@@ -45,8 +45,8 @@ declare
   v_name text := trim(coalesce(p_name, ''));
   v_offer jsonb;
   v_limit int;
-  v_used int;
-  v_plan public.plan_key := 'free';
+  v_used bigint;
+  v_plan public.plan_key := 'free'::public.plan_key;
   v_business uuid;
   v_display_name text;
 begin
@@ -69,7 +69,7 @@ begin
   v_limit := coalesce((v_offer ->> case when p_type = 'school' then 'school_limit' else 'instructor_limit' end)::int, 0);
   select count(*) into v_used from public.businesses where founding_offer and type = p_type;
   if v_used < v_limit then
-    v_plan := case when p_type = 'school' then 'school' else 'pro' end;
+    v_plan := case when p_type = 'school' then 'school'::public.plan_key else 'pro'::public.plan_key end;
   end if;
 
   insert into public.businesses (type, name, slug, plan, plan_expires_at, founding_offer, created_by)
