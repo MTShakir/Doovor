@@ -37,7 +37,7 @@ Do these once, in order. Items marked **You** need the product owner's accounts.
 2. Link and apply the migrations:
    ```bash
    pnpm supabase login
-   pnpm supabase link --project-ref <project-ref>
+   pnpm supabase link --project-ref yvxuarrrvgnfcjfyqfyi
    pnpm supabase db push --dry-run
    pnpm supabase db push
    ```
@@ -54,8 +54,8 @@ Do these once, in order. Items marked **You** need the product owner's accounts.
    ```
 5. Apply the hosted auth settings from `supabase/config.toml` (the `[remotes.staging]` block), which covers the site and redirect URLs, rate limits, email templates, the Resend sender, Twilio, two-step verification and Google:
    ```bash
-   pnpm supabase config diff --project-ref <project-ref>
-   pnpm supabase config push --project-ref <project-ref>
+   pnpm supabase config diff --project-ref yvxuarrrvgnfcjfyqfyi
+   pnpm supabase config push --project-ref yvxuarrrvgnfcjfyqfyi
    ```
    Read the diff before pushing: a push answers its own prompts and can overwrite a hosted setting. Check that the SMTP password shows as set rather than blank, and that no test phone numbers appear. Brand values (site URL, sender) come from `brand.ts`, so changing the domain there changes this too.
 6. **You:** Project Settings > API Keys: copy the publishable key and a secret key for Vercel (section 3.5).
@@ -63,7 +63,7 @@ Do these once, in order. Items marked **You** need the product owner's accounts.
 8. **You:** optional: under Authentication > Rate Limits, confirm the pushed values look right for your usage.
 9. Optional demo data, with its own password so public accounts never use the documented one. Every target must point at the staging project, because the seed writes through both the API and the database:
    ```bash
-   NEXT_PUBLIC_SUPABASE_URL='https://<project-ref>.supabase.co' \
+   NEXT_PUBLIC_SUPABASE_URL='https://yvxuarrrvgnfcjfyqfyi.supabase.co' \
    NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY='<publishable key>' \
    SUPABASE_SECRET_KEY='<secret key>' \
    SUPABASE_DB_URL='<session pooler connection string>' \
@@ -86,7 +86,7 @@ Do these once, in order. Items marked **You** need the product owner's accounts.
 ### 3.4 Google sign-in
 
 1. **You:** in Google Cloud, for OAuth client `647142621690-...`:
-   - Authorised redirect URI: `https://<project-ref>.supabase.co/auth/v1/callback`.
+   - Authorised redirect URI: `https://yvxuarrrvgnfcjfyqfyi.supabase.co/auth/v1/callback`.
    - Authorised JavaScript origin: `https://maxterzhub.co.uk`.
 2. **You:** copy the client secret into the Supabase Google provider.
 3. Set `NEXT_PUBLIC_AUTH_GOOGLE_ENABLED=true` in Vercel. The button stays hidden until then.
@@ -101,7 +101,7 @@ Do these once, in order. Items marked **You** need the product owner's accounts.
    | Name | Value |
    |---|---|
    | `APP_ENV` | `preview` (until launch in M6) |
-   | `NEXT_PUBLIC_SUPABASE_URL` | `https://<project-ref>.supabase.co` |
+   | `NEXT_PUBLIC_SUPABASE_URL` | `https://yvxuarrrvgnfcjfyqfyi.supabase.co` |
    | `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` | the publishable key |
    | `SUPABASE_SECRET_KEY` | a secret key (mark as Sensitive) |
    | `NEXT_PUBLIC_APP_URL` | Production only: `https://maxterzhub.co.uk`. Leave it unset for Preview |
