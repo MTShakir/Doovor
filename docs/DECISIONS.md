@@ -176,3 +176,61 @@ Every decision made without the product owner, newest last. Format: date, decisi
 - **Decision:** Commit the `apps/web/AGENTS.md` and `apps/web/CLAUDE.md` that `next dev` writes, and exclude agent and readme files from the copy guard.
 - **Options:** Delete or ignore them.
 - **Reason:** `next dev` recreates them, and they point coding sessions to the docs bundled with this exact Next.js version. They are not product copy.
+
+## D-036 | 2026-09-11 | Server Action arguments are never logged
+- **Decision:** `logging.serverFunctions: false` in `next.config.ts`.
+- **Options:** Next's default, which logs each Server Action call with its arguments in development.
+- **Reason:** The dev server printed sign-in arguments, including passwords and one-time codes, to the terminal and log files. Secrets must never reach logs. Requests are still logged with their timings.
+
+## D-037 | 2026-09-11 | Retry "JWT issued at future" from the database API
+- **Decision:** The Supabase clients use a fetch wrapper that retries a REST call rejected with 401 `PGRST303` up to three times, 400 ms apart per attempt. No other error is retried.
+- **Options:** Let the page fail and ask the person to refresh.
+- **Reason:** Straight after sign-in, the database API can reject a brand new token as issued in the future because its clock lags by up to a second (an upstream issue, seen locally). The retry is invisible to people and scoped to that one error. Remove it when the upstream fix lands.
+
+## D-038 | 2026-09-11 | Session-gated layouts opt out of instant validation (amends D-029)
+- **Decision:** `export const instant = false` on the portal, admin and account layouts, as Next's guide for authentication with Cache Components recommends while routes block on the session. In development, Next still notes "Could not validate instant" when a page redirects on purpose (wrong portal, two-step check, unknown section). Those notes are expected, not bugs.
+- **Options:** Private caching of session reads now; turning implicit validation off for the whole app.
+- **Reason:** Instant authenticated navigation is an optimisation for later milestones. Public pages keep the default validation.
+
+## D-039 | 2026-09-11 | Instructors can verify their mobile later | Confirm
+- **Decision:** After confirming their email, instructors land on "Verify your mobile" (AUTH-02) with a "Do this later" option. The account page shows "Add and verify" until it is done.
+- **Options:** Block the portal until the number is verified.
+- **Reason:** AUTH-04 lets instructors skip every onboarding step except their name, and a hard block would stop someone without signal finishing sign-up. Making it mandatory is a one-line change in `completeSignIn` if the product owner prefers.
+
+## D-040 | 2026-09-11 | School managers manage instructors' availability
+- **Decision:** Owners and managers hold `manage_availability` for their school's instructors; every instructor manages their own. Owners can remove it per manager through membership permissions (SCH-02).
+- **Options:** Read "Manage own availability" (PRD 6.2) literally, so only instructors edit hours.
+- **Reason:** Managers are office staff without a diary of their own (PRD 6.1: "Instructors, learners, bookings"), so the matrix's "Yes" only makes sense as maintaining the team's hours.
+
+## D-041 | 2026-09-11 | Signing out a device takes effect at once
+- **Decision:** Before every request, the database API (PostgREST) runs `private.check_request`, which refuses a token whose session has been signed out or has passed its end time, answering 401 `SESSION_ENDED`. Page gates read access through the database (`getAccess`), so a signed-out device is sent to sign in on its next visit.
+- **Options:**
+  - Rely on token expiry: pages verify tokens locally (`getClaims`), so a signed-out device keeps working for up to an hour.
+  - Call Supabase Auth on every request.
+- **Reason:** AUTH-09 and M0-27 need global sign-out to end other sessions. Someone who has lost their phone expects it cut off now, not in an hour. The check is one primary-key lookup per request and also covers direct API use. Storage and Realtime check tokens themselves and still accept them until expiry. They arrive in M1 and later, and M6 hardening shortens the token lifetime to narrow that window.
+
+## D-042 | 2026-09-11 | Visitor device and IP forwarded to Supabase Auth
+- **Decision:** Server-side Supabase clients forward the visitor's `User-Agent` and `X-Forwarded-For` headers.
+- **Options:** Sign in from the browser instead of Server Actions.
+- **Reason:** Sign-in runs in Server Actions, so Supabase Auth recorded the server as the device. The devices list (AUTH-09) and the audit log (NFR-SEC-06) need the person's own device. Vercel's edge sets `x-forwarded-for`, but the recorded IP stays informational: nothing authorises on it. Staging (M0-32) will confirm which address hosted Supabase records.
+
+## D-043 | 2026-09-11 | Forms never submit before the page is ready (security fix)
+- **Decision:** Forms handled by JavaScript use `ClientForm` and `SubmitButton`:
+  - they always post;
+  - the submit button is disabled until React has hydrated, keeping its normal look;
+  - repeat submits while pending are ignored;
+  - text fields have no React Hook Form default values.
+- **Options:**
+  - Full progressive enhancement: `useActionState` with FormData actions.
+  - Leave the forms as they were.
+- **Reason:** An e2e run caught a real leak. A sign-up submitted before hydration fell back to a native GET, which put the password in the URL (`/sign-up?...&password=...`), and from there in server logs and browser history. React Hook Form's empty defaults also cleared anything typed before hydration. Full progressive enhancement would mean rewriting every auth action, and the forms need JavaScript anyway (validation, one-time codes). A regression test holds back the JavaScript bundles and checks two things: nothing is sent, and early typing survives.
+
+## D-044 | 2026-09-11 | Viewport-only tests are tagged, not skipped
+- **Decision:** A test for a flow that exists on one form factor only carries `@phone-only` or `@desktop-only`, and each Playwright project leaves out the other tag.
+- **Options:** `test.skip` at run time.
+- **Reason:** Milestones cannot close with skipped tests (rule 10). Tags keep the report clean and make the intent explicit.
+
+## D-045 | 2026-09-11 | When a migration is frozen
+- **Decision:** A migration is frozen once it is merged to `main` or applied to a shared database, and mistakes are then fixed with a follow-up migration. An uncommitted migration on a branch may still be edited.
+- **Options:** "Forward only" for every migration, even one no other database has seen.
+- **Reason:** Editing a migration no one else has applied keeps history readable. Freezing it once shared keeps every database reproducible.
