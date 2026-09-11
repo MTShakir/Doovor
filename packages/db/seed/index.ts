@@ -1,6 +1,6 @@
 /**
  * Seed demo data (M0-28, M0-29). Run with `pnpm db:reset` (fresh database) or `pnpm db:seed`.
- * Refuses production, and refuses any non-local database unless run with --allow-remote.
+ * Refuses production, and any non-local target unless run with --allow-remote (seed/guard.ts).
  */
 import { existsSync, mkdirSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
@@ -10,6 +10,7 @@ import postgres from 'postgres';
 import { totp } from '../src/testing/totp';
 import { generateBookings, type SeedBooking } from './bookings';
 import { businesses, catalogue, instructors, SEED_PASSWORD, seedPeople } from './data';
+import { assertSeedTargets } from './guard';
 import fixture from './fixtures/postcodes.json' with { type: 'json' };
 
 const root = path.resolve(import.meta.dirname, '../../..');
@@ -27,16 +28,14 @@ const secretKey = required('SUPABASE_SECRET_KEY');
 const publishableKey = required('NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY');
 const dbUrl = process.env.SUPABASE_DB_URL ?? 'postgresql://postgres:postgres@127.0.0.1:54322/postgres';
 
-function guard(): void {
-  if (process.env.APP_ENV === 'production') throw new Error('Refusing to seed: APP_ENV is production.');
-  const local = /^https?:\/\/(127\.0\.0\.1|localhost)(:|\/|$)/.test(supabaseUrl);
-  if (!local && !process.argv.includes('--allow-remote')) {
-    throw new Error(`Refusing to seed ${supabaseUrl}: not a local database. Pass --allow-remote for a staging project.`);
-  }
-}
-
 async function main(): Promise<void> {
-  guard();
+  assertSeedTargets(
+    [
+      { label: 'Supabase URL', url: supabaseUrl },
+      { label: 'database URL', url: dbUrl },
+    ],
+    { appEnv: process.env.APP_ENV, allowRemote: process.argv.includes('--allow-remote') },
+  );
   const today = utcToLocal(new Date()).date;
   const people = seedPeople(today);
   const admin = createClient(supabaseUrl, secretKey, { auth: { persistSession: false, autoRefreshToken: false } });
