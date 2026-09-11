@@ -27,6 +27,8 @@ const supabaseUrl = required('NEXT_PUBLIC_SUPABASE_URL');
 const secretKey = required('SUPABASE_SECRET_KEY');
 const publishableKey = required('NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY');
 const dbUrl = process.env.SUPABASE_DB_URL ?? 'postgresql://postgres:postgres@127.0.0.1:54322/postgres';
+// Hosted projects need their own password (seed/guard.ts); locally the documented one is fine.
+const password = process.env.SEED_PASSWORD ?? SEED_PASSWORD;
 
 async function main(): Promise<void> {
   assertSeedTargets(
@@ -34,7 +36,11 @@ async function main(): Promise<void> {
       { label: 'Supabase URL', url: supabaseUrl },
       { label: 'database URL', url: dbUrl },
     ],
-    { appEnv: process.env.APP_ENV, allowRemote: process.argv.includes('--allow-remote') },
+    {
+      appEnv: process.env.APP_ENV,
+      allowRemote: process.argv.includes('--allow-remote'),
+      customPassword: Boolean(process.env.SEED_PASSWORD),
+    },
   );
   const today = utcToLocal(new Date()).date;
   const people = seedPeople(today);
@@ -45,7 +51,7 @@ async function main(): Promise<void> {
   for (const person of people) {
     const { data, error } = await admin.auth.admin.createUser({
       email: person.email,
-      password: SEED_PASSWORD,
+      password,
       email_confirm: true,
       ...(person.phone ? { phone: person.phone, phone_confirm: true } : {}),
       user_metadata: { full_name: person.fullName, ...(person.intendedRole ? { intended_role: person.intendedRole } : {}) },
@@ -206,7 +212,7 @@ async function main(): Promise<void> {
   mkdirSync(authDir, { recursive: true });
   writeFileSync(
     path.join(authDir, 'seed-accounts.json'),
-    `${JSON.stringify({ password: SEED_PASSWORD, totpSecrets: secrets }, null, 2)}\n`,
+    `${JSON.stringify({ password, totpSecrets: secrets }, null, 2)}\n`,
   );
 
   printSummary(people, bookings.length);
@@ -238,7 +244,7 @@ async function insertBooking(
 
 async function enrolTotp(email: string): Promise<string> {
   const client = createClient(supabaseUrl, publishableKey, { auth: { persistSession: false, autoRefreshToken: false } });
-  const signIn = await client.auth.signInWithPassword({ email, password: SEED_PASSWORD });
+  const signIn = await client.auth.signInWithPassword({ email, password });
   if (signIn.error) throw new Error(`Could not sign in ${email}: ${signIn.error.message}`);
   const enrol = await client.auth.mfa.enroll({ factorType: 'totp', friendlyName: 'Seed authenticator' });
   if (enrol.error) throw new Error(`Could not enrol ${email} in TOTP: ${enrol.error.message}`);
@@ -253,7 +259,7 @@ function printSummary(people: ReturnType<typeof seedPeople>, bookingCount: numbe
     ({ admin: 'Super Admin', support: 'Support Admin', sarah: 'Independent instructor, Leeds', david: 'School owner, Manchester', lucy: 'School manager' })[key] ??
     (instructors.some((i) => i.key === key) ? 'School instructor' : 'Learner');
   const lines = [
-    `\nSeeded accounts (password for all: ${SEED_PASSWORD})\n`,
+    `\nSeeded accounts (password for all: ${process.env.SEED_PASSWORD ? 'the SEED_PASSWORD you set' : password})\n`,
     ...people.map((person) => `  ${person.email.padEnd(28)} ${role(person.key)}${person.totp ? ' (TOTP)' : ''}`),
     `\n  ${String(bookingCount)} lessons across 5 days back and 14 days ahead.`,
     '  TOTP secrets for seeded staff: e2e/.auth/seed-accounts.json\n',
