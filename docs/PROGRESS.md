@@ -4,7 +4,7 @@ Last updated: 11 September 2026
 
 ## Status
 
-M0 Foundation, branch `m0-foundation`. M0-01 to M0-31 are done and green locally. The CI workflow is pushed; its first run on GitHub needs checking, because the repository is private. M0-32 (Vercel and staging) is prepared and waiting on the product owner's accounts (see `docs/RUNBOOK.md` section 3). The M0-33 milestone report is delivered (https://claude.ai/code/artifact/7b3956cb-d283-46c8-b3fa-a48ac2694c2e). Waiting for "Approved, continue".
+M0 Foundation, branch `m0-foundation`. M0-01 to M0-31 are done and green locally and on GitHub (CI run #5 passed all three jobs). The first four CI runs were red on two fresh-checkout problems, now fixed: lint needed Next's generated route types, and a blank setting value was rejected instead of counting as "not set" (which would also have broken a hosting dashboard with an empty variable). M0-32 (Vercel and staging) is prepared and waiting on the product owner's accounts (see `docs/RUNBOOK.md` section 3). The M0-33 milestone report is delivered (https://claude.ai/code/artifact/7b3956cb-d283-46c8-b3fa-a48ac2694c2e). Waiting for "Approved, continue".
 
 ## Done
 
@@ -24,9 +24,9 @@ M0 Foundation, branch `m0-foundation`. M0-01 to M0-31 are done and green locally
 | M0-28, M0-29 | Deterministic seed: 16 people across every role, Leeds independent instructor, Manchester school with 3 instructors (one PDI), 8 learners, catalogue, hours and 109 lessons | 12 |
 | M0-30 | Every seeded role signs in and lands on its portal, at 390 px and 1440 px | AUTH-03 |
 | M0-31 | GitHub Actions on every push: lint and copy guard, types, unit tests with the coverage gate, SQL lint, pgTAP, generated-types check, and Playwright against a production build with report and screenshots as artefacts | 14.5 |
-| M0-32 (prepared) | Runbook with the staging checklist, `apps/web/vercel.json` pinned to London, noindex outside production (D-047), `pnpm db:env`, safe hosted seeding (D-048) | 8.1 |
+| M0-32 (prepared) | Runbook with the staging checklist, hosted auth settings as code in `[remotes.staging]` applied by one reviewed command (D-050), `apps/web/vercel.json` pinned to London, noindex outside production (D-047), `pnpm db:env`, safe hosted seeding (D-048) | 8.1 |
 
-Decisions D-036 to D-049 were logged during this stretch. Two were security fixes caught by tests:
+Decisions D-036 to D-050 were logged during this stretch. Two were security fixes caught by tests:
 - D-043: a form submitted before the page was ready could put a password in the URL.
 - D-041: a signed-out device kept access until its token expired.
 
@@ -34,10 +34,11 @@ Decisions D-036 to D-049 were logged during this stretch. Two were security fixe
 
 | Suite | Result |
 |---|---|
-| Unit (Vitest) | 143 passed across 5 packages; `packages/core` line coverage 98.4% |
+| Unit (Vitest) | 146 passed across 5 packages; `packages/core` line coverage 98.4% |
 | Database (pgTAP) | 142 assertions in 8 files, all passing; SQL lint clean |
 | End to end (Playwright) | 79 passed at 390 px and 1440 px, none skipped, stable across repeated full runs, also against a production build in CI mode |
 | Lint, typecheck, copy guard | Clean |
+| CI on GitHub | Green: lint and unit, database, end to end against a production build |
 
 ## In progress
 
@@ -45,8 +46,7 @@ Decisions D-036 to D-049 were logged during this stretch. Two were security fixe
 
 ## Next
 
-- Confirm the first CI run is green on GitHub.
-- M0-32: the product owner works through `docs/RUNBOOK.md` section 3, then check that a preview loads and a seeded account signs in.
+- M0-32: the product owner adds the provider secrets and a Supabase access token to `.env.local` (RUNBOOK section 3.1 step 4), then the command-line setup runs from here. Resend DNS, Twilio, the Google redirect URI and the Vercel import stay with the owner.
 - On approval: merge `m0-foundation` into `main`, then start M1 on `m1-instructor-core`.
 
 ## Blockers
