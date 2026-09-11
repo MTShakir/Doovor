@@ -4,7 +4,7 @@ Last updated: 11 September 2026
 
 ## Status
 
-M0 Foundation, branch `m0-foundation`. M0-01 to M0-31 are done and green locally. The CI workflow is pushed; its first run on GitHub needs checking, because the repository is private. M0-32 (Vercel and staging) is prepared and waiting on the product owner's accounts (see `docs/RUNBOOK.md` section 3). Next: M0-33 milestone report.
+M0 Foundation, branch `m0-foundation`. M0-01 to M0-31 are done and green locally. The CI workflow is pushed; its first run on GitHub needs checking, because the repository is private. M0-32 (Vercel and staging) is prepared and waiting on the product owner's accounts (see `docs/RUNBOOK.md` section 3). The M0-33 milestone report is delivered (https://claude.ai/code/artifact/7b3956cb-d283-46c8-b3fa-a48ac2694c2e). Waiting for "Approved, continue".
 
 ## Done
 
@@ -41,13 +41,13 @@ Decisions D-036 to D-049 were logged during this stretch. Two were security fixe
 
 ## In progress
 
-- M0-33: milestone report.
+- Nothing. Waiting for approval of M0.
 
 ## Next
 
 - Confirm the first CI run is green on GitHub.
 - M0-32: the product owner works through `docs/RUNBOOK.md` section 3, then check that a preview loads and a seeded account signs in.
-- Wait for "Approved, continue" before M1.
+- On approval: merge `m0-foundation` into `main`, then start M1 on `m1-instructor-core`.
 
 ## Blockers
 
