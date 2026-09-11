@@ -39,6 +39,7 @@ Decisions D-036 to D-050 were logged during this stretch. Two were security fixe
 | End to end (Playwright) | 79 passed at 390 px and 1440 px, none skipped, stable across repeated full runs, also against a production build in CI mode |
 | Lint, typecheck, copy guard | Clean |
 | CI on GitHub | Green: lint and unit, database, end to end against a production build |
+| Staging (hosted) | Security Advisor: 0 errors, 6 expected warnings (D-051). Every public table has row-level security. The sign-out guard (D-041) is active on the authenticator role. Health check and sign-in page verified |
 
 ## In progress
 
