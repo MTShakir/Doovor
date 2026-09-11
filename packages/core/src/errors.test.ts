@@ -35,6 +35,12 @@ describe('domain errors', () => {
     expect(parsePostgresError({ code: 'PGRST116', message: 'no rows' }).code).toBe('NOT_FOUND');
   });
 
+  it('treats a session signed out on another device as signed out (D-041)', () => {
+    expect(parsePostgresError({ code: 'SESSION_ENDED', message: 'This device has been signed out.' }).code).toBe(
+      'NOT_AUTHENTICATED',
+    );
+  });
+
   it('never leaks unknown database text', () => {
     const parsed = parsePostgresError({ code: 'XX000', message: 'internal error at line 3', details: 'secret' });
     expect(parsed).toEqual({ code: 'UNKNOWN', context: {} });

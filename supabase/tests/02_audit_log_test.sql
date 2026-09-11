@@ -29,7 +29,8 @@ select results_eq(
 insert into auth.sessions (id, user_id, created_at, updated_at, aal, ip, user_agent)
 values ('eeeeeeee-0000-0000-0000-000000000001', :'owner_id', now(), now(), 'aal1', '203.0.113.7', 'Test browser');
 select results_eq(
-  $$ select actor_user_id::text, host(ip), user_agent from public.audit_log where action = 'auth.sign_in' $$,
+  $$ select actor_user_id::text, host(ip), user_agent from public.audit_log
+      where action = 'auth.sign_in' and entity_id = 'eeeeeeee-0000-0000-0000-000000000001' $$,
   format($$ values (%L, '203.0.113.7', 'Test browser') $$, :'owner_id'),
   'every sign-in is recorded with IP and user agent'
 );

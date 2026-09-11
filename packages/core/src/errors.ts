@@ -66,6 +66,7 @@ const SQLSTATE_TO_CODE: Record<string, DomainErrorCode> = {
   '42501': 'NOT_ALLOWED', // insufficient_privilege, including RLS write denials
   PGRST116: 'NOT_FOUND', // PostgREST: no row for .single()
   PGRST301: 'NOT_AUTHENTICATED', // PostgREST: JWT invalid or expired
+  SESSION_ENDED: 'NOT_AUTHENTICATED', // the token's session was signed out (private.check_request, D-041)
 };
 
 export interface ParsedDomainError {

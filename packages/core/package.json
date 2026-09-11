@@ -8,7 +8,9 @@
     "./money": "./src/money.ts",
     "./errors": "./src/errors.ts",
     "./result": "./src/result.ts",
-    "./time": "./src/time/index.ts"
+    "./time": "./src/time/index.ts",
+    "./phone": "./src/phone.ts",
+    "./schemas/auth": "./src/schemas/auth.ts"
   },
   "scripts": {
     "lint": "eslint .",

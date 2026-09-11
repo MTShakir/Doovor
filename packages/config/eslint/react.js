@@ -15,7 +15,11 @@ export function react(tsconfigRootDir) {
       files: ['**/*.{ts,tsx}'],
       languageOptions: { globals: { ...globals.browser } },
       plugins: { 'react-hooks': reactHooks },
-      rules: { ...reactHooks.configs.recommended.rules },
+      rules: {
+        ...reactHooks.configs.recommended.rules,
+        // React event props accept async handlers (for example react-hook-form's handleSubmit).
+        '@typescript-eslint/no-misused-promises': ['error', { checksVoidReturn: { attributes: false } }],
+      },
     },
     {
       files: ['**/*.tsx'],

@@ -1,0 +1,115 @@
+{
+  "source": "postcodes.io, verified 2026-09-11. Public places only (stations, universities, stadiums), never private addresses.",
+  "postcodes": [
+    {
+      "postcode": "LS6 3QS",
+      "outcode": "LS6",
+      "area": "LS",
+      "latitude": 53.826353,
+      "longitude": -1.590754,
+      "admin_district": "Leeds",
+      "ward": "Weetwood",
+      "region": "Yorkshire and The Humber",
+      "country": "England"
+    },
+    {
+      "postcode": "LS2 9JT",
+      "outcode": "LS2",
+      "area": "LS",
+      "latitude": 53.807974,
+      "longitude": -1.553334,
+      "admin_district": "Leeds",
+      "ward": "Little London & Woodhouse",
+      "region": "Yorkshire and The Humber",
+      "country": "England"
+    },
+    {
+      "postcode": "LS8 2HH",
+      "outcode": "LS8",
+      "area": "LS",
+      "latitude": 53.839563,
+      "longitude": -1.499642,
+      "admin_district": "Leeds",
+      "ward": "Roundhay",
+      "region": "Yorkshire and The Humber",
+      "country": "England"
+    },
+    {
+      "postcode": "LS11 0ES",
+      "outcode": "LS11",
+      "area": "LS",
+      "latitude": 53.77773,
+      "longitude": -1.573108,
+      "admin_district": "Leeds",
+      "ward": "Beeston & Holbeck",
+      "region": "Yorkshire and The Humber",
+      "country": "England"
+    },
+    {
+      "postcode": "M1 2QF",
+      "outcode": "M1",
+      "area": "M",
+      "latitude": 53.476016,
+      "longitude": -2.227375,
+      "admin_district": "Manchester",
+      "ward": "Piccadilly",
+      "region": "North West",
+      "country": "England"
+    },
+    {
+      "postcode": "M13 9PL",
+      "outcode": "M13",
+      "area": "M",
+      "latitude": 53.466926,
+      "longitude": -2.233578,
+      "admin_district": "Manchester",
+      "ward": "Hulme",
+      "region": "North West",
+      "country": "England"
+    },
+    {
+      "postcode": "M16 0RA",
+      "outcode": "M16",
+      "area": "M",
+      "latitude": 53.462576,
+      "longitude": -2.291032,
+      "admin_district": "Trafford",
+      "ward": "Gorse Hill & Cornbrook",
+      "region": "North West",
+      "country": "England"
+    },
+    {
+      "postcode": "M11 3FF",
+      "outcode": "M11",
+      "area": "M",
+      "latitude": 53.484222,
+      "longitude": -2.202811,
+      "admin_district": "Manchester",
+      "ward": "Ancoats & Beswick",
+      "region": "North West",
+      "country": "England"
+    },
+    {
+      "postcode": "M50 2EQ",
+      "outcode": "M50",
+      "area": "M",
+      "latitude": 53.471835,
+      "longitude": -2.298206,
+      "admin_district": "Salford",
+      "ward": "Quays",
+      "region": "North West",
+      "country": "England"
+    },
+    {
+      "postcode": "M15 4FN",
+      "outcode": "M15",
+      "area": "M",
+      "latitude": 53.472932,
+      "longitude": -2.246597,
+      "admin_district": "Manchester",
+      "ward": "Deansgate",
+      "region": "North West",
+      "country": "England"
+    }
+  ]
+}

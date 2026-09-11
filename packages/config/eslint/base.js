@@ -30,6 +30,8 @@ export function base(tsconfigRootDir) {
         '@typescript-eslint/no-non-null-assertion': 'error',
         '@typescript-eslint/consistent-type-imports': 'error',
         '@typescript-eslint/restrict-template-expressions': ['error', { allowNumber: true }],
+        // `||` on strings is intentional: an empty string should fall back too.
+        '@typescript-eslint/prefer-nullish-coalescing': ['error', { ignorePrimitives: { string: true } }],
         eqeqeq: ['error', 'always'],
         'no-console': ['error', { allow: ['warn', 'error'] }],
       },

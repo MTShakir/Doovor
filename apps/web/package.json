@@ -12,13 +12,18 @@
     "test": "vitest run"
   },
   "dependencies": {
+    "@hookform/resolvers": "catalog:",
     "@repo/config": "workspace:*",
     "@repo/core": "workspace:*",
+    "@repo/db": "workspace:*",
     "@repo/ui": "workspace:*",
+    "@supabase/ssr": "catalog:",
+    "@supabase/supabase-js": "catalog:",
     "lucide-react": "catalog:",
     "next": "catalog:",
     "react": "catalog:",
     "react-dom": "catalog:",
+    "react-hook-form": "catalog:",
     "server-only": "^0.0.1",
     "zod": "catalog:"
   },

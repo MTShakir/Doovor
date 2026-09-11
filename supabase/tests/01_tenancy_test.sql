@@ -173,7 +173,8 @@ select is(
 );
 select tests.authenticate_as(:'support', 'aal2');
 select is(
-  (select count(*)::int from public.businesses),
+  (select count(*)::int from public.businesses
+    where id in ('aaaaaaaa-0000-0000-0000-000000000001', 'bbbbbbbb-0000-0000-0000-000000000001')),
   2,
   'support staff with TOTP can read every business'
 );

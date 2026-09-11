@@ -81,6 +81,24 @@ max_frequency = "1s"
 otp_length = 6
 otp_expiry = 3600
 
+# Links go to /auth/confirm with a token hash so they work on any device. Branded
+# React Email versions replace these in M2; hosted templates are set in the dashboard.
+[auth.email.template.confirmation]
+subject = "Confirm your email"
+content_path = "./supabase/templates/confirmation.html"
+
+[auth.email.template.magic_link]
+subject = "Your sign-in link"
+content_path = "./supabase/templates/magic_link.html"
+
+[auth.email.template.recovery]
+subject = "Reset your password"
+content_path = "./supabase/templates/recovery.html"
+
+[auth.email.template.email_change]
+subject = "Confirm your new email"
+content_path = "./supabase/templates/email_change.html"
+
 # Phone codes verify instructor numbers (AUTH-02) and let people with a verified number sign in.
 # Phone-only sign-ups are off: every account has an email for receipts and notices.
 [auth.sms]
