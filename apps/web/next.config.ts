@@ -35,6 +35,11 @@ const securityHeaders = [
   { key: 'Content-Security-Policy-Report-Only', value: contentSecurityPolicy },
 ];
 
+/** Outside production nothing is indexed; in production, private areas never are (D-047). */
+const indexable = process.env.APP_ENV === 'production';
+const noindex = [{ key: 'X-Robots-Tag', value: 'noindex, nofollow' }];
+const privateAreas = ['/app/:path*', '/admin/:path*', '/account/:path*', '/auth/:path*', '/api/:path*', '/mfa', '/verify-phone'];
+
 const nextConfig: NextConfig = {
   reactStrictMode: true,
   poweredByHeader: false,
@@ -46,7 +51,11 @@ const nextConfig: NextConfig = {
   typedRoutes: true,
   transpilePackages: ['@repo/config', '@repo/core', '@repo/ui'],
   headers() {
-    return Promise.resolve([{ source: '/(.*)', headers: securityHeaders }]);
+    return Promise.resolve(
+      indexable
+        ? [{ source: '/(.*)', headers: securityHeaders }, ...privateAreas.map((source) => ({ source, headers: noindex }))]
+        : [{ source: '/(.*)', headers: [...securityHeaders, ...noindex] }],
+    );
   },
 };
 

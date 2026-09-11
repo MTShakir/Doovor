@@ -16,6 +16,14 @@ test('home placeholder renders with brand tokens and security headers', async ({
   await snap(page, testInfo, 'home');
 });
 
+test('nothing is indexed outside production (D-047)', async ({ request }) => {
+  const home = await request.get('/');
+  expect(home.headers()['x-robots-tag']).toBe('noindex, nofollow');
+  const robots = await request.get('/robots.txt');
+  expect(robots.ok()).toBe(true);
+  expect(await robots.text()).toMatch(/User-Agent: \*\s+Disallow: \/\s/);
+});
+
 test('health check responds', async ({ request }) => {
   const response = await request.get('/api/health');
   expect(response.ok()).toBe(true);
