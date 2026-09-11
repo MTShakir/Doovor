@@ -80,7 +80,14 @@ jobs:
       - name: Write .env.local for the local stack
         run: node scripts/local-env.mjs --app-env=test
       - name: Production build
-        run: pnpm build
+        # Build output is only in the logs, which need repository admin. Put the tail of a
+        # failure in an annotation, which anyone who can see the run can read.
+        run: |
+          set -o pipefail
+          if ! pnpm build 2>&1 | tee "$RUNNER_TEMP/build.log"; then
+            echo "::error title=Production build failed::$(tail -n 25 "$RUNNER_TEMP/build.log" | sed 's/%/%25/g' | sed ':a;N;$!ba;s/\n/%0A/g')"
+            exit 1
+          fi
       - name: Install Chromium
         run: pnpm --filter @repo/e2e exec playwright install --with-deps chromium
       - name: Playwright
