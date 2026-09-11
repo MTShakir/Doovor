@@ -15,12 +15,14 @@ process.env.SUPABASE_AUTH_EXTERNAL_GOOGLE_CLIENT_ID ||= 'not-configured';
 process.env.SUPABASE_AUTH_EXTERNAL_GOOGLE_SECRET ||= 'not-configured';
 
 // The hosted config (config.toml [remotes.*]) takes its brand values from brand.ts, so the
-// name, domain and sender addresses stay in one file (rule 8).
+// name, domain and sender addresses stay in one file (rule 8). Never name these
+// SUPABASE_AUTH_*: the CLI forwards that prefix into the local auth container, which would
+// point local sign-in emails at the production domain and break the email tests.
 const { brand } = await import(pathToFileURL(path.join(root, 'packages', 'config', 'src', 'brand.ts')).href);
-process.env.SUPABASE_AUTH_SITE_URL ||= brand.productionUrl;
-process.env.SUPABASE_AUTH_REDIRECT_URL ||= `${brand.productionUrl}/**`;
-process.env.SUPABASE_AUTH_SENDER_EMAIL ||= brand.email.fromAddress;
-process.env.SUPABASE_AUTH_SENDER_NAME ||= brand.name;
+process.env.BRAND_SITE_URL ||= brand.productionUrl;
+process.env.BRAND_REDIRECT_URL ||= `${brand.productionUrl}/**`;
+process.env.BRAND_SENDER_EMAIL ||= brand.email.fromAddress;
+process.env.BRAND_SENDER_NAME ||= brand.name;
 
 // Run the CLI's own launcher with Node directly: no shell, so paths with spaces work on Windows.
 const launcher = path.join(root, 'node_modules', 'supabase', 'dist', 'supabase.js');
