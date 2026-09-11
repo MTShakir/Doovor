@@ -24,6 +24,41 @@ process.env.BRAND_REDIRECT_URL ||= `${brand.productionUrl}/**`;
 process.env.BRAND_SENDER_EMAIL ||= brand.email.fromAddress;
 process.env.BRAND_SENDER_NAME ||= brand.name;
 
+// Ofcom drama numbers with a fixed code, for local and CI phone tests (D-033). The CLI
+// forwards SUPABASE_AUTH_* into the local auth container, so these never reach a hosted
+// project the way a config.toml entry would.
+process.env.SUPABASE_AUTH_SMS_TEST_OTP ||= Array.from({ length: 9 }, (_, i) => `44770090000${i + 1}:123456`).join(',');
+
+// A hosted push writes every value the config declares, so a secret that is not set would be
+// stored as the literal "env(NAME)" or as an empty password. Refuse before that happens.
+const argv = process.argv.slice(2);
+if (argv.includes('config') && argv.includes('push')) {
+  const needed = [
+    'RESEND_API_KEY',
+    'TWILIO_ACCOUNT_SID',
+    'TWILIO_AUTH_TOKEN',
+    'TWILIO_MESSAGING_SERVICE_SID',
+    'SUPABASE_AUTH_EXTERNAL_GOOGLE_CLIENT_ID',
+    'SUPABASE_AUTH_EXTERNAL_GOOGLE_SECRET',
+  ];
+  const missing = needed.filter((name) => {
+    const value = process.env[name];
+    return !value || value === 'not-configured';
+  });
+  if (missing.length > 0) {
+    const newline = String.fromCharCode(10);
+    process.stderr.write(
+      [
+        `Refusing to push hosted settings. Not set in .env.local: ${missing.join(', ')}.`,
+        'The push would store placeholder text or an empty password in the project.',
+        'See docs/RUNBOOK.md section 3.1.',
+        '',
+      ].join(newline),
+    );
+    process.exit(1);
+  }
+}
+
 // Run the CLI's own launcher with Node directly: no shell, so paths with spaces work on Windows.
 const launcher = path.join(root, 'node_modules', 'supabase', 'dist', 'supabase.js');
 const result = spawnSync(process.execPath, [launcher, ...process.argv.slice(2)], { stdio: 'inherit', cwd: root });

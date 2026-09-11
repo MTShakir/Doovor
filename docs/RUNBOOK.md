@@ -52,12 +52,12 @@ Do these once, in order. Items marked **You** need the product owner's accounts.
    SUPABASE_AUTH_EXTERNAL_GOOGLE_CLIENT_ID=    # section 3.4
    SUPABASE_AUTH_EXTERNAL_GOOGLE_SECRET=
    ```
-5. Apply the hosted auth settings from `supabase/config.toml` (the `[remotes.staging]` block), which covers the site and redirect URLs, rate limits, email templates, the Resend sender, Twilio, two-step verification and Google:
+5. Apply the hosted auth settings, which live in `ops/staging/supabase/config.toml` and cover the site and redirect URLs, rate limits, email templates, the Resend sender, Twilio, two-step verification and Google:
    ```bash
-   pnpm supabase config diff --project-ref yvxuarrrvgnfcjfyqfyi
-   pnpm supabase config push --project-ref yvxuarrrvgnfcjfyqfyi
+   pnpm supabase config diff --workdir ops/staging --project-ref yvxuarrrvgnfcjfyqfyi
+   pnpm supabase config push --workdir ops/staging --project-ref yvxuarrrvgnfcjfyqfyi
    ```
-   Read the diff before pushing: a push answers its own prompts and can overwrite a hosted setting. Check that the SMTP password shows as set rather than blank, and that no test phone numbers appear. Brand values (site URL, sender) come from `brand.ts`, so changing the domain there changes this too.
+   That file is deliberately separate from `supabase/config.toml`: the local one carries the test phone numbers, which must never reach a hosted project. Read the diff before pushing, because a push answers its own prompts and can overwrite a hosted setting. The push refuses to run while any provider secret in step 4 is unset, since it would otherwise store placeholder text or an empty password.
 6. **You:** Project Settings > API Keys: copy the publishable key and a secret key for Vercel (section 3.5).
 7. Check the site is reachable at the site URL once Vercel is connected, then sign in once to confirm emails arrive.
 8. **You:** optional: under Authentication > Rate Limits, confirm the pushed values look right for your usage.
