@@ -1,0 +1,110 @@
+# Every push and pull request: lint, types, unit tests, database tests and end-to-end flows
+# at 390 and 1440 px against a production build (M0-31, PRD 14.5).
+name: CI
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.event.pull_request.number || github.ref }}-${{ github.event_name }}
+  cancel-in-progress: true
+
+env:
+  NEXT_TELEMETRY_DISABLED: 1
+  TURBO_TELEMETRY_DISABLED: 1
+  # Services the tests do not use, left out to start the local Supabase stack faster.
+  SUPABASE_EXCLUDE: studio,imgproxy,postgres-meta,edge-runtime,logflare,vector,supavisor
+
+jobs:
+  checks:
+    name: Lint, types and unit tests
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: Lint and copy guard
+        run: pnpm lint
+      - name: Typecheck
+        run: pnpm typecheck
+      - name: Unit tests (core coverage gate 90%)
+        run: pnpm test
+
+  database:
+    name: Database tests and lint
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: Start local Supabase
+        run: node scripts/supabase.mjs start -x "$SUPABASE_EXCLUDE"
+      - name: Lint SQL functions
+        run: pnpm db:lint
+      - name: pgTAP (RLS, constraints, RPCs)
+        run: pnpm db:test
+      - name: Generated types match the migrations
+        run: |
+          pnpm db:types
+          git diff --exit-code -- packages/db/src/types.gen.ts
+
+  e2e:
+    name: End to end (390 and 1440 px)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: Start local Supabase
+        run: node scripts/supabase.mjs start -x "$SUPABASE_EXCLUDE"
+      - name: Write .env.local for the local stack
+        run: node scripts/local-env.mjs --app-env=test
+      - name: Production build
+        # Build output is only in the logs, which need repository admin. Put the tail of a
+        # failure in an annotation, which anyone who can see the run can read.
+        run: |
+          set -o pipefail
+          if ! pnpm build 2>&1 | tee "$RUNNER_TEMP/build.log"; then
+            echo "::error title=Production build failed::$(tail -n 25 "$RUNNER_TEMP/build.log" | sed 's/%/%25/g' | sed ':a;N;$!ba;s/\n/%0A/g')"
+            exit 1
+          fi
+      - name: Install Chromium
+        run: pnpm --filter @repo/e2e exec playwright install --with-deps chromium
+      - name: Playwright
+        run: pnpm test:e2e
+      - name: Upload report
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: |
+            e2e/playwright-report
+            e2e/test-results
+          retention-days: 14
+      - name: Upload screenshots
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: screenshots
+          path: e2e/screenshots
+          retention-days: 14

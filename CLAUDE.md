@@ -53,7 +53,9 @@ Run from the repo root.
 | `pnpm db:reset` | Re-apply all migrations and seed data locally |
 | `pnpm db:migration <name>` | Create a new SQL migration |
 | `pnpm db:types` | Regenerate `packages/db/src/types.gen.ts` from the local database |
+| `pnpm db:env` | Write `.env.local` from `.env.example` and the running local stack's keys (first-time setup) |
 | `pnpm db:test` | Run pgTAP tests (RLS, constraints, RPCs) |
+| `pnpm db:lint` | Lint SQL functions in `public` and `private`; fails on warnings |
 | `pnpm lint` | ESLint across the monorepo, plus copy guards (brand name, dashes) |
 | `pnpm typecheck` | TypeScript across the monorepo |
 | `pnpm test` | Vitest unit and integration tests |
@@ -90,7 +92,7 @@ Ask the product owner only for things only they can provide: keys, account acces
 ## Engineering conventions
 
 ### Database and security
-- Migrations in `supabase/migrations` are the single source of truth. Forward only. Fix mistakes with a follow-up migration.
+- Migrations in `supabase/migrations` are the single source of truth. Once a migration is merged to `main` or applied to a shared database it is frozen: fix mistakes with a follow-up migration. Uncommitted migrations on a branch may still be edited.
 - Every table in `public` has RLS enabled. A pgTAP test fails the build if any table lacks RLS or a tenant table lacks policies.
 - Tenant tables carry `business_id`. Policies use helpers in the `private` schema: `private.auth_is_member(business_id)`, `private.auth_has_role(business_id, role)`, `private.auth_business_ids()`. Wrap `auth.uid()` as `(select auth.uid())` in policies.
 - Booking, credit, payment, membership, verification and refund writes go only through `SECURITY DEFINER` RPCs with `set search_path = ''`. They derive the actor from `auth.uid()`, check permissions explicitly, run in one transaction and write audit rows. The `authenticated` role has no direct write grant on those tables.

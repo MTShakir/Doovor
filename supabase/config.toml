@@ -1,0 +1,155 @@
+# Local Supabase stack (Docker). Reference: https://supabase.com/docs/guides/local-development/cli/config
+# Hosted projects are configured in the dashboard; docs/RUNBOOK.md lists the matching settings.
+# Run the CLI through `pnpm supabase ...` so env() values load from the root .env.local.
+project_id = "platform"
+
+[api]
+enabled = true
+port = 54321
+# Only public is exposed. GraphQL is not used, so its schema stays off the API surface.
+schemas = ["public"]
+extra_search_path = ["public", "extensions"]
+max_rows = 1000
+
+[db]
+port = 54322
+shadow_port = 54320
+health_timeout = "2m"
+major_version = 17
+
+[db.pooler]
+enabled = false
+
+[db.migrations]
+enabled = true
+
+[db.seed]
+enabled = true
+# Local and CI only: hosted projects never run seed files.
+sql_paths = ["./seed.sql", "./seeds/test_helpers.sql"]
+
+[realtime]
+enabled = true
+
+[studio]
+enabled = true
+port = 54323
+api_url = "http://127.0.0.1"
+
+# Local mailbox for auth and app emails: http://127.0.0.1:54324
+[local_smtp]
+enabled = true
+port = 54324
+
+[storage]
+enabled = true
+file_size_limit = "10MiB"
+
+[storage.vector]
+enabled = false
+
+[auth]
+enabled = true
+site_url = "http://localhost:3000"
+additional_redirect_urls = ["http://localhost:3000/**", "http://127.0.0.1:3000/**"]
+jwt_expiry = 3600
+enable_refresh_token_rotation = true
+refresh_token_reuse_interval = 10
+enable_signup = true
+enable_anonymous_sign_ins = false
+enable_manual_linking = false
+# NCSC guidance: favour length over composition rules.
+minimum_password_length = 8
+password_requirements = ""
+
+# Local and CI limits are generous so end-to-end runs from one IP are not throttled.
+# Production limits are set in the dashboard (docs/RUNBOOK.md).
+[auth.rate_limit]
+email_sent = 100
+sms_sent = 100
+token_refresh = 1000
+sign_in_sign_ups = 1000
+token_verifications = 1000
+
+[auth.email]
+enable_signup = true
+double_confirm_changes = true
+# Learners verify their email (AUTH-02).
+enable_confirmations = true
+secure_password_change = false
+max_frequency = "1s"
+otp_length = 6
+otp_expiry = 3600
+
+# Links go to /auth/confirm with a token hash so they work on any device. Branded
+# React Email versions replace these in M2; hosted templates are set in the dashboard.
+[auth.email.template.confirmation]
+subject = "Confirm your email"
+content_path = "./supabase/templates/confirmation.html"
+
+[auth.email.template.magic_link]
+subject = "Your sign-in link"
+content_path = "./supabase/templates/magic_link.html"
+
+[auth.email.template.recovery]
+subject = "Reset your password"
+content_path = "./supabase/templates/recovery.html"
+
+[auth.email.template.email_change]
+subject = "Confirm your new email"
+content_path = "./supabase/templates/email_change.html"
+
+# Phone codes verify instructor numbers (AUTH-02) and let people with a verified number sign in.
+# Phone-only sign-ups are off: every account has an email for receipts and notices.
+[auth.sms]
+enable_signup = false
+enable_confirmations = true
+template = "Your code is {{ .Code }}"
+max_frequency = "5s"
+
+# Ofcom drama numbers (07700 900000 to 900999) with fixed codes. Nothing is sent for these.
+[auth.sms.test_otp]
+447700900001 = "123456"
+447700900002 = "123456"
+447700900003 = "123456"
+447700900004 = "123456"
+447700900005 = "123456"
+447700900006 = "123456"
+447700900007 = "123456"
+447700900008 = "123456"
+447700900009 = "123456"
+[auth.sms.twilio]
+enabled = true
+account_sid = "ACLOCALDEVELOPMENTONLY00000000000"
+message_service_sid = "MGLOCALDEVELOPMENTONLY0000000000"
+auth_token = "local-development-only"
+
+[auth.mfa]
+max_enrolled_factors = 10
+
+# TOTP is required for staff and school owners (AUTH-08, D-012).
+[auth.mfa.totp]
+enroll_enabled = true
+verify_enabled = true
+
+[auth.mfa.phone]
+enroll_enabled = false
+verify_enabled = false
+
+[auth.external.google]
+enabled = true
+client_id = "env(SUPABASE_AUTH_EXTERNAL_GOOGLE_CLIENT_ID)"
+secret = "env(SUPABASE_AUTH_EXTERNAL_GOOGLE_SECRET)"
+redirect_uri = ""
+# Required for local sign in with Google.
+skip_nonce_check = true
+
+# Sign in with Apple stays off until keys exist (product owner, 11 Sep 2026).
+[auth.external.apple]
+enabled = false
+
+[edge_runtime]
+enabled = false
+
+[analytics]
+enabled = false

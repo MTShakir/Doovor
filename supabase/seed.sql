@@ -1,0 +1,2 @@
+-- Reference data only. Demo accounts and bookings are created by the TypeScript seed
+-- (pnpm db:seed), which refuses to run against production.

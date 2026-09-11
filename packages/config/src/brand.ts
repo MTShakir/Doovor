@@ -1,0 +1,47 @@
+/**
+ * The single source of the brand. Name, domain, contact addresses and colours are defined
+ * here and nowhere else. A CI guard (scripts/check-copy.mjs) fails the build if any of
+ * these values appear elsewhere in apps/, packages/ or supabase/.
+ *
+ * The domain is temporary (D-026). Changing it here changes every URL, sender and
+ * support address in the product.
+ */
+
+const name = 'DrivingHub';
+const domain = 'maxterzhub.co.uk';
+
+export const brand = {
+  name,
+  shortName: name,
+  tagline: 'Book, pay and track driving lessons in one simple app.',
+  legalEntity: 'Maxterz LTD',
+  domain,
+  productionUrl: `https://${domain}`,
+  supportEmail: `support@${domain}`,
+  email: {
+    fromName: name,
+    fromAddress: `hello@${domain}`,
+    replyTo: `support@${domain}`,
+  },
+  sms: {
+    /** UK alphanumeric sender ID: 3 to 11 characters, letters and digits only. */
+    senderId: name.slice(0, 11),
+  },
+  /** PRD 7.2 colour tokens. Components use Tailwind utilities, never these hex values. */
+  colours: {
+    black: '#000000',
+    ink: '#1A1A1A',
+    'grey-700': '#545454',
+    'grey-400': '#AFAFAF',
+    'grey-200': '#E2E2E2',
+    'grey-100': '#F3F3F3',
+    white: '#FFFFFF',
+    yellow: '#FFD400',
+    red: '#E11900',
+    blue: '#276EF1',
+    green: '#05A357',
+  },
+} as const;
+
+export type Brand = typeof brand;
+export type ColourToken = keyof Brand['colours'];

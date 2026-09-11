@@ -102,7 +102,7 @@ Dependency rules, enforced by ESLint import boundaries:
 
 `packages/config/src/brand.ts` exports the name, short name, domain, support email, legal entity, social links and colour tokens. Everything else reads from it:
 
-- A build step (`pnpm tokens`) generates `packages/ui/src/styles/tokens.css` (Tailwind `@theme` variables) from `brand.ts`. The generated file is git-ignored and rebuilt by Turborepo before `dev` and `build`, so the repository holds each colour value once.
+- `<BrandStyle />` (in `packages/ui`) writes the colours from `brand.ts` as `--brand-*` CSS variables in the page head. `packages/ui/src/styles/theme.css` maps Tailwind utilities to those variables with `@theme inline` and resets Tailwind's default palette, type scale, radii and shadows, so only PRD tokens exist. The repository holds each colour value once and needs no build step (D-005).
 - Metadata, the web app manifest, Open Graph images, email templates, SMS copy and the seed script all import `brand`.
 - A CI copy guard (`scripts/check-copy.mjs`) fails the build if the brand name appears in `apps/`, `packages/` or `supabase/` outside `brand.ts`, or if an em dash or en dash appears in UI, email or SMS source.
 - Workspace packages use the neutral `@repo/*` scope.
@@ -131,8 +131,8 @@ Portals live under `/app` so public SEO pages and the product never share a pref
 
 ### 4.2 Request pipeline
 
-1. **`proxy.ts`** (Next 16 replacement for middleware) refreshes the Supabase session cookie using `@supabase/ssr`, redirects signed-out users away from `/app` and `/admin`, and redirects platform staff and school owners without an `aal2` session to `/mfa`. It performs no authorisation beyond that.
-2. **Layouts** for each portal load the session with `supabase.auth.getClaims()` (local JWT verification) and the user's memberships, then pick the active Business (cookie `active_business`, validated against memberships). A user with several roles switches portal from the account menu.
+1. **`proxy.ts`** (Next 16 replacement for middleware) refreshes the Supabase session cookie using `@supabase/ssr`, tags the request with an ID, and redirects signed-out visitors away from `/app`, `/admin`, `/account`, `/mfa`, `/verify-phone` and `/onboarding`. It performs no authorisation: the portal gates (`requirePortal`) send people without the role to their own portal, and platform staff and school owners without an `aal2` session to `/mfa` (AUTH-08).
+2. **Layouts** for each portal load the session with `supabase.auth.getClaims()` (local JWT verification) and the user's memberships through the database (`getAccess`), then pick the active Business (cookie `active_business`, validated against memberships). The database read is what catches a device signed out elsewhere (section 6.6). A user with several roles switches portal from the account menu.
 3. **Server Components** read through the user's session client. RLS decides what rows exist for that user.
 4. **Server Actions** validate input with the shared Zod schema, check the rate limit, call an RPC or a permitted table write with the session client, map domain error codes to copy and revalidate cache tags.
 5. **Route Handlers** serve callers that are not a browser form: Stripe webhooks, Inngest, the service worker's background sync, and future native clients (`/api/v1`).
@@ -243,7 +243,7 @@ Every table gets one of five patterns. A pgTAP meta-test lists every table in `p
 | Control | Approach |
 |---|---|
 | MFA (AUTH-08) | Supabase TOTP. `proxy.ts` forces enrolment and challenge for staff and school owners. Staff policies and billing RPCs also check `auth.jwt() ->> 'aal' = 'aal2'`, so the rule holds even if the UI is bypassed |
-| Sessions (AUTH-09) | Device list from `auth.sessions` through a self-only function, sign out one device or all (`signOut({ scope: 'global' })`), deletion request creates a `deletion_requests` row processed in M6 |
+| Sessions (AUTH-09) | Device list from `auth.sessions` through a self-only function, sign out one device or all (`signOut({ scope: 'global' })`), deletion request creates a `deletion_requests` row processed in M6. Signing out takes effect at once: PostgREST runs `private.check_request` before every request and refuses tokens whose session has ended (401 `SESSION_ENDED`, D-041). Server-side auth calls forward the visitor's user agent and IP (D-042) |
 | Rate limiting (NFR-SEC-03) | Supabase Auth's built-in limits for sign-in, OTP and email. A Postgres fixed-window limiter (`private.rate_limit_hit(key, window, max)`) behind a `RateLimiter` interface for booking, invite and messaging actions, keyed by user and IP (D-008) |
 | Storage | Private buckets `badges` and `receipts` with path-scoped policies (`{business_id}/...`), signed URLs valid for 60 seconds. Public buckets `avatars` and `logos` for images that appear on public pages. Uploads are resized and stripped of EXIF location data in the browser before upload |
 | Realtime | Private channels only. RLS on `realtime.messages` allows a subscription when the caller can see the channel's instructor, Business or learner |

@@ -1,0 +1,5 @@
+@import 'tailwindcss';
+@import '@repo/ui/styles.css';
+
+/* Workspace packages are outside this app folder, so point Tailwind at their sources. */
+@source '../../../../packages/ui/src';

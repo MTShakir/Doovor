@@ -1,0 +1,35 @@
+{
+  "$schema": "https://turborepo.com/schema.json",
+  "ui": "stream",
+  "globalDependencies": [".env.example", ".env.local"],
+  "globalEnv": ["APP_ENV", "NEXT_PUBLIC_*", "VERCEL_ENV", "VERCEL_URL", "CI"],
+  "globalPassThroughEnv": [
+    "SUPABASE_SECRET_KEY",
+    "SUPABASE_AUTH_*",
+    "EMAIL_PROVIDER",
+    "RESEND_API_KEY",
+    "SMS_PROVIDER",
+    "TWILIO_*",
+    "PAYMENTS_PROVIDER",
+    "STRIPE_*",
+    "INNGEST_*",
+    "FIELD_ENCRYPTION_KEYS",
+    "VAPID_*",
+    "SENTRY_AUTH_TOKEN"
+  ],
+  "tasks": {
+    "build": {
+      "dependsOn": ["^build"],
+      "outputs": [".next/**", "!.next/cache/**", "dist/**"]
+    },
+    "dev": {
+      "cache": false,
+      "persistent": true
+    },
+    "lint": {},
+    "typecheck": {},
+    "test": {
+      "outputs": []
+    }
+  }
+}
