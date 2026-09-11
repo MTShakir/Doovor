@@ -42,18 +42,25 @@ Do these once, in order. Items marked **You** need the product owner's accounts.
    pnpm supabase db push
    ```
 3. Check the session sign-out guard is active (D-041): in the SQL editor, `select rolconfig from pg_roles where rolname = 'authenticator';` must include `pgrst.db_pre_request=private.check_request`.
-4. **You:** Authentication > URL Configuration:
-   - Site URL: `https://maxterzhub.co.uk` (until the domain is connected, the Vercel production URL).
-   - Redirect URLs: `https://maxterzhub.co.uk/**` only. Do not add wildcard `*.vercel.app` entries: anyone can create a matching Vercel project and receive sign-in tokens (D-046).
-5. **You:** Authentication > Sign In / Providers:
-   - Email: confirm email on, secure email change on, minimum password length 8.
-   - Phone: on, provider Twilio (section 3.3). For testers you may add the drama numbers `447700900001` to `447700900009` with code `123456` under test phone numbers. Never do this in production.
-   - Google: on, with the client ID and secret (section 3.4). Apple stays off.
-6. **You:** Authentication > Emails:
-   - Templates: paste each file from `supabase/templates/` with its subject: Confirm your email (confirmation), Your sign-in link (magic link), Reset your password (recovery), Confirm your new email (email change).
-   - SMTP: host `smtp.resend.com`, port `465`, username `resend`, password a Resend API key (section 3.2), sender `hello@maxterzhub.co.uk`, sender name `DrivingHub`. Supabase's built-in sender only reaches project members, so sign-up does not work for anyone else without this.
-7. **You:** Authentication > Multi-Factor: TOTP on (the default).
-8. **You:** Project Settings > API Keys: copy the publishable key and a secret key for Vercel (section 3.5).
+4. **You:** put the provider secrets in `.env.local` (never in git or chat), plus a Supabase access token for the command line:
+   ```
+   SUPABASE_ACCESS_TOKEN=          # Supabase dashboard > Account > Access Tokens
+   RESEND_API_KEY=                 # section 3.2, also the SMTP password
+   TWILIO_ACCOUNT_SID=             # section 3.3
+   TWILIO_AUTH_TOKEN=
+   TWILIO_MESSAGING_SERVICE_SID=
+   SUPABASE_AUTH_EXTERNAL_GOOGLE_CLIENT_ID=    # section 3.4
+   SUPABASE_AUTH_EXTERNAL_GOOGLE_SECRET=
+   ```
+5. Apply the hosted auth settings from `supabase/config.toml` (the `[remotes.staging]` block), which covers the site and redirect URLs, rate limits, email templates, the Resend sender, Twilio, two-step verification and Google:
+   ```bash
+   pnpm supabase config diff --project-ref <project-ref>
+   pnpm supabase config push --project-ref <project-ref>
+   ```
+   Read the diff before pushing: a push answers its own prompts and can overwrite a hosted setting. Check that the SMTP password shows as set rather than blank, and that no test phone numbers appear. Brand values (site URL, sender) come from `brand.ts`, so changing the domain there changes this too.
+6. **You:** Project Settings > API Keys: copy the publishable key and a secret key for Vercel (section 3.5).
+7. Check the site is reachable at the site URL once Vercel is connected, then sign in once to confirm emails arrive.
+8. **You:** optional: under Authentication > Rate Limits, confirm the pushed values look right for your usage.
 9. Optional demo data, with its own password so public accounts never use the documented one. Every target must point at the staging project, because the seed writes through both the API and the database:
    ```bash
    NEXT_PUBLIC_SUPABASE_URL='https://<project-ref>.supabase.co' \

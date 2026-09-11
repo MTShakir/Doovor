@@ -254,3 +254,8 @@ Every decision made without the product owner, newest last. Format: date, decisi
 - **Decision:** Until M6, Vercel's production deployment of `main` is staging: `APP_ENV=preview`, the free Supabase project (D-032), the brand domain and no indexing (D-047). Branch previews stay private behind Vercel Authentication. Production gets its own Supabase Pro project in London at launch.
 - **Options:** A separate staging project and subdomain now.
 - **Reason:** One hosted environment is enough while there are no real users, and it keeps the free plan's two-project limit free for production.
+
+## D-050 | 2026-09-11 | Hosted auth settings live in config.toml
+- **Decision:** The staging project's auth settings (site and redirect URLs, rate limits, email templates, the Resend sender, Twilio, two-step verification and Google) are declared in `supabase/config.toml` under `[remotes.staging]` and applied with `supabase config diff` then `supabase config push`. Brand values come from `brand.ts` through `scripts/supabase.mjs`; secrets come from `.env.local`.
+- **Options:** Set each one in the dashboard by hand, as the first version of the runbook described.
+- **Reason:** The settings are then reviewed in a pull request, repeat identically for production, and cannot drift silently. Staging also gets Supabase's own rate limits rather than the generous local ones, and no test phone numbers. The push is always preceded by a diff: the CLI warns that a non-interactive push answers its own prompts and can overwrite a hosted setting.

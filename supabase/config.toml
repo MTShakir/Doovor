@@ -155,3 +155,98 @@ enabled = false
 
 [analytics]
 enabled = false
+
+# ---------------------------------------------------------------------------------------
+# Staging project (D-049). Apply with:
+#   pnpm supabase config diff --project-ref yvxuarrrvgnfcjfyqfyi   (review first)
+#   pnpm supabase config push --project-ref yvxuarrrvgnfcjfyqfyi
+# Brand values come from brand.ts through scripts/supabase.mjs (rule 8); provider secrets
+# come from .env.local. Anything not declared here is left as the dashboard has it.
+# ---------------------------------------------------------------------------------------
+[remotes.staging]
+project_id = "yvxuarrrvgnfcjfyqfyi"
+
+[remotes.staging.auth]
+site_url = "env(SUPABASE_AUTH_SITE_URL)"
+# Exact addresses only: a wildcard on a shared host would let a look-alike site collect
+# sign-in tokens (D-046).
+additional_redirect_urls = ["env(SUPABASE_AUTH_REDIRECT_URL)"]
+jwt_expiry = 3600
+enable_refresh_token_rotation = true
+refresh_token_reuse_interval = 10
+enable_signup = true
+enable_anonymous_sign_ins = false
+enable_manual_linking = false
+minimum_password_length = 8
+
+# Supabase defaults, not the generous local ones. Text codes stay tight: a public code
+# endpoint attracts SMS pumping fraud.
+[remotes.staging.auth.rate_limit]
+email_sent = 30
+sms_sent = 10
+token_refresh = 150
+sign_in_sign_ups = 30
+token_verifications = 30
+
+[remotes.staging.auth.email]
+enable_signup = true
+double_confirm_changes = true
+enable_confirmations = true
+secure_password_change = false
+max_frequency = "60s"
+otp_length = 6
+otp_expiry = 3600
+
+[remotes.staging.auth.email.template.confirmation]
+subject = "Confirm your email"
+content_path = "./supabase/templates/confirmation.html"
+
+[remotes.staging.auth.email.template.magic_link]
+subject = "Your sign-in link"
+content_path = "./supabase/templates/magic_link.html"
+
+[remotes.staging.auth.email.template.recovery]
+subject = "Reset your password"
+content_path = "./supabase/templates/recovery.html"
+
+[remotes.staging.auth.email.template.email_change]
+subject = "Confirm your new email"
+content_path = "./supabase/templates/email_change.html"
+
+# Resend over SMTP. Supabase's built-in sender only reaches project members.
+[remotes.staging.auth.email.smtp]
+enabled = true
+host = "smtp.resend.com"
+port = 465
+user = "resend"
+pass = "env(RESEND_API_KEY)"
+admin_email = "env(SUPABASE_AUTH_SENDER_EMAIL)"
+sender_name = "env(SUPABASE_AUTH_SENDER_NAME)"
+
+# No test numbers on a public site: they would let anyone mark a number as verified.
+[remotes.staging.auth.sms]
+enable_signup = false
+enable_confirmations = true
+template = "Your code is {{ .Code }}"
+max_frequency = "60s"
+test_otp = {}
+
+[remotes.staging.auth.sms.twilio]
+enabled = true
+account_sid = "env(TWILIO_ACCOUNT_SID)"
+message_service_sid = "env(TWILIO_MESSAGING_SERVICE_SID)"
+auth_token = "env(TWILIO_AUTH_TOKEN)"
+
+[remotes.staging.auth.mfa.totp]
+enroll_enabled = true
+verify_enabled = true
+
+# skip_nonce_check is a local-only convenience; hosted sign-in keeps the check.
+[remotes.staging.auth.external.google]
+enabled = true
+client_id = "env(SUPABASE_AUTH_EXTERNAL_GOOGLE_CLIENT_ID)"
+secret = "env(SUPABASE_AUTH_EXTERNAL_GOOGLE_SECRET)"
+skip_nonce_check = false
+
+[remotes.staging.auth.external.apple]
+enabled = false
