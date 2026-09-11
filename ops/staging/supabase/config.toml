@@ -65,28 +65,18 @@ pass = "env(RESEND_API_KEY)"
 admin_email = "env(BRAND_SENDER_EMAIL)"
 sender_name = "env(BRAND_SENDER_NAME)"
 
-[auth.sms]
-enable_signup = false
-enable_confirmations = true
-template = "Your code is {{ .Code }}"
-max_frequency = "60s"
-
-[auth.sms.twilio]
-enabled = true
-account_sid = "env(TWILIO_ACCOUNT_SID)"
-message_service_sid = "env(TWILIO_MESSAGING_SERVICE_SID)"
-auth_token = "env(TWILIO_AUTH_TOKEN)"
+# Text message settings are deliberately not declared here, so whatever is set in the Supabase
+# dashboard stays as it is. Declare them once Twilio is off its trial and TWILIO_* are in
+# .env.local, so this file describes them too.
 
 [auth.mfa.totp]
 enroll_enabled = true
 verify_enabled = true
 
-# skip_nonce_check is a local-only convenience; hosted sign-in keeps the check.
+# Google stays off until its client secret is in .env.local. skip_nonce_check is a local-only
+# convenience; hosted sign-in keeps the check.
 [auth.external.google]
-enabled = true
-client_id = "env(SUPABASE_AUTH_EXTERNAL_GOOGLE_CLIENT_ID)"
-secret = "env(SUPABASE_AUTH_EXTERNAL_GOOGLE_SECRET)"
-skip_nonce_check = false
+enabled = false
 
 [auth.external.apple]
 enabled = false

@@ -33,14 +33,9 @@ process.env.SUPABASE_AUTH_SMS_TEST_OTP ||= Array.from({ length: 9 }, (_, i) => `
 // stored as the literal "env(NAME)" or as an empty password. Refuse before that happens.
 const argv = process.argv.slice(2);
 if (argv.includes('config') && argv.includes('push')) {
-  const needed = [
-    'RESEND_API_KEY',
-    'TWILIO_ACCOUNT_SID',
-    'TWILIO_AUTH_TOKEN',
-    'TWILIO_MESSAGING_SERVICE_SID',
-    'SUPABASE_AUTH_EXTERNAL_GOOGLE_CLIENT_ID',
-    'SUPABASE_AUTH_EXTERNAL_GOOGLE_SECRET',
-  ];
+  // Only the secrets the hosted config actually uses. Add the Twilio and Google names here
+  // when those providers are switched on in ops/staging/supabase/config.toml.
+  const needed = ['RESEND_API_KEY'];
   const missing = needed.filter((name) => {
     const value = process.env[name];
     return !value || value === 'not-configured';
