@@ -2,7 +2,7 @@
 // Runs the Supabase CLI with the root .env.local loaded, so supabase/config.toml env() values
 // and the web app read the same file. Usage: pnpm supabase <command> [...args]
 import { spawnSync } from 'node:child_process';
-import { existsSync } from 'node:fs';
+import { copyFileSync, existsSync, mkdirSync, readdirSync } from 'node:fs';
 import path from 'node:path';
 import { pathToFileURL } from 'node:url';
 
@@ -28,6 +28,20 @@ process.env.BRAND_SENDER_NAME ||= brand.name;
 // forwards SUPABASE_AUTH_* into the local auth container, so these never reach a hosted
 // project the way a config.toml entry would.
 process.env.SUPABASE_AUTH_SMS_TEST_OTP ||= Array.from({ length: 9 }, (_, i) => `44770090000${i + 1}:123456`).join(',');
+
+// The CLI only reads template files inside its own project folder, so mirror the shared
+// templates into the staging folder for hosted commands. supabase/templates stays the source;
+// the copy is git-ignored.
+const workdirIndex = process.argv.indexOf('--workdir');
+if (workdirIndex !== -1) {
+  const workdir = path.resolve(root, process.argv[workdirIndex + 1] ?? '');
+  const from = path.join(root, 'supabase', 'templates');
+  const to = path.join(workdir, 'supabase', 'templates');
+  if (existsSync(from) && workdir !== root) {
+    mkdirSync(to, { recursive: true });
+    for (const file of readdirSync(from)) copyFileSync(path.join(from, file), path.join(to, file));
+  }
+}
 
 // A hosted push writes every value the config declares, so a secret that is not set would be
 // stored as the literal "env(NAME)" or as an empty password. Refuse before that happens.
