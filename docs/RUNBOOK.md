@@ -95,8 +95,8 @@ Do these once, in order. Items marked **You** need the product owner's accounts.
 ### 3.5 Vercel (team `driving-hub`)
 
 1. **You:** New Project, import `MTShakir/DrivingHUB` (this installs the Vercel GitHub app on the repository).
-2. **You:** Root Directory `apps/web`, framework Next.js, and leave the build and install commands on their defaults (pnpm is detected from the lockfile). Node.js version 24.x. The region, London (`lhr1`), comes from `apps/web/vercel.json`.
-3. **You:** Environment Variables, for both Production and Preview unless noted:
+2. **You:** Root Directory `apps/web` and Framework Preset **Next.js** (Settings > Build and Deployment). Both matter: with the repository root as the root directory, Vercel does not detect Next.js, fails with "No Output Directory named public", and ignores `apps/web/vercel.json`, so the app builds outside London. Leave the build and install commands on their defaults; keep "Include files outside the root directory" on, since the app uses workspace packages.
+3. **You:** Environment Variables. Set each for **all environments** unless noted: a variable scoped to Production only still fails every preview build, because the app checks its settings at build time.
 
    | Name | Value |
    |---|---|

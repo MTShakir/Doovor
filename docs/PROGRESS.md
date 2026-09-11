@@ -4,7 +4,7 @@ Last updated: 11 September 2026
 
 ## Status
 
-M0 Foundation, branch `m0-foundation`. M0-01 to M0-31 are done and green locally and on GitHub (CI run #5 passed all three jobs). The first four CI runs were red on two fresh-checkout problems, now fixed: lint needed Next's generated route types, and a blank setting value was rejected instead of counting as "not set" (which would also have broken a hosting dashboard with an empty variable). M0-32 (Vercel and staging) is prepared and waiting on the product owner's accounts (see `docs/RUNBOOK.md` section 3). The M0-33 milestone report is delivered (https://claude.ai/code/artifact/7b3956cb-d283-46c8-b3fa-a48ac2694c2e). Waiting for "Approved, continue".
+M0 Foundation, branch `m0-foundation`. M0-01 to M0-31 are done and green locally and on GitHub (CI run #5 passed all three jobs). The first four CI runs were red on two fresh-checkout problems, now fixed: lint needed Next's generated route types, and a blank setting value was rejected instead of counting as "not set" (which would also have broken a hosting dashboard with an empty variable). M0-32 is live: the staging database has all 8 migrations, the hosted auth settings were pushed from `ops/staging` (site and redirect URLs, Resend sender, email templates, 6-digit codes, tighter rate limits), the domain is connected (apex serves the app, `www` redirects to it) and the app builds and runs on Vercel in London. Production on the apex waits on merging this branch to `main`, since Vercel builds production from `main`. The M0-33 milestone report is delivered (https://claude.ai/code/artifact/7b3956cb-d283-46c8-b3fa-a48ac2694c2e). Waiting for "Approved, continue".
 
 ## Done
 
@@ -24,7 +24,7 @@ M0 Foundation, branch `m0-foundation`. M0-01 to M0-31 are done and green locally
 | M0-28, M0-29 | Deterministic seed: 16 people across every role, Leeds independent instructor, Manchester school with 3 instructors (one PDI), 8 learners, catalogue, hours and 109 lessons | 12 |
 | M0-30 | Every seeded role signs in and lands on its portal, at 390 px and 1440 px | AUTH-03 |
 | M0-31 | GitHub Actions on every push: lint and copy guard, types, unit tests with the coverage gate, SQL lint, pgTAP, generated-types check, and Playwright against a production build with report and screenshots as artefacts | 14.5 |
-| M0-32 (prepared) | Runbook with the staging checklist, hosted auth settings as code in `[remotes.staging]` applied by one reviewed command (D-050), `apps/web/vercel.json` pinned to London, noindex outside production (D-047), `pnpm db:env`, safe hosted seeding (D-048) | 8.1 |
+| M0-32 | Runbook with the staging checklist, hosted auth settings as code in `[remotes.staging]` applied by one reviewed command (D-050), `apps/web/vercel.json` pinned to London, noindex outside production (D-047), `pnpm db:env`, safe hosted seeding (D-048) | 8.1 |
 
 Decisions D-036 to D-050 were logged during this stretch. Two were security fixes caught by tests:
 - D-043: a form submitted before the page was ready could put a password in the URL.
