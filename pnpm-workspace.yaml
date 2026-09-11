@@ -1,0 +1,21 @@
+packages:
+  - apps/*
+  - packages/*
+
+# Supply chain (D-025): pnpm refuses versions younger than 24 hours by default
+# (minimumReleaseAge 1440). Releases from the last 30 days must not lose provenance
+# compared with earlier releases, which is how a package takeover usually shows up.
+# Older releases predate npm provenance and are trusted by age.
+trustPolicy: no-downgrade
+trustPolicyIgnoreAfter: 43200
+
+# Dependencies allowed to run install scripts. Anything new must be reviewed and added here.
+allowBuilds: {}
+
+# Shared versions. Workspace packages reference these with "catalog:".
+catalog:
+  "@types/node": ^24.0.0
+  typescript: ~6.0.3
+  vitest: ^5.0.0
+  "@vitest/coverage-v8": ^5.0.0
+  zod: ^4.6.0
