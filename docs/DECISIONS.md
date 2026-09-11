@@ -22,10 +22,10 @@ Every decision made without the product owner, newest last. Format: date, decisi
 - **Options:** Node 22 (installed here: 22.12.0), Node 24 LTS, Node 26 (current, not LTS).
 - **Reason:** ESLint 10 needs Node `^22.13.0 || >=24`; the machine has 22.12.0. Node 24 is the active LTS.
 
-## D-005 | 2026-09-11 | Neutral package scope and generated brand tokens
-- **Decision:** Workspace packages use `@repo/*`. Tailwind tokens are generated from `brand.ts` at build time into a git-ignored file. A CI copy guard scans for the brand name and dashes.
-- **Options:** Brand-named scope (`@drivinghub/*`); hand-written token CSS.
-- **Reason:** The brief requires a rename to be a one-file change. A brand-named scope or duplicated hex values would break that.
+## D-005 | 2026-09-11 | Neutral package scope and brand tokens from brand.ts
+- **Decision:** Workspace packages use `@repo/*`. `<BrandStyle />` writes the colours in `brand.ts` as CSS variables in the page head, and the Tailwind theme maps utilities such as `bg-yellow` to them. A CI copy guard fails the build on the brand name, domain or brand hex values outside `brand.ts`, and on em or en dashes. *Amended during M0: the first version generated a token CSS file at build time.*
+- **Options:** Brand-named scope (`@drivinghub/*`); hand-written token CSS; a build step that generates token CSS.
+- **Reason:** The brief requires a rename to be a one-file change. Runtime variables need no build step or git-ignored generated file, and editing `brand.ts` hot-reloads.
 
 ## D-006 | 2026-09-11 | Supabase publishable and secret keys
 - **Decision:** Use `sb_publishable_...` and `sb_secret_...` keys. `.env.example` names them `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` and `SUPABASE_SECRET_KEY`, with comments mapping them to the old anon and service role keys.
@@ -121,3 +121,58 @@ Every decision made without the product owner, newest last. Format: date, decisi
 - **Decision:** Pin exact latest versions: Next 16.3, React 19.3, pnpm 12.3, Turborepo 2.10, Vitest 5.0, ESLint 10.10, Tailwind 4.3, Zod 4.6, Inngest 4.20, Stripe 22.6. If a new major blocks progress, drop one major for that tool and log it here.
 - **Options:** Start on the previous majors.
 - **Reason:** The brief asks for the latest stable versions. The fallback rule keeps a tooling problem from stalling a milestone.
+
+## D-025 | 2026-09-11 | Supply-chain policy for dependencies
+- **Decision:** Keep pnpm's default 24 hour minimum release age. Enable `trustPolicy: no-downgrade` for releases from the last 30 days (`trustPolicyIgnoreAfter: 43200`). `allowBuilds` stays empty, so no dependency runs install scripts. "Latest stable" therefore means the newest release at least a day old; the lockfile pins exact versions.
+- **Options:** pnpm defaults only; trust policy on every release.
+- **Reason:** A takeover shows up as a fresh release that lost provenance. Checking every release blocked long-lived packages (for example `semver@6.3.1`) whose older lines predate npm provenance.
+
+## D-026 | 2026-09-11 | Temporary domain maxterzhub.co.uk
+- **Decision:** `brand.ts` sets the domain to `maxterzhub.co.uk` (product owner, 11 Sep 2026). URLs, senders and support addresses derive from it. Each environment's base URL comes from `NEXT_PUBLIC_APP_URL` or Vercel's variables.
+- **Options:** None; set by the product owner.
+- **Reason:** Changing the domain later is a one-line edit in `brand.ts`.
+
+## D-027 | 2026-09-11 | Founding offer by business type
+- **Decision:** The founding offer grants the paid plan for the business type: Pro for independent instructors, the School plan for schools, free for 12 months.
+- **Options:** Pro for everyone, including schools.
+- **Reason:** PRD 9.18 offers "Pro free for 12 months" to the first 50 schools too, and the School plan is the school equivalent of Pro.
+
+## D-028 | 2026-09-11 | ESLint without eslint-config-next
+- **Decision:** Use `@next/eslint-plugin-next`, `eslint-plugin-react-hooks` and `eslint-plugin-jsx-a11y` directly with typescript-eslint's strict type-checked rules.
+- **Options:** `eslint-config-next`, which pulls `eslint-import-resolver-typescript@3.10.x`.
+- **Reason:** That resolver line was published without the provenance its 4.x releases carry, so the trust policy (D-025) blocks it. jsx-a11y declares ESLint up to 9 but runs under ESLint 10; it already caught a real issue (an empty heading).
+
+## D-029 | 2026-09-11 | Cache Components on from M0
+- **Decision:** `cacheComponents: true` in `next.config.ts`. Session reads sit behind Suspense boundaries with skeletons, and public pages use `use cache` with tags in M5.
+- **Options:** The previous caching model, migrating later.
+- **Reason:** It is the Next 16 model, public SEO pages need it, and its streaming-with-skeletons pattern matches PRD 7.1. Adopting it before there are many routes avoids a migration.
+
+## D-030 | 2026-09-11 | Phase 2 navigation hidden in Phase 1 | Flag
+- **Decision:** PRD 8.2 destinations that only have Phase 2 content (instructor waiting list, school fleet and reports, admin reviews, disputes, plans and content) are in the navigation config but hidden until built.
+- **Options:** Show them with "coming soon" screens.
+- **Reason:** Phase 1 users should not meet empty screens. Showing them later is a one-line change per item.
+
+## D-031 | 2026-09-11 | Not-found status under streaming
+- **Decision:** In the private portals, an unknown address streams the not-found page with a 200 status and a `noindex` robots tag (documented Next behaviour once streaming starts). Public SEO pages in M5 will check the profile or area exists before streaming, so they return a real 404.
+- **Options:** Force every page to render without streaming.
+- **Reason:** Portals are private and `noindex`. For public pages the status code matters for SEO, so they get the check.
+
+## D-032 | 2026-09-11 | Supabase free plan for now | Flag
+- **Decision:** The product owner's `DrivingHub` project (free plan) is the staging database for previews. Production needs the Pro plan with point-in-time recovery before real users (NFR-SEC-07: daily backups and 7 day recovery).
+- **Options:** Pro now; Supabase branching for pull request previews.
+- **Reason:** The product owner chose the free plan at this early stage. Hosted auth emails also need a custom SMTP sender (Resend) because Supabase's built-in sender only reaches project team members.
+
+## D-033 | 2026-09-11 | Phone codes and test numbers
+- **Decision:** Phone sign-up is off; phone codes verify instructor numbers (AUTH-02) and let people with a verified number sign in. Local and CI use Ofcom drama numbers (07700 900001 to 900009) with a fixed test code, so no SMS is sent.
+- **Options:** Phone-only accounts.
+- **Reason:** Every account needs an email for receipts and notices. Drama numbers can never reach a real person.
+
+## D-034 | 2026-09-11 | One root .env.local
+- **Decision:** A single `.env.local` at the repository root is loaded by `next.config.ts` (with `process.loadEnvFile`) and by `scripts/supabase.mjs` for the CLI. Hosted environments use their dashboards.
+- **Options:** Separate env files per app and for the Supabase CLI.
+- **Reason:** One file avoids values drifting between the app, scripts and the local database.
+
+## D-035 | 2026-09-11 | Next.js agent files committed
+- **Decision:** Commit the `apps/web/AGENTS.md` and `apps/web/CLAUDE.md` that `next dev` writes, and exclude agent and readme files from the copy guard.
+- **Options:** Delete or ignore them.
+- **Reason:** `next dev` recreates them, and they point coding sessions to the docs bundled with this exact Next.js version. They are not product copy.

@@ -102,7 +102,7 @@ Dependency rules, enforced by ESLint import boundaries:
 
 `packages/config/src/brand.ts` exports the name, short name, domain, support email, legal entity, social links and colour tokens. Everything else reads from it:
 
-- A build step (`pnpm tokens`) generates `packages/ui/src/styles/tokens.css` (Tailwind `@theme` variables) from `brand.ts`. The generated file is git-ignored and rebuilt by Turborepo before `dev` and `build`, so the repository holds each colour value once.
+- `<BrandStyle />` (in `packages/ui`) writes the colours from `brand.ts` as `--brand-*` CSS variables in the page head. `packages/ui/src/styles/theme.css` maps Tailwind utilities to those variables with `@theme inline` and resets Tailwind's default palette, type scale, radii and shadows, so only PRD tokens exist. The repository holds each colour value once and needs no build step (D-005).
 - Metadata, the web app manifest, Open Graph images, email templates, SMS copy and the seed script all import `brand`.
 - A CI copy guard (`scripts/check-copy.mjs`) fails the build if the brand name appears in `apps/`, `packages/` or `supabase/` outside `brand.ts`, or if an em dash or en dash appears in UI, email or SMS source.
 - Workspace packages use the neutral `@repo/*` scope.
