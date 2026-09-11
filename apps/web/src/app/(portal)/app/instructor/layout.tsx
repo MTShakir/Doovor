@@ -1,11 +1,16 @@
 import { AppShell } from '@repo/ui/app-shell';
 import type { ReactNode } from 'react';
+import { PortalGate } from '@/components/portal-gate';
 import { PortalSidebar, PortalTabBar } from '@/components/portal-nav';
+import { SidebarFooter } from '@/components/sidebar-footer';
+
+// Gated by the session: the shell is instant, the content may block on the gate (D-029).
+export const instant = false;
 
 export default function InstructorLayout({ children }: { children: ReactNode }) {
   return (
-    <AppShell sidebar={<PortalSidebar portal="instructor" />} tabBar={<PortalTabBar portal="instructor" />}>
-      {children}
+    <AppShell sidebar={<PortalSidebar portal="instructor" footer={<SidebarFooter />} />} tabBar={<PortalTabBar portal="instructor" />}>
+      <PortalGate portal="instructor">{children}</PortalGate>
     </AppShell>
   );
 }

@@ -40,6 +40,8 @@ const nextConfig: NextConfig = {
   poweredByHeader: false,
   // The dev badge sits over the mobile tab bar. Build errors still show in the overlay.
   devIndicators: false,
+  // Dev logging prints Server Action arguments, which include passwords and codes (D-036).
+  logging: { serverFunctions: false },
   cacheComponents: true,
   typedRoutes: true,
   transpilePackages: ['@repo/config', '@repo/core', '@repo/ui'],

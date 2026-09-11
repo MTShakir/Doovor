@@ -6,9 +6,9 @@ import { labelFor, sectionsFor, type Portal } from '@/lib/navigation';
 
 /** Milestone that delivers each Phase 1 section (docs/PLAN.md). */
 const arrivesIn: Record<Portal, Record<string, string>> = {
-  learner: { '': 'M2', lessons: 'M2', progress: 'M4', payments: 'M3', account: 'M0' },
-  instructor: { '': 'M1', diary: 'M1', learners: 'M2', money: 'M3', profile: 'M1', settings: 'M1', more: 'M1' },
-  school: { '': 'M5', diary: 'M1', instructors: 'M5', learners: 'M2', money: 'M3', settings: 'M5', more: 'M5' },
+  learner: { '': 'M2', lessons: 'M2', progress: 'M4', payments: 'M3' },
+  instructor: { '': 'M1', diary: 'M1', learners: 'M2', money: 'M3', profile: 'M1', settings: 'M1' },
+  school: { '': 'M5', diary: 'M1', instructors: 'M5', learners: 'M2', money: 'M3', settings: 'M5' },
   admin: {
     '': 'M5',
     businesses: 'M5',
@@ -23,8 +23,11 @@ const arrivesIn: Record<Portal, Record<string, string>> = {
   },
 };
 
+/** Sections still waiting for their milestone. Sections with real pages are left out. */
 export function sectionParams(portal: Portal) {
-  return sectionsFor(portal).map((section) => ({ section }));
+  return sectionsFor(portal)
+    .filter((section) => section in arrivesIn[portal])
+    .map((section) => ({ section }));
 }
 
 export function PortalPlaceholder({ portal, section }: { portal: Portal; section: string }) {
