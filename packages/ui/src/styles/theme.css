@@ -1,0 +1,118 @@
+/*
+ * Design tokens (PRD 7.2 to 7.4). Tailwind's default palette, type scale, radii and
+ * shadows are reset so only these tokens exist. Colour values come from brand.ts through
+ * the --brand-* variables written by <BrandStyle />.
+ */
+@theme inline {
+  --color-*: initial;
+  --color-black: var(--brand-black);
+  --color-ink: var(--brand-ink);
+  --color-grey-700: var(--brand-grey-700);
+  --color-grey-400: var(--brand-grey-400);
+  --color-grey-200: var(--brand-grey-200);
+  --color-grey-100: var(--brand-grey-100);
+  --color-white: var(--brand-white);
+  --color-yellow: var(--brand-yellow);
+  --color-red: var(--brand-red);
+  --color-blue: var(--brand-blue);
+  --color-green: var(--brand-green);
+
+  --font-sans: var(--font-inter), ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+
+  /* PRD 7.3 type scale: size / line height, weight */
+  --text-*: initial;
+  --text-display: 2.25rem;
+  --text-display--line-height: 2.5rem;
+  --text-display--font-weight: 700;
+  --text-h1: 1.75rem;
+  --text-h1--line-height: 2.125rem;
+  --text-h1--font-weight: 700;
+  --text-h2: 1.375rem;
+  --text-h2--line-height: 1.75rem;
+  --text-h2--font-weight: 600;
+  --text-h3: 1.125rem;
+  --text-h3--line-height: 1.5rem;
+  --text-h3--font-weight: 600;
+  --text-body: 1rem;
+  --text-body--line-height: 1.5rem;
+  --text-small: 0.875rem;
+  --text-small--line-height: 1.25rem;
+  --text-caption: 0.75rem;
+  --text-caption--line-height: 1rem;
+
+  /* PRD 7.4: 12 px cards and sheets, 8 px inputs, pills use rounded-full */
+  --radius-*: initial;
+  --radius-input: 0.5rem;
+  --radius-card: 0.75rem;
+
+  --shadow-*: initial;
+  --shadow-card: 0 1px 2px rgb(0 0 0 / 0.06), 0 1px 1px rgb(0 0 0 / 0.04);
+  --shadow-raised: 0 4px 16px rgb(0 0 0 / 0.12);
+  --shadow-sheet: 0 -8px 32px rgb(0 0 0 / 0.16);
+
+  /* PRD 7.4 motion: 200 ms ease-out */
+  --ease-out: cubic-bezier(0.2, 0, 0, 1);
+  --animate-sheet-up: sheet-up 200ms var(--ease-out);
+  --animate-panel-in: panel-in 200ms var(--ease-out);
+  --animate-fade-in: fade-in 200ms var(--ease-out);
+
+  @keyframes panel-in {
+    from {
+      transform: translateX(100%);
+    }
+    to {
+      transform: translateX(0);
+    }
+  }
+
+  @keyframes sheet-up {
+    from {
+      transform: translateY(100%);
+    }
+    to {
+      transform: translateY(0);
+    }
+  }
+  @keyframes fade-in {
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 1;
+    }
+  }
+}
+
+@layer base {
+  html {
+    -webkit-text-size-adjust: 100%;
+    text-size-adjust: 100%;
+  }
+  body {
+    background-color: var(--color-white);
+    color: var(--color-ink);
+    font-family: var(--font-sans);
+    font-size: var(--text-body);
+    line-height: var(--text-body--line-height);
+    -webkit-font-smoothing: antialiased;
+  }
+  :focus-visible {
+    outline: 2px solid var(--color-black);
+    outline-offset: 2px;
+  }
+  ::placeholder {
+    /* D-009: grey-400 fails contrast for text, placeholders use grey-700. */
+    color: var(--color-grey-700);
+    opacity: 1;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+      scroll-behavior: auto !important;
+    }
+  }
+}
