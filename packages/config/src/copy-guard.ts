@@ -24,6 +24,8 @@ export const BRAND_SOURCE = 'packages/config/src/brand.ts';
 
 const SCOPED_DIRS = ['apps/', 'packages/', 'supabase/', 'e2e/'];
 const TEXT_EXTENSIONS = /\.(?:ts|tsx|js|jsx|mjs|cjs|json|css|sql|toml|html|svg|txt|md|mdx|yml|yaml)$/i;
+/** Developer and agent instructions, not product copy (Next.js writes AGENTS.md itself). */
+const DOC_FILES = new Set(['AGENTS.md', 'CLAUDE.md', 'README.md']);
 // Built from char codes so this file never contains the characters it bans.
 const DASH_PATTERN = new RegExp(`[${String.fromCharCode(0x2013, 0x2014)}]`, 'g');
 
@@ -45,10 +47,12 @@ export function brandNeedles(source: Brand = brand): Needle[] {
 /** Paths are repository-relative with forward slashes. */
 export function isInScope(path: string): boolean {
   const normalised = path.replace(/\\/g, '/');
+  const basename = normalised.slice(normalised.lastIndexOf('/') + 1);
   return (
     SCOPED_DIRS.some((dir) => normalised.startsWith(dir)) &&
     TEXT_EXTENSIONS.test(normalised) &&
-    !normalised.includes('/node_modules/')
+    !normalised.includes('/node_modules/') &&
+    !DOC_FILES.has(basename)
   );
 }
 

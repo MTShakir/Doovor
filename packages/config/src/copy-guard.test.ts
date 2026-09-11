@@ -51,6 +51,13 @@ describe('copy guard', () => {
     expect(isInScope('packages/ui/node_modules/x/index.js')).toBe(false);
   });
 
+  it('skips developer and agent instruction files but keeps content files', () => {
+    expect(isInScope('apps/web/AGENTS.md')).toBe(false);
+    expect(isInScope('apps/web/CLAUDE.md')).toBe(false);
+    expect(isInScope('packages/ui/README.md')).toBe(false);
+    expect(isInScope('apps/web/content/guides/how-to-book-driving-test.mdx')).toBe(true);
+  });
+
   it('explains how to fix each violation', () => {
     const [v] = findViolations('apps/web/a.ts', `x ${emDash} y`);
     expect(v && formatViolation(v)).toContain('use a comma, colon or full stop instead');
