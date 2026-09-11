@@ -234,3 +234,23 @@ Every decision made without the product owner, newest last. Format: date, decisi
 - **Decision:** A migration is frozen once it is merged to `main` or applied to a shared database, and mistakes are then fixed with a follow-up migration. An uncommitted migration on a branch may still be edited.
 - **Options:** "Forward only" for every migration, even one no other database has seen.
 - **Reason:** Editing a migration no one else has applied keeps history readable. Freezing it once shared keeps every database reproducible.
+
+## D-046 | 2026-09-11 | Email links always point at the site URL
+- **Decision:** Auth email templates build links from `{{ .SiteURL }}`, and the redirect allow list holds exact URLs only, with no `*.vercel.app` wildcards. On previews, password sign-in works in place; email and Google sign-in finish on the staging domain.
+- **Options:** Build links from the requested redirect URL so previews get their own links back, which needs wildcard redirect URLs.
+- **Reason:** Anyone can create a Vercel project whose address matches a `*-team.vercel.app` wildcard, and could then receive sign-in tokens through a crafted reset or sign-in link. Exact URLs close that hole. Previews are for checking changes, and password sign-in covers that.
+
+## D-047 | 2026-09-11 | Nothing is indexed outside production
+- **Decision:** Outside `APP_ENV=production`, every response carries `X-Robots-Tag: noindex, nofollow` and `robots.txt` disallows everything. In production, the portals, account, auth and API paths are never indexed and public pages are.
+- **Options:** Rely on Vercel's preview protection alone.
+- **Reason:** Staging sits on the public brand domain before launch. Search engines indexing demo data or staging pages would compete with the real public profiles in M5 (SEO).
+
+## D-048 | 2026-09-11 | Hosted demo data needs its own password
+- **Decision:** The seed refuses a hosted project unless `SEED_PASSWORD` is set, refuses a mix of local and hosted targets, and never prints a connection string.
+- **Options:** Reuse the documented local password everywhere.
+- **Reason:** The local password is in the repository. On a public staging URL, anyone could sign in as the demo instructors and learners and, for example, send texts. A mixed target would create users in one project and their rows in another.
+
+## D-049 | 2026-09-11 | Staging is the main branch deployment until launch | Confirm
+- **Decision:** Until M6, Vercel's production deployment of `main` is staging: `APP_ENV=preview`, the free Supabase project (D-032), the brand domain and no indexing (D-047). Branch previews stay private behind Vercel Authentication. Production gets its own Supabase Pro project in London at launch.
+- **Options:** A separate staging project and subdomain now.
+- **Reason:** One hosted environment is enough while there are no real users, and it keeps the free plan's two-project limit free for production.
