@@ -43,3 +43,6 @@ next-env.d.ts
 
 # Copied from supabase/templates when pushing hosted settings (scripts/supabase.mjs)
 ops/staging/supabase/templates/
+
+# Supabase CLI state for the hosted project
+ops/staging/supabase/.temp/
