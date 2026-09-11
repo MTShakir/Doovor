@@ -1,0 +1,39 @@
+# Dependencies
+node_modules/
+.pnpm-store/
+
+# Builds and caches
+.next/
+out/
+dist/
+build/
+.turbo/
+*.tsbuildinfo
+coverage/
+
+# Generated
+packages/ui/src/styles/tokens.css
+
+# Tests
+test-results/
+playwright-report/
+blob-report/
+e2e/.auth/
+
+# Environment and secrets
+.env
+.env.*
+!.env.example
+
+# Supabase local
+supabase/.branches/
+supabase/.temp/
+
+# Vercel
+.vercel/
+
+# OS and editors
+.DS_Store
+Thumbs.db
+.idea/
+*.log
