@@ -12,6 +12,8 @@ export interface OnboardingSession {
   completed: boolean;
   /** What they are called today: the name step starts from this. */
   displayName: string;
+  /** The photo they have already, as an object path in the avatars bucket. */
+  photoPath: string | null;
 }
 
 function instructorMembership(memberships: AccessMembership[]): AccessMembership | null {
@@ -32,7 +34,7 @@ export async function requireOnboarding(): Promise<OnboardingSession> {
   const supabase = await createSupabaseServerClient();
   const { data: profile } = await supabase
     .from('instructor_profiles')
-    .select('display_name')
+    .select('display_name, photo_path')
     .eq('id', membership.instructorProfileId)
     .single();
 
@@ -42,5 +44,6 @@ export async function requireOnboarding(): Promise<OnboardingSession> {
     step: membership.onboarding.step,
     completed: membership.onboarding.completed,
     displayName: profile?.display_name ?? '',
+    photoPath: profile?.photo_path ?? null,
   };
 }

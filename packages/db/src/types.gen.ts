@@ -402,7 +402,7 @@ export type Database = {
           languages: string[]
           onboarding_completed_at: string | null
           onboarding_step: number
-          photo_url: string | null
+          photo_path: string | null
           public_slug: string | null
           qualification: Database["public"]["Enums"]["instructor_qualification"]
           radius_miles: number
@@ -436,7 +436,7 @@ export type Database = {
           languages?: string[]
           onboarding_completed_at?: string | null
           onboarding_step?: number
-          photo_url?: string | null
+          photo_path?: string | null
           public_slug?: string | null
           qualification?: Database["public"]["Enums"]["instructor_qualification"]
           radius_miles?: number
@@ -470,7 +470,7 @@ export type Database = {
           languages?: string[]
           onboarding_completed_at?: string | null
           onboarding_step?: number
-          photo_url?: string | null
+          photo_path?: string | null
           public_slug?: string | null
           qualification?: Database["public"]["Enums"]["instructor_qualification"]
           radius_miles?: number

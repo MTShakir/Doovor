@@ -3,6 +3,7 @@ import { totp } from '../../packages/db/src/testing/totp';
 import { seedAccounts } from '../support/accounts';
 import { expectAccessible, snap } from '../support/helpers';
 import { linkFromEmail } from '../support/mailpit';
+import { testNumber } from '../support/phone-numbers';
 import { enterCode, signInThroughForm } from '../support/sign-in';
 import { chooseRoleAndCreateAccount, uniqueEmail } from '../support/sign-up';
 
@@ -35,12 +36,13 @@ test.describe('sign-up (AUTH-01, AUTH-03)', () => {
     const email = uniqueEmail(testInfo, 'instructor');
     await chooseRoleAndCreateAccount(page, { card: "I'm an instructor", heading: 'Create your instructor account' }, { fullName: 'Ian Newcomer', email });
     await page.goto(await linkFromEmail(email, 'Confirm your email'));
-    await expect(page).toHaveURL(/\/verify-phone\?next=%2Fapp%2Finstructor/);
+    // Mobile verification comes first, then onboarding: no detour through a diary they cannot use yet.
+    await expect(page).toHaveURL(/\/verify-phone\?next=%2Fonboarding/);
     await expect(page.getByRole('heading', { name: 'Verify your mobile' })).toBeVisible();
     await expectAccessible(page);
     await snap(page, testInfo, 'verify-phone');
     // Ofcom drama numbers with a fixed local test code (D-033).
-    await page.getByLabel('Mobile number').fill(perProject(testInfo, '07700 900005', '07700 900006'));
+    await page.getByLabel('Mobile number').fill(testNumber(testInfo, 'verify-mobile'));
     await page.getByRole('button', { name: 'Text me a code' }).click();
     await enterCode(page, '123456');
     await expect(page).toHaveURL(/\/onboarding\/name$/);
@@ -145,7 +147,7 @@ test.describe('sign-in (AUTH-01)', () => {
   test('an instructor signs in with a text message code', async ({ page }, testInfo) => {
     await page.goto('/sign-in');
     await page.getByRole('button', { name: 'Use a text message code instead' }).click();
-    await page.getByLabel('Mobile number').fill(perProject(testInfo, '07700 900003', '07700 900004'));
+    await page.getByLabel('Mobile number').fill(testNumber(testInfo, 'sign-in-with-code'));
     await page.getByRole('button', { name: 'Text me a code' }).click();
     await enterCode(page, '123456');
     await expect(page).toHaveURL(/\/app\/instructor$/);

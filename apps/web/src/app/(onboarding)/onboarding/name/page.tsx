@@ -8,7 +8,7 @@ import { StepShell } from '../step-shell';
 
 const step = stepBySlug('name');
 
-export const metadata: Metadata = { title: 'Your name' };
+export const metadata: Metadata = { title: 'Your name and photo' };
 
 export default function NameStepPage() {
   return (
@@ -23,7 +23,7 @@ async function NameStep() {
   if (!step) throw new Error('Unknown onboarding step');
   return (
     <StepShell step={step}>
-      <NameForm initialName={session.displayName} />
+      <NameForm profileId={session.profileId} initialName={session.displayName} initialPhotoPath={session.photoPath} />
     </StepShell>
   );
 }

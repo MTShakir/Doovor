@@ -3,6 +3,7 @@
 import { brand, type ColourToken } from '@repo/config/brand';
 import { formatPence } from '@repo/core/money';
 import { Avatar } from '@repo/ui/avatar';
+import { AvatarPicker } from '@repo/ui/avatar-picker';
 import { Button } from '@repo/ui/button';
 import { Card, CardDescription, CardTitle } from '@repo/ui/card';
 import { Checkbox } from '@repo/ui/checkbox';
@@ -83,6 +84,7 @@ export function DesignShowcase() {
   const [chips, setChips] = useState<Record<string, boolean>>({ Automatic: true });
   const [sheetOpen, setSheetOpen] = useState(false);
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [picked, setPicked] = useState<string | undefined>(undefined);
 
   return (
     <main className="mx-auto max-w-5xl px-4 pb-24 md:px-8">
@@ -264,6 +266,31 @@ export function DesignShowcase() {
         <div className="flex flex-col gap-2">
           <RatingStars rating={4.5} count={32} />
           <RatingStars rating={3} />
+        </div>
+        <div className="grid gap-8 md:grid-cols-2">
+          <AvatarPicker
+            name="Priya Patel"
+            src={picked}
+            label="Your photo"
+            hint="Learners are more likely to book an instructor they can see."
+            accept="image/jpeg,image/png,image/webp,image/gif"
+            onChoose={(file) => { setPicked(URL.createObjectURL(file)); }}
+            onRemove={() => { setPicked(undefined); }}
+          />
+          <AvatarPicker
+            name="Priya Patel"
+            label="Uploading"
+            accept="image/jpeg"
+            busy
+            onChoose={() => undefined}
+          />
+          <AvatarPicker
+            name="Priya Patel"
+            label="Something went wrong"
+            accept="image/jpeg"
+            error="That picture is too large. Choose one under 15MB."
+            onChoose={() => undefined}
+          />
         </div>
       </Section>
 

@@ -18,9 +18,13 @@ export function canUsePortal(context: AccessContext, portal: Portal): boolean {
   return availablePortals(context).includes(portal);
 }
 
-/** Where to send someone after sign-in. People with no role yet choose one (AUTH-03). */
+/**
+ * Where to send someone after sign-in. People with no role yet choose one (AUTH-03), and an
+ * instructor who has not finished onboarding goes there rather than through their diary.
+ */
 export function landingPath(context: AccessContext): string {
   const [first] = availablePortals(context);
+  if (first === 'instructor' && needsOnboarding(context)) return '/onboarding';
   return first ? portalRoots[first] : '/start';
 }
 

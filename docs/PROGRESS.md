@@ -13,7 +13,8 @@ M1 Instructor core has started on branch `m1-instructor-core`. Goal: an instruct
 | Task | What | PRD | State |
 |---|---|---|---|
 | M1-01 | Background jobs: runner client, `/api/inngest`, the `outbox_events` table with claim, sent and failed functions, the dispatcher and a one-minute sweep | 14.5 | Done. Verified end to end: an enqueued event was claimed, sent and delivered to a job |
-| M1-02 | Onboarding shell: five steps stored on the profile, resume where you left off, only the name is required, finishing opens the diary | AUTH-04 | Done. Steps 2 to 5 are placeholders until M1-03 to M1-09 fill them in |
+| M1-02 | Onboarding shell: five steps stored on the profile, resume where you left off, only the name is required, finishing opens the diary | AUTH-04 | Done. Steps 2 to 5 are placeholders until M1-04 to M1-09 fill them in |
+| M1-03 | Step 1 name and photo: picture cropped, resized and re-encoded in the browser, public `avatars` bucket with a folder per instructor | AUTH-04, INS-01 | Done. A photo carrying a GPS position is stored without it, proved end to end |
 
 ## Done (M0)
 
@@ -43,21 +44,21 @@ Decisions D-036 to D-050 were logged during this stretch. Two were security fixe
 
 | Suite | Result |
 |---|---|
-| Unit (Vitest) | 154 passed across 5 packages; `packages/core` line coverage 97.6% |
-| Database (pgTAP) | 160 assertions in 10 files, all passing; SQL lint clean |
-| End to end (Playwright) | 83 passed at 390 px and 1440 px, none skipped, stable across repeated full runs, also against a production build in CI mode |
+| Unit (Vitest) | 166 passed across 5 packages; `packages/core` line coverage 97.7% |
+| Database (pgTAP) | 170 assertions in 11 files, all passing; SQL lint clean |
+| End to end (Playwright) | 85 passed at 390 px and 1440 px, none skipped, stable across repeated full runs, also against a production build in CI mode |
 | Lint, typecheck, copy guard | Clean |
 | CI on GitHub | Green: lint and unit, database, end to end against a production build |
 | Staging (hosted) | Security Advisor: 0 errors, 6 expected warnings (D-051). Every public table has row-level security. The sign-out guard (D-041) is active on the authenticator role. Health check and sign-in page verified |
 
 ## In progress
 
-- M1-03: the name and photo step, which turns the placeholder on step 1 into the real profile question.
+- M1-04: the ADI or PDI badge step, with a private bucket and a verification submission.
 
 ## Next
 
-- M1-03 to M1-09: name and photo, ADI badge upload to a private bucket, `GeoProvider` and `MapProvider`, postcode and radius, prices, weekly hours.
-- The two M1 migrations (`outbox_events`, instructor onboarding columns) are applied locally only. They go to staging with the next staging push.
+- M1-04 to M1-09: badge upload to a private bucket, `GeoProvider` and `MapProvider`, postcode and radius, prices, weekly hours.
+- The three M1 migrations (`outbox_events`, onboarding columns, avatar photos) are applied locally only. They go to staging with the next staging push.
 
 ## Blockers
 

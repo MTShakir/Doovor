@@ -81,6 +81,8 @@ describe('onboarding (AUTH-04)', () => {
       memberships: [membership({ instructorProfileId: 'p1', onboarding: { step: 2, completed: false } })],
     });
     expect(needsOnboarding(ctx)).toBe(true);
+    // One redirect, not two: signing in does not pass through the diary to get there.
+    expect(landingPath(ctx)).toBe('/onboarding');
   });
 
   it('leaves a finished instructor alone', () => {
@@ -88,6 +90,16 @@ describe('onboarding (AUTH-04)', () => {
       memberships: [membership({ instructorProfileId: 'p1', onboarding: { step: 5, completed: true } })],
     });
     expect(needsOnboarding(ctx)).toBe(false);
+    expect(landingPath(ctx)).toBe('/app/instructor');
+  });
+
+  it('keeps a school owner who also teaches on the school portal', () => {
+    const ctx = context({
+      memberships: [
+        membership({ businessType: 'school', role: 'owner', instructorProfileId: 'p1', onboarding: { step: 1, completed: false } }),
+      ],
+    });
+    expect(landingPath(ctx)).toBe('/app/school');
   });
 
   it('does not apply to people who are not instructors', () => {
