@@ -49,7 +49,8 @@ test.describe('instructor onboarding (AUTH-04, M1-02)', () => {
       await expect(page).toHaveURL(new RegExp(`/onboarding/${step}$`));
     }
 
-    await page.getByRole('button', { name: 'Continue' }).click();
+    // Skipping the last step finishes onboarding: only the name was ever required.
+    await page.getByRole('button', { name: 'Skip for now' }).click();
     await expect(page).toHaveURL(/\/app\/instructor$/);
     await expect(page.getByRole('heading', { level: 1, name: 'Today' })).toBeVisible();
 
@@ -268,6 +269,73 @@ test.describe('instructor onboarding (AUTH-04, M1-02)', () => {
 
     await expect(page.getByText('Enter an hourly price between £5 and £500')).toBeVisible();
     await expect(page).toHaveURL(/\/onboarding\/prices$/);
+  });
+
+  test('saves the week in local time and finishes onboarding (M1-09)', async ({ page }, testInfo) => {
+    const email = uniqueEmail(testInfo, 'hours');
+    await chooseRoleAndCreateAccount(
+      page,
+      { card: "I'm an instructor", heading: 'Create your instructor account' },
+      { fullName: 'Nina Newstart', email },
+    );
+    await page.goto(await linkFromEmail(email, 'Confirm your email'));
+    await page.getByRole('link', { name: 'Do this later' }).click();
+    await page.getByLabel('Your name').fill('Nina Newstart');
+    await page.getByRole('button', { name: 'Continue' }).click();
+    for (const step of ['area', 'prices', 'hours']) {
+      await page.getByRole('button', { name: 'Skip for now' }).click();
+      await expect(page).toHaveURL(new RegExp(`/onboarding/${step}$`));
+    }
+
+    // Monday to Friday, nine to six, is what the step starts from.
+    await expect(page.getByRole('button', { name: 'Monday' })).toHaveAttribute('aria-pressed', 'true');
+    await expect(page.getByRole('button', { name: 'Sunday' })).toHaveAttribute('aria-pressed', 'false');
+    await expect(page.getByLabel('From')).toHaveValue('09:00');
+
+    await page.getByRole('button', { name: 'Saturday' }).click();
+    await page.getByLabel('From').fill('08:30');
+    await page.getByLabel('To').fill('19:00');
+    await expectAccessible(page);
+    await snap(page, testInfo, 'onboarding-hours');
+
+    await page.getByRole('button', { name: 'Finish' }).click();
+    await expect(page).toHaveURL(/\/app\/instructor$/);
+    await expect(page.getByRole('heading', { level: 1, name: 'Today' })).toBeVisible();
+
+    // Finished means finished, so the last step is behind them now.
+    await page.goto('/onboarding/hours');
+    await expect(page).toHaveURL(/\/app\/instructor$/);
+  });
+
+  test('will not save a week that finishes before it starts (DIA-01)', async ({ page }, testInfo) => {
+    const email = uniqueEmail(testInfo, 'bad-hours');
+    await chooseRoleAndCreateAccount(
+      page,
+      { card: "I'm an instructor", heading: 'Create your instructor account' },
+      { fullName: 'Nina Newstart', email },
+    );
+    await page.goto(await linkFromEmail(email, 'Confirm your email'));
+    await page.getByRole('link', { name: 'Do this later' }).click();
+    await page.getByLabel('Your name').fill('Nina Newstart');
+    await page.getByRole('button', { name: 'Continue' }).click();
+    for (const step of ['area', 'prices', 'hours']) {
+      await page.getByRole('button', { name: 'Skip for now' }).click();
+      await expect(page).toHaveURL(new RegExp(`/onboarding/${step}$`));
+    }
+
+    await page.getByLabel('From').fill('18:00');
+    await page.getByLabel('To').fill('09:00');
+    await page.getByRole('button', { name: 'Finish' }).click();
+    await expect(page.getByText('The finish time has to be after the start time')).toBeVisible();
+
+    // And a week with no days in it is not a week.
+    await page.getByLabel('To').fill('19:00');
+    for (const day of ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday']) {
+      await page.getByRole('button', { name: day }).click();
+    }
+    await page.getByRole('button', { name: 'Finish' }).click();
+    await expect(page.getByText('Choose at least one day')).toBeVisible();
+    await expect(page).toHaveURL(/\/onboarding\/hours$/);
   });
 
   test('is only for instructors', async ({ page }, testInfo) => {

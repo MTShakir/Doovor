@@ -6,6 +6,7 @@ import { err, type Result } from '@repo/core/result';
 import {
   onboardingAreaSchema,
   onboardingBadgeSchema,
+  onboardingHoursSchema,
   onboardingNameSchema,
   onboardingPricesSchema,
 } from '@repo/core/schemas/onboarding';
@@ -146,6 +147,28 @@ export async function savePrices(input: unknown): Promise<Result<null>> {
   if (error) {
     const { code } = parsePostgresError(error);
     return err(code === 'UNKNOWN' ? 'UNKNOWN' : code);
+  }
+
+  // Saving succeeded, so this redirects and never resolves.
+  return advance(session.profileId, session.step);
+}
+
+/** AUTH-04 step 5, DIA-01: the week they work. Local wall clock, never instants. */
+export async function saveHours(input: unknown): Promise<Result<null>> {
+  const parsed = onboardingHoursSchema.safeParse(input);
+  if (!parsed.success) return err('VALIDATION_FAILED', undefined, fieldErrors(parsed.error));
+
+  const session = await requireOnboarding();
+  const supabase = await createSupabaseServerClient();
+  const { error } = await supabase.rpc('set_working_hours', {
+    p_instructor_id: session.profileId,
+    p_weekdays: parsed.data.days,
+    p_start_time: parsed.data.startTime,
+    p_end_time: parsed.data.endTime,
+  });
+  if (error) {
+    const { code } = parsePostgresError(error);
+    return err(code);
   }
 
   // Saving succeeded, so this redirects and never resolves.

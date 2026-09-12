@@ -1,5 +1,20 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { onboardingAreaSchema, onboardingBadgeSchema, onboardingPricesSchema } from './onboarding.ts';
+import type { ZodType } from 'zod';
+import {
+  defaultWorkingDays,
+  defaultWorkingHours,
+  onboardingAreaSchema,
+  onboardingBadgeSchema,
+  onboardingHoursSchema,
+  onboardingPricesSchema,
+  weekdays,
+} from './onboarding.ts';
+
+/** The fields a schema complained about, so a test can say which one it expected. */
+function problemIn(schema: ZodType, input: unknown): string[] {
+  const result = schema.safeParse(input);
+  return result.success ? [] : result.error.issues.map((issue) => issue.path.join('.'));
+}
 
 const valid = {
   qualification: 'adi' as const,
@@ -109,5 +124,34 @@ describe('prices step (R-05, PAY-04, M1-08)', () => {
     expect(result.error?.issues[0]?.message).toBe('Enter an hourly price between £5 and £500');
     expect(onboardingPricesSchema.safeParse({ hourlyPrice: '501', packagePrice: '' }).success).toBe(false);
     expect(onboardingPricesSchema.safeParse({ hourlyPrice: '500', packagePrice: '5000' }).success).toBe(true);
+  });
+});
+
+describe('hours step (DIA-01, M1-09)', () => {
+  const valid = { days: [1, 2, 3, 4, 5], startTime: '09:00', endTime: '18:00' };
+
+  it('takes a week of working days and one pair of times', () => {
+    expect(onboardingHoursSchema.parse(valid)).toEqual(valid);
+  });
+
+  it('needs at least one day, because no days is not a week', () => {
+    expect(problemIn(onboardingHoursSchema, { ...valid, days: [] })).toEqual(['days']);
+  });
+
+  it('will not finish before it starts', () => {
+    expect(problemIn(onboardingHoursSchema, { ...valid, startTime: '18:00', endTime: '09:00' })).toEqual(['endTime']);
+    expect(problemIn(onboardingHoursSchema, { ...valid, startTime: '09:00', endTime: '09:00' })).toEqual(['endTime']);
+  });
+
+  it('refuses a time that is not one', () => {
+    expect(problemIn(onboardingHoursSchema, { ...valid, startTime: '9am' })).toEqual(['startTime']);
+    expect(problemIn(onboardingHoursSchema, { ...valid, endTime: '25:00' })).toEqual(['endTime']);
+  });
+
+  it('knows the days the database numbers, Monday first', () => {
+    expect(weekdays.map((day) => day.value)).toEqual([1, 2, 3, 4, 5, 6, 7]);
+    expect(weekdays[0].long).toBe('Monday');
+    expect(defaultWorkingDays).toEqual([1, 2, 3, 4, 5]);
+    expect(defaultWorkingHours.startTime).toBe('09:00');
   });
 });

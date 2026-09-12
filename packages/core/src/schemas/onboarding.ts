@@ -8,7 +8,7 @@
 import { z } from 'zod';
 import { parsePoundsToPence } from '../money.ts';
 import { isPostcode, normalisePostcode } from '../postcode.ts';
-import { isValidLocalDate } from '../time/calendar.ts';
+import { isValidLocalDate, isValidLocalTime, localTimeToMinutes } from '../time/calendar.ts';
 import { todayInZone } from '../time/zone.ts';
 import { fullNameSchema } from './auth.ts';
 
@@ -104,3 +104,43 @@ export const onboardingPricesSchema = z.object({
 });
 
 export type OnboardingPrices = z.infer<typeof onboardingPricesSchema>;
+
+/** Monday is 1 and Sunday is 7, as ISO says and as the database stores it. */
+export const weekdays = [
+  { value: 1, short: 'Mon', long: 'Monday' },
+  { value: 2, short: 'Tue', long: 'Tuesday' },
+  { value: 3, short: 'Wed', long: 'Wednesday' },
+  { value: 4, short: 'Thu', long: 'Thursday' },
+  { value: 5, short: 'Fri', long: 'Friday' },
+  { value: 6, short: 'Sat', long: 'Saturday' },
+  { value: 7, short: 'Sun', long: 'Sunday' },
+] as const;
+
+export const defaultWorkingDays = [1, 2, 3, 4, 5];
+export const defaultWorkingHours = { startTime: '09:00', endTime: '18:00' } as const;
+
+const localTime = z.string().trim().refine(isValidLocalTime, { error: 'Enter a time like 09:00' });
+
+/**
+ * Step 5: the week an instructor works (DIA-01). Onboarding asks for one pair of times across
+ * the days they choose; different times per day are set in the full editor later (M1-17).
+ * Times are local wall clock, never instants: 09:00 stays 09:00 through a clock change.
+ */
+export const onboardingHoursSchema = z
+  .object({
+    days: z
+      .array(z.union([z.literal(1), z.literal(2), z.literal(3), z.literal(4), z.literal(5), z.literal(6), z.literal(7)]))
+      .min(1, { error: 'Choose at least one day' }),
+    startTime: localTime,
+    endTime: localTime,
+  })
+  .refine(
+    (value) =>
+      // A time that is not a time already has its own message; do not add a second one.
+      !isValidLocalTime(value.startTime) ||
+      !isValidLocalTime(value.endTime) ||
+      localTimeToMinutes(value.endTime) > localTimeToMinutes(value.startTime),
+    { error: 'The finish time has to be after the start time', path: ['endTime'] },
+  );
+
+export type OnboardingHours = z.infer<typeof onboardingHoursSchema>;

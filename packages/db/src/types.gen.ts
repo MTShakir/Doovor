@@ -1366,6 +1366,15 @@ export type Database = {
         }
         Returns: string
       }
+      set_working_hours: {
+        Args: {
+          p_end_time: string
+          p_instructor_id: string
+          p_start_time: string
+          p_weekdays: number[]
+        }
+        Returns: number
+      }
       submit_verification: {
         Args: {
           p_badge_expiry: string
