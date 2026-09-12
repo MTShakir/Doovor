@@ -5,7 +5,7 @@ import { redirectTo } from '@/lib/redirect-to';
 import { cache } from 'react';
 import type { Portal } from '@/lib/navigation';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
-import { canUsePortal, landingPath, requiresMfa } from './portals';
+import { canUsePortal, landingPath, needsOnboarding, requiresMfa } from './portals';
 
 export interface Session {
   userId: string;
@@ -57,6 +57,7 @@ export async function requirePortal(portal: Portal): Promise<{ session: Session;
   if (!result) redirectTo(`/sign-in?next=${encodeURIComponent(path)}`);
   if (requiresMfa(result.access) && result.session.aal !== 'aal2') redirectTo(`/mfa?next=${encodeURIComponent(path)}`);
   if (!canUsePortal(result.access, portal)) redirectTo(landingPath(result.access));
+  if (portal === 'instructor' && needsOnboarding(result.access)) redirectTo('/onboarding');
   return result;
 }
 

@@ -400,6 +400,8 @@ export type Database = {
           instant_book: boolean
           is_listed: boolean
           languages: string[]
+          onboarding_completed_at: string | null
+          onboarding_step: number
           photo_url: string | null
           public_slug: string | null
           qualification: Database["public"]["Enums"]["instructor_qualification"]
@@ -432,6 +434,8 @@ export type Database = {
           instant_book?: boolean
           is_listed?: boolean
           languages?: string[]
+          onboarding_completed_at?: string | null
+          onboarding_step?: number
           photo_url?: string | null
           public_slug?: string | null
           qualification?: Database["public"]["Enums"]["instructor_qualification"]
@@ -464,6 +468,8 @@ export type Database = {
           instant_book?: boolean
           is_listed?: boolean
           languages?: string[]
+          onboarding_completed_at?: string | null
+          onboarding_step?: number
           photo_url?: string | null
           public_slug?: string | null
           qualification?: Database["public"]["Enums"]["instructor_qualification"]

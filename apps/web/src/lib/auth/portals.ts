@@ -40,3 +40,9 @@ export function safeNextPath(next: string | null | undefined, fallback = '/'): s
   if (!next || !next.startsWith('/') || next.startsWith('//') || next.startsWith('/\\')) return fallback;
   return next;
 }
+
+/** An instructor who has not finished onboarding is sent there before their diary (AUTH-04). */
+export function needsOnboarding(context: AccessContext): boolean {
+  const instructor = context.memberships.find((membership) => membership.onboarding !== null);
+  return instructor?.onboarding ? !instructor.onboarding.completed : false;
+}

@@ -1,34 +1,14 @@
-import { expect, test, type Page, type TestInfo } from '@playwright/test';
+import { expect, test, type TestInfo } from '@playwright/test';
 import { totp } from '../../packages/db/src/testing/totp';
 import { seedAccounts } from '../support/accounts';
 import { expectAccessible, snap } from '../support/helpers';
 import { linkFromEmail } from '../support/mailpit';
 import { enterCode, signInThroughForm } from '../support/sign-in';
+import { chooseRoleAndCreateAccount, uniqueEmail } from '../support/sign-up';
 
 /** Different seeded people per viewport so parallel projects never share state. */
 function perProject<T>(testInfo: TestInfo, mobile: T, desktop: T): T {
   return testInfo.project.name === 'mobile' ? mobile : desktop;
-}
-
-function uniqueEmail(testInfo: TestInfo, label: string): string {
-  return `e2e.${label}.${testInfo.project.name}.${String(Date.now())}@example.com`;
-}
-
-async function chooseRoleAndCreateAccount(
-  page: Page,
-  role: { card: string; heading: string },
-  details: { fullName: string; email: string; schoolName?: string },
-): Promise<void> {
-  await page.goto('/start');
-  await page.getByText(role.card).click();
-  await page.getByRole('button', { name: 'Continue' }).click();
-  await expect(page.getByRole('heading', { name: role.heading })).toBeVisible();
-  await page.getByLabel('Full name').fill(details.fullName);
-  if (details.schoolName) await page.getByLabel('School name').fill(details.schoolName);
-  await page.getByLabel('Email').fill(details.email);
-  await page.getByLabel('Password', { exact: true }).fill('a long pass phrase');
-  await page.getByRole('button', { name: 'Create account' }).click();
-  await expect(page.getByRole('heading', { name: 'Check your email' })).toBeVisible();
 }
 
 test.describe('sign-up (AUTH-01, AUTH-03)', () => {
@@ -63,8 +43,8 @@ test.describe('sign-up (AUTH-01, AUTH-03)', () => {
     await page.getByLabel('Mobile number').fill(perProject(testInfo, '07700 900005', '07700 900006'));
     await page.getByRole('button', { name: 'Text me a code' }).click();
     await enterCode(page, '123456');
-    await expect(page).toHaveURL(/\/app\/instructor$/);
-    await expect(page.getByRole('heading', { level: 1, name: 'Today' })).toBeVisible();
+    await expect(page).toHaveURL(/\/onboarding\/name$/);
+    await expect(page.getByRole('heading', { level: 1, name: 'What should learners call you?' })).toBeVisible();
   });
 
   test('a school owner signs up and must turn on two-step verification (AUTH-08)', async ({ page }, testInfo) => {
