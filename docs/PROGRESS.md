@@ -10,6 +10,12 @@ M1 Instructor core is approved and merged to `main`, all 24 tasks, with its fift
 
 M2 Learners and bookings has started on branch `m2-learners-bookings`. An instructor signs up, is set up in five minutes, is verified by a person, and has a diary that keeps itself up to date.
 
+## M2 progress
+
+| Task | What | PRD | State |
+|---|---|---|---|
+| M2-01 | Learner onboarding: name, postcode, gearbox, experience and a date of birth that stays the learner's own | AUTH-06, R-16 | Done. Under 16 is refused by the form and by the row itself |
+
 ## M1 progress
 
 | Task | What | PRD | State |
@@ -76,7 +82,7 @@ Decisions D-036 to D-050 were logged during this stretch. Two were security fixe
 
 ## In progress
 
-- M2-01: the first task of Learners and bookings.
+- M2-02: the rate limiter, before anything else takes public input.
 
 ## Next
 
