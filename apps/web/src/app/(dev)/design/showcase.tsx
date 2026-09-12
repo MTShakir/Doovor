@@ -5,6 +5,7 @@ import { formatPence } from '@repo/core/money';
 import { Avatar } from '@repo/ui/avatar';
 import { AvatarPicker } from '@repo/ui/avatar-picker';
 import { PhotoUpload } from '@repo/ui/photo-upload';
+import { PickupPointPicker } from '@repo/ui/pickup-point-picker';
 import { RadiusMap } from '@/components/map/radius-map';
 import { SetupChecklist } from '@/components/setup-checklist';
 import { Button } from '@repo/ui/button';
@@ -91,6 +92,7 @@ export function DesignShowcase() {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [picked, setPicked] = useState<string | undefined>(undefined);
   const [document, setDocument] = useState<string | undefined>(undefined);
+  const [pickup, setPickup] = useState<string | undefined>(undefined);
 
   return (
     <main className="mx-auto max-w-5xl px-4 pb-24 md:px-8">
@@ -434,6 +436,20 @@ export function DesignShowcase() {
         <div className="grid gap-4 md:grid-cols-2">
           <RadiusMap centre={null} radiusMiles={radius} place="LS6 3HN" />
           <RadiusMap centre={null} radiusMiles={1} />
+        </div>
+        <div className="grid gap-4 md:grid-cols-2">
+          <PickupPointPicker
+            label="Where does this lesson start?"
+            options={[
+              { id: 'home', kind: 'home', label: 'Home', address: '12 Hyde Park Road, Leeds LS6 1AB', isDefault: true },
+              { id: 'college', kind: 'school', label: 'College', address: 'Leeds City College, LS2 7EA' },
+              { id: 'work', kind: 'work', label: 'Work', address: '1 Wellington Place, Leeds LS1 4AP' },
+            ]}
+            value={pickup}
+            onChange={setPickup}
+            onAdd={() => toast('The add form arrives with learner management')}
+          />
+          <PickupPointPicker label="Nothing added yet" options={[]} onChange={() => undefined} />
         </div>
       </Section>
 

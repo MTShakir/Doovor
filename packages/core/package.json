@@ -16,7 +16,8 @@
     "./schemas/auth": "./src/schemas/auth.ts",
     "./schemas/onboarding": "./src/schemas/onboarding.ts",
     "./schemas/profile": "./src/schemas/profile.ts",
-    "./badge-expiry": "./src/badge-expiry.ts"
+    "./badge-expiry": "./src/badge-expiry.ts",
+    "./schemas/pickup": "./src/schemas/pickup.ts"
   },
   "scripts": {
     "lint": "eslint .",
