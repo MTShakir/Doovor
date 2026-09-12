@@ -3,6 +3,7 @@ import {
   addDaysToLocalDate,
   classifyLocalTime,
   DEFAULT_TIME_ZONE,
+  formatCalendarDate,
   formatDate,
   formatDateTime,
   formatDateWithYear,
@@ -125,5 +126,18 @@ describe('calendar helpers', () => {
     expect(minutesToLocalTime(510)).toBe('08:30');
     expect(minutesToLocalTime(0)).toBe('00:00');
     expect(() => minutesToLocalTime(1440)).toThrow();
+  });
+});
+
+describe('calendar dates with no instant behind them (PRD 7.6)', () => {
+  it('formats a date the way the product writes dates', () => {
+    expect(formatCalendarDate('2027-11-16')).toBe('Tue 16 Nov 2027');
+    expect(formatCalendarDate('2026-09-12', { year: false })).toBe('Sat 12 Sep');
+  });
+
+  it('does not shift the day, whatever the machine thinks the zone is', () => {
+    // A date read as an instant at midnight would slip to the day before, west of Greenwich.
+    expect(formatCalendarDate('2026-01-01')).toBe('Thu 1 Jan 2026');
+    expect(formatCalendarDate('2026-06-30')).toBe('Tue 30 Jun 2026');
   });
 });
