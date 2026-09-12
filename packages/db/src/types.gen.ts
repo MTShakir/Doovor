@@ -1551,6 +1551,10 @@ export type Database = {
         }
         Returns: string
       }
+      decide_booking_request: {
+        Args: { p_accept: boolean; p_booking_id: string; p_reason?: string }
+        Returns: string
+      }
       decide_verification: {
         Args: { p_approved: boolean; p_profile_id: string; p_reason?: string }
         Returns: Database["public"]["Enums"]["verification_status"]
@@ -1705,6 +1709,7 @@ export type Database = {
         Args: { p_older_than?: string }
         Returns: number
       }
+      system_expire_requests: { Args: never; Returns: number }
       system_mark_outbox_failed: {
         Args: { p_error: string; p_ids: string[] }
         Returns: number

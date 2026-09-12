@@ -42,6 +42,8 @@ M2 Learners and bookings has started on branch `m2-learners-bookings`. An instru
 
 | M2-17 | Self-booking at a public link: who the instructor is, what a lesson costs, the times they are free, and one tap to take one | BOK-02 | Done at 390 px, in well under a minute (acceptance-12). A visitor with no account keeps their choice while they make one (D-069) |
 
+| M2-18 | Request to book: accept or decline from the diary, a reason with a decline, and a sweep every five minutes for the ones nobody answered | BOK-06, R-12 | Done. A lapsed request frees the slot, and the sweep marks it rather than leaving it to look live |
+
 ## M1 progress
 
 | Task | What | PRD | State |
@@ -108,7 +110,7 @@ Decisions D-036 to D-050 were logged during this stretch. Two were security fixe
 
 ## In progress
 
-- M2-18 onwards: recurring lessons, then cancelling, rescheduling and the notifications around them.
+- M2-19 and M2-20: recurring lessons, the weekly slot most instructors actually run on.
 
 ## Next
 

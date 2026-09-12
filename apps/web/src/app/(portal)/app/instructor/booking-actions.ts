@@ -6,6 +6,7 @@ import { isValidLocalDate } from '@repo/core/time';
 import { revalidatePath } from 'next/cache';
 import { z } from 'zod';
 import { requirePortal } from '@/lib/auth/session';
+import { fieldErrors } from '@/lib/forms';
 import { bookingDay, lessonOptions, type BookingDay, type LessonOption } from '@/lib/booking/day';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
 
@@ -71,4 +72,29 @@ export async function bookLesson(input: unknown): Promise<Result<{ bookingId: st
   revalidatePath('/app/instructor');
   revalidatePath(`/app/instructor/learners/${parsed.data.learnerId}`);
   return ok({ bookingId: data });
+}
+
+const decisionSchema = z.object({
+  bookingId: z.uuid(),
+  accept: z.boolean(),
+  reason: z.string().trim().max(500, { error: 'Use 500 characters or fewer' }).default(''),
+});
+
+/** BOK-06: the instructor answers a request. The RPC checks it is still theirs to answer. */
+export async function decideRequest(input: unknown): Promise<Result<{ status: string }>> {
+  const parsed = decisionSchema.safeParse(input);
+  if (!parsed.success) return err('VALIDATION_FAILED', undefined, fieldErrors(parsed.error));
+
+  await requirePortal('instructor');
+  const supabase = await createSupabaseServerClient();
+  const { data, error } = await supabase.rpc('decide_booking_request', {
+    p_booking_id: parsed.data.bookingId,
+    p_accept: parsed.data.accept,
+    p_reason: parsed.data.reason === '' ? undefined : parsed.data.reason,
+  });
+  if (error) return err(parsePostgresError(error).code);
+
+  revalidatePath('/app/instructor/diary');
+  revalidatePath('/app/instructor');
+  return ok({ status: data });
 }

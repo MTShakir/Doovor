@@ -111,3 +111,23 @@ export async function findLesson(instructorName: string, status: string): Promis
     };
   });
 }
+
+/**
+ * Puts a lesson request in an instructor's diary, as a learner self-booking would when that
+ * instructor answers their own requests (BOK-06). Local only.
+ */
+export async function requestLesson(instructorName: string, learnerEmail: string, localStart: string): Promise<void> {
+  await withDatabase(async (sql) => {
+    await sql`
+      insert into public.bookings (business_id, instructor_id, learner_id, lesson_type_id, starts_at, ends_at,
+                                   buffer_minutes, status, price_pence, source, expires_at)
+      select p.business_id, p.id, u.id, t.id,
+             ${localStart}::timestamp at time zone 'Europe/London',
+             (${localStart}::timestamp + interval '1 hour') at time zone 'Europe/London',
+             30, 'requested', 4200, 'self', now() + interval '6 hours'
+        from public.instructor_profiles p
+        join public.lesson_types t on t.business_id = p.business_id and t.name = 'Standard lesson'
+        join public.users u on lower(u.email) = lower(${learnerEmail})
+       where p.display_name = ${instructorName}`;
+  });
+}

@@ -11,6 +11,8 @@ export function hoursTaught(minutes: number): string {
 }
 
 export interface DayViewProps {
+  /** BOK-06: this diary belongs to somebody who may answer a request in it. */
+  canAnswer?: boolean;
   lessons: DiaryEntry[];
   /** The hours worked that day, for the gaps between lessons. */
   opens: Date | null;
@@ -19,7 +21,7 @@ export interface DayViewProps {
 }
 
 /** The day, top to bottom: what is on, and the gaps between (DIA-03, M1-19). */
-export function DayView({ lessons, opens, closes, showInstructor = false }: DayViewProps) {
+export function DayView({ lessons, opens, closes, showInstructor = false, canAnswer = false }: DayViewProps) {
   if (lessons.length === 0) {
     return (
       <EmptyState
@@ -44,7 +46,7 @@ export function DayView({ lessons, opens, closes, showInstructor = false }: DayV
           const gap = gapAfter.get(lesson.endsAt.getTime());
           return (
             <li key={lesson.id}>
-              <LessonRow lesson={lesson} showInstructor={showInstructor} />
+              <LessonRow lesson={lesson} showInstructor={showInstructor} canAnswer={canAnswer} />
               {gap ? (
                 <p className="border-t border-dashed border-grey-200 bg-grey-100 px-4 py-2 text-small text-grey-700">
                   Free until {formatTime(gap.endsAt)}, {hoursTaught(gap.minutes).toLowerCase()}
