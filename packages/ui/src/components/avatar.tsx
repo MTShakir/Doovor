@@ -20,6 +20,8 @@ export interface AvatarProps extends VariantProps<typeof avatarVariants> {
   src?: string | null;
   /** Shows the blue Verified tick (INS-02). Blue is reserved for this and links (PRD 7.2). */
   verified?: boolean;
+  /** The name is written beside it, so it is a picture and not read out a second time. */
+  decorative?: boolean;
   className?: string;
 }
 
@@ -30,10 +32,10 @@ export function initialsFor(name: string): string {
   return (first + last).toUpperCase();
 }
 
-export function Avatar({ name, src, verified = false, size, className }: AvatarProps) {
+export function Avatar({ name, src, verified = false, decorative = false, size, className }: AvatarProps) {
   const key = size ?? 'md';
   return (
-    <span className={cn(avatarVariants({ size }), className)}>
+    <span className={cn(avatarVariants({ size }), className)} aria-hidden={decorative || undefined}>
       <AvatarPrimitive.Root className="flex size-full overflow-hidden rounded-full bg-grey-100">
         {src ? <AvatarPrimitive.Image src={src} alt={name} className="size-full object-cover" /> : null}
         <AvatarPrimitive.Fallback
@@ -41,7 +43,7 @@ export function Avatar({ name, src, verified = false, size, className }: AvatarP
           delayMs={src ? 300 : 0}
         >
           <span aria-hidden>{initialsFor(name)}</span>
-          <span className="sr-only">{name}</span>
+          {decorative ? null : <span className="sr-only">{name}</span>}
         </AvatarPrimitive.Fallback>
       </AvatarPrimitive.Root>
       {verified ? (

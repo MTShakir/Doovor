@@ -1,7 +1,7 @@
-import { expect, test, type Browser } from '@playwright/test';
+import { expect, test, type Browser, type Page } from '@playwright/test';
 import { authFile } from '../support/accounts';
 import { learnerInstructorName } from '../support/database';
-import { expectAccessible, snap } from '../support/helpers';
+import { expectAccessible, snap, tapUntil } from '../support/helpers';
 import { linkFromEmail } from '../support/mailpit';
 import { uniqueEmail } from '../support/sign-up';
 
@@ -10,8 +10,7 @@ async function inviteLink(browser: Browser, learner: { fullName: string; email: 
   const context = await browser.newContext({ storageState: authFile('instructor') });
   const page = await context.newPage();
   await page.goto('/app/instructor/learners');
-  // Typing before hydration fights the form that is about to take over (D-043).
-  await expect(page.getByRole('button', { name: 'Make the link' })).toBeEnabled();
+  await openInviteSheet(page);
   await page.getByLabel('Their name').fill(learner.fullName);
   await page.getByLabel('How will you send it?').selectOption('email');
   await page.getByLabel('Their email').fill(learner.email);
@@ -21,6 +20,15 @@ async function inviteLink(browser: Browser, learner: { fullName: string; email: 
   return link;
 }
 
+/** The form lives in a sheet, and the form itself waits for hydration before it is typed in. */
+async function openInviteSheet(page: Page): Promise<void> {
+  await tapUntil(
+    page.getByRole('button', { name: 'Invite a learner' }),
+    page.getByRole('dialog', { name: 'Invite a learner' }),
+  );
+  await expect(page.getByRole('button', { name: 'Make the link' })).toBeEnabled();
+}
+
 test.describe('inviting a learner (AUTH-07, M2-03)', () => {
   test.describe('the instructor', () => {
     test.use({ storageState: authFile('instructor') });
@@ -28,9 +36,9 @@ test.describe('inviting a learner (AUTH-07, M2-03)', () => {
     test('makes a link and hands it to the app they already use', async ({ page }, testInfo) => {
       await page.goto('/app/instructor/learners');
       await expect(page.getByRole('heading', { level: 1, name: 'Learners' })).toBeVisible();
-      await expect(page.getByRole('button', { name: 'Make the link' })).toBeEnabled();
+      await openInviteSheet(page);
       await expectAccessible(page);
-      await snap(page, testInfo, 'instructor-invite');
+      await snap(page, testInfo, 'instructor-invite', { fullPage: false });
 
       // WhatsApp is the default, so the mobile number is what it asks for.
       await page.getByLabel('Their name').fill('Priya Patel');
@@ -44,12 +52,12 @@ test.describe('inviting a learner (AUTH-07, M2-03)', () => {
       // A link is one long word: it must not push the page sideways on a phone.
       expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
       await expectAccessible(page);
-      await snap(page, testInfo, 'instructor-invite-ready');
+      await snap(page, testInfo, 'instructor-invite-ready', { fullPage: false });
     });
 
     test('asks for an address when the channel needs one', async ({ page }) => {
       await page.goto('/app/instructor/learners');
-      await expect(page.getByRole('button', { name: 'Make the link' })).toBeEnabled();
+      await openInviteSheet(page);
       await page.getByLabel('How will you send it?').selectOption('email');
       await page.getByRole('button', { name: 'Make the link' }).click();
 

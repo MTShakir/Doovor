@@ -17,6 +17,7 @@ M2 Learners and bookings has started on branch `m2-learners-bookings`. An instru
 | M2-01 | Learner onboarding: name, postcode, gearbox, experience and a date of birth that stays the learner's own | AUTH-06, R-16 | Done. Under 16 is refused by the form and by the row itself |
 | M2-02 | Rate limiter: fixed windows counted in Postgres, behind a `RateLimiter` interface, with the limits in one catalogue and a daily sweep | NFR-SEC-03, D-008 | Done. A limiter that cannot answer refuses rather than letting everything through |
 | M2-03 | Invitations: a hashed one-use token, shared by WhatsApp, text or email, a landing page that names the instructor, sign-up already filled in, and the link accepted once the account exists | AUTH-07 | Done. Only the hash is stored, so a copy of the table is not a set of working invitations |
+| M2-04 | Learner list: search by name or number, the four filters LRN-01 names over the six statuses, and calling or texting in one tap | LRN-01 | Done. One view answers the list, so forty learners is still one query. Booking from the row arrives with the booking sheet (M2-16) |
 
 ## M1 progress
 
@@ -84,7 +85,7 @@ Decisions D-036 to D-050 were logged during this stretch. Two were security fixe
 
 ## In progress
 
-- M2-04: the CRM list, the first screen that shows the learners an invitation brings in.
+- M2-05: the learner card, which the list rows will open.
 
 ## Next
 

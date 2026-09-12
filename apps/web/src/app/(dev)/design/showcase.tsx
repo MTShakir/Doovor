@@ -270,6 +270,7 @@ export function DesignShowcase() {
           <Avatar name="James O'Neill" size="lg" verified />
           <Avatar name="Priya Patel" size="xl" verified />
           <Avatar name="Tom" size="lg" />
+          <Avatar name="Jack Taylor" size="md" decorative />
         </div>
         <div className="flex flex-col gap-2">
           <RatingStars rating={4.5} count={32} />

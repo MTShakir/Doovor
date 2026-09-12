@@ -1,6 +1,6 @@
 import path from 'node:path';
 import AxeBuilder from '@axe-core/playwright';
-import { expect, type Page, type TestInfo } from '@playwright/test';
+import { expect, type Locator, type Page, type TestInfo } from '@playwright/test';
 
 const MILESTONE = process.env.E2E_MILESTONE ?? 'm2';
 
@@ -33,6 +33,18 @@ export async function settled(page: Page): Promise<void> {
     null,
     { timeout: 5000 },
   );
+}
+
+/**
+ * Taps a control that does nothing until the page is interactive, and keeps tapping until it
+ * does something. A button whose only job is to open a sheet has no disabled state to wait on
+ * the way a form does (D-043), so the proof that it worked is what it opened.
+ */
+export async function tapUntil(control: Locator, appears: Locator): Promise<void> {
+  await expect(async () => {
+    await control.click();
+    await expect(appears).toBeVisible({ timeout: 1000 });
+  }).toPass({ timeout: 15_000 });
 }
 
 /** WCAG 2.2 AA scan. Fails on serious or critical issues (PRD 14.4, M6-06). */
