@@ -28,6 +28,7 @@ M1 Instructor core has started on branch `m1-instructor-core`. Goal: an instruct
 | M1-14 | Trainee instructors: the label on the profile, supervision given by the school, and R-18 enforced on the booking row itself (D-061) | INS-04, R-18 | Done. An unlinked trainee cannot take a booking, whatever writes it |
 | M1-15 | Coverage: districts added and left out, `covers_postcode` answering the whole rule in one place, and the base postcode and radius editable after onboarding | COV-01, COV-02 | Done. Something that is not a district is refused in the form and by a constraint |
 | M1-16 | Pickup points: exactly one default per learner enforced by the database, the postcode resolved on the server, and the picker in the design system | COV-04 | Done. The picker has no screen to live on until learner management arrives in M2 |
+| M1-17 | Diary settings: the week a day at a time, plus one-off time off and extra hours, with overlaps settled when they are written | DIA-01, DIA-02 | Done. No moment can be both open and blocked |
 
 ## Done (M0)
 
@@ -57,20 +58,20 @@ Decisions D-036 to D-050 were logged during this stretch. Two were security fixe
 
 | Suite | Result |
 |---|---|
-| Unit (Vitest) | 260 passed across 6 packages; `packages/core` line coverage 99%, `packages/providers` 100% |
-| Database (pgTAP) | 268 assertions in 20 files, all passing; SQL lint clean |
-| End to end (Playwright) | 118 passed at 390 px and 1440 px, none skipped, stable across repeated full runs, also against a production build in CI mode |
+| Unit (Vitest) | 267 passed across 6 packages; `packages/core` line coverage 99%, `packages/providers` 100% |
+| Database (pgTAP) | 280 assertions in 21 files, all passing; SQL lint clean |
+| End to end (Playwright) | 123 passed at 390 px and 1440 px, none skipped, stable across repeated full runs, also against a production build in CI mode |
 | Lint, typecheck, copy guard | Clean |
 | CI on GitHub | Green: lint and unit, database, end to end against a production build |
 | Staging (hosted) | Security Advisor: 0 errors, 6 expected warnings (D-051). Every public table has row-level security. The sign-out guard (D-041) is active on the authenticator role. Health check and sign-in page verified |
 
 ## In progress
 
-- M1-17: the working hours editor and one-off exceptions.
+- M1-18: booking rules, the settings that decide what a learner may book.
 
 ## Next
 
-- M1-17 to M1-24: hours and exceptions, booking rules, the day, week and month views, the school diary, realtime, and the timed onboarding run.
+- M1-18 to M1-24: booking rules, the day, week and month views, the school diary, realtime, and the timed onboarding run.
 - The seven M1 migrations are applied locally only. They go to staging with the next staging push.
 
 ## Blockers

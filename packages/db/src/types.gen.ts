@@ -1427,6 +1427,16 @@ export type Database = {
       }
       request_account_deletion: { Args: { p_reason?: string }; Returns: string }
       revoke_my_session: { Args: { p_session_id: string }; Returns: boolean }
+      set_availability_exception: {
+        Args: {
+          p_ends_at: string
+          p_instructor_id: string
+          p_kind: Database["public"]["Enums"]["exception_kind"]
+          p_reason?: string
+          p_starts_at: string
+        }
+        Returns: string
+      }
       set_onboarding_prices: {
         Args: {
           p_business_id: string
