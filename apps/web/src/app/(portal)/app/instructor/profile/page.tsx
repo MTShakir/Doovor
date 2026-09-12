@@ -8,8 +8,11 @@ import { StatusPill } from '@repo/ui/status-pill';
 import { Suspense } from 'react';
 import { FormAlert } from '@/components/form-alert';
 import { requirePortal } from '@/lib/auth/session';
+import { getGeoProvider } from '@/lib/geo/provider';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
 import { ProfileForm } from './profile-form';
+import { CoverageEditor } from '../coverage-editor';
+import { CoverageForm } from '../coverage-form';
 
 export const metadata: Metadata = { title: 'Your profile' };
 
@@ -55,13 +58,23 @@ async function Profile() {
   const { data: profile } = await supabase
     .from('instructor_profiles')
     .select(
-      'display_name, bio, photo_path, languages, years_teaching, transmission, car_make, car_model, dual_controls, specialisms, qualification, badge_number, badge_expiry, verification_status, supervisor_business_id, supervisor_instructor_id',
+      'display_name, bio, photo_path, languages, years_teaching, transmission, car_make, car_model, dual_controls, specialisms, qualification, badge_number, badge_expiry, verification_status, supervisor_business_id, supervisor_instructor_id, base_postcode, radius_miles',
     )
     .eq('id', membership.instructorProfileId)
     .single();
   if (!profile) return null;
 
   const badge = verification(profile.verification_status);
+
+  // A base postcode saved earlier is in the cache, so the circle is drawn on the first paint.
+  const geo = await getGeoProvider();
+  const found = profile.base_postcode ? await geo.lookup(profile.base_postcode) : null;
+  const centre = found?.ok ? { latitude: found.place.latitude, longitude: found.place.longitude } : null;
+  const { data: districts } = await supabase
+    .from('coverage_districts')
+    .select('outcode, rule')
+    .eq('instructor_id', membership.instructorProfileId)
+    .order('outcode');
   const supervised = profile.supervisor_business_id !== null || profile.supervisor_instructor_id !== null;
 
   return (
@@ -79,6 +92,14 @@ async function Profile() {
           </CardDescription>
         ) : null}
         {profile.qualification === 'pdi' ? <Supervision supervised={supervised} /> : null}
+      </Card>
+      <Card className="flex flex-col gap-4">
+        <div className="flex flex-col gap-1">
+          <CardTitle>Where you teach</CardTitle>
+          <CardDescription>The circle around your base, and any exceptions to it.</CardDescription>
+        </div>
+        <CoverageForm postcode={profile.base_postcode} radiusMiles={profile.radius_miles} centre={centre} />
+        <CoverageEditor districts={districts ?? []} />
       </Card>
       <ProfileForm
         profileId={membership.instructorProfileId}

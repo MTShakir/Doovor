@@ -369,6 +369,38 @@ export type Database = {
           },
         ]
       }
+      coverage_districts: {
+        Row: {
+          business_id: string
+          created_at: string
+          instructor_id: string
+          outcode: string
+          rule: Database["public"]["Enums"]["coverage_rule"]
+        }
+        Insert: {
+          business_id: string
+          created_at?: string
+          instructor_id: string
+          outcode: string
+          rule: Database["public"]["Enums"]["coverage_rule"]
+        }
+        Update: {
+          business_id?: string
+          created_at?: string
+          instructor_id?: string
+          outcode?: string
+          rule?: Database["public"]["Enums"]["coverage_rule"]
+        }
+        Relationships: [
+          {
+            foreignKeyName: "coverage_districts_instructor_id_business_id_fkey"
+            columns: ["instructor_id", "business_id"]
+            isOneToOne: false
+            referencedRelation: "instructor_profiles"
+            referencedColumns: ["id", "business_id"]
+          },
+        ]
+      }
       deletion_requests: {
         Row: {
           created_at: string
@@ -1366,6 +1398,10 @@ export type Database = {
         }
         Returns: undefined
       }
+      covers_postcode: {
+        Args: { p_instructor_id: string; p_postcode: string }
+        Returns: boolean
+      }
       create_business: {
         Args: {
           p_name: string
@@ -1496,6 +1532,7 @@ export type Database = {
         | "expired"
       business_status: "pending" | "active" | "suspended"
       business_type: "independent" | "school"
+      coverage_rule: "include" | "exclude"
       exception_kind: "open" | "blocked"
       experience_level: "none" | "some" | "test_booked"
       instructor_qualification: "adi" | "pdi"
@@ -1689,6 +1726,7 @@ export const Constants = {
       ],
       business_status: ["pending", "active", "suspended"],
       business_type: ["independent", "school"],
+      coverage_rule: ["include", "exclude"],
       exception_kind: ["open", "blocked"],
       experience_level: ["none", "some", "test_booked"],
       instructor_qualification: ["adi", "pdi"],

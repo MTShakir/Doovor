@@ -26,6 +26,7 @@ M1 Instructor core has started on branch `m1-instructor-core`. Goal: an instruct
 | M1-12 | Admin verification queue: the badge photo through a signed address, approve or reject with a reason, audit row, and the tick | INS-02, ADM-03 | Done. Only staff with two-step verification can decide, proved in pgTAP and end to end |
 | M1-13 | Badge expiry: rules in core, a daily job at 07:00 London warning at 60, 30 and 7 days, and an expired badge taken out of search | INS-03 | Done. A reminder is recorded before it is sent, so a retry cannot send it twice |
 | M1-14 | Trainee instructors: the label on the profile, supervision given by the school, and R-18 enforced on the booking row itself (D-061) | INS-04, R-18 | Done. An unlinked trainee cannot take a booking, whatever writes it |
+| M1-15 | Coverage: districts added and left out, `covers_postcode` answering the whole rule in one place, and the base postcode and radius editable after onboarding | COV-01, COV-02 | Done. Something that is not a district is refused in the form and by a constraint |
 
 ## Done (M0)
 
@@ -56,19 +57,19 @@ Decisions D-036 to D-050 were logged during this stretch. Two were security fixe
 | Suite | Result |
 |---|---|
 | Unit (Vitest) | 250 passed across 6 packages; `packages/core` line coverage 99%, `packages/providers` 100% |
-| Database (pgTAP) | 246 assertions in 18 files, all passing; SQL lint clean |
-| End to end (Playwright) | 116 passed at 390 px and 1440 px, none skipped, stable across repeated full runs, also against a production build in CI mode |
+| Database (pgTAP) | 258 assertions in 19 files, all passing; SQL lint clean |
+| End to end (Playwright) | 118 passed at 390 px and 1440 px, none skipped, stable across repeated full runs, also against a production build in CI mode |
 | Lint, typecheck, copy guard | Clean |
 | CI on GitHub | Green: lint and unit, database, end to end against a production build |
 | Staging (hosted) | Security Advisor: 0 errors, 6 expected warnings (D-051). Every public table has row-level security. The sign-out guard (D-041) is active on the authenticator role. Health check and sign-in page verified |
 
 ## In progress
 
-- M1-15: the coverage editor, adding and excluding postcode districts.
+- M1-16: pickup points, stored per learner.
 
 ## Next
 
-- M1-15 and M1-16: coverage districts and pickup points. Then the diary, M1-17 onwards.
+- M1-16, then the diary: working hours and exceptions, booking rules, and the day, week and month views.
 - The seven M1 migrations are applied locally only. They go to staging with the next staging push.
 
 ## Blockers

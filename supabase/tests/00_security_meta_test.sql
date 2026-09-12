@@ -39,10 +39,13 @@ select is_empty(
 );
 
 -- Public RPCs are granted one by one. Add a function here only with a reason.
+--   covers_postcode: a learner asks "do you teach where I live?" before they have an account,
+--   and the answer is a yes or no about an area that is public on the instructor's profile
+--   anyway (COV-01, COV-02).
 select is_empty(
   $$ select distinct routine_name from information_schema.routine_privileges
       where routine_schema = 'public' and grantee in ('PUBLIC', 'anon')
-        and routine_name not in ('__allowlist_placeholder__') $$,
+        and routine_name not in ('covers_postcode') $$,
   'no public function is executable by anon unless allowlisted'
 );
 
