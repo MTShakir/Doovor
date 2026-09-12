@@ -2,6 +2,7 @@
 
 import { parsePostgresError } from '@repo/core/errors';
 import { err, ok, type Result } from '@repo/core/result';
+import { businessBookingRulesSchema, instructorBookingRulesSchema } from '@repo/core/booking-rules';
 import { availabilityExceptionSchema, workingWeekSchema } from '@repo/core/schemas/availability';
 import { localToUtc } from '@repo/core/time';
 import { revalidatePath } from 'next/cache';
@@ -81,6 +82,51 @@ export async function saveException(input: unknown): Promise<Result<null>> {
     p_reason: reason === '' ? undefined : reason,
   });
   if (error) return err(parsePostgresError(error).code);
+
+  revalidatePath('/app/instructor/settings');
+  return ok(null);
+}
+
+/** PRD 11.1: the settings a Business owns. Ranges are checked here and in the database. */
+export async function saveBookingRules(input: unknown): Promise<Result<null>> {
+  const parsed = businessBookingRulesSchema.safeParse(input);
+  if (!parsed.success) return err('VALIDATION_FAILED', undefined, fieldErrors(parsed.error));
+
+  const { access } = await requirePortal('instructor');
+  const membership = access.memberships.find((m) => m.instructorProfileId !== null);
+  if (!membership) return err('NOT_ALLOWED');
+
+  const supabase = await createSupabaseServerClient();
+  const { error } = await supabase.rpc('set_booking_rules', {
+    p_business_id: membership.businessId,
+    p_rules: {
+      notice_hours: parsed.data.noticeHours,
+      horizon_weeks: parsed.data.horizonWeeks,
+      cancellation_window_hours: parsed.data.cancellationWindowHours,
+      late_fee_percent: parsed.data.lateFeePercent,
+      request_expiry_hours: parsed.data.requestExpiryHours,
+    },
+  });
+  if (error) return err(parsePostgresError(error).code);
+
+  revalidatePath('/app/instructor/settings');
+  return ok(null);
+}
+
+/** PRD 11.1, BOK-06: the two an instructor owns for their own diary. */
+export async function saveInstructorRules(input: unknown): Promise<Result<null>> {
+  const parsed = instructorBookingRulesSchema.safeParse(input);
+  if (!parsed.success) return err('VALIDATION_FAILED', undefined, fieldErrors(parsed.error));
+
+  const profileId = await instructorId();
+  if (!profileId) return err('NOT_ALLOWED');
+
+  const supabase = await createSupabaseServerClient();
+  const { error } = await supabase
+    .from('instructor_profiles')
+    .update({ buffer_minutes: parsed.data.bufferMinutes, instant_book: parsed.data.instantBook })
+    .eq('id', profileId);
+  if (error) return err('UNKNOWN', 'We could not save those settings. Try again.');
 
   revalidatePath('/app/instructor/settings');
   return ok(null);

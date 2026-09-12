@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import { resolveBookingRules } from '@repo/core/booking-rules';
 import { defaultWorkingHours } from '@repo/core/schemas/onboarding';
 import { formatDate, formatTime, todayInZone } from '@repo/core/time';
 import { PageHeader } from '@repo/ui/app-shell';
@@ -8,6 +9,7 @@ import { connection } from 'next/server';
 import { Suspense } from 'react';
 import { requirePortal } from '@/lib/auth/session';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
+import { BookingRulesForm } from './booking-rules';
 import { Exceptions, type ExceptionRow } from './exceptions';
 import { WorkingWeek, type WorkingDayValue } from './working-week';
 
@@ -26,6 +28,10 @@ export default function InstructorSettingsPage() {
   );
 }
 
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null && !Array.isArray(value);
+}
+
 async function Availability() {
   // Upcoming exceptions are relative to now, which a prerendered shell cannot know.
   await connection();
@@ -34,7 +40,8 @@ async function Availability() {
   if (!membership?.instructorProfileId) return null;
 
   const supabase = await createSupabaseServerClient();
-  const [{ data: hours }, { data: exceptions }] = await Promise.all([
+  const [{ data: hours }, { data: exceptions }, { data: profile }, { data: business }, { data: platform }] =
+    await Promise.all([
     supabase
       .from('working_hours')
       .select('weekday, start_time, end_time')
@@ -47,6 +54,13 @@ async function Availability() {
       .gte('ends_at', new Date().toISOString())
       .order('starts_at')
       .limit(20),
+    supabase
+      .from('instructor_profiles')
+      .select('buffer_minutes, instant_book')
+      .eq('id', membership.instructorProfileId)
+      .single(),
+    supabase.from('businesses').select('settings').eq('id', membership.businessId).single(),
+    supabase.from('platform_settings').select('value').eq('key', 'booking_defaults').maybeSingle(),
   ]);
 
   const saved = new Map((hours ?? []).map((row) => [row.weekday, row]));
@@ -72,6 +86,14 @@ async function Availability() {
     };
   });
 
+  const rules = resolveBookingRules(
+    isRecord(platform?.value) ? platform.value : null,
+    isRecord(business?.settings) ? business.settings : null,
+    profile ? { bufferMinutes: profile.buffer_minutes, instantBook: profile.instant_book } : null,
+  );
+  // A school sets the rules for everyone who teaches for it (SCH-04).
+  const canSetBusinessRules = membership.role === 'owner' || membership.role === 'manager';
+
   return (
     <>
       <Card className="flex flex-col gap-4">
@@ -87,6 +109,13 @@ async function Availability() {
           <CardDescription>One-off changes to the week above.</CardDescription>
         </div>
         <Exceptions rows={rows} today={todayInZone()} />
+      </Card>
+      <Card className="flex flex-col gap-4">
+        <div className="flex flex-col gap-1">
+          <CardTitle>Booking rules</CardTitle>
+          <CardDescription>What a learner can book, and how much notice you need.</CardDescription>
+        </div>
+        <BookingRulesForm rules={rules} canSetBusinessRules={canSetBusinessRules} />
       </Card>
     </>
   );

@@ -18,7 +18,8 @@
     "./schemas/profile": "./src/schemas/profile.ts",
     "./badge-expiry": "./src/badge-expiry.ts",
     "./schemas/pickup": "./src/schemas/pickup.ts",
-    "./schemas/availability": "./src/schemas/availability.ts"
+    "./schemas/availability": "./src/schemas/availability.ts",
+    "./booking-rules": "./src/booking-rules.ts"
   },
   "scripts": {
     "lint": "eslint .",

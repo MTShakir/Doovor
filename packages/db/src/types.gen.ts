@@ -1437,6 +1437,10 @@ export type Database = {
         }
         Returns: string
       }
+      set_booking_rules: {
+        Args: { p_business_id: string; p_rules: Json }
+        Returns: Json
+      }
       set_onboarding_prices: {
         Args: {
           p_business_id: string
