@@ -1,6 +1,21 @@
-import { expect, test } from '@playwright/test';
+import { expect, test, type Page } from '@playwright/test';
 import { authFile } from '../support/accounts';
 import { expectAccessible, snap, tapUntil } from '../support/helpers';
+
+/** Adds a learner by hand from the list, and waits until they are on it. */
+async function addByHand(page: Page, name: string, number: string): Promise<void> {
+  await tapUntil(
+    page.getByRole('button', { name: 'Add a learner' }),
+    page.getByRole('dialog', { name: 'Add a learner' }),
+  );
+  await page.getByRole('button', { name: 'Add their details' }).click();
+  await expect(page.getByRole('button', { name: 'Add them' })).toBeEnabled();
+  await page.getByLabel('Their name').fill(name);
+  await page.getByLabel('Their mobile number').fill(number);
+  await page.getByRole('button', { name: 'Add them' }).click();
+  await expect(page.getByRole('dialog', { name: 'Add a learner' })).toBeHidden();
+  await expect(page.getByRole('link', { name, exact: true })).toBeVisible();
+}
 
 /** The list an instructor works from (LRN-01, M2-04). */
 test.describe('the learner list (LRN-01, M2-04)', () => {
@@ -49,13 +64,12 @@ test.describe('the learner list (LRN-01, M2-04)', () => {
     // Someone with a test booked is still learning, so they are under Active (D-065).
     await page.getByRole('button', { name: 'Active', exact: true }).click();
     await expect(page).toHaveURL(/\?status=active$/);
-    await expect(page.getByText('3 learners')).toBeVisible();
     await expect(page.getByText('Noah Wilson')).toBeVisible();
     await expect(page.getByText('Chloe Bennett')).toBeHidden();
 
     await page.getByRole('button', { name: 'Passed', exact: true }).click();
-    await expect(page.getByText('1 learner', { exact: true })).toBeVisible();
     await expect(page.getByText('Chloe Bennett')).toBeVisible();
+    await expect(page.getByText('Omar Iqbal')).toBeHidden();
     await snap(page, testInfo, 'instructor-learners-passed');
 
     await page.getByRole('button', { name: 'Waiting', exact: true }).click();
@@ -145,39 +159,43 @@ test.describe('the learner list (LRN-01, M2-04)', () => {
     await expect(notes.locator('li').filter({ hasText: note })).toHaveCount(0);
   });
 
-  // Both widths share one seeded learner, so only one of them moves her about.
+  // The learner it moves about is one it adds itself, so no other test is watching them.
   test('moves a learner through the statuses (LRN-05)', { tag: '@desktop-only' }, async ({ page }, testInfo) => {
+    const name = `Sam ${String(Date.now()).slice(-5)}`;
     await page.goto('/app/instructor/learners');
-    await page.getByRole('link', { name: 'Noah Wilson', exact: true }).click();
-    await expect(page.getByRole('heading', { level: 1, name: 'Noah Wilson' })).toBeVisible();
+    await addByHand(page, name, `07700 7${String(Date.now()).slice(-5)}`);
+    await page.getByRole('link', { name, exact: true }).click();
+    await expect(page.getByRole('heading', { level: 1, name })).toBeVisible();
 
+    // Somebody added by their instructor is already learning, so they start as Active.
     await tapUntil(
-      page.getByRole('button', { name: /Where they are up to: Test booked/ }),
+      page.getByRole('button', { name: /Where they are up to: Active/ }),
       page.getByRole('dialog', { name: 'Where are they up to?' }),
     );
     await expect(page.getByText('Has a practical test coming up')).toBeVisible();
     await expectAccessible(page);
     await snap(page, testInfo, 'learner-status', { fullPage: false });
 
-    await page.getByRole('button', { name: 'Passed Passed their test' }).click();
+    await page.getByRole('button', { name: 'Test booked Has a practical test coming up' }).click();
     await expect(page.getByRole('dialog', { name: 'Where are they up to?' })).toBeHidden();
-    await expect(page.getByRole('button', { name: /Where they are up to: Passed/ })).toBeVisible();
+    await expect(page.getByRole('button', { name: /Where they are up to: Test booked/ })).toBeVisible();
 
-    // The list follows: he is under Passed now, and no longer under Active.
-    await page.goto('/app/instructor/learners?status=passed');
-    await expect(page.getByText('Noah Wilson')).toBeVisible();
+    // The list follows: a test booked still counts as active, and passed does not (D-065).
     await page.goto('/app/instructor/learners?status=active');
-    await expect(page.getByText('Noah Wilson')).toBeHidden();
+    await expect(page.getByRole('link', { name, exact: true })).toBeVisible();
 
-    // Put him back, so the next run finds what it expects.
-    await page.goto('/app/instructor/learners?status=passed');
-    await page.getByRole('link', { name: 'Noah Wilson', exact: true }).click();
+    await page.getByRole('link', { name, exact: true }).click();
     await tapUntil(
-      page.getByRole('button', { name: /Where they are up to: Passed/ }),
+      page.getByRole('button', { name: /Where they are up to: Test booked/ }),
       page.getByRole('dialog', { name: 'Where are they up to?' }),
     );
-    await page.getByRole('button', { name: 'Test booked Has a practical test coming up' }).click();
-    await expect(page.getByRole('button', { name: /Where they are up to: Test booked/ })).toBeVisible();
+    await page.getByRole('button', { name: 'Passed Passed their test' }).click();
+    await expect(page.getByRole('button', { name: /Where they are up to: Passed/ })).toBeVisible();
+
+    await page.goto('/app/instructor/learners?status=active');
+    await expect(page.getByRole('link', { name, exact: true })).toBeHidden();
+    await page.goto('/app/instructor/learners?status=passed');
+    await expect(page.getByRole('link', { name, exact: true })).toBeVisible();
   });
 
   test('somebody else’s learner is not there to read', async ({ page }) => {

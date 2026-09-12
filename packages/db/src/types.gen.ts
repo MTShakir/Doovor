@@ -1502,6 +1502,17 @@ export type Database = {
     }
     Functions: {
       accept_invitation: { Args: { p_token: string }; Returns: string }
+      add_learner: {
+        Args: {
+          p_instructor_id: string
+          p_learner_id: string
+          p_postcode?: string
+          p_source?: string
+          p_transmission?: string
+          p_usual_minutes?: number
+        }
+        Returns: string
+      }
       cache_postcode: {
         Args: {
           p_country?: string

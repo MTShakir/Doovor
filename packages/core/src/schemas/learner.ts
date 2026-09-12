@@ -10,7 +10,7 @@ import { isAtLeast, leastLearnerAge } from '../age.ts';
 import { isPostcode, normalisePostcode } from '../postcode.ts';
 import { isValidLocalDate } from '../time/calendar.ts';
 import { todayInZone } from '../time/zone.ts';
-import { fullNameSchema } from './auth.ts';
+import { emailSchema, fullNameSchema, ukMobileSchema } from './auth.ts';
 
 export const learnerTransmissions = [
   { value: 'manual', label: 'Manual' },
@@ -49,3 +49,31 @@ export const learnerOnboardingSchema = z.object({
 });
 
 export type LearnerOnboarding = z.infer<typeof learnerOnboardingSchema>;
+
+/**
+ * A learner an instructor adds themselves, who has not signed up (LRN-03, M2-08).
+ *
+ * One way of reaching them is required, because that is how they claim the account later,
+ * and it is what the duplicate check compares.
+ */
+export const manualLearnerSchema = z
+  .object({
+    fullName: fullNameSchema,
+    email: z.union([z.literal('').transform(() => null), emailSchema]),
+    phone: z.union([z.literal('').transform(() => null), ukMobileSchema]),
+    postcode: z.union([
+      z.literal('').transform(() => null),
+      z
+        .string()
+        .trim()
+        .refine(isPostcode, { error: 'Enter a UK postcode like LS1 4DY' })
+        .transform((value) => normalisePostcode(value) ?? value),
+    ]),
+    transmission: z.union([z.literal('').transform(() => null), z.enum(['manual', 'automatic'])]),
+  })
+  // No path: it is not one field that is wrong, it is that neither was filled in.
+  .refine((value) => value.email !== null || value.phone !== null, {
+    error: 'Add an email address or a mobile number, so they can claim their account later',
+  });
+
+export type ManualLearner = z.infer<typeof manualLearnerSchema>;

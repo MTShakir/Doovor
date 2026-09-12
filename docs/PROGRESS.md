@@ -25,6 +25,8 @@ M2 Learners and bookings has started on branch `m2-learners-bookings`. An instru
 
 | M2-07 | Learner status workflow: the six statuses, changed from the card in one tap, through an RPC that checks the permission and records the move | LRN-05 | Done. Nobody holds an update grant on the relationship, so the RPC is the only way a status changes, and every change is in the audit log |
 
+| M2-08 | Add a learner by hand: one sheet offering a link or their details, an account they claim later (D-068), and the duplicate check LRN-03 asks for | LRN-03 | Done. The same number twice is caught before a second account is made, and a contact that already has an account is sent to the invite link instead |
+
 ## M1 progress
 
 | Task | What | PRD | State |
@@ -91,7 +93,7 @@ Decisions D-036 to D-050 were logged during this stretch. Two were security fixe
 
 ## In progress
 
-- M2-08: adding a learner by hand, with the duplicate check LRN-03 asks for.
+- M2-09: CSV import, which reuses the account and the link that M2-08 built.
 
 ## Next
 

@@ -23,9 +23,10 @@ async function inviteLink(browser: Browser, learner: { fullName: string; email: 
 /** The form lives in a sheet, and the form itself waits for hydration before it is typed in. */
 async function openInviteSheet(page: Page): Promise<void> {
   await tapUntil(
-    page.getByRole('button', { name: 'Invite a learner' }),
-    page.getByRole('dialog', { name: 'Invite a learner' }),
+    page.getByRole('button', { name: 'Add a learner' }),
+    page.getByRole('dialog', { name: 'Add a learner' }),
   );
+  await page.getByRole('button', { name: 'Send them a link' }).click();
   await expect(page.getByRole('button', { name: 'Make the link' })).toBeEnabled();
 }
 

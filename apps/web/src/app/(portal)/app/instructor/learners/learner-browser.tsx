@@ -11,6 +11,7 @@ import type { Route } from 'next';
 import { useRouter } from 'next/navigation';
 import { useEffect, useRef, useState, useTransition, type ReactNode } from 'react';
 import { InviteForm } from './invite-form';
+import { ManualLearnerForm } from './manual-form';
 
 export interface LearnerBrowserProps {
   search: string;
@@ -31,7 +32,9 @@ export function LearnerBrowser({ search, filter, total, children }: LearnerBrows
   // would otherwise build the second address from the state before the first.
   const [term, setTerm] = useState(search);
   const [chosen, setChosen] = useState(filter);
-  const [inviting, setInviting] = useState(false);
+  const [adding, setAdding] = useState(false);
+  // Two ways in, both on one screen: a link they accept, or their details typed in (LRN-03).
+  const [way, setWay] = useState<'link' | 'details'>('link');
   const typing = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => () => { if (typing.current) clearTimeout(typing.current); }, []);
@@ -65,9 +68,9 @@ export function LearnerBrowser({ search, filter, total, children }: LearnerBrows
             onChange={(event) => { onSearch(event.target.value); }}
           />
         </Field>
-        <Button width="responsive" onClick={() => { setInviting(true); }}>
+        <Button width="responsive" onClick={() => { setAdding(true); }}>
           <UserPlus className="size-5" aria-hidden />
-          Invite a learner
+          Add a learner
         </Button>
       </div>
 
@@ -92,12 +95,22 @@ export function LearnerBrowser({ search, filter, total, children }: LearnerBrows
       </div>
 
       <Sheet
-        open={inviting}
-        onOpenChange={setInviting}
-        title="Invite a learner"
-        description="Send them a link. They sign up on their phone and land already linked to you."
+        open={adding}
+        onOpenChange={setAdding}
+        title="Add a learner"
+        description="Send them a link, or put in what you already know about them."
       >
-        <InviteForm />
+        <div className="flex flex-col gap-4">
+          <ChipGroup role="group" aria-label="How to add them">
+            <Chip selected={way === 'link'} onClick={() => { setWay('link'); }}>
+              Send them a link
+            </Chip>
+            <Chip selected={way === 'details'} onClick={() => { setWay('details'); }}>
+              Add their details
+            </Chip>
+          </ChipGroup>
+          {way === 'link' ? <InviteForm /> : <ManualLearnerForm onAdded={() => { setAdding(false); }} />}
+        </div>
       </Sheet>
     </div>
   );
