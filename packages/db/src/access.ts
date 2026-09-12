@@ -15,6 +15,8 @@ export interface AccessContext {
   userId: string;
   staffRole: PlatformRole | null;
   isLearner: boolean;
+  /** A learner who has answered the onboarding questions (AUTH-06). False for everyone else. */
+  learnerOnboarded: boolean;
   memberships: AccessMembership[];
 }
 
@@ -41,7 +43,7 @@ export async function getAccessContext(client: DbClient, userId: string): Promis
       .select('business_id, role, businesses!inner(name, type, status)')
       .eq('user_id', userId)
       .eq('status', 'active'),
-    client.from('learner_profiles').select('user_id').eq('user_id', userId).maybeSingle(),
+    client.from('learner_profiles').select('user_id, transmission').eq('user_id', userId).maybeSingle(),
     client
       .from('instructor_profiles')
       .select('id, business_id, onboarding_step, onboarding_completed_at')
@@ -58,6 +60,8 @@ export async function getAccessContext(client: DbClient, userId: string): Promis
     userId,
     staffRole: staff.data?.role ?? null,
     isLearner: learner.data !== null,
+    // The row is created at sign-up; the answers are what say they have been through it.
+    learnerOnboarded: typeof learner.data?.transmission === 'string',
     memberships: (memberships.data ?? [])
       .filter((m) => m.businesses.status !== 'suspended')
       .map((m) => ({

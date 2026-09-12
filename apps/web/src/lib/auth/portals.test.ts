@@ -1,9 +1,17 @@
 import type { AccessContext, AccessMembership } from '@repo/db';
 import { describe, expect, it } from 'vitest';
-import { availablePortals, canUsePortal, landingPath, needsOnboarding, requiresMfa, safeNextPath } from './portals';
+import {
+  availablePortals,
+  canUsePortal,
+  landingPath,
+  needsLearnerOnboarding,
+  needsOnboarding,
+  requiresMfa,
+  safeNextPath,
+} from './portals';
 
 function context(overrides: Partial<AccessContext> = {}): AccessContext {
-  return { userId: 'u1', staffRole: null, isLearner: false, memberships: [], ...overrides };
+  return { userId: 'u1', staffRole: null, isLearner: false, learnerOnboarded: true, memberships: [], ...overrides };
 }
 
 function membership(overrides: Partial<AccessMembership>): AccessMembership {
@@ -104,5 +112,25 @@ describe('onboarding (AUTH-04)', () => {
 
   it('does not apply to people who are not instructors', () => {
     expect(needsOnboarding(context({ isLearner: true }))).toBe(false);
+  });
+
+  it('asks a new learner the questions before their own portal (AUTH-06)', () => {
+    const fresh = context({ isLearner: true, learnerOnboarded: false });
+    expect(needsLearnerOnboarding(fresh)).toBe(true);
+    expect(landingPath(fresh)).toBe('/onboarding/about-you');
+  });
+
+  it('leaves a learner who has answered them alone', () => {
+    expect(needsLearnerOnboarding(context({ isLearner: true }))).toBe(false);
+    expect(landingPath(context({ isLearner: true }))).toBe('/app/learner');
+  });
+
+  it('does not ask an instructor the learner questions', () => {
+    const both = context({
+      isLearner: true,
+      learnerOnboarded: false,
+      memberships: [membership({ instructorProfileId: 'p1', onboarding: { step: 5, completed: true } })],
+    });
+    expect(landingPath(both)).toBe('/app/instructor');
   });
 });

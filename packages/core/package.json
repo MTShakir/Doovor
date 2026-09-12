@@ -20,7 +20,9 @@
     "./schemas/pickup": "./src/schemas/pickup.ts",
     "./schemas/availability": "./src/schemas/availability.ts",
     "./booking-rules": "./src/booking-rules.ts",
-    "./diary": "./src/diary.ts"
+    "./diary": "./src/diary.ts",
+    "./age": "./src/age.ts",
+    "./schemas/learner": "./src/schemas/learner.ts"
   },
   "scripts": {
     "lint": "eslint .",
