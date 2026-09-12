@@ -6,7 +6,9 @@ Last updated: 12 September 2026
 
 M0 Foundation is approved, merged to `main` and live: the app runs on the brand domain against the hosted Supabase project, with CI green on every push. The milestone report is at https://claude.ai/code/artifact/7b3956cb-d283-46c8-b3fa-a48ac2694c2e
 
-M1 Instructor core is complete on branch `m1-instructor-core`, all 24 tasks, and is waiting for approval. The milestone report is at https://claude.ai/code/artifact/92224816-1b7a-4eef-bd86-0ab470cb16ae An instructor signs up, is set up in five minutes, is verified by a person, and has a diary that keeps itself up to date.
+M1 Instructor core is approved and merged to `main`, all 24 tasks, with its fifteen migrations applied to staging. The milestone report is at https://claude.ai/code/artifact/92224816-1b7a-4eef-bd86-0ab470cb16ae
+
+M2 Learners and bookings has started on branch `m2-learners-bookings`. An instructor signs up, is set up in five minutes, is verified by a person, and has a diary that keeps itself up to date.
 
 ## M1 progress
 
@@ -70,15 +72,15 @@ Decisions D-036 to D-050 were logged during this stretch. Two were security fixe
 | End to end (Playwright) | 147 passed at 390 px and 1440 px, none skipped, stable across repeated full runs, and against a production build with the CI settings |
 | Lint, typecheck, copy guard | Clean |
 | CI on GitHub | Green: lint and unit, database, end to end against a production build |
-| Staging (hosted) | Security Advisor: 0 errors, 6 expected warnings (D-051). Every public table has row-level security. The sign-out guard (D-041) is active on the authenticator role. Health check and sign-in page verified |
+| Staging (hosted) | All 23 migrations applied. Security Advisor: 0 errors, 17 warnings, 16 of them the expected `security definer` pattern (D-051) and one a dashboard switch for leaked password protection, now in the runbook |
 
 ## In progress
 
-- Nothing. Waiting for approval of M1.
+- M2-01: the first task of Learners and bookings.
 
 ## Next
 
-- On approval: merge `m1-instructor-core` into `main`, push the fifteen M1 migrations to staging, and start M2.
+- M2: learners, invites, the booking rules in code, and the booking flows themselves.
 - The seven M1 migrations are applied locally only. They go to staging with the next staging push.
 
 ## Blockers
@@ -88,3 +90,4 @@ Decisions D-036 to D-050 were logged during this stretch. Two were security fixe
 | Google OAuth client secret | The Google button, which stays hidden until it is set | Product owner |
 | Twilio account off trial | Text codes to a number that is not pre-registered, on staging | Product owner |
 | Mapbox access token | The real map on the coverage step. The drawn fallback ships meanwhile (D-058) | Product owner |
+| Leaked password protection | One dashboard switch on staging, found by the M1 security advisor. RUNBOOK 3.1 step 4 | Product owner |

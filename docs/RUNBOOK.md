@@ -42,7 +42,8 @@ Do these once, in order. Items marked **You** need the product owner's accounts.
    pnpm supabase db push
    ```
 3. Check the session sign-out guard is active (D-041): in the SQL editor, `select rolconfig from pg_roles where rolname = 'authenticator';` must include `pgrst.db_pre_request=private.check_request`.
-4. **You:** put the provider secrets in `.env.local` (never in git or chat), plus a Supabase access token for the command line:
+4. **You:** turn on leaked password protection: Authentication > Sign In / Providers > Password > "Prevent use of leaked passwords". Supabase checks a new password against HaveIBeenPwned without ever sending it. The CLI has no config key for it, so it cannot live in `ops/staging/supabase/config.toml` with the rest (M1 security advisor).
+5. **You:** put the provider secrets in `.env.local` (never in git or chat), plus a Supabase access token for the command line:
    ```
    SUPABASE_ACCESS_TOKEN=          # Supabase dashboard > Account > Access Tokens
    RESEND_API_KEY=                 # section 3.2, also the SMTP password
@@ -52,16 +53,16 @@ Do these once, in order. Items marked **You** need the product owner's accounts.
    SUPABASE_AUTH_EXTERNAL_GOOGLE_CLIENT_ID=    # section 3.4
    SUPABASE_AUTH_EXTERNAL_GOOGLE_SECRET=
    ```
-5. Apply the hosted auth settings, which live in `ops/staging/supabase/config.toml` and cover the site and redirect URLs, rate limits, email templates, the Resend sender, Twilio, two-step verification and Google:
+6. Apply the hosted auth settings, which live in `ops/staging/supabase/config.toml` and cover the site and redirect URLs, rate limits, email templates, the Resend sender, Twilio, two-step verification and Google:
    ```bash
    pnpm supabase config diff --workdir ops/staging --project-ref yvxuarrrvgnfcjfyqfyi
    pnpm supabase config push --workdir ops/staging --project-ref yvxuarrrvgnfcjfyqfyi
    ```
    That file is deliberately separate from `supabase/config.toml`: the local one carries the test phone numbers, which must never reach a hosted project. Read the diff before pushing, because a push answers its own prompts and can overwrite a hosted setting. The push refuses to run while any provider secret in step 4 is unset, since it would otherwise store placeholder text or an empty password.
-6. **You:** Project Settings > API Keys: copy the publishable key and a secret key for Vercel (section 3.5).
-7. Check the site is reachable at the site URL once Vercel is connected, then sign in once to confirm emails arrive.
-8. **You:** optional: under Authentication > Rate Limits, confirm the pushed values look right for your usage.
-9. Optional demo data, with its own password so public accounts never use the documented one. Every target must point at the staging project, because the seed writes through both the API and the database:
+7. **You:** Project Settings > API Keys: copy the publishable key and a secret key for Vercel (section 3.5).
+8. Check the site is reachable at the site URL once Vercel is connected, then sign in once to confirm emails arrive.
+9. **You:** optional: under Authentication > Rate Limits, confirm the pushed values look right for your usage.
+10. Optional demo data, with its own password so public accounts never use the documented one. Every target must point at the staging project, because the seed writes through both the API and the database:
    ```bash
    NEXT_PUBLIC_SUPABASE_URL='https://yvxuarrrvgnfcjfyqfyi.supabase.co' \
    NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY='<publishable key>' \

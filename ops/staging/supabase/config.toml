@@ -20,6 +20,8 @@ enable_signup = true
 enable_anonymous_sign_ins = false
 enable_manual_linking = false
 minimum_password_length = 8
+# Refusing passwords that appear in known breaches is a hosted setting the CLI has no key
+# for, so it is a switch in the dashboard rather than a line here (RUNBOOK 3.4).
 
 # Supabase's own defaults, not the generous local ones. Text codes stay tight: a public code
 # endpoint attracts SMS pumping fraud.
