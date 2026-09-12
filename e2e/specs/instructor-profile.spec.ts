@@ -53,3 +53,16 @@ test.describe('instructor profile (INS-01, M1-11)', () => {
     await expect(page.getByText('Profile saved')).toBeHidden();
   });
 });
+
+test.describe('trainee instructors (INS-04, R-18, M1-14)', () => {
+  test.use({ storageState: authFile('trainee') });
+
+  test('a trainee is told they need a supervisor before they can take bookings', async ({ page }, testInfo) => {
+    await page.goto('/app/instructor/profile');
+
+    // The seeded trainee teaches for a school, which supervises her.
+    await expect(page.getByRole('heading', { name: 'Trainee instructor' })).toBeVisible();
+    await expect(page.getByText('A school is supervising you, so you can take bookings.')).toBeVisible();
+    await snap(page, testInfo, 'instructor-profile-trainee');
+  });
+});

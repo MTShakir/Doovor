@@ -6,6 +6,7 @@ import { Card, CardDescription, CardTitle } from '@repo/ui/card';
 import { SkeletonRow } from '@repo/ui/skeleton';
 import { StatusPill } from '@repo/ui/status-pill';
 import { Suspense } from 'react';
+import { FormAlert } from '@/components/form-alert';
 import { requirePortal } from '@/lib/auth/session';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
 import { ProfileForm } from './profile-form';
@@ -33,6 +34,18 @@ function verification(status: string) {
   return { pill: 'unpaid' as const, label: 'Not sent yet', copy: 'Send your badge for checking to get the blue tick.' };
 }
 
+/** R-18: a trainee teaches only under a school or an approved instructor (INS-04). */
+function Supervision({ supervised }: { supervised: boolean }) {
+  return supervised ? (
+    <CardDescription>A school is supervising you, so you can take bookings.</CardDescription>
+  ) : (
+    <FormAlert>
+      You need a supervising school or approved instructor before you can take bookings. Ask the school you teach for
+      to add you, or get in touch and we will help.
+    </FormAlert>
+  );
+}
+
 async function Profile() {
   const { access } = await requirePortal('instructor');
   const membership = access.memberships.find((m) => m.instructorProfileId !== null);
@@ -42,13 +55,14 @@ async function Profile() {
   const { data: profile } = await supabase
     .from('instructor_profiles')
     .select(
-      'display_name, bio, photo_path, languages, years_teaching, transmission, car_make, car_model, dual_controls, specialisms, qualification, badge_number, badge_expiry, verification_status',
+      'display_name, bio, photo_path, languages, years_teaching, transmission, car_make, car_model, dual_controls, specialisms, qualification, badge_number, badge_expiry, verification_status, supervisor_business_id, supervisor_instructor_id',
     )
     .eq('id', membership.instructorProfileId)
     .single();
   if (!profile) return null;
 
   const badge = verification(profile.verification_status);
+  const supervised = profile.supervisor_business_id !== null || profile.supervisor_instructor_id !== null;
 
   return (
     <>
@@ -64,6 +78,7 @@ async function Profile() {
             {profile.badge_expiry ? `, expires ${formatCalendarDate(profile.badge_expiry)}` : ''}
           </CardDescription>
         ) : null}
+        {profile.qualification === 'pdi' ? <Supervision supervised={supervised} /> : null}
       </Card>
       <ProfileForm
         profileId={membership.instructorProfileId}

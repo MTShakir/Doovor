@@ -1399,6 +1399,10 @@ export type Database = {
         }
         Returns: string
       }
+      set_supervisor: {
+        Args: { p_instructor_id: string; p_supervised: boolean }
+        Returns: boolean
+      }
       set_working_hours: {
         Args: {
           p_end_time: string
