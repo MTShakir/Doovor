@@ -1,5 +1,5 @@
 import { gapsBetween, teachingMinutes } from '@repo/core/diary';
-import { formatTime } from '@repo/core/time';
+import { formatMinutes, formatTime } from '@repo/core/time';
 import { EmptyState } from '@repo/ui/empty-state';
 import { CalendarX } from 'lucide-react';
 import type { DiaryEntry } from '@/lib/diary/lessons';
@@ -7,12 +7,7 @@ import { LessonRow } from './lesson-row';
 
 /** How much of the day is taught, in the words a person would use. */
 export function hoursTaught(minutes: number): string {
-  if (minutes === 0) return 'Nothing booked';
-  const hours = Math.floor(minutes / 60);
-  const rest = minutes % 60;
-  const hourText = hours === 1 ? '1 hour' : `${String(hours)} hours`;
-  if (hours === 0) return `${String(rest)} minutes`;
-  return rest === 0 ? hourText : `${hourText} ${String(rest)} minutes`;
+  return minutes === 0 ? 'Nothing booked' : formatMinutes(minutes);
 }
 
 export interface DayViewProps {

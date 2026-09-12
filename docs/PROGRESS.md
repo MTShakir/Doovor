@@ -19,6 +19,8 @@ M2 Learners and bookings has started on branch `m2-learners-bookings`. An instru
 | M2-03 | Invitations: a hashed one-use token, shared by WhatsApp, text or email, a landing page that names the instructor, sign-up already filled in, and the link accepted once the account exists | AUTH-07 | Done. Only the hash is stored, so a copy of the table is not a set of working invitations |
 | M2-04 | Learner list: search by name or number, the four filters LRN-01 names over the six statuses, and calling or texting in one tap | LRN-01 | Done. One view answers the list, so forty learners is still one query. Booking from the row arrives with the booking sheet (M2-16) |
 
+| M2-05 | Learner card: contact and the three ways to reach them, lessons taken, hours driven, next and last lesson, and their pickup points | LRN-02, COV-04 | Done in one query, through a view on the list view. Notes arrive with M2-06, the balance with payments (M3), and the test date with TST-01, which the PRD puts in Phase 2 |
+
 ## M1 progress
 
 | Task | What | PRD | State |
@@ -85,7 +87,7 @@ Decisions D-036 to D-050 were logged during this stretch. Two were security fixe
 
 ## In progress
 
-- M2-05: the learner card, which the list rows will open.
+- M2-06: private notes, the last thing LRN-02 asks the card to show.
 
 ## Next
 

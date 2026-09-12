@@ -80,6 +80,40 @@ test.describe('the learner list (LRN-01, M2-04)', () => {
     await expect(page.getByRole('link', { name: 'Text Jack Taylor' })).toHaveAttribute('href', 'sms:+447700900011');
   });
 
+  test('opens the card behind a name (LRN-02)', async ({ page }, testInfo) => {
+    await page.goto('/app/instructor/learners');
+    await page.getByRole('link', { name: 'Jack Taylor', exact: true }).click();
+
+    await expect(page).toHaveURL(/\/app\/instructor\/learners\/[0-9a-f-]{36}$/);
+    await expect(page.getByRole('heading', { level: 1, name: 'Jack Taylor' })).toBeVisible();
+    await expect(page.getByText('Manual · LS2 9JT')).toBeVisible();
+    await expect(page.getByRole('link', { name: 'Call' })).toHaveAttribute('href', 'tel:+447700900011');
+    await expect(page.getByRole('link', { name: 'Text' })).toHaveAttribute('href', 'sms:+447700900011');
+    await expect(page.getByRole('link', { name: 'Email' })).toHaveAttribute('href', 'mailto:jack.taylor@example.com');
+
+    const lessons = page.getByRole('region', { name: 'Lessons' });
+    await expect(lessons.getByText('Hours driven')).toBeVisible();
+    await expect(lessons.getByText('Usual lesson')).toBeVisible();
+    await expect(lessons.getByText('1 hour', { exact: true })).toBeVisible();
+
+    // COV-04: where to collect them, the usual one first.
+    const pickups = page.getByRole('region', { name: 'Pickup points' });
+    await expect(pickups.getByText('Home')).toBeVisible();
+    await expect(pickups.getByText('Default')).toBeVisible();
+
+    await expectAccessible(page);
+    await snap(page, testInfo, 'learner-card');
+
+    await page.getByRole('main').getByRole('link', { name: 'Learners' }).click();
+    await expect(page.getByRole('heading', { level: 1, name: 'Learners' })).toBeVisible();
+  });
+
+  test('somebody else’s learner is not there to read', async ({ page }) => {
+    await page.goto('/app/instructor/learners/00000000-0000-0000-0000-000000000000');
+
+    await expect(page.getByRole('heading', { name: 'Page not found' })).toBeVisible();
+  });
+
   test('a learner has no business reading this page', async ({ browser }) => {
     const context = await browser.newContext({ storageState: authFile('learner') });
     const page = await context.newPage();

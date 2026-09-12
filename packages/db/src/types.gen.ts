@@ -1402,6 +1402,55 @@ export type Database = {
       }
     }
     Views: {
+      learner_card: {
+        Row: {
+          avatar_url: string | null
+          business_id: string | null
+          created_at: string | null
+          email: string | null
+          full_name: string | null
+          id: string | null
+          instructor_id: string | null
+          instructor_name: string | null
+          last_lesson_at: string | null
+          learner_id: string | null
+          lessons_taken: number | null
+          minutes_taught: number | null
+          next_lesson_at: string | null
+          phone: string | null
+          pickup_points: Json | null
+          postcode: string | null
+          source: Database["public"]["Enums"]["learner_source"] | null
+          status: Database["public"]["Enums"]["learner_status"] | null
+          transmission:
+            | Database["public"]["Enums"]["learner_transmission"]
+            | null
+          usual_duration_minutes: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "learner_relationships_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "businesses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "learner_relationships_instructor_id_business_id_fkey"
+            columns: ["instructor_id", "business_id"]
+            isOneToOne: false
+            referencedRelation: "instructor_profiles"
+            referencedColumns: ["id", "business_id"]
+          },
+          {
+            foreignKeyName: "learner_relationships_learner_id_fkey"
+            columns: ["learner_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       learner_list: {
         Row: {
           avatar_url: string | null

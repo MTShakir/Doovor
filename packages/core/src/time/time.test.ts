@@ -7,6 +7,7 @@ import {
   formatDate,
   formatDateTime,
   formatDateWithYear,
+  formatMinutes,
   formatTime,
   isoWeekday,
   isValidLocalDate,
@@ -139,5 +140,20 @@ describe('calendar dates with no instant behind them (PRD 7.6)', () => {
     // A date read as an instant at midnight would slip to the day before, west of Greenwich.
     expect(formatCalendarDate('2026-01-01')).toBe('Thu 1 Jan 2026');
     expect(formatCalendarDate('2026-06-30')).toBe('Tue 30 Jun 2026');
+  });
+});
+
+describe('formatMinutes', () => {
+  it('says a length of time the way a person would', () => {
+    expect(formatMinutes(0)).toBe('0 minutes');
+    expect(formatMinutes(1)).toBe('1 minute');
+    expect(formatMinutes(45)).toBe('45 minutes');
+    expect(formatMinutes(60)).toBe('1 hour');
+    expect(formatMinutes(90)).toBe('1 hour 30 minutes');
+    expect(formatMinutes(750)).toBe('12 hours 30 minutes');
+  });
+
+  it('never counts backwards', () => {
+    expect(formatMinutes(-30)).toBe('0 minutes');
   });
 });
