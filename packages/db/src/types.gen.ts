@@ -1358,6 +1358,14 @@ export type Database = {
       }
       request_account_deletion: { Args: { p_reason?: string }; Returns: string }
       revoke_my_session: { Args: { p_session_id: string }; Returns: boolean }
+      set_onboarding_prices: {
+        Args: {
+          p_business_id: string
+          p_hourly_price_pence: number
+          p_package_price_pence?: number
+        }
+        Returns: string
+      }
       submit_verification: {
         Args: {
           p_badge_expiry: string

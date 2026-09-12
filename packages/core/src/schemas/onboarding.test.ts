@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { onboardingAreaSchema, onboardingBadgeSchema } from './onboarding.ts';
+import { onboardingAreaSchema, onboardingBadgeSchema, onboardingPricesSchema } from './onboarding.ts';
 
 const valid = {
   qualification: 'adi' as const,
@@ -81,5 +81,33 @@ describe('area step (COV-01, M1-07)', () => {
     const result = onboardingAreaSchema.safeParse({ postcode: 'Leeds', radiusMiles: 8 });
     expect(result.success).toBe(false);
     expect(result.error?.issues[0]?.message).toBe('Enter a UK postcode like LS1 4DY');
+  });
+});
+
+describe('prices step (R-05, PAY-04, M1-08)', () => {
+  it('takes pounds and stores pence', () => {
+    expect(onboardingPricesSchema.parse({ hourlyPrice: '42', packagePrice: '380' })).toEqual({
+      hourlyPrice: 4200,
+      packagePrice: 38000,
+    });
+    expect(onboardingPricesSchema.parse({ hourlyPrice: '£42.50', packagePrice: '' }).hourlyPrice).toBe(4250);
+  });
+
+  it('treats an empty package as no package, because it is optional', () => {
+    expect(onboardingPricesSchema.parse({ hourlyPrice: '42', packagePrice: '' }).packagePrice).toBeNull();
+  });
+
+  it('refuses a price that is not a price', () => {
+    for (const hourlyPrice of ['', 'forty two', '42.999', '-42']) {
+      expect(onboardingPricesSchema.safeParse({ hourlyPrice, packagePrice: '' }).success).toBe(false);
+    }
+  });
+
+  it('keeps prices inside a sensible range, and says the range', () => {
+    const result = onboardingPricesSchema.safeParse({ hourlyPrice: '4', packagePrice: '' });
+    expect(result.success).toBe(false);
+    expect(result.error?.issues[0]?.message).toBe('Enter an hourly price between £5 and £500');
+    expect(onboardingPricesSchema.safeParse({ hourlyPrice: '501', packagePrice: '' }).success).toBe(false);
+    expect(onboardingPricesSchema.safeParse({ hourlyPrice: '500', packagePrice: '5000' }).success).toBe(true);
   });
 });

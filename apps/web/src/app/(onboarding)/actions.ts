@@ -3,7 +3,12 @@
 import { parsePostgresError } from '@repo/core/errors';
 import { isProfileObjectPath } from '@repo/core/images';
 import { err, type Result } from '@repo/core/result';
-import { onboardingAreaSchema, onboardingBadgeSchema, onboardingNameSchema } from '@repo/core/schemas/onboarding';
+import {
+  onboardingAreaSchema,
+  onboardingBadgeSchema,
+  onboardingNameSchema,
+  onboardingPricesSchema,
+} from '@repo/core/schemas/onboarding';
 import { getGeoProvider } from '@/lib/geo/provider';
 import { requireOnboarding } from '@/lib/onboarding/session';
 import { nextStep, slugForStep } from '@/lib/onboarding/steps';
@@ -121,6 +126,27 @@ export async function saveArea(input: unknown): Promise<Result<null>> {
     })
     .eq('id', session.profileId);
   if (error) return err('UNKNOWN', 'We could not save your area. Try again.');
+
+  // Saving succeeded, so this redirects and never resolves.
+  return advance(session.profileId, session.step);
+}
+
+/** AUTH-04 step 4, R-05, PAY-04: one hourly price, and ten hours if they sell them that way. */
+export async function savePrices(input: unknown): Promise<Result<null>> {
+  const parsed = onboardingPricesSchema.safeParse(input);
+  if (!parsed.success) return err('VALIDATION_FAILED', undefined, fieldErrors(parsed.error));
+
+  const session = await requireOnboarding();
+  const supabase = await createSupabaseServerClient();
+  const { error } = await supabase.rpc('set_onboarding_prices', {
+    p_business_id: session.businessId,
+    p_hourly_price_pence: parsed.data.hourlyPrice,
+    p_package_price_pence: parsed.data.packagePrice ?? undefined,
+  });
+  if (error) {
+    const { code } = parsePostgresError(error);
+    return err(code === 'UNKNOWN' ? 'UNKNOWN' : code);
+  }
 
   // Saving succeeded, so this redirects and never resolves.
   return advance(session.profileId, session.step);

@@ -6,6 +6,7 @@
  */
 
 import { z } from 'zod';
+import { parsePoundsToPence } from '../money.ts';
 import { isPostcode, normalisePostcode } from '../postcode.ts';
 import { isValidLocalDate } from '../time/calendar.ts';
 import { todayInZone } from '../time/zone.ts';
@@ -74,3 +75,32 @@ export const onboardingAreaSchema = z.object({
 });
 
 export type OnboardingArea = z.infer<typeof onboardingAreaSchema>;
+
+/** Prices are typed in pounds and stored in pence (CLAUDE.md rule 3). */
+function priceInPence(low: number, high: number, error: string) {
+  return z
+    .string()
+    .trim()
+    .transform((value, context) => {
+      const pence = parsePoundsToPence(value);
+      if (pence === null || pence < low || pence > high) {
+        context.addIssue({ code: 'custom', message: error });
+        return z.NEVER;
+      }
+      return pence;
+    });
+}
+
+/** The package the PRD names: ten hours bought in one go (PAY-04). */
+export const packageHours = 10;
+
+/** Step 4: what an hour costs, and what ten hours cost (R-05, PAY-04). */
+export const onboardingPricesSchema = z.object({
+  hourlyPrice: priceInPence(500, 50000, 'Enter an hourly price between £5 and £500'),
+  packagePrice: z.union([
+    z.literal('').transform(() => null),
+    priceInPence(500, 500000, 'Enter a package price between £5 and £5000'),
+  ]),
+});
+
+export type OnboardingPrices = z.infer<typeof onboardingPricesSchema>;

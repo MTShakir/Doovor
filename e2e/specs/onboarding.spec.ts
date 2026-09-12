@@ -44,13 +44,10 @@ test.describe('instructor onboarding (AUTH-04, M1-02)', () => {
     await expect(page).toHaveURL(/\/onboarding\/badge$/);
 
     // A step with its own form is moved past by skipping, not by continuing (AUTH-04).
-    for (const step of ['area', 'prices']) {
+    for (const step of ['area', 'prices', 'hours']) {
       await page.getByRole('button', { name: 'Skip for now' }).click();
       await expect(page).toHaveURL(new RegExp(`/onboarding/${step}$`));
     }
-
-    await page.getByRole('button', { name: 'Continue' }).click();
-    await expect(page).toHaveURL(/\/onboarding\/hours$/);
 
     await page.getByRole('button', { name: 'Continue' }).click();
     await expect(page).toHaveURL(/\/app\/instructor$/);
@@ -216,6 +213,61 @@ test.describe('instructor onboarding (AUTH-04, M1-02)', () => {
 
     await expect(page.getByText('Enter a UK postcode like LS1 4DY')).toBeVisible();
     await expect(page).toHaveURL(/\/onboarding\/area$/);
+  });
+
+  test('turns one price into a lesson type, its prices and a package (M1-08)', async ({ page }, testInfo) => {
+    const email = uniqueEmail(testInfo, 'prices');
+    await chooseRoleAndCreateAccount(
+      page,
+      { card: "I'm an instructor", heading: 'Create your instructor account' },
+      { fullName: 'Nina Newstart', email },
+    );
+    await page.goto(await linkFromEmail(email, 'Confirm your email'));
+    await page.getByRole('link', { name: 'Do this later' }).click();
+    await page.getByLabel('Your name').fill('Nina Newstart');
+    await page.getByRole('button', { name: 'Continue' }).click();
+    for (const step of ['area', 'prices']) {
+      await page.getByRole('button', { name: 'Skip for now' }).click();
+      await expect(page).toHaveURL(new RegExp(`/onboarding/${step}$`));
+    }
+
+    await page.getByLabel('Price for an hour').fill('42');
+    // The hint works out what ten hours would come to at that price.
+    await expect(page.getByText('£420 at your hourly price')).toBeVisible();
+    await page.getByLabel(/Price for 10 hours/).fill('380');
+    await expectAccessible(page);
+    await snap(page, testInfo, 'onboarding-prices');
+
+    await page.getByRole('button', { name: 'Continue' }).click();
+    await expect(page).toHaveURL(/\/onboarding\/hours$/);
+
+    // Definition of done: the rows exist, and they come back when the step is opened again.
+    await page.goto('/onboarding/prices');
+    await expect(page.getByLabel('Price for an hour')).toHaveValue('42');
+    await expect(page.getByLabel(/Price for 10 hours/)).toHaveValue('380');
+  });
+
+  test('will not take a price that is not one (R-05)', async ({ page }, testInfo) => {
+    const email = uniqueEmail(testInfo, 'bad-price');
+    await chooseRoleAndCreateAccount(
+      page,
+      { card: "I'm an instructor", heading: 'Create your instructor account' },
+      { fullName: 'Nina Newstart', email },
+    );
+    await page.goto(await linkFromEmail(email, 'Confirm your email'));
+    await page.getByRole('link', { name: 'Do this later' }).click();
+    await page.getByLabel('Your name').fill('Nina Newstart');
+    await page.getByRole('button', { name: 'Continue' }).click();
+    for (const step of ['area', 'prices']) {
+      await page.getByRole('button', { name: 'Skip for now' }).click();
+      await expect(page).toHaveURL(new RegExp(`/onboarding/${step}$`));
+    }
+
+    await page.getByLabel('Price for an hour').fill('4');
+    await page.getByRole('button', { name: 'Continue' }).click();
+
+    await expect(page.getByText('Enter an hourly price between £5 and £500')).toBeVisible();
+    await expect(page).toHaveURL(/\/onboarding\/prices$/);
   });
 
   test('is only for instructors', async ({ page }, testInfo) => {
