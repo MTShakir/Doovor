@@ -264,3 +264,13 @@ Every decision made without the product owner, newest last. Format: date, decisi
 - **Decision:** The six Security Advisor warnings on the staging project are accepted as they are, with no code change. Four name our own RPCs (`create_business`, `list_my_sessions`, `revoke_my_session`, `request_account_deletion`), which are `security definer` by design: they check the caller with `auth.uid()`, run in one transaction and write audit rows, and `execute` is granted to signed-in users only. The other two name `public.rls_auto_enable`, an event trigger function the platform creates, which enables row-level security on any new table in `public`.
 - **Options:** Rewrite the RPCs as `security invoker` (they would then need direct table grants, which the brief forbids); revoke `execute` on the platform's function.
 - **Reason:** The advisor flags the pattern, not a fault. `rls_auto_enable` returns `event_trigger`, so it cannot be called directly or through the API, and it only adds protection. Our own migrations enable row-level security on every table, and a pgTAP test fails the build if one lacks it. Checked on staging: zero tables without row-level security, and the sign-out guard (D-041) is active on the authenticator role.
+
+## D-052 | 2026-09-12 | The local job runner is fetched when asked for, not installed
+- **Decision:** `pnpm dev:jobs` runs the job runner through `pnpm dlx inngest-cli@1.44.0`. It is not a dependency of the workspace.
+- **Options:** Add `inngest-cli` as a dev dependency, which needs its install script allowed.
+- **Reason:** That package downloads a platform binary from the internet in its install script. As a dependency it would run on every install, including in CI, which neither needs the runner nor should pull binaries at install time (D-025). Fetching it on demand keeps the version pinned and the surface small. The `inngest` library itself is a normal pinned dependency; its transitive `protobufjs` install script is denied, since it only prints warnings.
+
+## D-053 | 2026-09-12 | The shared database client type is structural
+- **Decision:** `DbClient` in `packages/db` is `Pick<SupabaseClient<Database>, 'from' | 'rpc'>` rather than the class type.
+- **Options:** Keep the class type and force one copy of the client library, for example by adding OpenTelemetry to every package that needs alignment.
+- **Reason:** pnpm installs a second copy of the client library when a package brings a different set of its peer dependencies: adding the job runner did exactly that, and the two copies stopped being interchangeable because the class has protected members. Helpers in `packages/db` only need the query entry points, so a structural type accepts either copy and the problem cannot come back.

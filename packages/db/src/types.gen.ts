@@ -946,6 +946,36 @@ export type Database = {
           },
         ]
       }
+      outbox_events: {
+        Row: {
+          attempts: number
+          created_at: string
+          id: string
+          last_error: string | null
+          name: string
+          payload: Json
+          sent_at: string | null
+        }
+        Insert: {
+          attempts?: number
+          created_at?: string
+          id?: string
+          last_error?: string | null
+          name: string
+          payload?: Json
+          sent_at?: string | null
+        }
+        Update: {
+          attempts?: number
+          created_at?: string
+          id?: string
+          last_error?: string | null
+          name?: string
+          payload?: Json
+          sent_at?: string | null
+        }
+        Relationships: []
+      }
       packages: {
         Row: {
           business_id: string
@@ -1302,6 +1332,29 @@ export type Database = {
       }
       request_account_deletion: { Args: { p_reason?: string }; Returns: string }
       revoke_my_session: { Args: { p_session_id: string }; Returns: boolean }
+      system_claim_outbox_events: {
+        Args: { p_limit?: number }
+        Returns: {
+          attempts: number
+          created_at: string
+          id: string
+          last_error: string | null
+          name: string
+          payload: Json
+          sent_at: string | null
+        }[]
+        SetofOptions: {
+          from: "*"
+          to: "outbox_events"
+          isOneToOne: false
+          isSetofReturn: true
+        }
+      }
+      system_mark_outbox_failed: {
+        Args: { p_error: string; p_ids: string[] }
+        Returns: number
+      }
+      system_mark_outbox_sent: { Args: { p_ids: string[] }; Returns: number }
     }
     Enums: {
       booking_payment_mode:

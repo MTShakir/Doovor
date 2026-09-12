@@ -4,9 +4,17 @@ Last updated: 11 September 2026
 
 ## Status
 
-M0 Foundation, branch `m0-foundation`. M0-01 to M0-31 are done and green locally and on GitHub (CI run #5 passed all three jobs). The first four CI runs were red on two fresh-checkout problems, now fixed: lint needed Next's generated route types, and a blank setting value was rejected instead of counting as "not set" (which would also have broken a hosting dashboard with an empty variable). M0-32 is live: the staging database has all 8 migrations, the hosted auth settings were pushed from `ops/staging` (site and redirect URLs, Resend sender, email templates, 6-digit codes, tighter rate limits), the domain is connected (apex serves the app, `www` redirects to it) and the app builds and runs on Vercel in London. Production on the apex waits on merging this branch to `main`, since Vercel builds production from `main`. The M0-33 milestone report is delivered (https://claude.ai/code/artifact/7b3956cb-d283-46c8-b3fa-a48ac2694c2e). Waiting for "Approved, continue".
+M0 Foundation is approved, merged to `main` and live: the app runs on the brand domain against the hosted Supabase project, with CI green on every push. The milestone report is at https://claude.ai/code/artifact/7b3956cb-d283-46c8-b3fa-a48ac2694c2e
 
-## Done
+M1 Instructor core has started on branch `m1-instructor-core`. Goal: an instructor finishes onboarding in under 5 minutes and has a working diary.
+
+## M1 progress
+
+| Task | What | PRD | State |
+|---|---|---|---|
+| M1-01 | Background jobs: runner client, `/api/inngest`, the `outbox_events` table with claim, sent and failed functions, the dispatcher and a one-minute sweep | 14.5 | Done. Verified end to end: an enqueued event was claimed, sent and delivered to a job |
+
+## Done (M0)
 
 | Tasks | What | PRD |
 |---|---|---|
@@ -34,8 +42,8 @@ Decisions D-036 to D-050 were logged during this stretch. Two were security fixe
 
 | Suite | Result |
 |---|---|
-| Unit (Vitest) | 146 passed across 5 packages; `packages/core` line coverage 98.4% |
-| Database (pgTAP) | 142 assertions in 8 files, all passing; SQL lint clean |
+| Unit (Vitest) | 150 passed across 5 packages; `packages/core` line coverage 98.4% |
+| Database (pgTAP) | 154 assertions in 9 files, all passing; SQL lint clean |
 | End to end (Playwright) | 79 passed at 390 px and 1440 px, none skipped, stable across repeated full runs, also against a production build in CI mode |
 | Lint, typecheck, copy guard | Clean |
 | CI on GitHub | Green: lint and unit, database, end to end against a production build |

@@ -19,6 +19,7 @@
     "@repo/ui": "workspace:*",
     "@supabase/ssr": "catalog:",
     "@supabase/supabase-js": "catalog:",
+    "inngest": "^4.20.0",
     "lucide-react": "catalog:",
     "next": "catalog:",
     "react": "catalog:",
