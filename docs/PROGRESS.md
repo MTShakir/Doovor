@@ -31,6 +31,10 @@ M2 Learners and bookings has started on branch `m2-learners-bookings`. An instru
 
 | M2-10 | The school's own learner list, handing a learner to another instructor, and the history that follows them | LRN-06 | Done. The history is read through an RPC, so the people who work with a learner see their story without the audit log being opened to them |
 
+| M2-11 | Availability engine part 1: working hours and exceptions turned into plain UTC windows, including both clock changes | R-04, R-14 | Done. The hour that does not happen in March cannot be booked, and the hour that happens twice in October is counted once |
+| M2-12 | Availability engine part 2: buffers, notice, horizon, step, and the difference between what a learner may book and what an instructor may | R-01, R-04, DIA-05, DIA-06 | Done. Core coverage 97.6% of lines, above the 90% gate |
+| M2-13 | One set of availability vectors, run by Vitest against the TypeScript rules and by pgTAP against the SQL ones | R-04 | Done. 20 vectors, both runners green, and `pnpm db:test` regenerates the SQL from the JSON so they cannot drift |
+
 ## M1 progress
 
 | Task | What | PRD | State |
@@ -97,7 +101,7 @@ Decisions D-036 to D-050 were logged during this stretch. Two were security fixe
 
 ## In progress
 
-- M2-11 to M2-13: the availability engine, which the booking flows are built on.
+- M2-14: `create_booking`, the RPC every booking screen goes through.
 
 ## Next
 

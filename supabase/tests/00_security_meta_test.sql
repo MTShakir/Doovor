@@ -44,10 +44,12 @@ select is_empty(
 --   anyway (COV-01, COV-02).
 --   invitation_details: the page an invitation link opens, read before there is an account.
 --   It answers only for a token someone was actually sent, and says a name (AUTH-07).
+--   slot_problem: the public booking page asks whether a slot can be taken before anybody
+--   signs in, and the answer is about hours the instructor publishes anyway (BOK-02, R-04).
 select is_empty(
   $$ select distinct routine_name from information_schema.routine_privileges
       where routine_schema = 'public' and grantee in ('PUBLIC', 'anon')
-        and routine_name not in ('covers_postcode', 'invitation_details') $$,
+        and routine_name not in ('covers_postcode', 'invitation_details', 'slot_problem') $$,
   'no public function is executable by anon unless allowlisted'
 );
 
