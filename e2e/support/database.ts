@@ -73,3 +73,41 @@ export async function clearDiary(instructorName: string, date: string): Promise<
          and (b.starts_at at time zone 'Europe/London')::date = ${date}::date`;
   });
 }
+
+export interface SeededLesson {
+  startsAt: string;
+  /** The local day and time, as the diary shows them. */
+  date: string;
+  time: string;
+  learnerName: string;
+}
+
+/**
+ * A lesson the seed actually made, found rather than remembered. The seed is anchored to
+ * the day it ran, so a date written into a test goes stale the moment the clock moves on.
+ */
+export async function findLesson(instructorName: string, status: string): Promise<SeededLesson> {
+  return withDatabase(async (sql) => {
+    const rows = await sql<{ starts_at: string; date: string; time: string; learner_name: string }[]>`
+      select b.starts_at,
+             to_char(b.starts_at at time zone 'Europe/London', 'YYYY-MM-DD') as date,
+             to_char(b.starts_at at time zone 'Europe/London', 'HH24:MI') as time,
+             u.full_name as learner_name
+        from public.bookings b
+        join public.instructor_profiles p on p.id = b.instructor_id
+        join public.users u on u.id = b.learner_id
+       where p.display_name = ${instructorName}
+         and b.status = ${status}::public.booking_status
+         and b.starts_at > now()
+       order by b.starts_at
+       limit 1`;
+    const found = rows[0];
+    if (!found) throw new Error(`The seed has no ${status} lesson for ${instructorName}`);
+    return {
+      startsAt: new Date(found.starts_at).toISOString(),
+      date: found.date,
+      time: found.time,
+      learnerName: found.learner_name,
+    };
+  });
+}

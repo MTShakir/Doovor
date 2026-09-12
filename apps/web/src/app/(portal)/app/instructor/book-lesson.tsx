@@ -69,7 +69,9 @@ export function BookLesson({ learners, learnerId, date, label = 'Book a lesson',
       setLessons(result.data);
       const usual = learners.find((one) => one.id === learner)?.usualDurationMinutes;
       const first = result.data.find((one) => one.durationMinutes === usual) ?? result.data[0];
-      if (first) setLessonKey(`${first.lessonTypeId}:${String(first.durationMinutes)}`);
+      // Only if nothing has been chosen while this was on its way: somebody quick off the
+      // mark should not have their choice taken back by an answer that arrives after it.
+      if (first) setLessonKey((current) => (current === '' ? `${first.lessonTypeId}:${String(first.durationMinutes)}` : current));
     });
   }, [open, lessons.length, learner, learners]);
 
@@ -178,7 +180,8 @@ export function BookLesson({ learners, learnerId, date, label = 'Book a lesson',
           </Field>
 
           <Field label="Which day?">
-            <Input type="date" value={day} min={todayInZone()} onChange={(event) => { setDay(event.target.value); }} />
+            {/* The browser owns what is in the box; this only listens (D-043). */}
+            <Input type="date" defaultValue={day} min={todayInZone()} onChange={(event) => { setDay(event.target.value); }} />
           </Field>
 
           {loading || times === null ? (

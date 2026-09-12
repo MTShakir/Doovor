@@ -43,7 +43,7 @@ export async function bookableLessons(): Promise<Result<LessonOption[]>> {
 const bookingSchema = z.object({
   learnerId: z.uuid(),
   lessonTypeId: z.uuid(),
-  startsAt: z.iso.datetime(),
+  startsAt: z.iso.datetime({ offset: true }),
   durationMinutes: z.coerce.number().int().min(15).max(480),
   pickupPointId: z.union([z.literal('').transform(() => null), z.uuid()]).nullable().default(null),
 });

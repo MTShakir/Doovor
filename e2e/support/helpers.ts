@@ -47,6 +47,33 @@ export async function tapUntil(control: Locator, appears: Locator): Promise<void
   }).toPass({ timeout: 15_000 });
 }
 
+/**
+ * Types into a field that a component controls, until the value sticks. A value set before
+ * the page is interactive is overwritten by the first render that follows it (D-043).
+ */
+export async function fillUntil(field: Locator, value: string): Promise<void> {
+  await expect(async () => {
+    await field.fill(value);
+    await expect(field).toHaveValue(value, { timeout: 1000 });
+  }).toPass({ timeout: 15_000 });
+}
+
+/**
+ * Picks a date by typing it, the way somebody with a keyboard does. Playwright's fill sets
+ * the value on the element without the page hearing about it, which is no use for a field a
+ * component is listening to; real keystrokes always are.
+ *
+ * The locale is en-GB throughout the suite, so the boxes are day, month, year.
+ */
+export async function chooseDate(field: Locator, value: string): Promise<void> {
+  const [year, month, day] = value.split('-');
+  await expect(async () => {
+    await field.click();
+    await field.pressSequentially(`${day ?? ''}${month ?? ''}${year ?? ''}`);
+    await expect(field).toHaveValue(value, { timeout: 1000 });
+  }).toPass({ timeout: 15_000 });
+}
+
 /** WCAG 2.2 AA scan. Fails on serious or critical issues (PRD 14.4, M6-06). */
 export async function expectAccessible(page: Page, options: { exclude?: string[] } = {}): Promise<void> {
   await settled(page);

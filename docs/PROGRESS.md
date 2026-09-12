@@ -40,6 +40,8 @@ M2 Learners and bookings has started on branch `m2-learners-bookings`. An instru
 
 | M2-16 | The instructor's booking sheet: who it is for, when it is, and yes, with times outside their hours offered separately and a warning before one is taken | BOK-01, BOK-03, BOK-04, R-04 | Done. Three taps from the diary at 390 px, and the length follows what that learner usually books |
 
+| M2-17 | Self-booking at a public link: who the instructor is, what a lesson costs, the times they are free, and one tap to take one | BOK-02 | Done at 390 px, in well under a minute (acceptance-12). A visitor with no account keeps their choice while they make one (D-069) |
+
 ## M1 progress
 
 | Task | What | PRD | State |
@@ -106,7 +108,7 @@ Decisions D-036 to D-050 were logged during this stretch. Two were security fixe
 
 ## In progress
 
-- M2-17: self-booking at a public link, the learner's side of the same RPC.
+- M2-18 onwards: recurring lessons, then cancelling, rescheduling and the notifications around them.
 
 ## Next
 

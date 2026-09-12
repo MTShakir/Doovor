@@ -1517,6 +1517,7 @@ export type Database = {
         Args: { p_instructor_id: string; p_learner_id: string }
         Returns: string
       }
+      booking_page: { Args: { p_slug: string }; Returns: Json }
       cache_postcode: {
         Args: {
           p_country?: string
@@ -1599,6 +1600,14 @@ export type Database = {
           last_active_at: string
           user_agent: string
         }[]
+      }
+      open_slots: {
+        Args: {
+          p_date: string
+          p_duration_minutes: number
+          p_instructor_id: string
+        }
+        Returns: string[]
       }
       request_account_deletion: { Args: { p_reason?: string }; Returns: string }
       revoke_my_session: { Args: { p_session_id: string }; Returns: boolean }

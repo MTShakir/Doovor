@@ -1,6 +1,6 @@
 import { expect, test } from '@playwright/test';
 import { authFile } from '../support/accounts';
-import { setBookingStatus } from '../support/database';
+import { findLesson, setBookingStatus } from '../support/database';
 import { expectAccessible, snap } from '../support/helpers';
 
 /** The school diary (DIA-09, M1-22). The seeded school has three instructors. */
@@ -53,10 +53,12 @@ test.describe('a live diary (DIA-03, M1-23)', () => {
 
   test('a lesson changed elsewhere shows without a reload', { tag: '@desktop-only' }, async ({ page }) => {
     const instructor = 'Emma Clarke';
-    const startsAt = '2026-09-15T08:00:00.000Z';
+    // Found in the seed rather than written down here: the seed moves with the day it ran.
+    const seeded = await findLesson(instructor, 'requested');
+    const startsAt = seeded.startsAt;
 
-    await page.goto('/app/school/diary?date=2026-09-15');
-    const lesson = page.getByRole('article', { name: /09:00 Isla Roberts/ });
+    await page.goto(`/app/school/diary?date=${seeded.date}`);
+    const lesson = page.getByRole('article', { name: new RegExp(`${seeded.time} ${seeded.learnerName}`) });
     await expect(lesson).toBeVisible();
     await expect(lesson).toContainText('Pending');
     // A change made before the page is listening is one it can never hear about.
