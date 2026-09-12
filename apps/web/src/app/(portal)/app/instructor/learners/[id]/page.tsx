@@ -13,7 +13,9 @@ import { notFound } from 'next/navigation';
 import { Fragment, Suspense } from 'react';
 import { requirePortal } from '@/lib/auth/session';
 import { learnerCard, type LearnerCard } from '@/lib/learners/card';
+import { learnerNotes } from '@/lib/learners/notes';
 import { statusPill } from '@/lib/learners/status-pill';
+import { Notes } from './notes';
 
 export const metadata: Metadata = { title: 'Learner' };
 
@@ -34,13 +36,14 @@ export default function LearnerPage({ params }: LearnerPageProps) {
 /** LRN-02: one learner, everything about them an instructor needs before a lesson. */
 async function Learner({ params }: LearnerPageProps) {
   const { id } = await params;
-  const { access } = await requirePortal('instructor');
+  const { access, session } = await requirePortal('instructor');
 
   const card = await learnerCard(id);
   // The view shows only learners this instructor may see, so a stranger's id is simply
   // not there, and not there and not allowed look the same from here.
   if (!card) notFound();
 
+  const notes = await learnerNotes(card.learnerId);
   const mine = access.memberships.some((one) => one.instructorProfileId === card.instructorId);
   const gearbox = card.transmission === null ? null : card.transmission === 'manual' ? 'Manual' : 'Automatic';
 
@@ -72,6 +75,7 @@ async function Learner({ params }: LearnerPageProps) {
         <Reach card={card} />
         <Lessons card={card} />
         <Pickups card={card} />
+        <Notes learnerId={card.learnerId} notes={notes} viewerId={session.userId} />
       </div>
     </>
   );

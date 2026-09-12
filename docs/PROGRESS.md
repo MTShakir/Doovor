@@ -21,6 +21,8 @@ M2 Learners and bookings has started on branch `m2-learners-bookings`. An instru
 
 | M2-05 | Learner card: contact and the three ways to reach them, lessons taken, hours driven, next and last lesson, and their pickup points | LRN-02, COV-04 | Done in one query, through a view on the list view. Notes arrive with M2-06, the balance with payments (M3), and the test date with TST-01, which the PRD puts in Phase 2 |
 
+| M2-06 | Private notes on the learner card, with five seconds to undo a deletion, and tests that no learner path reaches them | LRN-04 | Done. pgTAP proves it three ways: the table, no view built on it, and no `security definer` function that reads it |
+
 ## M1 progress
 
 | Task | What | PRD | State |
@@ -87,7 +89,7 @@ Decisions D-036 to D-050 were logged during this stretch. Two were security fixe
 
 ## In progress
 
-- M2-06: private notes, the last thing LRN-02 asks the card to show.
+- M2-07: the learner status workflow, so the filters on the list can be changed from the card.
 
 ## Next
 

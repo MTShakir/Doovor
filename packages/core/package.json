@@ -23,6 +23,7 @@
     "./diary": "./src/diary.ts",
     "./age": "./src/age.ts",
     "./schemas/learner": "./src/schemas/learner.ts",
+    "./schemas/note": "./src/schemas/note.ts",
     "./invitations": "./src/invitations.ts",
     "./learners": "./src/learners.ts"
   },

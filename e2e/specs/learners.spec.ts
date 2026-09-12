@@ -108,6 +108,43 @@ test.describe('the learner list (LRN-01, M2-04)', () => {
     await expect(page.getByRole('heading', { level: 1, name: 'Learners' })).toBeVisible();
   });
 
+  // That no learner can read these is proved in the database, where the rule lives
+  // (supabase/tests/27_learner_notes_test.sql). This is about writing and unwriting one.
+  test('keeps private notes on the card (LRN-04)', async ({ page }, testInfo) => {
+    // A run of its own words: the same spec at the other width writes to the same learner.
+    const note = `Nervous on roundabouts, ${testInfo.project.name} ${String(Date.now())}.`;
+    await page.goto('/app/instructor/learners');
+    await page.getByRole('link', { name: 'Olivia Brown', exact: true }).click();
+    await expect(page.getByRole('heading', { level: 1, name: 'Olivia Brown' })).toBeVisible();
+
+    const notes = page.getByRole('region', { name: 'Private notes' });
+    await expect(notes.getByRole('button', { name: 'Save note' })).toBeEnabled();
+    await notes.getByRole('textbox').fill(note);
+    await notes.getByRole('button', { name: 'Save note' }).click();
+
+    const row = notes.locator('li').filter({ hasText: note });
+    await expect(row).toHaveCount(1);
+    // Signed as the person who wrote it, so a colleague can tell whose note it is.
+    await expect(row.getByText('Sarah Khan', { exact: false })).toBeVisible();
+    await expectAccessible(page);
+    await snap(page, testInfo, 'learner-card-notes');
+
+    // Deleting is forgiving: five seconds to change your mind (PRD 7.1).
+    await row.getByRole('button', { name: /^Delete the note/ }).click();
+    await expect(row).toHaveCount(0);
+    await page.getByRole('button', { name: 'Undo' }).click();
+    await expect(row).toHaveCount(1);
+
+    // Left alone, the note goes when the five seconds are up, and stays gone. The wait is
+    // the feature: there is nothing on screen that says the moment has passed.
+    await row.getByRole('button', { name: /^Delete the note/ }).click();
+    await expect(row).toHaveCount(0);
+    await page.waitForTimeout(6000);
+    await page.reload();
+    await expect(page.getByRole('heading', { level: 1, name: 'Olivia Brown' })).toBeVisible();
+    await expect(notes.locator('li').filter({ hasText: note })).toHaveCount(0);
+  });
+
   test('somebody else’s learner is not there to read', async ({ page }) => {
     await page.goto('/app/instructor/learners/00000000-0000-0000-0000-000000000000');
 
