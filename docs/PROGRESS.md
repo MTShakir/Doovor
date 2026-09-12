@@ -24,6 +24,7 @@ M1 Instructor core has started on branch `m1-instructor-core`. Goal: an instruct
 | M1-10 | Today screen with the setup checklist: first learner, payments, booking link | 10.1 | Done. Every row is worked out from real rows, and the card disappears when the list is finished |
 | M1-11 | Profile editor: photo, name, bio, languages, years, car, transmission, dual controls, specialisms, with the badge shown but not editable | INS-01 | Done. One Zod schema decides the form and the server |
 | M1-12 | Admin verification queue: the badge photo through a signed address, approve or reject with a reason, audit row, and the tick | INS-02, ADM-03 | Done. Only staff with two-step verification can decide, proved in pgTAP and end to end |
+| M1-13 | Badge expiry: rules in core, a daily job at 07:00 London warning at 60, 30 and 7 days, and an expired badge taken out of search | INS-03 | Done. A reminder is recorded before it is sent, so a retry cannot send it twice |
 
 ## Done (M0)
 
@@ -53,8 +54,8 @@ Decisions D-036 to D-050 were logged during this stretch. Two were security fixe
 
 | Suite | Result |
 |---|---|
-| Unit (Vitest) | 240 passed across 6 packages; `packages/core` line coverage 99%, `packages/providers` 100% |
-| Database (pgTAP) | 225 assertions in 16 files, all passing; SQL lint clean |
+| Unit (Vitest) | 250 passed across 6 packages; `packages/core` line coverage 99%, `packages/providers` 100% |
+| Database (pgTAP) | 236 assertions in 17 files, all passing; SQL lint clean |
 | End to end (Playwright) | 113 passed at 390 px and 1440 px, none skipped, stable across repeated full runs, also against a production build in CI mode |
 | Lint, typecheck, copy guard | Clean |
 | CI on GitHub | Green: lint and unit, database, end to end against a production build |
@@ -62,11 +63,11 @@ Decisions D-036 to D-050 were logged during this stretch. Two were security fixe
 
 ## In progress
 
-- M1-13: badge expiry reminders at 60, 30 and 7 days, and unlisting an expired badge.
+- M1-14: trainee instructors, their supervising school or ADI, and the R-18 guard.
 
 ## Next
 
-- M1-13 and M1-14: badge expiry rules and the daily job, then PDI supervision and the R-18 guard.
+- M1-14, then coverage districts and pickup points (M1-15, M1-16) and the diary (M1-17 onwards).
 - The seven M1 migrations are applied locally only. They go to staging with the next staging push.
 
 ## Blockers

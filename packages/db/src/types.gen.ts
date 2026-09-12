@@ -114,6 +114,35 @@ export type Database = {
           },
         ]
       }
+      badge_reminders: {
+        Row: {
+          badge_expiry: string
+          created_at: string
+          days_before: number
+          instructor_id: string
+        }
+        Insert: {
+          badge_expiry: string
+          created_at?: string
+          days_before: number
+          instructor_id: string
+        }
+        Update: {
+          badge_expiry?: string
+          created_at?: string
+          days_before?: number
+          instructor_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "badge_reminders_instructor_id_fkey"
+            columns: ["instructor_id"]
+            isOneToOne: false
+            referencedRelation: "instructor_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       bookings: {
         Row: {
           blocked_range: unknown
@@ -1390,6 +1419,16 @@ export type Database = {
         }
         Returns: Database["public"]["Enums"]["verification_status"]
       }
+      system_claim_badge_reminders: {
+        Args: { p_today?: string }
+        Returns: {
+          badge_expiry: string
+          business_id: string
+          days_before: number
+          days_left: number
+          instructor_id: string
+        }[]
+      }
       system_claim_outbox_events: {
         Args: { p_limit?: number }
         Returns: {
@@ -1413,6 +1452,10 @@ export type Database = {
         Returns: number
       }
       system_mark_outbox_sent: { Args: { p_ids: string[] }; Returns: number }
+      system_unlist_expired_badges: {
+        Args: { p_today?: string }
+        Returns: number
+      }
     }
     Enums: {
       booking_payment_mode:
