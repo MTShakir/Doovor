@@ -30,7 +30,7 @@ $$;
 -- Acceptance test 1 at database level.
 select throws_ok(
   $$ select pg_temp.book('b1000000-0000-0000-0000-000000000001', 'c0000000-0000-0000-0000-000000000002', '2026-09-15 11:15+01', '2026-09-15 12:15+01') $$,
-  '23P01', null, '11:15 is rejected: too close to the 10:00 lesson (acceptance test 1)'
+  '23P01', null, 'acceptance-01: 11:15 is rejected, too close to the 10:00 lesson'
 );
 select lives_ok(
   $$ select pg_temp.book('b1000000-0000-0000-0000-000000000001', 'c0000000-0000-0000-0000-000000000002', '2026-09-15 11:30+01', '2026-09-15 12:30+01') $$,

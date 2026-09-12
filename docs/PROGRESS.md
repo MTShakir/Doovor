@@ -35,6 +35,9 @@ M2 Learners and bookings has started on branch `m2-learners-bookings`. An instru
 | M2-12 | Availability engine part 2: buffers, notice, horizon, step, and the difference between what a learner may book and what an instructor may | R-01, R-04, DIA-05, DIA-06 | Done. Core coverage 97.6% of lines, above the 90% gate |
 | M2-13 | One set of availability vectors, run by Vitest against the TypeScript rules and by pgTAP against the SQL ones | R-04 | Done. 20 vectors, both runners green, and `pnpm db:test` regenerates the SQL from the JSON so they cannot drift |
 
+| M2-14 | `create_booking`: who is asking, what they may book, what it costs, whether the slot is free, then the row, the audit line and the message, in one transaction | BOK-01, BOK-02, BOK-07, R-10 | Done. acceptance-01 passes through the RPC, and a learner booking for the first time joins the Business as they do it |
+| M2-15 | Two learners taking the same slot at the same moment, in two real transactions | BOK-07, R-02 | Done. acceptance-02: exactly one succeeds, the other is told the slot has just gone |
+
 ## M1 progress
 
 | Task | What | PRD | State |
@@ -101,7 +104,7 @@ Decisions D-036 to D-050 were logged during this stretch. Two were security fixe
 
 ## In progress
 
-- M2-14: `create_booking`, the RPC every booking screen goes through.
+- M2-16: the instructor's three tap booking sheet, the first screen on top of `create_booking`.
 
 ## Next
 

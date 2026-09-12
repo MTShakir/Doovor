@@ -7,14 +7,14 @@ import postgres from 'postgres';
  * Local only. There is no path from here to a hosted project, and nothing in the app uses
  * this module.
  */
-const url = process.env.SUPABASE_DB_URL ?? 'postgresql://postgres:postgres@127.0.0.1:54322/postgres';
+export const databaseUrl = process.env.SUPABASE_DB_URL ?? 'postgresql://postgres:postgres@127.0.0.1:54322/postgres';
 
-if (!/@(127\.0\.0\.1|localhost)[:/]/.test(url)) {
+if (!/@(127\.0\.0\.1|localhost)[:/]/.test(databaseUrl)) {
   throw new Error('The end to end tests only ever change the local database.');
 }
 
 export async function withDatabase<T>(work: (sql: postgres.Sql) => Promise<T>): Promise<T> {
-  const sql = postgres(url, { max: 1 });
+  const sql = postgres(databaseUrl, { max: 1 });
   try {
     return await work(sql);
   } finally {
