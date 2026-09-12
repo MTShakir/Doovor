@@ -1,6 +1,6 @@
 'use server';
 
-import { parsePostgresError } from '@repo/core/errors';
+import { defaultErrorCopy, parsePostgresError, type DomainErrorCode } from '@repo/core/errors';
 import { invitationLink } from '@repo/core/invitations';
 import { err, ok, type Result } from '@repo/core/result';
 import { revalidatePath } from 'next/cache';
@@ -99,49 +99,139 @@ async function alreadyHere(
   return contact.email === null ? null : await here('email', contact.email);
 }
 
+interface NewLearner {
+  fullName: string;
+  email: string | null;
+  phone: string | null;
+  postcode: string | null;
+  transmission: 'manual' | 'automatic' | null;
+}
+
+type Linked = { ok: true; learnerId: string } | { ok: false; code: DomainErrorCode; reason: string };
+
 /**
- * LRN-03: a learner the instructor already teaches, who has never heard of us. We make the
- * account they will claim later (D-068), then link them through their own session.
+ * One learner who has never heard of us: the account they will claim later (D-068), then
+ * the link to the Business through the caller's own session. Shared by typing somebody in
+ * and by importing a hundred of them, because the rules are the same either way.
  */
-export async function addLearner(input: unknown): Promise<Result<{ learnerId: string }>> {
-  const parsed = manualLearnerSchema.safeParse(input);
-  if (!parsed.success) return err('VALIDATION_FAILED', undefined, fieldErrors(parsed.error));
-
-  const { access } = await requirePortal('instructor');
-  const membership = access.memberships.find((m) => m.instructorProfileId !== null);
-  if (!membership?.instructorProfileId) return err('NOT_ALLOWED');
-
-  const { fullName, email, phone, postcode, transmission } = parsed.data;
-  const supabase = await createSupabaseServerClient();
-
-  const existing = await alreadyHere(supabase, membership.businessId, { email, phone });
+async function linkNewLearner(
+  supabase: Awaited<ReturnType<typeof createSupabaseServerClient>>,
+  where: { instructorProfileId: string; businessId: string },
+  learner: NewLearner,
+  source: 'manual' | 'import',
+): Promise<Linked> {
+  const existing = await alreadyHere(supabase, where.businessId, learner);
   if (existing !== null) {
-    return err('DUPLICATE_CONTACT', `${existing} is already on your list with those details.`);
+    return { ok: false, code: 'DUPLICATE_CONTACT', reason: `${existing} is already on your list with those details.` };
   }
 
-  const account = await createUnclaimedLearnerAccount({ fullName, email, phone });
+  const account = await createUnclaimedLearnerAccount({
+    fullName: learner.fullName,
+    email: learner.email,
+    phone: learner.phone,
+  });
   if (!account.ok) {
     return account.taken
-      ? err(
-          'DUPLICATE_CONTACT',
-          'Those details already belong to an account. Send them a link instead, so they can join you themselves.',
-        )
-      : err('UNKNOWN');
+      ? {
+          ok: false,
+          code: 'DUPLICATE_CONTACT',
+          reason: 'Those details already belong to an account. Send them a link instead, so they can join you themselves.',
+        }
+      : { ok: false, code: 'UNKNOWN', reason: 'We could not make their account. Try again.' };
   }
 
   const { error } = await supabase.rpc('add_learner', {
-    p_instructor_id: membership.instructorProfileId,
+    p_instructor_id: where.instructorProfileId,
     p_learner_id: account.userId,
-    p_postcode: postcode ?? undefined,
-    p_transmission: transmission ?? undefined,
-    p_source: 'manual',
+    p_postcode: learner.postcode ?? undefined,
+    p_transmission: learner.transmission ?? undefined,
+    p_source: source,
   });
   if (error) {
     // The account was ours and a moment old, so it goes rather than sits there unowned.
     await removeUnclaimedLearnerAccount(account.userId);
-    return err(parsePostgresError(error).code);
+    const { code } = parsePostgresError(error);
+    return { ok: false, code, reason: defaultErrorCopy[code] };
   }
 
+  return { ok: true, learnerId: account.userId };
+}
+
+/** Where the caller teaches, for the two actions below. */
+async function instructorPlace(): Promise<{ instructorProfileId: string; businessId: string } | null> {
+  const { access } = await requirePortal('instructor');
+  const membership = access.memberships.find((m) => m.instructorProfileId !== null);
+  if (!membership?.instructorProfileId) return null;
+  return { instructorProfileId: membership.instructorProfileId, businessId: membership.businessId };
+}
+
+/** LRN-03: a learner the instructor already teaches, typed in by them. */
+export async function addLearner(input: unknown): Promise<Result<{ learnerId: string }>> {
+  const parsed = manualLearnerSchema.safeParse(input);
+  if (!parsed.success) return err('VALIDATION_FAILED', undefined, fieldErrors(parsed.error));
+
+  const place = await instructorPlace();
+  if (!place) return err('NOT_ALLOWED');
+
+  const supabase = await createSupabaseServerClient();
+  const result = await linkNewLearner(supabase, place, parsed.data, 'manual');
+  if (!result.ok) return err(result.code, result.reason);
+
   revalidatePath('/app/instructor/learners');
-  return ok({ learnerId: account.userId });
+  return ok({ learnerId: result.learnerId });
+}
+
+const importRowSchema = z.object({
+  /** The line in the file, so a problem can be pointed at. */
+  line: z.number().int().min(1),
+  fullName: z.string().default(''),
+  phone: z.string().default(''),
+  email: z.string().default(''),
+  postcode: z.string().default(''),
+});
+
+const importSchema = z.object({
+  // One batch at a time, so a long file reports as it goes rather than timing out in silence.
+  rows: z.array(importRowSchema).min(1).max(25),
+});
+
+export interface ImportOutcome {
+  imported: number;
+  problems: { line: number; name: string; reason: string }[];
+}
+
+/**
+ * LRN-03: a batch of rows from a spreadsheet. A row that cannot be imported is reported
+ * with its line number and the reason, and the rest of the batch still goes in.
+ */
+export async function importLearners(input: unknown): Promise<Result<ImportOutcome>> {
+  const parsed = importSchema.safeParse(input);
+  if (!parsed.success) return err('VALIDATION_FAILED');
+
+  const place = await instructorPlace();
+  if (!place) return err('NOT_ALLOWED');
+
+  const supabase = await createSupabaseServerClient();
+  const problems: ImportOutcome['problems'] = [];
+  let imported = 0;
+
+  for (const { line, ...row } of parsed.data.rows) {
+    // A spreadsheet has no column for the gearbox, so that is asked for later, on the card.
+    const details = manualLearnerSchema.safeParse({ ...row, transmission: '' });
+    if (!details.success) {
+      problems.push({
+        line,
+        name: row.fullName,
+        reason: details.error.issues[0]?.message ?? 'We could not read that row',
+      });
+      continue;
+    }
+
+    const result = await linkNewLearner(supabase, place, details.data, 'import');
+    if (result.ok) imported += 1;
+    else problems.push({ line, name: details.data.fullName, reason: result.reason });
+  }
+
+  if (imported > 0) revalidatePath('/app/instructor/learners');
+  return ok({ imported, problems });
 }

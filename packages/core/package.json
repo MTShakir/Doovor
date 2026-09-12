@@ -25,7 +25,8 @@
     "./schemas/learner": "./src/schemas/learner.ts",
     "./schemas/note": "./src/schemas/note.ts",
     "./invitations": "./src/invitations.ts",
-    "./learners": "./src/learners.ts"
+    "./learners": "./src/learners.ts",
+    "./csv": "./src/csv.ts"
   },
   "scripts": {
     "lint": "eslint .",

@@ -8,6 +8,7 @@ import { Input } from '@repo/ui/input';
 import { Sheet } from '@repo/ui/sheet';
 import { UserPlus } from 'lucide-react';
 import type { Route } from 'next';
+import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useEffect, useRef, useState, useTransition, type ReactNode } from 'react';
 import { InviteForm } from './invite-form';
@@ -110,6 +111,15 @@ export function LearnerBrowser({ search, filter, total, children }: LearnerBrows
             </Chip>
           </ChipGroup>
           {way === 'link' ? <InviteForm /> : <ManualLearnerForm onAdded={() => { setAdding(false); }} />}
+          <p className="text-small text-grey-700">
+            Got a list of them already?{' '}
+            <Link
+              href="/app/instructor/learners/import"
+              className="font-semibold text-blue underline underline-offset-4"
+            >
+              Import a spreadsheet
+            </Link>
+          </p>
         </div>
       </Sheet>
     </div>

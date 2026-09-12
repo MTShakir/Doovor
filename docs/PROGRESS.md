@@ -27,6 +27,8 @@ M2 Learners and bookings has started on branch `m2-learners-bookings`. An instru
 
 | M2-08 | Add a learner by hand: one sheet offering a link or their details, an account they claim later (D-068), and the duplicate check LRN-03 asks for | LRN-03 | Done. The same number twice is caught before a second account is made, and a contact that already has an account is sent to the invite link instead |
 
+| M2-09 | CSV import: the file read in the browser, columns guessed and changeable, a preview, then batches of twenty with a report of every row left out and why | LRN-03 | Done. A 120 row file is read, checked and reported in a unit test; the screen imports in batches so a long file reports as it goes |
+
 ## M1 progress
 
 | Task | What | PRD | State |
@@ -93,7 +95,7 @@ Decisions D-036 to D-050 were logged during this stretch. Two were security fixe
 
 ## In progress
 
-- M2-09: CSV import, which reuses the account and the link that M2-08 built.
+- M2-10: assigning and reassigning a learner between instructors at a school.
 
 ## Next
 
