@@ -4,6 +4,10 @@ select plan(12);
 
 select tests.create_user('outbox@test.local', 'Oscar Outbox') as user \gset
 
+-- Start from an empty outbox: a development database carries events from earlier runs, and
+-- the dispatcher claims whatever is waiting. The transaction rolls back either way.
+delete from public.outbox_events;
+
 -- Structure
 select has_table('public', 'outbox_events', 'the outbox table exists');
 select ok(

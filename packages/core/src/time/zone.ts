@@ -54,6 +54,11 @@ export interface LocalParts {
   weekday: number;
 }
 
+/** Today's date in the zone. Pass the instant so rules that depend on it stay testable. */
+export function todayInZone(now: Date = new Date(), timeZone: string = DEFAULT_TIME_ZONE): LocalDate {
+  return utcToLocal(now, timeZone).date;
+}
+
 export function utcToLocal(instant: Date, timeZone: string = DEFAULT_TIME_ZONE): LocalParts {
   const zoned = new TZDate(instant.getTime(), timeZone);
   const jsDay = zoned.getDay();

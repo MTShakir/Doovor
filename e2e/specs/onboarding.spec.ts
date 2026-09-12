@@ -1,6 +1,6 @@
 import { expect, test } from '@playwright/test';
 import { expectAccessible, snap } from '../support/helpers';
-import { hasExif, hasGpsTag, jpegWithGps, publicAvatarUrl, webpSize } from '../support/images';
+import { hasExif, hasGpsTag, jpegWithGps, publicAvatarUrl, publicBadgeUrl, webpSize } from '../support/images';
 import { linkFromEmail } from '../support/mailpit';
 import { testNumber } from '../support/phone-numbers';
 import { enterCode } from '../support/sign-in';
@@ -43,7 +43,11 @@ test.describe('instructor onboarding (AUTH-04, M1-02)', () => {
     await page.goto('/onboarding/hours');
     await expect(page).toHaveURL(/\/onboarding\/badge$/);
 
-    for (const step of ['area', 'prices', 'hours']) {
+    // The badge step has its own form, so moving on without it means skipping (INS-02).
+    await page.getByRole('button', { name: 'Skip for now' }).click();
+    await expect(page).toHaveURL(/\/onboarding\/area$/);
+
+    for (const step of ['prices', 'hours']) {
       await page.getByRole('button', { name: 'Continue' }).click();
       await expect(page).toHaveURL(new RegExp(`/onboarding/${step}$`));
     }
@@ -95,6 +99,65 @@ test.describe('instructor onboarding (AUTH-04, M1-02)', () => {
     expect(webpSize(bytes)).toEqual({ width: 512, height: 512 });
     expect(hasExif(bytes)).toBe(false);
     expect(hasGpsTag(bytes)).toBe(false);
+  });
+
+  test('sends the badge for review, and keeps the photo private (M1-04)', async ({ page, request }, testInfo) => {
+    const email = uniqueEmail(testInfo, 'badge');
+    await chooseRoleAndCreateAccount(
+      page,
+      { card: "I'm an instructor", heading: 'Create your instructor account' },
+      { fullName: 'Nina Newstart', email },
+    );
+    await page.goto(await linkFromEmail(email, 'Confirm your email'));
+    await page.getByRole('link', { name: 'Do this later' }).click();
+
+    await page.getByLabel('Your name').fill('Nina Newstart');
+    await page.getByRole('button', { name: 'Continue' }).click();
+    await expect(page).toHaveURL(/\/onboarding\/badge$/);
+    await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
+
+    const upload = page.waitForRequest((r) => r.url().includes('/storage/v1/object/badges/') && r.method() === 'POST');
+    await page.setInputFiles('input[type="file"]', {
+      name: 'badge.jpg',
+      mimeType: 'image/jpeg',
+      buffer: await jpegWithGps(page),
+    });
+    const stored = new URL((await upload).url()).pathname.split('/object/badges/').at(-1) ?? '';
+    expect(stored).toMatch(/\.webp$/);
+
+    await page.getByLabel('Badge number').fill('123456');
+    await page.getByLabel('Badge expiry date').fill('2029-03-31');
+    await page.getByRole('checkbox', { name: 'I have a current enhanced DBS check' }).click();
+    await expectAccessible(page);
+    await snap(page, testInfo, 'onboarding-badge');
+
+    await page.getByRole('button', { name: 'Continue' }).click();
+    await expect(page).toHaveURL(/\/onboarding\/area$/);
+
+    // A badge photo shows a name, a number and a face: the public address must not serve it.
+    const response = await request.get(publicBadgeUrl(stored));
+    expect(response.status()).toBeGreaterThanOrEqual(400);
+  });
+
+  test('will not submit a badge that has expired (INS-02)', async ({ page }, testInfo) => {
+    const email = uniqueEmail(testInfo, 'expired-badge');
+    await chooseRoleAndCreateAccount(
+      page,
+      { card: "I'm an instructor", heading: 'Create your instructor account' },
+      { fullName: 'Nina Newstart', email },
+    );
+    await page.goto(await linkFromEmail(email, 'Confirm your email'));
+    await page.getByRole('link', { name: 'Do this later' }).click();
+    await page.getByLabel('Your name').fill('Nina Newstart');
+    await page.getByRole('button', { name: 'Continue' }).click();
+
+    await page.getByLabel('Badge number').fill('123456');
+    await page.getByLabel('Badge expiry date').fill('2020-01-31');
+    await page.getByRole('checkbox', { name: 'I have a current enhanced DBS check' }).click();
+    await page.getByRole('button', { name: 'Continue' }).click();
+
+    await expect(page.getByText('That date has passed. Renew your badge first')).toBeVisible();
+    await expect(page).toHaveURL(/\/onboarding\/badge$/);
   });
 
   test('is only for instructors', async ({ page }, testInfo) => {

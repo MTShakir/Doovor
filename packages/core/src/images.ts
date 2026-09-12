@@ -21,8 +21,34 @@ export const avatarImage = {
   maxOutputBytes: 2 * 1024 * 1024,
 } as const;
 
+/**
+ * A badge photo is read by a person checking a number against the DVSA register, so it keeps
+ * its shape and far more detail than an avatar. It is re-encoded all the same: a badge is
+ * usually photographed at home (INS-02, M1-04).
+ */
+export const badgeImage = {
+  outputType: 'image/webp',
+  outputQuality: 0.92,
+  /** Longest side. Enough to read a badge number from a phone photo. */
+  maxSide: 1600,
+  acceptedTypes: avatarImage.acceptedTypes,
+  maxInputBytes: 15 * 1024 * 1024,
+  maxOutputBytes: 5 * 1024 * 1024,
+} as const;
+
 export function isAcceptedImageType(type: string): boolean {
   return (avatarImage.acceptedTypes as readonly string[]).includes(type);
+}
+
+/**
+ * The picture scaled to fit inside a square of `maxSide`, keeping its proportions. A picture
+ * already smaller is left alone rather than blown up.
+ */
+export function fitWithin(width: number, height: number, maxSide: number = badgeImage.maxSide): { width: number; height: number } {
+  const longest = Math.max(width, height);
+  if (longest <= maxSide) return { width, height };
+  const scale = maxSide / longest;
+  return { width: Math.max(1, Math.round(width * scale)), height: Math.max(1, Math.round(height * scale)) };
 }
 
 export interface AvatarCrop {
@@ -50,17 +76,18 @@ export function centreCrop(width: number, height: number, target: number = avata
 
 /**
  * Objects live under the instructor profile they belong to, which is what the storage policy
- * checks. The token makes each upload a new object, so a changed photo is never served from
- * a cache, and the old one is deleted afterwards.
+ * checks. The token makes each upload a new object, so a changed picture is never served from
+ * a cache, and the old one is deleted afterwards. Avatars and badges share the shape; they
+ * differ only in which bucket they are in.
  */
-export function avatarObjectPath(profileId: string, token: string): string {
+export function profileObjectPath(profileId: string, token: string): string {
   return `${profileId}/${token}.webp`;
 }
 
-const avatarFileName = /^[a-z0-9-]{8,64}\.webp$/;
+const objectFileName = /^[a-z0-9-]{8,64}\.webp$/;
 
 /** Guards the Server Action: a path may only name a folder the caller owns. */
-export function isAvatarObjectPath(path: string, profileId: string): boolean {
+export function isProfileObjectPath(path: string, profileId: string): boolean {
   const parts = path.split('/');
-  return parts.length === 2 && parts[0] === profileId && avatarFileName.test(parts[1] ?? '');
+  return parts.length === 2 && parts[0] === profileId && objectFileName.test(parts[1] ?? '');
 }

@@ -14,6 +14,11 @@ export interface OnboardingSession {
   displayName: string;
   /** The photo they have already, as an object path in the avatars bucket. */
   photoPath: string | null;
+  /** Their badge photo, as an object path in the private badges bucket. */
+  badgePath: string | null;
+  qualification: 'adi' | 'pdi';
+  badgeNumber: string | null;
+  badgeExpiry: string | null;
 }
 
 function instructorMembership(memberships: AccessMembership[]): AccessMembership | null {
@@ -34,7 +39,7 @@ export async function requireOnboarding(): Promise<OnboardingSession> {
   const supabase = await createSupabaseServerClient();
   const { data: profile } = await supabase
     .from('instructor_profiles')
-    .select('display_name, photo_path')
+    .select('display_name, photo_path, badge_path, qualification, badge_number, badge_expiry')
     .eq('id', membership.instructorProfileId)
     .single();
 
@@ -45,5 +50,9 @@ export async function requireOnboarding(): Promise<OnboardingSession> {
     completed: membership.onboarding.completed,
     displayName: profile?.display_name ?? '',
     photoPath: profile?.photo_path ?? null,
+    badgePath: profile?.badge_path ?? null,
+    qualification: profile?.qualification ?? 'adi',
+    badgeNumber: profile?.badge_number ?? null,
+    badgeExpiry: profile?.badge_expiry ?? null,
   };
 }

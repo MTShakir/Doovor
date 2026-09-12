@@ -17,6 +17,11 @@ export function publicAvatarUrl(path: string): string {
   return `${SUPABASE_URL}/storage/v1/object/public/avatars/${path}`;
 }
 
+/** The same address for a badge photo, which must not serve it: the bucket is private. */
+export function publicBadgeUrl(path: string): string {
+  return `${SUPABASE_URL}/storage/v1/object/public/badges/${path}`;
+}
+
 /** A little-endian TIFF block whose only content is a GPS position. */
 function exifWithGps(): Buffer {
   const tiff = Buffer.alloc(128);

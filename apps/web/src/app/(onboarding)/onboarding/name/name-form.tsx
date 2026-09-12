@@ -11,12 +11,12 @@ import { useForm } from 'react-hook-form';
 import type { z } from 'zod';
 import { ClientForm, SubmitButton } from '@/components/client-form';
 import { FormAlert } from '@/components/form-alert';
-import { prepareAvatar, type AvatarProblem } from '@/lib/images/prepare-avatar';
-import { avatarUrl, removeAvatar, uploadAvatar } from '@/lib/storage/avatars';
+import { prepareAvatar, type ImageProblem } from '@/lib/images/prepare';
+import { avatarsBucket, avatarUrl, removeProfileImage, uploadProfileImage } from '@/lib/storage/images';
 import { getSupabaseBrowserClient } from '@/lib/supabase/browser';
 import { saveName } from '../../actions';
 
-const photoProblem: Record<AvatarProblem, string> = {
+const photoProblem: Record<ImageProblem, string> = {
   WRONG_TYPE: 'Choose a JPEG, PNG, GIF or WebP picture.',
   TOO_BIG: 'That picture is too large. Choose one under 15MB.',
   UNREADABLE: 'We could not read that picture. Try another one.',
@@ -58,13 +58,13 @@ export function NameForm({ profileId, initialName, initialPhotoPath }: NameFormP
         return;
       }
       const supabase = getSupabaseBrowserClient();
-      const path = await uploadAvatar(supabase, profileId, prepared.blob);
+      const path = await uploadProfileImage(supabase, avatarsBucket, profileId, prepared.blob);
       if (!path) {
         setPhotoError('We could not upload that picture. Try again.');
         setWorking(false);
         return;
       }
-      await removeAvatar(supabase, unsaved.current);
+      await removeProfileImage(supabase, avatarsBucket, unsaved.current);
       unsaved.current = path;
       setPhotoPath(path);
       setPreview(URL.createObjectURL(prepared.blob));
@@ -77,7 +77,7 @@ export function NameForm({ profileId, initialName, initialPhotoPath }: NameFormP
     setPhotoPath(null);
     setPreview(undefined);
     void (async () => {
-      await removeAvatar(getSupabaseBrowserClient(), unsaved.current);
+      await removeProfileImage(getSupabaseBrowserClient(), avatarsBucket, unsaved.current);
       unsaved.current = null;
     })();
   };

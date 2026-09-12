@@ -385,6 +385,7 @@ export type Database = {
         Row: {
           badge_expiry: string | null
           badge_number: string | null
+          badge_path: string | null
           base_location: unknown
           base_postcode: string | null
           bio: string | null
@@ -412,13 +413,16 @@ export type Database = {
           transmission: Database["public"]["Enums"]["transmission"]
           updated_at: string
           user_id: string
+          verification_decision_reason: string | null
           verification_status: Database["public"]["Enums"]["verification_status"]
+          verification_submitted_at: string | null
           verified_at: string | null
           years_teaching: number | null
         }
         Insert: {
           badge_expiry?: string | null
           badge_number?: string | null
+          badge_path?: string | null
           base_location?: unknown
           base_postcode?: string | null
           bio?: string | null
@@ -446,13 +450,16 @@ export type Database = {
           transmission?: Database["public"]["Enums"]["transmission"]
           updated_at?: string
           user_id: string
+          verification_decision_reason?: string | null
           verification_status?: Database["public"]["Enums"]["verification_status"]
+          verification_submitted_at?: string | null
           verified_at?: string | null
           years_teaching?: number | null
         }
         Update: {
           badge_expiry?: string | null
           badge_number?: string | null
+          badge_path?: string | null
           base_location?: unknown
           base_postcode?: string | null
           bio?: string | null
@@ -480,7 +487,9 @@ export type Database = {
           transmission?: Database["public"]["Enums"]["transmission"]
           updated_at?: string
           user_id?: string
+          verification_decision_reason?: string | null
           verification_status?: Database["public"]["Enums"]["verification_status"]
+          verification_submitted_at?: string | null
           verified_at?: string | null
           years_teaching?: number | null
         }
@@ -1338,6 +1347,17 @@ export type Database = {
       }
       request_account_deletion: { Args: { p_reason?: string }; Returns: string }
       revoke_my_session: { Args: { p_session_id: string }; Returns: boolean }
+      submit_verification: {
+        Args: {
+          p_badge_expiry: string
+          p_badge_number: string
+          p_badge_path?: string
+          p_dbs_confirmed: boolean
+          p_profile_id: string
+          p_qualification: Database["public"]["Enums"]["instructor_qualification"]
+        }
+        Returns: Database["public"]["Enums"]["verification_status"]
+      }
       system_claim_outbox_events: {
         Args: { p_limit?: number }
         Returns: {

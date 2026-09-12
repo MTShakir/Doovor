@@ -4,6 +4,7 @@ import { brand, type ColourToken } from '@repo/config/brand';
 import { formatPence } from '@repo/core/money';
 import { Avatar } from '@repo/ui/avatar';
 import { AvatarPicker } from '@repo/ui/avatar-picker';
+import { PhotoUpload } from '@repo/ui/photo-upload';
 import { Button } from '@repo/ui/button';
 import { Card, CardDescription, CardTitle } from '@repo/ui/card';
 import { Checkbox } from '@repo/ui/checkbox';
@@ -85,6 +86,7 @@ export function DesignShowcase() {
   const [sheetOpen, setSheetOpen] = useState(false);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [picked, setPicked] = useState<string | undefined>(undefined);
+  const [document, setDocument] = useState<string | undefined>(undefined);
 
   return (
     <main className="mx-auto max-w-5xl px-4 pb-24 md:px-8">
@@ -289,6 +291,30 @@ export function DesignShowcase() {
             label="Something went wrong"
             accept="image/jpeg"
             error="That picture is too large. Choose one under 15MB."
+            onChoose={() => undefined}
+          />
+        </div>
+        <div className="grid gap-8 md:grid-cols-2">
+          <PhotoUpload
+            label="Photo of your badge"
+            hint="We check the number against the DVSA register."
+            accept="image/jpeg,image/png,image/webp,image/gif"
+            src={document}
+            onChoose={(file) => { setDocument(URL.createObjectURL(file)); }}
+            onRemove={() => { setDocument(undefined); }}
+          />
+          <PhotoUpload
+            label="Already uploaded"
+            accept="image/jpeg"
+            stored
+            storedLabel="Badge photo added"
+            onChoose={() => undefined}
+          />
+          <PhotoUpload label="Uploading" accept="image/jpeg" busy onChoose={() => undefined} />
+          <PhotoUpload
+            label="Something went wrong"
+            accept="image/jpeg"
+            error="We could not read that picture. Try another one."
             onChoose={() => undefined}
           />
         </div>

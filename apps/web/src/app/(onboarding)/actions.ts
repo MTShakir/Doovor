@@ -1,13 +1,14 @@
 'use server';
 
-import { isAvatarObjectPath } from '@repo/core/images';
+import { parsePostgresError } from '@repo/core/errors';
+import { isProfileObjectPath } from '@repo/core/images';
 import { err, type Result } from '@repo/core/result';
-import { onboardingNameSchema } from '@repo/core/schemas/onboarding';
+import { onboardingBadgeSchema, onboardingNameSchema } from '@repo/core/schemas/onboarding';
 import { requireOnboarding } from '@/lib/onboarding/session';
 import { nextStep, slugForStep } from '@/lib/onboarding/steps';
 import { fieldErrors } from '@/lib/forms';
 import { redirectTo } from '@/lib/redirect-to';
-import { removeAvatar } from '@/lib/storage/avatars';
+import { avatarsBucket, badgesBucket, removeProfileImage } from '@/lib/storage/images';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
 
 /** Moves to the next step, or finishes onboarding after the last one (AUTH-04). */
@@ -30,7 +31,7 @@ export async function saveName(input: unknown): Promise<Result<null>> {
   const session = await requireOnboarding();
   const { fullName, photoPath } = parsed.data;
   // Storage refuses a folder that is not theirs, and so does this: the browser sends the path.
-  if (typeof photoPath === 'string' && !isAvatarObjectPath(photoPath, session.profileId)) {
+  if (typeof photoPath === 'string' && !isProfileObjectPath(photoPath, session.profileId)) {
     return err('NOT_ALLOWED', 'That photo could not be saved. Try choosing it again.');
   }
 
@@ -42,7 +43,41 @@ export async function saveName(input: unknown): Promise<Result<null>> {
 
   // The picture it replaced is nobody's now.
   if (photoPath !== undefined && session.photoPath && session.photoPath !== photoPath) {
-    await removeAvatar(supabase, session.photoPath);
+    await removeProfileImage(supabase, avatarsBucket, session.photoPath);
+  }
+
+  // Saving succeeded, so this redirects and never resolves.
+  return advance(session.profileId, session.step);
+}
+
+/** AUTH-04 step 2, INS-02: the badge goes to staff for review, never straight to a tick. */
+export async function saveBadge(input: unknown): Promise<Result<null>> {
+  const parsed = onboardingBadgeSchema.safeParse(input);
+  if (!parsed.success) return err('VALIDATION_FAILED', undefined, fieldErrors(parsed.error));
+
+  const session = await requireOnboarding();
+  const { qualification, badgeNumber, badgeExpiry, dbsConfirmed, badgePath } = parsed.data;
+  if (typeof badgePath === 'string' && !isProfileObjectPath(badgePath, session.profileId)) {
+    return err('NOT_ALLOWED', 'That photo could not be saved. Try choosing it again.');
+  }
+
+  const supabase = await createSupabaseServerClient();
+  const { error } = await supabase.rpc('submit_verification', {
+    p_profile_id: session.profileId,
+    p_qualification: qualification,
+    p_badge_number: badgeNumber,
+    p_badge_expiry: badgeExpiry,
+    p_dbs_confirmed: dbsConfirmed,
+    p_badge_path: badgePath ?? undefined,
+  });
+  if (error) {
+    const { code } = parsePostgresError(error);
+    return err(code === 'VALIDATION_FAILED' ? 'VALIDATION_FAILED' : code);
+  }
+
+  // The badge photo it replaced is nobody's now.
+  if (typeof badgePath === 'string' && session.badgePath && session.badgePath !== badgePath) {
+    await removeProfileImage(supabase, badgesBucket, session.badgePath);
   }
 
   // Saving succeeded, so this redirects and never resolves.
