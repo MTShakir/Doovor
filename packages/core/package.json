@@ -9,6 +9,7 @@
     "./errors": "./src/errors.ts",
     "./images": "./src/images.ts",
     "./result": "./src/result.ts",
+    "./setup-checklist": "./src/setup-checklist.ts",
     "./time": "./src/time/index.ts",
     "./phone": "./src/phone.ts",
     "./postcode": "./src/postcode.ts",

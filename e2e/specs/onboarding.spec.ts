@@ -302,6 +302,12 @@ test.describe('instructor onboarding (AUTH-04, M1-02)', () => {
     await expect(page).toHaveURL(/\/app\/instructor$/);
     await expect(page.getByRole('heading', { level: 1, name: 'Today' })).toBeVisible();
 
+    // Nothing is set up yet, and the booking link waits for the badge check (PRD 10.1).
+    await expect(page.getByText('0 of 3 done')).toBeVisible();
+    await expect(page.getByRole('link', { name: /Share your booking link/ })).toContainText(
+      'Ready as soon as your badge is approved',
+    );
+
     // Finished means finished, so the last step is behind them now.
     await page.goto('/onboarding/hours');
     await expect(page).toHaveURL(/\/app\/instructor$/);

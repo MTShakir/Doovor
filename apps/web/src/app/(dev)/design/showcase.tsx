@@ -6,6 +6,7 @@ import { Avatar } from '@repo/ui/avatar';
 import { AvatarPicker } from '@repo/ui/avatar-picker';
 import { PhotoUpload } from '@repo/ui/photo-upload';
 import { RadiusMap } from '@/components/map/radius-map';
+import { SetupChecklist } from '@/components/setup-checklist';
 import { Button } from '@repo/ui/button';
 import { Card, CardDescription, CardTitle } from '@repo/ui/card';
 import { Checkbox } from '@repo/ui/checkbox';
@@ -47,6 +48,7 @@ const sections = [
   'Cards and lists',
   'Feedback',
   'Progress',
+  'Checklist',
   'Coverage',
   'Scheduling',
   'Overlays',
@@ -419,6 +421,13 @@ export function DesignShowcase() {
           step={30}
           format={(v) => `${String(v)} min`}
         />
+      </Section>
+
+      <Section title="Checklist">
+        <div className="grid gap-4 md:grid-cols-2">
+          <SetupChecklist state={{ learners: 0, paymentsConnected: false, verified: false, listed: true }} />
+          <SetupChecklist state={{ learners: 3, paymentsConnected: false, verified: true, listed: true }} />
+        </div>
       </Section>
 
       <Section title="Coverage">
