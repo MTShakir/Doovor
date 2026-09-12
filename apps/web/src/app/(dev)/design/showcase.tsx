@@ -5,6 +5,7 @@ import { formatPence } from '@repo/core/money';
 import { Avatar } from '@repo/ui/avatar';
 import { AvatarPicker } from '@repo/ui/avatar-picker';
 import { PhotoUpload } from '@repo/ui/photo-upload';
+import { RadiusMap } from '@/components/map/radius-map';
 import { Button } from '@repo/ui/button';
 import { Card, CardDescription, CardTitle } from '@repo/ui/card';
 import { Checkbox } from '@repo/ui/checkbox';
@@ -46,6 +47,7 @@ const sections = [
   'Cards and lists',
   'Feedback',
   'Progress',
+  'Coverage',
   'Scheduling',
   'Overlays',
   'Navigation',
@@ -417,6 +419,13 @@ export function DesignShowcase() {
           step={30}
           format={(v) => `${String(v)} min`}
         />
+      </Section>
+
+      <Section title="Coverage">
+        <div className="grid gap-4 md:grid-cols-2">
+          <RadiusMap centre={null} radiusMiles={radius} place="LS6 3HN" />
+          <RadiusMap centre={null} radiusMiles={1} />
+        </div>
       </Section>
 
       <Section title="Scheduling">

@@ -22,6 +22,7 @@
     "@supabase/supabase-js": "catalog:",
     "inngest": "^4.20.0",
     "lucide-react": "catalog:",
+    "mapbox-gl": "^3.30.0",
     "next": "catalog:",
     "react": "catalog:",
     "react-dom": "catalog:",

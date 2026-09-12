@@ -4,7 +4,8 @@
   "private": true,
   "type": "module",
   "exports": {
-    "./geo": "./src/geo/index.ts"
+    "./geo": "./src/geo/index.ts",
+    "./map": "./src/map/index.ts"
   },
   "scripts": {
     "lint": "eslint .",
