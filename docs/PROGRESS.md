@@ -6,7 +6,7 @@ Last updated: 12 September 2026
 
 M0 Foundation is approved, merged to `main` and live: the app runs on the brand domain against the hosted Supabase project, with CI green on every push. The milestone report is at https://claude.ai/code/artifact/7b3956cb-d283-46c8-b3fa-a48ac2694c2e
 
-M1 Instructor core is complete on branch `m1-instructor-core`, all 24 tasks, and is waiting for approval. An instructor signs up, is set up in five minutes, is verified by a person, and has a diary that keeps itself up to date.
+M1 Instructor core is complete on branch `m1-instructor-core`, all 24 tasks, and is waiting for approval. The milestone report is at https://claude.ai/code/artifact/92224816-1b7a-4eef-bd86-0ab470cb16ae An instructor signs up, is set up in five minutes, is verified by a person, and has a diary that keeps itself up to date.
 
 ## M1 progress
 
@@ -78,7 +78,7 @@ Decisions D-036 to D-050 were logged during this stretch. Two were security fixe
 
 ## Next
 
-- On approval: merge `m1-instructor-core` into `main`, push the nine M1 migrations to staging, and start M2.
+- On approval: merge `m1-instructor-core` into `main`, push the fifteen M1 migrations to staging, and start M2.
 - The seven M1 migrations are applied locally only. They go to staging with the next staging push.
 
 ## Blockers
