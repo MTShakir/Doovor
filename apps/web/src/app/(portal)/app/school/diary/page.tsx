@@ -7,6 +7,7 @@ import { SkeletonRow } from '@repo/ui/skeleton';
 import { Users } from 'lucide-react';
 import { Suspense } from 'react';
 import { hoursTaught } from '@/components/diary/day-view';
+import { LiveDiary } from '@/components/diary/live-diary';
 import { LessonRow } from '@/components/diary/lesson-row';
 import { requirePortal } from '@/lib/auth/session';
 import { lessonsBetween, type DiaryEntry } from '@/lib/diary/lessons';
@@ -20,24 +21,22 @@ interface SchoolDiaryParams {
   searchParams: Promise<{ date?: string; instructor?: string; transmission?: string }>;
 }
 
-export default async function SchoolDiaryPage({ searchParams }: SchoolDiaryParams) {
-  const params = await searchParams;
-  const date = dateFrom(params.date);
-
+/** A diary is about now, so all of it sits inside one boundary (D-029). */
+export default function SchoolDiaryPage({ searchParams }: SchoolDiaryParams) {
   return (
     <main className="flex flex-col gap-4 pb-8">
-      <PageHeader title="Diary" subtitle={formatCalendarDate(date)} />
-      <div className="flex flex-col gap-4 px-4 md:px-8">
-        <Suspense key={`${date}-${params.instructor ?? ''}-${params.transmission ?? ''}`} fallback={<SkeletonRow />}>
-          <SchoolDay date={date} instructor={params.instructor} transmission={params.transmission} />
-        </Suspense>
-      </div>
+      <Suspense fallback={<SkeletonRow />}>
+        <SchoolDay searchParams={searchParams} />
+      </Suspense>
     </main>
   );
 }
 
 /** DIA-09: every instructor side by side, for one day. */
-async function SchoolDay({ date, instructor, transmission }: { date: string; instructor?: string; transmission?: string }) {
+async function SchoolDay({ searchParams }: SchoolDiaryParams) {
+  const params = await searchParams;
+  const date = dateFrom(params.date);
+  const { instructor, transmission } = params;
   const { access } = await requirePortal('school');
   const business = access.memberships.find((m) => m.businessType === 'school');
   if (!business) return null;
@@ -66,6 +65,9 @@ async function SchoolDay({ date, instructor, transmission }: { date: string; ins
 
   return (
     <>
+      <PageHeader title="Diary" subtitle={formatCalendarDate(date)} />
+      <div className="flex flex-col gap-4 px-4 md:px-8">
+        <LiveDiary instructorIds={shown.map((member) => member.id)} />
       <SchoolDiaryNav
         date={date}
         previous={step('day', date, -1)}
@@ -75,9 +77,9 @@ async function SchoolDay({ date, instructor, transmission }: { date: string; ins
         instructor={instructor ?? ''}
         transmission={transmission ?? ''}
       />
-      {shown.length === 0 ? (
-        <EmptyState icon={Users} title="Nobody matches" description="Change the filters to see your instructors." />
-      ) : (
+        {shown.length === 0 ? (
+          <EmptyState icon={Users} title="Nobody matches" description="Change the filters to see your instructors." />
+        ) : (
         <ol className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
           {shown.map((member) => {
             const theirs = byInstructor.get(member.id) ?? [];
@@ -105,8 +107,9 @@ async function SchoolDay({ date, instructor, transmission }: { date: string; ins
               </li>
             );
           })}
-        </ol>
-      )}
+          </ol>
+        )}
+      </div>
     </>
   );
 }

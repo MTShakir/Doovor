@@ -1,5 +1,6 @@
 import { expect, test } from '@playwright/test';
 import { authFile } from '../support/accounts';
+import { setBookingStatus } from '../support/database';
 import { expectAccessible, snap } from '../support/helpers';
 
 /** The school diary (DIA-09, M1-22). The seeded school has three instructors. */
@@ -40,5 +41,37 @@ test.describe('school diary (DIA-09, M1-22)', () => {
     await page.goto('/app/school/diary?date=2026-09-15');
     await expect(page).toHaveURL(/\/app\/instructor$/);
     await context.close();
+  });
+});
+
+/**
+ * A diary that is open stays right (DIA-03, M1-23). The manager watches, the database
+ * changes underneath them, and the page catches up on its own.
+ */
+test.describe('a live diary (DIA-03, M1-23)', () => {
+  test.use({ storageState: authFile('schoolManager') });
+
+  test('a lesson changed elsewhere shows without a reload', { tag: '@desktop-only' }, async ({ page }) => {
+    const instructor = 'Emma Clarke';
+    const startsAt = '2026-09-15T08:00:00.000Z';
+
+    await page.goto('/app/school/diary?date=2026-09-15');
+    const lesson = page.getByRole('article', { name: /09:00 Isla Roberts/ });
+    await expect(lesson).toBeVisible();
+    await expect(lesson).toContainText('Pending');
+    // A change made before the page is listening is one it can never hear about.
+    await expect(page.locator('[data-diary-live="on"]')).toBeAttached();
+
+    try {
+      // Changed by something other than this page, as another person or a job would.
+      await setBookingStatus(instructor, startsAt, 'cancelled');
+      await expect(lesson).toContainText('Cancelled', { timeout: 20_000 });
+    } finally {
+      // Housekeeping for the next run, not part of what is being checked here.
+      await setBookingStatus(instructor, startsAt, 'requested');
+    }
+
+    await page.reload();
+    await expect(lesson).toContainText('Pending');
   });
 });

@@ -5,6 +5,7 @@ import { PageHeader } from '@repo/ui/app-shell';
 import { SkeletonRow } from '@repo/ui/skeleton';
 import { Suspense } from 'react';
 import { DayView } from '@/components/diary/day-view';
+import { LiveDiary } from '@/components/diary/live-diary';
 import { MonthView } from '@/components/diary/month-view';
 import { WeekView } from '@/components/diary/week-view';
 import { requirePortal } from '@/lib/auth/session';
@@ -19,31 +20,24 @@ interface DiaryParams {
   searchParams: Promise<{ view?: string; date?: string }>;
 }
 
-export default async function DiaryPage({ searchParams }: DiaryParams) {
-  const params = await searchParams;
-  const view: ChosenView = isDiaryView(params.view) ? params.view : 'responsive';
-  const date = dateFrom(params.date);
-
+/**
+ * A diary is about now: the day asked for, or today. None of it can be prerendered, so all
+ * of it sits inside one boundary and the shell around it stays instant (D-029).
+ */
+export default function DiaryPage({ searchParams }: DiaryParams) {
   return (
     <main className="flex flex-col gap-4 pb-8">
-      <PageHeader title="Diary" subtitle={formatCalendarDate(date)} />
-      <div className="flex flex-col gap-4 px-4 md:px-8">
-        <DiaryNav
-          view={view}
-          date={date}
-          previous={step(view, date, -1)}
-          next={step(view, date, 1)}
-          today={todayInZone()}
-        />
-        <Suspense key={`${view}-${date}`} fallback={<SkeletonRow />}>
-          <Diary view={view} date={date} />
-        </Suspense>
-      </div>
+      <Suspense fallback={<SkeletonRow />}>
+        <Diary searchParams={searchParams} />
+      </Suspense>
     </main>
   );
 }
 
-async function Diary({ view, date }: { view: ChosenView; date: string }) {
+async function Diary({ searchParams }: DiaryParams) {
+  const params = await searchParams;
+  const view: ChosenView = isDiaryView(params.view) ? params.view : 'responsive';
+  const date = dateFrom(params.date);
   const { access } = await requirePortal('instructor');
   const membership = access.memberships.find((m) => m.instructorProfileId !== null);
   if (!membership?.instructorProfileId) return null;
@@ -64,19 +58,32 @@ async function Diary({ view, date }: { view: ChosenView; date: string }) {
   const week = <WeekView from={range.from} lessons={lessons} dayOf={dayOf} today={todayInZone()} />;
 
   return (
-    <section aria-label={`Diary for ${formatDate(range.startsAt)}`}>
-      {view === 'day' ? day : null}
-      {view === 'week' ? week : null}
-      {view === 'month' ? (
-        <MonthView month={range.from} today={todayInZone()} busy={[...byDay(lessons, dayOf).keys()]} />
-      ) : null}
-      {view === 'responsive' ? (
-        <>
-          <div className="md:hidden">{day}</div>
-          <div className="hidden md:block">{week}</div>
-        </>
-      ) : null}
-    </section>
+    <>
+      <PageHeader title="Diary" subtitle={formatCalendarDate(date)} />
+      <div className="flex flex-col gap-4 px-4 md:px-8">
+        <DiaryNav
+          view={view}
+          date={date}
+          previous={step(view, date, -1)}
+          next={step(view, date, 1)}
+          today={todayInZone()}
+        />
+        <section aria-label={`Diary for ${formatDate(range.startsAt)}`}>
+          <LiveDiary instructorIds={[membership.instructorProfileId]} />
+          {view === 'day' ? day : null}
+          {view === 'week' ? week : null}
+          {view === 'month' ? (
+            <MonthView month={range.from} today={todayInZone()} busy={[...byDay(lessons, dayOf).keys()]} />
+          ) : null}
+          {view === 'responsive' ? (
+            <>
+              <div className="md:hidden">{day}</div>
+              <div className="hidden md:block">{week}</div>
+            </>
+          ) : null}
+        </section>
+      </div>
+    </>
   );
 }
 
