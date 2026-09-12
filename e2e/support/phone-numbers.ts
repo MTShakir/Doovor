@@ -13,6 +13,8 @@ const reserved = {
   'sign-in-with-code': ['07700 900003', '07700 900004'],
   'verify-mobile': ['07700 900005', '07700 900006'],
   onboarding: ['07700 900007', '07700 900008'],
+  /** The timed run is a phone flow, so only the first of these is ever used. */
+  'onboarding-timed': ['07700 900009', '07700 900009'],
 } as const;
 
 export type PhoneReservation = keyof typeof reserved;

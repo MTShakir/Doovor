@@ -6,7 +6,7 @@ Last updated: 12 September 2026
 
 M0 Foundation is approved, merged to `main` and live: the app runs on the brand domain against the hosted Supabase project, with CI green on every push. The milestone report is at https://claude.ai/code/artifact/7b3956cb-d283-46c8-b3fa-a48ac2694c2e
 
-M1 Instructor core has started on branch `m1-instructor-core`. Goal: an instructor finishes onboarding in under 5 minutes and has a working diary.
+M1 Instructor core is complete on branch `m1-instructor-core`, all 24 tasks, and is waiting for approval. An instructor signs up, is set up in five minutes, is verified by a person, and has a diary that keeps itself up to date.
 
 ## M1 progress
 
@@ -35,6 +35,7 @@ M1 Instructor core has started on branch `m1-instructor-core`. Goal: an instruct
 | M1-21 | Diary month view, on the design system's month grid, with a dot on every day that has lessons | DIA-03 | Done. Choosing a day opens that day |
 | M1-22 | School diary: every instructor side by side for a day, filtered by instructor and transmission (D-062 on branches) | DIA-09 | Done. A manager sees all of them; an instructor at the school sees only their own |
 | M1-23 | Live diary: the database broadcasts on a private topic per instructor, and an open diary catches up on its own (D-063) | DIA-03 | Done. A lesson cancelled from outside the page shows on it without a reload |
+| M1-24 | A timed run at 390 px: sign up, verify the mobile, and fill in all five steps including both photos | AUTH-04 | Done. 8 seconds of machine time against a production build, well inside the five minutes the milestone claims |
 
 ## Done (M0)
 
@@ -64,20 +65,20 @@ Decisions D-036 to D-050 were logged during this stretch. Two were security fixe
 
 | Suite | Result |
 |---|---|
-| Unit (Vitest) | 295 passed across 6 packages; `packages/core` line coverage 99%, `packages/providers` 100% |
+| Unit (Vitest) | 288 passed across 6 packages; `packages/core` line coverage 99.3%, `packages/providers` 100% |
 | Database (pgTAP) | 290 assertions in 22 files, all passing; SQL lint clean |
-| End to end (Playwright) | 146 passed at 390 px and 1440 px, none skipped, stable across repeated full runs, also against a production build in CI mode |
+| End to end (Playwright) | 147 passed at 390 px and 1440 px, none skipped, stable across repeated full runs, and against a production build with the CI settings |
 | Lint, typecheck, copy guard | Clean |
 | CI on GitHub | Green: lint and unit, database, end to end against a production build |
 | Staging (hosted) | Security Advisor: 0 errors, 6 expected warnings (D-051). Every public table has row-level security. The sign-out guard (D-041) is active on the authenticator role. Health check and sign-in page verified |
 
 ## In progress
 
-- M1-24: the timed onboarding run, then the milestone report.
+- Nothing. Waiting for approval of M1.
 
 ## Next
 
-- M1-24, then the M1 report and, on approval, the merge to `main`.
+- On approval: merge `m1-instructor-core` into `main`, push the nine M1 migrations to staging, and start M2.
 - The seven M1 migrations are applied locally only. They go to staging with the next staging push.
 
 ## Blockers
