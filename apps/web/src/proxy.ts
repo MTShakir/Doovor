@@ -1,4 +1,5 @@
 import { NextResponse, type NextRequest } from 'next/server';
+import { rememberInvitation } from '@/lib/auth/invitation-proxy';
 import { refreshSession, withSessionCookies } from '@/lib/supabase/proxy';
 
 /** Areas that need a signed-in person. Roles and TOTP are checked in each layout. */
@@ -28,6 +29,10 @@ export async function proxy(request: NextRequest) {
     redirect.headers.set('x-request-id', requestId);
     return redirect;
   }
+
+  // An invitation link opened by someone who has no account yet is kept until they have one
+  // (AUTH-07). Signed in, there is nothing to remember: the page asks them there and then.
+  if (!userId) rememberInvitation(response, request.nextUrl.pathname);
 
   response.headers.set('x-request-id', requestId);
   return response;

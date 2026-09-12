@@ -1405,6 +1405,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      accept_invitation: { Args: { p_token: string }; Returns: string }
       cache_postcode: {
         Args: {
           p_country?: string
@@ -1430,6 +1431,30 @@ export type Database = {
       decide_verification: {
         Args: { p_approved: boolean; p_profile_id: string; p_reason?: string }
         Returns: Database["public"]["Enums"]["verification_status"]
+      }
+      invitation_details: {
+        Args: { p_token: string }
+        Returns: {
+          business_name: string
+          email: string
+          expired: boolean
+          full_name: string
+          instructor_name: string
+        }[]
+      }
+      invite_learner: {
+        Args: {
+          p_channel: string
+          p_email?: string
+          p_full_name?: string
+          p_instructor_id: string
+          p_phone?: string
+        }
+        Returns: {
+          expires_at: string
+          invitation_id: string
+          token: string
+        }[]
       }
       list_my_sessions: {
         Args: never
@@ -1518,6 +1543,10 @@ export type Database = {
           isOneToOne: false
           isSetofReturn: true
         }
+      }
+      system_clear_expired_invitations: {
+        Args: { p_older_than?: string }
+        Returns: number
       }
       system_clear_rate_limits: {
         Args: { p_older_than?: string }

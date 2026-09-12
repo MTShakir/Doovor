@@ -22,7 +22,8 @@
     "./booking-rules": "./src/booking-rules.ts",
     "./diary": "./src/diary.ts",
     "./age": "./src/age.ts",
-    "./schemas/learner": "./src/schemas/learner.ts"
+    "./schemas/learner": "./src/schemas/learner.ts",
+    "./invitations": "./src/invitations.ts"
   },
   "scripts": {
     "lint": "eslint .",

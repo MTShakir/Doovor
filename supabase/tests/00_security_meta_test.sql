@@ -42,10 +42,12 @@ select is_empty(
 --   covers_postcode: a learner asks "do you teach where I live?" before they have an account,
 --   and the answer is a yes or no about an area that is public on the instructor's profile
 --   anyway (COV-01, COV-02).
+--   invitation_details: the page an invitation link opens, read before there is an account.
+--   It answers only for a token someone was actually sent, and says a name (AUTH-07).
 select is_empty(
   $$ select distinct routine_name from information_schema.routine_privileges
       where routine_schema = 'public' and grantee in ('PUBLIC', 'anon')
-        and routine_name not in ('covers_postcode') $$,
+        and routine_name not in ('covers_postcode', 'invitation_details') $$,
   'no public function is executable by anon unless allowlisted'
 );
 

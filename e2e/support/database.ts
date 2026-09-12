@@ -22,6 +22,22 @@ export async function withDatabase<T>(work: (sql: postgres.Sql) => Promise<T>): 
   }
 }
 
+/**
+ * Who a learner is linked to, found by the email they signed up with. An invitation is only
+ * really accepted if this row exists, and no page shows it until the CRM arrives (M2-04).
+ */
+export async function learnerInstructorName(email: string): Promise<string | null> {
+  return withDatabase(async (sql) => {
+    const rows = await sql<{ display_name: string }[]>`
+      select p.display_name
+        from public.learner_relationships r
+        join auth.users u on u.id = r.learner_id
+        join public.instructor_profiles p on p.id = r.instructor_id
+       where lower(u.email) = lower(${email})`;
+    return rows[0]?.display_name ?? null;
+  });
+}
+
 /** Sets a booking's status, as another person or a job would. Returns what it was. */
 export async function setBookingStatus(
   instructorName: string,

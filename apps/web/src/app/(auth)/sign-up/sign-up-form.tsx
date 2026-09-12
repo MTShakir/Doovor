@@ -20,7 +20,12 @@ const headings: Record<IntendedRole, string> = {
   school: 'Create your school account',
 };
 
-export function SignUpForm({ role }: { role: IntendedRole }) {
+export interface SignUpPrefill {
+  fullName: string;
+  email: string;
+}
+
+export function SignUpForm({ role, prefill }: { role: IntendedRole; prefill?: SignUpPrefill }) {
   const [pending, startTransition] = useTransition();
   const [formError, setFormError] = useState<string | null>(null);
   const form = useForm<z.input<typeof signUpSchema>>({
@@ -55,7 +60,7 @@ export function SignUpForm({ role }: { role: IntendedRole }) {
       <ClientForm onSubmit={onSubmit} pending={pending} className="flex flex-col gap-4">
         {formError ? <FormAlert>{formError}</FormAlert> : null}
         <Field label="Full name" error={errors.fullName?.message}>
-          <Input autoComplete="name" {...form.register('fullName')} />
+          <Input autoComplete="name" defaultValue={prefill?.fullName} {...form.register('fullName')} />
         </Field>
         {role === 'school' ? (
           <Field label="School name" error={errors.schoolName?.message}>
@@ -63,7 +68,7 @@ export function SignUpForm({ role }: { role: IntendedRole }) {
           </Field>
         ) : null}
         <Field label="Email" error={errors.email?.message}>
-          <Input type="email" autoComplete="email" inputMode="email" {...form.register('email')} />
+          <Input type="email" autoComplete="email" inputMode="email" defaultValue={prefill?.email} {...form.register('email')} />
         </Field>
         <Field label="Password" hint="At least 8 characters. A short phrase is easy to remember." error={errors.password?.message}>
           <PasswordInput autoComplete="new-password" {...form.register('password')} />
