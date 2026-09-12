@@ -1281,6 +1281,24 @@ export type Database = {
         }
         Relationships: []
       }
+      rate_limit_buckets: {
+        Row: {
+          hits: number
+          key: string
+          window_started_at: string
+        }
+        Insert: {
+          hits?: number
+          key: string
+          window_started_at: string
+        }
+        Update: {
+          hits?: number
+          key?: string
+          window_started_at?: string
+        }
+        Relationships: []
+      }
       users: {
         Row: {
           analytics_consent: boolean
@@ -1501,11 +1519,24 @@ export type Database = {
           isSetofReturn: true
         }
       }
+      system_clear_rate_limits: {
+        Args: { p_older_than?: string }
+        Returns: number
+      }
       system_mark_outbox_failed: {
         Args: { p_error: string; p_ids: string[] }
         Returns: number
       }
       system_mark_outbox_sent: { Args: { p_ids: string[] }; Returns: number }
+      system_rate_limit_hit: {
+        Args: {
+          p_action: string
+          p_max: number
+          p_who: string
+          p_window_seconds: number
+        }
+        Returns: boolean
+      }
       system_unlist_expired_badges: {
         Args: { p_today?: string }
         Returns: number

@@ -15,6 +15,7 @@ M2 Learners and bookings has started on branch `m2-learners-bookings`. An instru
 | Task | What | PRD | State |
 |---|---|---|---|
 | M2-01 | Learner onboarding: name, postcode, gearbox, experience and a date of birth that stays the learner's own | AUTH-06, R-16 | Done. Under 16 is refused by the form and by the row itself |
+| M2-02 | Rate limiter: fixed windows counted in Postgres, behind a `RateLimiter` interface, with the limits in one catalogue and a daily sweep | NFR-SEC-03, D-008 | Done. A limiter that cannot answer refuses rather than letting everything through |
 
 ## M1 progress
 
@@ -82,7 +83,7 @@ Decisions D-036 to D-050 were logged during this stretch. Two were security fixe
 
 ## In progress
 
-- M2-02: the rate limiter, before anything else takes public input.
+- M2-03: invitations, the first thing the limiter protects.
 
 ## Next
 
