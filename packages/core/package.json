@@ -11,6 +11,7 @@
     "./result": "./src/result.ts",
     "./time": "./src/time/index.ts",
     "./phone": "./src/phone.ts",
+    "./postcode": "./src/postcode.ts",
     "./schemas/auth": "./src/schemas/auth.ts",
     "./schemas/onboarding": "./src/schemas/onboarding.ts"
   },

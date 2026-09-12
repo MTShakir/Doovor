@@ -1326,6 +1326,17 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      cache_postcode: {
+        Args: {
+          p_country?: string
+          p_district?: string
+          p_latitude: number
+          p_longitude: number
+          p_outcode: string
+          p_postcode: string
+        }
+        Returns: undefined
+      }
       create_business: {
         Args: {
           p_name: string
