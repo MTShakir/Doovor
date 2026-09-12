@@ -12,6 +12,7 @@ import { notFound } from 'next/navigation';
 import { Fragment, Suspense } from 'react';
 import { requirePortal } from '@/lib/auth/session';
 import { learnerCard, type LearnerCard } from '@/lib/learners/card';
+import { learnerHistory, type LearnerHistoryEntry } from '@/lib/learners/history';
 import { learnerNotes } from '@/lib/learners/notes';
 import { Notes } from './notes';
 import { StatusControl } from './status-control';
@@ -42,7 +43,7 @@ async function Learner({ params }: LearnerPageProps) {
   // not there, and not there and not allowed look the same from here.
   if (!card) notFound();
 
-  const notes = await learnerNotes(card.learnerId);
+  const [notes, history] = await Promise.all([learnerNotes(card.learnerId), learnerHistory(card.learnerId)]);
   const mine = access.memberships.some((one) => one.instructorProfileId === card.instructorId);
   const gearbox = card.transmission === null ? null : card.transmission === 'manual' ? 'Manual' : 'Automatic';
 
@@ -75,6 +76,7 @@ async function Learner({ params }: LearnerPageProps) {
         <Lessons card={card} />
         <Pickups card={card} />
         <Notes learnerId={card.learnerId} notes={notes} viewerId={session.userId} />
+        <History entries={history} />
       </div>
     </>
   );
@@ -140,6 +142,27 @@ function Lessons({ card }: { card: LearnerCard }) {
         title="Last lesson"
         trailing={card.lastLessonAt === null ? 'None yet' : formatDateTime(new Date(card.lastLessonAt))}
       />
+    </Card>
+  );
+}
+
+/** LRN-06: what has happened to this learner here, newest first. */
+function History({ entries }: { entries: LearnerHistoryEntry[] }) {
+  if (entries.length === 0) return null;
+
+  return (
+    <Card padding="none" role="region" aria-labelledby="history-title">
+      <div className="px-4 pt-4">
+        <CardTitle id="history-title">History</CardTitle>
+      </div>
+      <ul className="flex flex-col py-2">
+        {entries.map((entry) => (
+          <li key={`${entry.at}-${entry.line}`} className="flex flex-col gap-0.5 px-4 py-2">
+            <span className="text-body text-ink">{entry.line}</span>
+            <span className="text-small text-grey-700">{formatDateTime(new Date(entry.at))}</span>
+          </li>
+        ))}
+      </ul>
     </Card>
   );
 }

@@ -1513,6 +1513,10 @@ export type Database = {
         }
         Returns: string
       }
+      assign_learner: {
+        Args: { p_instructor_id: string; p_learner_id: string }
+        Returns: string
+      }
       cache_postcode: {
         Args: {
           p_country?: string
@@ -1561,6 +1565,16 @@ export type Database = {
           expires_at: string
           invitation_id: string
           token: string
+        }[]
+      }
+      learner_history: {
+        Args: { p_learner_id: string }
+        Returns: {
+          action: string
+          actor_name: string
+          after: Json
+          before: Json
+          happened_at: string
         }[]
       }
       list_my_sessions: {

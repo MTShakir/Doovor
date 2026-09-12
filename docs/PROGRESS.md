@@ -29,6 +29,8 @@ M2 Learners and bookings has started on branch `m2-learners-bookings`. An instru
 
 | M2-09 | CSV import: the file read in the browser, columns guessed and changeable, a preview, then batches of twenty with a report of every row left out and why | LRN-03 | Done. A 120 row file is read, checked and reported in a unit test; the screen imports in batches so a long file reports as it goes |
 
+| M2-10 | The school's own learner list, handing a learner to another instructor, and the history that follows them | LRN-06 | Done. The history is read through an RPC, so the people who work with a learner see their story without the audit log being opened to them |
+
 ## M1 progress
 
 | Task | What | PRD | State |
@@ -95,7 +97,7 @@ Decisions D-036 to D-050 were logged during this stretch. Two were security fixe
 
 ## In progress
 
-- M2-10: assigning and reassigning a learner between instructors at a school.
+- M2-11 to M2-13: the availability engine, which the booking flows are built on.
 
 ## Next
 

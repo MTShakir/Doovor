@@ -92,3 +92,47 @@ export function lessonsTakenLine(lessonsTaken: number): string {
 export function learnerCountLine(count: number): string {
   return count === 1 ? '1 learner' : `${String(count)} learners`;
 }
+
+export interface LearnerEvent {
+  action: string;
+  before: Record<string, unknown> | null;
+  after: Record<string, unknown> | null;
+  actorName: string;
+}
+
+function text(record: Record<string, unknown> | null, key: string): string | null {
+  const value = record?.[key];
+  return typeof value === 'string' && value !== '' ? value : null;
+}
+
+/**
+ * One line of a learner's history (LRN-06). Anything we have no sentence for is left out
+ * rather than shown as a code: the history is for the instructor, not for us.
+ */
+export function learnerEventLine(event: LearnerEvent): string | null {
+  if (event.action === 'learner.added') {
+    const source = text(event.after, 'source');
+    return source === 'import' ? `Imported by ${event.actorName}` : `Added by ${event.actorName}`;
+  }
+  if (event.action === 'learner.reassigned') {
+    const was = text(event.before, 'instructor_name');
+    const now = text(event.after, 'instructor_name');
+    if (now === null) return `Moved by ${event.actorName}`;
+    return was === null ? `Given to ${now} by ${event.actorName}` : `Moved from ${was} to ${now} by ${event.actorName}`;
+  }
+  if (event.action === 'learner.status_changed') {
+    const was = text(event.before, 'status');
+    const now = text(event.after, 'status');
+    if (was === null || now === null) return null;
+    const label = (status: string): string =>
+      isLearnerStatus(status) ? learnerStatusLabels[status].toLowerCase() : status;
+    const reason = text(event.after, 'reason');
+    const line = `Moved from ${label(was)} to ${label(now)} by ${event.actorName}`;
+    return reason === null ? line : `${line}: ${reason}`;
+  }
+  return null;
+}
+
+export function isLearnerStatus(value: unknown): value is LearnerStatus {
+  return typeof value === 'string' && (learnerStatuses as readonly string[]).includes(value);
+}

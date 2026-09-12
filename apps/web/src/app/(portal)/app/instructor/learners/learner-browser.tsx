@@ -18,15 +18,24 @@ export interface LearnerBrowserProps {
   search: string;
   filter: LearnerFilter;
   total: number;
+  /** Where the search and the filters are written, so a school reads its own list. */
+  path?: string;
+  /** A school has no way of adding somebody yet: their instructors do that. */
+  canAdd?: boolean;
   children: ReactNode;
 }
-
-const PATH = '/app/instructor/learners';
 /** Long enough that a name is typed, not spelled out, into the address bar. */
 const TYPING_PAUSE = 300;
 
 /** Search, the four filters, and the one button that adds somebody (LRN-01, AUTH-07). */
-export function LearnerBrowser({ search, filter, total, children }: LearnerBrowserProps) {
+export function LearnerBrowser({
+  search,
+  filter,
+  total,
+  path = '/app/instructor/learners',
+  canAdd = true,
+  children,
+}: LearnerBrowserProps) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
   // Held here rather than read back from the address bar: two changes in quick succession
@@ -46,7 +55,7 @@ export function LearnerBrowser({ search, filter, total, children }: LearnerBrows
     const query = new URLSearchParams();
     if (text !== '') query.set('q', text);
     if (which !== 'all') query.set('status', which);
-    const address = query.size === 0 ? PATH : `${PATH}?${query.toString()}`;
+    const address = query.size === 0 ? path : `${path}?${query.toString()}`;
     // replace, not push: a search is not a place to come back to with the back button.
     startTransition(() => { router.replace(address as Route); });
   };
@@ -69,10 +78,12 @@ export function LearnerBrowser({ search, filter, total, children }: LearnerBrows
             onChange={(event) => { onSearch(event.target.value); }}
           />
         </Field>
-        <Button width="responsive" onClick={() => { setAdding(true); }}>
-          <UserPlus className="size-5" aria-hidden />
-          Add a learner
-        </Button>
+        {canAdd ? (
+          <Button width="responsive" onClick={() => { setAdding(true); }}>
+            <UserPlus className="size-5" aria-hidden />
+            Add a learner
+          </Button>
+        ) : null}
       </div>
 
       <ChipGroup role="group" aria-label="Filter learners">
@@ -95,6 +106,7 @@ export function LearnerBrowser({ search, filter, total, children }: LearnerBrows
         {children}
       </div>
 
+      {canAdd ? (
       <Sheet
         open={adding}
         onOpenChange={setAdding}
@@ -122,6 +134,7 @@ export function LearnerBrowser({ search, filter, total, children }: LearnerBrows
           </p>
         </div>
       </Sheet>
+      ) : null}
     </div>
   );
 }

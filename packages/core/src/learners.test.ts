@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   learnerCountLine,
+  learnerEventLine,
   learnerFilterFrom,
   learnerFilterLabels,
   learnerFilters,
@@ -85,5 +86,43 @@ describe('learnerCountLine', () => {
     expect(learnerCountLine(0)).toBe('0 learners');
     expect(learnerCountLine(1)).toBe('1 learner');
     expect(learnerCountLine(24)).toBe('24 learners');
+  });
+});
+
+describe('learnerEventLine (LRN-06)', () => {
+  const event = (action: string, before: Record<string, unknown> | null, after: Record<string, unknown> | null) => ({
+    action,
+    before,
+    after,
+    actorName: 'Lucy Grant',
+  });
+
+  it('says who added them, and how', () => {
+    expect(learnerEventLine(event('learner.added', null, { source: 'manual' }))).toBe('Added by Lucy Grant');
+    expect(learnerEventLine(event('learner.added', null, { source: 'import' }))).toBe('Imported by Lucy Grant');
+  });
+
+  it('names both instructors when a learner is handed over', () => {
+    const line = learnerEventLine(
+      event('learner.reassigned', { instructor_name: 'Emma Clarke' }, { instructor_name: 'Tom Walsh' }),
+    );
+    expect(line).toBe('Moved from Emma Clarke to Tom Walsh by Lucy Grant');
+  });
+
+  it('says where a learner has got to, in the words the screen uses', () => {
+    expect(learnerEventLine(event('learner.status_changed', { status: 'active' }, { status: 'test_booked' }))).toBe(
+      'Moved from active to test booked by Lucy Grant',
+    );
+  });
+
+  it('keeps a reason when one was given', () => {
+    expect(
+      learnerEventLine(event('learner.status_changed', { status: 'active' }, { status: 'left', reason: 'Moved away' })),
+    ).toBe('Moved from active to left by Lucy Grant: Moved away');
+  });
+
+  it('leaves out anything it has no sentence for', () => {
+    expect(learnerEventLine(event('learner.exploded', null, null))).toBeNull();
+    expect(learnerEventLine(event('learner.status_changed', null, null))).toBeNull();
   });
 });

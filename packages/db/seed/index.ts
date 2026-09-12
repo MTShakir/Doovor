@@ -182,6 +182,12 @@ async function main(): Promise<void> {
           await tx`insert into public.learner_relationships (business_id, learner_id, instructor_id, status, source, usual_duration_minutes, created_by)
                    values (${businessId(i.business)}, ${id(learner.key)}, ${instructorId(i.key)}, ${learner.status}, 'invite',
                            ${learner.usualMinutes}, ${id(i.key)})`;
+          // The learner card shows a history (LRN-06), so a seeded learner has one too.
+          await tx`insert into public.audit_log (actor_user_id, actor_role, action, entity, entity_id, business_id, after)
+                   select ${id(i.key)}, 'instructor', 'learner.added', 'learner_relationship', r.id, r.business_id,
+                          jsonb_build_object('learner_id', r.learner_id, 'instructor_profile_id', r.instructor_id, 'source', 'manual')
+                     from public.learner_relationships r
+                    where r.business_id = ${businessId(i.business)} and r.learner_id = ${id(learner.key)}`;
         }
       }
 
