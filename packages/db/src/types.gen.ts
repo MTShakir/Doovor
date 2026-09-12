@@ -1580,6 +1580,10 @@ export type Database = {
         Args: { p_business_id: string; p_rules: Json }
         Returns: Json
       }
+      set_learner_status: {
+        Args: { p_learner_id: string; p_reason?: string; p_status: string }
+        Returns: Database["public"]["Enums"]["learner_status"]
+      }
       set_onboarding_prices: {
         Args: {
           p_business_id: string

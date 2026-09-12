@@ -5,6 +5,7 @@ import {
   learnerFilterLabels,
   learnerFilters,
   learnerStatuses,
+  learnerStatusHints,
   learnerStatusLabels,
   lessonsTakenLine,
   searchPattern,
@@ -38,8 +39,11 @@ describe('learner filters (LRN-01)', () => {
     expect(learnerFilterFrom(undefined)).toBe('all');
   });
 
-  it('has a label for every status and every filter', () => {
-    for (const status of learnerStatuses) expect(learnerStatusLabels[status]).not.toBe('');
+  it('has a label for every status and every filter, and says what each status means', () => {
+    for (const status of learnerStatuses) {
+      expect(learnerStatusLabels[status]).not.toBe('');
+      expect(learnerStatusHints[status]).not.toBe('');
+    }
     for (const filter of learnerFilters) expect(learnerFilterLabels[filter]).not.toBe('');
   });
 });

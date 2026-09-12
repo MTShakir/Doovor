@@ -2,6 +2,7 @@
 
 import { parsePostgresError } from '@repo/core/errors';
 import { err, ok, type Result } from '@repo/core/result';
+import { learnerStatuses } from '@repo/core/learners';
 import { learnerNoteSchema } from '@repo/core/schemas/note';
 import { revalidatePath } from 'next/cache';
 import { z } from 'zod';
@@ -38,6 +39,29 @@ export async function addLearnerNote(input: unknown): Promise<Result<null>> {
   if (error) return err(parsePostgresError(error).code);
 
   revalidatePath(`/app/instructor/learners/${parsed.data.learnerId}`);
+  return ok(null);
+}
+
+const statusSchema = z.object({
+  learnerId: z.uuid(),
+  status: z.enum(learnerStatuses),
+});
+
+/** LRN-05: where a learner is up to. The RPC checks the permission and records the move. */
+export async function setLearnerStatus(input: unknown): Promise<Result<null>> {
+  const parsed = statusSchema.safeParse(input);
+  if (!parsed.success) return err('VALIDATION_FAILED', undefined, fieldErrors(parsed.error));
+
+  await requirePortal('instructor');
+  const supabase = await createSupabaseServerClient();
+  const { error } = await supabase.rpc('set_learner_status', {
+    p_learner_id: parsed.data.learnerId,
+    p_status: parsed.data.status,
+  });
+  if (error) return err(parsePostgresError(error).code);
+
+  revalidatePath(`/app/instructor/learners/${parsed.data.learnerId}`);
+  revalidatePath('/app/instructor/learners');
   return ok(null);
 }
 

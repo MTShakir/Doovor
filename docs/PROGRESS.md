@@ -23,6 +23,8 @@ M2 Learners and bookings has started on branch `m2-learners-bookings`. An instru
 
 | M2-06 | Private notes on the learner card, with five seconds to undo a deletion, and tests that no learner path reaches them | LRN-04 | Done. pgTAP proves it three ways: the table, no view built on it, and no `security definer` function that reads it |
 
+| M2-07 | Learner status workflow: the six statuses, changed from the card in one tap, through an RPC that checks the permission and records the move | LRN-05 | Done. Nobody holds an update grant on the relationship, so the RPC is the only way a status changes, and every change is in the audit log |
+
 ## M1 progress
 
 | Task | What | PRD | State |
@@ -89,7 +91,7 @@ Decisions D-036 to D-050 were logged during this stretch. Two were security fixe
 
 ## In progress
 
-- M2-07: the learner status workflow, so the filters on the list can be changed from the card.
+- M2-08: adding a learner by hand, with the duplicate check LRN-03 asks for.
 
 ## Next
 

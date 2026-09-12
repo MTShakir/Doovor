@@ -1,5 +1,4 @@
 import type { Metadata } from 'next';
-import { learnerStatusLabels } from '@repo/core/learners';
 import { formatDateTime, formatMinutes } from '@repo/core/time';
 import { PageHeader } from '@repo/ui/app-shell';
 import { Button } from '@repo/ui/button';
@@ -14,8 +13,8 @@ import { Fragment, Suspense } from 'react';
 import { requirePortal } from '@/lib/auth/session';
 import { learnerCard, type LearnerCard } from '@/lib/learners/card';
 import { learnerNotes } from '@/lib/learners/notes';
-import { statusPill } from '@/lib/learners/status-pill';
 import { Notes } from './notes';
+import { StatusControl } from './status-control';
 
 export const metadata: Metadata = { title: 'Learner' };
 
@@ -65,7 +64,7 @@ async function Learner({ params }: LearnerPageProps) {
 
       <div className="flex flex-col gap-4 px-4 md:max-w-2xl md:px-8">
         <div className="flex flex-wrap items-center gap-2">
-          <StatusPill status={statusPill(card.status)}>{learnerStatusLabels[card.status]}</StatusPill>
+          <StatusControl learnerId={card.learnerId} status={card.status} name={card.fullName} />
           {/* Who teaches them is worth saying only to somebody who is not that person. */}
           {card.instructorName === null || mine ? null : (
             <span className="text-small text-grey-700">Taught by {card.instructorName}</span>

@@ -19,6 +19,16 @@ export const learnerStatusLabels: Record<LearnerStatus, string> = {
   left: 'Left',
 };
 
+/** What each status means, in the words the screen uses to explain the choice (LRN-05). */
+export const learnerStatusHints: Record<LearnerStatus, string> = {
+  enquiry: 'Asked about lessons, nothing booked yet',
+  waiting: 'Ready to start, waiting for a slot',
+  active: 'Having lessons now',
+  test_booked: 'Has a practical test coming up',
+  passed: 'Passed their test',
+  left: 'Not learning with you any more',
+};
+
 export const learnerFilters = ['all', 'active', 'waiting', 'passed', 'inactive'] as const;
 
 export type LearnerFilter = (typeof learnerFilters)[number];
