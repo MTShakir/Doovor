@@ -1,12 +1,43 @@
 # Progress
 
-Last updated: 11 September 2026
+Last updated: 12 September 2026
 
 ## Status
 
-M0 Foundation, branch `m0-foundation`. M0-01 to M0-31 are done and green locally and on GitHub (CI run #5 passed all three jobs). The first four CI runs were red on two fresh-checkout problems, now fixed: lint needed Next's generated route types, and a blank setting value was rejected instead of counting as "not set" (which would also have broken a hosting dashboard with an empty variable). M0-32 is live: the staging database has all 8 migrations, the hosted auth settings were pushed from `ops/staging` (site and redirect URLs, Resend sender, email templates, 6-digit codes, tighter rate limits), the domain is connected (apex serves the app, `www` redirects to it) and the app builds and runs on Vercel in London. Production on the apex waits on merging this branch to `main`, since Vercel builds production from `main`. The M0-33 milestone report is delivered (https://claude.ai/code/artifact/7b3956cb-d283-46c8-b3fa-a48ac2694c2e). Waiting for "Approved, continue".
+M0 Foundation is approved, merged to `main` and live: the app runs on the brand domain against the hosted Supabase project, with CI green on every push. The milestone report is at https://claude.ai/code/artifact/7b3956cb-d283-46c8-b3fa-a48ac2694c2e
 
-## Done
+M1 Instructor core is complete on branch `m1-instructor-core`, all 24 tasks, and is waiting for approval. The milestone report is at https://claude.ai/code/artifact/92224816-1b7a-4eef-bd86-0ab470cb16ae An instructor signs up, is set up in five minutes, is verified by a person, and has a diary that keeps itself up to date.
+
+## M1 progress
+
+| Task | What | PRD | State |
+|---|---|---|---|
+| M1-01 | Background jobs: runner client, `/api/inngest`, the `outbox_events` table with claim, sent and failed functions, the dispatcher and a one-minute sweep | 14.5 | Done. Verified end to end: an enqueued event was claimed, sent and delivered to a job |
+| M1-02 | Onboarding shell: five steps stored on the profile, resume where you left off, only the name is required, finishing opens the diary | AUTH-04 | Done. Steps 2 to 5 are placeholders until M1-04 to M1-09 fill them in |
+| M1-03 | Step 1 name and photo: picture cropped, resized and re-encoded in the browser, public `avatars` bucket with a folder per instructor | AUTH-04, INS-01 | Done. A photo carrying a GPS position is stored without it, proved end to end |
+| M1-04 | Step 2 badge: private `badges` bucket, storage policies, `submit_verification` RPC with an audit row and a job event | AUTH-04, INS-02 | Done. Another instructor cannot read the badge photo, and nobody sets their own verification status |
+| M1-05 | `GeoProvider` over postcodes.io in the new `packages/providers`, postcode rules in core, the cache written through `cache_postcode` (D-057), and a lookup route | COV-03 | Done. Checked against the live service: a real postcode resolves, a well formed one that does not exist is told apart from one that is not a postcode |
+| M1-06 | `MapProvider`: circle and bounds geometry in `packages/providers`, Mapbox behind `next/dynamic`, a drawn fallback while there is no map key (D-058) | COV-01 | Done, except the Mapbox path itself, which needs a token to run once |
+| M1-07 | Step 3 area: base postcode looked up as it is typed, radius slider from 1 to 30 miles, the circle following it | COV-01, AUTH-04 | Done. The server resolves the postcode itself, so no coordinates are taken from the browser |
+| M1-08 | Step 4 prices: one hourly price and an optional ten hour block, turned into a lesson type, three durations and a package in one transaction | AUTH-04, R-05, PAY-04 | Done. Setting prices again changes them rather than making a second set |
+| M1-09 | Step 5 hours: the days they teach and one pair of times (D-059), written as a row per day in local wall clock | AUTH-04, DIA-01 | Done. Onboarding is complete: five steps, only the name required |
+| M1-10 | Today screen with the setup checklist: first learner, payments, booking link | 10.1 | Done. Every row is worked out from real rows, and the card disappears when the list is finished |
+| M1-11 | Profile editor: photo, name, bio, languages, years, car, transmission, dual controls, specialisms, with the badge shown but not editable | INS-01 | Done. One Zod schema decides the form and the server |
+| M1-12 | Admin verification queue: the badge photo through a signed address, approve or reject with a reason, audit row, and the tick | INS-02, ADM-03 | Done. Only staff with two-step verification can decide, proved in pgTAP and end to end |
+| M1-13 | Badge expiry: rules in core, a daily job at 07:00 London warning at 60, 30 and 7 days, and an expired badge taken out of search | INS-03 | Done. A reminder is recorded before it is sent, so a retry cannot send it twice |
+| M1-14 | Trainee instructors: the label on the profile, supervision given by the school, and R-18 enforced on the booking row itself (D-061) | INS-04, R-18 | Done. An unlinked trainee cannot take a booking, whatever writes it |
+| M1-15 | Coverage: districts added and left out, `covers_postcode` answering the whole rule in one place, and the base postcode and radius editable after onboarding | COV-01, COV-02 | Done. Something that is not a district is refused in the form and by a constraint |
+| M1-16 | Pickup points: exactly one default per learner enforced by the database, the postcode resolved on the server, and the picker in the design system | COV-04 | Done. The picker has no screen to live on until learner management arrives in M2 |
+| M1-17 | Diary settings: the week a day at a time, plus one-off time off and extra hours, with overlaps settled when they are written | DIA-01, DIA-02 | Done. No moment can be both open and blocked |
+| M1-18 | Booking rules: buffer and instant booking for the instructor, notice, horizon, cancellation and request expiry for the Business, layered over the platform defaults | 11.1, DIA-05, DIA-06, BOK-06 | Done. Every range from PRD 11.1 is enforced in the schema and again in the database |
+| M1-19 | Diary day view: one word per lesson, the gaps worth filling, and navigation that lives in the address bar | DIA-03, DIA-04 | Done. Reviewed at 390 px |
+| M1-20 | Diary week view, seven days across, and the day on a phone with the week on a desktop when nobody has chosen | DIA-03 | Done. Reviewed at 1440 px |
+| M1-21 | Diary month view, on the design system's month grid, with a dot on every day that has lessons | DIA-03 | Done. Choosing a day opens that day |
+| M1-22 | School diary: every instructor side by side for a day, filtered by instructor and transmission (D-062 on branches) | DIA-09 | Done. A manager sees all of them; an instructor at the school sees only their own |
+| M1-23 | Live diary: the database broadcasts on a private topic per instructor, and an open diary catches up on its own (D-063) | DIA-03 | Done. A lesson cancelled from outside the page shows on it without a reload |
+| M1-24 | A timed run at 390 px: sign up, verify the mobile, and fill in all five steps including both photos | AUTH-04 | Done. 8 seconds of machine time against a production build, well inside the five minutes the milestone claims |
+
+## Done (M0)
 
 | Tasks | What | PRD |
 |---|---|---|
@@ -34,27 +65,26 @@ Decisions D-036 to D-050 were logged during this stretch. Two were security fixe
 
 | Suite | Result |
 |---|---|
-| Unit (Vitest) | 146 passed across 5 packages; `packages/core` line coverage 98.4% |
-| Database (pgTAP) | 142 assertions in 8 files, all passing; SQL lint clean |
-| End to end (Playwright) | 79 passed at 390 px and 1440 px, none skipped, stable across repeated full runs, also against a production build in CI mode |
+| Unit (Vitest) | 288 passed across 6 packages; `packages/core` line coverage 99.3%, `packages/providers` 100% |
+| Database (pgTAP) | 290 assertions in 22 files, all passing; SQL lint clean |
+| End to end (Playwright) | 147 passed at 390 px and 1440 px, none skipped, stable across repeated full runs, and against a production build with the CI settings |
 | Lint, typecheck, copy guard | Clean |
 | CI on GitHub | Green: lint and unit, database, end to end against a production build |
 | Staging (hosted) | Security Advisor: 0 errors, 6 expected warnings (D-051). Every public table has row-level security. The sign-out guard (D-041) is active on the authenticator role. Health check and sign-in page verified |
 
 ## In progress
 
-- Nothing. Waiting for approval of M0.
+- Nothing. Waiting for approval of M1.
 
 ## Next
 
-- M0-32: the product owner adds the provider secrets and a Supabase access token to `.env.local` (RUNBOOK section 3.1 step 4), then the command-line setup runs from here. Resend DNS, Twilio, the Google redirect URI and the Vercel import stay with the owner.
-- On approval: merge `m0-foundation` into `main`, then start M1 on `m1-instructor-core`.
+- On approval: merge `m1-instructor-core` into `main`, push the fifteen M1 migrations to staging, and start M2.
+- The seven M1 migrations are applied locally only. They go to staging with the next staging push.
 
 ## Blockers
 
 | Blocker | Blocks | Needs |
 |---|---|---|
-| Google OAuth client secret and redirect URIs | Google button (M0-23) locally and on staging | Product owner, when M0-32 starts |
-| Vercel project import and environment variables | M0-32 | Product owner |
-| Staging Supabase auth settings, email templates and a Resend SMTP sender | M0-32 (hosted sign-up emails) | Product owner |
-| Twilio credentials | Hosted text codes (M0-32) | Product owner |
+| Google OAuth client secret | The Google button, which stays hidden until it is set | Product owner |
+| Twilio account off trial | Text codes to a number that is not pre-registered, on staging | Product owner |
+| Mapbox access token | The real map on the coverage step. The drawn fallback ships meanwhile (D-058) | Product owner |

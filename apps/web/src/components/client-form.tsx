@@ -45,14 +45,16 @@ export function ClientForm({
  * field) before the page is ready does nothing instead of posting the raw form. It keeps its
  * normal look meanwhile, so the page does not flash.
  */
-export function SubmitButton({ className, disabled, ...props }: Omit<ButtonProps, 'type' | 'asChild' | 'variant'>) {
+export function SubmitButton({ className, disabled, variant, ...props }: Omit<ButtonProps, 'type' | 'asChild'>) {
   const hydrated = useHydrated();
+  const primary = variant === undefined || variant === 'primary';
   return (
     <Button
       {...props}
+      variant={variant}
       type="submit"
       disabled={disabled === true || !hydrated}
-      className={cn(!hydrated && disabled !== true && 'disabled:bg-black disabled:text-white', className)}
+      className={cn(!hydrated && disabled !== true && primary && 'disabled:bg-black disabled:text-white', className)}
     />
   );
 }

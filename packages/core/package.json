@@ -7,10 +7,20 @@
     ".": "./src/index.ts",
     "./money": "./src/money.ts",
     "./errors": "./src/errors.ts",
+    "./images": "./src/images.ts",
     "./result": "./src/result.ts",
+    "./setup-checklist": "./src/setup-checklist.ts",
     "./time": "./src/time/index.ts",
     "./phone": "./src/phone.ts",
-    "./schemas/auth": "./src/schemas/auth.ts"
+    "./postcode": "./src/postcode.ts",
+    "./schemas/auth": "./src/schemas/auth.ts",
+    "./schemas/onboarding": "./src/schemas/onboarding.ts",
+    "./schemas/profile": "./src/schemas/profile.ts",
+    "./badge-expiry": "./src/badge-expiry.ts",
+    "./schemas/pickup": "./src/schemas/pickup.ts",
+    "./schemas/availability": "./src/schemas/availability.ts",
+    "./booking-rules": "./src/booking-rules.ts",
+    "./diary": "./src/diary.ts"
   },
   "scripts": {
     "lint": "eslint .",

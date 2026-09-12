@@ -3,6 +3,11 @@
 import { brand, type ColourToken } from '@repo/config/brand';
 import { formatPence } from '@repo/core/money';
 import { Avatar } from '@repo/ui/avatar';
+import { AvatarPicker } from '@repo/ui/avatar-picker';
+import { PhotoUpload } from '@repo/ui/photo-upload';
+import { PickupPointPicker } from '@repo/ui/pickup-point-picker';
+import { RadiusMap } from '@/components/map/radius-map';
+import { SetupChecklist } from '@/components/setup-checklist';
 import { Button } from '@repo/ui/button';
 import { Card, CardDescription, CardTitle } from '@repo/ui/card';
 import { Checkbox } from '@repo/ui/checkbox';
@@ -44,6 +49,8 @@ const sections = [
   'Cards and lists',
   'Feedback',
   'Progress',
+  'Checklist',
+  'Coverage',
   'Scheduling',
   'Overlays',
   'Navigation',
@@ -83,6 +90,9 @@ export function DesignShowcase() {
   const [chips, setChips] = useState<Record<string, boolean>>({ Automatic: true });
   const [sheetOpen, setSheetOpen] = useState(false);
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [picked, setPicked] = useState<string | undefined>(undefined);
+  const [document, setDocument] = useState<string | undefined>(undefined);
+  const [pickup, setPickup] = useState<string | undefined>(undefined);
 
   return (
     <main className="mx-auto max-w-5xl px-4 pb-24 md:px-8">
@@ -265,6 +275,55 @@ export function DesignShowcase() {
           <RatingStars rating={4.5} count={32} />
           <RatingStars rating={3} />
         </div>
+        <div className="grid gap-8 md:grid-cols-2">
+          <AvatarPicker
+            name="Priya Patel"
+            src={picked}
+            label="Your photo"
+            hint="Learners are more likely to book an instructor they can see."
+            accept="image/jpeg,image/png,image/webp,image/gif"
+            onChoose={(file) => { setPicked(URL.createObjectURL(file)); }}
+            onRemove={() => { setPicked(undefined); }}
+          />
+          <AvatarPicker
+            name="Priya Patel"
+            label="Uploading"
+            accept="image/jpeg"
+            busy
+            onChoose={() => undefined}
+          />
+          <AvatarPicker
+            name="Priya Patel"
+            label="Something went wrong"
+            accept="image/jpeg"
+            error="That picture is too large. Choose one under 15MB."
+            onChoose={() => undefined}
+          />
+        </div>
+        <div className="grid gap-8 md:grid-cols-2">
+          <PhotoUpload
+            label="Photo of your badge"
+            hint="We check the number against the DVSA register."
+            accept="image/jpeg,image/png,image/webp,image/gif"
+            src={document}
+            onChoose={(file) => { setDocument(URL.createObjectURL(file)); }}
+            onRemove={() => { setDocument(undefined); }}
+          />
+          <PhotoUpload
+            label="Already uploaded"
+            accept="image/jpeg"
+            stored
+            storedLabel="Badge photo added"
+            onChoose={() => undefined}
+          />
+          <PhotoUpload label="Uploading" accept="image/jpeg" busy onChoose={() => undefined} />
+          <PhotoUpload
+            label="Something went wrong"
+            accept="image/jpeg"
+            error="We could not read that picture. Try another one."
+            onChoose={() => undefined}
+          />
+        </div>
       </Section>
 
       <Section title="Cards and lists">
@@ -364,6 +423,34 @@ export function DesignShowcase() {
           step={30}
           format={(v) => `${String(v)} min`}
         />
+      </Section>
+
+      <Section title="Checklist">
+        <div className="grid gap-4 md:grid-cols-2">
+          <SetupChecklist state={{ learners: 0, paymentsConnected: false, verified: false, listed: true }} />
+          <SetupChecklist state={{ learners: 3, paymentsConnected: false, verified: true, listed: true }} />
+        </div>
+      </Section>
+
+      <Section title="Coverage">
+        <div className="grid gap-4 md:grid-cols-2">
+          <RadiusMap centre={null} radiusMiles={radius} place="LS6 3HN" />
+          <RadiusMap centre={null} radiusMiles={1} />
+        </div>
+        <div className="grid gap-4 md:grid-cols-2">
+          <PickupPointPicker
+            label="Where does this lesson start?"
+            options={[
+              { id: 'home', kind: 'home', label: 'Home', address: '12 Hyde Park Road, Leeds LS6 1AB', isDefault: true },
+              { id: 'college', kind: 'school', label: 'College', address: 'Leeds City College, LS2 7EA' },
+              { id: 'work', kind: 'work', label: 'Work', address: '1 Wellington Place, Leeds LS1 4AP' },
+            ]}
+            value={pickup}
+            onChange={setPickup}
+            onAdd={() => toast('The add form arrives with learner management')}
+          />
+          <PickupPointPicker label="Nothing added yet" options={[]} onChange={() => undefined} />
+        </div>
       </Section>
 
       <Section title="Scheduling">

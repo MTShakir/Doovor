@@ -1,6 +1,6 @@
 import type { AccessContext, AccessMembership } from '@repo/db';
 import { describe, expect, it } from 'vitest';
-import { availablePortals, canUsePortal, landingPath, requiresMfa, safeNextPath } from './portals';
+import { availablePortals, canUsePortal, landingPath, needsOnboarding, requiresMfa, safeNextPath } from './portals';
 
 function context(overrides: Partial<AccessContext> = {}): AccessContext {
   return { userId: 'u1', staffRole: null, isLearner: false, memberships: [], ...overrides };
@@ -13,6 +13,7 @@ function membership(overrides: Partial<AccessMembership>): AccessMembership {
     businessType: 'independent',
     role: 'owner',
     instructorProfileId: null,
+    onboarding: null,
     ...overrides,
   };
 }
@@ -71,5 +72,37 @@ describe('safeNextPath', () => {
     expect(safeNextPath('//evil.example')).toBe('/');
     expect(safeNextPath('/\\evil.example')).toBe('/');
     expect(safeNextPath(null, '/start')).toBe('/start');
+  });
+});
+
+describe('onboarding (AUTH-04)', () => {
+  it('sends an instructor who has not finished onboarding there first', () => {
+    const ctx = context({
+      memberships: [membership({ instructorProfileId: 'p1', onboarding: { step: 2, completed: false } })],
+    });
+    expect(needsOnboarding(ctx)).toBe(true);
+    // One redirect, not two: signing in does not pass through the diary to get there.
+    expect(landingPath(ctx)).toBe('/onboarding');
+  });
+
+  it('leaves a finished instructor alone', () => {
+    const ctx = context({
+      memberships: [membership({ instructorProfileId: 'p1', onboarding: { step: 5, completed: true } })],
+    });
+    expect(needsOnboarding(ctx)).toBe(false);
+    expect(landingPath(ctx)).toBe('/app/instructor');
+  });
+
+  it('keeps a school owner who also teaches on the school portal', () => {
+    const ctx = context({
+      memberships: [
+        membership({ businessType: 'school', role: 'owner', instructorProfileId: 'p1', onboarding: { step: 1, completed: false } }),
+      ],
+    });
+    expect(landingPath(ctx)).toBe('/app/school');
+  });
+
+  it('does not apply to people who are not instructors', () => {
+    expect(needsOnboarding(context({ isLearner: true }))).toBe(false);
   });
 });

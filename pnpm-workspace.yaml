@@ -15,6 +15,9 @@ allowBuilds:
   # Reviewed, not needed: its script only checks for the platform binary, which pnpm
   # already installs as an optional dependency.
   esbuild: false
+  # Reviewed, not needed: its script only prints warnings about dependents' version
+  # schemes. It generates nothing (pulled in by inngest through OpenTelemetry).
+  protobufjs: false
 
 # Shared versions. Workspace packages reference these with "catalog:".
 catalog:

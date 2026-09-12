@@ -114,6 +114,35 @@ export type Database = {
           },
         ]
       }
+      badge_reminders: {
+        Row: {
+          badge_expiry: string
+          created_at: string
+          days_before: number
+          instructor_id: string
+        }
+        Insert: {
+          badge_expiry: string
+          created_at?: string
+          days_before: number
+          instructor_id: string
+        }
+        Update: {
+          badge_expiry?: string
+          created_at?: string
+          days_before?: number
+          instructor_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "badge_reminders_instructor_id_fkey"
+            columns: ["instructor_id"]
+            isOneToOne: false
+            referencedRelation: "instructor_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       bookings: {
         Row: {
           blocked_range: unknown
@@ -340,6 +369,38 @@ export type Database = {
           },
         ]
       }
+      coverage_districts: {
+        Row: {
+          business_id: string
+          created_at: string
+          instructor_id: string
+          outcode: string
+          rule: Database["public"]["Enums"]["coverage_rule"]
+        }
+        Insert: {
+          business_id: string
+          created_at?: string
+          instructor_id: string
+          outcode: string
+          rule: Database["public"]["Enums"]["coverage_rule"]
+        }
+        Update: {
+          business_id?: string
+          created_at?: string
+          instructor_id?: string
+          outcode?: string
+          rule?: Database["public"]["Enums"]["coverage_rule"]
+        }
+        Relationships: [
+          {
+            foreignKeyName: "coverage_districts_instructor_id_business_id_fkey"
+            columns: ["instructor_id", "business_id"]
+            isOneToOne: false
+            referencedRelation: "instructor_profiles"
+            referencedColumns: ["id", "business_id"]
+          },
+        ]
+      }
       deletion_requests: {
         Row: {
           created_at: string
@@ -385,6 +446,7 @@ export type Database = {
         Row: {
           badge_expiry: string | null
           badge_number: string | null
+          badge_path: string | null
           base_location: unknown
           base_postcode: string | null
           bio: string | null
@@ -400,7 +462,9 @@ export type Database = {
           instant_book: boolean
           is_listed: boolean
           languages: string[]
-          photo_url: string | null
+          onboarding_completed_at: string | null
+          onboarding_step: number
+          photo_path: string | null
           public_slug: string | null
           qualification: Database["public"]["Enums"]["instructor_qualification"]
           radius_miles: number
@@ -410,13 +474,16 @@ export type Database = {
           transmission: Database["public"]["Enums"]["transmission"]
           updated_at: string
           user_id: string
+          verification_decision_reason: string | null
           verification_status: Database["public"]["Enums"]["verification_status"]
+          verification_submitted_at: string | null
           verified_at: string | null
           years_teaching: number | null
         }
         Insert: {
           badge_expiry?: string | null
           badge_number?: string | null
+          badge_path?: string | null
           base_location?: unknown
           base_postcode?: string | null
           bio?: string | null
@@ -432,7 +499,9 @@ export type Database = {
           instant_book?: boolean
           is_listed?: boolean
           languages?: string[]
-          photo_url?: string | null
+          onboarding_completed_at?: string | null
+          onboarding_step?: number
+          photo_path?: string | null
           public_slug?: string | null
           qualification?: Database["public"]["Enums"]["instructor_qualification"]
           radius_miles?: number
@@ -442,13 +511,16 @@ export type Database = {
           transmission?: Database["public"]["Enums"]["transmission"]
           updated_at?: string
           user_id: string
+          verification_decision_reason?: string | null
           verification_status?: Database["public"]["Enums"]["verification_status"]
+          verification_submitted_at?: string | null
           verified_at?: string | null
           years_teaching?: number | null
         }
         Update: {
           badge_expiry?: string | null
           badge_number?: string | null
+          badge_path?: string | null
           base_location?: unknown
           base_postcode?: string | null
           bio?: string | null
@@ -464,7 +536,9 @@ export type Database = {
           instant_book?: boolean
           is_listed?: boolean
           languages?: string[]
-          photo_url?: string | null
+          onboarding_completed_at?: string | null
+          onboarding_step?: number
+          photo_path?: string | null
           public_slug?: string | null
           qualification?: Database["public"]["Enums"]["instructor_qualification"]
           radius_miles?: number
@@ -474,7 +548,9 @@ export type Database = {
           transmission?: Database["public"]["Enums"]["transmission"]
           updated_at?: string
           user_id?: string
+          verification_decision_reason?: string | null
           verification_status?: Database["public"]["Enums"]["verification_status"]
+          verification_submitted_at?: string | null
           verified_at?: string | null
           years_teaching?: number | null
         }
@@ -946,6 +1022,36 @@ export type Database = {
           },
         ]
       }
+      outbox_events: {
+        Row: {
+          attempts: number
+          created_at: string
+          id: string
+          last_error: string | null
+          name: string
+          payload: Json
+          sent_at: string | null
+        }
+        Insert: {
+          attempts?: number
+          created_at?: string
+          id?: string
+          last_error?: string | null
+          name: string
+          payload?: Json
+          sent_at?: string | null
+        }
+        Update: {
+          attempts?: number
+          created_at?: string
+          id?: string
+          last_error?: string | null
+          name?: string
+          payload?: Json
+          sent_at?: string | null
+        }
+        Relationships: []
+      }
       packages: {
         Row: {
           business_id: string
@@ -1281,12 +1387,31 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      cache_postcode: {
+        Args: {
+          p_country?: string
+          p_district?: string
+          p_latitude: number
+          p_longitude: number
+          p_outcode: string
+          p_postcode: string
+        }
+        Returns: undefined
+      }
+      covers_postcode: {
+        Args: { p_instructor_id: string; p_postcode: string }
+        Returns: boolean
+      }
       create_business: {
         Args: {
           p_name: string
           p_type: Database["public"]["Enums"]["business_type"]
         }
         Returns: string
+      }
+      decide_verification: {
+        Args: { p_approved: boolean; p_profile_id: string; p_reason?: string }
+        Returns: Database["public"]["Enums"]["verification_status"]
       }
       list_my_sessions: {
         Args: never
@@ -1302,6 +1427,89 @@ export type Database = {
       }
       request_account_deletion: { Args: { p_reason?: string }; Returns: string }
       revoke_my_session: { Args: { p_session_id: string }; Returns: boolean }
+      set_availability_exception: {
+        Args: {
+          p_ends_at: string
+          p_instructor_id: string
+          p_kind: Database["public"]["Enums"]["exception_kind"]
+          p_reason?: string
+          p_starts_at: string
+        }
+        Returns: string
+      }
+      set_booking_rules: {
+        Args: { p_business_id: string; p_rules: Json }
+        Returns: Json
+      }
+      set_onboarding_prices: {
+        Args: {
+          p_business_id: string
+          p_hourly_price_pence: number
+          p_package_price_pence?: number
+        }
+        Returns: string
+      }
+      set_supervisor: {
+        Args: { p_instructor_id: string; p_supervised: boolean }
+        Returns: boolean
+      }
+      set_working_hours: {
+        Args: {
+          p_end_time: string
+          p_instructor_id: string
+          p_start_time: string
+          p_weekdays: number[]
+        }
+        Returns: number
+      }
+      submit_verification: {
+        Args: {
+          p_badge_expiry: string
+          p_badge_number: string
+          p_badge_path?: string
+          p_dbs_confirmed: boolean
+          p_profile_id: string
+          p_qualification: Database["public"]["Enums"]["instructor_qualification"]
+        }
+        Returns: Database["public"]["Enums"]["verification_status"]
+      }
+      system_claim_badge_reminders: {
+        Args: { p_today?: string }
+        Returns: {
+          badge_expiry: string
+          business_id: string
+          days_before: number
+          days_left: number
+          instructor_id: string
+        }[]
+      }
+      system_claim_outbox_events: {
+        Args: { p_limit?: number }
+        Returns: {
+          attempts: number
+          created_at: string
+          id: string
+          last_error: string | null
+          name: string
+          payload: Json
+          sent_at: string | null
+        }[]
+        SetofOptions: {
+          from: "*"
+          to: "outbox_events"
+          isOneToOne: false
+          isSetofReturn: true
+        }
+      }
+      system_mark_outbox_failed: {
+        Args: { p_error: string; p_ids: string[] }
+        Returns: number
+      }
+      system_mark_outbox_sent: { Args: { p_ids: string[] }; Returns: number }
+      system_unlist_expired_badges: {
+        Args: { p_today?: string }
+        Returns: number
+      }
     }
     Enums: {
       booking_payment_mode:
@@ -1338,6 +1546,7 @@ export type Database = {
         | "expired"
       business_status: "pending" | "active" | "suspended"
       business_type: "independent" | "school"
+      coverage_rule: "include" | "exclude"
       exception_kind: "open" | "blocked"
       experience_level: "none" | "some" | "test_booked"
       instructor_qualification: "adi" | "pdi"
@@ -1531,6 +1740,7 @@ export const Constants = {
       ],
       business_status: ["pending", "active", "suspended"],
       business_type: ["independent", "school"],
+      coverage_rule: ["include", "exclude"],
       exception_kind: ["open", "blocked"],
       experience_level: ["none", "some", "test_booked"],
       instructor_qualification: ["adi", "pdi"],

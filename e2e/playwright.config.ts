@@ -18,6 +18,9 @@ export default defineConfig({
   retries: 0,
   workers: isCI ? 2 : 4,
   timeout: 60_000,
+  // The dev server compiles a route the first time it is asked for, which can take longer
+  // than the five second default for the navigation that follows. CI runs against a build.
+  expect: { timeout: isCI ? 5_000 : 15_000 },
   reporter: isCI ? [['github'], ['html', { open: 'never', outputFolder: 'playwright-report' }]] : [['list']],
   use: {
     baseURL,

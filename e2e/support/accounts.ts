@@ -21,6 +21,8 @@ export const roles = {
   schoolOwner: { email: 'david.okafor@example.com', landing: '/app/school', heading: 'Overview' },
   schoolManager: { email: 'lucy.grant@example.com', landing: '/app/school', heading: 'Overview' },
   schoolInstructor: { email: 'emma.clarke@example.com', landing: '/app/instructor', heading: 'Today' },
+  /** A trainee instructor (PDI), supervised by the school she teaches for (INS-04). */
+  trainee: { email: 'aisha.rahman@example.com', landing: '/app/instructor', heading: 'Today' },
   learner: { email: 'jack.taylor@example.com', landing: '/app/learner', heading: 'Home' },
 } as const;
 

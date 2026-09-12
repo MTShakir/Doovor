@@ -129,14 +129,15 @@ async function main(): Promise<void> {
           insert into public.instructor_profiles (
             user_id, business_id, display_name, bio, languages, years_teaching, qualification, badge_number, badge_expiry,
             dbs_confirmed_at, verification_status, verified_at, transmission, car_make, car_model, specialisms,
-            base_postcode, base_location, buffer_minutes, public_slug, supervisor_business_id
+            base_postcode, base_location, buffer_minutes, public_slug, supervisor_business_id,
+            onboarding_completed_at
           ) values (
             ${id(i.key)}, ${biz}, ${i.displayName}, ${i.bio}, ${i.languages}, ${i.yearsTeaching}, ${i.qualification},
             ${i.badgeNumber}, ${addDaysToLocalDate(today, i.badgeExpiresInDays)}, now(), ${i.verification},
             ${i.verification === 'approved' ? new Date() : null}, ${i.transmission}, ${i.car[0]}, ${i.car[1]}, ${i.specialisms},
             ${businesses.find((b) => b.key === i.business)?.postcode ?? null},
             (select base_location from public.businesses where id = ${biz}), ${i.bufferMinutes}, ${i.slug},
-            ${i.qualification === 'pdi' ? businessId('school') : null}
+            ${i.qualification === 'pdi' ? businessId('school') : null}, now()
           ) returning id`;
         if (!row) throw new Error(`Instructor ${i.displayName} was not created`);
         instructorIds.set(i.key, row.id);
