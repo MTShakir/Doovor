@@ -1532,6 +1532,17 @@ export type Database = {
         Args: { p_instructor_id: string; p_postcode: string }
         Returns: boolean
       }
+      create_booking: {
+        Args: {
+          p_duration_minutes: number
+          p_instructor_id: string
+          p_learner_id: string
+          p_lesson_type_id: string
+          p_pickup_point_id?: string
+          p_starts_at: string
+        }
+        Returns: string
+      }
       create_business: {
         Args: {
           p_name: string
@@ -1629,6 +1640,14 @@ export type Database = {
           p_weekdays: number[]
         }
         Returns: number
+      }
+      slot_problem: {
+        Args: {
+          p_duration_minutes: number
+          p_instructor_id: string
+          p_starts_at: string
+        }
+        Returns: string
       }
       submit_verification: {
         Args: {

@@ -12,6 +12,8 @@ import { requirePortal } from '@/lib/auth/session';
 import { lessonsBetween } from '@/lib/diary/lessons';
 import { dateFrom, isDiaryView, step, windowFor, type ChosenView } from '@/lib/diary/range';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
+import { bookableLearners } from '@/lib/booking/learners';
+import { BookLesson } from '../book-lesson';
 import { DiaryNav } from './diary-nav';
 
 export const metadata: Metadata = { title: 'Diary' };
@@ -43,9 +45,10 @@ async function Diary({ searchParams }: DiaryParams) {
   if (!membership?.instructorProfileId) return null;
 
   const range = windowFor(view, date);
-  const [lessons, hours] = await Promise.all([
+  const [lessons, hours, learners] = await Promise.all([
     lessonsBetween(range.startsAt, range.endsAt, [membership.instructorProfileId]),
     workingHours(membership.instructorProfileId),
+    bookableLearners(membership.instructorProfileId),
   ]);
 
   const worked = hours.get(isoWeekday(date));
@@ -61,6 +64,7 @@ async function Diary({ searchParams }: DiaryParams) {
     <>
       <PageHeader title="Diary" subtitle={formatCalendarDate(date)} />
       <div className="flex flex-col gap-4 px-4 md:px-8">
+        {learners.length > 0 ? <BookLesson learners={learners} date={date} /> : null}
         <DiaryNav
           view={view}
           date={date}

@@ -58,3 +58,18 @@ export async function setBookingStatus(
     return rows[0]?.status ?? status;
   });
 }
+
+/**
+ * Clears one instructor's lessons on one local day, so a booking test starts from an empty
+ * diary however the last run ended. Local only, like everything in this module.
+ */
+export async function clearDiary(instructorName: string, date: string): Promise<void> {
+  await withDatabase(async (sql) => {
+    await sql`
+      delete from public.bookings b
+       using public.instructor_profiles p
+       where p.id = b.instructor_id
+         and p.display_name = ${instructorName}
+         and (b.starts_at at time zone 'Europe/London')::date = ${date}::date`;
+  });
+}

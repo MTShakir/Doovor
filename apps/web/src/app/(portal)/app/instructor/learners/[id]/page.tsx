@@ -14,6 +14,7 @@ import { requirePortal } from '@/lib/auth/session';
 import { learnerCard, type LearnerCard } from '@/lib/learners/card';
 import { learnerHistory, type LearnerHistoryEntry } from '@/lib/learners/history';
 import { learnerNotes } from '@/lib/learners/notes';
+import { BookLesson } from '../../book-lesson';
 import { Notes } from './notes';
 import { StatusControl } from './status-control';
 
@@ -73,6 +74,14 @@ async function Learner({ params }: LearnerPageProps) {
         </div>
 
         <Reach card={card} />
+        {mine ? (
+          <BookLesson
+            learners={[{ id: card.learnerId, name: card.fullName, usualDurationMinutes: card.usualDurationMinutes }]}
+            learnerId={card.learnerId}
+            label={`Book a lesson for ${card.fullName.split(' ')[0] ?? card.fullName}`}
+            variant="secondary"
+          />
+        ) : null}
         <Lessons card={card} />
         <Pickups card={card} />
         <Notes learnerId={card.learnerId} notes={notes} viewerId={session.userId} />
