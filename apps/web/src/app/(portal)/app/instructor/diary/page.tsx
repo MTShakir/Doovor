@@ -1,9 +1,11 @@
 import type { Metadata } from 'next';
+import { byDay } from '@repo/core/diary';
 import { formatCalendarDate, formatDate, isoWeekday, localToUtc, todayInZone, utcToLocal } from '@repo/core/time';
 import { PageHeader } from '@repo/ui/app-shell';
 import { SkeletonRow } from '@repo/ui/skeleton';
 import { Suspense } from 'react';
 import { DayView } from '@/components/diary/day-view';
+import { MonthView } from '@/components/diary/month-view';
 import { WeekView } from '@/components/diary/week-view';
 import { requirePortal } from '@/lib/auth/session';
 import { lessonsBetween } from '@/lib/diary/lessons';
@@ -65,6 +67,9 @@ async function Diary({ view, date }: { view: ChosenView; date: string }) {
     <section aria-label={`Diary for ${formatDate(range.startsAt)}`}>
       {view === 'day' ? day : null}
       {view === 'week' ? week : null}
+      {view === 'month' ? (
+        <MonthView month={range.from} today={todayInZone()} busy={[...byDay(lessons, dayOf).keys()]} />
+      ) : null}
       {view === 'responsive' ? (
         <>
           <div className="md:hidden">{day}</div>

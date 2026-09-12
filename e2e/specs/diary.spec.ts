@@ -83,3 +83,27 @@ test.describe('diary week view (DIA-03, M1-20)', () => {
     }
   });
 });
+
+test.describe('diary month view (DIA-03, M1-21)', () => {
+  test.use({ storageState: authFile('instructor') });
+
+  test('marks the days with lessons and opens the one chosen', async ({ page }, testInfo) => {
+    await page.goto('/app/instructor/diary?view=month&date=2026-09-15');
+    await expect(page.getByRole('heading', { name: 'September 2026' })).toBeVisible();
+
+    // Definition of done: a day in the month opens that day.
+    await expectAccessible(page);
+    await snap(page, testInfo, 'diary-month');
+    await page.getByRole('button', { name: 'Tuesday 15 September' }).click();
+
+    await expect(page).toHaveURL(/view=day&date=2026-09-15/);
+    await expect(page.getByText('3 lessons, 4 hours 30 minutes')).toBeVisible();
+  });
+
+  test('moves a month at a time', async ({ page }) => {
+    await page.goto('/app/instructor/diary?view=month&date=2026-09-15');
+
+    await page.getByRole('button', { name: 'Next month' }).click();
+    await expect(page.getByRole('heading', { name: 'October 2026' })).toBeVisible();
+  });
+});
