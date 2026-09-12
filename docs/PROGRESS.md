@@ -31,6 +31,7 @@ M1 Instructor core has started on branch `m1-instructor-core`. Goal: an instruct
 | M1-17 | Diary settings: the week a day at a time, plus one-off time off and extra hours, with overlaps settled when they are written | DIA-01, DIA-02 | Done. No moment can be both open and blocked |
 | M1-18 | Booking rules: buffer and instant booking for the instructor, notice, horizon, cancellation and request expiry for the Business, layered over the platform defaults | 11.1, DIA-05, DIA-06, BOK-06 | Done. Every range from PRD 11.1 is enforced in the schema and again in the database |
 | M1-19 | Diary day view: one word per lesson, the gaps worth filling, and navigation that lives in the address bar | DIA-03, DIA-04 | Done. Reviewed at 390 px |
+| M1-20 | Diary week view, seven days across, and the day on a phone with the week on a desktop when nobody has chosen | DIA-03 | Done. Reviewed at 1440 px |
 
 ## Done (M0)
 
@@ -60,20 +61,20 @@ Decisions D-036 to D-050 were logged during this stretch. Two were security fixe
 
 | Suite | Result |
 |---|---|
-| Unit (Vitest) | 293 passed across 6 packages; `packages/core` line coverage 99%, `packages/providers` 100% |
+| Unit (Vitest) | 295 passed across 6 packages; `packages/core` line coverage 99%, `packages/providers` 100% |
 | Database (pgTAP) | 290 assertions in 22 files, all passing; SQL lint clean |
-| End to end (Playwright) | 131 passed at 390 px and 1440 px, none skipped, stable across repeated full runs, also against a production build in CI mode |
+| End to end (Playwright) | 135 passed at 390 px and 1440 px, none skipped, stable across repeated full runs, also against a production build in CI mode |
 | Lint, typecheck, copy guard | Clean |
 | CI on GitHub | Green: lint and unit, database, end to end against a production build |
 | Staging (hosted) | Security Advisor: 0 errors, 6 expected warnings (D-051). Every public table has row-level security. The sign-out guard (D-041) is active on the authenticator role. Health check and sign-in page verified |
 
 ## In progress
 
-- M1-20: the week view, which is the desktop default.
+- M1-21: the month view.
 
 ## Next
 
-- M1-20 to M1-24: the week and month views, the school diary, realtime, and the timed onboarding run.
+- M1-21 to M1-24: the month view, the school diary, realtime, and the timed onboarding run.
 - The seven M1 migrations are applied locally only. They go to staging with the next staging push.
 
 ## Blockers

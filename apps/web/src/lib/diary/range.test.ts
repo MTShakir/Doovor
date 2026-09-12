@@ -53,3 +53,14 @@ describe('diary windows (DIA-03, M1-19)', () => {
     expect(isDiaryView(undefined)).toBe(false);
   });
 });
+
+describe('no view chosen (DIA-03, M1-20)', () => {
+  it('fetches the week, because the phone shows a day inside it', () => {
+    expect(windowFor('responsive', '2026-09-15')).toEqual(windowFor('week', '2026-09-15'));
+  });
+
+  it('moves a week at a time, which is what the wider screen is showing', () => {
+    expect(step('responsive', '2026-09-15', 1)).toBe('2026-09-22');
+    expect(step('responsive', '2026-09-15', -1)).toBe('2026-09-08');
+  });
+});

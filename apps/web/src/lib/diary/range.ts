@@ -2,6 +2,12 @@ import { addDaysToLocalDate, isoWeekday, isValidLocalDate, localToUtc, todayInZo
 
 export type DiaryView = 'day' | 'week' | 'month';
 
+/**
+ * What to show when nobody has chosen: the day on a phone and the week on a desktop
+ * (DIA-03). The server cannot know which, so both are rendered and the stylesheet decides.
+ */
+export type ChosenView = DiaryView | 'responsive';
+
 export function isDiaryView(value: string | undefined): value is DiaryView {
   return value === 'day' || value === 'week' || value === 'month';
 }
@@ -40,7 +46,9 @@ export interface DiaryWindow {
  * The window a view covers, in local dates and in instants (DIA-03). Midnight is a wall
  * clock time, so the instants are worked out with the clock-change rules (R-14).
  */
-export function windowFor(view: DiaryView, date: LocalDate): DiaryWindow {
+export function windowFor(view: ChosenView, date: LocalDate): DiaryWindow {
+  // Without a choice, the week is fetched: it contains the day the phone shows.
+  if (view === 'responsive') return windowFor('week', date);
   const from = view === 'day' ? date : view === 'week' ? startOfWeek(date) : startOfMonth(date);
   const to = view === 'day' ? date : view === 'week' ? addDaysToLocalDate(from, 6) : endOfMonth(date);
   // The hour after midnight always exists, even on the day the clocks go forward.
@@ -50,8 +58,10 @@ export function windowFor(view: DiaryView, date: LocalDate): DiaryWindow {
 }
 
 /** The date the arrows move to. */
-export function step(view: DiaryView, date: LocalDate, direction: 1 | -1): LocalDate {
+export function step(view: ChosenView, date: LocalDate, direction: 1 | -1): LocalDate {
+  // Without a choice, the arrows move a week, which is what the wider screen is showing.
   if (view === 'day') return addDaysToLocalDate(date, direction);
+  if (view === 'responsive') return addDaysToLocalDate(date, 7 * direction);
   if (view === 'week') return addDaysToLocalDate(date, 7 * direction);
   const first = startOfMonth(date);
   return direction === 1 ? addDaysToLocalDate(endOfMonth(first), 1) : startOfMonth(addDaysToLocalDate(first, -1));

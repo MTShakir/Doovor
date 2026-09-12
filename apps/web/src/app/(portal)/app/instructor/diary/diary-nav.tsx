@@ -1,15 +1,19 @@
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { NavLink } from '@/components/nav-link';
-import type { DiaryView } from '@/lib/diary/range';
+import type { ChosenView, DiaryView } from '@/lib/diary/range';
 
-const views: { value: DiaryView; label: string }[] = [
-  { value: 'day', label: 'Day' },
-  { value: 'week', label: 'Week' },
-  { value: 'month', label: 'Month' },
+const views: { value: DiaryView; label: string; whenResponsive: string }[] = [
+  // Nothing chosen means the day on a phone and the week on a desktop, so the highlight
+  // follows the same rule (DIA-03). Neither is aria-current: neither is definitively the one.
+  { value: 'day', label: 'Day', whenResponsive: 'md:bg-transparent md:text-black' },
+  { value: 'week', label: 'Week', whenResponsive: 'bg-transparent text-black md:bg-black md:text-white' },
+  { value: 'month', label: 'Month', whenResponsive: '' },
 ];
 
-function href(view: DiaryView, date: string): string {
-  return `/app/instructor/diary?view=${view}&date=${date}`;
+/** Nothing chosen stays nothing chosen, so the arrows keep whichever view the screen shows. */
+function href(view: ChosenView, date: string): string {
+  const query = view === 'responsive' ? `date=${date}` : `view=${view}&date=${date}`;
+  return `/app/instructor/diary?${query}`;
 }
 
 /**
@@ -19,7 +23,7 @@ function href(view: DiaryView, date: string): string {
  * bookmarked or opened in another tab, and the arrows work before any JavaScript has run.
  */
 export function DiaryNav({ view, date, previous, next, today }: {
-  view: DiaryView;
+  view: ChosenView;
   date: string;
   previous: string;
   next: string;
@@ -52,7 +56,7 @@ export function DiaryNav({ view, date, previous, next, today }: {
               aria-current={option.value === view ? 'page' : undefined}
               className={`flex h-10 items-center rounded-full px-4 text-small font-semibold focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-black ${
                 option.value === view ? 'bg-black text-white' : 'text-black hover:bg-grey-200'
-              }`}
+              } ${view === 'responsive' && option.value !== 'month' ? `bg-black text-white ${option.whenResponsive}` : ''}`}
             >
               {option.label}
             </NavLink>

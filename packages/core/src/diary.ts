@@ -118,8 +118,8 @@ export interface DiaryDay {
 }
 
 /** Groups lessons by the local day they start on, for the week and month views. */
-export function byDay(lessons: DiaryLesson[], dayOf: (instant: Date) => LocalDate): Map<LocalDate, DiaryLesson[]> {
-  const days = new Map<LocalDate, DiaryLesson[]>();
+export function byDay<T extends DiaryLesson>(lessons: T[], dayOf: (instant: Date) => LocalDate): Map<LocalDate, T[]> {
+  const days = new Map<LocalDate, T[]>();
   for (const lesson of [...lessons].sort((a, b) => a.startsAt.getTime() - b.startsAt.getTime())) {
     const day = dayOf(lesson.startsAt);
     const existing = days.get(day);

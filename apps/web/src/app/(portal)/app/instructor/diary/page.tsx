@@ -1,12 +1,13 @@
 import type { Metadata } from 'next';
-import { formatCalendarDate, formatDate, isoWeekday, localToUtc, todayInZone } from '@repo/core/time';
+import { formatCalendarDate, formatDate, isoWeekday, localToUtc, todayInZone, utcToLocal } from '@repo/core/time';
 import { PageHeader } from '@repo/ui/app-shell';
 import { SkeletonRow } from '@repo/ui/skeleton';
 import { Suspense } from 'react';
 import { DayView } from '@/components/diary/day-view';
+import { WeekView } from '@/components/diary/week-view';
 import { requirePortal } from '@/lib/auth/session';
 import { lessonsBetween } from '@/lib/diary/lessons';
-import { dateFrom, isDiaryView, step, windowFor, type DiaryView } from '@/lib/diary/range';
+import { dateFrom, isDiaryView, step, windowFor, type ChosenView } from '@/lib/diary/range';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
 import { DiaryNav } from './diary-nav';
 
@@ -18,7 +19,7 @@ interface DiaryParams {
 
 export default async function DiaryPage({ searchParams }: DiaryParams) {
   const params = await searchParams;
-  const view: DiaryView = isDiaryView(params.view) ? params.view : 'day';
+  const view: ChosenView = isDiaryView(params.view) ? params.view : 'responsive';
   const date = dateFrom(params.date);
 
   return (
@@ -40,7 +41,7 @@ export default async function DiaryPage({ searchParams }: DiaryParams) {
   );
 }
 
-async function Diary({ view, date }: { view: DiaryView; date: string }) {
+async function Diary({ view, date }: { view: ChosenView; date: string }) {
   const { access } = await requirePortal('instructor');
   const membership = access.memberships.find((m) => m.instructorProfileId !== null);
   if (!membership?.instructorProfileId) return null;
@@ -55,9 +56,21 @@ async function Diary({ view, date }: { view: DiaryView; date: string }) {
   const opens = worked ? localToUtc(date, worked.start) : null;
   const closes = worked ? localToUtc(date, worked.end) : null;
 
+  const dayOf = (instant: Date) => utcToLocal(instant).date;
+  const onThisDay = lessons.filter((lesson) => dayOf(lesson.startsAt) === date);
+  const day = <DayView lessons={onThisDay} opens={opens} closes={closes} />;
+  const week = <WeekView from={range.from} lessons={lessons} dayOf={dayOf} today={todayInZone()} />;
+
   return (
     <section aria-label={`Diary for ${formatDate(range.startsAt)}`}>
-      <DayView lessons={lessons} opens={opens} closes={closes} />
+      {view === 'day' ? day : null}
+      {view === 'week' ? week : null}
+      {view === 'responsive' ? (
+        <>
+          <div className="md:hidden">{day}</div>
+          <div className="hidden md:block">{week}</div>
+        </>
+      ) : null}
     </section>
   );
 }
