@@ -71,6 +71,10 @@ test.describe('instructor onboarding (AUTH-04, M1-02)', () => {
     await page.getByRole('link', { name: 'Do this later' }).click();
     await expect(page).toHaveURL(/\/onboarding\/name$/);
 
+    // A file picked before the page is ready goes nowhere: the submit button is disabled
+    // until React is running, so that is the signal to wait for (D-043).
+    await expect(page.getByRole('button', { name: 'Continue' })).toBeEnabled();
+
     // A photo straight off a phone: it really does say where it was taken.
     const original = await jpegWithGps(page);
     expect(hasExif(original)).toBe(true);
@@ -112,7 +116,7 @@ test.describe('instructor onboarding (AUTH-04, M1-02)', () => {
     await page.getByLabel('Your name').fill('Nina Newstart');
     await page.getByRole('button', { name: 'Continue' }).click();
     await expect(page).toHaveURL(/\/onboarding\/badge$/);
-    await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Continue' })).toBeEnabled();
 
     const upload = page.waitForRequest((r) => r.url().includes('/storage/v1/object/badges/') && r.method() === 'POST');
     await page.setInputFiles('input[type="file"]', {

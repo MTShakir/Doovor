@@ -23,6 +23,7 @@ M1 Instructor core has started on branch `m1-instructor-core`. Goal: an instruct
 | M1-09 | Step 5 hours: the days they teach and one pair of times (D-059), written as a row per day in local wall clock | AUTH-04, DIA-01 | Done. Onboarding is complete: five steps, only the name required |
 | M1-10 | Today screen with the setup checklist: first learner, payments, booking link | 10.1 | Done. Every row is worked out from real rows, and the card disappears when the list is finished |
 | M1-11 | Profile editor: photo, name, bio, languages, years, car, transmission, dual controls, specialisms, with the badge shown but not editable | INS-01 | Done. One Zod schema decides the form and the server |
+| M1-12 | Admin verification queue: the badge photo through a signed address, approve or reject with a reason, audit row, and the tick | INS-02, ADM-03 | Done. Only staff with two-step verification can decide, proved in pgTAP and end to end |
 
 ## Done (M0)
 
@@ -53,19 +54,19 @@ Decisions D-036 to D-050 were logged during this stretch. Two were security fixe
 | Suite | Result |
 |---|---|
 | Unit (Vitest) | 240 passed across 6 packages; `packages/core` line coverage 99%, `packages/providers` 100% |
-| Database (pgTAP) | 214 assertions in 15 files, all passing; SQL lint clean |
-| End to end (Playwright) | 111 passed at 390 px and 1440 px, none skipped, stable across repeated full runs, also against a production build in CI mode |
+| Database (pgTAP) | 225 assertions in 16 files, all passing; SQL lint clean |
+| End to end (Playwright) | 113 passed at 390 px and 1440 px, none skipped, stable across repeated full runs, also against a production build in CI mode |
 | Lint, typecheck, copy guard | Clean |
 | CI on GitHub | Green: lint and unit, database, end to end against a production build |
 | Staging (hosted) | Security Advisor: 0 errors, 6 expected warnings (D-051). Every public table has row-level security. The sign-out guard (D-041) is active on the authenticator role. Health check and sign-in page verified |
 
 ## In progress
 
-- M1-12: the admin verification queue, where a person approves or rejects a badge.
+- M1-13: badge expiry reminders at 60, 30 and 7 days, and unlisting an expired badge.
 
 ## Next
 
-- M1-12 to M1-14: admin verification queue, badge expiry reminders, PDI supervision.
+- M1-13 and M1-14: badge expiry rules and the daily job, then PDI supervision and the R-18 guard.
 - The seven M1 migrations are applied locally only. They go to staging with the next staging push.
 
 ## Blockers

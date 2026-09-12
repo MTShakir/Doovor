@@ -13,7 +13,6 @@ const arrivesIn: Record<Portal, Record<string, string>> = {
     '': 'M5',
     businesses: 'M5',
     instructors: 'M5',
-    verification: 'M1',
     learners: 'M5',
     bookings: 'M5',
     payments: 'M5',

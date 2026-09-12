@@ -1344,6 +1344,10 @@ export type Database = {
         }
         Returns: string
       }
+      decide_verification: {
+        Args: { p_approved: boolean; p_profile_id: string; p_reason?: string }
+        Returns: Database["public"]["Enums"]["verification_status"]
+      }
       list_my_sessions: {
         Args: never
         Returns: {
