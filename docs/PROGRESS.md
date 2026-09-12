@@ -18,6 +18,7 @@ M1 Instructor core has started on branch `m1-instructor-core`. Goal: an instruct
 | M1-04 | Step 2 badge: private `badges` bucket, storage policies, `submit_verification` RPC with an audit row and a job event | AUTH-04, INS-02 | Done. Another instructor cannot read the badge photo, and nobody sets their own verification status |
 | M1-05 | `GeoProvider` over postcodes.io in the new `packages/providers`, postcode rules in core, the cache written through `cache_postcode` (D-057), and a lookup route | COV-03 | Done. Checked against the live service: a real postcode resolves, a well formed one that does not exist is told apart from one that is not a postcode |
 | M1-06 | `MapProvider`: circle and bounds geometry in `packages/providers`, Mapbox behind `next/dynamic`, a drawn fallback while there is no map key (D-058) | COV-01 | Done, except the Mapbox path itself, which needs a token to run once |
+| M1-07 | Step 3 area: base postcode looked up as it is typed, radius slider from 1 to 30 miles, the circle following it | COV-01, AUTH-04 | Done. The server resolves the postcode itself, so no coordinates are taken from the browser |
 
 ## Done (M0)
 
@@ -47,20 +48,20 @@ Decisions D-036 to D-050 were logged during this stretch. Two were security fixe
 
 | Suite | Result |
 |---|---|
-| Unit (Vitest) | 210 passed across 6 packages; `packages/core` line coverage 97.8%, `packages/providers` 100% |
+| Unit (Vitest) | 214 passed across 6 packages; `packages/core` line coverage 97.8%, `packages/providers` 100% |
 | Database (pgTAP) | 193 assertions in 13 files, all passing; SQL lint clean |
-| End to end (Playwright) | 91 passed at 390 px and 1440 px, none skipped, stable across repeated full runs, also against a production build in CI mode |
+| End to end (Playwright) | 95 passed at 390 px and 1440 px, none skipped, stable across repeated full runs, also against a production build in CI mode |
 | Lint, typecheck, copy guard | Clean |
 | CI on GitHub | Green: lint and unit, database, end to end against a production build |
 | Staging (hosted) | Security Advisor: 0 errors, 6 expected warnings (D-051). Every public table has row-level security. The sign-out guard (D-041) is active on the authenticator role. Health check and sign-in page verified |
 
 ## In progress
 
-- M1-07: the coverage step, with the postcode lookup and the radius slider.
+- M1-08: the prices step, which creates the lesson type, its price and an optional package.
 
 ## Next
 
-- M1-07 to M1-09: postcode and radius, prices, weekly hours.
+- M1-08 and M1-09: prices, weekly hours. Then the Today screen and the profile editor.
 - The five M1 migrations (`outbox_events`, onboarding columns, avatar photos, badge verification, the postcode cache function) are applied locally only. They go to staging with the next staging push.
 
 ## Blockers

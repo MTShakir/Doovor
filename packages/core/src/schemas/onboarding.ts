@@ -6,6 +6,7 @@
  */
 
 import { z } from 'zod';
+import { isPostcode, normalisePostcode } from '../postcode.ts';
 import { isValidLocalDate } from '../time/calendar.ts';
 import { todayInZone } from '../time/zone.ts';
 import { fullNameSchema } from './auth.ts';
@@ -52,3 +53,24 @@ export const onboardingBadgeSchema = z.object({
 });
 
 export type OnboardingBadge = z.infer<typeof onboardingBadgeSchema>;
+
+/** How far an instructor will travel, in miles (COV-01, PRD 11.1). */
+export const radiusMilesSchema = z.coerce
+  .number({ error: 'Choose how far you travel' })
+  .int()
+  .min(1, { error: 'Choose at least 1 mile' })
+  .max(30, { error: 'Choose 30 miles or fewer' });
+
+export const defaultRadiusMiles = 8;
+
+/** Step 3: where lessons start from, and how far out they go (COV-01). */
+export const onboardingAreaSchema = z.object({
+  postcode: z
+    .string()
+    .trim()
+    .refine(isPostcode, { error: 'Enter a UK postcode like LS1 4DY' })
+    .transform((value) => normalisePostcode(value) ?? value),
+  radiusMiles: radiusMilesSchema,
+});
+
+export type OnboardingArea = z.infer<typeof onboardingAreaSchema>;

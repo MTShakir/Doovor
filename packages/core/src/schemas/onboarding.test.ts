@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { onboardingBadgeSchema } from './onboarding.ts';
+import { onboardingAreaSchema, onboardingBadgeSchema } from './onboarding.ts';
 
 const valid = {
   qualification: 'adi' as const,
@@ -54,5 +54,32 @@ describe('badge step (INS-02, M1-04)', () => {
 
   it('takes trainee instructors too', () => {
     expect(onboardingBadgeSchema.parse({ ...valid, qualification: 'pdi' }).qualification).toBe('pdi');
+  });
+});
+
+describe('area step (COV-01, M1-07)', () => {
+  it('tidies the postcode the way it is printed', () => {
+    expect(onboardingAreaSchema.parse({ postcode: ' ls6 3hn ', radiusMiles: 8 })).toEqual({
+      postcode: 'LS6 3HN',
+      radiusMiles: 8,
+    });
+  });
+
+  it('takes a radius typed as text, because a form field gives one', () => {
+    expect(onboardingAreaSchema.parse({ postcode: 'LS6 3HN', radiusMiles: '12' }).radiusMiles).toBe(12);
+  });
+
+  it('keeps the radius inside the range the product sets', () => {
+    for (const radiusMiles of [0, 31, 8.5]) {
+      expect(onboardingAreaSchema.safeParse({ postcode: 'LS6 3HN', radiusMiles }).success).toBe(false);
+    }
+    expect(onboardingAreaSchema.safeParse({ postcode: 'LS6 3HN', radiusMiles: 1 }).success).toBe(true);
+    expect(onboardingAreaSchema.safeParse({ postcode: 'LS6 3HN', radiusMiles: 30 }).success).toBe(true);
+  });
+
+  it('says what a postcode looks like when it is given something else', () => {
+    const result = onboardingAreaSchema.safeParse({ postcode: 'Leeds', radiusMiles: 8 });
+    expect(result.success).toBe(false);
+    expect(result.error?.issues[0]?.message).toBe('Enter a UK postcode like LS1 4DY');
   });
 });

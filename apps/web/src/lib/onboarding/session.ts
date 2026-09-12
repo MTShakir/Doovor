@@ -1,4 +1,5 @@
 import 'server-only';
+import { defaultRadiusMiles } from '@repo/core/schemas/onboarding';
 import type { AccessMembership } from '@repo/db';
 import { getAccess } from '@/lib/auth/session';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
@@ -19,6 +20,8 @@ export interface OnboardingSession {
   qualification: 'adi' | 'pdi';
   badgeNumber: string | null;
   badgeExpiry: string | null;
+  basePostcode: string | null;
+  radiusMiles: number;
 }
 
 function instructorMembership(memberships: AccessMembership[]): AccessMembership | null {
@@ -39,7 +42,7 @@ export async function requireOnboarding(): Promise<OnboardingSession> {
   const supabase = await createSupabaseServerClient();
   const { data: profile } = await supabase
     .from('instructor_profiles')
-    .select('display_name, photo_path, badge_path, qualification, badge_number, badge_expiry')
+    .select('display_name, photo_path, badge_path, qualification, badge_number, badge_expiry, base_postcode, radius_miles')
     .eq('id', membership.instructorProfileId)
     .single();
 
@@ -54,5 +57,7 @@ export async function requireOnboarding(): Promise<OnboardingSession> {
     qualification: profile?.qualification ?? 'adi',
     badgeNumber: profile?.badge_number ?? null,
     badgeExpiry: profile?.badge_expiry ?? null,
+    basePostcode: profile?.base_postcode ?? null,
+    radiusMiles: profile?.radius_miles ?? defaultRadiusMiles,
   };
 }

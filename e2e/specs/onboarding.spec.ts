@@ -43,14 +43,14 @@ test.describe('instructor onboarding (AUTH-04, M1-02)', () => {
     await page.goto('/onboarding/hours');
     await expect(page).toHaveURL(/\/onboarding\/badge$/);
 
-    // The badge step has its own form, so moving on without it means skipping (INS-02).
-    await page.getByRole('button', { name: 'Skip for now' }).click();
-    await expect(page).toHaveURL(/\/onboarding\/area$/);
-
-    for (const step of ['prices', 'hours']) {
-      await page.getByRole('button', { name: 'Continue' }).click();
+    // A step with its own form is moved past by skipping, not by continuing (AUTH-04).
+    for (const step of ['area', 'prices']) {
+      await page.getByRole('button', { name: 'Skip for now' }).click();
       await expect(page).toHaveURL(new RegExp(`/onboarding/${step}$`));
     }
+
+    await page.getByRole('button', { name: 'Continue' }).click();
+    await expect(page).toHaveURL(/\/onboarding\/hours$/);
 
     await page.getByRole('button', { name: 'Continue' }).click();
     await expect(page).toHaveURL(/\/app\/instructor$/);
@@ -158,6 +158,64 @@ test.describe('instructor onboarding (AUTH-04, M1-02)', () => {
 
     await expect(page.getByText('That date has passed. Renew your badge first')).toBeVisible();
     await expect(page).toHaveURL(/\/onboarding\/badge$/);
+  });
+
+  test('draws the area as the slider moves (M1-07)', async ({ page }, testInfo) => {
+    const email = uniqueEmail(testInfo, 'area');
+    await chooseRoleAndCreateAccount(
+      page,
+      { card: "I'm an instructor", heading: 'Create your instructor account' },
+      { fullName: 'Nina Newstart', email },
+    );
+    await page.goto(await linkFromEmail(email, 'Confirm your email'));
+    await page.getByRole('link', { name: 'Do this later' }).click();
+    await page.getByLabel('Your name').fill('Nina Newstart');
+    await page.getByRole('button', { name: 'Continue' }).click();
+    await page.getByRole('button', { name: 'Skip for now' }).click();
+    await expect(page).toHaveURL(/\/onboarding\/area$/);
+
+    // Eight miles is the default the product sets (COV-01).
+    const area = page.getByRole('img', { name: /coverage area/i });
+    await expect(area).toHaveAttribute('aria-label', /8 miles/);
+
+    // A postcode the seed already cached, so the suite never waits on postcodes.io.
+    await page.getByLabel('Your base postcode').fill('ls6 3qs');
+    await expect(area).toHaveAttribute('aria-label', /around LS6 3QS/);
+
+    // Definition of done: the circle follows the slider.
+    await page.getByRole('slider', { name: 'How far do you travel' }).press('ArrowRight');
+    await expect(page.getByText('9 miles', { exact: true })).toBeVisible();
+    await expect(area).toHaveAttribute('aria-label', /9 miles/);
+    await expectAccessible(page);
+    await snap(page, testInfo, 'onboarding-area');
+
+    await page.getByRole('button', { name: 'Continue' }).click();
+    await expect(page).toHaveURL(/\/onboarding\/prices$/);
+
+    // What was saved comes back, with the circle already drawn.
+    await page.goto('/onboarding/area');
+    await expect(page.getByLabel('Your base postcode')).toHaveValue('LS6 3QS');
+    await expect(page.getByText('9 miles', { exact: true })).toBeVisible();
+  });
+
+  test('will not save an area without a real postcode (COV-03)', async ({ page }, testInfo) => {
+    const email = uniqueEmail(testInfo, 'bad-postcode');
+    await chooseRoleAndCreateAccount(
+      page,
+      { card: "I'm an instructor", heading: 'Create your instructor account' },
+      { fullName: 'Nina Newstart', email },
+    );
+    await page.goto(await linkFromEmail(email, 'Confirm your email'));
+    await page.getByRole('link', { name: 'Do this later' }).click();
+    await page.getByLabel('Your name').fill('Nina Newstart');
+    await page.getByRole('button', { name: 'Continue' }).click();
+    await page.getByRole('button', { name: 'Skip for now' }).click();
+
+    await page.getByLabel('Your base postcode').fill('Leeds');
+    await page.getByRole('button', { name: 'Continue' }).click();
+
+    await expect(page.getByText('Enter a UK postcode like LS1 4DY')).toBeVisible();
+    await expect(page).toHaveURL(/\/onboarding\/area$/);
   });
 
   test('is only for instructors', async ({ page }, testInfo) => {
