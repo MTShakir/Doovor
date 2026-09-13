@@ -61,6 +61,8 @@ M2 Learners and bookings has started on branch `m2-learners-bookings`. An instru
 
 | M2-28 | Email: a provider interface with Resend behind it, the React Email template, and the job that sends what the core wrote | NTF-03 | Done. Every notification in the catalogue renders without an em or en dash, in HTML and in words. Proved end to end locally: a cancelled lesson reached the log provider as two emails, one for each side |
 
+| M2-29 | The service worker spike (Serwist with Turbopack) and web push: VAPID, signing a browser up, the push handler | NTF-01 | Done, spike passed (D-073). A push delivered through the devtools protocol reaches the worker and is passed on to the open app, at 1440 px in Playwright. The worker precaches nothing yet, by choice |
+
 ## M1 progress
 
 | Task | What | PRD | State |
@@ -119,15 +121,15 @@ Decisions D-036 to D-050 were logged during this stretch. Two were security fixe
 | Suite | Result |
 |---|---|
 | Unit (Vitest) | 497 passed across 7 packages; `packages/core` line coverage 99.3%, `packages/providers` 100% |
-| Database (pgTAP) | 496 assertions in 41 files, all passing; SQL lint clean |
-| End to end (Playwright) | 222 passed at 390 px and 1440 px, none skipped, stable across repeated full runs |
+| Database (pgTAP) | 502 assertions in 42 files, all passing; SQL lint clean |
+| End to end (Playwright) | 224 passed at 390 px and 1440 px, none skipped, stable across repeated full runs |
 | Lint, typecheck, copy guard | Clean |
 | CI on GitHub | Green: lint and unit, database, end to end against a production build |
 | Staging (hosted) | All 23 migrations applied. Security Advisor: 0 errors, 17 warnings, 16 of them the expected `security definer` pattern (D-051) and one a dashboard switch for leaked password protection, now in the runbook |
 
 ## In progress
 
-- M2-29: the service worker spike and web push.
+- M2-30: reminders at 24 hours and 2 hours, and text messages on Pro.
 
 ## Next
 
@@ -143,3 +145,4 @@ Decisions D-036 to D-050 were logged during this stretch. Two were security fixe
 | Mapbox access token | The real map on the coverage step. The drawn fallback ships meanwhile (D-058) | Product owner |
 | Leaked password protection | One dashboard switch on staging, found by the M1 security advisor. RUNBOOK 3.1 step 4 | Product owner |
 | Resend API key for the app | Real email from staging and production. Local and test runs write to the log and send nothing. RUNBOOK 3.2 step 3 | Product owner |
+| VAPID key pair for staging and production | Push from those environments. Generated with one command, no account needed. RUNBOOK 3.2a | Product owner |

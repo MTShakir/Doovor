@@ -9,3 +9,13 @@ export const notificationPreferenceSchema = z.object({
 });
 
 export type NotificationPreferenceInput = z.infer<typeof notificationPreferenceSchema>;
+
+/** A browser saying "send push here" (NTF-01, M2-29). */
+export const pushSubscriptionSchema = z.object({
+  endpoint: z.url().max(1000),
+  p256dh: z.string().min(10).max(200),
+  auth: z.string().min(10).max(100),
+  userAgent: z.string().max(300).optional(),
+});
+
+export type PushSubscriptionInput = z.infer<typeof pushSubscriptionSchema>;

@@ -533,7 +533,7 @@ sequenceDiagram
   Note over DB: outbox event notifies the learner (lesson record added)
 ```
 
-- Serwist with `@serwist/turbopack`, which compiles the service worker through a route handler and works with the Turbopack build that Next 16 uses by default. The service worker first lands in M2 for web push, so the spike happens there. The fallback is `@serwist/next` with a webpack production build (D-013).
+- Serwist with `@serwist/turbopack`, which compiles the service worker through a route handler and works with the Turbopack build that Next 16 uses by default. The spike passed in M2 (D-073): the worker is written in `apps/web/src/app/sw.ts`, compiled by the route at `/serwist/[path]` and served from `/sw.js` through a rewrite so its scope is the whole app. It is registered when somebody turns push on, not before, and it precaches nothing until M4 decides what to keep offline.
 - Precached: the app shell, the Today view, the lesson record screen and the skill map. Runtime cache: today's and tomorrow's lesson data (network first, cache fallback). Public pages are not cached by the service worker.
 - The outbox is per device. Saving is idempotent on the client-generated ID, so a retry never creates a second record. If a record already exists for the booking from another device, the server keeps the first and returns a conflict that the UI shows.
 - Acceptance test 8 runs in Playwright with `context.setOffline(true)`, saves a record, goes back online and checks the learner's timeline.

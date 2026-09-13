@@ -242,3 +242,24 @@ export async function notify(email: string, one: SeededNotification): Promise<vo
     await sql`select public.system_notify(${sql.json([row])})`;
   });
 }
+
+/** Browsers this account has signed up for push, cleared before a test and counted after. */
+export async function clearPushSubscriptions(email: string): Promise<void> {
+  await withDatabase(async (sql) => {
+    await sql`
+      delete from public.push_subscriptions s
+       using public.users u
+       where u.id = s.user_id and lower(u.email) = lower(${email})`;
+  });
+}
+
+export async function countPushSubscriptions(email: string): Promise<number> {
+  return withDatabase(async (sql) => {
+    const rows = await sql<{ count: string }[]>`
+      select count(*)::text as count
+        from public.push_subscriptions s
+        join public.users u on u.id = s.user_id
+       where lower(u.email) = lower(${email})`;
+    return Number(rows[0]?.count ?? '0');
+  });
+}

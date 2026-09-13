@@ -1473,6 +1473,39 @@ export type Database = {
         }
         Relationships: []
       }
+      push_subscriptions: {
+        Row: {
+          auth: string
+          created_at: string
+          endpoint: string
+          id: string
+          last_used_at: string | null
+          p256dh: string
+          user_agent: string | null
+          user_id: string
+        }
+        Insert: {
+          auth: string
+          created_at?: string
+          endpoint: string
+          id?: string
+          last_used_at?: string | null
+          p256dh: string
+          user_agent?: string | null
+          user_id: string
+        }
+        Update: {
+          auth?: string
+          created_at?: string
+          endpoint?: string
+          id?: string
+          last_used_at?: string | null
+          p256dh?: string
+          user_agent?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       rate_limit_buckets: {
         Row: {
           hits: number
@@ -1954,6 +1987,7 @@ export type Database = {
         Args: { p_older_than?: string }
         Returns: number
       }
+      system_drop_push_target: { Args: { p_id: string }; Returns: number }
       system_expire_requests: { Args: never; Returns: number }
       system_extend_recurrences: { Args: { p_weeks?: number }; Returns: number }
       system_mark_notification_failed: {
@@ -1980,6 +2014,15 @@ export type Database = {
         }[]
       }
       system_notify: { Args: { p_rows: Json }; Returns: number }
+      system_push_targets: {
+        Args: { p_user_id: string }
+        Returns: {
+          auth: string
+          endpoint: string
+          id: string
+          p256dh: string
+        }[]
+      }
       system_rate_limit_hit: {
         Args: {
           p_action: string
@@ -1989,6 +2032,7 @@ export type Database = {
         }
         Returns: boolean
       }
+      system_touch_push_target: { Args: { p_id: string }; Returns: undefined }
       system_unlist_expired_badges: {
         Args: { p_today?: string }
         Returns: number

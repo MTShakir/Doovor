@@ -12,9 +12,11 @@ import type { Metadata } from 'next';
 import { connection } from 'next/server';
 import Link from 'next/link';
 import { Suspense } from 'react';
+import { clientEnv } from '@/env/client';
 import { requireAccess } from '@/lib/auth/session';
-import { myNotificationPreferences } from '@/lib/notifications/inbox';
+import { myNotificationPreferences, mySubscribedBrowsers } from '@/lib/notifications/inbox';
 import { ChannelSwitch } from './channel-switch';
+import { PushSwitch } from './push-switch';
 
 export const metadata: Metadata = { title: 'Notification settings', robots: { index: false } };
 
@@ -38,7 +40,7 @@ async function Settings() {
   // Somebody's own switches, which a prerendered shell cannot know.
   await connection();
   await requireAccess();
-  const off = await myNotificationPreferences();
+  const [off, browsers] = await Promise.all([myNotificationPreferences(), mySubscribedBrowsers()]);
 
   return (
     <div className="flex flex-col gap-6">
@@ -57,6 +59,16 @@ async function Settings() {
           list. The rest is up to you.
         </p>
       </div>
+
+      <Card className="flex flex-col gap-1" role="region" aria-labelledby="push-title">
+        <CardTitle id="push-title">Push notifications</CardTitle>
+        <CardDescription>
+          Push has to be turned on for each browser and each phone you use.
+        </CardDescription>
+        <div className="mt-2 flex flex-col divide-y divide-grey-200">
+          <PushSwitch publicKey={clientEnv.NEXT_PUBLIC_VAPID_PUBLIC_KEY ?? ''} anySubscribed={browsers > 0} />
+        </div>
+      </Card>
 
       {notificationCategories.map((category) => {
         const fixed = alwaysOnChannels(category);

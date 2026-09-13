@@ -1,7 +1,7 @@
 'use server';
 
 import { err, ok, type Result } from '@repo/core/result';
-import { notificationPreferenceSchema } from '@repo/core/schemas/notification';
+import { notificationPreferenceSchema, pushSubscriptionSchema } from '@repo/core/schemas/notification';
 import { revalidatePath } from 'next/cache';
 import { z } from 'zod';
 import { requireAccess } from '@/lib/auth/session';
@@ -68,6 +68,46 @@ export async function setNotificationChannel(input: unknown): Promise<Result<nul
           { user_id: userId, category, channel, enabled: false },
           { onConflict: 'user_id,category,channel' },
         );
+  if (error) return err('UNKNOWN');
+
+  revalidatePath('/notifications/settings');
+  return ok(null);
+}
+
+/**
+ * NTF-01: this browser asks to be sent push notifications. One row per browser, replaced if
+ * the same browser asks again, because a push service hands out the same endpoint.
+ */
+export async function subscribeToPush(input: unknown): Promise<Result<null>> {
+  const parsed = pushSubscriptionSchema.safeParse(input);
+  if (!parsed.success) return err('VALIDATION_FAILED');
+
+  const { userId, supabase } = await mine();
+  const { error } = await supabase.from('push_subscriptions').upsert(
+    {
+      user_id: userId,
+      endpoint: parsed.data.endpoint,
+      p256dh: parsed.data.p256dh,
+      auth: parsed.data.auth,
+      user_agent: parsed.data.userAgent ?? null,
+    },
+    { onConflict: 'endpoint' },
+  );
+  if (error) return err('UNKNOWN');
+
+  revalidatePath('/notifications/settings');
+  return ok(null);
+}
+
+const endpointSchema = z.object({ endpoint: z.url().max(1000) });
+
+/** And this browser asking to stop. */
+export async function unsubscribeFromPush(input: unknown): Promise<Result<null>> {
+  const parsed = endpointSchema.safeParse(input);
+  if (!parsed.success) return err('VALIDATION_FAILED');
+
+  const { supabase } = await mine();
+  const { error } = await supabase.from('push_subscriptions').delete().eq('endpoint', parsed.data.endpoint);
   if (error) return err('UNKNOWN');
 
   revalidatePath('/notifications/settings');

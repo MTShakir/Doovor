@@ -12,6 +12,9 @@ trustPolicyIgnoreAfter: 43200
 
 # Dependencies allowed to run install scripts. Anything new must be reviewed and added here.
 allowBuilds:
+  # Reviewed, not needed: its script checks the native binding and, if it is missing,
+  # installs a WebAssembly fallback. pnpm installs the binding as an optional dependency.
+  '@swc/core': false
   # Reviewed, not needed: its script only checks for the platform binary, which pnpm
   # already installs as an optional dependency.
   esbuild: false

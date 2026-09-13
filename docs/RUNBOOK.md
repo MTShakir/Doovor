@@ -80,6 +80,13 @@ Do these once, in order. Items marked **You** need the product owner's accounts.
 3. **You:** create a second API key, also sending to that domain only, for the app's own emails (M2-28). Put it in Vercel as `RESEND_API_KEY` and set `EMAIL_PROVIDER=resend` there. Two keys rather than one, so revoking the app's key never stops a password reset.
 4. Without the key the app uses the local provider: it writes a line to the log and sends nothing, which is what every local and test run does.
 
+### 3.2a Web push (VAPID)
+
+1. **You:** generate a key pair: `npx web-push generate-vapid-keys`. It needs no account anywhere; the pair only identifies this application to push services.
+2. **You:** in Vercel set `NEXT_PUBLIC_VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY` and `VAPID_SUBJECT` (`mailto:` and an address a push service can reach you at). Staging and production get their own pair.
+3. Changing the public key invalidates every subscription: browsers have to turn push on again. Generate once and keep it.
+4. Locally, `pnpm db:env` leaves these blank and the settings screen says push is not set up here. A pair for local work is generated the same way.
+
 ### 3.3 Twilio (text codes)
 
 1. **You:** create a Messaging Service with the alphanumeric sender `DrivingHub` (UK senders need no registration; people cannot reply).

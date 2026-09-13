@@ -2,6 +2,7 @@ import 'server-only';
 import { renderNotificationEmail } from '@repo/emails';
 import { getAppUrl } from '@/lib/app-url';
 import { emailProvider } from '@/lib/email/provider';
+import { pushConfigured, sendPush } from '@/lib/notifications/push';
 import { getSupabaseServiceClient } from '@/lib/supabase/service';
 import { emailPropsFor, wantsEmail, type ClaimedNotification } from './notification-emails';
 
@@ -42,29 +43,54 @@ export async function sendPendingNotifications(limit = 25): Promise<SendResult> 
       dedupeKey: row.dedupe_key,
     };
 
-    if (!wantsEmail(one)) {
-      // Nothing to send yet: its channels arrive in a later milestone.
-      sent.push(one.id);
-      continue;
+    let trouble: string | null = null;
+    let refused = false;
+
+    if (wantsEmail(one)) {
+      const email = await renderNotificationEmail(emailPropsFor(one, { appUrl }));
+      const result = await provider.send({
+        to: one.email,
+        subject: email.subject,
+        html: email.html,
+        text: email.text,
+        idempotencyKey: one.dedupeKey,
+      });
+      if (!result.ok) {
+        trouble = result.message;
+        refused = result.reason === 'REJECTED';
+      }
     }
 
-    const email = await renderNotificationEmail(emailPropsFor(one, { appUrl }));
-    const result = await provider.send({
-      to: one.email,
-      subject: email.subject,
-      html: email.html,
-      text: email.text,
-      idempotencyKey: one.dedupeKey,
-    });
+    // Every browser this person signed up, and any that have gone are forgotten (NTF-01).
+    if (one.channels.includes('push') && pushConfigured()) {
+      const targets = await supabase.rpc('system_push_targets', { p_user_id: one.userId });
+      for (const target of targets.data ?? []) {
+        const result = await sendPush(target, {
+          title: one.title,
+          body: one.body,
+          url: one.link,
+          tag: one.kind,
+        });
+        if (result.ok) {
+          await supabase.rpc('system_touch_push_target', { p_id: target.id });
+          continue;
+        }
+        if (result.gone) {
+          await supabase.rpc('system_drop_push_target', { p_id: target.id });
+          continue;
+        }
+        trouble ??= result.message;
+      }
+    }
 
-    if (result.ok) {
+    if (trouble === null) {
       sent.push(one.id);
       continue;
     }
     failed += 1;
-    await supabase.rpc('system_mark_notification_failed', { p_id: one.id, p_error: result.message });
+    await supabase.rpc('system_mark_notification_failed', { p_id: one.id, p_error: trouble });
     // A refusal will be refused again: stop it being claimed rather than trying five times.
-    if (result.reason === 'REJECTED') {
+    if (refused) {
       await supabase.rpc('system_mark_notifications_sent', { p_ids: [one.id] });
     }
   }

@@ -69,3 +69,10 @@ export async function notificationsMenuLink(): Promise<{ href: string; title: st
     subtitle: unread === 0 ? 'What you have been told, and what you hear about' : `${String(unread)} waiting`,
   };
 }
+
+/** How many browsers this account has asked us to push to (NTF-01). */
+export async function mySubscribedBrowsers(): Promise<number> {
+  const supabase = await createSupabaseServerClient();
+  const { count, error } = await supabase.from('push_subscriptions').select('id', { count: 'exact', head: true });
+  return error ? 0 : (count ?? 0);
+}
