@@ -26,18 +26,28 @@ export interface Checkout {
   accountId: string;
 }
 
-/** Hold the slot and check the lesson can be paid for, before any money is asked for (R-10). */
-async function payableLesson(bookingId: string): Promise<Result<CheckoutLesson & { accountId: string }>> {
+type Payable = CheckoutLesson & { accountId: string; request: boolean };
+
+/**
+ * Checks the lesson can be paid for before any money is asked for, and holds the slot for a
+ * lesson that is on (R-10). A request holds its own slot until it is answered, and is paid for
+ * with an authorisation rather than a payment (R-12).
+ */
+async function payableLesson(bookingId: string): Promise<Result<Payable>> {
   const lesson = await checkoutLesson(bookingId);
   if (!lesson) return err('NOT_FOUND');
   if (lesson.paid) return err('VALIDATION_FAILED', 'That lesson is already paid for.');
+  if (lesson.authorised) return err('VALIDATION_FAILED', 'Your card is already authorised for that lesson.');
   if (lesson.accountId === null) return err('NOT_ALLOWED', 'This instructor cannot take card payments yet.');
 
-  const supabase = await createSupabaseServerClient();
-  const held = await supabase.rpc('hold_booking_for_payment', { p_booking_id: lesson.bookingId });
-  if (held.error) return err(parsePostgresError(held.error).code);
+  const request = lesson.status === 'requested';
+  if (!request) {
+    const supabase = await createSupabaseServerClient();
+    const held = await supabase.rpc('hold_booking_for_payment', { p_booking_id: lesson.bookingId });
+    if (held.error) return err(parsePostgresError(held.error).code);
+  }
 
-  return ok({ ...lesson, accountId: lesson.accountId });
+  return ok({ ...lesson, accountId: lesson.accountId, request });
 }
 
 /**
@@ -54,11 +64,11 @@ async function recordAttempt(bookingId: string, intentId: string, amountPence: n
 }
 
 /**
- * Starts paying for a lesson with a card typed in now (PAY-02, PAY-03, R-10, M3-05).
+ * Starts paying for a lesson with a card typed in now (PAY-02, PAY-03, R-10, R-12, M3-05).
  *
- * The slot is held first, so nobody else can take it while a card is being typed, and the
- * payment carries the booking in its metadata, which is how the webhook knows what it was
- * for without trusting anything the browser says.
+ * The payment carries the booking in its metadata, which is how the webhook knows what it was
+ * for without trusting anything the browser says. For a request, the card is authorised and
+ * not charged: the money is taken only if the instructor accepts.
  */
 export async function startCheckout(input: unknown): Promise<Result<Checkout>> {
   const parsed = checkoutSchema.safeParse(input);
@@ -84,16 +94,18 @@ export async function startCheckout(input: unknown): Promise<Result<Checkout>> {
     p_customer_id: customer.data.customerId,
   });
 
+  const keep = parsed.data.saveCard ? 'keep' : 'once';
   const intent = await provider.createCheckoutIntent({
     accountId: lesson.accountId,
     amountPence: lesson.pricePence,
     customerId: customer.data.customerId,
+    holdOnly: lesson.request,
     savePaymentMethod: parsed.data.saveCard,
     metadata: { booking_id: lesson.bookingId, business_id: lesson.businessId },
     // One attempt per version of this lesson and per choice about the card: a retry reuses the
     // same payment (R-11), and changing one's mind about keeping the card is a new attempt,
     // because the provider refuses the same key with different instructions.
-    idempotencyKey: `booking:${lesson.bookingId}:${String(lesson.pricePence)}:${parsed.data.saveCard ? 'keep' : 'once'}`,
+    idempotencyKey: `booking:${lesson.bookingId}:${String(lesson.pricePence)}:${keep}:${lesson.request ? 'hold' : 'take'}`,
     statementDescriptor: 'LESSON',
   });
   if (!intent.ok || intent.data.clientSecret === null) {
@@ -115,15 +127,20 @@ const savedCardSchema = z.object({
   paymentMethodId: z.string().min(3).max(100),
 });
 
+const needsCheck = 'Your bank wants to check it is you. Use a different card to pay with your card details.';
+
 /**
- * Pays for a lesson with a card the learner kept with this Business (PAY-02, M3-07).
+ * Pays for a lesson with a card the learner kept with this Business (PAY-02, M3-07), or
+ * authorises it for a request (R-12, M3-08).
  *
  * The card has to be one the provider holds for this learner on this Business's account: the
  * customer comes from their own `billing_customers` row, never from the browser, and the card
  * from that customer's own list. The learner is here pressing the button, so the bank is told
- * so. What confirms the lesson is the webhook, exactly as for a card typed in.
+ * so. What records the payment is the webhook, exactly as for a card typed in.
  */
-export async function payWithSavedCard(input: unknown): Promise<Result<{ status: 'paid' | 'confirming' }>> {
+export async function payWithSavedCard(
+  input: unknown,
+): Promise<Result<{ status: 'paid' | 'authorised' | 'confirming' }>> {
   const parsed = savedCardSchema.safeParse(input);
   if (!parsed.success) return err('VALIDATION_FAILED');
 
@@ -141,29 +158,29 @@ export async function payWithSavedCard(input: unknown): Promise<Result<{ status:
     customerId: kept.customerId,
     paymentMethodId: card.paymentMethodId,
     amountPence: lesson.pricePence,
+    holdOnly: lesson.request,
     onSession: true,
     metadata: { booking_id: lesson.bookingId, business_id: lesson.businessId },
     // Pressing the button twice pays once (R-11).
-    idempotencyKey: `booking:${lesson.bookingId}:${String(lesson.pricePence)}:card:${card.paymentMethodId}`,
+    idempotencyKey: `booking:${lesson.bookingId}:${String(lesson.pricePence)}:card:${card.paymentMethodId}:${lesson.request ? 'hold' : 'take'}`,
   });
 
   if (!charged.ok) {
-    if (charged.reason === 'AUTHENTICATION_REQUIRED') {
-      return err('PAYMENT_FAILED', 'Your bank wants to check it is you. Use a different card to pay with your card details.');
-    }
+    if (charged.reason === 'AUTHENTICATION_REQUIRED') return err('PAYMENT_FAILED', needsCheck);
     if (charged.reason === 'DECLINED') return err('PAYMENT_FAILED', 'That card was refused. Use a different card.');
     return err('UNKNOWN', 'We could not take the payment. Try again.');
   }
 
+  const went = lesson.request ? 'requires_capture' : 'succeeded';
   // A bank that asks for a check part way through cannot be answered from here yet (M3-23).
-  if (charged.data.status === 'requires_action' || charged.data.status === 'requires_payment_method') {
-    return err('PAYMENT_FAILED', 'Your bank wants to check it is you. Use a different card to pay with your card details.');
+  if (charged.data.status !== went && charged.data.status !== 'processing') {
+    return err('PAYMENT_FAILED', needsCheck);
   }
 
   await recordAttempt(lesson.bookingId, charged.data.id, charged.data.amountPence);
 
   // With the fake nobody sends the event, so it is sent here, through the same handler.
-  if (serverEnv.PAYMENTS_PROVIDER !== 'stripe' && charged.data.status === 'succeeded') {
+  if (serverEnv.PAYMENTS_PROVIDER !== 'stripe' && charged.data.status === went) {
     const delivered = await deliverFakePaymentEvent(
       {
         id: charged.data.id,
@@ -171,14 +188,15 @@ export async function payWithSavedCard(input: unknown): Promise<Result<{ status:
         amountPence: charged.data.amountPence,
         metadata: charged.data.metadata,
       },
-      'succeeded',
+      lesson.request ? 'authorised' : 'succeeded',
     );
     if (!delivered) return err('UNKNOWN', 'The payment did not go through. Try again.');
   }
 
   revalidatePath(`/app/learner/pay/${lesson.bookingId}`);
   revalidatePath('/app/learner/lessons');
-  return ok({ status: serverEnv.PAYMENTS_PROVIDER === 'stripe' ? 'confirming' : 'paid' });
+  if (serverEnv.PAYMENTS_PROVIDER === 'stripe') return ok({ status: 'confirming' });
+  return ok({ status: lesson.request ? 'authorised' : 'paid' });
 }
 
 const testSchema = z.object({
@@ -190,10 +208,12 @@ const testSchema = z.object({
  * Stands in for a card, while the fake provider is in use (M3-05).
  *
  * It does what Stripe does: the payment reaches its outcome and a signed event goes through
- * the same handler the webhook route uses. Nothing here writes to the database itself, so what
- * is being exercised is the real path from the provider to the booking. Not in production.
+ * the same handler the webhook route uses. A card that goes through for a request is held, not
+ * taken, and the event says so. Nothing here writes to the database itself. Not in production.
  */
-export async function payWithTestCard(input: unknown): Promise<Result<{ outcome: string }>> {
+export async function payWithTestCard(
+  input: unknown,
+): Promise<Result<{ outcome: 'succeeded' | 'authorised' | 'failed' }>> {
   if (serverEnv.APP_ENV === 'production' || serverEnv.PAYMENTS_PROVIDER === 'stripe') {
     return err('NOT_ALLOWED');
   }
@@ -205,11 +225,13 @@ export async function payWithTestCard(input: unknown): Promise<Result<{ outcome:
   const intent = fakeCardOutcome(parsed.data.paymentIntentId, parsed.data.outcome);
   if (!intent) return err('NOT_FOUND');
 
-  const delivered = await deliverFakePaymentEvent(intent, parsed.data.outcome);
+  const outcome =
+    parsed.data.outcome === 'failed' ? 'failed' : intent.status === 'requires_capture' ? 'authorised' : 'succeeded';
+  const delivered = await deliverFakePaymentEvent(intent, outcome);
   if (!delivered) return err('UNKNOWN', 'The payment did not go through. Try again.');
 
   const booking = intent.metadata.booking_id;
   if (booking) revalidatePath(`/app/learner/pay/${booking}`);
   revalidatePath('/app/learner/lessons');
-  return ok({ outcome: parsed.data.outcome });
+  return ok({ outcome });
 }

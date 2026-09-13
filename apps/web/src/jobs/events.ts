@@ -36,3 +36,8 @@ export const bookingRescheduled = bookingEvent('booking.rescheduled');
 export const paymentRefund = eventType('payment.refund', {
   schema: staticSchema<{ refund_id: string; payment_id: string; booking_id: string | null }>(),
 });
+
+/** A card set aside for a request, waiting to be taken or let go (R-12). */
+export const paymentAuthorised = eventType('payment.authorised', {
+  schema: staticSchema<{ payment_id: string; booking_id: string }>(),
+});

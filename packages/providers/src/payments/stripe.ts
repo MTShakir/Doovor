@@ -295,6 +295,8 @@ export function stripePaymentsProvider(options: StripeOptions): PaymentsProvider
             customer: input.customerId,
             payment_method: input.paymentMethodId,
             confirm: true,
+            // A request to book is held, not taken, until it is accepted (R-12).
+            capture_method: input.holdOnly ? 'manual' : 'automatic',
             ...(input.onSession
               ? // Somebody is here, so a card that needs a redirect is not one to offer them.
                 { automatic_payment_methods: { enabled: true, allow_redirects: 'never' as const } }

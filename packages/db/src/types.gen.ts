@@ -2211,6 +2211,7 @@ export type Database = {
         }
         Returns: Database["public"]["Enums"]["verification_status"]
       }
+      system_authorisations_due: { Args: never; Returns: Json }
       system_booking_notice: { Args: { p_booking_id: string }; Returns: Json }
       system_claim_badge_reminders: {
         Args: { p_today?: string }
@@ -2327,6 +2328,18 @@ export type Database = {
         }
         Returns: boolean
       }
+      system_record_capture_failed: {
+        Args: { p_payment_id: string }
+        Returns: boolean
+      }
+      system_record_card_authorisation: {
+        Args: {
+          p_amount_pence: number
+          p_booking_id: string
+          p_provider_ref: string
+        }
+        Returns: Json
+      }
       system_record_card_payment: {
         Args: {
           p_amount_pence: number
@@ -2441,6 +2454,7 @@ export type Database = {
         | "refunded"
         | "partially_refunded"
         | "cancelled"
+        | "authorised"
       pickup_kind: "home" | "school" | "work" | "custom"
       plan_key: "free" | "pro" | "school"
       platform_role: "super_admin" | "support_admin"
@@ -2649,6 +2663,7 @@ export const Constants = {
         "refunded",
         "partially_refunded",
         "cancelled",
+        "authorised",
       ],
       pickup_kind: ["home", "school", "work", "custom"],
       plan_key: ["free", "pro", "school"],

@@ -43,7 +43,11 @@ export async function myLessons(): Promise<{ upcoming: MyLesson[]; past: MyLesso
     pricePence: row.price_pence,
     pickup: row.pickup_points?.label ?? null,
     durationMinutes: Math.round((new Date(row.ends_at).getTime() - new Date(row.starts_at).getTime()) / 60_000),
-    canPayNow: row.businesses.stripe_charges_enabled && ['unpaid', 'pending', 'failed'].includes(row.payment_status),
+    // A request is paid for with an authorisation, and one already authorised has nothing left
+    // to do until it is answered (R-12).
+    canPayNow:
+      row.businesses.stripe_charges_enabled &&
+      (row.status === 'requested' ? ['unpaid', 'failed'] : ['unpaid', 'pending', 'failed']).includes(row.payment_status),
   }));
 
   return {

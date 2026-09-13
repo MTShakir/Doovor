@@ -3,6 +3,7 @@ import {
   fakePaymentsProvider,
   stripePaymentsProvider,
   type FakePaymentsProvider,
+  type PaymentIntentStatus,
   type PaymentsProvider,
 } from '@repo/providers/payments';
 import { serverEnv } from '@/env/server';
@@ -54,11 +55,24 @@ export function fakeOnboarding(accountId: string): boolean {
 export function fakeCardOutcome(
   paymentIntentId: string,
   outcome: 'succeeded' | 'failed',
-): { id: string; accountId: string; amountPence: number; metadata: Record<string, string> } | null {
+): {
+  id: string;
+  accountId: string;
+  amountPence: number;
+  metadata: Record<string, string>;
+  /** Whether the card went through into a payment, or into a hold for a request (R-12). */
+  status: PaymentIntentStatus;
+} | null {
   if (serverEnv.PAYMENTS_PROVIDER === 'stripe') return null;
   const intent = theFake().completePayment(paymentIntentId, outcome);
   return intent
-    ? { id: intent.id, accountId: intent.accountId, amountPence: intent.amountPence, metadata: intent.metadata }
+    ? {
+        id: intent.id,
+        accountId: intent.accountId,
+        amountPence: intent.amountPence,
+        metadata: intent.metadata,
+        status: intent.status,
+      }
     : null;
 }
 

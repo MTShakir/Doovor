@@ -130,7 +130,9 @@ export function MyLessonRow({ lesson, rules, now, canChange }: MyLessonRowProps)
         <div className="flex flex-wrap justify-end gap-2">
           {lesson.canPayNow ? (
             <Button asChild>
-              <Link href={`/app/learner/pay/${lesson.id}`}>Pay {formatPence(lesson.pricePence)}</Link>
+              <Link href={`/app/learner/pay/${lesson.id}`}>
+                {lesson.status === 'requested' ? 'Authorise' : 'Pay'} {formatPence(lesson.pricePence)}
+              </Link>
             </Button>
           ) : null}
           <Button variant="secondary" onClick={() => { setSheet('move'); }}>

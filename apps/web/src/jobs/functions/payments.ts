@@ -1,6 +1,7 @@
 import { cron } from 'inngest';
+import { settleAuthorisations } from '../authorisations';
 import { inngest } from '../client';
-import { paymentRefund } from '../events';
+import { bookingAccepted, bookingDeclined, paymentAuthorised, paymentRefund } from '../events';
 import { expirePaymentHolds, sendRefund } from '../payments';
 
 /**
@@ -23,4 +24,20 @@ export const holdSweep = inngest.createFunction(
 export const refundSend = inngest.createFunction(
   { id: 'refund-send', name: 'Send a refund', triggers: [paymentRefund] },
   ({ event }) => sendRefund(event.data.refund_id),
+);
+
+/**
+ * An authorised card is taken when its request is accepted and let go when it is declined or
+ * runs out (R-12). At once when an answer or an authorisation arrives, and every five minutes
+ * for the requests that simply ran out. One run at a time, so two answers arriving together
+ * are settled in turn rather than raced.
+ */
+export const authorisationSweep = inngest.createFunction(
+  {
+    id: 'authorisation-sweep',
+    name: 'Take or release authorised cards',
+    concurrency: { limit: 1 },
+    triggers: [cron('TZ=Europe/London */5 * * * *'), bookingAccepted, bookingDeclined, paymentAuthorised],
+  },
+  () => settleAuthorisations(),
 );

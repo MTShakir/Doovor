@@ -41,6 +41,9 @@ const lesson = {
   paid: false,
   status: 'pending_payment',
   holdExpiresAt: '2026-09-13T12:15:00Z',
+  requestExpiresAt: null,
+  authorised: false,
+  refunded: false,
 };
 
 const kept = {
@@ -88,9 +91,10 @@ describe('paying with a kept card (PAY-02, M3-07)', () => {
       customerId: 'cus_lee',
       paymentMethodId: 'pm_kept',
       amountPence: 4200,
+      holdOnly: false,
       onSession: true,
       metadata: { booking_id: bookingId, business_id: 'business-1' },
-      idempotencyKey: `booking:${bookingId}:4200:card:pm_kept`,
+      idempotencyKey: `booking:${bookingId}:4200:card:pm_kept:take`,
     });
     expect(rpc).toHaveBeenCalledWith('set_payment_intent', {
       p_booking_id: bookingId,
@@ -188,7 +192,7 @@ describe('keeping a card is the learner’s choice (PAY-02, D-079)', () => {
     await startCheckout({ bookingId, saveCard: true });
 
     expect(provider.createCheckoutIntent).toHaveBeenCalledWith(
-      expect.objectContaining({ savePaymentMethod: true, idempotencyKey: `booking:${bookingId}:4200:keep` }),
+      expect.objectContaining({ savePaymentMethod: true, idempotencyKey: `booking:${bookingId}:4200:keep:take` }),
     );
   });
 
@@ -196,12 +200,60 @@ describe('keeping a card is the learner’s choice (PAY-02, D-079)', () => {
     await startCheckout({ bookingId });
 
     expect(provider.createCheckoutIntent).toHaveBeenCalledWith(
-      expect.objectContaining({ savePaymentMethod: false, idempotencyKey: `booking:${bookingId}:4200:once` }),
+      expect.objectContaining({ savePaymentMethod: false, idempotencyKey: `booking:${bookingId}:4200:once:take` }),
     );
     expect(rpc).toHaveBeenCalledWith('set_payment_intent', {
       p_booking_id: bookingId,
       p_provider_ref: 'pi_1',
       p_amount_pence: 4200,
     });
+  });
+});
+
+describe('asking for a lesson authorises the card instead (R-12, M3-08)', () => {
+  const request = { ...lesson, status: 'requested', holdExpiresAt: null, requestExpiresAt: '2026-09-14T09:00:00Z' };
+  const held = { ...succeeded, status: 'requires_capture', chargeId: null };
+
+  it('holds a kept card rather than charging it, and leaves the slot to the request', async () => {
+    checkoutLesson.mockResolvedValue(request);
+    provider.chargeSavedMethod.mockResolvedValue({ ok: true, data: held });
+
+    const result = await payWithSavedCard({ bookingId, paymentMethodId: 'pm_kept' });
+
+    expect(result).toEqual({ ok: true, data: { status: 'authorised' } });
+    expect(provider.chargeSavedMethod).toHaveBeenCalledWith(
+      expect.objectContaining({ holdOnly: true, idempotencyKey: `booking:${bookingId}:4200:card:pm_kept:hold` }),
+    );
+    expect(rpc).not.toHaveBeenCalledWith('hold_booking_for_payment', expect.anything());
+    expect(deliverFakePaymentEvent).toHaveBeenCalledWith(expect.objectContaining({ id: 'pi_1' }), 'authorised');
+  });
+
+  it('does not count a card that was taken outright as an authorisation', async () => {
+    checkoutLesson.mockResolvedValue(request);
+
+    const result = await payWithSavedCard({ bookingId, paymentMethodId: 'pm_kept' });
+
+    expect(result).toMatchObject({ ok: false, code: 'PAYMENT_FAILED' });
+    expect(deliverFakePaymentEvent).not.toHaveBeenCalled();
+  });
+
+  it('authorises a card typed in, as an attempt of its own', async () => {
+    checkoutLesson.mockResolvedValue(request);
+
+    await startCheckout({ bookingId });
+
+    expect(provider.createCheckoutIntent).toHaveBeenCalledWith(
+      expect.objectContaining({ holdOnly: true, idempotencyKey: `booking:${bookingId}:4200:once:hold` }),
+    );
+    expect(rpc).not.toHaveBeenCalledWith('hold_booking_for_payment', expect.anything());
+  });
+
+  it('asks for nothing twice once the card is authorised', async () => {
+    checkoutLesson.mockResolvedValue({ ...request, authorised: true });
+
+    const result = await payWithSavedCard({ bookingId, paymentMethodId: 'pm_kept' });
+
+    expect(result).toMatchObject({ ok: false, code: 'VALIDATION_FAILED' });
+    expect(provider.chargeSavedMethod).not.toHaveBeenCalled();
   });
 });

@@ -2,7 +2,7 @@ import { badgeExpirySweep } from './functions/badge-expiry';
 import { bookingNotices } from './functions/booking-notices';
 import { maintenanceSweep, recurrenceSweep, requestExpirySweep } from './functions/maintenance';
 import { notificationDispatch } from './functions/notification-dispatch';
-import { holdSweep, refundSend } from './functions/payments';
+import { authorisationSweep, holdSweep, refundSend } from './functions/payments';
 import { reminderSweep } from './functions/reminders';
 import { outboxSweep } from './functions/outbox-sweep';
 import { systemPingFunction } from './functions/ping';
@@ -20,4 +20,5 @@ export const functions = [
   reminderSweep,
   holdSweep,
   refundSend,
+  authorisationSweep,
 ];

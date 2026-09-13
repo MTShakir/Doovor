@@ -16,22 +16,36 @@ export interface CheckoutLesson {
   status: string;
   /** When the slot stops being held for them (R-10). */
   holdExpiresAt: string | null;
+  /** When a request stops waiting for an answer (R-12). Null for anything but a request. */
+  requestExpiresAt: string | null;
+  /** Their card is authorised for this lesson: set aside by the bank, not yet taken (R-12). */
+  authorised: boolean;
+  /** What they paid has gone back, or is on its way back (PAY-07). */
+  refunded: boolean;
 }
 
 /**
- * The lesson somebody is about to pay for (PAY-02, M3-05). Read under row-level security, so
- * this can only ever be a lesson of theirs.
+ * The lesson somebody is about to pay for (PAY-02, M3-05, M3-08). Read under row-level security,
+ * so this can only ever be a lesson of theirs.
  */
 export async function checkoutLesson(bookingId: string): Promise<CheckoutLesson | null> {
   const supabase = await createSupabaseServerClient();
   const { data } = await supabase
     .from('bookings')
     .select(
-      'id, business_id, starts_at, ends_at, price_pence, status, payment_status, hold_expires_at, instructor_profiles(display_name), lesson_types(name), businesses!bookings_business_id_fkey(name, stripe_account_id)',
+      'id, business_id, starts_at, ends_at, price_pence, status, payment_status, hold_expires_at, expires_at, instructor_profiles(display_name), lesson_types(name), businesses!bookings_business_id_fkey(name, stripe_account_id)',
     )
     .eq('id', bookingId)
     .maybeSingle();
   if (!data) return null;
+
+  // Their own payments only: row-level security shows a learner nobody else's.
+  const held = await supabase
+    .from('payments')
+    .select('id')
+    .eq('booking_id', bookingId)
+    .eq('status', 'authorised')
+    .limit(1);
 
   const paidStatuses = ['paid_card', 'paid_cash', 'paid_bank', 'paid_credit'];
   return {
@@ -49,5 +63,8 @@ export async function checkoutLesson(bookingId: string): Promise<CheckoutLesson 
     paid: paidStatuses.includes(data.payment_status),
     status: data.status,
     holdExpiresAt: data.hold_expires_at,
+    requestExpiresAt: data.status === 'requested' ? data.expires_at : null,
+    authorised: (held.data ?? []).length > 0,
+    refunded: data.payment_status === 'refunded' || data.payment_status === 'partially_refunded',
   };
 }

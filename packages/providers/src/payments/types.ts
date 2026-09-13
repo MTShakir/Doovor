@@ -70,6 +70,11 @@ export interface ChargeSavedMethodInput {
   metadata?: Record<string, string>;
   idempotencyKey?: string;
   /**
+   * Hold the money rather than take it, for a lesson that has to be accepted first (R-12). The
+   * hold is captured on accept and released on decline or expiry.
+   */
+  holdOnly?: boolean;
+  /**
    * The learner is here, pressing the button (PAY-02). Off by default, which is the charge
    * made 24 hours before a lesson with nobody at the keyboard (PAY-03). The bank is told which
    * it is, because it is allowed to treat the two differently and a charge that claims nobody

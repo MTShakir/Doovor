@@ -26,6 +26,11 @@ export interface PayLessonProps {
   businessName: string;
   /** Cards this learner kept with this Business that still work, newest first (PAY-02). */
   savedCards: KeptCardOption[];
+  /**
+   * A request waiting for the instructor: the card is authorised, not charged, and is only
+   * charged if they accept (R-12).
+   */
+  request: boolean;
   /** True when this environment has a real payments provider behind it. */
   live: boolean;
 }
@@ -34,13 +39,14 @@ export interface PayLessonProps {
 const CONFIRM_POLLS = 15;
 
 /**
- * Paying for a lesson (PAY-02, M3-05, M3-07).
+ * Paying for a lesson (PAY-02, M3-05, M3-07, M3-08).
  *
  * A learner with a card kept for this Business pays with it in one press. Anybody else types a
- * card, and chooses whether this Business keeps it for next time. Either way the lesson is
- * confirmed by the webhook, never by this screen.
+ * card, and chooses whether this Business keeps it for next time. For a request the same press
+ * authorises the card instead of charging it. Either way what happened is written down by the
+ * webhook, never by this screen.
  */
-export function PayLesson({ bookingId, pricePence, businessName, savedCards, live }: PayLessonProps) {
+export function PayLesson({ bookingId, pricePence, businessName, savedCards, request, live }: PayLessonProps) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
@@ -51,6 +57,8 @@ export function PayLesson({ bookingId, pricePence, businessName, savedCards, liv
   const [confirming, setConfirming] = useState(false);
 
   const price = formatPence(pricePence);
+  const verb = request ? 'Authorise' : 'Pay';
+  const done = request ? 'Card authorised' : 'Lesson paid for';
   const card = savedCards.find((one) => one.paymentMethodId === chosen) ?? savedCards[0];
 
   // The money is taken and the webhook is on its way. The page says paid once it lands, which
@@ -79,7 +87,7 @@ export function PayLesson({ bookingId, pricePence, businessName, savedCards, liv
         setConfirming(true);
         return;
       }
-      toast('Lesson paid for');
+      toast(done);
       router.refresh();
     });
   };
@@ -110,7 +118,7 @@ export function PayLesson({ bookingId, pricePence, businessName, savedCards, liv
         setError('The card was refused. Try another one.');
         return;
       }
-      toast('Lesson paid for');
+      toast(done);
       router.refresh();
     });
   };
@@ -118,7 +126,7 @@ export function PayLesson({ bookingId, pricePence, businessName, savedCards, liv
   if (confirming) {
     return (
       <p className="text-body text-ink" role="status">
-        Payment taken. Confirming your lesson, which takes a few seconds.
+        {request ? 'Card authorised. Sending your request, which takes a few seconds.' : 'Payment taken. Confirming your lesson, which takes a few seconds.'}
       </p>
     );
   }
@@ -147,7 +155,7 @@ export function PayLesson({ bookingId, pricePence, businessName, savedCards, liv
             </p>
           )}
           <Button width="responsive" size="lg" pending={pending} onClick={payWithCard}>
-            Pay {price} with {card.label}
+            {verb} {price} with {card.label}
           </Button>
           <Button
             variant="secondary"
@@ -171,7 +179,7 @@ export function PayLesson({ bookingId, pricePence, businessName, savedCards, liv
           />
           <Button width="responsive" size="lg" pending={pending} onClick={start}>
             <CreditCard className="size-5" aria-hidden />
-            Pay {price}
+            {verb} {price}
           </Button>
           {savedCards.length > 0 ? (
             <Button
@@ -183,7 +191,7 @@ export function PayLesson({ bookingId, pricePence, businessName, savedCards, liv
                 setMode('saved');
               }}
             >
-              Pay with a saved card
+              {verb} with a saved card
             </Button>
           ) : null}
         </div>
@@ -197,7 +205,7 @@ export function PayLesson({ bookingId, pricePence, businessName, savedCards, liv
           </p>
           <div className="flex flex-col gap-2 md:flex-row">
             <Button width="responsive" pending={pending} onClick={() => { finish('succeeded'); }}>
-              Pay with a test card
+              {request ? 'Authorise with a test card' : 'Pay with a test card'}
             </Button>
             <Button variant="secondary" width="responsive" pending={pending} onClick={() => { finish('failed'); }}>
               Test a refused card

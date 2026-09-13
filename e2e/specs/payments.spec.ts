@@ -1,6 +1,7 @@
 import { expect, test } from '@playwright/test';
 import { authFile, roles } from '../support/accounts';
 import {
+  acceptRequests,
   bookLesson,
   clearPaymentsAccount,
   enablePayments,
@@ -9,6 +10,9 @@ import {
   lessonsOn,
   paymentFor,
   paymentsAccountOf,
+  removeLesson,
+  requestLesson,
+  setBookingStatus,
 } from '../support/database';
 import { expectAccessible, snap } from '../support/helpers';
 
@@ -230,6 +234,77 @@ test.describe('paying for a lesson (PAY-02, M3-05)', () => {
     await clearPaymentsAccount(owner);
   });
 
+  test('a request authorises the card, which is taken on accept and let go on decline (M3-08)', async ({ page }, testInfo) => {
+    test.setTimeout(150_000);
+    const day = ownDay(testInfo.project.name);
+    await enablePayments(owner, `fake_acct_request_${testInfo.project.name}_${String(Date.now())}`);
+    const ask = async (hour: string) => {
+      await removeLesson('Tom Walsh', learner, day, hour);
+      await requestLesson('Tom Walsh', learner, day, hour);
+    };
+
+    /** The job runner is not part of this run: the sweep it would run in five minutes runs now. */
+    const settle = async () => {
+      const answer = await page.request.post('/dev/authorisations');
+      expect(answer.ok()).toBe(true);
+      return (await answer.json()) as { captured: number; released: number; failed: number };
+    };
+
+    const authorise = async (hour: string) => {
+      await page.goto('/app/learner/lessons');
+      const lesson = page
+        .getByRole('article')
+        .filter({ hasText: `at ${hour}` })
+        .filter({ hasText: 'Tom Walsh' });
+      await expect(async () => {
+        await lesson.getByRole('link', { name: /^Authorise £/ }).click();
+        await page.waitForURL(/\/app\/learner\/pay\//, { timeout: 5000 });
+      }).toPass({ timeout: 20_000 });
+
+      const checkout = page.getByRole('region', { name: /at \d\d:\d\d$/ });
+      await expect(checkout).toContainText('Request');
+      await expect(checkout).toContainText('Your card is only charged if they do.');
+      await expect(async () => {
+        await checkout.getByRole('button', { name: /^Authorise £/ }).click();
+        await expect(checkout.getByRole('button', { name: 'Authorise with a test card' })).toBeVisible({ timeout: 10_000 });
+      }).toPass({ timeout: 40_000 });
+      await checkout.getByRole('button', { name: 'Authorise with a test card' }).click();
+      await expect(checkout).toContainText('Your card is authorised for £42.', { timeout: 30_000 });
+      return checkout;
+    };
+
+    // Asking: the card is set aside, and nothing is taken.
+    await ask('20:00');
+    const accepted = await authorise('20:00');
+    await expect(accepted).toContainText('You are only charged if Tom Walsh accepts');
+    await expectAccessible(page);
+    await snap(page, testInfo, 'pay-request-authorised');
+
+    const asked = (await lessonsOn('Tom Walsh', day)).find((one) => one.time === '20:00');
+    expect(await paymentFor(asked?.startsAt ?? '')).toEqual({ amountPence: 4200, status: 'authorised' });
+
+    // Accepted: the money is taken.
+    await acceptRequests('Tom Walsh', day);
+    expect((await settle()).captured, 'the sweep took the authorised card').toBeGreaterThan(0);
+    await page.reload();
+    await expect(accepted).toContainText('That is paid for, and your lesson is confirmed.');
+    expect(await paymentFor(asked?.startsAt ?? '')).toEqual({ amountPence: 4200, status: 'paid' });
+
+    // Declined: the money is let go of, and the learner is told nothing was taken. Asked only
+    // now, because accepting above accepts every request that day.
+    await ask('06:00');
+    const declined = await authorise('06:00');
+    const other = (await lessonsOn('Tom Walsh', day)).find((one) => one.time === '06:00');
+    await setBookingStatus('Tom Walsh', other?.startsAt ?? '', 'cancelled');
+    expect((await settle()).released, 'the sweep released the authorised card').toBeGreaterThan(0);
+    await page.reload();
+    await expect(declined).toContainText('This lesson is not going ahead. Nothing has been taken from your card.');
+    await snap(page, testInfo, 'pay-request-declined');
+    expect(await paymentFor(other?.startsAt ?? '')).toEqual({ amountPence: 4200, status: 'cancelled' });
+
+    await clearPaymentsAccount(owner);
+  });
+
   test('a hold that runs out gives the slot back, and the page says so @desktop-only', async ({ page }, testInfo) => {
     const day = ownDay(testInfo.project.name);
     await enablePayments(owner, `fake_acct_expiry_${testInfo.project.name}`);
@@ -257,7 +332,8 @@ test.describe('paying for a lesson (PAY-02, M3-05)', () => {
 
     await page.reload();
     await expect(checkout).toContainText('Slot gone');
-    await expect(checkout).toContainText('The slot was held while you paid, and the hold has run out.');
+    await expect(checkout).toContainText('This slot is no longer held for you, so the lesson is not booked.');
+    await expect(checkout).toContainText('Nothing has been taken from your card.');
     await expect(checkout.getByRole('button', { name: /^Pay £/ })).toBeHidden();
     await expectAccessible(page);
     await snap(page, testInfo, 'pay-lesson-expired');

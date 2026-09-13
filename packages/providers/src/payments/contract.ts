@@ -131,6 +131,37 @@ export function paymentsContract(contract: PaymentsContract): void {
     if (!refused.ok) expect(refused.reason).toBe('DECLINED');
   });
 
+  it('holds a card rather than charging it, then takes the hold or lets it go (R-12)', async () => {
+    const { provider, accountId } = await ready();
+    const customer = await provider.ensureCustomer({ accountId, reference: 'learner-hold' });
+    expect(customer.ok).toBe(true);
+    if (!customer.ok) return;
+
+    const hold = () =>
+      provider.chargeSavedMethod({
+        accountId,
+        customerId: customer.data.customerId,
+        paymentMethodId: contract.workingCard,
+        amountPence: 4200,
+        holdOnly: true,
+        onSession: true,
+      });
+
+    const held = await hold();
+    expect(held.ok).toBe(true);
+    if (!held.ok) return;
+    expect(held.data.status, 'held, not taken').toBe('requires_capture');
+
+    const taken = await provider.captureHold({ accountId, paymentIntentId: held.data.id });
+    expect(taken.ok && taken.data.status).toBe('succeeded');
+
+    const second = await hold();
+    expect(second.ok).toBe(true);
+    if (!second.ok) return;
+    const letGo = await provider.cancelHold({ accountId, paymentIntentId: second.data.id });
+    expect(letGo.ok && letGo.data.status).toBe('canceled');
+  });
+
   it('gives money back, once, and never more than was taken (PAY-07)', async () => {
     const { provider, accountId } = await ready();
     const customer = await provider.ensureCustomer({ accountId, reference: 'learner-refund' });

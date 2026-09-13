@@ -49,6 +49,8 @@ interface FakeState {
   intents: Map<string, PaymentIntent>;
   /** Who each payment was for, and whether they asked for the card to be kept (PAY-02). */
   payers: Map<string, { customerId: string; save: boolean }>;
+  /** Payments that are held when the card goes through, rather than taken (R-12). */
+  held: Set<string>;
   refunds: Map<string, Refund[]>;
   /** What each idempotency key answered, so the same key never does the work twice. */
   answered: Map<string, string>;
@@ -104,6 +106,7 @@ export function fakePaymentsProvider(options: FakePaymentsOptions = {}): FakePay
     cards: new Map(),
     intents: new Map(),
     payers: new Map(),
+    held: new Set(),
     refunds: new Map(),
     answered: new Map(),
   };
@@ -162,6 +165,8 @@ export function fakePaymentsProvider(options: FakePaymentsOptions = {}): FakePay
         if (!already) state.cards.set(key, [{ paymentMethodId: next('pm'), ...card }, ...kept]);
       }
 
+      // A held payment is set aside by the bank, not taken, until it is captured (R-12).
+      if (state.held.has(paymentIntentId)) return put({ ...intent, status: 'requires_capture', clientSecret: null });
       return put({ ...intent, status: 'succeeded', clientSecret: null, chargeId: intent.chargeId ?? next('ch') });
     },
 
@@ -172,6 +177,7 @@ export function fakePaymentsProvider(options: FakePaymentsOptions = {}): FakePay
       state.cards.clear();
       state.intents.clear();
       state.payers.clear();
+      state.held.clear();
       state.refunds.clear();
       state.answered.clear();
       counter = 0;
@@ -276,6 +282,7 @@ export function fakePaymentsProvider(options: FakePaymentsOptions = {}): FakePay
       if (input.customerId !== undefined) {
         state.payers.set(intent.id, { customerId: input.customerId, save: input.savePaymentMethod === true });
       }
+      if (input.holdOnly) state.held.add(intent.id);
       return Promise.resolve(ok(intent));
     },
 
@@ -287,6 +294,13 @@ export function fakePaymentsProvider(options: FakePaymentsOptions = {}): FakePay
     captureHold: (input): Promise<PaymentResult<PaymentIntent>> => {
       const intent = intentOf(input.paymentIntentId);
       if (!intent) return Promise.resolve({ ok: false, reason: 'NOT_FOUND', message: 'No such payment.' });
+      // The same key again is the same capture, as it is with Stripe (R-11).
+      if (input.idempotencyKey !== undefined && state.answered.get(input.idempotencyKey) === intent.id) {
+        return Promise.resolve(ok(intent));
+      }
+      if (input.idempotencyKey !== undefined && intent.status === 'requires_capture') {
+        state.answered.set(input.idempotencyKey, intent.id);
+      }
       if (intent.status !== 'requires_capture') {
         return Promise.resolve({ ok: false, reason: 'DECLINED', message: 'That payment is not being held.' });
       }
@@ -337,15 +351,16 @@ export function fakePaymentsProvider(options: FakePaymentsOptions = {}): FakePay
           intentOf(id) ??
           put({
             id,
-            status: 'succeeded',
+            status: input.holdOnly ? 'requires_capture' : 'succeeded',
             amountPence: input.amountPence,
             currency: input.currency ?? 'gbp',
             clientSecret: null,
             accountId: input.accountId,
             metadata: input.metadata ?? {},
-            chargeId: next('ch'),
+            chargeId: input.holdOnly ? null : next('ch'),
           }),
       );
+      if (input.holdOnly) state.held.add(intent.id);
       return Promise.resolve(ok(intent));
     },
 

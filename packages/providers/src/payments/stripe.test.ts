@@ -351,6 +351,22 @@ describe('taking money (PAY-02, PAY-03, R-12)', () => {
     expect(body.payment_method).toBe('pm_1');
   });
 
+  it('holds a saved card rather than taking it, for a request (R-12)', async () => {
+    const { calls, payments } = provider();
+
+    await payments.chargeSavedMethod({
+      accountId: 'acct_1',
+      customerId: 'cus_1',
+      paymentMethodId: 'pm_1',
+      amountPence: 4200,
+      holdOnly: true,
+      onSession: true,
+    });
+
+    const body = calls[0]?.args[0] as Record<string, unknown>;
+    expect(body.capture_method).toBe('manual');
+  });
+
   it('tells the bank the learner is there when they are, and offers nothing that redirects (PAY-02)', async () => {
     const { calls, payments } = provider();
 

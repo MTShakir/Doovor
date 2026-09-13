@@ -65,13 +65,19 @@ export interface FakeOutcome {
  * path from an event to a lesson. Returns false with Stripe, where there is nothing to stand in
  * for.
  */
-export async function deliverFakePaymentEvent(
-  intent: FakeOutcome,
-  outcome: 'succeeded' | 'failed',
-): Promise<boolean> {
+export type FakeEventOutcome = 'succeeded' | 'authorised' | 'failed';
+
+const fakeEventTypes: Record<FakeEventOutcome, string> = {
+  succeeded: 'payment_intent.succeeded',
+  // A manual capture payment that the card has gone through for, held and not yet taken (R-12).
+  authorised: 'payment_intent.amount_capturable_updated',
+  failed: 'payment_intent.payment_failed',
+};
+
+export async function deliverFakePaymentEvent(intent: FakeOutcome, outcome: FakeEventOutcome): Promise<boolean> {
   const body = JSON.stringify({
     id: `evt_fake_${intent.id}_${outcome}`,
-    type: outcome === 'succeeded' ? 'payment_intent.succeeded' : 'payment_intent.payment_failed',
+    type: fakeEventTypes[outcome],
     account: intent.accountId,
     created: Math.floor(Date.now() / 1000),
     data: {
@@ -79,6 +85,7 @@ export async function deliverFakePaymentEvent(
         id: intent.id,
         amount: intent.amountPence,
         amount_received: outcome === 'succeeded' ? intent.amountPence : 0,
+        amount_capturable: outcome === 'authorised' ? intent.amountPence : 0,
         metadata: intent.metadata,
       },
     },
