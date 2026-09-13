@@ -2,7 +2,7 @@
 
 Status: Draft for approval | 11 September 2026 | Scope: Phase 1 (M0 to M6), shaped for Phases 2 to 5
 
-This document explains how the system is built and why. Requirement IDs refer to `docs/DrivingHub_PRD.md`. Decision IDs (`D-001`) refer to `docs/DECISIONS.md`.
+This document explains how the system is built and why. Requirement IDs refer to `docs/Doovor_PRD.md`. Decision IDs (`D-001`) refer to `docs/DECISIONS.md`.
 
 ## 1. Guiding principles
 

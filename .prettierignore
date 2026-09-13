@@ -8,4 +8,4 @@ test-results
 playwright-report
 supabase/.temp
 packages/db/src/types.gen.ts
-docs/DrivingHub_PRD.md
+docs/Doovor_PRD.md

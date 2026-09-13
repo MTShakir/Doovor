@@ -1,12 +1,12 @@
-# DrivingHub Product Requirements Document
+# Doovor Product Requirements Document
 
 Version 1.0 | 10 September 2026 | Owner: Talha, Maxterz LTD | Status: Approved for build
 
-DrivingHub is a working name. The final brand name is set in one configuration file so a rename takes minutes.
+Doovor is a working name. The final brand name is set in one configuration file so a rename takes minutes.
 
 ## 1. Executive summary
 
-DrivingHub is the one place in the UK where learners, driving instructors and driving schools meet, book, pay and track progress.
+Doovor is the one place in the UK where learners, driving instructors and driving schools meet, book, pay and track progress.
 
 It works like Uber for driving lessons. Learners open the app, enter a postcode and see instructors who have space. Instructors run their whole business from their phone. Driving schools manage their team, learners and money in one dashboard.
 
@@ -76,7 +76,7 @@ Principle: build the infrastructure first, then turn it into a marketplace.
 
 | Phase | Name | Goal | Key output |
 |---|---|---|---|
-| 1 | Instructor OS (MVP) | Get instructors and small schools running their business on DrivingHub. | Accounts, instructor profile and verification, diary, bookings, learner CRM, lesson records, progress, payments (online and offline), reminders, public profile and booking link, basic school portal, super admin. |
+| 1 | Instructor OS (MVP) | Get instructors and small schools running their business on Doovor. | Accounts, instructor profile and verification, diary, bookings, learner CRM, lesson records, progress, payments (online and offline), reminders, public profile and booking link, basic school portal, super admin. |
 | 2 | Network and Schools | Deepen school tools and grow the network. | Full school portal, waiting lists, Gap Fill, messaging, reviews, subscriptions, MTD exports, test tracking, analytics. |
 | 3 | Learner Marketplace | Switch on learner search and booking by region. | Map search, filters, compare, instant booking, lesson requests, marketplace fees, featured listings. |
 | 4 | Intelligence | Use data to match, schedule and predict. | AI instructor matching, smart scheduling with travel time, test readiness score, AI lesson summaries. |
@@ -101,14 +101,14 @@ Before switch-on, learners in that area can join a waiting list and post a lesso
 
 ## 5. Goals and success metrics
 
-**North Star metric:** Lessons completed through DrivingHub per week.
+**North Star metric:** Lessons completed through Doovor per week.
 
 | Area | Metric | Phase 1 target (first 6 months after launch) |
 |---|---|---|
 | Acquisition | Instructors signed up | 1,000 |
 | Activation | Instructor adds at least 3 learners and 5 lessons within 7 days | 50% of sign-ups |
 | Engagement | Weekly active instructors | 60% of activated instructors |
-| Payments | Share of lessons paid through DrivingHub (online or recorded offline) | 70% |
+| Payments | Share of lessons paid through Doovor (online or recorded offline) | 70% |
 | Learner adoption | Learners who accept an invite and log in | 60% |
 | Quality | Instructor NPS | 50 or higher |
 | Reliability | Double bookings in production | Zero |
@@ -117,8 +117,8 @@ Before switch-on, learners in that area can join a waiting list and post a lesso
 
 | Role | Who | Access scope |
 |---|---|---|
-| Super Admin | DrivingHub founders | Whole platform. |
-| Support Admin | DrivingHub support staff | Read most data, manage verification, disputes and reviews. No payouts or platform settings. |
+| Super Admin | Doovor founders | Whole platform. |
+| Support Admin | Doovor support staff | Read most data, manage verification, disputes and reviews. No payouts or platform settings. |
 | School Owner | Owner of a driving school | Everything in their school, including billing and payouts. |
 | School Manager | Office staff at a school | Instructors, learners, bookings, reports. No billing or payouts. |
 | Instructor (independent) | Solo ADI or PDI running their own business | Their own business: profile, diary, learners, payments, earnings. |
@@ -277,7 +277,7 @@ Priority key: **P1** = Phase 1 (MVP), **P2** = Phase 2, **P3** = Phase 3, **P4**
 | INS-03 | Badge expiry tracking with reminders at 60, 30 and 7 days. Profile hides from search when expired. | P1 |
 | INS-04 | PDI profiles show "Trainee instructor" clearly. Trainees must link to a supervising school or ADI. | P1 |
 | INS-05 | Public profile page and booking link generated on approval (see 9.13). | P1 |
-| INS-06 | Pass rate shown only when based on at least 10 recorded tests in the last 12 months, and labelled "Based on tests recorded on DrivingHub". | P2 |
+| INS-06 | Pass rate shown only when based on at least 10 recorded tests in the last 12 months, and labelled "Based on tests recorded on Doovor". | P2 |
 
 ### 9.3 Coverage area
 
@@ -350,7 +350,7 @@ Priority key: **P1** = Phase 1 (MVP), **P2** = Phase 2, **P3** = Phase 3, **P4**
 
 | ID | Requirement | Phase |
 |---|---|---|
-| TST-01 | Learner adds their own test date, time, test centre and booking reference. DrivingHub never books tests on the learner's behalf (DVSA rule from 12 May 2026). | P2 |
+| TST-01 | Learner adds their own test date, time, test centre and booking reference. Doovor never books tests on the learner's behalf (DVSA rule from 12 May 2026). | P2 |
 | TST-02 | Learner can share test details with their instructor. The instructor sees it in the diary and can offer a test day booking (warm-up lesson plus car use). | P2 |
 | TST-03 | Test result capture (pass or fail, number of minors, serious and dangerous faults). Feeds pass rate (INS-06). | P2 |
 | TST-04 | Guidance screen linking to the official GOV.UK test booking service. No scraping or automated booking of DVSA systems. | P2 |
@@ -359,7 +359,7 @@ Priority key: **P1** = Phase 1 (MVP), **P2** = Phase 2, **P3** = Phase 3, **P4**
 
 | ID | Requirement | Phase |
 |---|---|---|
-| PAY-01 | Each Business connects a Stripe Connect Express account in onboarding (2 minutes, identity handled by Stripe). Card payments go to the Business; DrivingHub takes an application fee where applicable. | P1 |
+| PAY-01 | Each Business connects a Stripe Connect Express account in onboarding (2 minutes, identity handled by Stripe). Card payments go to the Business; Doovor takes an application fee where applicable. | P1 |
 | PAY-02 | Learner pays by card, Apple Pay or Google Pay. Card can be saved for future lessons. | P1 |
 | PAY-03 | Payment options per Business: pay at booking, pay before lesson (auto-charge saved card 24 hours before), or pay after lesson (payment link sent on completion). | P1 |
 | PAY-04 | Lesson packages (for example 10 hours for £380). Purchased hours become lesson credit held against that Business only. Bookings use credit first. | P1 |
@@ -370,7 +370,7 @@ Priority key: **P1** = Phase 1 (MVP), **P2** = Phase 2, **P3** = Phase 3, **P4**
 | PAY-09 | Late cancellation and no-show fees charged per the Business policy (to saved card or deducted from credit). | P1 |
 | PAY-10 | Payer (guardian) can pay for a linked learner. | P2 |
 | PAY-11 | Gift cards for lessons. | P5 |
-| PAY-12 | DrivingHub never holds learner money in a platform wallet. Credit is always a prepaid package with a specific Business. This avoids e-money regulation. | P1 |
+| PAY-12 | Doovor never holds learner money in a platform wallet. Credit is always a prepaid package with a specific Business. This avoids e-money regulation. | P1 |
 
 ### 9.10 Earnings, expenses and tax
 
@@ -480,7 +480,7 @@ All prices live in configuration. The values below are recommended launch defaul
 | School | £9 per instructor per month (minimum 2) | All Pro features plus school portal, allocation, reports, fleet. |
 | Founding offer | Pro free for 12 months | First 500 instructors and first 50 schools. |
 
-Card fees: standard Stripe UK rates (about 1.5% plus 20p for UK cards) are passed through to the Business on the Free plan. DrivingHub takes no fee on lessons between an instructor and their own learners.
+Card fees: standard Stripe UK rates (about 1.5% plus 20p for UK cards) are passed through to the Business on the Free plan. Doovor takes no fee on lessons between an instructor and their own learners.
 
 Marketplace fee (Phase 3): learner booking fee on the first booking with a new instructor through the marketplace only, 5% capped at £2. Repeat lessons with the same instructor carry no fee. This keeps us cheaper than lead resellers and close to LANE's capped model.
 
@@ -828,7 +828,7 @@ Rating scale: 1 Introduced, 2 Under full instruction, 3 Prompted, 4 Seldom promp
 - **DVSA:** Driver and Vehicle Standards Agency.
 - **DL25:** The DVSA driving test report form.
 - **MTD:** Making Tax Digital, HMRC's digital record-keeping and quarterly reporting scheme.
-- **Business:** A tenant in DrivingHub. An independent instructor or a driving school.
+- **Business:** A tenant in Doovor. An independent instructor or a driving school.
 - **Gap Fill:** Automatic offer of a cancelled slot to learners who want it.
 - **Driving Passport:** The learner-owned progress record.
 - **GMV:** Gross merchandise value, total lesson value paid through the platform.

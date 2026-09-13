@@ -3,12 +3,12 @@
  * here and nowhere else. A CI guard (scripts/check-copy.mjs) fails the build if any of
  * these values appear elsewhere in apps/, packages/ or supabase/.
  *
- * The domain is temporary (D-026). Changing it here changes every URL, sender and
- * support address in the product.
+ * Changing these two lines changes every URL, sender, support address and piece of copy in
+ * the product. That is the point of this file (D-076).
  */
 
-const name = 'DrivingHub';
-const domain = 'maxterzhub.co.uk';
+const name = 'Doovor';
+const domain = 'doovor.com';
 
 export const brand = {
   name,

@@ -31,7 +31,7 @@ Before every commit: `pnpm check`. Database changes also need `pnpm db:test` and
 
 Do these once, in order. Items marked **You** need the product owner's accounts. If you prefer, put the access tokens in `.env.local` (never in chat or git) and the engineer runs the command-line steps.
 
-### 3.1 Supabase (project `DrivingHub`)
+### 3.1 Supabase (project `Doovor`)
 
 1. **You:** check the project region is London (`eu-west-2`). If not, create a new free project in London and remove the old one. Data must stay in the UK.
 2. Link and apply the migrations:
@@ -75,7 +75,7 @@ Do these once, in order. Items marked **You** need the product owner's accounts.
 
 ### 3.2 Resend (email)
 
-1. **You:** add the domain `maxterzhub.co.uk` and create the DNS records Resend shows (SPF, DKIM and DMARC) at the domain's DNS provider. Wait for "Verified".
+1. **You:** add the domain `doovor.com` and create the DNS records Resend shows (SPF, DKIM and DMARC) at the domain's DNS provider. Wait for "Verified".
 2. **You:** create an API key with sending access to that domain only. It goes into the Supabase SMTP settings.
 3. **You:** create a second API key, also sending to that domain only, for the app's own emails (M2-28). Put it in Vercel as `RESEND_API_KEY` and set `EMAIL_PROVIDER=resend` there. Two keys rather than one, so revoking the app's key never stops a password reset.
 4. Without the key the app uses the local provider: it writes a line to the log and sends nothing, which is what every local and test run does.
@@ -89,7 +89,7 @@ Do these once, in order. Items marked **You** need the product owner's accounts.
 
 ### 3.3 Twilio (text codes)
 
-1. **You:** create a Messaging Service with the alphanumeric sender `DrivingHub` (UK senders need no registration; people cannot reply).
+1. **You:** create a Messaging Service with the alphanumeric sender `Doovor` (UK senders need no registration; people cannot reply).
 2. **You:** Messaging > Geo permissions: allow the United Kingdom only. Set a low monthly spend limit. Public code endpoints attract SMS pumping fraud, and this caps the damage.
 3. **You:** enter the Account SID, Auth Token and Messaging Service SID in the Supabase phone provider.
 4. **You:** for the app's own reminders (M2-30), put the same three values in Vercel as `TWILIO_ACCOUNT_SID`, `TWILIO_AUTH_TOKEN` and `TWILIO_MESSAGING_SERVICE_SID`, and set `SMS_PROVIDER=twilio`. Without them the app writes a line to the log and texts nobody, which is what every local and test run does. Reminders are the only thing that texts, and only on a plan that includes it: 200 a month on Pro, counted in `sms_usage`.
@@ -98,7 +98,7 @@ Do these once, in order. Items marked **You** need the product owner's accounts.
 
 1. **You:** in Google Cloud, for OAuth client `647142621690-...`:
    - Authorised redirect URI: `https://yvxuarrrvgnfcjfyqfyi.supabase.co/auth/v1/callback`.
-   - Authorised JavaScript origin: `https://maxterzhub.co.uk`.
+   - Authorised JavaScript origin: `https://doovor.com`.
 2. **You:** copy the client secret into the Supabase Google provider.
 3. Set `NEXT_PUBLIC_AUTH_GOOGLE_ENABLED=true` in Vercel. The button stays hidden until then.
 4. Locally (optional): add `http://127.0.0.1:54321/auth/v1/callback` as a redirect URI, put the client ID and secret in `.env.local` (`SUPABASE_AUTH_EXTERNAL_GOOGLE_CLIENT_ID`, `SUPABASE_AUTH_EXTERNAL_GOOGLE_SECRET`), set `NEXT_PUBLIC_AUTH_GOOGLE_ENABLED=true`, then run `pnpm db:stop` and `pnpm db:start`.
@@ -115,12 +115,12 @@ Do these once, in order. Items marked **You** need the product owner's accounts.
    | `NEXT_PUBLIC_SUPABASE_URL` | `https://yvxuarrrvgnfcjfyqfyi.supabase.co` |
    | `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` | the publishable key |
    | `SUPABASE_SECRET_KEY` | a secret key (mark as Sensitive) |
-   | `NEXT_PUBLIC_APP_URL` | Production only: `https://maxterzhub.co.uk`. Leave it unset for Preview |
+   | `NEXT_PUBLIC_APP_URL` | Production only: `https://doovor.com`. Leave it unset for Preview |
    | `NEXT_PUBLIC_AUTH_GOOGLE_ENABLED` | `true` once section 3.4 is done |
 
    Payments, email and SMS providers keep their fake and log defaults until their milestones. Supabase Auth sends auth emails and texts itself.
 4. **You:** Deployment Protection: keep Standard Protection, so previews need a Vercel login.
-5. **You:** Domains: add `maxterzhub.co.uk` (and `www` redirecting to it), then create the DNS records Vercel shows.
+5. **You:** Domains: add `doovor.com` (and `www` redirecting to it), then create the DNS records Vercel shows.
 6. Check: the preview URL loads, `/api/health` returns `ok`, and a seeded account signs in (M0-32 done-when).
 
 ### 3.6 GitHub

@@ -2,7 +2,7 @@
 
 Project guide for every coding session. Read this first, then `docs/ARCHITECTURE.md`, `docs/PLAN.md` and `docs/PROGRESS.md`.
 
-The product requirements live in `docs/DrivingHub_PRD.md`. Every feature must trace to a PRD ID (for example `BOK-07`, `PAY-04`, `R-02`). The PRD wins on product behaviour. The engineering brief (Section 10 rules below) wins on technical choices.
+The product requirements live in `docs/Doovor_PRD.md`. Every feature must trace to a PRD ID (for example `BOK-07`, `PAY-04`, `R-02`). The PRD wins on product behaviour. The engineering brief (Section 10 rules below) wins on technical choices.
 
 ## Stack (pinned in the lockfile)
 
