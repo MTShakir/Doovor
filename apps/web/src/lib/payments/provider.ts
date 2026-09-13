@@ -46,3 +46,19 @@ export function fakeOnboarding(accountId: string): boolean {
   if (serverEnv.PAYMENTS_PROVIDER === 'stripe') return false;
   return theFake().completeOnboarding(accountId);
 }
+
+/**
+ * The secret the fake signs its events with. Local and test runs have no Stripe endpoint to
+ * take a secret from, and a webhook route that cannot be exercised locally is a webhook route
+ * nobody finds the bugs in.
+ */
+export const localWebhookSecret = 'whsec_local_fake';
+
+/** The secrets an incoming event may have been signed with: the platform's, and Connect's. */
+export function webhookSecrets(): string[] {
+  if (serverEnv.PAYMENTS_PROVIDER !== 'stripe') return [localWebhookSecret];
+
+  return [serverEnv.STRIPE_WEBHOOK_SECRET, serverEnv.STRIPE_CONNECT_WEBHOOK_SECRET].filter(
+    (secret): secret is string => typeof secret === 'string' && secret.length > 0,
+  );
+}

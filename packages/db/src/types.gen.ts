@@ -1482,6 +1482,39 @@ export type Database = {
         }
         Relationships: []
       }
+      provider_events: {
+        Row: {
+          account_id: string | null
+          event_id: string
+          event_type: string
+          id: string
+          outcome: string | null
+          processed_at: string | null
+          provider: string
+          received_at: string
+        }
+        Insert: {
+          account_id?: string | null
+          event_id: string
+          event_type: string
+          id?: string
+          outcome?: string | null
+          processed_at?: string | null
+          provider?: string
+          received_at?: string
+        }
+        Update: {
+          account_id?: string | null
+          event_id?: string
+          event_type?: string
+          id?: string
+          outcome?: string | null
+          processed_at?: string | null
+          provider?: string
+          received_at?: string
+        }
+        Relationships: []
+      }
       push_subscriptions: {
         Row: {
           auth: string
@@ -2073,6 +2106,15 @@ export type Database = {
         }[]
       }
       system_notify: { Args: { p_rows: Json }; Returns: number }
+      system_process_stripe_event: {
+        Args: {
+          p_account_id: string
+          p_event_id: string
+          p_event_type: string
+          p_payload: Json
+        }
+        Returns: Json
+      }
       system_push_targets: {
         Args: { p_user_id: string }
         Returns: {

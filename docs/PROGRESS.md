@@ -16,6 +16,8 @@ M2 Learners and bookings has started on branch `m2-learners-bookings`. An instru
 |---|---|---|---|
 | M3-01 | `PaymentsProvider`: the interface, Stripe Connect with direct charges, and an in-memory fake | 13, PAY-01 | Done. One contract suite, run against the fake now and against Stripe test mode in M3-23 |
 | M3-02 | Connect Express onboarding: the account, the link, coming back, and what is still missing | PAY-01 | Done. An owner connects payments from the Money screen in either portal; only owners can. The fake's onboarding is a page of the app, so the whole round trip runs locally |
+| M3-03 | The webhook route: the signature on the raw body, `provider_events`, and applying an event in the same transaction as recording it | R-11 | Done. A forged or tampered body is refused; three deliveries of one event at the same moment leave one row and one effect |
+| M3-04 | The replay test itself | R-11 | Part done. The concurrent and sequential replays are green at the route and in pgTAP. It is named acceptance-06 once there is a payment and a credit entry to count, which is M3-13 |
 
 ## M2 progress
 

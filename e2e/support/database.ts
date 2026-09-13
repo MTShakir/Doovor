@@ -337,3 +337,12 @@ export async function paymentsAccountOf(ownerEmail: string): Promise<string | nu
     return rows[0]?.stripe_account_id ?? null;
   });
 }
+
+/** How many times an event from the payments provider was recorded (R-11). */
+export async function countProviderEvents(eventId: string): Promise<number> {
+  return withDatabase(async (sql) => {
+    const rows = await sql<{ count: string }[]>`
+      select count(*)::text as count from public.provider_events where event_id = ${eventId}`;
+    return Number(rows[0]?.count ?? '0');
+  });
+}

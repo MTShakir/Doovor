@@ -40,7 +40,7 @@ export async function proxy(request: NextRequest) {
 
 export const config = {
   matcher: [
-    // The service worker is fetched by the browser itself, with no session to speak of.
-    '/((?!_next/static|_next/image|api/health|api/inngest|favicon.ico|sw.js|serwist/|.*\\.(?:png|jpg|jpeg|gif|svg|webp|ico|txt|xml|webmanifest)$).*)',
+    // The service worker and the webhooks are fetched by machines, with no session at all.
+    '/((?!_next/static|_next/image|api/health|api/inngest|api/webhooks|favicon.ico|sw.js|serwist/|.*\\.(?:png|jpg|jpeg|gif|svg|webp|ico|txt|xml|webmanifest)$).*)',
   ],
 };
