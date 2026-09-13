@@ -1650,6 +1650,7 @@ export type Database = {
         Args: { p_booking_id: string; p_reason?: string }
         Returns: Json
       }
+      complete_booking: { Args: { p_booking_id: string }; Returns: string }
       covers_postcode: {
         Args: { p_instructor_id: string; p_postcode: string }
         Returns: boolean
@@ -1725,6 +1726,10 @@ export type Database = {
           last_active_at: string
           user_agent: string
         }[]
+      }
+      mark_no_show: {
+        Args: { p_booking_id: string; p_reason?: string }
+        Returns: Json
       }
       open_slots: {
         Args: {

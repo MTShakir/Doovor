@@ -3,7 +3,7 @@
 import { formatMinutes, formatTime } from '@repo/core/time';
 import { toast } from '@repo/ui/toast';
 import { useRef, useState, useTransition } from 'react';
-import { moveLesson } from '@/app/(portal)/app/instructor/booking-actions';
+import { completeLesson, markNoShow, moveLesson } from '@/app/(portal)/app/instructor/booking-actions';
 import type { DiaryEntry } from '@/lib/diary/lessons';
 import { LessonRow } from './lesson-row';
 import { LessonSheets } from './lesson-sheets';
@@ -17,6 +17,8 @@ export interface DayGap {
 export interface DayLessonsProps {
   lessons: DiaryEntry[];
   gaps: DayGap[];
+  /** The moment the page was rendered, so the server and the browser agree on what is past. */
+  now: Date;
   showInstructor?: boolean;
   canAnswer?: boolean;
   rules?: { cancellationWindowHours: number; lateFeePercent: number };
@@ -32,7 +34,7 @@ const HOLD_MS = 500;
  * A dragged lesson moves on screen before the server has agreed, and moves back if the
  * server says no, because a diary that waits half a second to redraw feels broken.
  */
-export function DayLessons({ lessons, gaps, showInstructor = false, canAnswer = false, rules }: DayLessonsProps) {
+export function DayLessons({ lessons, gaps, now, showInstructor = false, canAnswer = false, rules }: DayLessonsProps) {
   const [, startTransition] = useTransition();
   const [moved, setMoved] = useState<Record<string, Date>>({});
   const [dragging, setDragging] = useState<string | null>(null);
@@ -63,6 +65,13 @@ export function DayLessons({ lessons, gaps, showInstructor = false, canAnswer = 
       // Back where it was: the server would not have it there.
       setMoved((current) => Object.fromEntries(Object.entries(current).filter(([id]) => id !== lessonId)));
       toast(result.message);
+    });
+  };
+
+  const after = (what: 'done' | 'no show', run: () => Promise<{ ok: boolean; message?: string }>) => {
+    startTransition(async () => {
+      const result = await run();
+      toast(result.ok ? `Marked as ${what}` : (result.message ?? 'That did not work'));
     });
   };
 
@@ -101,6 +110,10 @@ export function DayLessons({ lessons, gaps, showInstructor = false, canAnswer = 
                   canAnswer={canAnswer}
                   onMove={rules ? () => { setSheet({ id: lesson.id, action: 'move' }); } : undefined}
                   onCancel={rules ? () => { setSheet({ id: lesson.id, action: 'cancel' }); } : undefined}
+                  started={lesson.startsAt.getTime() <= now.getTime()}
+                  canMarkNoShow={now.getTime() >= lesson.startsAt.getTime() + 15 * 60_000}
+                  onComplete={() => { after('done', () => completeLesson({ bookingId: lesson.id })); }}
+                  onNoShow={() => { after('no show', () => markNoShow({ bookingId: lesson.id })); }}
                 />
               </div>
               {gap ? (

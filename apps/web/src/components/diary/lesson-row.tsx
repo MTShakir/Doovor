@@ -5,7 +5,7 @@ import { formatPence } from '@repo/core/money';
 import { formatTime } from '@repo/core/time';
 import { StatusPill } from '@repo/ui/status-pill';
 import { Button } from '@repo/ui/button';
-import { CalendarClock, MapPin, X } from 'lucide-react';
+import { CalendarClock, Check, MapPin, X } from 'lucide-react';
 import type { DiaryEntry } from '@/lib/diary/lessons';
 import { RequestActions } from './request-actions';
 
@@ -19,6 +19,10 @@ export function LessonRow({
   canAnswer = false,
   onMove,
   onCancel,
+  started = false,
+  canMarkNoShow = false,
+  onComplete,
+  onNoShow,
 }: {
   lesson: DiaryEntry;
   showInstructor?: boolean;
@@ -27,10 +31,16 @@ export function LessonRow({
   /** BOK-08, BOK-09: opening the sheets the day holds for the whole list. */
   onMove?: () => void;
   onCancel?: () => void;
+  /** BOK-10, R-09: a lesson that has already happened has different answers. */
+  started?: boolean;
+  canMarkNoShow?: boolean;
+  onComplete?: () => void;
+  onNoShow?: () => void;
 }) {
   const state = lessonState(lesson.facts);
   const off = state === 'cancelled';
   const asked = lesson.facts.status === 'requested';
+  const done = lesson.facts.status === 'completed' || lesson.facts.status === 'no_show';
 
   return (
     <article
@@ -70,7 +80,20 @@ export function LessonRow({
           <RequestActions bookingId={lesson.id} learnerName={lesson.learnerName} />
         </div>
       ) : null}
-      {canAnswer && !asked && !off && onMove && onCancel ? (
+      {canAnswer && !asked && !off && !done && started && onComplete ? (
+        <div className="flex justify-end gap-2">
+          <Button onClick={onComplete}>
+            <Check className="size-5" aria-hidden />
+            Done
+          </Button>
+          {canMarkNoShow && onNoShow ? (
+            <Button variant="secondary" onClick={onNoShow}>
+              No show
+            </Button>
+          ) : null}
+        </div>
+      ) : null}
+      {canAnswer && !asked && !off && !done && !started && onMove && onCancel ? (
         <div className="flex justify-end gap-2">
           <Button variant="secondary" onClick={onMove}>
             <CalendarClock className="size-5" aria-hidden />

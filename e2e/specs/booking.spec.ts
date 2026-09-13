@@ -216,4 +216,30 @@ test.describe('booking a lesson (BOK-01, M2-16)', () => {
     await page.getByRole('button', { name: 'Move to 13:00' }).click();
     await expect(page.getByText('Moved to')).toBeVisible();
   });
+
+  test('marks a lesson done, and one nobody came to (BOK-10, R-09) @desktop-only', async ({ page }, testInfo) => {
+    // Yesterday, so both lessons are in the past and far enough apart to exist at once.
+    const yesterday = new Date();
+    yesterday.setDate(yesterday.getDate() - 1);
+    const day = yesterday.toISOString().slice(0, 10);
+    await clearDiary('Sarah Khan', day);
+    await requestLesson('Sarah Khan', 'jack.taylor@example.com', day, '09:00');
+    await requestLesson('Sarah Khan', 'olivia.brown@example.com', day, '14:00');
+    await acceptRequests('Sarah Khan', day);
+
+    await page.goto(`/app/instructor/diary?view=day&date=${day}`);
+    const taught = page.getByRole('article').filter({ hasText: 'Jack Taylor' });
+    const absent = page.getByRole('article').filter({ hasText: 'Olivia Brown' });
+
+    // A lesson in the past is asked about, not moved.
+    await expect(taught.getByRole('button', { name: 'Move' })).toBeHidden();
+    await taught.getByRole('button', { name: 'Done' }).click();
+    await expect(page.getByText('Marked as done')).toBeVisible();
+    await expect(taught).toContainText('Completed');
+
+    await absent.getByRole('button', { name: 'No show' }).click();
+    await expect(page.getByText('Marked as no show')).toBeVisible();
+    await expect(absent).toContainText('Cancelled');
+    await snap(page, testInfo, 'diary-after-the-lesson');
+  });
 });

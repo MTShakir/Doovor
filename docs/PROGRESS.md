@@ -53,6 +53,8 @@ M2 Learners and bookings has started on branch `m2-learners-bookings`. An instru
 
 | M2-24 | Dragging a lesson into a gap on a desktop, holding one on a phone, and putting it back when the server will not have it | DIA-03, BOK-08 | Done. The move shows before the server has agreed and rolls back on a clash |
 
+| M2-25 | Marking a lesson done, and one nobody came to, a quarter of an hour after the start and not before | BOK-10, R-09 | Done. A lesson in the past offers those two answers instead of move and cancel. The lesson record itself is M4 |
+
 ## M1 progress
 
 | Task | What | PRD | State |
@@ -119,7 +121,7 @@ Decisions D-036 to D-050 were logged during this stretch. Two were security fixe
 
 ## In progress
 
-- M2-25 and M2-26: marking a lesson done or a no-show, then the learner's own lessons tab.
+- M2-26: the learner's own lessons, with the two things they may do to one.
 
 ## Next
 

@@ -38,6 +38,11 @@ test.describe('two learners, one slot (BOK-07, R-02)', () => {
 
     expect(facts.learnerIds).toHaveLength(2);
 
+    // However the last run ended, this one starts with that moment free.
+    await withDatabase(async (sql) => {
+      await sql`delete from public.bookings where instructor_id = ${facts.instructorId} and starts_at = ${facts.startsAt}::timestamptz`;
+    });
+
     /** One learner, in their own transaction, booking the slot. */
     const book = async (learnerId: string) => {
       const sql = postgres(databaseUrl, { max: 1 });

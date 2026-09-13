@@ -59,7 +59,7 @@ async function Diary({ searchParams }: DiaryParams) {
 
   const dayOf = (instant: Date) => utcToLocal(instant).date;
   const onThisDay = lessons.filter((lesson) => dayOf(lesson.startsAt) === date);
-  const day = <DayView lessons={onThisDay} opens={opens} closes={closes} canAnswer rules={rules} />;
+  const day = <DayView lessons={onThisDay} opens={opens} closes={closes} canAnswer rules={rules} now={new Date()} />;
   const week = <WeekView from={range.from} lessons={lessons} dayOf={dayOf} today={todayInZone()} />;
 
   return (

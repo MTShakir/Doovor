@@ -190,3 +190,42 @@ export async function moveLesson(input: unknown): Promise<Result<null>> {
   revalidatePath('/app/instructor');
   return ok(null);
 }
+
+const lessonSchema = z.object({ bookingId: z.uuid() });
+
+/** BOK-10: the lesson happened. The lesson record itself arrives with M4. */
+export async function completeLesson(input: unknown): Promise<Result<null>> {
+  const parsed = lessonSchema.safeParse(input);
+  if (!parsed.success) return err('VALIDATION_FAILED');
+
+  await requirePortal('instructor');
+  const supabase = await createSupabaseServerClient();
+  const { error } = await supabase.rpc('complete_booking', { p_booking_id: parsed.data.bookingId });
+  if (error) return err(parsePostgresError(error).code);
+
+  revalidatePath('/app/instructor/diary');
+  revalidatePath('/app/instructor');
+  return ok(null);
+}
+
+const noShowSchema = lessonSchema.extend({
+  reason: z.string().trim().max(500).default(''),
+});
+
+/** R-09: nobody turned up. A quarter of an hour after the start, and not before. */
+export async function markNoShow(input: unknown): Promise<Result<null>> {
+  const parsed = noShowSchema.safeParse(input);
+  if (!parsed.success) return err('VALIDATION_FAILED');
+
+  await requirePortal('instructor');
+  const supabase = await createSupabaseServerClient();
+  const { error } = await supabase.rpc('mark_no_show', {
+    p_booking_id: parsed.data.bookingId,
+    p_reason: parsed.data.reason === '' ? undefined : parsed.data.reason,
+  });
+  if (error) return err(parsePostgresError(error).code);
+
+  revalidatePath('/app/instructor/diary');
+  revalidatePath('/app/instructor');
+  return ok(null);
+}
