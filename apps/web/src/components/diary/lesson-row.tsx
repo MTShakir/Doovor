@@ -44,7 +44,7 @@ export function LessonRow({
 
   return (
     <article
-      className={`flex flex-col gap-2 px-4 py-3 ${off ? 'opacity-60' : ''}`}
+      className="flex flex-col gap-2 px-4 py-3"
       aria-label={`${formatTime(lesson.startsAt)} ${lesson.learnerName}`}
     >
       <div className="flex items-start gap-3">
@@ -53,7 +53,9 @@ export function LessonRow({
           <span className="block font-normal text-grey-700">{formatTime(lesson.endsAt)}</span>
         </span>
         <span className="flex min-w-0 flex-1 flex-col gap-1">
-          <span className={`text-body font-semibold text-black ${off ? 'line-through' : ''}`}>
+          {/* A cancelled lesson is struck through and muted rather than faded: text behind an
+              opacity is text nobody with low vision can read (D-009). */}
+          <span className={`text-body font-semibold ${off ? 'text-grey-700 line-through' : 'text-black'}`}>
             {lesson.learnerName}
           </span>
           <span className="text-small text-grey-700">

@@ -1,6 +1,6 @@
 -- The public booking link (BOK-02, M2-17).
 begin;
-select plan(8);
+select plan(9);
 
 select tests.create_fixture();
 
@@ -59,7 +59,8 @@ insert into public.bookings (business_id, instructor_id, learner_id, lesson_type
 values (:'school', :'ian', :'lou', :'lesson_type',
         (:'tuesday'::date + time '12:00') at time zone 'Europe/London',
         (:'tuesday'::date + time '13:00') at time zone 'Europe/London',
-        30, 'confirmed', 4200, 'instructor');
+        30, 'confirmed', 4200, 'instructor')
+returning id as noon \gset
 
 select tests.authenticate_as_anon();
 -- Noon to one, and travel until half past. An hour long lesson starting at eleven, half
@@ -68,6 +69,13 @@ select is(
   (select count(*)::int from public.open_slots(:'ian', :'tuesday'::date, 60)),
   10,
   'a lesson takes itself and the times either side of it out of the list'
+);
+
+-- Unless that lesson is the one being moved, which is not in its own way (BOK-08).
+select is(
+  (select count(*)::int from public.open_slots(:'ian', :'tuesday'::date, 60, :'noon')),
+  15,
+  'a lesson being moved leaves the times either side of it free'
 );
 
 -- An instructor nobody has checked takes no bookings from strangers.

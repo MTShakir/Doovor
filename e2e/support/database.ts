@@ -153,3 +153,50 @@ export async function acceptRequests(instructorName: string, date: string): Prom
          and (b.starts_at at time zone 'Europe/London')::date = ${date}::date`;
   });
 }
+
+/** Takes one lesson out of the database, whatever became of it. Local only. */
+export async function removeLesson(
+  instructorName: string,
+  learnerEmail: string,
+  date: string,
+  time: string,
+): Promise<void> {
+  await withDatabase(async (sql) => {
+    await sql`
+      delete from public.bookings b
+       using public.instructor_profiles p, public.users u
+       where p.id = b.instructor_id
+         and u.id = b.learner_id
+         and p.display_name = ${instructorName}
+         and lower(u.email) = lower(${learnerEmail})
+         and b.starts_at = (${date}::date + ${time}::time) at time zone 'Europe/London'`;
+  });
+}
+
+/**
+ * Puts a confirmed lesson in a learner's diary, as their instructor booking it would. Whatever
+ * was at that moment is cleared first, so a rerun starts where the last one did rather than
+ * tripping over what it left. Local only, like everything in this module.
+ */
+export async function bookLesson(
+  instructorName: string,
+  learnerEmail: string,
+  date: string,
+  time: string,
+  durationMinutes = 60,
+): Promise<void> {
+  await removeLesson(instructorName, learnerEmail, date, time);
+  await withDatabase(async (sql) => {
+    await sql`
+      insert into public.bookings (business_id, instructor_id, learner_id, lesson_type_id, starts_at, ends_at,
+                                   buffer_minutes, status, price_pence, source)
+      select p.business_id, p.id, u.id, t.id,
+             (${date}::date + ${time}::time) at time zone 'Europe/London',
+             (${date}::date + ${time}::time + make_interval(mins => ${durationMinutes})) at time zone 'Europe/London',
+             30, 'confirmed', 4200, 'instructor'
+        from public.instructor_profiles p
+        join public.lesson_types t on t.business_id = p.business_id and t.name = 'Standard lesson'
+        join public.users u on lower(u.email) = lower(${learnerEmail})
+       where p.display_name = ${instructorName}`;
+  });
+}

@@ -26,6 +26,8 @@ export async function bookingDay(
   durationMinutes: number,
   by: 'instructor' | 'learner' = 'instructor',
   now: Date = new Date(),
+  /** A lesson being moved, which is not in its own way (BOK-08). */
+  exceptBookingId?: string,
 ): Promise<BookingDay> {
   const supabase = await createSupabaseServerClient();
   const dayStart = localToUtc(date, '00:00') ?? now;
@@ -46,7 +48,7 @@ export async function bookingDay(
       .gt('ends_at', dayStart.toISOString()),
     supabase
       .from('bookings')
-      .select('starts_at, ends_at, buffer_minutes, status')
+      .select('id, starts_at, ends_at, buffer_minutes, status')
       .eq('instructor_id', instructorProfileId)
       .lt('starts_at', dayEnd.toISOString())
       .gt('ends_at', new Date(dayStart.getTime() - 12 * 3_600_000).toISOString()),
@@ -77,6 +79,7 @@ export async function bookingDay(
     endsAt: new Date(row.ends_at),
   }));
   const holding: TimeRange[] = (busy.data ?? [])
+    .filter((row) => row.id !== exceptBookingId)
     .filter((row) => ['pending_payment', 'requested', 'confirmed', 'in_progress', 'completed'].includes(row.status))
     .map((row) => ({
       startsAt: new Date(row.starts_at),

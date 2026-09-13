@@ -1735,6 +1735,7 @@ export type Database = {
         Args: {
           p_date: string
           p_duration_minutes: number
+          p_except_booking_id?: string
           p_instructor_id: string
         }
         Returns: string[]

@@ -33,13 +33,22 @@ export async function bookingPage(slug: string): Promise<BookingPage | null> {
   return parsed.success ? parsed.data : null;
 }
 
-/** The times a learner could take on one day (BOK-02, R-04). */
-export async function openSlots(instructorId: string, date: string, durationMinutes: number): Promise<string[]> {
+/**
+ * The times a learner could take on one day (BOK-02, R-04). A lesson being moved is left out
+ * of the diary, because it is not in its own way (BOK-08).
+ */
+export async function openSlots(
+  instructorId: string,
+  date: string,
+  durationMinutes: number,
+  exceptBookingId?: string,
+): Promise<string[]> {
   const supabase = await createSupabaseServerClient();
   const { data, error } = await supabase.rpc('open_slots', {
     p_instructor_id: instructorId,
     p_date: date,
     p_duration_minutes: durationMinutes,
+    ...(exceptBookingId ? { p_except_booking_id: exceptBookingId } : {}),
   });
   // Postgres writes an offset rather than a Z, and every other instant in the app is a Z.
   return error ? [] : data.map((one) => new Date(one).toISOString());

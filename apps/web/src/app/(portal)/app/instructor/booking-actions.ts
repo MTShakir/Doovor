@@ -21,6 +21,8 @@ async function place(): Promise<{ instructorProfileId: string; businessId: strin
 const daySchema = z.object({
   date: z.string().refine(isValidLocalDate, { error: 'Choose a day' }),
   durationMinutes: z.coerce.number().int().min(15).max(480),
+  /** A lesson being moved, which does not count as being in the way (BOK-08). */
+  exceptBookingId: z.uuid().optional(),
 });
 
 /** BOK-03: the times on one day, and the times only an instructor may take (R-04). */
@@ -31,7 +33,16 @@ export async function slotsForDay(input: unknown): Promise<Result<BookingDay>> {
   const where = await place();
   if (!where) return err('NOT_ALLOWED');
 
-  return ok(await bookingDay(where.instructorProfileId, parsed.data.date, parsed.data.durationMinutes));
+  return ok(
+    await bookingDay(
+      where.instructorProfileId,
+      parsed.data.date,
+      parsed.data.durationMinutes,
+      'instructor',
+      new Date(),
+      parsed.data.exceptBookingId,
+    ),
+  );
 }
 
 /** The lessons this instructor offers, with what each length costs (R-05). */

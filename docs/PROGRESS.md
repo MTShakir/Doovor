@@ -55,6 +55,8 @@ M2 Learners and bookings has started on branch `m2-learners-bookings`. An instru
 
 | M2-25 | Marking a lesson done, and one nobody came to, a quarter of an hour after the start and not before | BOK-10, R-09 | Done. A lesson in the past offers those two answers instead of move and cancel. The lesson record itself is M4 |
 
+| M2-26 | The learner's own lessons: what is coming up, what has happened, and the move and cancel sheets | BOK-08, BOK-09, 8.2 | Done. A learner is told what a late cancellation costs before they confirm it, and the times either side of the lesson they are moving are now offered |
+
 ## M1 progress
 
 | Task | What | PRD | State |
@@ -112,16 +114,16 @@ Decisions D-036 to D-050 were logged during this stretch. Two were security fixe
 
 | Suite | Result |
 |---|---|
-| Unit (Vitest) | 288 passed across 6 packages; `packages/core` line coverage 99.3%, `packages/providers` 100% |
-| Database (pgTAP) | 290 assertions in 22 files, all passing; SQL lint clean |
-| End to end (Playwright) | 147 passed at 390 px and 1440 px, none skipped, stable across repeated full runs, and against a production build with the CI settings |
+| Unit (Vitest) | 446 passed across 6 packages; `packages/core` line coverage 99.3%, `packages/providers` 100% |
+| Database (pgTAP) | 475 assertions in 39 files, all passing; SQL lint clean |
+| End to end (Playwright) | 218 passed at 390 px and 1440 px, none skipped, stable across repeated full runs |
 | Lint, typecheck, copy guard | Clean |
 | CI on GitHub | Green: lint and unit, database, end to end against a production build |
 | Staging (hosted) | All 23 migrations applied. Security Advisor: 0 errors, 17 warnings, 16 of them the expected `security definer` pattern (D-051) and one a dashboard switch for leaked password protection, now in the runbook |
 
 ## In progress
 
-- M2-26: the learner's own lessons, with the two things they may do to one.
+- M2-27: the notification core, which is where the booking events already being written go.
 
 ## Next
 

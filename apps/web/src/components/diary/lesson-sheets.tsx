@@ -49,7 +49,7 @@ export function LessonSheets({ lesson, rules, action, onClose }: LessonSheetsPro
   useEffect(() => {
     if (!moving || times?.asked === day) return;
     let current = true;
-    void slotsForDay({ date: day, durationMinutes }).then((result) => {
+    void slotsForDay({ date: day, durationMinutes, exceptBookingId: bookingId }).then((result) => {
       if (!current) return;
       if (!result.ok) {
         setError(result.message);
@@ -60,7 +60,7 @@ export function LessonSheets({ lesson, rules, action, onClose }: LessonSheetsPro
     return () => {
       current = false;
     };
-  }, [moving, day, durationMinutes, times?.asked]);
+  }, [moving, day, bookingId, durationMinutes, times?.asked]);
 
   // What the learner would be charged if the instructor were the learner: the instructor
   // cancelling costs them nothing (R-08), so this is only ever the shape of the warning.

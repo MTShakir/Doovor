@@ -359,3 +359,8 @@ Every decision made without the product owner, newest last. Format: date, decisi
 - **Decision:** End to end tests that need a seeded lesson look one up in the database rather than writing a date into the test, and the booking tests each work on a day of their own, cleared before they start.
 - **Options:** Keep fixed dates and reseed to a fixed "today".
 - **Reason:** The seed is anchored to the day it runs, so a date written into a test is right until midnight. Two tests failed on exactly that the first time the clock rolled over mid-milestone. A test that finds what it needs keeps working whatever day it runs on, and a day per test keeps the suite parallel: they all book into one seeded instructor's diary.
+
+## D-071 | 2026-09-13 | A cancelled lesson is struck through, not faded
+- **Decision:** A lesson that has been called off is shown with its name muted and struck through and its Cancelled pill beside it, rather than by fading the whole row to sixty per cent.
+- **Options:** Keep the fade and exempt the row from the accessibility check; or fade only the parts that are not text.
+- **Reason:** An axe run over a week with a cancelled lesson in it failed on contrast: grey-700 text at sixty per cent opacity over white is below AA, and it is text somebody is trying to read to find out what happened to their lesson. The strike-through and the pill already say the lesson is off, and they say it to a screen reader too, which the fade never did. D-009 rules out low-contrast text everywhere else; this closes the last place it was still being produced.

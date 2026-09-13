@@ -49,15 +49,19 @@ export function WeekView({ from, lessons, dayOf, today, showInstructor = false }
                 return (
                   <li key={lesson.id}>
                     <article
-                      className={`flex flex-col gap-1 rounded-card border border-grey-200 bg-white p-2 ${
-                        isOff(lesson.facts.status) ? 'opacity-60' : ''
-                      }`}
+                      className="flex flex-col gap-1 rounded-card border border-grey-200 bg-white p-2"
                       aria-label={`${formatTime(lesson.startsAt)} ${lesson.learnerName}`}
                     >
                       <span className="text-small font-semibold text-ink tabular-nums">
                         {formatTime(lesson.startsAt)}
                       </span>
-                      <span className="truncate text-small text-black">{lesson.learnerName}</span>
+                      <span
+                        className={`truncate text-small ${
+                          isOff(lesson.facts.status) ? 'text-grey-700 line-through' : 'text-black'
+                        }`}
+                      >
+                        {lesson.learnerName}
+                      </span>
                       {showInstructor ? (
                         <span className="truncate text-caption text-grey-700">{lesson.instructorName}</span>
                       ) : null}
