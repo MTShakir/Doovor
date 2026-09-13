@@ -14,7 +14,7 @@ import {
   requestLesson,
   setBookingStatus,
 } from '../support/database';
-import { expectAccessible, snap } from '../support/helpers';
+import { dayLabel, expectAccessible, settled, snap } from '../support/helpers';
 
 /**
  * Everything about one Business taking money (PAY-01, PAY-02, PAY-03, R-10, M3-02, M3-05).
@@ -319,6 +319,49 @@ test.describe('paying for a lesson (PAY-02, M3-05)', () => {
     await expect(declined).toContainText('This lesson is not going ahead. Nothing has been taken from your card.');
     await snap(page, testInfo, 'pay-request-declined');
     expect(await paymentFor(other?.startsAt ?? '')).toEqual({ amountPence: 4200, status: 'cancelled' });
+
+    await clearPaymentsAccount(owner);
+  });
+
+  test('a lesson charged the day before asks only for a card, and says when it will be taken (M3-09)', async ({ page }, testInfo) => {
+    const day = ownDay(testInfo.project.name);
+    await enablePayments(owner, `fake_acct_before_${testInfo.project.name}_${String(Date.now())}`);
+    // The last hour of the day nobody else in this file books, buffer and all.
+    await bookLesson('Tom Walsh', learner, day, '21:30', { paymentMode: 'before_lesson' });
+
+    await page.goto('/app/learner/lessons');
+    const lesson = page
+      .getByRole('article')
+      // By the day as well: the other width booked the same hour on a day of its own.
+      .filter({ hasText: `${dayLabel(day)} at 21:30` })
+      .filter({ hasText: 'Tom Walsh' });
+    await expect(async () => {
+      await lesson.getByRole('link', { name: 'Set up payment' }).click();
+      await page.waitForURL(/\/app\/learner\/pay\//, { timeout: 5000 });
+    }).toPass({ timeout: 20_000 });
+
+    const checkout = page.getByRole('region', { name: /at \d\d:\d\d$/ });
+    await expect(checkout).toContainText('Booked');
+    await expect(checkout).toContainText('Save a card and £42 is charged to it at 21:30 on');
+    await expect(checkout).toContainText('Nothing is taken until then.');
+    await expect(checkout.getByRole('button', { name: /^Pay £/ })).toHaveCount(0);
+    await expectAccessible(page);
+    await snap(page, testInfo, 'pay-before-lesson');
+
+    await expect(async () => {
+      await checkout.getByRole('button', { name: 'Save a card' }).click();
+      await expect(checkout.getByRole('button', { name: 'Save a test card' })).toBeVisible({ timeout: 10_000 });
+    }).toPass({ timeout: 40_000 });
+    await checkout.getByRole('button', { name: 'Save a test card' }).click();
+
+    await expect(checkout).toContainText('£42 is charged to your Visa ending 4242 at 21:30 on', { timeout: 30_000 });
+    await expect(checkout.getByRole('button', { name: 'Use a different card' })).toBeVisible();
+    // The button has just gone from black to grey, and a picture half way through is neither.
+    await settled(page);
+    await snap(page, testInfo, 'pay-before-lesson-card');
+
+    const booked = (await lessonsOn('Tom Walsh', day)).find((one) => one.time === '21:30');
+    expect(await paymentFor(booked?.startsAt ?? ''), 'nothing is taken until the day before').toBeNull();
 
     await clearPaymentsAccount(owner);
   });

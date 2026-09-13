@@ -22,6 +22,10 @@ export interface CheckoutLesson {
   authorised: boolean;
   /** What they paid has gone back, or is on its way back (PAY-07). */
   refunded: boolean;
+  /** The terms the lesson was booked on (PAY-03). */
+  paymentMode: string;
+  /** Where its money stands: a charge that failed says `failed` here. */
+  paymentStatus: string;
 }
 
 /**
@@ -33,7 +37,7 @@ export async function checkoutLesson(bookingId: string): Promise<CheckoutLesson 
   const { data } = await supabase
     .from('bookings')
     .select(
-      'id, business_id, starts_at, ends_at, price_pence, status, payment_status, hold_expires_at, expires_at, instructor_profiles(display_name), lesson_types(name), businesses!bookings_business_id_fkey(name, stripe_account_id)',
+      'id, business_id, starts_at, ends_at, price_pence, status, payment_status, payment_mode, hold_expires_at, expires_at, instructor_profiles(display_name), lesson_types(name), businesses!bookings_business_id_fkey(name, stripe_account_id)',
     )
     .eq('id', bookingId)
     .maybeSingle();
@@ -66,5 +70,7 @@ export async function checkoutLesson(bookingId: string): Promise<CheckoutLesson 
     requestExpiresAt: data.status === 'requested' ? data.expires_at : null,
     authorised: (held.data ?? []).length > 0,
     refunded: data.payment_status === 'refunded' || data.payment_status === 'partially_refunded',
+    paymentMode: data.payment_mode,
+    paymentStatus: data.payment_status,
   };
 }

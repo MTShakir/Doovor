@@ -85,3 +85,18 @@ export async function expectAccessible(page: Page, options: { exclude?: string[]
     .map((v) => `${v.id} (${String(v.impact)}): ${v.help} -> ${v.nodes.map((n) => n.target.join(' ')).join(', ')}`);
   expect(blocking, 'serious or critical accessibility issues').toEqual([]);
 }
+
+/**
+ * The day as the app writes it: Wed 14 Oct. The browser abbreviates September to Sept and the
+ * library the app formats with writes Sep, so the month is cut to three letters here.
+ */
+export function dayLabel(date: string): string {
+  const parts = new Intl.DateTimeFormat('en-GB', {
+    weekday: 'short',
+    day: 'numeric',
+    month: 'short',
+    timeZone: 'Europe/London',
+  }).formatToParts(new Date(`${date}T12:00:00Z`));
+  const part = (type: Intl.DateTimeFormatPartTypes): string => parts.find((one) => one.type === type)?.value ?? '';
+  return `${part('weekday')} ${part('day')} ${part('month').slice(0, 3)}`;
+}

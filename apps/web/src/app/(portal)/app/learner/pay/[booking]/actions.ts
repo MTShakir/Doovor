@@ -8,7 +8,7 @@ import { serverEnv } from '@/env/server';
 import { requirePortal } from '@/lib/auth/session';
 import { keptCardsWith } from '@/lib/payments/cards';
 import { checkoutLesson, type CheckoutLesson } from '@/lib/payments/checkout';
-import { fakeCardOutcome, paymentsProvider } from '@/lib/payments/provider';
+import { fakeCardOutcome, fakeCardSetupDone, paymentsProvider } from '@/lib/payments/provider';
 import { deliverFakePaymentEvent } from '@/lib/payments/webhook';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
 
@@ -197,6 +197,70 @@ export async function payWithSavedCard(
   revalidatePath('/app/learner/lessons');
   if (serverEnv.PAYMENTS_PROVIDER === 'stripe') return ok({ status: 'confirming' });
   return ok({ status: lesson.request ? 'authorised' : 'paid' });
+}
+
+const setupSchema = z.object({ bookingId: z.uuid() });
+
+/**
+ * Starts saving a card for a lesson that is charged the day before (PAY-03, M3-09).
+ *
+ * Nothing is taken now. The card is kept with this Business against this learner, the way a
+ * card kept at checkout is (D-080), and the charge made later is the one the learner is told
+ * about on this screen: that is their agreement to it.
+ */
+export async function startCardSetup(input: unknown): Promise<Result<{ setupId: string; clientSecret: string }>> {
+  const parsed = setupSchema.safeParse(input);
+  if (!parsed.success) return err('VALIDATION_FAILED');
+
+  const { session } = await requirePortal('learner');
+  const lesson = await checkoutLesson(parsed.data.bookingId);
+  if (!lesson) return err('NOT_FOUND');
+  if (lesson.paymentMode !== 'before_lesson' || lesson.paid) {
+    return err('VALIDATION_FAILED', 'This lesson is not charged before it starts.');
+  }
+  if (lesson.accountId === null) return err('NOT_ALLOWED', 'This instructor cannot take card payments yet.');
+
+  const provider = paymentsProvider();
+  const customer = await provider.ensureCustomer({
+    accountId: lesson.accountId,
+    reference: session.userId,
+    email: session.email ?? undefined,
+  });
+  if (!customer.ok) return err('UNKNOWN', 'We could not start saving your card. Try again.');
+
+  const supabase = await createSupabaseServerClient();
+  await supabase.rpc('set_billing_customer', {
+    p_business_id: lesson.businessId,
+    p_customer_id: customer.data.customerId,
+  });
+
+  const setup = await provider.createCardSetup({
+    accountId: lesson.accountId,
+    customerId: customer.data.customerId,
+    metadata: { booking_id: lesson.bookingId, business_id: lesson.businessId },
+  });
+  if (!setup.ok || setup.data.clientSecret === null) {
+    return err('UNKNOWN', 'We could not start saving your card. Try again.');
+  }
+
+  return ok({ setupId: setup.data.id, clientSecret: setup.data.clientSecret });
+}
+
+const testSetupSchema = z.object({ bookingId: z.uuid(), setupId: z.string().min(3).max(100) });
+
+/** Stands in for a card being saved, while the fake provider is in use (M3-09). Not in production. */
+export async function saveTestCard(input: unknown): Promise<Result<null>> {
+  if (serverEnv.APP_ENV === 'production' || serverEnv.PAYMENTS_PROVIDER === 'stripe') {
+    return err('NOT_ALLOWED');
+  }
+  const parsed = testSetupSchema.safeParse(input);
+  if (!parsed.success) return err('VALIDATION_FAILED');
+  await requirePortal('learner');
+
+  if (!fakeCardSetupDone(parsed.data.setupId)) return err('NOT_FOUND');
+  revalidatePath(`/app/learner/pay/${parsed.data.bookingId}`);
+  revalidatePath('/app/learner/payments');
+  return ok(null);
 }
 
 const testSchema = z.object({

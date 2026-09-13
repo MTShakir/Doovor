@@ -77,6 +77,15 @@ export function fakeCardOutcome(
 }
 
 /**
+ * Stands in for somebody finishing saving a card while the fake is in use (PAY-03). With
+ * Stripe, the card form does this.
+ */
+export function fakeCardSetupDone(setupId: string): boolean {
+  if (serverEnv.PAYMENTS_PROVIDER === 'stripe') return false;
+  return theFake().completeCardSetup(setupId)?.status === 'succeeded';
+}
+
+/**
  * Signs an event body the way the fake's webhook check expects, for the paths that stand in
  * for the provider sending one. Nothing to sign with Stripe, which sends its own.
  */

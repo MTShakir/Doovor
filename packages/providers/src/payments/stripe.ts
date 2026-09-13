@@ -3,6 +3,8 @@ import type {
   AccountLink,
   AccountLinkInput,
   AccountState,
+  CardSetup,
+  CardSetupStatus,
   ChargeSavedMethodInput,
   CheckoutIntentInput,
   ConnectedAccount,
@@ -69,6 +71,15 @@ const statuses: Record<string, PaymentIntentStatus> = {
   requires_confirmation: 'requires_payment_method',
   requires_action: 'requires_action',
   requires_capture: 'requires_capture',
+  processing: 'processing',
+  succeeded: 'succeeded',
+  canceled: 'canceled',
+};
+
+const setupStatuses: Record<string, CardSetupStatus> = {
+  requires_payment_method: 'requires_payment_method',
+  requires_confirmation: 'requires_payment_method',
+  requires_action: 'requires_action',
   processing: 'processing',
   succeeded: 'succeeded',
   canceled: 'canceled',
@@ -239,6 +250,27 @@ export function stripePaymentsProvider(options: StripeOptions): PaymentsProvider
       if (done.data === 'not_theirs') return { ok: false, reason: 'NOT_FOUND', message: 'That card is not saved for them.' };
       return { ok: true, data: null };
     },
+
+    createCardSetup: (input): Promise<PaymentResult<CardSetup>> =>
+      call(async (stripe) => {
+        const setup = await stripe.setupIntents.create(
+          {
+            customer: input.customerId,
+            // Charged later with nobody there, which is what the bank is asked to allow.
+            usage: 'off_session',
+            automatic_payment_methods: { enabled: true, allow_redirects: 'never' },
+            metadata: input.metadata ?? {},
+          },
+          { stripeAccount: input.accountId, idempotencyKey: input.idempotencyKey },
+        );
+        return {
+          id: setup.id,
+          status: setupStatuses[setup.status] ?? 'processing',
+          clientSecret: setup.client_secret,
+          accountId: input.accountId,
+          customerId: input.customerId,
+        };
+      }),
 
     createCheckoutIntent: (input: CheckoutIntentInput): Promise<PaymentResult<PaymentIntent>> =>
       call(async (stripe) => {

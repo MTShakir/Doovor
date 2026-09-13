@@ -325,6 +325,18 @@ describe('cards the fake keeps (PAY-02, M3-07)', () => {
     expect(await cardsOf(world)).toEqual([expect.objectContaining({ ...fakeSavedCard })]);
   });
 
+  it('keeps a card saved with nothing taken, once', async () => {
+    const world = await setUp();
+    const setup = await world.provider.createCardSetup({ accountId: world.accountId, customerId: world.customerId });
+    if (!setup.ok) throw new Error('the fake would not start saving a card');
+
+    expect(world.provider.completeCardSetup(setup.data.id)?.status).toBe('succeeded');
+    world.provider.completeCardSetup(setup.data.id);
+
+    expect(await cardsOf(world)).toEqual([expect.objectContaining({ ...fakeSavedCard })]);
+    expect(world.provider.completeCardSetup('seti_nobody')).toBeNull();
+  });
+
   it('keeps nothing for somebody who did not ask', async () => {
     const world = await setUp();
     await payOnce(world, false, 'first');

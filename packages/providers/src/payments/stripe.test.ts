@@ -43,6 +43,9 @@ function stubStripe(answers: Record<string, unknown> = {}) {
       search: record('customers.search', { data: [] }),
       create: record('customers.create', { id: 'cus_1' }),
     },
+    setupIntents: {
+      create: record('setupIntents.create', { id: 'seti_1', status: 'requires_confirmation', client_secret: 'seti_1_secret' }),
+    },
     paymentMethods: {
       list: record('paymentMethods.list', {
         data: [
@@ -230,6 +233,23 @@ describe('a learner and their cards (PAY-02)', () => {
       { id: 'pm_amex', card: { brand: 'amex', last4: '0005', exp_month: 1, exp_year: 2031, fingerprint: 'fp_amex' } },
     ],
   };
+
+  it('saves a card for later on the Business account, for charging with nobody there (PAY-03)', async () => {
+    const { calls, payments } = provider();
+
+    const setup = await payments.createCardSetup({ accountId: 'acct_1', customerId: 'cus_1', idempotencyKey: 'setup-1' });
+
+    expect(setup.ok && setup.data).toEqual({
+      id: 'seti_1',
+      status: 'requires_payment_method',
+      clientSecret: 'seti_1_secret',
+      accountId: 'acct_1',
+      customerId: 'cus_1',
+    });
+    const create = calls.find((call) => call.method === 'setupIntents.create');
+    expect(create?.args[0]).toMatchObject({ customer: 'cus_1', usage: 'off_session' });
+    expect(create?.args[1]).toEqual({ stripeAccount: 'acct_1', idempotencyKey: 'setup-1' });
+  });
 
   it('shows a card paid with twice once, the newest copy of it', async () => {
     const { payments } = provider({ 'paymentMethods.list': twice });

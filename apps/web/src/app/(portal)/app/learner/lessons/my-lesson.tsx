@@ -131,7 +131,11 @@ export function MyLessonRow({ lesson, rules, now, canChange }: MyLessonRowProps)
           {lesson.canPayNow ? (
             <Button asChild>
               <Link href={`/app/learner/pay/${lesson.id}`}>
-                {lesson.status === 'requested' ? 'Authorise' : 'Pay'} {formatPence(lesson.pricePence)}
+                {lesson.status === 'requested'
+                  ? `Authorise ${formatPence(lesson.pricePence)}`
+                  : lesson.paymentMode === 'before_lesson' && lesson.paymentStatus === 'unpaid'
+                    ? 'Set up payment'
+                    : `Pay ${formatPence(lesson.pricePence)}`}
               </Link>
             </Button>
           ) : null}

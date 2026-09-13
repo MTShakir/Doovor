@@ -214,9 +214,10 @@ export async function bookLesson(
   learnerEmail: string,
   date: string,
   time: string,
-  options: { durationMinutes?: number; link?: boolean } = {},
+  options: { durationMinutes?: number; link?: boolean; paymentMode?: 'offline' | 'before_lesson' } = {},
 ): Promise<void> {
   const durationMinutes = options.durationMinutes ?? 60;
+  const paymentMode = options.paymentMode ?? 'offline';
   await removeLesson(instructorName, learnerEmail, date, time);
   await withDatabase(async (sql) => {
     // Booking through the app makes the learner one of that Business's learners, and some
@@ -233,11 +234,11 @@ export async function bookLesson(
     }
     await sql`
       insert into public.bookings (business_id, instructor_id, learner_id, lesson_type_id, starts_at, ends_at,
-                                   buffer_minutes, status, price_pence, source)
+                                   buffer_minutes, status, payment_mode, price_pence, source)
       select p.business_id, p.id, u.id, t.id,
              (${date}::date + ${time}::time) at time zone 'Europe/London',
              (${date}::date + ${time}::time + make_interval(mins => ${durationMinutes})) at time zone 'Europe/London',
-             30, 'confirmed', 4200, 'instructor'
+             30, 'confirmed', ${paymentMode}::public.booking_payment_mode, 4200, 'instructor'
         from public.instructor_profiles p
         join public.lesson_types t on t.business_id = p.business_id and t.name = 'Standard lesson'
         join public.users u on lower(u.email) = lower(${learnerEmail})

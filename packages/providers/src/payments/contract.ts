@@ -89,6 +89,20 @@ export function paymentsContract(contract: PaymentsContract): void {
     if (read.ok) expect(read.data.id).toBe(intent.data.id);
   });
 
+  it('starts saving a card with nothing taken, for charging before a lesson (PAY-03)', async () => {
+    const { provider, accountId } = await ready();
+    const customer = await provider.ensureCustomer({ accountId, reference: 'learner-setup' });
+    expect(customer.ok).toBe(true);
+    if (!customer.ok) return;
+
+    const setup = await provider.createCardSetup({ accountId, customerId: customer.data.customerId });
+    expect(setup.ok).toBe(true);
+    if (!setup.ok) return;
+    expect(setup.data.status).toBe('requires_payment_method');
+    expect(setup.data.clientSecret).toBeTruthy();
+    expect(setup.data.customerId).toBe(customer.data.customerId);
+  });
+
   it('takes nothing for nothing', async () => {
     const { provider, accountId } = await ready();
     const nothing = await provider.createCheckoutIntent({ accountId, amountPence: 0 });

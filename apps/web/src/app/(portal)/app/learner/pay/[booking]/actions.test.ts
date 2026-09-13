@@ -8,7 +8,9 @@ const provider = {
   ensureCustomer: vi.fn(),
   createCheckoutIntent: vi.fn(),
   chargeSavedMethod: vi.fn(),
+  createCardSetup: vi.fn(),
 };
+const fakeCardSetupDone = vi.fn<(id: string) => boolean>();
 const env = { PAYMENTS_PROVIDER: 'fake', APP_ENV: 'local' };
 
 vi.mock('@/lib/supabase/server', () => ({ createSupabaseServerClient: () => Promise.resolve({ rpc }) }));
@@ -17,14 +19,18 @@ vi.mock('@/lib/auth/session', () => ({
 }));
 vi.mock('@/lib/payments/checkout', () => ({ checkoutLesson: (id: string) => checkoutLesson(id) }));
 vi.mock('@/lib/payments/cards', () => ({ keptCardsWith: (id: string) => keptCardsWith(id) }));
-vi.mock('@/lib/payments/provider', () => ({ paymentsProvider: () => provider, fakeCardOutcome: vi.fn() }));
+vi.mock('@/lib/payments/provider', () => ({
+  paymentsProvider: () => provider,
+  fakeCardOutcome: vi.fn(),
+  fakeCardSetupDone: (id: string) => fakeCardSetupDone(id),
+}));
 vi.mock('@/lib/payments/webhook', () => ({
   deliverFakePaymentEvent: (...args: unknown[]) => deliverFakePaymentEvent(...args),
 }));
 vi.mock('@/env/server', () => ({ serverEnv: env }));
 vi.mock('next/cache', () => ({ revalidatePath: vi.fn() }));
 
-const { payWithSavedCard, startCheckout } = await import('./actions');
+const { payWithSavedCard, saveTestCard, startCardSetup, startCheckout } = await import('./actions');
 
 const bookingId = '6f1c3a52-9d8e-4b7a-8c61-2f0e9b4d7a13';
 
@@ -44,6 +50,8 @@ const lesson = {
   requestExpiresAt: null,
   authorised: false,
   refunded: false,
+  paymentMode: 'at_booking',
+  paymentStatus: 'pending',
 };
 
 const kept = {
@@ -255,5 +263,61 @@ describe('asking for a lesson authorises the card instead (R-12, M3-08)', () => 
 
     expect(result).toMatchObject({ ok: false, code: 'VALIDATION_FAILED' });
     expect(provider.chargeSavedMethod).not.toHaveBeenCalled();
+  });
+});
+
+describe('saving a card for a lesson charged the day before (PAY-03, M3-09)', () => {
+  const before = { ...lesson, status: 'confirmed', holdExpiresAt: null, paymentMode: 'before_lesson', paymentStatus: 'unpaid' };
+
+  beforeEach(() => {
+    checkoutLesson.mockResolvedValue(before);
+    provider.createCardSetup.mockResolvedValue({
+      ok: true,
+      data: { id: 'seti_1', status: 'requires_payment_method', clientSecret: 'seti_1_secret', accountId: 'acct_1', customerId: 'cus_lee' },
+    });
+  });
+
+  it('starts saving a card on the learner’s own customer, taking nothing', async () => {
+    const result = await startCardSetup({ bookingId });
+
+    expect(result).toEqual({ ok: true, data: { setupId: 'seti_1', clientSecret: 'seti_1_secret' } });
+    expect(rpc).toHaveBeenCalledWith('set_billing_customer', { p_business_id: 'business-1', p_customer_id: 'cus_lee' });
+    expect(provider.createCardSetup).toHaveBeenCalledWith({
+      accountId: 'acct_1',
+      customerId: 'cus_lee',
+      metadata: { booking_id: bookingId, business_id: 'business-1' },
+    });
+    expect(provider.createCheckoutIntent).not.toHaveBeenCalled();
+    expect(provider.chargeSavedMethod).not.toHaveBeenCalled();
+  });
+
+  it('is only for lessons charged the day before', async () => {
+    checkoutLesson.mockResolvedValue({ ...before, paymentMode: 'at_booking' });
+
+    expect(await startCardSetup({ bookingId })).toMatchObject({ ok: false, code: 'VALIDATION_FAILED' });
+    expect(provider.createCardSetup).not.toHaveBeenCalled();
+  });
+
+  it('asks nothing of a Business that cannot take cards', async () => {
+    checkoutLesson.mockResolvedValue({ ...before, accountId: null });
+
+    expect(await startCardSetup({ bookingId })).toMatchObject({ ok: false, code: 'NOT_ALLOWED' });
+  });
+
+  it('says so when the provider will not start one', async () => {
+    provider.createCardSetup.mockResolvedValue({ ok: false, reason: 'UNAVAILABLE', message: 'Down.' });
+
+    expect(await startCardSetup({ bookingId })).toMatchObject({ ok: false, code: 'UNKNOWN' });
+  });
+
+  it('stands in for the card form with the fake, and never with Stripe', async () => {
+    fakeCardSetupDone.mockReturnValue(true);
+    expect(await saveTestCard({ bookingId, setupId: 'seti_1' })).toEqual({ ok: true, data: null });
+
+    fakeCardSetupDone.mockReturnValue(false);
+    expect(await saveTestCard({ bookingId, setupId: 'seti_nobody' })).toMatchObject({ ok: false, code: 'NOT_FOUND' });
+
+    env.PAYMENTS_PROVIDER = 'stripe';
+    expect(await saveTestCard({ bookingId, setupId: 'seti_1' })).toMatchObject({ ok: false, code: 'NOT_ALLOWED' });
   });
 });

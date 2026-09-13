@@ -123,6 +123,22 @@ export interface AccountState {
   requirements: string[];
 }
 
+/** Where a card being saved without a payment has got to (PAY-03). */
+export type CardSetupStatus = 'requires_payment_method' | 'requires_action' | 'processing' | 'succeeded' | 'canceled';
+
+/**
+ * A card being saved for later with nothing taken now, for a Business that charges the day
+ * before a lesson (PAY-03). The browser finishes it with the client secret, as it does a payment.
+ */
+export interface CardSetup {
+  id: string;
+  status: CardSetupStatus;
+  /** What the Payment Element needs. Never logged, never stored. */
+  clientSecret: string | null;
+  accountId: string;
+  customerId: string;
+}
+
 export interface SavedCard {
   paymentMethodId: string;
   brand: string;
@@ -181,6 +197,16 @@ export interface PaymentsProvider {
     name?: string;
   }) => Promise<PaymentResult<{ customerId: string }>>;
   listSavedCards: (input: { accountId: string; customerId: string }) => Promise<PaymentResult<SavedCard[]>>;
+  /**
+   * Starts saving a card with nothing taken, to be charged later while nobody is at the keyboard
+   * (PAY-03). The bank is told that is what it is for.
+   */
+  createCardSetup: (input: {
+    accountId: string;
+    customerId: string;
+    metadata?: Record<string, string>;
+    idempotencyKey?: string;
+  }) => Promise<PaymentResult<CardSetup>>;
   /**
    * Forgets a card. Given the customer, it forgets every copy of the same card they have, since
    * paying with one card twice can leave two of it behind and a card that comes back after it

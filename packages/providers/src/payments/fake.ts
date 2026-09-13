@@ -10,6 +10,7 @@ import type {
   PaymentsProvider,
   Refund,
   RefundInput,
+  CardSetup,
   SavedCard,
   WebhookEvent,
 } from './types.ts';
@@ -51,6 +52,8 @@ interface FakeState {
   payers: Map<string, { customerId: string; save: boolean }>;
   /** Payments that are held when the card goes through, rather than taken (R-12). */
   held: Set<string>;
+  /** Cards being saved with nothing taken (PAY-03). */
+  setups: Map<string, CardSetup>;
   refunds: Map<string, Refund[]>;
   /** What each idempotency key answered, so the same key never does the work twice. */
   answered: Map<string, string>;
@@ -77,6 +80,8 @@ export interface FakePaymentsProvider extends PaymentsProvider {
    * Stands in for a card going through, or being refused (PAY-02). Returns the payment as it
    * now stands, which is what the provider would send in an event.
    */
+  /** Stands in for somebody finishing saving a card (PAY-03). Returns the setup as it now stands. */
+  completeCardSetup: (setupId: string, card?: Omit<SavedCard, 'paymentMethodId'>) => CardSetup | null;
   completePayment: (
     paymentIntentId: string,
     outcome?: 'succeeded' | 'failed',
@@ -107,6 +112,7 @@ export function fakePaymentsProvider(options: FakePaymentsOptions = {}): FakePay
     intents: new Map(),
     payers: new Map(),
     held: new Set(),
+    setups: new Map(),
     refunds: new Map(),
     answered: new Map(),
   };
@@ -122,6 +128,20 @@ export function fakePaymentsProvider(options: FakePaymentsOptions = {}): FakePay
   };
 
   const intentOf = (id: string): PaymentIntent | undefined => state.intents.get(id);
+
+  /** A card kept against one customer on one account, once however many times it is used. */
+  const keepCard = (accountId: string, customerId: string, card: Omit<SavedCard, 'paymentMethodId'>): void => {
+    const key = `${accountId}:${customerId}`;
+    const kept = state.cards.get(key) ?? [];
+    const already = kept.some(
+      (one) =>
+        one.brand === card.brand &&
+        one.last4 === card.last4 &&
+        one.expiryMonth === card.expiryMonth &&
+        one.expiryYear === card.expiryYear,
+    );
+    if (!already) state.cards.set(key, [{ paymentMethodId: next('pm'), ...card }, ...kept]);
+  };
 
   const put = (intent: PaymentIntent): PaymentIntent => {
     state.intents.set(intent.id, intent);
@@ -144,6 +164,15 @@ export function fakePaymentsProvider(options: FakePaymentsOptions = {}): FakePay
       return true;
     },
 
+    completeCardSetup: (setupId, card = fakeSavedCard) => {
+      const setup = state.setups.get(setupId);
+      if (!setup) return null;
+      keepCard(setup.accountId, setup.customerId, card);
+      const done: CardSetup = { ...setup, status: 'succeeded', clientSecret: null };
+      state.setups.set(setupId, done);
+      return done;
+    },
+
     completePayment: (paymentIntentId, outcome = 'succeeded', card = fakeSavedCard) => {
       const intent = state.intents.get(paymentIntentId);
       if (!intent) return null;
@@ -152,18 +181,7 @@ export function fakePaymentsProvider(options: FakePaymentsOptions = {}): FakePay
       // A card that went through, for somebody who asked to keep it, is kept against them on
       // that account, once however many times they pay with it (PAY-02).
       const payer = state.payers.get(paymentIntentId);
-      if (payer?.save) {
-        const key = `${intent.accountId}:${payer.customerId}`;
-        const kept = state.cards.get(key) ?? [];
-        const already = kept.some(
-          (one) =>
-            one.brand === card.brand &&
-            one.last4 === card.last4 &&
-            one.expiryMonth === card.expiryMonth &&
-            one.expiryYear === card.expiryYear,
-        );
-        if (!already) state.cards.set(key, [{ paymentMethodId: next('pm'), ...card }, ...kept]);
-      }
+      if (payer?.save) keepCard(intent.accountId, payer.customerId, card);
 
       // A held payment is set aside by the bank, not taken, until it is captured (R-12).
       if (state.held.has(paymentIntentId)) return put({ ...intent, status: 'requires_capture', clientSecret: null });
@@ -178,6 +196,7 @@ export function fakePaymentsProvider(options: FakePaymentsOptions = {}): FakePay
       state.intents.clear();
       state.payers.clear();
       state.held.clear();
+      state.setups.clear();
       state.refunds.clear();
       state.answered.clear();
       counter = 0;
@@ -257,6 +276,23 @@ export function fakePaymentsProvider(options: FakePaymentsOptions = {}): FakePay
         );
       }
       return Promise.resolve(ok(null));
+    },
+
+    createCardSetup: (input): Promise<PaymentResult<CardSetup>> => {
+      const setup = once(
+        input.idempotencyKey,
+        () => next('seti'),
+        (id): CardSetup =>
+          state.setups.get(id) ?? {
+            id,
+            status: 'requires_payment_method',
+            clientSecret: `${id}_secret`,
+            accountId: input.accountId,
+            customerId: input.customerId,
+          },
+      );
+      state.setups.set(setup.id, setup);
+      return Promise.resolve(ok(setup));
     },
 
     createCheckoutIntent: (input: CheckoutIntentInput): Promise<PaymentResult<PaymentIntent>> => {
