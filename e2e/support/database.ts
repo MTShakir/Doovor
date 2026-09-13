@@ -320,6 +320,26 @@ export async function lessonsOn(instructorName: string, date: string): Promise<L
   });
 }
 
+/**
+ * Winds a hold back and sweeps, which is the only clock a hold has (R-10, M3-06). Returns how
+ * many slots went back to the diary, so a test can say it happened rather than assume it.
+ */
+export async function expireHoldsNow(instructorName: string, date: string): Promise<number> {
+  return withDatabase(async (sql) => {
+    await sql`
+      update public.bookings b
+         set hold_expires_at = now() - interval '1 minute'
+        from public.instructor_profiles p
+       where p.id = b.instructor_id
+         and p.display_name = ${instructorName}
+         and (b.starts_at at time zone 'Europe/London')::date = ${date}::date
+         and b.status = 'pending_payment'`;
+    const rows = await sql<{ expired: number }[]>`
+      select (public.system_expire_payment_holds() ->> 'expired')::int as expired`;
+    return rows[0]?.expired ?? 0;
+  });
+}
+
 /** Forgets the payments account a Business connected, so a test starts from nothing. */
 export async function clearPaymentsAccount(ownerEmail: string): Promise<void> {
   await withDatabase(async (sql) => {

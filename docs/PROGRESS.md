@@ -19,6 +19,7 @@ M2 Learners and bookings has started on branch `m2-learners-bookings`. An instru
 | M3-03 | The webhook route: the signature on the raw body, `provider_events`, and applying an event in the same transaction as recording it | R-11 | Done. A forged or tampered body is refused; three deliveries of one event at the same moment leave one row and one effect |
 | M3-04 | The replay test itself | R-11 | Part done. The concurrent and sequential replays are green at the route and in pgTAP. It is named acceptance-06 once there is a payment and a credit entry to count, which is M3-13 |
 | M3-05 | Pay at booking: the hold, the payment, the confirmation, and the webhook that confirms the lesson | PAY-02, PAY-03, R-10 | Done. The slot is held for fifteen minutes while a card is found, the webhook records the payment once and confirms the lesson, and a refused card leaves the lesson waiting rather than lost |
+| M3-06 | Hold expiry and late payment: the sweep that gives a slot back, and the refund when money arrives too late | R-10, PAY-07 | Done. A learner booking a Business that takes cards gets a lesson that is held rather than confirmed, and a hold that runs out puts the time back in the diary and calls the attempt off. Money that lands after that gets the lesson back if the slot is still free, and gets refunded if somebody else has taken it |
 
 ## M2 progress
 

@@ -71,6 +71,14 @@ export async function startCheckout(input: unknown): Promise<Result<Checkout>> {
     return err('PAYMENT_FAILED', 'We could not start the payment. Try again.');
   }
 
+  // Written down before a card is typed, so the sweep that gives the slot back can call the
+  // attempt off with it (R-10). It is a record of an attempt, not of money: nothing is paid.
+  await supabase.rpc('set_payment_intent', {
+    p_booking_id: lesson.bookingId,
+    p_provider_ref: intent.data.id,
+    p_amount_pence: intent.data.amountPence,
+  });
+
   revalidatePath(`/app/learner/pay/${lesson.bookingId}`);
   return ok({
     clientSecret: intent.data.clientSecret,

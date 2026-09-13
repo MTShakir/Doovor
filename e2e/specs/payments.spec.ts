@@ -4,6 +4,7 @@ import {
   bookLesson,
   clearPaymentsAccount,
   enablePayments,
+  expireHoldsNow,
   lessonsOn,
   paymentFor,
   paymentsAccountOf,
@@ -127,6 +128,45 @@ test.describe('paying for a lesson (PAY-02, M3-05)', () => {
     const [after] = await lessonsOn('Tom Walsh', day);
     expect(after?.status).toBe('confirmed');
     expect(await paymentFor(after?.startsAt ?? '')).toEqual({ amountPence: 4200, status: 'paid' });
+
+    await clearPaymentsAccount(owner);
+  });
+
+  test('a hold that runs out gives the slot back, and the page says so @desktop-only', async ({ page }, testInfo) => {
+    const day = ownDay(testInfo.project.name);
+    await enablePayments(owner, `fake_acct_expiry_${testInfo.project.name}`);
+    await bookLesson('Tom Walsh', learner, day, '18:00');
+
+    await page.goto('/app/learner/lessons');
+    const lesson = page
+      .getByRole('article')
+      .filter({ hasText: 'at 18:00' })
+      .filter({ hasText: 'Tom Walsh' });
+    await expect(async () => {
+      await lesson.getByRole('link', { name: /^Pay £/ }).click();
+      await page.waitForURL(/\/app\/learner\/pay\//, { timeout: 5000 });
+    }).toPass({ timeout: 20_000 });
+
+    const checkout = page.getByRole('region', { name: /at \d\d:\d\d$/ });
+    await expect(async () => {
+      await checkout.getByRole('button', { name: /^Pay £/ }).click();
+      await expect(checkout.getByRole('button', { name: 'Pay with a test card' })).toBeVisible({ timeout: 10_000 });
+    }).toPass({ timeout: 40_000 });
+    await expect(checkout).toContainText('This slot is held for you until');
+
+    // The clock a hold runs on is the only thing the sweep looks at (R-10).
+    expect(await expireHoldsNow('Tom Walsh', day), 'the sweep gave a slot back').toBeGreaterThan(0);
+
+    await page.reload();
+    await expect(checkout).toContainText('Slot gone');
+    await expect(checkout).toContainText('The slot was held while you paid, and the hold has run out.');
+    await expect(checkout.getByRole('button', { name: /^Pay £/ })).toBeHidden();
+    await expectAccessible(page);
+    await snap(page, testInfo, 'pay-lesson-expired');
+
+    // By name, not by position: the earlier test in this file booked the same day.
+    const after = (await lessonsOn('Tom Walsh', day)).find((one) => one.time === '18:00');
+    expect(after?.status, 'the time is back in the diary').toBe('expired');
 
     await clearPaymentsAccount(owner);
   });

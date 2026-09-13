@@ -1670,6 +1670,79 @@ export type Database = {
         }
         Relationships: []
       }
+      refunds: {
+        Row: {
+          amount_pence: number
+          booking_id: string | null
+          business_id: string
+          created_at: string
+          id: string
+          kind: Database["public"]["Enums"]["refund_kind"]
+          learner_id: string
+          payment_id: string | null
+          provider: string
+          provider_ref: string | null
+          reason: string
+          requested_by: string | null
+          settled_at: string | null
+          status: Database["public"]["Enums"]["refund_status"]
+        }
+        Insert: {
+          amount_pence: number
+          booking_id?: string | null
+          business_id: string
+          created_at?: string
+          id?: string
+          kind?: Database["public"]["Enums"]["refund_kind"]
+          learner_id: string
+          payment_id?: string | null
+          provider?: string
+          provider_ref?: string | null
+          reason: string
+          requested_by?: string | null
+          settled_at?: string | null
+          status?: Database["public"]["Enums"]["refund_status"]
+        }
+        Update: {
+          amount_pence?: number
+          booking_id?: string | null
+          business_id?: string
+          created_at?: string
+          id?: string
+          kind?: Database["public"]["Enums"]["refund_kind"]
+          learner_id?: string
+          payment_id?: string | null
+          provider?: string
+          provider_ref?: string | null
+          reason?: string
+          requested_by?: string | null
+          settled_at?: string | null
+          status?: Database["public"]["Enums"]["refund_status"]
+        }
+        Relationships: [
+          {
+            foreignKeyName: "refunds_booking_id_fkey"
+            columns: ["booking_id"]
+            isOneToOne: false
+            referencedRelation: "bookings"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "refunds_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "businesses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "refunds_payment_id_fkey"
+            columns: ["payment_id"]
+            isOneToOne: false
+            referencedRelation: "payments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       sms_usage: {
         Row: {
           business_id: string
@@ -2084,6 +2157,14 @@ export type Database = {
         }
         Returns: string
       }
+      set_payment_intent: {
+        Args: {
+          p_amount_pence: number
+          p_booking_id: string
+          p_provider_ref: string
+        }
+        Returns: string
+      }
       set_payments_account: {
         Args: { p_account_id: string; p_business_id: string }
         Returns: Json
@@ -2192,6 +2273,7 @@ export type Database = {
       }
       system_drop_push_target: { Args: { p_id: string }; Returns: number }
       system_due_reminders: { Args: { p_within_hours?: number }; Returns: Json }
+      system_expire_payment_holds: { Args: never; Returns: Json }
       system_expire_requests: { Args: never; Returns: number }
       system_extend_recurrences: { Args: { p_weeks?: number }; Returns: number }
       system_mark_notification_failed: {
@@ -2262,6 +2344,11 @@ export type Database = {
         }
         Returns: Json
       }
+      system_record_payment_cancelled: {
+        Args: { p_payment_id: string }
+        Returns: boolean
+      }
+      system_refund_to_send: { Args: { p_refund_id: string }; Returns: Json }
       system_release_sms: {
         Args: { p_business_id: string }
         Returns: undefined
@@ -2274,6 +2361,10 @@ export type Database = {
           p_payouts_enabled: boolean
         }
         Returns: number
+      }
+      system_settle_refund: {
+        Args: { p_provider_ref: string; p_refund_id: string; p_status?: string }
+        Returns: Json
       }
       system_touch_push_target: { Args: { p_id: string }; Returns: undefined }
       system_unlist_expired_badges: {
@@ -2349,9 +2440,12 @@ export type Database = {
         | "failed"
         | "refunded"
         | "partially_refunded"
+        | "cancelled"
       pickup_kind: "home" | "school" | "work" | "custom"
       plan_key: "free" | "pro" | "school"
       platform_role: "super_admin" | "support_admin"
+      refund_kind: "card" | "credit"
+      refund_status: "pending" | "succeeded" | "failed" | "cancelled"
       transmission: "manual" | "automatic" | "both"
       verification_status: "unsubmitted" | "pending" | "approved" | "rejected"
     }
@@ -2554,10 +2648,13 @@ export const Constants = {
         "failed",
         "refunded",
         "partially_refunded",
+        "cancelled",
       ],
       pickup_kind: ["home", "school", "work", "custom"],
       plan_key: ["free", "pro", "school"],
       platform_role: ["super_admin", "support_admin"],
+      refund_kind: ["card", "credit"],
+      refund_status: ["pending", "succeeded", "failed", "cancelled"],
       transmission: ["manual", "automatic", "both"],
       verification_status: ["unsubmitted", "pending", "approved", "rejected"],
     },

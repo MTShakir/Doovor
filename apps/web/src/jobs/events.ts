@@ -28,3 +28,11 @@ export const bookingAccepted = bookingEvent('booking.accepted');
 export const bookingDeclined = bookingEvent('booking.declined');
 export const bookingCancelled = bookingEvent('booking.cancelled');
 export const bookingRescheduled = bookingEvent('booking.rescheduled');
+
+/**
+ * Money that has to go back (PAY-07, R-10). The refund is already decided and written down;
+ * the event only says which one, so the job can send it.
+ */
+export const paymentRefund = eventType('payment.refund', {
+  schema: staticSchema<{ refund_id: string; payment_id: string; booking_id: string | null }>(),
+});

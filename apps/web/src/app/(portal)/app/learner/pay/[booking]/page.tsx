@@ -5,7 +5,7 @@ import { Button } from '@repo/ui/button';
 import { Card, CardDescription, CardTitle } from '@repo/ui/card';
 import { SkeletonRow } from '@repo/ui/skeleton';
 import { StatusPill } from '@repo/ui/status-pill';
-import { CalendarCheck } from 'lucide-react';
+import { CalendarCheck, CalendarX } from 'lucide-react';
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
@@ -21,7 +21,7 @@ export const metadata: Metadata = { title: 'Pay for your lesson', robots: { inde
 export default function PayPage({ params }: { params: Promise<{ booking: string }> }) {
   return (
     <main className="flex flex-col gap-4 pb-8">
-      <PageHeader title="Pay for your lesson" subtitle="The slot is held while you do." />
+      <PageHeader title="Pay for your lesson" />
       <div className="flex flex-col gap-4 px-4 md:max-w-2xl md:px-8">
         <Suspense fallback={<SkeletonRow />}>
           <Checkout params={params} />
@@ -41,6 +41,9 @@ async function Checkout({ params }: { params: Promise<{ booking: string }> }) {
   if (!lesson) notFound();
 
   const startsAt = new Date(lesson.startsAt);
+  // A slot held while somebody pays goes back to the diary when the hold runs out (R-10).
+  const gone = !lesson.paid && ['expired', 'cancelled', 'declined'].includes(lesson.status);
+  const heldUntil = gone || lesson.paid || lesson.holdExpiresAt === null ? null : new Date(lesson.holdExpiresAt);
 
   return (
     <Card className="flex flex-col gap-4" role="region" aria-labelledby="checkout-title">
@@ -53,12 +56,30 @@ async function Checkout({ params }: { params: Promise<{ booking: string }> }) {
             {lesson.lessonType}, {formatMinutes(lesson.durationMinutes)} with {lesson.instructorName}
           </CardDescription>
         </div>
-        <StatusPill status={lesson.paid ? 'paid' : 'unpaid'}>{lesson.paid ? 'Paid' : 'To pay'}</StatusPill>
+        {gone ? (
+          <StatusPill status="pending">Slot gone</StatusPill>
+        ) : (
+          <StatusPill status={lesson.paid ? 'paid' : 'unpaid'}>{lesson.paid ? 'Paid' : 'To pay'}</StatusPill>
+        )}
       </div>
 
-      <p className="text-h2 text-black tabular-nums">{formatPence(lesson.pricePence)}</p>
+      {gone ? null : <p className="text-h2 text-black tabular-nums">{formatPence(lesson.pricePence)}</p>}
 
-      {lesson.paid ? (
+      {heldUntil === null ? null : (
+        <p className="text-small text-grey-700">This slot is held for you until {formatTime(heldUntil)}.</p>
+      )}
+
+      {gone ? (
+        <div className="flex flex-col gap-3">
+          <p className="flex items-center gap-2 text-body text-ink">
+            <CalendarX className="size-5 shrink-0 text-grey-700" aria-hidden />
+            The slot was held while you paid, and the hold has run out. Nothing has been charged.
+          </p>
+          <Button asChild width="responsive">
+            <Link href="/app/learner/lessons">See your lessons</Link>
+          </Button>
+        </div>
+      ) : lesson.paid ? (
         <div className="flex flex-col gap-3">
           <p className="flex items-center gap-2 text-body text-ink">
             <CalendarCheck className="size-5 shrink-0 text-grey-700" aria-hidden />
@@ -76,9 +97,11 @@ async function Checkout({ params }: { params: Promise<{ booking: string }> }) {
         />
       )}
 
-      <p className="text-small text-grey-700">
-        {lesson.businessName} takes the payment. {lesson.instructorName} is told as soon as it goes through.
-      </p>
+      {gone ? null : (
+        <p className="text-small text-grey-700">
+          {lesson.businessName} takes the payment. {lesson.instructorName} is told as soon as it goes through.
+        </p>
+      )}
     </Card>
   );
 }
