@@ -131,19 +131,31 @@ export function peopleInvolved(notice: BookingNotice): string[] {
 /** One row as `system_notify` takes it: plain JSON, because that is what crosses the wire. */
 export type NotificationRow = Record<string, string | string[] | null>;
 
+export interface RowContext {
+  businessId: string;
+  /** What it is about: a booking today, a payment later. */
+  entityType: string;
+  entityId: string;
+}
+
 /** The shape `system_notify` takes. */
-export function notificationRows(planned: PlannedNotification[], notice: BookingNotice): NotificationRow[] {
+export function notificationRows(planned: PlannedNotification[], context: RowContext): NotificationRow[] {
   return planned.map((one) => ({
     user_id: one.userId,
-    business_id: notice.business_id,
+    business_id: context.businessId,
     kind: one.kind,
     category: one.category,
     title: one.title,
     body: one.body,
     link: one.link,
     channels: one.channels,
-    entity_type: 'booking',
-    entity_id: notice.booking_id,
+    entity_type: context.entityType,
+    entity_id: context.entityId,
     dedupe_key: one.dedupeKey,
   }));
+}
+
+/** The context for one lesson's notifications. */
+export function rowContextFor(notice: BookingNotice): RowContext {
+  return { businessId: notice.business_id, entityType: 'booking', entityId: notice.booking_id };
 }

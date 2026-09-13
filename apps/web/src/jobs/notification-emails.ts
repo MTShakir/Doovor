@@ -7,12 +7,17 @@
  */
 
 import type { NotificationEmailProps } from '@repo/emails';
+import { normaliseUkMobile } from '@repo/core/phone';
 
 export interface ClaimedNotification {
   id: string;
   userId: string;
   email: string;
+  /** In E.164, or empty when they have not given us one. */
+  phone: string;
   fullName: string;
+  businessId: string | null;
+  businessPlan: string | null;
   kind: string;
   title: string;
   body: string;
@@ -55,4 +60,29 @@ export function emailPropsFor(one: ClaimedNotification, options: EmailPropsOptio
     ...(one.link === null ? {} : { action: { label: actionLabel(one.link), url: `${base}${one.link}` } }),
     settingsUrl: `${base}/notifications/settings`,
   };
+}
+
+/**
+ * The number to text, in the form a network wants. Numbers are stored the way somebody typed
+ * them in, and a text message needs E.164 with its plus.
+ */
+export function smsNumberFor(one: ClaimedNotification): string | null {
+  return normaliseUkMobile(one.phone);
+}
+
+/** A text goes only where the plan said one should, and only if we know the number. */
+export function wantsSms(one: ClaimedNotification): boolean {
+  return one.channels.includes('sms') && smsNumberFor(one) !== null && one.businessId !== null;
+}
+
+/** How long a text may be before it costs two messages. */
+export const SMS_LIMIT = 300;
+
+/**
+ * A text says the same thing as everything else, shorter. No link: a link in a text message
+ * is what a phishing text looks like, and the app is one tap away anyway.
+ */
+export function smsBodyFor(one: ClaimedNotification): string {
+  const line = `${one.title}. ${one.body}`.replace(/\s+/g, ' ').trim();
+  return line.length <= SMS_LIMIT ? line : `${line.slice(0, SMS_LIMIT - 1).trimEnd()}.`;
 }

@@ -1,6 +1,7 @@
 'use client';
 
 import { lateFeePercents, type BookingRules } from '@repo/core/booking-rules';
+import { reminderChoiceOf, reminderChoices } from '@repo/core/reminders';
 import { Field } from '@repo/ui/field';
 import { Input } from '@repo/ui/input';
 import { Select } from '@repo/ui/select';
@@ -29,6 +30,7 @@ export function BookingRulesForm({ rules, canSetBusinessRules }: { rules: Bookin
     cancellationWindowHours: String(rules.cancellationWindowHours),
     lateFeePercent: String(rules.lateFeePercent),
     requestExpiryHours: String(rules.requestExpiryHours),
+    reminderHoursBefore: reminderChoiceOf(rules.reminderHoursBefore),
   });
 
   const change = (patch: Partial<typeof values>) => { setValues((current) => ({ ...current, ...patch })); };
@@ -54,6 +56,7 @@ export function BookingRulesForm({ rules, canSetBusinessRules }: { rules: Bookin
           cancellationWindowHours: values.cancellationWindowHours,
           lateFeePercent: values.lateFeePercent,
           requestExpiryHours: values.requestExpiryHours,
+          reminderHoursBefore: values.reminderHoursBefore,
         });
         if (!business.ok) {
           setErrors(business.fields ?? {});
@@ -117,6 +120,17 @@ export function BookingRulesForm({ rules, canSetBusinessRules }: { rules: Bookin
                 inputMode="numeric"
                 value={values.requestExpiryHours}
                 onChange={(event) => { change({ requestExpiryHours: event.target.value }); }}
+              />
+            </Field>
+            <Field
+              label="Remind learners"
+              hint="Before the lesson. They can turn reminders off themselves."
+              error={errors.reminderHoursBefore}
+            >
+              <Select
+                options={reminderChoices.map((choice) => ({ value: choice.value, label: choice.label }))}
+                value={values.reminderHoursBefore}
+                onChange={(event) => { change({ reminderHoursBefore: event.target.value }); }}
               />
             </Field>
           </>

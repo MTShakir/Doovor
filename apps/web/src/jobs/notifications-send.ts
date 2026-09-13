@@ -1,10 +1,23 @@
 import 'server-only';
+import { getEntitlements, type PlanKey } from '@repo/config/plans';
 import { renderNotificationEmail } from '@repo/emails';
 import { getAppUrl } from '@/lib/app-url';
 import { emailProvider } from '@/lib/email/provider';
 import { pushConfigured, sendPush } from '@/lib/notifications/push';
+import { smsProvider } from '@/lib/sms/provider';
 import { getSupabaseServiceClient } from '@/lib/supabase/service';
-import { emailPropsFor, wantsEmail, type ClaimedNotification } from './notification-emails';
+import {
+  emailPropsFor,
+  smsBodyFor,
+  smsNumberFor,
+  wantsEmail,
+  wantsSms,
+  type ClaimedNotification,
+} from './notification-emails';
+
+function isPlan(value: string | null): value is PlanKey {
+  return value === 'free' || value === 'pro' || value === 'school';
+}
 
 export interface SendResult {
   sent: number;
@@ -25,6 +38,7 @@ export async function sendPendingNotifications(limit = 25): Promise<SendResult> 
   if (data.length === 0) return { sent: 0, failed: 0 };
 
   const provider = emailProvider();
+  const texter = smsProvider();
   const appUrl = getAppUrl();
   const sent: string[] = [];
   let failed = 0;
@@ -34,7 +48,10 @@ export async function sendPendingNotifications(limit = 25): Promise<SendResult> 
       id: row.id,
       userId: row.user_id,
       email: row.email,
+      phone: row.phone,
       fullName: row.full_name,
+      businessId: row.business_id,
+      businessPlan: row.business_plan,
       kind: row.kind,
       title: row.title,
       body: row.body,
@@ -81,6 +98,26 @@ export async function sendPendingNotifications(limit = 25): Promise<SendResult> 
         }
         trouble ??= result.message;
       }
+    }
+
+    // Text messages are Pro only and capped by the month (NTF-01). The allowance is taken
+    // before the send and given back if it fails, so the cap is never quietly passed.
+    const number = smsNumberFor(one);
+    if (wantsSms(one) && one.businessId !== null && number !== null) {
+      const allowance = isPlan(one.businessPlan) ? getEntitlements(one.businessPlan).smsRemindersPerMonth : 0;
+      const claimed = await supabase.rpc('system_claim_sms', {
+        p_business_id: one.businessId,
+        p_allowance: allowance,
+      });
+      if (claimed.data === true) {
+        const result = await texter.send({ to: number, body: smsBodyFor(one) });
+        if (!result.ok) {
+          await supabase.rpc('system_release_sms', { p_business_id: one.businessId });
+          trouble ??= result.message;
+          refused ||= result.reason === 'REJECTED';
+        }
+      }
+      // Over the cap is not a failure: everything else about this notification went out.
     }
 
     if (trouble === null) {

@@ -379,3 +379,8 @@ Every decision made without the product owner, newest last. Format: date, decisi
 - **Decision:** The service worker's push handler posts the notification to any open tab first, then shows the system notification.
 - **Options:** Show the notification only, and let the page find out when it is next loaded.
 - **Reason:** Somebody looking at the app when a lesson is cancelled should see it there, not only in a banner over the top of it. It also makes the handler testable: the browser Playwright drives has no notification UI at all, so a test can prove the push arrived and was acted on, which a banner it cannot render never could.
+
+## D-075 | 2026-09-13 | Reminders are swept for, not slept on
+- **Decision:** A job every five minutes asks which lessons are close, and packages/core decides which reminders have come due for each of them. Each reminder carries the lesson's version in its key, so a lesson that moved is reminded about at its new time and never at its old one.
+- **Options:** The architecture sketch's shape: a function triggered when a lesson is confirmed that sleeps until each reminder is due, cancelled and restarted whenever the lesson changes.
+- **Reason:** A sleep of twenty-four hours is a promise the job runner has to keep across deploys, restarts and any change to the lesson in between, and cancelling one reliably means tracking every event that could invalidate it. A sweep holds no state at all: it looks at the lesson as it is now. The cost is that a reminder can be up to five minutes late, which nobody notices, and one query every five minutes, which is nothing. The dedupe key does the rest of the work: a reminder already written is never written twice, and a lesson at a new version is a new reminder.

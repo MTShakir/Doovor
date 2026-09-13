@@ -92,6 +92,7 @@ Do these once, in order. Items marked **You** need the product owner's accounts.
 1. **You:** create a Messaging Service with the alphanumeric sender `DrivingHub` (UK senders need no registration; people cannot reply).
 2. **You:** Messaging > Geo permissions: allow the United Kingdom only. Set a low monthly spend limit. Public code endpoints attract SMS pumping fraud, and this caps the damage.
 3. **You:** enter the Account SID, Auth Token and Messaging Service SID in the Supabase phone provider.
+4. **You:** for the app's own reminders (M2-30), put the same three values in Vercel as `TWILIO_ACCOUNT_SID`, `TWILIO_AUTH_TOKEN` and `TWILIO_MESSAGING_SERVICE_SID`, and set `SMS_PROVIDER=twilio`. Without them the app writes a line to the log and texts nobody, which is what every local and test run does. Reminders are the only thing that texts, and only on a plan that includes it: 200 a month on Pro, counted in `sms_usage`.
 
 ### 3.4 Google sign-in
 

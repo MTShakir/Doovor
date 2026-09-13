@@ -478,7 +478,7 @@ Jobs are Inngest functions in `apps/web/src/jobs`, served from `/api/inngest`. E
 
 | Job | Trigger | What it does | PRD |
 |---|---|---|---|
-| `booking.reminders` | `booking/confirmed`, cancelled on `booking/changed` or `booking/cancelled` for the same ID | Sleeps until 24 h and 2 h before start (per Business settings), checks the booking version, sends reminders | NTF-02 |
+| `booking.reminders` | Cron, every 5 minutes | Asks which lessons are close, works out which reminders are due (24 h and 2 h by default, per Business settings) and writes them. The lesson's version is in the key, so a lesson that moved is reminded about at its new time only (D-075) | NTF-02 |
 | `booking.request-expiry` | `booking/requested` | Sleeps until `expires_at` (12 h or 2 h before start, whichever first), calls `system_expire_request`, releases any authorisation | BOK-06, R-12 |
 | `booking.hold-expiry` | `booking/held` | Expires unpaid checkout holds after 15 minutes and cancels the PaymentIntent | R-10 |
 | `booking.expiry-sweep` | Cron, every 5 minutes | Safety net for requests and holds whose timers were missed | R-02, R-12 |

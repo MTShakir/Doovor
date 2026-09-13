@@ -30,6 +30,7 @@
     "./availability": "./src/availability.ts",
     "./slots": "./src/slots.ts",
     "./cancellation": "./src/cancellation.ts",
+    "./reminders": "./src/reminders.ts",
     "./notifications": "./src/notifications/index.ts",
     "./schemas/notification": "./src/schemas/notification.ts"
   },

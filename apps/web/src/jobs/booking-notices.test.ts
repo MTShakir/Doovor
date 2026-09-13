@@ -4,6 +4,7 @@ import {
   notificationRows,
   peopleInvolved,
   planBookingNotifications,
+  rowContextFor,
   type BookingNotice,
 } from './booking-notices';
 
@@ -123,7 +124,7 @@ describe('what everybody is told about a lesson (PRD Appendix B)', () => {
       event: { name: 'booking.rescheduled', payload: {} },
       notice,
     });
-    const rows = notificationRows(planned, notice);
+    const rows = notificationRows(planned, rowContextFor(notice));
     expect(rows[0]).toMatchObject({
       user_id: 'learner-1',
       business_id: 'business-1',

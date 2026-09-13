@@ -63,6 +63,8 @@ M2 Learners and bookings has started on branch `m2-learners-bookings`. An instru
 
 | M2-29 | The service worker spike (Serwist with Turbopack) and web push: VAPID, signing a browser up, the push handler | NTF-01 | Done, spike passed (D-073). A push delivered through the devtools protocol reaches the worker and is passed on to the open app, at 1440 px in Playwright. The worker precaches nothing yet, by choice |
 
+| M2-30 | Reminders before a lesson, what a Business sets, and text messages on Pro with the monthly cap | NTF-02, NTF-01 | Done. A lesson that moved is reminded about at its new time only, by unit test and by the key each reminder carries. Proved end to end locally: a lesson twenty hours out became a reminder, an email and a text, counted against the allowance |
+
 ## M1 progress
 
 | Task | What | PRD | State |
@@ -120,8 +122,8 @@ Decisions D-036 to D-050 were logged during this stretch. Two were security fixe
 
 | Suite | Result |
 |---|---|
-| Unit (Vitest) | 497 passed across 7 packages; `packages/core` line coverage 99.3%, `packages/providers` 100% |
-| Database (pgTAP) | 502 assertions in 42 files, all passing; SQL lint clean |
+| Unit (Vitest) | 532 passed across 7 packages; `packages/core` line coverage 99.3%, `packages/providers` 100% |
+| Database (pgTAP) | 510 assertions in 43 files, all passing; SQL lint clean |
 | End to end (Playwright) | 224 passed at 390 px and 1440 px, none skipped, stable across repeated full runs |
 | Lint, typecheck, copy guard | Clean |
 | CI on GitHub | Green: lint and unit, database, end to end against a production build |
@@ -129,7 +131,7 @@ Decisions D-036 to D-050 were logged during this stretch. Two were security fixe
 
 ## In progress
 
-- M2-30: reminders at 24 hours and 2 hours, and text messages on Pro.
+- M2-31: the four acceptance tests for this milestone, and the milestone report.
 
 ## Next
 

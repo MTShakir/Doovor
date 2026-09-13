@@ -57,7 +57,11 @@ describe('booking rules (PRD 11.1, M1-18)', () => {
       lateFeePercent: 100,
       requestExpiryHours: 12,
     };
-    expect(businessBookingRulesSchema.parse(valid)).toEqual(valid);
+    // Reminders default to the platform's, so a form that does not ask still saves (NTF-02).
+    expect(businessBookingRulesSchema.parse(valid)).toEqual({ ...valid, reminderHoursBefore: [24, 2] });
+    expect(businessBookingRulesSchema.parse({ ...valid, reminderHoursBefore: '72,24' })).toMatchObject({
+      reminderHoursBefore: [72, 24],
+    });
     expect(problem(businessBookingRulesSchema, { ...valid, noticeHours: 73 })).toBe(true);
     expect(problem(businessBookingRulesSchema, { ...valid, horizonWeeks: 0 })).toBe(true);
     expect(problem(businessBookingRulesSchema, { ...valid, horizonWeeks: 27 })).toBe(true);

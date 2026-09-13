@@ -1524,6 +1524,35 @@ export type Database = {
         }
         Relationships: []
       }
+      sms_usage: {
+        Row: {
+          business_id: string
+          month: string
+          sent: number
+          updated_at: string
+        }
+        Insert: {
+          business_id: string
+          month: string
+          sent?: number
+          updated_at?: string
+        }
+        Update: {
+          business_id?: string
+          month?: string
+          sent?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sms_usage_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "businesses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       users: {
         Row: {
           analytics_consent: boolean
@@ -1949,6 +1978,8 @@ export type Database = {
         Args: { p_limit?: number }
         Returns: {
           body: string
+          business_id: string
+          business_plan: string
           category: Database["public"]["Enums"]["notification_category"]
           channels: Database["public"]["Enums"]["notification_channel"][]
           dedupe_key: string
@@ -1957,6 +1988,7 @@ export type Database = {
           id: string
           kind: string
           link: string
+          phone: string
           title: string
           user_id: string
         }[]
@@ -1979,6 +2011,10 @@ export type Database = {
           isSetofReturn: true
         }
       }
+      system_claim_sms: {
+        Args: { p_allowance: number; p_business_id: string }
+        Returns: boolean
+      }
       system_clear_expired_invitations: {
         Args: { p_older_than?: string }
         Returns: number
@@ -1988,6 +2024,7 @@ export type Database = {
         Returns: number
       }
       system_drop_push_target: { Args: { p_id: string }; Returns: number }
+      system_due_reminders: { Args: { p_within_hours?: number }; Returns: Json }
       system_expire_requests: { Args: never; Returns: number }
       system_extend_recurrences: { Args: { p_weeks?: number }; Returns: number }
       system_mark_notification_failed: {
@@ -2031,6 +2068,10 @@ export type Database = {
           p_window_seconds: number
         }
         Returns: boolean
+      }
+      system_release_sms: {
+        Args: { p_business_id: string }
+        Returns: undefined
       }
       system_touch_push_target: { Args: { p_id: string }; Returns: undefined }
       system_unlist_expired_badges: {

@@ -6,6 +6,7 @@ import {
   notificationRows,
   peopleInvolved,
   planBookingNotifications,
+  rowContextFor,
   type BookingEvent,
   type BookingNotice,
 } from './booking-notices';
@@ -49,7 +50,7 @@ export async function notifyAboutBooking(event: BookingEvent): Promise<NotifyRes
   const planned = planBookingNotifications({ event, notice, muted });
   if (planned.length === 0) return { written: 0 };
 
-  const written = await supabase.rpc('system_notify', { p_rows: notificationRows(planned, notice) });
+  const written = await supabase.rpc('system_notify', { p_rows: notificationRows(planned, rowContextFor(notice)) });
   if (written.error) throw new Error(`Could not write notifications: ${written.error.message}`);
   return { written: written.data };
 }
