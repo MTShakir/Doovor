@@ -105,6 +105,7 @@ export async function saveBookingRules(input: unknown): Promise<Result<null>> {
       cancellation_window_hours: parsed.data.cancellationWindowHours,
       late_fee_percent: parsed.data.lateFeePercent,
       request_expiry_hours: parsed.data.requestExpiryHours,
+      reminder_hours_before: parsed.data.reminderHoursBefore,
     },
   });
   if (error) return err(parsePostgresError(error).code);

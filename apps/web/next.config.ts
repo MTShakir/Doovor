@@ -1,3 +1,4 @@
+import { withSerwist } from '@serwist/turbopack';
 import { existsSync } from 'node:fs';
 import path from 'node:path';
 import type { NextConfig } from 'next';
@@ -50,6 +51,10 @@ const nextConfig: NextConfig = {
   cacheComponents: true,
   typedRoutes: true,
   transpilePackages: ['@repo/config', '@repo/core', '@repo/ui'],
+  /** The worker is compiled at /serwist/sw.js and served from the root, so its scope is the app. */
+  rewrites() {
+    return Promise.resolve([{ source: '/sw.js', destination: '/serwist/sw.js' }]);
+  },
   headers() {
     return Promise.resolve(
       indexable
@@ -59,4 +64,4 @@ const nextConfig: NextConfig = {
   },
 };
 
-export default nextConfig;
+export default withSerwist(nextConfig);

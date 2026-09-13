@@ -23,11 +23,22 @@ test.describe('sign-up (AUTH-01, AUTH-03)', () => {
     await snap(page, testInfo, 'start');
   });
 
-  test('a learner signs up, confirms their email and lands on Home', async ({ page }, testInfo) => {
+  test('a learner signs up, answers the questions and lands on Home', async ({ page }, testInfo) => {
     const email = uniqueEmail(testInfo, 'learner');
     await chooseRoleAndCreateAccount(page, { card: "I'm learning to drive", heading: 'Create your learner account' }, { fullName: 'Ella Learner', email });
     await snap(page, testInfo, 'check-email');
     await page.goto(await linkFromEmail(email, 'Confirm your email'));
+
+    // A learner is asked their five questions before their own portal opens (AUTH-06).
+    await expect(page).toHaveURL(/\/onboarding\/about-you$/);
+    await expect(page.getByRole('button', { name: 'Finish' })).toBeEnabled();
+    await page.getByLabel('Your name').fill('Ella Learner');
+    await page.getByLabel('Your postcode').fill('LS6 3QS');
+    await page.getByLabel('Which gearbox?').selectOption('automatic');
+    await page.getByLabel('How far along are you?').selectOption('some');
+    await page.getByLabel('Date of birth').fill('2006-11-20');
+    await page.getByRole('button', { name: 'Finish' }).click();
+
     await expect(page).toHaveURL(/\/app\/learner$/);
     await expect(page.getByRole('heading', { level: 1, name: 'Home' })).toBeVisible();
   });

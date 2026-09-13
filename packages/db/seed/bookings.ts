@@ -34,6 +34,10 @@ export function generateBookings(
   const bookings: SeedBooking[] = [];
 
   instructors.forEach((instructor, instructorIndex) => {
+    // Who is having lessons: someone who has passed has them behind them only, and someone
+    // still waiting for a slot has none at all (LRN-05).
+    const learning = instructor.learners.filter((one) => one.status === 'active' || one.status === 'test_booked');
+    const taught = [...learning, ...instructor.learners.filter((one) => one.status === 'passed')];
     let learnerCursor = 0;
     let paymentCursor = 0;
     for (let offset = -daysBack; offset <= daysAhead; offset += 1) {
@@ -42,13 +46,16 @@ export function generateBookings(
       const hours = instructor.hours.find((h) => h.weekday === isoWeekday(date));
       if (!hours) continue;
 
+      const pool = offset < 0 ? taught : learning;
+      if (pool.length === 0) continue;
+
       const lessonsToday = 2 + ((offset + instructorIndex + 30) % 2);
       const dayEnd = localTimeToMinutes(hours.end);
       let cursor = Math.max(localTimeToMinutes(hours.start), FIRST_LESSON);
       const bookedToday = new Set<string>();
 
       for (let n = 0; n < lessonsToday; n += 1) {
-        const learner = instructor.learners[learnerCursor % instructor.learners.length];
+        const learner = pool[learnerCursor % pool.length];
         learnerCursor += 1;
         if (!learner || bookedToday.has(learner.key)) break;
         const end = cursor + learner.usualMinutes;

@@ -1,8 +1,8 @@
 import path from 'node:path';
 import AxeBuilder from '@axe-core/playwright';
-import { expect, type Page, type TestInfo } from '@playwright/test';
+import { expect, type Locator, type Page, type TestInfo } from '@playwright/test';
 
-const MILESTONE = process.env.E2E_MILESTONE ?? 'm1';
+const MILESTONE = process.env.E2E_MILESTONE ?? 'm2';
 
 /** Where a named screenshot lives: e2e/screenshots/<milestone>/<viewport>/<name>.png */
 export function snapPath(testInfo: TestInfo, name: string): string {
@@ -33,6 +33,45 @@ export async function settled(page: Page): Promise<void> {
     null,
     { timeout: 5000 },
   );
+}
+
+/**
+ * Taps a control that does nothing until the page is interactive, and keeps tapping until it
+ * does something. A button whose only job is to open a sheet has no disabled state to wait on
+ * the way a form does (D-043), so the proof that it worked is what it opened.
+ */
+export async function tapUntil(control: Locator, appears: Locator): Promise<void> {
+  await expect(async () => {
+    await control.click();
+    await expect(appears).toBeVisible({ timeout: 1000 });
+  }).toPass({ timeout: 15_000 });
+}
+
+/**
+ * Types into a field that a component controls, until the value sticks. A value set before
+ * the page is interactive is overwritten by the first render that follows it (D-043).
+ */
+export async function fillUntil(field: Locator, value: string): Promise<void> {
+  await expect(async () => {
+    await field.fill(value);
+    await expect(field).toHaveValue(value, { timeout: 1000 });
+  }).toPass({ timeout: 15_000 });
+}
+
+/**
+ * Picks a date by typing it, the way somebody with a keyboard does. Playwright's fill sets
+ * the value on the element without the page hearing about it, which is no use for a field a
+ * component is listening to; real keystrokes always are.
+ *
+ * The locale is en-GB throughout the suite, so the boxes are day, month, year.
+ */
+export async function chooseDate(field: Locator, value: string): Promise<void> {
+  const [year, month, day] = value.split('-');
+  await expect(async () => {
+    await field.click();
+    await field.pressSequentially(`${day ?? ''}${month ?? ''}${year ?? ''}`);
+    await expect(field).toHaveValue(value, { timeout: 1000 });
+  }).toPass({ timeout: 15_000 });
 }
 
 /** WCAG 2.2 AA scan. Fails on serious or critical issues (PRD 14.4, M6-06). */

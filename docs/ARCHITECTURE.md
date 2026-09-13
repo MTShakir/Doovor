@@ -478,7 +478,7 @@ Jobs are Inngest functions in `apps/web/src/jobs`, served from `/api/inngest`. E
 
 | Job | Trigger | What it does | PRD |
 |---|---|---|---|
-| `booking.reminders` | `booking/confirmed`, cancelled on `booking/changed` or `booking/cancelled` for the same ID | Sleeps until 24 h and 2 h before start (per Business settings), checks the booking version, sends reminders | NTF-02 |
+| `booking.reminders` | Cron, every 5 minutes | Asks which lessons are close, works out which reminders are due (24 h and 2 h by default, per Business settings) and writes them. The lesson's version is in the key, so a lesson that moved is reminded about at its new time only (D-075) | NTF-02 |
 | `booking.request-expiry` | `booking/requested` | Sleeps until `expires_at` (12 h or 2 h before start, whichever first), calls `system_expire_request`, releases any authorisation | BOK-06, R-12 |
 | `booking.hold-expiry` | `booking/held` | Expires unpaid checkout holds after 15 minutes and cancels the PaymentIntent | R-10 |
 | `booking.expiry-sweep` | Cron, every 5 minutes | Safety net for requests and holds whose timers were missed | R-02, R-12 |
@@ -489,7 +489,8 @@ Jobs are Inngest functions in `apps/web/src/jobs`, served from `/api/inngest`. E
 | `payment.followups` | Webhook follow-up events | Receipt email, instructor notification, credit-low check | PAY-08, NTF-03 |
 | `credit.expiry` | Cron, daily | Expires lots past `expires_at` with ledger rows | PAY-04 |
 | `badge.expiry` | Cron, daily at 08:00 London | Reminders at 60, 30 and 7 days, deduplicated by threshold. Expired badges drop out of search automatically because listing checks the date | INS-03 |
-| `notification.dispatch` | `notification/created` | Fans out to push, email and SMS according to preferences and plan (SMS on Pro, capped at 200 a month) | NTF-01 to 04 |
+| `booking.notices` | `booking.created`, `.accepted`, `.declined`, `.cancelled`, `.rescheduled` | Reads who the lesson concerns, applies the catalogue and their settings, and writes one notification each | NTF-01, NTF-03, NTF-04 |
+| `notification.dispatch` | Notifications not yet sent | Fans out to push, email and SMS on the channels the notification already carries (SMS on Pro, capped at 200 a month) | NTF-01 to 04 |
 | `ledger.reconcile` | Cron, nightly | Asserts cached balances equal ledger sums and alerts on drift | PAY-04 |
 | `account.deletion` | `account/deletion-requested` | Exports, anonymises and deletes per the retention rules (M6) | NFR-PRV-03 |
 | `maintenance.cleanup` | Cron, daily | Clears old rate-limit buckets, stale holds and expired invitations | NFR-SEC-03 |
@@ -501,7 +502,8 @@ Retries use exponential backoff. Each function has an `onFailure` handler that r
 ## 10. Notifications (NTF-01 to NTF-04, Appendix B)
 
 - The notification catalogue from PRD Appendix B lives in `packages/core/src/notifications/catalogue.ts`: event type, audiences, channels, whether it is essential, and copy keys.
-- `notifications` rows are the in-app inbox and the delivery log. `dedupe_key` (for example `reminder:24h:{booking_id}:{version}`) is unique, so retries never double-send.
+- `notifications` rows are the in-app inbox and the delivery log. `dedupe_key` (`{kind}:{entity}:{version}:{user}`) is unique, so retries never double-send.
+- Which channels a notification uses is decided when it is planned, in `packages/core/src/notifications/plan.ts`, and stored on the row (D-072). The job that sends it reads the row rather than working the rule out a second time.
 - Preferences (NTF-04): users switch non-essential notifications per channel. Essential service messages (booking confirmations, changes, cancellations, receipts, payment failures, security) always go by at least one channel (PECR allows service messages without consent, NFR-PRV-05).
 - Channels: email (Resend, React Email templates), web push (VAPID, `push_subscriptions`, works on iOS for installed PWAs), SMS (Twilio, reminders only, Pro plan). All copy uses plain British English and never uses em or en dashes. A unit test scans every template's rendered output for them.
 - Local and test environments use provider fakes that write to a local mailbox viewer and the console. Nothing real is sent outside staging and production.
@@ -531,7 +533,7 @@ sequenceDiagram
   Note over DB: outbox event notifies the learner (lesson record added)
 ```
 
-- Serwist with `@serwist/turbopack`, which compiles the service worker through a route handler and works with the Turbopack build that Next 16 uses by default. The service worker first lands in M2 for web push, so the spike happens there. The fallback is `@serwist/next` with a webpack production build (D-013).
+- Serwist with `@serwist/turbopack`, which compiles the service worker through a route handler and works with the Turbopack build that Next 16 uses by default. The spike passed in M2 (D-073): the worker is written in `apps/web/src/app/sw.ts`, compiled by the route at `/serwist/[path]` and served from `/sw.js` through a rewrite so its scope is the whole app. It is registered when somebody turns push on, not before, and it precaches nothing until M4 decides what to keep offline.
 - Precached: the app shell, the Today view, the lesson record screen and the skill map. Runtime cache: today's and tomorrow's lesson data (network first, cache fallback). Public pages are not cached by the service worker.
 - The outbox is per device. Saving is idempotent on the client-generated ID, so a retry never creates a second record. If a record already exists for the booking from another device, the server keeps the first and returns a conflict that the UI shows.
 - Acceptance test 8 runs in Playwright with `context.setOffline(true)`, saves a record, goes back online and checks the learner's timeline.

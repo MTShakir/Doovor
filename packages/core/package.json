@@ -20,7 +20,19 @@
     "./schemas/pickup": "./src/schemas/pickup.ts",
     "./schemas/availability": "./src/schemas/availability.ts",
     "./booking-rules": "./src/booking-rules.ts",
-    "./diary": "./src/diary.ts"
+    "./diary": "./src/diary.ts",
+    "./age": "./src/age.ts",
+    "./schemas/learner": "./src/schemas/learner.ts",
+    "./schemas/note": "./src/schemas/note.ts",
+    "./invitations": "./src/invitations.ts",
+    "./learners": "./src/learners.ts",
+    "./csv": "./src/csv.ts",
+    "./availability": "./src/availability.ts",
+    "./slots": "./src/slots.ts",
+    "./cancellation": "./src/cancellation.ts",
+    "./reminders": "./src/reminders.ts",
+    "./notifications": "./src/notifications/index.ts",
+    "./schemas/notification": "./src/schemas/notification.ts"
   },
   "scripts": {
     "lint": "eslint .",

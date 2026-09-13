@@ -143,6 +143,106 @@ export type Database = {
           },
         ]
       }
+      booking_recurrences: {
+        Row: {
+          booked_until: string | null
+          business_id: string
+          cancelled_at: string | null
+          created_at: string
+          created_by: string | null
+          duration_minutes: number
+          ends_on: string | null
+          id: string
+          instructor_id: string
+          learner_id: string
+          lesson_type_id: string
+          local_time: string
+          pickup_point_id: string | null
+          starts_on: string
+          updated_at: string
+          weekday: number
+        }
+        Insert: {
+          booked_until?: string | null
+          business_id: string
+          cancelled_at?: string | null
+          created_at?: string
+          created_by?: string | null
+          duration_minutes: number
+          ends_on?: string | null
+          id?: string
+          instructor_id: string
+          learner_id: string
+          lesson_type_id: string
+          local_time: string
+          pickup_point_id?: string | null
+          starts_on: string
+          updated_at?: string
+          weekday: number
+        }
+        Update: {
+          booked_until?: string | null
+          business_id?: string
+          cancelled_at?: string | null
+          created_at?: string
+          created_by?: string | null
+          duration_minutes?: number
+          ends_on?: string | null
+          id?: string
+          instructor_id?: string
+          learner_id?: string
+          lesson_type_id?: string
+          local_time?: string
+          pickup_point_id?: string | null
+          starts_on?: string
+          updated_at?: string
+          weekday?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "booking_recurrences_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "businesses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "booking_recurrences_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "booking_recurrences_instructor_id_business_id_fkey"
+            columns: ["instructor_id", "business_id"]
+            isOneToOne: false
+            referencedRelation: "instructor_profiles"
+            referencedColumns: ["id", "business_id"]
+          },
+          {
+            foreignKeyName: "booking_recurrences_learner_id_fkey"
+            columns: ["learner_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "booking_recurrences_lesson_type_id_business_id_fkey"
+            columns: ["lesson_type_id", "business_id"]
+            isOneToOne: false
+            referencedRelation: "lesson_types"
+            referencedColumns: ["id", "business_id"]
+          },
+          {
+            foreignKeyName: "booking_recurrences_pickup_point_id_fkey"
+            columns: ["pickup_point_id"]
+            isOneToOne: false
+            referencedRelation: "pickup_points"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       bookings: {
         Row: {
           blocked_range: unknown
@@ -1022,6 +1122,98 @@ export type Database = {
           },
         ]
       }
+      notification_preferences: {
+        Row: {
+          category: Database["public"]["Enums"]["notification_category"]
+          channel: Database["public"]["Enums"]["notification_channel"]
+          enabled: boolean
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          category: Database["public"]["Enums"]["notification_category"]
+          channel: Database["public"]["Enums"]["notification_channel"]
+          enabled: boolean
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          category?: Database["public"]["Enums"]["notification_category"]
+          channel?: Database["public"]["Enums"]["notification_channel"]
+          enabled?: boolean
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      notifications: {
+        Row: {
+          attempts: number
+          body: string
+          business_id: string | null
+          category: Database["public"]["Enums"]["notification_category"]
+          channels: Database["public"]["Enums"]["notification_channel"][]
+          created_at: string
+          dedupe_key: string
+          entity_id: string | null
+          entity_type: string | null
+          id: string
+          kind: string
+          last_error: string | null
+          link: string | null
+          read_at: string | null
+          sent_at: string | null
+          title: string
+          user_id: string
+        }
+        Insert: {
+          attempts?: number
+          body: string
+          business_id?: string | null
+          category: Database["public"]["Enums"]["notification_category"]
+          channels?: Database["public"]["Enums"]["notification_channel"][]
+          created_at?: string
+          dedupe_key: string
+          entity_id?: string | null
+          entity_type?: string | null
+          id?: string
+          kind: string
+          last_error?: string | null
+          link?: string | null
+          read_at?: string | null
+          sent_at?: string | null
+          title: string
+          user_id: string
+        }
+        Update: {
+          attempts?: number
+          body?: string
+          business_id?: string | null
+          category?: Database["public"]["Enums"]["notification_category"]
+          channels?: Database["public"]["Enums"]["notification_channel"][]
+          created_at?: string
+          dedupe_key?: string
+          entity_id?: string | null
+          entity_type?: string | null
+          id?: string
+          kind?: string
+          last_error?: string | null
+          link?: string | null
+          read_at?: string | null
+          sent_at?: string | null
+          title?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "notifications_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "businesses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       outbox_events: {
         Row: {
           attempts: number
@@ -1281,6 +1473,86 @@ export type Database = {
         }
         Relationships: []
       }
+      push_subscriptions: {
+        Row: {
+          auth: string
+          created_at: string
+          endpoint: string
+          id: string
+          last_used_at: string | null
+          p256dh: string
+          user_agent: string | null
+          user_id: string
+        }
+        Insert: {
+          auth: string
+          created_at?: string
+          endpoint: string
+          id?: string
+          last_used_at?: string | null
+          p256dh: string
+          user_agent?: string | null
+          user_id: string
+        }
+        Update: {
+          auth?: string
+          created_at?: string
+          endpoint?: string
+          id?: string
+          last_used_at?: string | null
+          p256dh?: string
+          user_agent?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      rate_limit_buckets: {
+        Row: {
+          hits: number
+          key: string
+          window_started_at: string
+        }
+        Insert: {
+          hits?: number
+          key: string
+          window_started_at: string
+        }
+        Update: {
+          hits?: number
+          key?: string
+          window_started_at?: string
+        }
+        Relationships: []
+      }
+      sms_usage: {
+        Row: {
+          business_id: string
+          month: string
+          sent: number
+          updated_at: string
+        }
+        Insert: {
+          business_id: string
+          month: string
+          sent?: number
+          updated_at?: string
+        }
+        Update: {
+          business_id?: string
+          month?: string
+          sent?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sms_usage_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "businesses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       users: {
         Row: {
           analytics_consent: boolean
@@ -1384,9 +1656,139 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      learner_card: {
+        Row: {
+          avatar_url: string | null
+          business_id: string | null
+          created_at: string | null
+          email: string | null
+          full_name: string | null
+          id: string | null
+          instructor_id: string | null
+          instructor_name: string | null
+          last_lesson_at: string | null
+          learner_id: string | null
+          lessons_taken: number | null
+          minutes_taught: number | null
+          next_lesson_at: string | null
+          phone: string | null
+          pickup_points: Json | null
+          postcode: string | null
+          source: Database["public"]["Enums"]["learner_source"] | null
+          status: Database["public"]["Enums"]["learner_status"] | null
+          transmission:
+            | Database["public"]["Enums"]["learner_transmission"]
+            | null
+          usual_duration_minutes: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "learner_relationships_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "businesses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "learner_relationships_instructor_id_business_id_fkey"
+            columns: ["instructor_id", "business_id"]
+            isOneToOne: false
+            referencedRelation: "instructor_profiles"
+            referencedColumns: ["id", "business_id"]
+          },
+          {
+            foreignKeyName: "learner_relationships_learner_id_fkey"
+            columns: ["learner_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      learner_list: {
+        Row: {
+          avatar_url: string | null
+          business_id: string | null
+          created_at: string | null
+          email: string | null
+          full_name: string | null
+          id: string | null
+          instructor_id: string | null
+          instructor_name: string | null
+          last_lesson_at: string | null
+          learner_id: string | null
+          lessons_taken: number | null
+          next_lesson_at: string | null
+          phone: string | null
+          postcode: string | null
+          search_text: string | null
+          source: Database["public"]["Enums"]["learner_source"] | null
+          status: Database["public"]["Enums"]["learner_status"] | null
+          transmission:
+            | Database["public"]["Enums"]["learner_transmission"]
+            | null
+          usual_duration_minutes: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "learner_relationships_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "businesses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "learner_relationships_instructor_id_business_id_fkey"
+            columns: ["instructor_id", "business_id"]
+            isOneToOne: false
+            referencedRelation: "instructor_profiles"
+            referencedColumns: ["id", "business_id"]
+          },
+          {
+            foreignKeyName: "learner_relationships_learner_id_fkey"
+            columns: ["learner_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Functions: {
+      accept_invitation: { Args: { p_token: string }; Returns: string }
+      add_learner: {
+        Args: {
+          p_instructor_id: string
+          p_learner_id: string
+          p_postcode?: string
+          p_source?: string
+          p_transmission?: string
+          p_usual_minutes?: number
+        }
+        Returns: string
+      }
+      assign_learner: {
+        Args: { p_instructor_id: string; p_learner_id: string }
+        Returns: string
+      }
+      book_weekly: {
+        Args: {
+          p_duration_minutes: number
+          p_first_starts_at: string
+          p_instructor_id: string
+          p_learner_id: string
+          p_lesson_type_id: string
+          p_open_ended?: boolean
+          p_pickup_point_id?: string
+          p_weeks: number
+        }
+        Returns: {
+          booking_id: string
+          problem: string
+          starts_at: string
+        }[]
+      }
+      booking_page: { Args: { p_slug: string }; Returns: Json }
       cache_postcode: {
         Args: {
           p_country?: string
@@ -1398,9 +1800,25 @@ export type Database = {
         }
         Returns: undefined
       }
+      cancel_booking: {
+        Args: { p_booking_id: string; p_reason?: string }
+        Returns: Json
+      }
+      complete_booking: { Args: { p_booking_id: string }; Returns: string }
       covers_postcode: {
         Args: { p_instructor_id: string; p_postcode: string }
         Returns: boolean
+      }
+      create_booking: {
+        Args: {
+          p_duration_minutes: number
+          p_instructor_id: string
+          p_learner_id: string
+          p_lesson_type_id: string
+          p_pickup_point_id?: string
+          p_starts_at: string
+        }
+        Returns: string
       }
       create_business: {
         Args: {
@@ -1409,9 +1827,47 @@ export type Database = {
         }
         Returns: string
       }
+      decide_booking_request: {
+        Args: { p_accept: boolean; p_booking_id: string; p_reason?: string }
+        Returns: string
+      }
       decide_verification: {
         Args: { p_approved: boolean; p_profile_id: string; p_reason?: string }
         Returns: Database["public"]["Enums"]["verification_status"]
+      }
+      invitation_details: {
+        Args: { p_token: string }
+        Returns: {
+          business_name: string
+          email: string
+          expired: boolean
+          full_name: string
+          instructor_name: string
+        }[]
+      }
+      invite_learner: {
+        Args: {
+          p_channel: string
+          p_email?: string
+          p_full_name?: string
+          p_instructor_id: string
+          p_phone?: string
+        }
+        Returns: {
+          expires_at: string
+          invitation_id: string
+          token: string
+        }[]
+      }
+      learner_history: {
+        Args: { p_learner_id: string }
+        Returns: {
+          action: string
+          actor_name: string
+          after: Json
+          before: Json
+          happened_at: string
+        }[]
       }
       list_my_sessions: {
         Args: never
@@ -1425,7 +1881,28 @@ export type Database = {
           user_agent: string
         }[]
       }
+      mark_no_show: {
+        Args: { p_booking_id: string; p_reason?: string }
+        Returns: Json
+      }
+      open_slots: {
+        Args: {
+          p_date: string
+          p_duration_minutes: number
+          p_except_booking_id?: string
+          p_instructor_id: string
+        }
+        Returns: string[]
+      }
       request_account_deletion: { Args: { p_reason?: string }; Returns: string }
+      reschedule_booking: {
+        Args: {
+          p_booking_id: string
+          p_duration_minutes?: number
+          p_starts_at: string
+        }
+        Returns: string
+      }
       revoke_my_session: { Args: { p_session_id: string }; Returns: boolean }
       set_availability_exception: {
         Args: {
@@ -1440,6 +1917,10 @@ export type Database = {
       set_booking_rules: {
         Args: { p_business_id: string; p_rules: Json }
         Returns: Json
+      }
+      set_learner_status: {
+        Args: { p_learner_id: string; p_reason?: string; p_status: string }
+        Returns: Database["public"]["Enums"]["learner_status"]
       }
       set_onboarding_prices: {
         Args: {
@@ -1462,6 +1943,15 @@ export type Database = {
         }
         Returns: number
       }
+      slot_problem: {
+        Args: {
+          p_duration_minutes: number
+          p_instructor_id: string
+          p_starts_at: string
+        }
+        Returns: string
+      }
+      stop_recurrence: { Args: { p_recurrence_id: string }; Returns: undefined }
       submit_verification: {
         Args: {
           p_badge_expiry: string
@@ -1473,6 +1963,7 @@ export type Database = {
         }
         Returns: Database["public"]["Enums"]["verification_status"]
       }
+      system_booking_notice: { Args: { p_booking_id: string }; Returns: Json }
       system_claim_badge_reminders: {
         Args: { p_today?: string }
         Returns: {
@@ -1481,6 +1972,25 @@ export type Database = {
           days_before: number
           days_left: number
           instructor_id: string
+        }[]
+      }
+      system_claim_notifications: {
+        Args: { p_limit?: number }
+        Returns: {
+          body: string
+          business_id: string
+          business_plan: string
+          category: Database["public"]["Enums"]["notification_category"]
+          channels: Database["public"]["Enums"]["notification_channel"][]
+          dedupe_key: string
+          email: string
+          full_name: string
+          id: string
+          kind: string
+          link: string
+          phone: string
+          title: string
+          user_id: string
         }[]
       }
       system_claim_outbox_events: {
@@ -1501,11 +2011,69 @@ export type Database = {
           isSetofReturn: true
         }
       }
+      system_claim_sms: {
+        Args: { p_allowance: number; p_business_id: string }
+        Returns: boolean
+      }
+      system_clear_expired_invitations: {
+        Args: { p_older_than?: string }
+        Returns: number
+      }
+      system_clear_rate_limits: {
+        Args: { p_older_than?: string }
+        Returns: number
+      }
+      system_drop_push_target: { Args: { p_id: string }; Returns: number }
+      system_due_reminders: { Args: { p_within_hours?: number }; Returns: Json }
+      system_expire_requests: { Args: never; Returns: number }
+      system_extend_recurrences: { Args: { p_weeks?: number }; Returns: number }
+      system_mark_notification_failed: {
+        Args: { p_error: string; p_id: string }
+        Returns: number
+      }
+      system_mark_notifications_sent: {
+        Args: { p_ids: string[] }
+        Returns: number
+      }
       system_mark_outbox_failed: {
         Args: { p_error: string; p_ids: string[] }
         Returns: number
       }
       system_mark_outbox_sent: { Args: { p_ids: string[] }; Returns: number }
+      system_notification_mutes: {
+        Args: {
+          p_category: Database["public"]["Enums"]["notification_category"]
+          p_user_ids: string[]
+        }
+        Returns: {
+          channel: Database["public"]["Enums"]["notification_channel"]
+          user_id: string
+        }[]
+      }
+      system_notify: { Args: { p_rows: Json }; Returns: number }
+      system_push_targets: {
+        Args: { p_user_id: string }
+        Returns: {
+          auth: string
+          endpoint: string
+          id: string
+          p256dh: string
+        }[]
+      }
+      system_rate_limit_hit: {
+        Args: {
+          p_action: string
+          p_max: number
+          p_who: string
+          p_window_seconds: number
+        }
+        Returns: boolean
+      }
+      system_release_sms: {
+        Args: { p_business_id: string }
+        Returns: undefined
+      }
+      system_touch_push_target: { Args: { p_id: string }; Returns: undefined }
       system_unlist_expired_badges: {
         Args: { p_today?: string }
         Returns: number
@@ -1570,6 +2138,8 @@ export type Database = {
         | "custom"
       membership_role: "owner" | "manager" | "instructor"
       membership_status: "invited" | "active" | "deactivated"
+      notification_category: "bookings" | "reminders" | "money" | "account"
+      notification_channel: "in_app" | "email" | "push" | "sms"
       pickup_kind: "home" | "school" | "work" | "custom"
       plan_key: "free" | "pro" | "school"
       platform_role: "super_admin" | "support_admin"
@@ -1766,6 +2336,8 @@ export const Constants = {
       ],
       membership_role: ["owner", "manager", "instructor"],
       membership_status: ["invited", "active", "deactivated"],
+      notification_category: ["bookings", "reminders", "money", "account"],
+      notification_channel: ["in_app", "email", "push", "sms"],
       pickup_kind: ["home", "school", "work", "custom"],
       plan_key: ["free", "pro", "school"],
       platform_role: ["super_admin", "support_admin"],

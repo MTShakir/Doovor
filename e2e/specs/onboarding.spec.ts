@@ -356,9 +356,10 @@ test.describe('instructor onboarding (AUTH-04, M1-02)', () => {
       { fullName: 'Leo Learner', email },
     );
     await page.goto(await linkFromEmail(email, 'Confirm your email'));
-    await expect(page).toHaveURL(/\/app\/learner$/);
+    // A learner has questions of their own to answer, not an instructor's five steps.
+    await expect(page).toHaveURL(/\/onboarding\/about-you$/);
 
     await page.goto('/onboarding');
-    await expect(page).toHaveURL(/\/app\/learner$/);
+    await expect(page).toHaveURL(/\/onboarding\/about-you$/);
   });
 });

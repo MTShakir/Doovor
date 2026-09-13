@@ -15,3 +15,16 @@ export const badgeExpiring = eventType('instructor/badge-expiring', {
     summary: string;
   }>(),
 });
+
+/**
+ * What happened to a lesson (BOK-01 to BOK-09). The names match the rows the RPCs write to
+ * the outbox, because the dispatcher sends them through unchanged (D-017).
+ */
+const bookingEvent = <Name extends string>(name: Name) =>
+  eventType(name, { schema: staticSchema<{ booking_id: string; [key: string]: unknown }>() });
+
+export const bookingCreated = bookingEvent('booking.created');
+export const bookingAccepted = bookingEvent('booking.accepted');
+export const bookingDeclined = bookingEvent('booking.declined');
+export const bookingCancelled = bookingEvent('booking.cancelled');
+export const bookingRescheduled = bookingEvent('booking.rescheduled');

@@ -63,6 +63,20 @@ describe('seed booking generator (M0-29)', () => {
     expect([...statuses].sort()).toEqual(['cancelled', 'completed', 'confirmed', 'no_show', 'requested']);
   });
 
+  it('gives nobody a lesson they would not be having (LRN-05)', () => {
+    const today = '2026-09-11';
+    const bookings = generateBookings(instructors, today);
+    const statusOf = (key: string): string | undefined =>
+      instructors.flatMap((i) => i.learners).find((l) => l.key === key)?.status;
+
+    for (const booking of bookings) {
+      const status = statusOf(booking.learnerKey);
+      expect(status, `${booking.learnerKey} is waiting and has no lessons`).not.toBe('waiting');
+      if (status === 'passed') expect(booking.date < today, 'a learner who passed has lessons behind them').toBe(true);
+    }
+    expect(bookings.some((b) => statusOf(b.learnerKey) === 'passed')).toBe(true);
+  });
+
   it('skips blocked days', () => {
     const bookings = generateBookings(instructors, '2026-09-11', { blockedDates: { tom: ['2026-09-17'] } });
     expect(bookings.some((b) => b.instructorKey === 'tom' && b.date === '2026-09-17')).toBe(false);

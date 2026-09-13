@@ -76,13 +76,23 @@ Do these once, in order. Items marked **You** need the product owner's accounts.
 ### 3.2 Resend (email)
 
 1. **You:** add the domain `maxterzhub.co.uk` and create the DNS records Resend shows (SPF, DKIM and DMARC) at the domain's DNS provider. Wait for "Verified".
-2. **You:** create an API key with sending access to that domain only. It goes into the Supabase SMTP settings. The app's own emails arrive in M2 and will use a separate key (`RESEND_API_KEY`).
+2. **You:** create an API key with sending access to that domain only. It goes into the Supabase SMTP settings.
+3. **You:** create a second API key, also sending to that domain only, for the app's own emails (M2-28). Put it in Vercel as `RESEND_API_KEY` and set `EMAIL_PROVIDER=resend` there. Two keys rather than one, so revoking the app's key never stops a password reset.
+4. Without the key the app uses the local provider: it writes a line to the log and sends nothing, which is what every local and test run does.
+
+### 3.2a Web push (VAPID)
+
+1. **You:** generate a key pair: `npx web-push generate-vapid-keys`. It needs no account anywhere; the pair only identifies this application to push services.
+2. **You:** in Vercel set `NEXT_PUBLIC_VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY` and `VAPID_SUBJECT` (`mailto:` and an address a push service can reach you at). Staging and production get their own pair.
+3. Changing the public key invalidates every subscription: browsers have to turn push on again. Generate once and keep it.
+4. Locally, `pnpm db:env` leaves these blank and the settings screen says push is not set up here. A pair for local work is generated the same way.
 
 ### 3.3 Twilio (text codes)
 
 1. **You:** create a Messaging Service with the alphanumeric sender `DrivingHub` (UK senders need no registration; people cannot reply).
 2. **You:** Messaging > Geo permissions: allow the United Kingdom only. Set a low monthly spend limit. Public code endpoints attract SMS pumping fraud, and this caps the damage.
 3. **You:** enter the Account SID, Auth Token and Messaging Service SID in the Supabase phone provider.
+4. **You:** for the app's own reminders (M2-30), put the same three values in Vercel as `TWILIO_ACCOUNT_SID`, `TWILIO_AUTH_TOKEN` and `TWILIO_MESSAGING_SERVICE_SID`, and set `SMS_PROVIDER=twilio`. Without them the app writes a line to the log and texts nobody, which is what every local and test run does. Reminders are the only thing that texts, and only on a plan that includes it: 200 a month on Pro, counted in `sms_usage`.
 
 ### 3.4 Google sign-in
 

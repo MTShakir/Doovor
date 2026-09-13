@@ -9,6 +9,7 @@
  */
 
 import { z } from 'zod';
+import { reminderHoursDefault, reminderHoursSchema, resolveReminderHours } from './reminders.ts';
 
 export interface BookingRules {
   /** Minutes between lessons, for travel. Instructor level. */
@@ -25,6 +26,8 @@ export interface BookingRules {
   requestExpiryHours: number;
   /** Instructor level: a booking is confirmed at once rather than asked for. */
   instantBook: boolean;
+  /** How long before a lesson learners are reminded (NTF-02). */
+  reminderHoursBefore: number[];
 }
 
 /** What the platform ships with (PRD 11.1). Matches `platform_settings.booking_defaults`. */
@@ -36,6 +39,7 @@ export const bookingRuleDefaults: BookingRules = {
   lateFeePercent: 100,
   requestExpiryHours: 12,
   instantBook: true,
+  reminderHoursBefore: [...reminderHoursDefault],
 };
 
 /** The ranges from PRD 11.1, enforced here, in the database and in the form. */
@@ -66,6 +70,25 @@ export const businessBookingRulesSchema = z.object({
       error: 'Choose 0, 50 or 100 per cent',
     }),
   requestExpiryHours: whole('requestExpiryHours', 'Choose between 1 and 48 hours'),
+  /** How long before a lesson learners are reminded (NTF-02). A form sends "24,2". */
+  reminderHoursBefore: z
+    .union([z.string(), z.array(z.coerce.number())])
+    .default(() => [...reminderHoursDefault])
+    .transform((value, ctx): number[] => {
+      const hours =
+        typeof value === 'string'
+          ? value
+              .split(',')
+              .map((part) => Number(part.trim()))
+              .filter((one) => Number.isFinite(one))
+          : value;
+      const parsed = reminderHoursSchema.safeParse(hours);
+      if (!parsed.success) {
+        ctx.addIssue({ code: 'custom', message: 'Choose when to remind learners' });
+        return [];
+      }
+      return parsed.data;
+    }),
 });
 
 /** What an instructor owns for their own diary (PRD 11.1, BOK-06). */
@@ -101,5 +124,6 @@ export function resolveBookingRules(
     lateFeePercent: level('late_fee_percent', bookingRuleDefaults.lateFeePercent),
     requestExpiryHours: level('request_expiry_hours', bookingRuleDefaults.requestExpiryHours),
     instantBook: instructor?.instantBook ?? bookingRuleDefaults.instantBook,
+    reminderHoursBefore: resolveReminderHours(business, platform),
   };
 }

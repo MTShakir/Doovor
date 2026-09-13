@@ -42,36 +42,44 @@ export function seedPeople(today: string): SeedPerson[] {
     { key: 'tom', fullName: 'Tom Walsh', email: 'tom.walsh@example.com', intendedRole: 'instructor', phone: '+447700900003' },
     { key: 'aisha', fullName: 'Aisha Rahman', email: 'aisha.rahman@example.com', intendedRole: 'instructor', phone: '+447700900004' },
     {
-      key: 'jack', fullName: 'Jack Taylor', email: 'jack.taylor@example.com', intendedRole: 'learner',
+      key: 'jack', fullName: 'Jack Taylor', email: 'jack.taylor@example.com', intendedRole: 'learner', phone: '+447700900011',
       learner: { dateOfBirth: '2004-03-14', postcode: 'LS2 9JT', transmission: 'manual', experience: 'some' },
     },
     {
-      key: 'olivia', fullName: 'Olivia Brown', email: 'olivia.brown@example.com', intendedRole: 'learner',
+      key: 'olivia', fullName: 'Olivia Brown', email: 'olivia.brown@example.com', intendedRole: 'learner', phone: '+447700900012',
       learner: { dateOfBirth: seventeenYearsAgo(today), postcode: 'LS8 2HH', transmission: 'manual', experience: 'none' },
     },
     {
-      key: 'noah', fullName: 'Noah Wilson', email: 'noah.wilson@example.com', intendedRole: 'learner',
+      key: 'noah', fullName: 'Noah Wilson', email: 'noah.wilson@example.com', intendedRole: 'learner', phone: '+447700900013',
       learner: { dateOfBirth: '1998-11-02', postcode: 'LS11 0ES', transmission: 'manual', experience: 'test_booked' },
     },
     {
-      key: 'amelia', fullName: 'Amelia Evans', email: 'amelia.evans@example.com', intendedRole: 'learner',
+      key: 'amelia', fullName: 'Amelia Evans', email: 'amelia.evans@example.com', intendedRole: 'learner', phone: '+447700900014',
       learner: { dateOfBirth: '2006-06-21', postcode: 'M13 9PL', transmission: 'automatic', experience: 'none' },
     },
     {
-      key: 'harry', fullName: 'Harry Thomas', email: 'harry.thomas@example.com', intendedRole: 'learner',
+      key: 'harry', fullName: 'Harry Thomas', email: 'harry.thomas@example.com', intendedRole: 'learner', phone: '+447700900015',
       learner: { dateOfBirth: seventeenYearsAgo(today), postcode: 'M16 0RA', transmission: 'manual', experience: 'some' },
     },
     {
-      key: 'isla', fullName: 'Isla Roberts', email: 'isla.roberts@example.com', intendedRole: 'learner',
+      key: 'isla', fullName: 'Isla Roberts', email: 'isla.roberts@example.com', intendedRole: 'learner', phone: '+447700900016',
       learner: { dateOfBirth: '2001-01-30', postcode: 'M11 3FF', transmission: 'automatic', experience: 'some' },
     },
     {
-      key: 'leo', fullName: 'Leo Johnson', email: 'leo.johnson@example.com', intendedRole: 'learner',
+      key: 'leo', fullName: 'Leo Johnson', email: 'leo.johnson@example.com', intendedRole: 'learner', phone: '+447700900017',
       learner: { dateOfBirth: '2007-08-09', postcode: 'M50 2EQ', transmission: 'manual', experience: 'none' },
     },
     {
-      key: 'mia', fullName: 'Mia Walker', email: 'mia.walker@example.com', intendedRole: 'learner',
+      key: 'mia', fullName: 'Mia Walker', email: 'mia.walker@example.com', intendedRole: 'learner', phone: '+447700900018',
       learner: { dateOfBirth: '1995-04-17', postcode: 'M15 4FN', transmission: 'manual', experience: 'test_booked' },
+    },
+    {
+      key: 'chloe', fullName: 'Chloe Bennett', email: 'chloe.bennett@example.com', intendedRole: 'learner', phone: '+447700900019',
+      learner: { dateOfBirth: '2003-09-25', postcode: 'LS7 3PD', transmission: 'manual', experience: 'test_booked' },
+    },
+    {
+      key: 'omar', fullName: 'Omar Iqbal', email: 'omar.iqbal@example.com', intendedRole: 'learner', phone: '+447700900020',
+      learner: { dateOfBirth: '2008-02-11', postcode: 'LS4 2AZ', transmission: 'automatic', experience: 'none' },
     },
   ];
 }
@@ -117,7 +125,8 @@ export interface SeedInstructor {
   specialisms: string[];
   bufferMinutes: number;
   hours: SeedHours[];
-  learners: { key: string; usualMinutes: number; status: 'active' | 'test_booked' }[];
+  /** The status the CRM list filters on (LRN-01, LRN-05). */
+  learners: { key: string; usualMinutes: number; status: 'enquiry' | 'waiting' | 'active' | 'test_booked' | 'passed' | 'left' }[];
 }
 
 const weekdays = (days: number[], start: string, end: string): SeedHours[] => days.map((weekday) => ({ weekday, start, end }));
@@ -134,6 +143,9 @@ export const instructors: SeedInstructor[] = [
       { key: 'jack', usualMinutes: 60, status: 'active' },
       { key: 'olivia', usualMinutes: 90, status: 'active' },
       { key: 'noah', usualMinutes: 120, status: 'test_booked' },
+      // Passed and waiting, so every filter on the learner list has somebody under it.
+      { key: 'chloe', usualMinutes: 60, status: 'passed' },
+      { key: 'omar', usualMinutes: 60, status: 'waiting' },
     ],
   },
   {

@@ -32,3 +32,14 @@ export function formatTime(instant: Date, timeZone: string = DEFAULT_TIME_ZONE):
 export function formatDateTime(instant: Date, timeZone: string = DEFAULT_TIME_ZONE): string {
   return `${formatDate(instant, timeZone)}, ${formatTime(instant, timeZone)}`;
 }
+
+/** A length of time in words: "45 minutes", "1 hour", "12 hours 30 minutes". */
+export function formatMinutes(minutes: number): string {
+  const whole = Math.max(0, Math.round(minutes));
+  const hours = Math.floor(whole / 60);
+  const rest = whole % 60;
+  const hourText = hours === 1 ? '1 hour' : `${String(hours)} hours`;
+  if (hours === 0) return rest === 1 ? '1 minute' : `${String(rest)} minutes`;
+  if (rest === 0) return hourText;
+  return `${hourText} ${String(rest)} minutes`;
+}

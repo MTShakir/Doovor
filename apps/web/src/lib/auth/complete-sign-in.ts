@@ -1,6 +1,8 @@
 import 'server-only';
 import { getAccessContext } from '@repo/db';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
+import { takePendingBooking } from '@/lib/booking/pending';
+import { takeInvitation } from './invitation-cookie';
 import { availablePortals, landingPath, safeNextPath } from './portals';
 
 /**
@@ -30,6 +32,21 @@ export async function completeSignIn(next?: string | null): Promise<string> {
       await supabase.rpc('create_business', { p_type: 'school', p_name: schoolName });
     }
     access = await getAccessContext(supabase, user.id);
+  }
+
+  // An invitation opened before signing up is accepted now, once the account exists
+  // (AUTH-07). A link that has since expired simply does nothing.
+  const invitation = await takeInvitation();
+  if (invitation !== null && access.isLearner) {
+    await supabase.rpc('accept_invitation', { p_token: invitation });
+    access = await getAccessContext(supabase, user.id);
+  }
+
+  // A slot chosen on a booking link before there was an account is waiting; they go back to
+  // the link with it picked, and press the button themselves (BOK-02, D-069).
+  const pending = await takePendingBooking();
+  if (pending && access.isLearner) {
+    return `/book/${encodeURIComponent(pending.slug)}?slot=${encodeURIComponent(pending.startsAt)}`;
   }
 
   const destination = availablePortals(access).length > 0 ? safeNextPath(next, landingPath(access)) : '/start';
