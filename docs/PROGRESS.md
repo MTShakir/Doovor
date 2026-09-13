@@ -133,7 +133,7 @@ Decisions D-036 to D-050 were logged during this stretch. Two were security fixe
 
 ## In progress
 
-- Nothing. M2 is complete and its report is delivered, waiting for approval before the merge to main.
+- Nothing. M2 is complete, its report is published, and it is waiting for approval before the merge to main.
 
 ## Next
 
