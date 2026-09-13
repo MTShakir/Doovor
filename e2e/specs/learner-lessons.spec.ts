@@ -15,13 +15,14 @@ test.describe('my lessons (BOK-08, BOK-09, M2-26)', () => {
   };
 
   /**
-   * A Wednesday of its own for each width: past the fortnight the seed fills, and well inside
-   * the eight weeks a learner may book ahead (R-04).
+   * A Monday of its own for each width: past the fortnight the seed fills, and well inside the
+   * eight weeks a learner may book ahead (R-04). Mondays belong to this spec: see the table in
+   * support/database.ts.
    */
   const ownDay = (project: string): string => {
     const day = new Date();
     day.setDate(day.getDate() + 7 * (4 + (project === 'mobile' ? 0 : 1)));
-    while (day.getDay() !== 3) day.setDate(day.getDate() + 1);
+    while (day.getDay() !== 1) day.setDate(day.getDate() + 1);
     return new Intl.DateTimeFormat('en-CA', { timeZone: 'Europe/London' }).format(day);
   };
 

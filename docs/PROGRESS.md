@@ -15,6 +15,7 @@ M2 Learners and bookings has started on branch `m2-learners-bookings`. An instru
 | Task | What | PRD | State |
 |---|---|---|---|
 | M3-01 | `PaymentsProvider`: the interface, Stripe Connect with direct charges, and an in-memory fake | 13, PAY-01 | Done. One contract suite, run against the fake now and against Stripe test mode in M3-23 |
+| M3-02 | Connect Express onboarding: the account, the link, coming back, and what is still missing | PAY-01 | Done. An owner connects payments from the Money screen in either portal; only owners can. The fake's onboarding is a page of the app, so the whole round trip runs locally |
 
 ## M2 progress
 

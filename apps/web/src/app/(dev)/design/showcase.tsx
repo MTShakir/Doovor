@@ -69,7 +69,7 @@ function Label({ children }: { children: ReactNode }) {
   return <p className="text-caption font-semibold text-grey-700">{children}</p>;
 }
 
-const pillStatuses: PillStatus[] = ['confirmed', 'pending', 'completed', 'paid', 'cancelled', 'unpaid', 'overdue', 'credit', 'gap-fill', 'test-day'];
+const pillStatuses: PillStatus[] = ['confirmed', 'pending', 'completed', 'paid', 'cancelled', 'attention', 'unpaid', 'overdue', 'credit', 'gap-fill', 'test-day'];
 
 const slots = ['09:00', '10:30', '12:00', '13:30', '15:00', '16:30', '18:00'].map((label, index) => ({
   id: label,

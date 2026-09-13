@@ -157,6 +157,15 @@ export function stripePaymentsProvider(options: StripeOptions): PaymentsProvider
         };
       }),
 
+    registerPaymentDomain: (input): Promise<PaymentResult<null>> =>
+      call(async (stripe) => {
+        await stripe.paymentMethodDomains.create(
+          { domain_name: input.domain },
+          { stripeAccount: input.accountId },
+        );
+        return null;
+      }),
+
     ensureCustomer: (input): Promise<PaymentResult<{ customerId: string }>> =>
       call(async (stripe) => {
         // The app keeps its own mapping (billing_customers); this is the safety net for the

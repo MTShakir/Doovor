@@ -34,6 +34,8 @@ export const fakeCards = {
 
 interface FakeState {
   accounts: Map<string, AccountState>;
+  /** The sites each account has claimed for wallets (PAY-02). */
+  domains: Map<string, string[]>;
   customers: Map<string, { accountId: string; reference: string }>;
   cards: Map<string, SavedCard[]>;
   intents: Map<string, PaymentIntent>;
@@ -47,11 +49,18 @@ export interface FakePaymentsOptions {
   chargesEnabledAtOnce?: boolean;
   /** Where the fake's ids start, so a test can read them. */
   prefix?: string;
+  /**
+   * Where onboarding happens. Local runs point this at a page in the app itself, so the whole
+   * connect flow can be walked through without Stripe.
+   */
+  onboardingUrl?: (input: AccountLinkInput) => string;
 }
 
 export interface FakePaymentsProvider extends PaymentsProvider {
   /** What the fake has been through, for a test to look at. */
   readonly state: FakeState;
+  /** Stands in for somebody finishing Stripe's onboarding (PAY-01). */
+  completeOnboarding: (accountId: string) => boolean;
   /** Pretends the provider sent an event, for the webhook path (R-11). */
   event: (type: string, data: Record<string, unknown>, accountId?: string) => WebhookEvent;
   /** Signs a body the way the real one does, so the webhook route can be tested. */
@@ -71,6 +80,7 @@ export function fakePaymentsProvider(options: FakePaymentsOptions = {}): FakePay
 
   const state: FakeState = {
     accounts: new Map(),
+    domains: new Map(),
     customers: new Map(),
     cards: new Map(),
     intents: new Map(),
@@ -98,8 +108,22 @@ export function fakePaymentsProvider(options: FakePaymentsOptions = {}): FakePay
   return {
     state,
 
+    completeOnboarding: (accountId) => {
+      const account = state.accounts.get(accountId);
+      if (!account) return false;
+      state.accounts.set(accountId, {
+        ...account,
+        chargesEnabled: true,
+        payoutsEnabled: true,
+        detailsSubmitted: true,
+        requirements: [],
+      });
+      return true;
+    },
+
     reset: () => {
       state.accounts.clear();
+      state.domains.clear();
       state.customers.clear();
       state.cards.clear();
       state.intents.clear();
@@ -125,12 +149,10 @@ export function fakePaymentsProvider(options: FakePaymentsOptions = {}): FakePay
       if (!state.accounts.has(input.accountId)) {
         return Promise.resolve({ ok: false, reason: 'NOT_FOUND', message: 'No such account.' });
       }
-      return Promise.resolve(
-        ok({
-          url: `https://connect.example.test/${input.accountId}?return=${encodeURIComponent(input.returnUrl)}`,
-          expiresAt: new Date(Date.now() + 5 * 60_000),
-        }),
-      );
+      const url =
+        options.onboardingUrl?.(input) ??
+        `https://connect.example.test/${input.accountId}?return=${encodeURIComponent(input.returnUrl)}`;
+      return Promise.resolve(ok({ url, expiresAt: new Date(Date.now() + 5 * 60_000) }));
     },
 
     getAccount: (accountId): Promise<PaymentResult<AccountState>> => {
@@ -138,6 +160,12 @@ export function fakePaymentsProvider(options: FakePaymentsOptions = {}): FakePay
       return Promise.resolve(
         account ? ok(account) : { ok: false, reason: 'NOT_FOUND', message: 'No such account.' },
       );
+    },
+
+    registerPaymentDomain: (input): Promise<PaymentResult<null>> => {
+      const known = state.domains.get(input.accountId) ?? [];
+      if (!known.includes(input.domain)) state.domains.set(input.accountId, [...known, input.domain]);
+      return Promise.resolve(ok(null));
     },
 
     ensureCustomer: (input): Promise<PaymentResult<{ customerId: string }>> => {

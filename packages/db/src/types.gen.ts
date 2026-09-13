@@ -410,6 +410,9 @@ export type Database = {
           status: Database["public"]["Enums"]["business_status"]
           stripe_account_id: string | null
           stripe_charges_enabled: boolean
+          stripe_connected_at: string | null
+          stripe_details_submitted: boolean
+          stripe_payouts_enabled: boolean
           timezone: string
           type: Database["public"]["Enums"]["business_type"]
           updated_at: string
@@ -432,6 +435,9 @@ export type Database = {
           status?: Database["public"]["Enums"]["business_status"]
           stripe_account_id?: string | null
           stripe_charges_enabled?: boolean
+          stripe_connected_at?: string | null
+          stripe_details_submitted?: boolean
+          stripe_payouts_enabled?: boolean
           timezone?: string
           type: Database["public"]["Enums"]["business_type"]
           updated_at?: string
@@ -454,6 +460,9 @@ export type Database = {
           status?: Database["public"]["Enums"]["business_status"]
           stripe_account_id?: string | null
           stripe_charges_enabled?: boolean
+          stripe_connected_at?: string | null
+          stripe_details_submitted?: boolean
+          stripe_payouts_enabled?: boolean
           timezone?: string
           type?: Database["public"]["Enums"]["business_type"]
           updated_at?: string
@@ -1930,6 +1939,19 @@ export type Database = {
         }
         Returns: string
       }
+      set_payments_account: {
+        Args: { p_account_id: string; p_business_id: string }
+        Returns: Json
+      }
+      set_payments_state: {
+        Args: {
+          p_business_id: string
+          p_charges_enabled: boolean
+          p_details_submitted: boolean
+          p_payouts_enabled: boolean
+        }
+        Returns: number
+      }
       set_supervisor: {
         Args: { p_instructor_id: string; p_supervised: boolean }
         Returns: boolean
@@ -2072,6 +2094,15 @@ export type Database = {
       system_release_sms: {
         Args: { p_business_id: string }
         Returns: undefined
+      }
+      system_set_payments_state: {
+        Args: {
+          p_account_id: string
+          p_charges_enabled: boolean
+          p_details_submitted: boolean
+          p_payouts_enabled: boolean
+        }
+        Returns: number
       }
       system_touch_push_target: { Args: { p_id: string }; Returns: undefined }
       system_unlist_expired_badges: {

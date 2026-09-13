@@ -154,6 +154,12 @@ export interface PaymentsProvider {
   createAccountLink: (input: AccountLinkInput) => Promise<PaymentResult<AccountLink>>;
   getAccount: (accountId: string) => Promise<PaymentResult<AccountState>>;
 
+  /**
+   * Registers the site the Payment Element runs on, so wallets are offered (PAY-02). Apple Pay
+   * refuses to appear on a domain the account has not claimed.
+   */
+  registerPaymentDomain: (input: { accountId: string; domain: string }) => Promise<PaymentResult<null>>;
+
   /** A person who pays a Business, kept on that Business's own account (PAY-02, PAY-12). */
   ensureCustomer: (input: {
     accountId: string;

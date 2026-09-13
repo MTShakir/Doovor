@@ -11,11 +11,14 @@ import { snap, tapUntil } from '../support/helpers';
 test.describe('acceptance tests (PRD 17.2)', () => {
   test.use({ storageState: authFile('instructor') });
 
-  /** A Wednesday of its own for each width, past the fortnight the seed fills. */
-  const ownWednesday = (project: string): string => {
+  /**
+   * A Friday of its own for each width, past the fortnight the seed fills. Fridays belong to
+   * this spec: see the table in support/database.ts.
+   */
+  const ownFriday = (project: string): string => {
     const day = new Date();
     day.setDate(day.getDate() + 7 * (12 + (project === 'mobile' ? 0 : 1)));
-    while (day.getDay() !== 3) day.setDate(day.getDate() + 1);
+    while (day.getDay() !== 5) day.setDate(day.getDate() + 1);
     return day.toISOString().slice(0, 10);
   };
 
@@ -36,7 +39,7 @@ test.describe('acceptance tests (PRD 17.2)', () => {
   const day = (date: Date): string => date.toISOString().slice(0, 10);
 
   test('acceptance-01: the half hour after a lesson belongs to the travel', async ({ page }, testInfo) => {
-    const on = ownWednesday(testInfo.project.name);
+    const on = ownFriday(testInfo.project.name);
     await clearDiary('Sarah Khan', on);
     // Ten to eleven, with thirty minutes of travel after it (D-001, R-01).
     await bookLesson('Sarah Khan', 'jack.taylor@example.com', on, '10:00');
@@ -47,6 +50,9 @@ test.describe('acceptance tests (PRD 17.2)', () => {
       page.getByRole('dialog', { name: 'Book a lesson' }),
     );
     const sheet = page.getByRole('dialog', { name: 'Book a lesson' });
+    // The sheet opens on the day the diary is showing. Waiting for that is waiting for the
+    // page to be interactive, which is what everything after this depends on (D-043).
+    await expect(sheet.getByLabel('Which day?')).toHaveValue(on);
     await sheet.getByLabel('Who is it for?').selectOption({ label: 'Olivia Brown' });
 
     // Eleven is inside the travel time, so it is not offered. Half past is.
@@ -81,6 +87,7 @@ test.describe('acceptance tests (PRD 17.2)', () => {
       page.getByRole('dialog', { name: 'Book a lesson' }),
     );
     const sheet = page.getByRole('dialog', { name: 'Book a lesson' });
+    await expect(sheet.getByLabel('Which day?')).toHaveValue(day(before));
     await sheet.getByLabel('Who is it for?').selectOption({ label: 'Jack Taylor' });
     await sheet.getByLabel('How often?').selectOption('4');
     await sheet.getByRole('button', { name: hour }).click();

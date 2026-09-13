@@ -62,6 +62,19 @@ export async function setBookingStatus(
 /**
  * Clears one instructor's lessons on one local day, so a booking test starts from an empty
  * diary however the last run ended. Local only, like everything in this module.
+ *
+ * Every spec that clears a diary books on a weekday of its own, because clearing a day takes
+ * out whatever another spec had just put there:
+ *
+ * | Weekday   | Spec                  |
+ * |-----------|-----------------------|
+ * | Monday    | learner-lessons       |
+ * | Tuesday   | self-booking          |
+ * | Wednesday | booking               |
+ * | Thursday  | booking-requests      |
+ * | Friday    | acceptance            |
+ *
+ * Within a weekday, each width takes its own week, because both widths run at once.
  */
 export async function clearDiary(instructorName: string, date: string): Promise<void> {
   await withDatabase(async (sql) => {
@@ -291,5 +304,36 @@ export async function lessonsOn(instructorName: string, date: string): Promise<L
       learnerName: row.learner_name,
       status: row.status,
     }));
+  });
+}
+
+/** Forgets the payments account a Business connected, so a test starts from nothing. */
+export async function clearPaymentsAccount(ownerEmail: string): Promise<void> {
+  await withDatabase(async (sql) => {
+    await sql`
+      update public.businesses b
+         set stripe_account_id = null,
+             stripe_charges_enabled = false,
+             stripe_payouts_enabled = false,
+             stripe_details_submitted = false,
+             stripe_connected_at = null
+        from public.memberships m
+        join public.users u on u.id = m.user_id
+       where m.business_id = b.id
+         and m.role = 'owner'
+         and lower(u.email) = lower(${ownerEmail})`;
+  });
+}
+
+/** The account a Business is connected to, as the database has it. */
+export async function paymentsAccountOf(ownerEmail: string): Promise<string | null> {
+  return withDatabase(async (sql) => {
+    const rows = await sql<{ stripe_account_id: string | null }[]>`
+      select b.stripe_account_id
+        from public.businesses b
+        join public.memberships m on m.business_id = b.id and m.role = 'owner'
+        join public.users u on u.id = m.user_id
+       where lower(u.email) = lower(${ownerEmail})`;
+    return rows[0]?.stripe_account_id ?? null;
   });
 }
