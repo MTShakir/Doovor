@@ -129,16 +129,15 @@ Decisions D-036 to D-050 were logged during this stretch. Two were security fixe
 | End to end (Playwright) | 229 passed at 390 px and 1440 px, including acceptance-01, 02, 09 and 12 at both widths, none skipped, stable across repeated full runs |
 | Lint, typecheck, copy guard | Clean |
 | CI on GitHub | Last read green on M1. Not read for the M2 branch: the repository is private and this machine has no GitHub CLI |
-| Staging (hosted) | All 23 migrations applied. Security Advisor: 0 errors, 17 warnings, 16 of them the expected `security definer` pattern (D-051) and one a dashboard switch for leaked password protection, now in the runbook |
+| Staging (hosted) | All 46 migrations applied, M2 pushed on 2026-09-13. Security Advisor: 0 errors, 39 warnings, 38 of them the expected `security definer` pattern (D-051) and one the dashboard switch for leaked password protection |
 
 ## In progress
 
-- Nothing. M2 is complete, its report is published, and it is waiting for approval before the merge to main.
+- M3 Payments. M2 was approved on 2026-09-13, merged into `main` and pushed to staging.
 
 ## Next
 
 - M3: payments. Stripe Connect, the Payment Element, credit, and the money side of cancellation.
-- The M2 migrations are applied locally only. They go to staging with the next staging push.
 
 ## Blockers
 
