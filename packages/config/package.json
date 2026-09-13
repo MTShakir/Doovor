@@ -9,6 +9,7 @@
     "./plans": "./src/plans.ts",
     "./eslint/base": "./eslint/base.js",
     "./eslint/core": "./eslint/core.js",
+    "./eslint/providers": "./eslint/providers.js",
     "./eslint/react": "./eslint/react.js",
     "./eslint/next": "./eslint/next.js",
     "./tsconfig/base.json": "./tsconfig/base.json",

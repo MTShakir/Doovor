@@ -10,6 +10,12 @@ M1 Instructor core is approved and merged to `main`, all 24 tasks, with its fift
 
 M2 Learners and bookings has started on branch `m2-learners-bookings`. An instructor signs up, is set up in five minutes, is verified by a person, and has a diary that keeps itself up to date.
 
+## M3 progress
+
+| Task | What | PRD | State |
+|---|---|---|---|
+| M3-01 | `PaymentsProvider`: the interface, Stripe Connect with direct charges, and an in-memory fake | 13, PAY-01 | Done. One contract suite, run against the fake now and against Stripe test mode in M3-23 |
+
 ## M2 progress
 
 | Task | What | PRD | State |

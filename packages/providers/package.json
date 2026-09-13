@@ -6,6 +6,7 @@
   "exports": {
     "./email": "./src/email/index.ts",
     "./geo": "./src/geo/index.ts",
+    "./payments": "./src/payments/index.ts",
     "./map": "./src/map/index.ts",
     "./rate-limit": "./src/rate-limit/index.ts",
     "./sms": "./src/sms/index.ts"
@@ -16,7 +17,8 @@
     "test": "vitest run --coverage"
   },
   "dependencies": {
-    "@repo/core": "workspace:*"
+    "@repo/core": "workspace:*",
+    "stripe": "^22.6.2"
   },
   "devDependencies": {
     "@repo/config": "workspace:*",

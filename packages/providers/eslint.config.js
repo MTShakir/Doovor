@@ -1,3 +1,3 @@
-import { core } from '@repo/config/eslint/core';
+import { providers } from '@repo/config/eslint/providers';
 
-export default core(import.meta.dirname);
+export default providers(import.meta.dirname);
