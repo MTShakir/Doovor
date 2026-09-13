@@ -29,7 +29,9 @@
     "./csv": "./src/csv.ts",
     "./availability": "./src/availability.ts",
     "./slots": "./src/slots.ts",
-    "./cancellation": "./src/cancellation.ts"
+    "./cancellation": "./src/cancellation.ts",
+    "./notifications": "./src/notifications/index.ts",
+    "./schemas/notification": "./src/schemas/notification.ts"
   },
   "scripts": {
     "lint": "eslint .",

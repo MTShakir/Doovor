@@ -1122,6 +1122,92 @@ export type Database = {
           },
         ]
       }
+      notification_preferences: {
+        Row: {
+          category: Database["public"]["Enums"]["notification_category"]
+          channel: Database["public"]["Enums"]["notification_channel"]
+          enabled: boolean
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          category: Database["public"]["Enums"]["notification_category"]
+          channel: Database["public"]["Enums"]["notification_channel"]
+          enabled: boolean
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          category?: Database["public"]["Enums"]["notification_category"]
+          channel?: Database["public"]["Enums"]["notification_channel"]
+          enabled?: boolean
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      notifications: {
+        Row: {
+          body: string
+          business_id: string | null
+          category: Database["public"]["Enums"]["notification_category"]
+          channels: Database["public"]["Enums"]["notification_channel"][]
+          created_at: string
+          dedupe_key: string
+          entity_id: string | null
+          entity_type: string | null
+          id: string
+          kind: string
+          link: string | null
+          read_at: string | null
+          sent_at: string | null
+          title: string
+          user_id: string
+        }
+        Insert: {
+          body: string
+          business_id?: string | null
+          category: Database["public"]["Enums"]["notification_category"]
+          channels?: Database["public"]["Enums"]["notification_channel"][]
+          created_at?: string
+          dedupe_key: string
+          entity_id?: string | null
+          entity_type?: string | null
+          id?: string
+          kind: string
+          link?: string | null
+          read_at?: string | null
+          sent_at?: string | null
+          title: string
+          user_id: string
+        }
+        Update: {
+          body?: string
+          business_id?: string | null
+          category?: Database["public"]["Enums"]["notification_category"]
+          channels?: Database["public"]["Enums"]["notification_channel"][]
+          created_at?: string
+          dedupe_key?: string
+          entity_id?: string | null
+          entity_type?: string | null
+          id?: string
+          kind?: string
+          link?: string | null
+          read_at?: string | null
+          sent_at?: string | null
+          title?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "notifications_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "businesses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       outbox_events: {
         Row: {
           attempts: number
@@ -1809,6 +1895,7 @@ export type Database = {
         }
         Returns: Database["public"]["Enums"]["verification_status"]
       }
+      system_booking_notice: { Args: { p_booking_id: string }; Returns: Json }
       system_claim_badge_reminders: {
         Args: { p_today?: string }
         Returns: {
@@ -1852,6 +1939,17 @@ export type Database = {
         Returns: number
       }
       system_mark_outbox_sent: { Args: { p_ids: string[] }; Returns: number }
+      system_notification_mutes: {
+        Args: {
+          p_category: Database["public"]["Enums"]["notification_category"]
+          p_user_ids: string[]
+        }
+        Returns: {
+          channel: Database["public"]["Enums"]["notification_channel"]
+          user_id: string
+        }[]
+      }
+      system_notify: { Args: { p_rows: Json }; Returns: number }
       system_rate_limit_hit: {
         Args: {
           p_action: string
@@ -1925,6 +2023,8 @@ export type Database = {
         | "custom"
       membership_role: "owner" | "manager" | "instructor"
       membership_status: "invited" | "active" | "deactivated"
+      notification_category: "bookings" | "reminders" | "money" | "account"
+      notification_channel: "in_app" | "email" | "push" | "sms"
       pickup_kind: "home" | "school" | "work" | "custom"
       plan_key: "free" | "pro" | "school"
       platform_role: "super_admin" | "support_admin"
@@ -2121,6 +2221,8 @@ export const Constants = {
       ],
       membership_role: ["owner", "manager", "instructor"],
       membership_status: ["invited", "active", "deactivated"],
+      notification_category: ["bookings", "reminders", "money", "account"],
+      notification_channel: ["in_app", "email", "push", "sms"],
       pickup_kind: ["home", "school", "work", "custom"],
       plan_key: ["free", "pro", "school"],
       platform_role: ["super_admin", "support_admin"],

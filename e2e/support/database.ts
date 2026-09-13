@@ -200,3 +200,45 @@ export async function bookLesson(
        where p.display_name = ${instructorName}`;
   });
 }
+
+/** Everything one person has been told, cleared so a test starts from a quiet inbox. */
+export async function clearNotifications(email: string): Promise<void> {
+  await withDatabase(async (sql) => {
+    await sql`
+      delete from public.notifications n
+       using public.users u
+       where u.id = n.user_id and lower(u.email) = lower(${email})`;
+    await sql`
+      delete from public.notification_preferences p
+       using public.users u
+       where u.id = p.user_id and lower(u.email) = lower(${email})`;
+  });
+}
+
+export interface SeededNotification {
+  kind: string;
+  category: 'bookings' | 'reminders' | 'money' | 'account';
+  title: string;
+  body: string;
+  link?: string | null;
+}
+
+/** Writes what a job would have written, as the job does: through system_notify. Local only. */
+export async function notify(email: string, one: SeededNotification): Promise<void> {
+  await withDatabase(async (sql) => {
+    const rows = await sql<{ id: string }[]>`select id from public.users where lower(email) = lower(${email})`;
+    const userId = rows[0]?.id;
+    if (!userId) throw new Error(`No account for ${email}`);
+    const row = {
+      user_id: userId,
+      kind: one.kind,
+      category: one.category,
+      title: one.title,
+      body: one.body,
+      link: one.link ?? null,
+      channels: ['in_app', 'push'],
+      dedupe_key: `${one.kind}:${userId}:${one.title}`,
+    };
+    await sql`select public.system_notify(${sql.json([row])})`;
+  });
+}

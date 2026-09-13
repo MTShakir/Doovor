@@ -88,7 +88,6 @@ declare
   v_id uuid;
   v_recurrence uuid;
   v_last date;
-  n integer;
 begin
   if v_user is null then
     raise exception 'NOT_AUTHENTICATED' using errcode = '42501';

@@ -57,6 +57,8 @@ M2 Learners and bookings has started on branch `m2-learners-bookings`. An instru
 
 | M2-26 | The learner's own lessons: what is coming up, what has happened, and the move and cancel sheets | BOK-08, BOK-09, 8.2 | Done. A learner is told what a late cancellation costs before they confirm it, and the times either side of the lesson they are moving are now offered |
 
+| M2-27 | The notification core: the Appendix B catalogue, `notifications` and `notification_preferences`, the settings screen and the job that writes them | NTF-01, NTF-03, NTF-04 | Done. A repeated event writes one row, not two, and a service message reaches the inbox whatever is switched off. Proved end to end locally: a booking event went outbox to job runner to two notifications, one worded for each side |
+
 ## M1 progress
 
 | Task | What | PRD | State |
@@ -114,16 +116,16 @@ Decisions D-036 to D-050 were logged during this stretch. Two were security fixe
 
 | Suite | Result |
 |---|---|
-| Unit (Vitest) | 446 passed across 6 packages; `packages/core` line coverage 99.3%, `packages/providers` 100% |
-| Database (pgTAP) | 475 assertions in 39 files, all passing; SQL lint clean |
-| End to end (Playwright) | 218 passed at 390 px and 1440 px, none skipped, stable across repeated full runs |
+| Unit (Vitest) | 479 passed across 6 packages; `packages/core` line coverage 99.3%, `packages/providers` 100% |
+| Database (pgTAP) | 489 assertions in 40 files, all passing; SQL lint clean |
+| End to end (Playwright) | 222 passed at 390 px and 1440 px, none skipped, stable across repeated full runs |
 | Lint, typecheck, copy guard | Clean |
 | CI on GitHub | Green: lint and unit, database, end to end against a production build |
 | Staging (hosted) | All 23 migrations applied. Security Advisor: 0 errors, 17 warnings, 16 of them the expected `security definer` pattern (D-051) and one a dashboard switch for leaked password protection, now in the runbook |
 
 ## In progress
 
-- M2-27: the notification core, which is where the booking events already being written go.
+- M2-28: email, so the notifications the core writes reach people who are not looking at the app.
 
 ## Next
 
