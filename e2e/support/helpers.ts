@@ -59,17 +59,25 @@ export async function fillUntil(field: Locator, value: string): Promise<void> {
 }
 
 /**
- * Picks a date by typing it, the way somebody with a keyboard does. Playwright's fill sets
- * the value on the element without the page hearing about it, which is no use for a field a
- * component is listening to; real keystrokes always are.
+ * Picks a date in a date field that a component is listening to.
  *
- * The locale is en-GB throughout the suite, so the boxes are day, month, year.
+ * Typing it in cannot work everywhere: the order of the day, month and year boxes comes from
+ * the machine the browser runs on, not from the page's locale, so the same keystrokes make
+ * 3 November here and nonsense on a Linux runner. Playwright's fill does not work either: it
+ * sets the value through the element's own property, which React has replaced with one that
+ * remembers the value, so the input event after it looks like no change at all. The setter on
+ * the prototype goes around that, and the events that follow are ones React believes. The
+ * loop is for a page that is not interactive yet, whose first render puts the old value back
+ * (D-043).
  */
 export async function chooseDate(field: Locator, value: string): Promise<void> {
-  const [year, month, day] = value.split('-');
   await expect(async () => {
-    await field.click();
-    await field.pressSequentially(`${day ?? ''}${month ?? ''}${year ?? ''}`);
+    await field.evaluate((input, next) => {
+      const element = input as HTMLInputElement;
+      Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value')?.set?.call(element, next);
+      element.dispatchEvent(new Event('input', { bubbles: true }));
+      element.dispatchEvent(new Event('change', { bubbles: true }));
+    }, value);
     await expect(field).toHaveValue(value, { timeout: 1000 });
   }).toPass({ timeout: 15_000 });
 }
