@@ -13,6 +13,8 @@ export function hoursTaught(minutes: number): string {
 export interface DayViewProps {
   /** BOK-06: this diary belongs to somebody who may answer a request in it. */
   canAnswer?: boolean;
+  /** BOK-08, BOK-09: the rules a cancellation is judged by, for the warning before one. */
+  rules?: { cancellationWindowHours: number; lateFeePercent: number };
   lessons: DiaryEntry[];
   /** The hours worked that day, for the gaps between lessons. */
   opens: Date | null;
@@ -21,7 +23,7 @@ export interface DayViewProps {
 }
 
 /** The day, top to bottom: what is on, and the gaps between (DIA-03, M1-19). */
-export function DayView({ lessons, opens, closes, showInstructor = false, canAnswer = false }: DayViewProps) {
+export function DayView({ lessons, opens, closes, showInstructor = false, canAnswer = false, rules }: DayViewProps) {
   if (lessons.length === 0) {
     return (
       <EmptyState
@@ -46,7 +48,7 @@ export function DayView({ lessons, opens, closes, showInstructor = false, canAns
           const gap = gapAfter.get(lesson.endsAt.getTime());
           return (
             <li key={lesson.id}>
-              <LessonRow lesson={lesson} showInstructor={showInstructor} canAnswer={canAnswer} />
+              <LessonRow lesson={lesson} showInstructor={showInstructor} canAnswer={canAnswer} rules={rules} />
               {gap ? (
                 <p className="border-t border-dashed border-grey-200 bg-grey-100 px-4 py-2 text-small text-grey-700">
                   Free until {formatTime(gap.endsAt)}, {hoursTaught(gap.minutes).toLowerCase()}

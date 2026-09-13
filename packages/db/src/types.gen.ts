@@ -1646,6 +1646,10 @@ export type Database = {
         }
         Returns: undefined
       }
+      cancel_booking: {
+        Args: { p_booking_id: string; p_reason?: string }
+        Returns: Json
+      }
       covers_postcode: {
         Args: { p_instructor_id: string; p_postcode: string }
         Returns: boolean
@@ -1731,6 +1735,14 @@ export type Database = {
         Returns: string[]
       }
       request_account_deletion: { Args: { p_reason?: string }; Returns: string }
+      reschedule_booking: {
+        Args: {
+          p_booking_id: string
+          p_duration_minutes?: number
+          p_starts_at: string
+        }
+        Returns: string
+      }
       revoke_my_session: { Args: { p_session_id: string }; Returns: boolean }
       set_availability_exception: {
         Args: {

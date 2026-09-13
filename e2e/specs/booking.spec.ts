@@ -1,6 +1,6 @@
 import { expect, test } from '@playwright/test';
 import { authFile } from '../support/accounts';
-import { clearDiary } from '../support/database';
+import { acceptRequests, clearDiary, requestLesson } from '../support/database';
 import { expectAccessible, snap, tapUntil } from '../support/helpers';
 
 /** The instructor's three taps: who it is for, when it is, and yes (BOK-01, BOK-03, M2-16). */
@@ -13,8 +13,11 @@ test.describe('booking a lesson (BOK-01, M2-16)', () => {
    * ahead of the fortnight the seed fills, too.
    */
   const openDay = (project: string, nth: number): string => {
+    // A week each for the tests that book one lesson, and a stretch far enough out for the
+    // one that books four, so its later weeks cannot land on anybody else's day.
+    const weeks = nth < 8 ? 3 + nth : 22;
     const day = new Date();
-    day.setDate(day.getDate() + 7 * (3 + nth + (project === 'mobile' ? 0 : 3)));
+    day.setDate(day.getDate() + 7 * (weeks + (project === 'mobile' ? 0 : 6)));
     while (day.getDay() !== 3) day.setDate(day.getDate() + 1);
     return day.toISOString().slice(0, 10);
   };
@@ -106,7 +109,7 @@ test.describe('booking a lesson (BOK-01, M2-16)', () => {
   });
 
   test('books the same slot every week (BOK-05) @desktop-only', async ({ page }, testInfo) => {
-    const day = await emptyDay(testInfo.project.name, 3);
+    const day = await emptyDay(testInfo.project.name, 8);
     const nextWeek = new Date(`${day}T12:00:00Z`);
     nextWeek.setDate(nextWeek.getDate() + 7);
     const after = nextWeek.toISOString().slice(0, 10);
@@ -130,5 +133,43 @@ test.describe('booking a lesson (BOK-01, M2-16)', () => {
     await expect(
       page.getByRole('article').filter({ hasText: 'Jack Taylor' }).filter({ hasText: '13:00' }),
     ).toBeVisible();
+  });
+
+  test('moves a lesson to another time (BOK-08)', async ({ page }, testInfo) => {
+    const day = await emptyDay(testInfo.project.name, 4);
+    await requestLesson('Sarah Khan', 'jack.taylor@example.com', `${day}T09:00:00`);
+    await acceptRequests('Sarah Khan', day);
+
+    await page.goto(`/app/instructor/diary?view=day&date=${day}`);
+    const lesson = page.getByRole('article').filter({ hasText: 'Jack Taylor' });
+    await expect(lesson).toContainText('09:00');
+
+    await tapUntil(lesson.getByRole('button', { name: 'Move' }), page.getByRole('dialog', { name: /^Move Jack/ }));
+    await page.getByRole('button', { name: '15:00' }).click();
+    await page.getByRole('button', { name: 'Move to 15:00' }).click();
+
+    await expect(page.getByText('Moved to')).toBeVisible();
+    await expect(page.getByRole('article').filter({ hasText: 'Jack Taylor' })).toContainText('15:00');
+  });
+
+  test('cancels a lesson, and has to say why (BOK-09) @desktop-only', async ({ page }, testInfo) => {
+    const day = await emptyDay(testInfo.project.name, 5);
+    await requestLesson('Sarah Khan', 'olivia.brown@example.com', `${day}T11:00:00`);
+    await acceptRequests('Sarah Khan', day);
+
+    await page.goto(`/app/instructor/diary?view=day&date=${day}`);
+    const lesson = page.getByRole('article').filter({ hasText: 'Olivia Brown' });
+
+    await tapUntil(lesson.getByRole('button', { name: 'Cancel' }), page.getByRole('dialog', { name: /^Cancel Olivia/ }));
+    // Nothing happens until there is a reason to give the learner (R-08).
+    await expect(page.getByRole('button', { name: 'Cancel the lesson' })).toBeDisabled();
+    await page.getByLabel('Why?').fill('Car in for repair');
+    await expect(page.getByRole('button', { name: 'Cancel the lesson' })).toBeEnabled();
+    await expectAccessible(page);
+    await snap(page, testInfo, 'booking-cancel', { fullPage: false });
+    await page.getByRole('button', { name: 'Cancel the lesson' }).click();
+
+    await expect(page.getByText('cancelled')).toBeVisible();
+    await expect(lesson).toContainText('Cancelled');
   });
 });

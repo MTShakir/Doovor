@@ -142,3 +142,51 @@ export async function bookWeekly(input: unknown): Promise<Result<WeeklyOutcome>>
       .map((week) => ({ startsAt: week.starts_at, reason: week.problem ?? 'UNKNOWN' })),
   });
 }
+
+const cancelSchema = z.object({
+  bookingId: z.uuid(),
+  reason: z.string().trim().min(1, { error: 'Say why, so the learner knows' }).max(500),
+});
+
+/** BOK-09: the instructor calls a lesson off, and says why (R-08). */
+export async function cancelLesson(input: unknown): Promise<Result<null>> {
+  const parsed = cancelSchema.safeParse(input);
+  if (!parsed.success) return err('VALIDATION_FAILED', undefined, fieldErrors(parsed.error));
+
+  await requirePortal('instructor');
+  const supabase = await createSupabaseServerClient();
+  const { error } = await supabase.rpc('cancel_booking', {
+    p_booking_id: parsed.data.bookingId,
+    p_reason: parsed.data.reason,
+  });
+  if (error) return err(parsePostgresError(error).code);
+
+  revalidatePath('/app/instructor/diary');
+  revalidatePath('/app/instructor');
+  return ok(null);
+}
+
+const moveSchema = z.object({
+  bookingId: z.uuid(),
+  startsAt: z.iso.datetime({ offset: true }),
+  durationMinutes: z.coerce.number().int().min(15).max(480).optional(),
+});
+
+/** BOK-08: the same lesson, at another time. */
+export async function moveLesson(input: unknown): Promise<Result<null>> {
+  const parsed = moveSchema.safeParse(input);
+  if (!parsed.success) return err('VALIDATION_FAILED');
+
+  await requirePortal('instructor');
+  const supabase = await createSupabaseServerClient();
+  const { error } = await supabase.rpc('reschedule_booking', {
+    p_booking_id: parsed.data.bookingId,
+    p_starts_at: parsed.data.startsAt,
+    p_duration_minutes: parsed.data.durationMinutes,
+  });
+  if (error) return err(parsePostgresError(error).code);
+
+  revalidatePath('/app/instructor/diary');
+  revalidatePath('/app/instructor');
+  return ok(null);
+}

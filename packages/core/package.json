@@ -28,7 +28,8 @@
     "./learners": "./src/learners.ts",
     "./csv": "./src/csv.ts",
     "./availability": "./src/availability.ts",
-    "./slots": "./src/slots.ts"
+    "./slots": "./src/slots.ts",
+    "./cancellation": "./src/cancellation.ts"
   },
   "scripts": {
     "lint": "eslint .",

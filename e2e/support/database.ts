@@ -131,3 +131,17 @@ export async function requestLesson(instructorName: string, learnerEmail: string
        where p.display_name = ${instructorName}`;
   });
 }
+
+/** Confirms whatever is waiting in an instructor's diary on one local day. Local only. */
+export async function acceptRequests(instructorName: string, date: string): Promise<void> {
+  await withDatabase(async (sql) => {
+    await sql`
+      update public.bookings b
+         set status = 'confirmed', expires_at = null
+        from public.instructor_profiles p
+       where p.id = b.instructor_id
+         and p.display_name = ${instructorName}
+         and b.status = 'requested'
+         and (b.starts_at at time zone 'Europe/London')::date = ${date}::date`;
+  });
+}

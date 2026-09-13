@@ -47,6 +47,10 @@ M2 Learners and bookings has started on branch `m2-learners-bookings`. An instru
 | M2-19 | Recurring bookings: a weekly plan, the lessons it makes, and a result for every week rather than all or nothing | BOK-05, R-13 | Done. acceptance-09 at database level: a weekly nine o clock lesson is still at nine o clock after the March clock change |
 | M2-20 | Repeat weekly in the booking sheet, the weeks that clashed listed back, and a nightly job that keeps an open ended slot booked a month ahead | BOK-05 | Done. Four weeks booked in one go from the diary |
 
+| M2-21 | The cancellation policy in core: who cancelled, how late, how it was paid for | R-06 to R-09 | Done. Eleven rows of the policy table as eleven unit tests, no-show included |
+| M2-22 | `cancel_booking`: a reason from an instructor, the late flag and the fee recorded on the booking | BOK-09 | Done. An instructor cancelling costs the learner nothing however late it is, and has to say why |
+| M2-23 | `reschedule_booking`: an instructor moves a lesson whenever they like, a learner until the free window closes | BOK-08 | Done. A lesson is not counted as being in its own way, and a learner inside the window is told to ring instead |
+
 ## M1 progress
 
 | Task | What | PRD | State |
@@ -113,7 +117,7 @@ Decisions D-036 to D-050 were logged during this stretch. Two were security fixe
 
 ## In progress
 
-- M2-21 and M2-22: the cancellation policy in core, then `cancel_booking`.
+- M2-24: dragging a lesson to another time on a desktop, and holding it on a phone.
 
 ## Next
 

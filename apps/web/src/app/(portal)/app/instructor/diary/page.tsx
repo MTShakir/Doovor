@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import { resolveBookingRules } from '@repo/core/booking-rules';
 import { byDay } from '@repo/core/diary';
 import { formatCalendarDate, formatDate, isoWeekday, localToUtc, todayInZone, utcToLocal } from '@repo/core/time';
 import { PageHeader } from '@repo/ui/app-shell';
@@ -45,10 +46,11 @@ async function Diary({ searchParams }: DiaryParams) {
   if (!membership?.instructorProfileId) return null;
 
   const range = windowFor(view, date);
-  const [lessons, hours, learners] = await Promise.all([
+  const [lessons, hours, learners, rules] = await Promise.all([
     lessonsBetween(range.startsAt, range.endsAt, [membership.instructorProfileId]),
     workingHours(membership.instructorProfileId),
     bookableLearners(membership.instructorProfileId),
+    businessRules(membership.instructorProfileId),
   ]);
 
   const worked = hours.get(isoWeekday(date));
@@ -57,7 +59,7 @@ async function Diary({ searchParams }: DiaryParams) {
 
   const dayOf = (instant: Date) => utcToLocal(instant).date;
   const onThisDay = lessons.filter((lesson) => dayOf(lesson.startsAt) === date);
-  const day = <DayView lessons={onThisDay} opens={opens} closes={closes} canAnswer />;
+  const day = <DayView lessons={onThisDay} opens={opens} closes={closes} canAnswer rules={rules} />;
   const week = <WeekView from={range.from} lessons={lessons} dayOf={dayOf} today={todayInZone()} />;
 
   return (
@@ -101,4 +103,27 @@ async function workingHours(instructorId: string): Promise<Map<number, { start: 
   return new Map(
     (data ?? []).map((row) => [row.weekday, { start: row.start_time.slice(0, 5), end: row.end_time.slice(0, 5) }]),
   );
+}
+
+/** What a cancellation would mean here, for the warning before one (R-06, BOK-09). */
+async function businessRules(instructorProfileId: string): Promise<{
+  cancellationWindowHours: number;
+  lateFeePercent: number;
+}> {
+  const supabase = await createSupabaseServerClient();
+  const [profile, platform] = await Promise.all([
+    supabase
+      .from('instructor_profiles')
+      .select('buffer_minutes, instant_book, businesses!instructor_profiles_business_id_fkey(settings)')
+      .eq('id', instructorProfileId)
+      .maybeSingle(),
+    supabase.from('platform_settings').select('value').eq('key', 'booking_defaults').maybeSingle(),
+  ]);
+
+  const rules = resolveBookingRules(
+    platform.data?.value as Record<string, unknown> | null,
+    profile.data?.businesses.settings as Record<string, unknown> | null,
+    { bufferMinutes: profile.data?.buffer_minutes, instantBook: profile.data?.instant_book },
+  );
+  return { cancellationWindowHours: rules.cancellationWindowHours, lateFeePercent: rules.lateFeePercent };
 }

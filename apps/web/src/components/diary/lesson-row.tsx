@@ -4,6 +4,7 @@ import { formatTime } from '@repo/core/time';
 import { StatusPill } from '@repo/ui/status-pill';
 import { MapPin } from 'lucide-react';
 import type { DiaryEntry } from '@/lib/diary/lessons';
+import { LessonActions } from './lesson-actions';
 import { RequestActions } from './request-actions';
 
 /**
@@ -14,11 +15,14 @@ export function LessonRow({
   lesson,
   showInstructor = false,
   canAnswer = false,
+  rules,
 }: {
   lesson: DiaryEntry;
   showInstructor?: boolean;
   /** BOK-06: somebody who may accept or decline a request is looking at it. */
   canAnswer?: boolean;
+  /** BOK-08, BOK-09: what moving or cancelling this lesson would mean. */
+  rules?: { cancellationWindowHours: number; lateFeePercent: number };
 }) {
   const state = lessonState(lesson.facts);
   const off = state === 'cancelled';
@@ -60,6 +64,19 @@ export function LessonRow({
       {canAnswer && asked ? (
         <div className="flex justify-end gap-2">
           <RequestActions bookingId={lesson.id} learnerName={lesson.learnerName} />
+        </div>
+      ) : null}
+      {canAnswer && !asked && !off && rules ? (
+        <div className="flex justify-end gap-2">
+          <LessonActions
+            bookingId={lesson.id}
+            learnerName={lesson.learnerName}
+            startsAt={lesson.startsAt.toISOString()}
+            durationMinutes={Math.round((lesson.endsAt.getTime() - lesson.startsAt.getTime()) / 60_000)}
+            pricePence={lesson.pricePence}
+            cancellationWindowHours={rules.cancellationWindowHours}
+            lateFeePercent={rules.lateFeePercent}
+          />
         </div>
       ) : null}
     </article>
