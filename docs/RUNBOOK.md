@@ -60,7 +60,7 @@ Do these once, in order. Items marked **You** need the product owner's accounts.
    ```
    That file is deliberately separate from `supabase/config.toml`: the local one carries the test phone numbers, which must never reach a hosted project. Read the diff before pushing, because a push answers its own prompts and can overwrite a hosted setting. The push refuses to run while any provider secret in step 4 is unset, since it would otherwise store placeholder text or an empty password.
 7. **You:** Project Settings > API Keys: copy the publishable key and a secret key for Vercel (section 3.5).
-8. Check the site is reachable at the site URL once Vercel is connected, then sign in once to confirm emails arrive.
+8. Check the app is reachable at `https://app.doovor.com` once Vercel is connected, then sign in once to confirm emails arrive and their links open the app. The site URL and redirect URLs pushed in step 6 come from `brand.appUrl`.
 9. **You:** optional: under Authentication > Rate Limits, confirm the pushed values look right for your usage.
 10. Optional demo data, with its own password so public accounts never use the documented one. Every target must point at the staging project, because the seed writes through both the API and the database:
    ```bash
@@ -98,7 +98,7 @@ Do these once, in order. Items marked **You** need the product owner's accounts.
 
 1. **You:** in Google Cloud, for OAuth client `647142621690-...`:
    - Authorised redirect URI: `https://yvxuarrrvgnfcjfyqfyi.supabase.co/auth/v1/callback`.
-   - Authorised JavaScript origin: `https://doovor.com`.
+   - Authorised JavaScript origin: `https://app.doovor.com`, where the sign-in button is (D-084).
 2. **You:** copy the client secret into the Supabase Google provider.
 3. Set `NEXT_PUBLIC_AUTH_GOOGLE_ENABLED=true` in Vercel. The button stays hidden until then.
 4. Locally (optional): add `http://127.0.0.1:54321/auth/v1/callback` as a redirect URI, put the client ID and secret in `.env.local` (`SUPABASE_AUTH_EXTERNAL_GOOGLE_CLIENT_ID`, `SUPABASE_AUTH_EXTERNAL_GOOGLE_SECRET`), set `NEXT_PUBLIC_AUTH_GOOGLE_ENABLED=true`, then run `pnpm db:stop` and `pnpm db:start`.
@@ -115,12 +115,12 @@ Do these once, in order. Items marked **You** need the product owner's accounts.
    | `NEXT_PUBLIC_SUPABASE_URL` | `https://yvxuarrrvgnfcjfyqfyi.supabase.co` |
    | `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` | the publishable key |
    | `SUPABASE_SECRET_KEY` | a secret key (mark as Sensitive) |
-   | `NEXT_PUBLIC_APP_URL` | Production only: `https://doovor.com`. Leave it unset for Preview |
+   | `NEXT_PUBLIC_APP_URL` | Production only: `https://app.doovor.com`. Leave it unset for Preview |
    | `NEXT_PUBLIC_AUTH_GOOGLE_ENABLED` | `true` once section 3.4 is done |
 
    Payments, email and SMS providers keep their fake and log defaults until their milestones. Supabase Auth sends auth emails and texts itself.
 4. **You:** Deployment Protection: keep Standard Protection, so previews need a Vercel login.
-5. **You:** Domains: add `doovor.com` (and `www` redirecting to it), then create the DNS records Vercel shows.
+5. **You:** Domains: add `app.doovor.com` for the app, and `doovor.com` (with `www` redirecting to it) for the public site, then create the DNS records Vercel shows: usually a CNAME for `app` and an A record for the bare domain. Both point at this project for now. The app sends an app address opened on `doovor.com` to `app.doovor.com`, and `doovor.com` keeps only its own pages (D-084); when the marketing site is built somewhere else, move `doovor.com` there and nothing in the app changes.
 6. Check: the preview URL loads, `/api/health` returns `ok`, and a seeded account signs in (M0-32 done-when).
 
 ### 3.6 GitHub
@@ -155,10 +155,12 @@ Sandbox `Doovor sandbox`, account `acct_1UFF4RDP3EG8YZIf`. Settings > Connect:
    `STRIPE_CONNECT_WEBHOOK_SECRET`. Direct charges raise their events on the connected account, so a
    plain `--forward-to` never sees them.
 7. Webhooks, hosted: waits for a URL Stripe can reach. Preview deployments are behind Vercel
-   Authentication and a webhook to one is refused, so the endpoint is created against the production
-   domain in M6. It listens on `account.updated`, `payment_intent.succeeded`,
-   `payment_intent.payment_failed`, `charge.refunded` and `charge.dispute.created`, with "Listen to
-   events on connected accounts" ticked, and its secret goes in `STRIPE_CONNECT_WEBHOOK_SECRET`.
+   Authentication and a webhook to one is refused, so the endpoint is created in M6 against
+   `https://app.doovor.com/api/webhooks/stripe` (D-084). It listens on `account.updated`,
+   `payment_intent.succeeded`, `payment_intent.payment_failed`, `payment_intent.amount_capturable_updated`
+   (a request's card authorised, M3-08), `payment_intent.canceled`, `charge.refunded` and
+   `charge.dispute.created`, with "Listen to events on connected accounts" ticked, and its secret goes in
+   `STRIPE_CONNECT_WEBHOOK_SECRET`.
    `STRIPE_WEBHOOK_SECRET` is for platform events (Stripe Billing, M5) and stays empty until then.
 8. **You:** live mode needs the Connect platform onboarding questionnaire finished (Platform profile >
    View onboarding): company identity, the business model and the loss liability elections.

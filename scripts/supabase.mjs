@@ -19,8 +19,9 @@ process.env.SUPABASE_AUTH_EXTERNAL_GOOGLE_SECRET ||= 'not-configured';
 // SUPABASE_AUTH_*: the CLI forwards that prefix into the local auth container, which would
 // point local sign-in emails at the production domain and break the email tests.
 const { brand } = await import(pathToFileURL(path.join(root, 'packages', 'config', 'src', 'brand.ts')).href);
-process.env.BRAND_SITE_URL ||= brand.productionUrl;
-process.env.BRAND_REDIRECT_URL ||= `${brand.productionUrl}/**`;
+// Sign-in emails and redirects go to the app, not to the public site (D-084).
+process.env.BRAND_SITE_URL ||= brand.appUrl;
+process.env.BRAND_REDIRECT_URL ||= `${brand.appUrl}/**`;
 process.env.BRAND_SENDER_EMAIL ||= brand.email.fromAddress;
 process.env.BRAND_SENDER_NAME ||= brand.name;
 

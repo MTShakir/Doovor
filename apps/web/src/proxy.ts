@@ -1,5 +1,6 @@
 import { NextResponse, type NextRequest } from 'next/server';
 import { rememberInvitation } from '@/lib/auth/invitation-proxy';
+import { hostRedirect } from '@/lib/hosts';
 import { refreshSession, withSessionCookies } from '@/lib/supabase/proxy';
 
 /** Areas that need a signed-in person. Roles and TOTP are checked in each layout. */
@@ -15,6 +16,10 @@ function isProtected(pathname: string): boolean {
  * Action and Route Handler still checks the session itself (Next.js proxy docs).
  */
 export async function proxy(request: NextRequest) {
+  // The public site and the app are two hosts (D-084): a request on the wrong one moves first.
+  const elsewhere = hostRedirect(request.headers.get('host'), request.nextUrl.pathname, request.nextUrl.search);
+  if (elsewhere) return NextResponse.redirect(elsewhere.url, elsewhere.permanent ? 308 : 307);
+
   const requestId = request.headers.get('x-request-id') ?? crypto.randomUUID();
   const requestHeaders = new Headers(request.headers);
   requestHeaders.set('x-request-id', requestId);

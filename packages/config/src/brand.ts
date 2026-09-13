@@ -3,12 +3,14 @@
  * here and nowhere else. A CI guard (scripts/check-copy.mjs) fails the build if any of
  * these values appear elsewhere in apps/, packages/ or supabase/.
  *
- * Changing these two lines changes every URL, sender, support address and piece of copy in
- * the product. That is the point of this file (D-076).
+ * Changing these lines changes every URL, sender, support address and piece of copy in the
+ * product. That is the point of this file (D-076). The public site is the bare domain; the
+ * app, and everything somebody signs in to, is on its own host (D-084).
  */
 
 const name = 'Doovor';
 const domain = 'doovor.com';
+const appHost = `app.${domain}`;
 
 export const brand = {
   name,
@@ -16,7 +18,11 @@ export const brand = {
   tagline: 'Book, pay and track driving lessons in one simple app.',
   legalEntity: 'Maxterz LTD',
   domain,
+  appHost,
+  /** The public site: the landing page now, pricing and the blog later. */
   productionUrl: `https://${domain}`,
+  /** The app: signing in, the portals, paying, booking links, and every link in an email. */
+  appUrl: `https://${appHost}`,
   supportEmail: `support@${domain}`,
   email: {
     fromName: name,
