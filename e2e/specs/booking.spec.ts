@@ -137,7 +137,7 @@ test.describe('booking a lesson (BOK-01, M2-16)', () => {
 
   test('moves a lesson to another time (BOK-08)', async ({ page }, testInfo) => {
     const day = await emptyDay(testInfo.project.name, 4);
-    await requestLesson('Sarah Khan', 'jack.taylor@example.com', `${day}T09:00:00`);
+    await requestLesson('Sarah Khan', 'jack.taylor@example.com', day, '09:00');
     await acceptRequests('Sarah Khan', day);
 
     await page.goto(`/app/instructor/diary?view=day&date=${day}`);
@@ -154,7 +154,7 @@ test.describe('booking a lesson (BOK-01, M2-16)', () => {
 
   test('cancels a lesson, and has to say why (BOK-09) @desktop-only', async ({ page }, testInfo) => {
     const day = await emptyDay(testInfo.project.name, 5);
-    await requestLesson('Sarah Khan', 'olivia.brown@example.com', `${day}T11:00:00`);
+    await requestLesson('Sarah Khan', 'olivia.brown@example.com', day, '11:00');
     await acceptRequests('Sarah Khan', day);
 
     await page.goto(`/app/instructor/diary?view=day&date=${day}`);
@@ -171,5 +171,49 @@ test.describe('booking a lesson (BOK-01, M2-16)', () => {
 
     await expect(page.getByText('cancelled')).toBeVisible();
     await expect(lesson).toContainText('Cancelled');
+  });
+
+  test('drags a lesson into a gap (DIA-03, BOK-08) @desktop-only', async ({ page }, testInfo) => {
+    const day = await emptyDay(testInfo.project.name, 6);
+    await requestLesson('Sarah Khan', 'jack.taylor@example.com', day, '09:00');
+    await acceptRequests('Sarah Khan', day);
+
+    await page.goto(`/app/instructor/diary?view=day&date=${day}`);
+    const lesson = page.getByRole('article', { name: '09:00 Jack Taylor' });
+    await expect(lesson).toBeVisible();
+
+    // The gap after it is a place to drop one.
+    const gap = page.getByText(/^Free until/);
+    await expect(gap).toBeVisible();
+    await lesson.dragTo(gap);
+
+    // The gap starts when the lesson before it ends, so that is where it lands.
+    await expect(page.getByText('Moved to')).toBeVisible();
+    await expect(page.getByRole('article', { name: '09:00 Jack Taylor' })).toBeHidden();
+    await expect(page.getByRole('article').filter({ hasText: 'Jack Taylor' })).toContainText('10:00');
+  });
+
+  test('holds a lesson on a phone to move it @phone-only', async ({ page }, testInfo) => {
+    const day = await emptyDay(testInfo.project.name, 7);
+    await requestLesson('Sarah Khan', 'olivia.brown@example.com', day, '09:00');
+    await acceptRequests('Sarah Khan', day);
+
+    await page.goto(`/app/instructor/diary?view=day&date=${day}`);
+    const lesson = page.getByRole('article', { name: '09:00 Olivia Brown' });
+    await expect(lesson).toBeVisible();
+
+    // A finger, not a mouse: Playwright's click is a mouse whatever the device is, and a
+    // mouse drags a lesson rather than holding it. Once the sheet is open the diary behind
+    // it is hidden from the page, so the hold is only tried while it is not.
+    const sheet = page.getByRole('dialog', { name: /^Move Olivia/ });
+    await expect(async () => {
+      if (await sheet.isVisible()) return;
+      await lesson.dispatchEvent('pointerdown', { pointerType: 'touch', isPrimary: true });
+      await expect(sheet).toBeVisible({ timeout: 2000 });
+    }).toPass({ timeout: 15_000 });
+
+    await page.getByRole('button', { name: '13:00' }).click();
+    await page.getByRole('button', { name: 'Move to 13:00' }).click();
+    await expect(page.getByText('Moved to')).toBeVisible();
   });
 });

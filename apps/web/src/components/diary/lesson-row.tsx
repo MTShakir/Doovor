@@ -1,10 +1,12 @@
+'use client';
+
 import { lessonState } from '@repo/core/diary';
 import { formatPence } from '@repo/core/money';
 import { formatTime } from '@repo/core/time';
 import { StatusPill } from '@repo/ui/status-pill';
-import { MapPin } from 'lucide-react';
+import { Button } from '@repo/ui/button';
+import { CalendarClock, MapPin, X } from 'lucide-react';
 import type { DiaryEntry } from '@/lib/diary/lessons';
-import { LessonActions } from './lesson-actions';
 import { RequestActions } from './request-actions';
 
 /**
@@ -15,14 +17,16 @@ export function LessonRow({
   lesson,
   showInstructor = false,
   canAnswer = false,
-  rules,
+  onMove,
+  onCancel,
 }: {
   lesson: DiaryEntry;
   showInstructor?: boolean;
   /** BOK-06: somebody who may accept or decline a request is looking at it. */
   canAnswer?: boolean;
-  /** BOK-08, BOK-09: what moving or cancelling this lesson would mean. */
-  rules?: { cancellationWindowHours: number; lateFeePercent: number };
+  /** BOK-08, BOK-09: opening the sheets the day holds for the whole list. */
+  onMove?: () => void;
+  onCancel?: () => void;
 }) {
   const state = lessonState(lesson.facts);
   const off = state === 'cancelled';
@@ -66,17 +70,16 @@ export function LessonRow({
           <RequestActions bookingId={lesson.id} learnerName={lesson.learnerName} />
         </div>
       ) : null}
-      {canAnswer && !asked && !off && rules ? (
+      {canAnswer && !asked && !off && onMove && onCancel ? (
         <div className="flex justify-end gap-2">
-          <LessonActions
-            bookingId={lesson.id}
-            learnerName={lesson.learnerName}
-            startsAt={lesson.startsAt.toISOString()}
-            durationMinutes={Math.round((lesson.endsAt.getTime() - lesson.startsAt.getTime()) / 60_000)}
-            pricePence={lesson.pricePence}
-            cancellationWindowHours={rules.cancellationWindowHours}
-            lateFeePercent={rules.lateFeePercent}
-          />
+          <Button variant="secondary" onClick={onMove}>
+            <CalendarClock className="size-5" aria-hidden />
+            Move
+          </Button>
+          <Button variant="tertiary" onClick={onCancel}>
+            <X className="size-5" aria-hidden />
+            Cancel
+          </Button>
         </div>
       ) : null}
     </article>

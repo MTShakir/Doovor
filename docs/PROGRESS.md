@@ -51,6 +51,8 @@ M2 Learners and bookings has started on branch `m2-learners-bookings`. An instru
 | M2-22 | `cancel_booking`: a reason from an instructor, the late flag and the fee recorded on the booking | BOK-09 | Done. An instructor cancelling costs the learner nothing however late it is, and has to say why |
 | M2-23 | `reschedule_booking`: an instructor moves a lesson whenever they like, a learner until the free window closes | BOK-08 | Done. A lesson is not counted as being in its own way, and a learner inside the window is told to ring instead |
 
+| M2-24 | Dragging a lesson into a gap on a desktop, holding one on a phone, and putting it back when the server will not have it | DIA-03, BOK-08 | Done. The move shows before the server has agreed and rolls back on a clash |
+
 ## M1 progress
 
 | Task | What | PRD | State |
@@ -117,7 +119,7 @@ Decisions D-036 to D-050 were logged during this stretch. Two were security fixe
 
 ## In progress
 
-- M2-24: dragging a lesson to another time on a desktop, and holding it on a phone.
+- M2-25 and M2-26: marking a lesson done or a no-show, then the learner's own lessons tab.
 
 ## Next
 

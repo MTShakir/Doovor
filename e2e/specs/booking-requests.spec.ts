@@ -18,7 +18,7 @@ test.describe('answering a request (BOK-06, M2-18)', () => {
   test('accepts one, and the diary says it is on', async ({ page }, testInfo) => {
     const day = askOn(testInfo.project.name, 0);
     await clearDiary('Sarah Khan', day);
-    await requestLesson('Sarah Khan', 'jack.taylor@example.com', `${day}T10:00:00`);
+    await requestLesson('Sarah Khan', 'jack.taylor@example.com', day, '10:00');
 
     await page.goto(`/app/instructor/diary?view=day&date=${day}`);
     const lesson = page.getByRole('article').filter({ hasText: 'Jack Taylor' });
@@ -35,7 +35,7 @@ test.describe('answering a request (BOK-06, M2-18)', () => {
   test('declines one with a word about why @desktop-only', async ({ page }, testInfo) => {
     const day = askOn(testInfo.project.name, 1);
     await clearDiary('Sarah Khan', day);
-    await requestLesson('Sarah Khan', 'olivia.brown@example.com', `${day}T14:00:00`);
+    await requestLesson('Sarah Khan', 'olivia.brown@example.com', day, '14:00');
 
     await page.goto(`/app/instructor/diary?view=day&date=${day}`);
     const lesson = page.getByRole('article').filter({ hasText: 'Olivia Brown' });

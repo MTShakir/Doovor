@@ -37,7 +37,7 @@ export async function saveLearnerProfile(input: unknown): Promise<Result<null>> 
 
   const supabase = await createSupabaseServerClient();
   const { error: named } = await supabase.from('users').update({ full_name: parsed.data.fullName }).eq('id', userId);
-  if (named) return err('UNKNOWN', 'We could not save your details. Try again.');
+  if (named) return saveFailed('name', named);
 
   // Insert or update, never upsert: the column grants deliberately exclude `user_id` from
   // updates, and an upsert would try to write it either way.
@@ -55,7 +55,7 @@ export async function saveLearnerProfile(input: unknown): Promise<Result<null>> 
     if (code === 'VALIDATION_FAILED') {
       return err('VALIDATION_FAILED', undefined, { dateOfBirth: 'You have to be 16 to start learning to drive' });
     }
-    return err('UNKNOWN', 'We could not save your details. Try again.');
+    return saveFailed('date of birth', dated);
   }
 
   const answers = {
@@ -70,12 +70,21 @@ export async function saveLearnerProfile(input: unknown): Promise<Result<null>> 
     .from('learner_profiles')
     .update(answers, { count: 'exact' })
     .eq('user_id', userId);
-  if (error) return err('UNKNOWN', 'We could not save your details. Try again.');
+  if (error) return saveFailed('profile', error);
   if (updated === 0) {
     const { error: created } = await supabase.from('learner_profiles').insert({ user_id: userId, ...answers });
-    if (created) return err('UNKNOWN', 'We could not save your details. Try again.');
+    if (created) return saveFailed('profile', created);
   }
 
   // Saving succeeded, so this redirects and never resolves.
   return redirectTo('/app/learner');
+}
+
+/**
+ * One message for the learner, and the detail in the server log. A save that fails here is
+ * nobody's typing: it is something we need to be able to look up afterwards.
+ */
+function saveFailed(step: string, cause: { message?: string | null; code?: string | null }): Result<null> {
+  console.error(`Learner onboarding could not save the ${step}:`, cause.code, cause.message);
+  return err('UNKNOWN', 'We could not save your details. Try again.');
 }
