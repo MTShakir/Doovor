@@ -359,6 +359,38 @@ export async function expireHoldsNow(instructorName: string, date: string): Prom
   });
 }
 
+/**
+ * Puts a lesson booked to be paid afterwards into the past, marked done, as it is once the
+ * instructor presses Complete (PAY-03, M3-10). Local only.
+ */
+export async function finishedLessonOwed(instructorName: string, learnerEmail: string, daysAgo: number, time: string): Promise<string> {
+  return withDatabase(async (sql) => {
+    const rows = await sql<{ id: string }[]>`
+      with day as (select (current_date - ${daysAgo}::int) as d)
+      insert into public.bookings (business_id, instructor_id, learner_id, lesson_type_id, starts_at, ends_at,
+                                   buffer_minutes, status, payment_mode, price_pence, source)
+      select p.business_id, p.id, u.id, t.id,
+             ((select d from day) + ${time}::time) at time zone 'Europe/London',
+             ((select d from day) + ${time}::time + interval '1 hour') at time zone 'Europe/London',
+             30, 'completed', 'after_lesson', 4200, 'instructor'
+        from public.instructor_profiles p
+        join public.lesson_types t on t.business_id = p.business_id and t.name = 'Standard lesson'
+        join public.users u on lower(u.email) = lower(${learnerEmail})
+       where p.display_name = ${instructorName}
+      returning id`;
+    const id = rows[0]?.id;
+    if (!id) throw new Error(`Could not put a finished lesson in ${instructorName}'s diary`);
+    return id;
+  });
+}
+
+/** Takes a lesson out by its id, whatever became of it. Local only. */
+export async function removeLessonById(id: string): Promise<void> {
+  await withDatabase(async (sql) => {
+    await sql`delete from public.bookings where id = ${id}`;
+  });
+}
+
 /** Forgets the payments account a Business connected, so a test starts from nothing. */
 export async function clearPaymentsAccount(ownerEmail: string): Promise<void> {
   await withDatabase(async (sql) => {

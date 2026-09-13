@@ -38,7 +38,7 @@ describe('which notification an event comes to (NTF-03)', () => {
     );
   });
 
-  it('says nothing about a lesson waiting to be paid for, or one marked done', () => {
+  it('says nothing about a lesson waiting to be paid for, or one marked done that owes nothing', () => {
     expect(kindForEvent({ name: 'booking.created', payload: { status: 'pending_payment' } }, notice)).toBeNull();
     expect(kindForEvent({ name: 'booking.completed', payload: {} }, notice)).toBeNull();
   });
@@ -164,5 +164,25 @@ describe('a lesson that could not be charged the day before (PAY-03, M3-09)', ()
 
   it('says nothing about a card refused on screen, which the screen already said', () => {
     expect(kindForEvent({ name: 'payment.failed', payload: { booking_id: 'booking-1' } }, notice)).toBeNull();
+  });
+});
+
+describe('asking to be paid when a lesson is marked done (PAY-03, M3-10)', () => {
+  const done = { name: 'booking.completed', payload: { booking_id: 'booking-1' } };
+  const owed = { ...notice, status: 'completed', payment_mode: 'after_lesson', payment_status: 'unpaid', price_pence: 4200 };
+
+  it('sends the learner, and only the learner, straight to paying for it', () => {
+    const planned = planBookingNotifications({ event: done, notice: owed });
+
+    expect(planned.map((one) => one.userId)).toEqual(['learner-1']);
+    expect(planned[0]?.kind).toBe('payment.requested');
+    expect(planned[0]?.title).toBe('Pay for your lesson');
+    expect(planned[0]?.body).toBe('Wed 16 Sep at 09:00 with Sarah Khan. £42 is due now.');
+    expect(planned[0]?.link).toBe('/app/learner/pay/booking-1');
+  });
+
+  it('asks nothing of a lesson paid for another way, or already paid', () => {
+    expect(planBookingNotifications({ event: done, notice: { ...owed, payment_mode: 'at_booking' } })).toEqual([]);
+    expect(planBookingNotifications({ event: done, notice: { ...owed, payment_status: 'paid_cash' } })).toEqual([]);
   });
 });

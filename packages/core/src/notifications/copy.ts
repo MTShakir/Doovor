@@ -86,6 +86,9 @@ export function notificationCopy(
         ? { title: 'A payment did not go through', body: sentence(line, facts.detail, 'Pay now to keep the lesson') }
         : { title: `A payment from ${them} did not go through`, body: sentence(line, facts.detail) };
 
+    case 'payment.requested':
+      return { title: 'Pay for your lesson', body: sentence(line, facts.detail) };
+
     case 'lesson_record.added':
       return { title: 'Your lesson record is ready', body: sentence(line, facts.detail) };
 

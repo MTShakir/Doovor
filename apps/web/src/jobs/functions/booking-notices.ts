@@ -2,6 +2,7 @@ import { inngest } from '../client';
 import {
   bookingAccepted,
   bookingCancelled,
+  bookingCompleted,
   bookingCreated,
   bookingDeclined,
   bookingRescheduled,
@@ -20,7 +21,7 @@ export const bookingNotices = inngest.createFunction(
   {
     id: 'booking-notices',
     name: 'Notify about a lesson',
-    triggers: [bookingCreated, bookingAccepted, bookingDeclined, bookingCancelled, bookingRescheduled, paymentChargeFailed],
+    triggers: [bookingCreated, bookingAccepted, bookingDeclined, bookingCancelled, bookingRescheduled, bookingCompleted, paymentChargeFailed],
   },
   ({ event }) => notifyAboutBooking({ name: event.name, payload: event.data }),
 );

@@ -102,7 +102,7 @@ async function Payments({ screen }: { screen: 'instructor' | 'school' }) {
 }
 
 /** The ways of paying this app can take today, in the order an owner reads them (PAY-03). */
-const choices: PaymentMode[] = ['at_booking', 'offline'];
+const choices: PaymentMode[] = ['at_booking', 'before_lesson', 'after_lesson', 'offline'];
 
 /** PAY-03: once cards can be taken, the owner decides when learners are asked for one. */
 function HowLearnersPay({ mode, canManage }: { mode: PaymentMode; canManage: boolean }) {

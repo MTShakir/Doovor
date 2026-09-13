@@ -126,6 +126,15 @@ export function MyLessonRow({ lesson, rules, now, canChange }: MyLessonRowProps)
         </span>
       </div>
 
+      {!canChange && lesson.canPayNow && lesson.status === 'completed' ? (
+        // Paid for after it happened, and not yet (PAY-03): the one thing left to do about it.
+        <div className="flex flex-wrap justify-end gap-2">
+          <Button asChild>
+            <Link href={`/app/learner/pay/${lesson.id}`}>Pay {formatPence(lesson.pricePence)}</Link>
+          </Button>
+        </div>
+      ) : null}
+
       {canChange ? (
         <div className="flex flex-wrap justify-end gap-2">
           {lesson.canPayNow ? (

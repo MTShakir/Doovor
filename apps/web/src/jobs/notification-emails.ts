@@ -34,6 +34,7 @@ export function wantsEmail(one: ClaimedNotification): boolean {
 /** What the button says, which is where it goes. */
 export function actionLabel(link: string): string {
   if (link.startsWith('/app/learner/lessons')) return 'See your lessons';
+  if (link.startsWith('/app/learner/pay/')) return 'Pay now';
   if (link.startsWith('/app/instructor/diary')) return 'Open your diary';
   if (link.startsWith('/app/school/diary')) return 'Open the school diary';
   if (link.startsWith('/app/instructor/learners')) return 'See the learner';

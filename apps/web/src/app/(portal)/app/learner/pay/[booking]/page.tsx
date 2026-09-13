@@ -140,7 +140,7 @@ async function Checkout({ params }: { params: Promise<{ booking: string }> }) {
       ) : stage === 'paid' ? (
         <div className="flex flex-col gap-3">
           <Note icon={<CalendarCheck className={iconClass} aria-hidden />}>
-            That is paid for, and your lesson is confirmed.
+            {lesson.status === 'completed' ? 'That is paid for. Thank you.' : 'That is paid for, and your lesson is confirmed.'}
           </Note>
           <LessonsButton />
         </div>

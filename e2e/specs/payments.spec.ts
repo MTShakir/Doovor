@@ -6,11 +6,13 @@ import {
   clearPaymentsAccount,
   enablePayments,
   expireHoldsNow,
+  finishedLessonOwed,
   holdPaymentsBusiness,
   lessonsOn,
   paymentFor,
   paymentsAccountOf,
   removeLesson,
+  removeLessonById,
   requestLesson,
   setBookingStatus,
 } from '../support/database';
@@ -72,6 +74,7 @@ test.describe('connecting payments (PAY-01, M3-02)', () => {
     await expect(how).toContainText('The slot is held while they pay');
     await expectAccessible(page);
 
+    await expect(choice.locator('option')).toHaveText(['When they book', 'The day before the lesson', 'After the lesson', 'In person']);
     await choice.selectOption('offline');
     await expect(page.getByText('Learners now pay in person')).toBeVisible();
     await expect(how).toContainText('Learners are not asked for a card.');
@@ -401,6 +404,44 @@ test.describe('paying for a lesson (PAY-02, M3-05)', () => {
     expect(await paymentFor(booked?.startsAt ?? '')).toEqual({ amountPence: 4200, status: 'paid' });
 
     await clearPaymentsAccount(owner);
+  });
+
+  test('a lesson paid for afterwards is paid for from the lessons list once it is done (M3-10)', async ({ page }, testInfo) => {
+    await enablePayments(owner, `fake_acct_after_${testInfo.project.name}_${String(Date.now())}`);
+    // Days of their own in the past, a few weeks apart for each width, so neither sees the other's.
+    const daysAgo = testInfo.project.name === 'mobile' ? 40 : 47;
+    const id = await finishedLessonOwed('Tom Walsh', learner, daysAgo, '11:00');
+
+    try {
+      await page.goto('/app/learner/lessons');
+      const lesson = page.locator(`article:has(a[href="/app/learner/pay/${id}"])`);
+      await expect(lesson).toContainText('Tom Walsh');
+      await expectAccessible(page);
+
+      await expect(async () => {
+        await lesson.getByRole('link', { name: 'Pay £42' }).click();
+        await page.waitForURL(new RegExp(`/app/learner/pay/${id}`), { timeout: 5000 });
+      }).toPass({ timeout: 20_000 });
+
+      const checkout = page.getByRole('region', { name: /at \d\d:\d\d$/ });
+      await expect(checkout).toContainText('To pay');
+      await expect(checkout.getByRole('button', { name: /^Pay £42$/ })).toBeVisible();
+      await snap(page, testInfo, 'pay-after-lesson');
+
+      await expect(async () => {
+        await checkout.getByRole('button', { name: /^Pay £42$/ }).click();
+        await expect(checkout.getByRole('button', { name: 'Pay with a test card' })).toBeVisible({ timeout: 10_000 });
+      }).toPass({ timeout: 40_000 });
+      await checkout.getByRole('button', { name: 'Pay with a test card' }).click();
+      await expect(checkout).toContainText('That is paid for. Thank you.', { timeout: 30_000 });
+
+      await page.goto('/app/learner/lessons');
+      await expect(page.locator(`a[href="/app/learner/pay/${id}"]`)).toHaveCount(0);
+    } finally {
+      // A finished lesson in the past would sit on this learner's history for every later run.
+      await removeLessonById(id);
+      await clearPaymentsAccount(owner);
+    }
   });
 
   test('a hold that runs out gives the slot back, and the page says so @desktop-only', async ({ page }, testInfo) => {

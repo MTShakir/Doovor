@@ -41,6 +41,7 @@ export const notificationKinds = [
   'booking.cancelled',
   'payment.received',
   'payment.failed',
+  'payment.requested',
   'lesson_record.added',
   'credit.low',
   'verification.decided',
@@ -107,6 +108,15 @@ export const notificationCatalogue: Record<NotificationKind, NotificationSpec> =
     kind: 'payment.failed',
     category: 'money',
     audiences: ['learner', 'instructor', 'school'],
+    channels: PUSH_AND_EMAIL,
+    essential: true,
+  },
+  // The payment link a learner is sent when a lesson paid for afterwards is marked done
+  // (PAY-03, PRD 10.2 step 4). A service message: it is about money they owe.
+  'payment.requested': {
+    kind: 'payment.requested',
+    category: 'money',
+    audiences: ['learner'],
     channels: PUSH_AND_EMAIL,
     essential: true,
   },

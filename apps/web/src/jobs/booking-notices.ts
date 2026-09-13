@@ -29,6 +29,10 @@ export interface BookingNotice {
   instructor_name: string;
   school_user_ids: string[];
   fee_pence?: number | null;
+  price_pence?: number;
+  /** How the lesson is paid for, and whether it is (PAY-03). */
+  payment_mode?: string;
+  payment_status?: string;
   late_cancellation?: boolean;
   cancel_reason?: string | null;
 }
@@ -56,6 +60,9 @@ export function kindForEvent(event: BookingEvent, notice: BookingNotice): Notifi
       return 'booking.cancelled';
     case 'booking.rescheduled':
       return 'booking.rescheduled';
+    // A lesson paid for afterwards asks for the money when it is marked done (PAY-03, M3-10).
+    case 'booking.completed':
+      return notice.payment_mode === 'after_lesson' && notice.payment_status === 'unpaid' ? 'payment.requested' : null;
     // Only a charge made with nobody there: a card refused on screen is shown on screen (M3-09).
     case 'payment.charge_failed':
       return 'payment.failed';
@@ -74,6 +81,9 @@ const chargeFailures: Record<string, string> = {
 
 /** The line under the title, when there is more to say than when the lesson is. */
 function detailFor(event: BookingEvent, notice: BookingNotice): string | undefined {
+  if (event.name === 'booking.completed') {
+    return notice.price_pence === undefined ? undefined : `${formatPence(notice.price_pence)} is due now.`;
+  }
   if (event.name === 'payment.charge_failed') {
     const reason = typeof event.payload.reason === 'string' ? event.payload.reason : '';
     return chargeFailures[reason] ?? 'The card could not be charged.';
@@ -94,7 +104,9 @@ function linkFor(event: BookingEvent, notice: BookingNotice): (audience: 'learne
   const day = utcToLocal(new Date(notice.starts_at)).date;
   return (audience) => {
     if (audience === 'learner') {
-      return event.name === 'payment.charge_failed' ? `/app/learner/pay/${notice.booking_id}` : '/app/learner/lessons';
+      return event.name === 'payment.charge_failed' || event.name === 'booking.completed'
+        ? `/app/learner/pay/${notice.booking_id}`
+        : '/app/learner/lessons';
     }
     if (audience === 'school') return `/app/school/diary?date=${day}`;
     return `/app/instructor/diary?view=day&date=${day}`;
