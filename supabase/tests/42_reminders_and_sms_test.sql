@@ -23,20 +23,25 @@ values (:'school', :'ian', :'lee', :'lesson_type',
        (:'school', :'ian', :'lee', :'lesson_type',
         now() + interval '3 hours', now() + interval '4 hours', 30, 'cancelled', 4200, 'instructor');
 
+-- Scoped to this fixture's own lessons: the database this runs against has a seed in it.
+create or replace view pg_temp.due as
+  select one from jsonb_array_elements(public.system_due_reminders(26)) as one
+   where one ->> 'business_id' = 'bbbb0000-0000-0000-0000-000000000000';
+
 select is(
-  (select jsonb_array_length(public.system_due_reminders(26))),
+  (select count(*)::int from pg_temp.due),
   1,
   'only lessons inside the window, and only ones that are still on'
 );
 
 select is(
-  (select public.system_due_reminders(26) -> 0 ->> 'learner_name'),
+  (select one ->> 'learner_name' from pg_temp.due),
   'Lee One',
   'and the job is told who to remind'
 );
 
 select is(
-  (select public.system_due_reminders(26) -> 0 ->> 'business_plan'),
+  (select one ->> 'business_plan' from pg_temp.due),
   'free',
   'and what the plan allows'
 );

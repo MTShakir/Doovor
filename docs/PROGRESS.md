@@ -65,6 +65,8 @@ M2 Learners and bookings has started on branch `m2-learners-bookings`. An instru
 
 | M2-30 | Reminders before a lesson, what a Business sets, and text messages on Pro with the monthly cap | NTF-02, NTF-01 | Done. A lesson that moved is reminded about at its new time only, by unit test and by the key each reminder carries. Proved end to end locally: a lesson twenty hours out became a reminder, an email and a text, counted against the allowance |
 
+| M2-31 | The four acceptance tests this milestone owns, named and green at both widths | 17.2 | Done. acceptance-01, 02, 09 and 12 run at 390 px and 1440 px, eight runs in all |
+
 ## M1 progress
 
 | Task | What | PRD | State |
@@ -122,21 +124,21 @@ Decisions D-036 to D-050 were logged during this stretch. Two were security fixe
 
 | Suite | Result |
 |---|---|
-| Unit (Vitest) | 532 passed across 7 packages; `packages/core` line coverage 99.3%, `packages/providers` 100% |
+| Unit (Vitest) | 532 passed across 7 packages; `packages/core` line coverage 97.4%, `packages/providers` 100%, both above the 90% gate |
 | Database (pgTAP) | 510 assertions in 43 files, all passing; SQL lint clean |
-| End to end (Playwright) | 224 passed at 390 px and 1440 px, none skipped, stable across repeated full runs |
+| End to end (Playwright) | 229 passed at 390 px and 1440 px, including acceptance-01, 02, 09 and 12 at both widths, none skipped, stable across repeated full runs |
 | Lint, typecheck, copy guard | Clean |
-| CI on GitHub | Green: lint and unit, database, end to end against a production build |
+| CI on GitHub | Last read green on M1. Not read for the M2 branch: the repository is private and this machine has no GitHub CLI |
 | Staging (hosted) | All 23 migrations applied. Security Advisor: 0 errors, 17 warnings, 16 of them the expected `security definer` pattern (D-051) and one a dashboard switch for leaked password protection, now in the runbook |
 
 ## In progress
 
-- M2-31: the four acceptance tests for this milestone, and the milestone report.
+- Nothing. M2 is complete and its report is delivered, waiting for approval before the merge to main.
 
 ## Next
 
-- M2: learners, invites, the booking rules in code, and the booking flows themselves.
-- The seven M1 migrations are applied locally only. They go to staging with the next staging push.
+- M3: payments. Stripe Connect, the Payment Element, credit, and the money side of cancellation.
+- The M2 migrations are applied locally only. They go to staging with the next staging push.
 
 ## Blockers
 

@@ -263,3 +263,33 @@ export async function countPushSubscriptions(email: string): Promise<number> {
     return Number(rows[0]?.count ?? '0');
   });
 }
+
+export interface LessonRow {
+  startsAt: string;
+  time: string;
+  learnerName: string;
+  status: string;
+}
+
+/** One instructor's lessons on one local day, in order. Local only. */
+export async function lessonsOn(instructorName: string, date: string): Promise<LessonRow[]> {
+  return withDatabase(async (sql) => {
+    const rows = await sql<{ starts_at: string; time: string; learner_name: string; status: string }[]>`
+      select b.starts_at,
+             to_char(b.starts_at at time zone 'Europe/London', 'HH24:MI') as time,
+             u.full_name as learner_name,
+             b.status::text as status
+        from public.bookings b
+        join public.instructor_profiles p on p.id = b.instructor_id
+        join public.users u on u.id = b.learner_id
+       where p.display_name = ${instructorName}
+         and (b.starts_at at time zone 'Europe/London')::date = ${date}::date
+       order by b.starts_at`;
+    return rows.map((row) => ({
+      startsAt: new Date(row.starts_at).toISOString(),
+      time: row.time,
+      learnerName: row.learner_name,
+      status: row.status,
+    }));
+  });
+}

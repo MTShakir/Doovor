@@ -25,8 +25,10 @@ select public.system_notify(jsonb_build_array(
 -- ---------------------------------------------------------------------------------------
 -- Claiming.
 -- ---------------------------------------------------------------------------------------
+-- Scoped to this fixture's own rows: the database this runs against has a seed in it.
 select is(
-  (select count(*)::int from public.system_claim_notifications(10)),
+  (select count(*)::int from public.system_claim_notifications(200)
+    where dedupe_key in ('booking.cancelled:b1:2:lee', 'learner.joined:l1:1:ian')),
   1,
   'only what has somewhere to be sent is claimed: the inbox needs no sending'
 );
@@ -38,7 +40,8 @@ select is(
 );
 
 select is(
-  (select email from public.system_claim_notifications(10)),
+  (select email from public.system_claim_notifications(200)
+    where dedupe_key = 'booking.cancelled:b1:2:lee'),
   'learner.1@test.local',
   'and the claim says where to send it'
 );
@@ -55,7 +58,8 @@ select is(
 );
 
 select is(
-  (select count(*)::int from public.system_claim_notifications(10)),
+  (select count(*)::int from public.system_claim_notifications(200)
+    where dedupe_key = 'booking.cancelled:b1:2:lee'),
   0,
   'and is never claimed again'
 );

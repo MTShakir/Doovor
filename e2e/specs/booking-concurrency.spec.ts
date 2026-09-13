@@ -12,7 +12,9 @@ import { databaseUrl, withDatabase } from '../support/database';
  * refused by the exclusion on the instructor's time.
  */
 test.describe('two learners, one slot (BOK-07, R-02)', () => {
-  test('acceptance-02: exactly one of them gets it @desktop-only', async () => {
+  test('acceptance-02: exactly one of them gets it', async () => {
+    // A week of its own for each width, because both widths race at the same moment.
+    const weeks = test.info().project.name === 'mobile' ? 3 : 4;
     const facts = await withDatabase(async (sql) => {
       const [instructor] = await sql<{ id: string; business_id: string }[]>`
         select id, business_id from public.instructor_profiles where display_name = 'Sarah Khan'`;
@@ -23,10 +25,11 @@ test.describe('two learners, one slot (BOK-07, R-02)', () => {
         select u.id from public.users u
          where u.email in ('jack.taylor@example.com', 'olivia.brown@example.com')
          order by u.email`;
-      // Three weeks ahead: inside the eight week horizon, past the fortnight the seed fills,
+      // A few weeks ahead: inside the eight week horizon, past the fortnight the seed fills,
       // and at ten in the morning on a Wednesday, when Sarah is open.
       const [slot] = await sql<{ starts_at: Date }[]>`
-        select (date_trunc('week', now() + interval '3 weeks') + interval '2 days' + interval '10 hours')
+        select (date_trunc('week', now() + make_interval(weeks => ${weeks}))
+                  + interval '2 days' + interval '10 hours')
                  at time zone 'Europe/London' as starts_at`;
       return {
         instructorId: instructor?.id ?? '',

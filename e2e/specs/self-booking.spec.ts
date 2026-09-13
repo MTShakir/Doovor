@@ -58,7 +58,7 @@ test.describe('booking from a shared link (BOK-02, M2-17)', () => {
     await expect(page).toHaveURL(/\/start/);
   });
 
-  test('a learner books in under a minute', async ({ browser }, testInfo) => {
+  test('acceptance-12: a learner books in under a minute', async ({ browser }, testInfo) => {
     const day = openDay(testInfo.project.name);
     await clearDiary('Sarah Khan', day);
 
