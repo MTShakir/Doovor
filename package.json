@@ -28,7 +28,8 @@
     "test:e2e": "pnpm --filter @repo/e2e test:e2e",
     "db:seed": "pnpm --filter @repo/db seed",
     "db:env": "node scripts/local-env.mjs",
-    "dev:jobs": "pnpm dlx inngest-cli@1.44.0 dev --no-discovery -u http://localhost:3000/api/inngest"
+    "dev:jobs": "pnpm dlx inngest-cli@1.44.0 dev --no-discovery -u http://localhost:3000/api/inngest",
+    "stripe:listen": "stripe listen --forward-connect-to localhost:3000/api/webhooks/stripe"
   },
   "devDependencies": {
     "prettier": "^3.9.0",

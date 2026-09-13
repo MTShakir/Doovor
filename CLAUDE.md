@@ -50,6 +50,7 @@ Run from the repo root.
 | `pnpm install` | Install dependencies |
 | `pnpm dev` | Start the web app |
 | `pnpm dev:jobs` | Start the job runner on this machine, pointed at the app (D-052) |
+| `pnpm stripe:listen` | Forward connected account events from Stripe to the local webhook (needs the Stripe CLI) |
 | `pnpm db:start` / `pnpm db:stop` | Start or stop the local Supabase stack (Docker required) |
 | `pnpm db:reset` | Re-apply all migrations and seed data locally |
 | `pnpm db:migration <name>` | Create a new SQL migration |

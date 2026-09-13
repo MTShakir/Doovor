@@ -127,6 +127,42 @@ Do these once, in order. Items marked **You** need the product owner's accounts.
 
 **You:** Settings > Branches: protect `main` and require the CI checks `Lint, types and unit tests`, `Database tests and lint` and `End to end (390 and 1440 px)`.
 
+### 3.7 Stripe (payments, PAY-01)
+
+Connect Express with direct charges (D-011): the Business is the merchant of record, so every
+call carries the connected account, and the card fees, refunds and disputes are theirs.
+
+Sandbox `Doovor sandbox`, account `acct_1UFF4RDP3EG8YZIf`. Settings > Connect:
+
+1. **Done:** Onboarding options > Countries: the United Kingdom is on, and connected accounts get
+   both **Transfers** and **Payments**. Transfers alone is what the sandbox started with and it is
+   not enough: a direct charge against an account without `card_payments` is refused.
+2. **Done:** Onboarding options > Set up their products: Cards is on.
+3. **Done:** Express Dashboard > Features: "View payments" and "Edit payout schedule" are on, so an
+   owner can see their money and choose when it lands (PRD section 6 roles). "Issue refunds" stays
+   **off** on purpose (D-077).
+4. **You:** Settings > Connect > Platform profile: press **Acknowledge** on "Refunds and chargebacks
+   liability acknowledgement" and on "Ongoing seller compliance acknowledgement". Stripe creates no
+   connected account, not even a test one, until both are signed, so this blocks the Stripe test mode
+   acceptance run (M3-23). They commit the platform to negative balances and to refunds and
+   chargebacks a connected account cannot cover, which is the company's to sign.
+5. **You:** Developers > API keys. Put the test keys straight into `.env.local`, which is git ignored,
+   rather than into chat or the repository: `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY` (`pk_test_...`) and
+   `STRIPE_SECRET_KEY` (`sk_test_...`). Leave `PAYMENTS_PROVIDER=fake` until M3-23; the fake is what
+   every test run uses, and the keys sit unused until the provider is switched to `stripe`.
+6. Webhooks, locally: `pnpm stripe:listen` (`stripe listen --forward-connect-to
+   localhost:3000/api/webhooks/stripe`) prints a signing secret of its own. It goes in
+   `STRIPE_CONNECT_WEBHOOK_SECRET`. Direct charges raise their events on the connected account, so a
+   plain `--forward-to` never sees them.
+7. Webhooks, hosted: waits for a URL Stripe can reach. Preview deployments are behind Vercel
+   Authentication and a webhook to one is refused, so the endpoint is created against the production
+   domain in M6. It listens on `account.updated`, `payment_intent.succeeded`,
+   `payment_intent.payment_failed`, `charge.refunded` and `charge.dispute.created`, with "Listen to
+   events on connected accounts" ticked, and its secret goes in `STRIPE_CONNECT_WEBHOOK_SECRET`.
+   `STRIPE_WEBHOOK_SECRET` is for platform events (Stripe Billing, M5) and stays empty until then.
+8. **You:** live mode needs the Connect platform onboarding questionnaire finished (Platform profile >
+   View onboarding): company identity, the business model and the loss liability elections.
+
 ## 4. Routine operations
 
 ### Database changes
