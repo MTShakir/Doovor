@@ -25,3 +25,10 @@ export async function clearExpiredInvitations(): Promise<{ cleared: number }> {
   if (error) throw new Error(`Could not clear expired invitations: ${error.message}`);
   return { cleared: data };
 }
+
+/** Open ended weekly slots are kept booked a month ahead (BOK-05, M2-20). */
+export async function extendRecurrences(): Promise<{ booked: number }> {
+  const { data, error } = await getSupabaseServiceClient().rpc('system_extend_recurrences', { p_weeks: 4 });
+  if (error) throw new Error(`Could not extend the weekly slots: ${error.message}`);
+  return { booked: data };
+}

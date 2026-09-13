@@ -44,6 +44,9 @@ M2 Learners and bookings has started on branch `m2-learners-bookings`. An instru
 
 | M2-18 | Request to book: accept or decline from the diary, a reason with a decline, and a sweep every five minutes for the ones nobody answered | BOK-06, R-12 | Done. A lapsed request frees the slot, and the sweep marks it rather than leaving it to look live |
 
+| M2-19 | Recurring bookings: a weekly plan, the lessons it makes, and a result for every week rather than all or nothing | BOK-05, R-13 | Done. acceptance-09 at database level: a weekly nine o clock lesson is still at nine o clock after the March clock change |
+| M2-20 | Repeat weekly in the booking sheet, the weeks that clashed listed back, and a nightly job that keeps an open ended slot booked a month ahead | BOK-05 | Done. Four weeks booked in one go from the diary |
+
 ## M1 progress
 
 | Task | What | PRD | State |
@@ -110,7 +113,7 @@ Decisions D-036 to D-050 were logged during this stretch. Two were security fixe
 
 ## In progress
 
-- M2-19 and M2-20: recurring lessons, the weekly slot most instructors actually run on.
+- M2-21 and M2-22: the cancellation policy in core, then `cancel_booking`.
 
 ## Next
 

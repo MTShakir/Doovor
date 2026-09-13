@@ -104,4 +104,31 @@ test.describe('booking a lesson (BOK-01, M2-16)', () => {
     await expect(times.getByRole('button', { name: '09:00' })).toBeHidden();
     await expect(times.getByRole('button', { name: '09:30' })).toBeHidden();
   });
+
+  test('books the same slot every week (BOK-05) @desktop-only', async ({ page }, testInfo) => {
+    const day = await emptyDay(testInfo.project.name, 3);
+    const nextWeek = new Date(`${day}T12:00:00Z`);
+    nextWeek.setDate(nextWeek.getDate() + 7);
+    const after = nextWeek.toISOString().slice(0, 10);
+    await clearDiary('Sarah Khan', after);
+
+    await page.goto(`/app/instructor/diary?view=day&date=${day}`);
+    await tapUntil(
+      page.getByRole('button', { name: 'Book a lesson' }).first(),
+      page.getByRole('dialog', { name: 'Book a lesson' }),
+    );
+    const sheet = page.getByRole('dialog', { name: 'Book a lesson' });
+    await sheet.getByLabel('Who is it for?').selectOption({ label: 'Jack Taylor' });
+    await sheet.getByLabel('How often?').selectOption('4');
+    await sheet.getByRole('button', { name: '13:00' }).click();
+    await sheet.getByRole('button', { name: /^Book 13:00 for £/ }).click();
+
+    await expect(page.getByText('4 lessons booked, 13:00 every week')).toBeVisible();
+
+    // The week after has the same lesson at the same time.
+    await page.goto(`/app/instructor/diary?view=day&date=${after}`);
+    await expect(
+      page.getByRole('article').filter({ hasText: 'Jack Taylor' }).filter({ hasText: '13:00' }),
+    ).toBeVisible();
+  });
 });

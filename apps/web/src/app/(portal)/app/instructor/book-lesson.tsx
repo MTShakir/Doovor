@@ -14,7 +14,16 @@ import { CalendarPlus } from 'lucide-react';
 import { useEffect, useState, useTransition } from 'react';
 import { FormAlert } from '@/components/form-alert';
 import type { LessonOption } from '@/lib/booking/day';
-import { bookableLessons, bookLesson, slotsForDay } from './booking-actions';
+import { bookableLessons, bookLesson, bookWeekly, slotsForDay } from './booking-actions';
+
+/** How often it happens. Most learners have the same slot every week (BOK-05). */
+const repeats = [
+  { value: '1', label: 'Just this one' },
+  { value: '4', label: 'Every week for 4 weeks' },
+  { value: '6', label: 'Every week for 6 weeks' },
+  { value: '12', label: 'Every week for 12 weeks' },
+  { value: 'open', label: 'Every week until I stop it' },
+];
 
 export interface BookableLearner {
   id: string;
@@ -48,6 +57,8 @@ export function BookLesson({ learners, learnerId, date, label = 'Book a lesson',
   const [lessonKey, setLessonKey] = useState('');
   const [times, setTimes] = useState<{ asked: string; open: string[]; outOfHours: string[] } | null>(null);
   const [chosenSlot, setChosenSlot] = useState<string | null>(null);
+  const [repeat, setRepeat] = useState('1');
+  const [clashes, setClashes] = useState<{ startsAt: string; reason: string }[]>([]);
 
   const chosen = lessons.find((one) => `${one.lessonTypeId}:${String(one.durationMinutes)}` === lessonKey);
   // What the times on screen are for. Changing the day or the length asks again, and the
@@ -103,22 +114,47 @@ export function BookLesson({ learners, learnerId, date, label = 'Book a lesson',
   const confirm = () => {
     if (!chosen || slot === null) return;
     setError(null);
+    setClashes([]);
+    const lesson = {
+      learnerId: learner,
+      lessonTypeId: chosen.lessonTypeId,
+      startsAt: slot,
+      durationMinutes: chosen.durationMinutes,
+    };
+
     startTransition(async () => {
-      const result = await bookLesson({
-        learnerId: learner,
-        lessonTypeId: chosen.lessonTypeId,
-        startsAt: slot,
-        durationMinutes: chosen.durationMinutes,
-      });
+      const when = new Date(slot);
+      if (repeat === '1') {
+        const result = await bookLesson(lesson);
+        if (!result.ok) {
+          setError(result.message);
+          return;
+        }
+        toast(`Booked for ${formatDate(when)} at ${formatTime(when)}`);
+        setOpen(false);
+        setChosenSlot(null);
+        setTimes(null);
+        return;
+      }
+
+      const openEnded = repeat === 'open';
+      const result = await bookWeekly({ ...lesson, weeks: openEnded ? 4 : Number(repeat), openEnded });
       if (!result.ok) {
         setError(result.message);
         return;
       }
-      const when = new Date(slot);
-      toast(`Booked for ${formatDate(when)} at ${formatTime(when)}`);
-      setOpen(false);
-      setChosenSlot(null);
+      toast(
+        result.data.booked === 1
+          ? `Booked for ${formatDate(when)} at ${formatTime(when)}`
+          : `${String(result.data.booked)} lessons booked, ${formatTime(when)} every week`,
+      );
+      // A week that could not go in stays on screen, because it is the instructor's to sort.
+      setClashes(result.data.clashes);
       setTimes(null);
+      if (result.data.clashes.length === 0) {
+        setOpen(false);
+        setChosenSlot(null);
+      }
     });
   };
 
@@ -179,6 +215,10 @@ export function BookLesson({ learners, learnerId, date, label = 'Book a lesson',
             />
           </Field>
 
+          <Field label="How often?">
+            <Select value={repeat} onChange={(event) => { setRepeat(event.target.value); }} options={repeats} />
+          </Field>
+
           <Field label="Which day?">
             {/* The browser owns what is in the box; this only listens (D-043). */}
             <Input type="date" defaultValue={day} min={todayInZone()} onChange={(event) => { setDay(event.target.value); }} />
@@ -206,6 +246,13 @@ export function BookLesson({ learners, learnerId, date, label = 'Book a lesson',
               ) : null}
             </div>
           )}
+
+          {clashes.length > 0 ? (
+            <FormAlert tone="warning">
+              {clashes.length === 1 ? 'One week could not be booked: ' : `${String(clashes.length)} weeks could not be booked: `}
+              {clashes.map((clash) => formatDate(new Date(clash.startsAt))).join(', ')}. The rest are in the diary.
+            </FormAlert>
+          ) : null}
 
           {outside ? (
             <FormAlert tone="warning">

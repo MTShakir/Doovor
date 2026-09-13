@@ -98,3 +98,47 @@ export async function decideRequest(input: unknown): Promise<Result<{ status: st
   revalidatePath('/app/instructor');
   return ok({ status: data });
 }
+
+const weeklySchema = bookingSchema.extend({
+  weeks: z.coerce.number().int().min(1).max(52),
+  openEnded: z.boolean().default(false),
+});
+
+export interface WeeklyOutcome {
+  booked: number;
+  clashes: { startsAt: string; reason: string }[];
+}
+
+/** BOK-05: the same slot every week. A week that clashes is reported, not fatal (R-13). */
+export async function bookWeekly(input: unknown): Promise<Result<WeeklyOutcome>> {
+  const parsed = weeklySchema.safeParse(input);
+  if (!parsed.success) return err('VALIDATION_FAILED');
+
+  const where = await place();
+  if (!where) return err('NOT_ALLOWED');
+
+  const supabase = await createSupabaseServerClient();
+  const { data, error } = await supabase.rpc('book_weekly', {
+    p_instructor_id: where.instructorProfileId,
+    p_learner_id: parsed.data.learnerId,
+    p_lesson_type_id: parsed.data.lessonTypeId,
+    p_first_starts_at: parsed.data.startsAt,
+    p_duration_minutes: parsed.data.durationMinutes,
+    p_weeks: parsed.data.weeks,
+    p_open_ended: parsed.data.openEnded,
+    p_pickup_point_id: parsed.data.pickupPointId ?? undefined,
+  });
+  if (error) return err(parsePostgresError(error).code);
+
+  revalidatePath('/app/instructor/diary');
+  revalidatePath('/app/instructor');
+  // A week that clashed comes back with no booking and a reason; the generated types have
+  // no way of knowing that a column of a set returning function can be null.
+  const weeks = data as { starts_at: string; booking_id: string | null; problem: string | null }[];
+  return ok({
+    booked: weeks.filter((week) => week.booking_id !== null).length,
+    clashes: weeks
+      .filter((week) => week.booking_id === null)
+      .map((week) => ({ startsAt: week.starts_at, reason: week.problem ?? 'UNKNOWN' })),
+  });
+}

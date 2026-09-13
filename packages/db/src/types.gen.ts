@@ -143,6 +143,106 @@ export type Database = {
           },
         ]
       }
+      booking_recurrences: {
+        Row: {
+          booked_until: string | null
+          business_id: string
+          cancelled_at: string | null
+          created_at: string
+          created_by: string | null
+          duration_minutes: number
+          ends_on: string | null
+          id: string
+          instructor_id: string
+          learner_id: string
+          lesson_type_id: string
+          local_time: string
+          pickup_point_id: string | null
+          starts_on: string
+          updated_at: string
+          weekday: number
+        }
+        Insert: {
+          booked_until?: string | null
+          business_id: string
+          cancelled_at?: string | null
+          created_at?: string
+          created_by?: string | null
+          duration_minutes: number
+          ends_on?: string | null
+          id?: string
+          instructor_id: string
+          learner_id: string
+          lesson_type_id: string
+          local_time: string
+          pickup_point_id?: string | null
+          starts_on: string
+          updated_at?: string
+          weekday: number
+        }
+        Update: {
+          booked_until?: string | null
+          business_id?: string
+          cancelled_at?: string | null
+          created_at?: string
+          created_by?: string | null
+          duration_minutes?: number
+          ends_on?: string | null
+          id?: string
+          instructor_id?: string
+          learner_id?: string
+          lesson_type_id?: string
+          local_time?: string
+          pickup_point_id?: string | null
+          starts_on?: string
+          updated_at?: string
+          weekday?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "booking_recurrences_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "businesses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "booking_recurrences_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "booking_recurrences_instructor_id_business_id_fkey"
+            columns: ["instructor_id", "business_id"]
+            isOneToOne: false
+            referencedRelation: "instructor_profiles"
+            referencedColumns: ["id", "business_id"]
+          },
+          {
+            foreignKeyName: "booking_recurrences_learner_id_fkey"
+            columns: ["learner_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "booking_recurrences_lesson_type_id_business_id_fkey"
+            columns: ["lesson_type_id", "business_id"]
+            isOneToOne: false
+            referencedRelation: "lesson_types"
+            referencedColumns: ["id", "business_id"]
+          },
+          {
+            foreignKeyName: "booking_recurrences_pickup_point_id_fkey"
+            columns: ["pickup_point_id"]
+            isOneToOne: false
+            referencedRelation: "pickup_points"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       bookings: {
         Row: {
           blocked_range: unknown
@@ -1517,6 +1617,23 @@ export type Database = {
         Args: { p_instructor_id: string; p_learner_id: string }
         Returns: string
       }
+      book_weekly: {
+        Args: {
+          p_duration_minutes: number
+          p_first_starts_at: string
+          p_instructor_id: string
+          p_learner_id: string
+          p_lesson_type_id: string
+          p_open_ended?: boolean
+          p_pickup_point_id?: string
+          p_weeks: number
+        }
+        Returns: {
+          booking_id: string
+          problem: string
+          starts_at: string
+        }[]
+      }
       booking_page: { Args: { p_slug: string }; Returns: Json }
       cache_postcode: {
         Args: {
@@ -1662,6 +1779,7 @@ export type Database = {
         }
         Returns: string
       }
+      stop_recurrence: { Args: { p_recurrence_id: string }; Returns: undefined }
       submit_verification: {
         Args: {
           p_badge_expiry: string
@@ -1710,6 +1828,7 @@ export type Database = {
         Returns: number
       }
       system_expire_requests: { Args: never; Returns: number }
+      system_extend_recurrences: { Args: { p_weeks?: number }; Returns: number }
       system_mark_outbox_failed: {
         Args: { p_error: string; p_ids: string[] }
         Returns: number
