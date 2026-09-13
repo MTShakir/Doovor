@@ -59,6 +59,8 @@ M2 Learners and bookings has started on branch `m2-learners-bookings`. An instru
 
 | M2-27 | The notification core: the Appendix B catalogue, `notifications` and `notification_preferences`, the settings screen and the job that writes them | NTF-01, NTF-03, NTF-04 | Done. A repeated event writes one row, not two, and a service message reaches the inbox whatever is switched off. Proved end to end locally: a booking event went outbox to job runner to two notifications, one worded for each side |
 
+| M2-28 | Email: a provider interface with Resend behind it, the React Email template, and the job that sends what the core wrote | NTF-03 | Done. Every notification in the catalogue renders without an em or en dash, in HTML and in words. Proved end to end locally: a cancelled lesson reached the log provider as two emails, one for each side |
+
 ## M1 progress
 
 | Task | What | PRD | State |
@@ -116,8 +118,8 @@ Decisions D-036 to D-050 were logged during this stretch. Two were security fixe
 
 | Suite | Result |
 |---|---|
-| Unit (Vitest) | 479 passed across 6 packages; `packages/core` line coverage 99.3%, `packages/providers` 100% |
-| Database (pgTAP) | 489 assertions in 40 files, all passing; SQL lint clean |
+| Unit (Vitest) | 497 passed across 7 packages; `packages/core` line coverage 99.3%, `packages/providers` 100% |
+| Database (pgTAP) | 496 assertions in 41 files, all passing; SQL lint clean |
 | End to end (Playwright) | 222 passed at 390 px and 1440 px, none skipped, stable across repeated full runs |
 | Lint, typecheck, copy guard | Clean |
 | CI on GitHub | Green: lint and unit, database, end to end against a production build |
@@ -125,7 +127,7 @@ Decisions D-036 to D-050 were logged during this stretch. Two were security fixe
 
 ## In progress
 
-- M2-28: email, so the notifications the core writes reach people who are not looking at the app.
+- M2-29: the service worker spike and web push.
 
 ## Next
 
@@ -140,3 +142,4 @@ Decisions D-036 to D-050 were logged during this stretch. Two were security fixe
 | Twilio account off trial | Text codes to a number that is not pre-registered, on staging | Product owner |
 | Mapbox access token | The real map on the coverage step. The drawn fallback ships meanwhile (D-058) | Product owner |
 | Leaked password protection | One dashboard switch on staging, found by the M1 security advisor. RUNBOOK 3.1 step 4 | Product owner |
+| Resend API key for the app | Real email from staging and production. Local and test runs write to the log and send nothing. RUNBOOK 3.2 step 3 | Product owner |

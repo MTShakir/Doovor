@@ -4,6 +4,7 @@
   "private": true,
   "type": "module",
   "exports": {
+    "./email": "./src/email/index.ts",
     "./geo": "./src/geo/index.ts",
     "./map": "./src/map/index.ts",
     "./rate-limit": "./src/rate-limit/index.ts"

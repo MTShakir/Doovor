@@ -72,8 +72,13 @@ test.describe('notifications (NTF-01, NTF-04, M2-27)', () => {
     await expectAccessible(page);
     await snap(page, testInfo, 'notification-settings');
 
+    // The switch moves at once and saves behind it, so wait for the save, not the movement.
+    const saved = page.waitForResponse(
+      (response) => response.request().method() === 'POST' && response.url().includes('/notifications/settings'),
+    );
     await email.click();
     await expect(email).not.toBeChecked();
+    await saved;
 
     // It was really saved, not only moved on screen.
     await page.reload();

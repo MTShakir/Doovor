@@ -76,7 +76,9 @@ Do these once, in order. Items marked **You** need the product owner's accounts.
 ### 3.2 Resend (email)
 
 1. **You:** add the domain `maxterzhub.co.uk` and create the DNS records Resend shows (SPF, DKIM and DMARC) at the domain's DNS provider. Wait for "Verified".
-2. **You:** create an API key with sending access to that domain only. It goes into the Supabase SMTP settings. The app's own emails arrive in M2 and will use a separate key (`RESEND_API_KEY`).
+2. **You:** create an API key with sending access to that domain only. It goes into the Supabase SMTP settings.
+3. **You:** create a second API key, also sending to that domain only, for the app's own emails (M2-28). Put it in Vercel as `RESEND_API_KEY` and set `EMAIL_PROVIDER=resend` there. Two keys rather than one, so revoking the app's key never stops a password reset.
+4. Without the key the app uses the local provider: it writes a line to the log and sends nothing, which is what every local and test run does.
 
 ### 3.3 Twilio (text codes)
 

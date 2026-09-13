@@ -1148,6 +1148,7 @@ export type Database = {
       }
       notifications: {
         Row: {
+          attempts: number
           body: string
           business_id: string | null
           category: Database["public"]["Enums"]["notification_category"]
@@ -1158,6 +1159,7 @@ export type Database = {
           entity_type: string | null
           id: string
           kind: string
+          last_error: string | null
           link: string | null
           read_at: string | null
           sent_at: string | null
@@ -1165,6 +1167,7 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          attempts?: number
           body: string
           business_id?: string | null
           category: Database["public"]["Enums"]["notification_category"]
@@ -1175,6 +1178,7 @@ export type Database = {
           entity_type?: string | null
           id?: string
           kind: string
+          last_error?: string | null
           link?: string | null
           read_at?: string | null
           sent_at?: string | null
@@ -1182,6 +1186,7 @@ export type Database = {
           user_id: string
         }
         Update: {
+          attempts?: number
           body?: string
           business_id?: string | null
           category?: Database["public"]["Enums"]["notification_category"]
@@ -1192,6 +1197,7 @@ export type Database = {
           entity_type?: string | null
           id?: string
           kind?: string
+          last_error?: string | null
           link?: string | null
           read_at?: string | null
           sent_at?: string | null
@@ -1906,6 +1912,22 @@ export type Database = {
           instructor_id: string
         }[]
       }
+      system_claim_notifications: {
+        Args: { p_limit?: number }
+        Returns: {
+          body: string
+          category: Database["public"]["Enums"]["notification_category"]
+          channels: Database["public"]["Enums"]["notification_channel"][]
+          dedupe_key: string
+          email: string
+          full_name: string
+          id: string
+          kind: string
+          link: string
+          title: string
+          user_id: string
+        }[]
+      }
       system_claim_outbox_events: {
         Args: { p_limit?: number }
         Returns: {
@@ -1934,6 +1956,14 @@ export type Database = {
       }
       system_expire_requests: { Args: never; Returns: number }
       system_extend_recurrences: { Args: { p_weeks?: number }; Returns: number }
+      system_mark_notification_failed: {
+        Args: { p_error: string; p_id: string }
+        Returns: number
+      }
+      system_mark_notifications_sent: {
+        Args: { p_ids: string[] }
+        Returns: number
+      }
       system_mark_outbox_failed: {
         Args: { p_error: string; p_ids: string[] }
         Returns: number
