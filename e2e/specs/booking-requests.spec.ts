@@ -27,8 +27,8 @@ test.describe('answering a request (BOK-06, M2-18)', () => {
     await snap(page, testInfo, 'booking-request');
 
     await lesson.getByRole('button', { name: 'Accept' }).click();
-    await expect(page.getByText('confirmed')).toBeVisible();
-    await expect(lesson).toContainText('Unpaid');
+    await expect(page.getByText('Lesson with Jack Taylor confirmed')).toBeVisible();
+    await expect(lesson).toContainText('Unpaid', { timeout: 30_000 });
     await expect(lesson.getByRole('button', { name: 'Accept' })).toBeHidden();
   });
 
@@ -49,7 +49,7 @@ test.describe('answering a request (BOK-06, M2-18)', () => {
     await snap(page, testInfo, 'booking-decline', { fullPage: false });
     await page.getByRole('button', { name: 'Decline the lesson' }).click();
 
-    await expect(page.getByText('declined')).toBeVisible();
-    await expect(lesson).toContainText('Cancelled');
+    await expect(page.getByText('Lesson with Olivia Brown declined')).toBeVisible();
+    await expect(lesson).toContainText('Cancelled', { timeout: 30_000 });
   });
 });

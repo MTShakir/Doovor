@@ -149,7 +149,9 @@ test.describe('booking a lesson (BOK-01, M2-16)', () => {
     await page.getByRole('button', { name: 'Move to 15:00' }).click();
 
     await expect(page.getByText('Moved to')).toBeVisible();
-    await expect(page.getByRole('article').filter({ hasText: 'Jack Taylor' })).toContainText('15:00');
+    await expect(page.getByRole('article').filter({ hasText: 'Jack Taylor' })).toContainText('15:00', {
+      timeout: 30_000,
+    });
   });
 
   test('cancels a lesson, and has to say why (BOK-09) @desktop-only', async ({ page }, testInfo) => {
@@ -169,8 +171,10 @@ test.describe('booking a lesson (BOK-01, M2-16)', () => {
     await snap(page, testInfo, 'booking-cancel', { fullPage: false });
     await page.getByRole('button', { name: 'Cancel the lesson' }).click();
 
-    await expect(page.getByText('cancelled')).toBeVisible();
-    await expect(lesson).toContainText('Cancelled');
+    await expect(page.getByText('Lesson with Olivia Brown cancelled')).toBeVisible();
+    // The diary catches up on its own. A development server under four workers is slow at it,
+    // which is why this waits longer than the default.
+    await expect(lesson).toContainText('Cancelled', { timeout: 30_000 });
   });
 
   test('drags a lesson into a gap (DIA-03, BOK-08) @desktop-only', async ({ page }, testInfo) => {
