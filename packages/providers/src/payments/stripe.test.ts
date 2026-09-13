@@ -222,6 +222,58 @@ describe('a learner and their cards (PAY-02)', () => {
       { paymentMethodId: 'pm_1', brand: 'visa', last4: '4242', expiryMonth: 4, expiryYear: 2030 },
     ]);
   });
+
+  const twice = {
+    data: [
+      { id: 'pm_new', card: { brand: 'visa', last4: '4242', exp_month: 4, exp_year: 2030, fingerprint: 'fp_visa' } },
+      { id: 'pm_old', card: { brand: 'visa', last4: '4242', exp_month: 4, exp_year: 2030, fingerprint: 'fp_visa' } },
+      { id: 'pm_amex', card: { brand: 'amex', last4: '0005', exp_month: 1, exp_year: 2031, fingerprint: 'fp_amex' } },
+    ],
+  };
+
+  it('shows a card paid with twice once, the newest copy of it', async () => {
+    const { payments } = provider({ 'paymentMethods.list': twice });
+    const cards = await payments.listSavedCards({ accountId: 'acct_1', customerId: 'cus_1' });
+
+    expect(cards.ok && cards.data.map((card) => card.paymentMethodId)).toEqual(['pm_new', 'pm_amex']);
+  });
+
+  it('forgets every copy of a card, so it does not come back', async () => {
+    const { calls, payments } = provider({ 'paymentMethods.list': twice });
+
+    const forgotten = await payments.forgetSavedCard({
+      accountId: 'acct_1',
+      customerId: 'cus_1',
+      paymentMethodId: 'pm_new',
+    });
+
+    expect(forgotten.ok).toBe(true);
+    const detached = calls.filter((call) => call.method === 'paymentMethods.detach').map((call) => call.args[0]);
+    expect(detached).toEqual(['pm_new', 'pm_old']);
+  });
+
+  it('removes nothing when the card is not on the customer asking', async () => {
+    const { calls, payments } = provider({ 'paymentMethods.list': twice });
+
+    const forgotten = await payments.forgetSavedCard({
+      accountId: 'acct_1',
+      customerId: 'cus_1',
+      paymentMethodId: 'pm_somebody_else',
+    });
+
+    expect(forgotten.ok).toBe(false);
+    if (!forgotten.ok) expect(forgotten.reason).toBe('NOT_FOUND');
+    expect(calls.some((call) => call.method === 'paymentMethods.detach')).toBe(false);
+  });
+
+  it('forgets the one card it was given when it is not told whose it is', async () => {
+    const { calls, payments } = provider({ 'paymentMethods.list': twice });
+
+    await payments.forgetSavedCard({ accountId: 'acct_1', paymentMethodId: 'pm_old' });
+
+    const detached = calls.filter((call) => call.method === 'paymentMethods.detach').map((call) => call.args[0]);
+    expect(detached).toEqual(['pm_old']);
+  });
 });
 
 describe('taking money (PAY-02, PAY-03, R-12)', () => {
@@ -297,6 +349,23 @@ describe('taking money (PAY-02, PAY-03, R-12)', () => {
     expect(body.off_session).toBe(true);
     expect(body.confirm).toBe(true);
     expect(body.payment_method).toBe('pm_1');
+  });
+
+  it('tells the bank the learner is there when they are, and offers nothing that redirects (PAY-02)', async () => {
+    const { calls, payments } = provider();
+
+    await payments.chargeSavedMethod({
+      accountId: 'acct_1',
+      customerId: 'cus_1',
+      paymentMethodId: 'pm_1',
+      amountPence: 4200,
+      onSession: true,
+    });
+
+    const body = calls[0]?.args[0] as Record<string, unknown>;
+    expect(body.off_session).toBeUndefined();
+    expect(body.confirm).toBe(true);
+    expect(body.automatic_payment_methods).toEqual({ enabled: true, allow_redirects: 'never' });
   });
 
   it('reads a charge whether Stripe sends its id or the whole thing', async () => {

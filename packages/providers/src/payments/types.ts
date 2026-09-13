@@ -69,6 +69,13 @@ export interface ChargeSavedMethodInput {
   currency?: string;
   metadata?: Record<string, string>;
   idempotencyKey?: string;
+  /**
+   * The learner is here, pressing the button (PAY-02). Off by default, which is the charge
+   * made 24 hours before a lesson with nobody at the keyboard (PAY-03). The bank is told which
+   * it is, because it is allowed to treat the two differently and a charge that claims nobody
+   * was there when somebody was is not one to make.
+   */
+  onSession?: boolean;
 }
 
 export interface RefundInput {
@@ -169,7 +176,16 @@ export interface PaymentsProvider {
     name?: string;
   }) => Promise<PaymentResult<{ customerId: string }>>;
   listSavedCards: (input: { accountId: string; customerId: string }) => Promise<PaymentResult<SavedCard[]>>;
-  forgetSavedCard: (input: { accountId: string; paymentMethodId: string }) => Promise<PaymentResult<null>>;
+  /**
+   * Forgets a card. Given the customer, it forgets every copy of the same card they have, since
+   * paying with one card twice can leave two of it behind and a card that comes back after it
+   * was removed is a card somebody thinks we kept.
+   */
+  forgetSavedCard: (input: {
+    accountId: string;
+    paymentMethodId: string;
+    customerId?: string;
+  }) => Promise<PaymentResult<null>>;
 
   /** Paying for a lesson (PAY-02, PAY-03, R-10, R-12). */
   createCheckoutIntent: (input: CheckoutIntentInput) => Promise<PaymentResult<PaymentIntent>>;

@@ -7,6 +7,7 @@ export default async function LearnerAccountPage() {
       title="Account"
       links={[
         await notificationsMenuLink(),
+        { href: '/app/learner/payments', title: 'Payments', subtitle: 'Cards you have saved with your instructors' },
         { href: '/account', title: 'Account and security', subtitle: 'Password, devices, two-step verification' },
       ]}
     />

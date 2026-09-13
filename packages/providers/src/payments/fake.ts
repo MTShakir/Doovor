@@ -25,6 +25,14 @@ import type {
  * authentication, the rest work.
  */
 
+/** What a card looks like once the fake has kept it. */
+export const fakeSavedCard = {
+  brand: 'visa',
+  last4: '4242',
+  expiryMonth: 12,
+  expiryYear: 2030,
+} as const;
+
 /** Test cards, so a test can ask for a refusal without pretending. */
 export const fakeCards = {
   works: 'pm_card_visa',
@@ -39,6 +47,8 @@ interface FakeState {
   customers: Map<string, { accountId: string; reference: string }>;
   cards: Map<string, SavedCard[]>;
   intents: Map<string, PaymentIntent>;
+  /** Who each payment was for, and whether they asked for the card to be kept (PAY-02). */
+  payers: Map<string, { customerId: string; save: boolean }>;
   refunds: Map<string, Refund[]>;
   /** What each idempotency key answered, so the same key never does the work twice. */
   answered: Map<string, string>;
@@ -65,7 +75,11 @@ export interface FakePaymentsProvider extends PaymentsProvider {
    * Stands in for a card going through, or being refused (PAY-02). Returns the payment as it
    * now stands, which is what the provider would send in an event.
    */
-  completePayment: (paymentIntentId: string, outcome?: 'succeeded' | 'failed') => PaymentIntent | null;
+  completePayment: (
+    paymentIntentId: string,
+    outcome?: 'succeeded' | 'failed',
+    card?: Omit<SavedCard, 'paymentMethodId'>,
+  ) => PaymentIntent | null;
   /** Pretends the provider sent an event, for the webhook path (R-11). */
   event: (type: string, data: Record<string, unknown>, accountId?: string) => WebhookEvent;
   /** Signs a body the way the real one does, so the webhook route can be tested. */
@@ -89,6 +103,7 @@ export function fakePaymentsProvider(options: FakePaymentsOptions = {}): FakePay
     customers: new Map(),
     cards: new Map(),
     intents: new Map(),
+    payers: new Map(),
     refunds: new Map(),
     answered: new Map(),
   };
@@ -126,10 +141,27 @@ export function fakePaymentsProvider(options: FakePaymentsOptions = {}): FakePay
       return true;
     },
 
-    completePayment: (paymentIntentId, outcome = 'succeeded') => {
+    completePayment: (paymentIntentId, outcome = 'succeeded', card = fakeSavedCard) => {
       const intent = state.intents.get(paymentIntentId);
       if (!intent) return null;
       if (outcome === 'failed') return put({ ...intent, status: 'requires_payment_method' });
+
+      // A card that went through, for somebody who asked to keep it, is kept against them on
+      // that account, once however many times they pay with it (PAY-02).
+      const payer = state.payers.get(paymentIntentId);
+      if (payer?.save) {
+        const key = `${intent.accountId}:${payer.customerId}`;
+        const kept = state.cards.get(key) ?? [];
+        const already = kept.some(
+          (one) =>
+            one.brand === card.brand &&
+            one.last4 === card.last4 &&
+            one.expiryMonth === card.expiryMonth &&
+            one.expiryYear === card.expiryYear,
+        );
+        if (!already) state.cards.set(key, [{ paymentMethodId: next('pm'), ...card }, ...kept]);
+      }
+
       return put({ ...intent, status: 'succeeded', clientSecret: null, chargeId: intent.chargeId ?? next('ch') });
     },
 
@@ -139,6 +171,7 @@ export function fakePaymentsProvider(options: FakePaymentsOptions = {}): FakePay
       state.customers.clear();
       state.cards.clear();
       state.intents.clear();
+      state.payers.clear();
       state.refunds.clear();
       state.answered.clear();
       counter = 0;
@@ -200,6 +233,16 @@ export function fakePaymentsProvider(options: FakePaymentsOptions = {}): FakePay
       Promise.resolve(ok(state.cards.get(`${input.accountId}:${input.customerId}`) ?? [])),
 
     forgetSavedCard: (input): Promise<PaymentResult<null>> => {
+      if (input.customerId !== undefined) {
+        const key = `${input.accountId}:${input.customerId}`;
+        const kept = state.cards.get(key) ?? [];
+        if (!kept.some((card) => card.paymentMethodId === input.paymentMethodId)) {
+          return Promise.resolve({ ok: false, reason: 'NOT_FOUND', message: 'That card is not saved for them.' });
+        }
+        state.cards.set(key, kept.filter((card) => card.paymentMethodId !== input.paymentMethodId));
+        return Promise.resolve(ok(null));
+      }
+
       for (const [key, cards] of state.cards) {
         if (!key.startsWith(`${input.accountId}:`)) continue;
         state.cards.set(
@@ -230,6 +273,9 @@ export function fakePaymentsProvider(options: FakePaymentsOptions = {}): FakePay
             chargeId: null,
           }),
       );
+      if (input.customerId !== undefined) {
+        state.payers.set(intent.id, { customerId: input.customerId, save: input.savePaymentMethod === true });
+      }
       return Promise.resolve(ok(intent));
     },
 
@@ -266,6 +312,14 @@ export function fakePaymentsProvider(options: FakePaymentsOptions = {}): FakePay
     },
 
     chargeSavedMethod: (input: ChargeSavedMethodInput): Promise<PaymentResult<PaymentIntent>> => {
+      // Test cards work for anybody, as Stripe's do. A card the fake kept works only for the
+      // person it was kept for, on the account it was kept on, as a real saved card does.
+      if (input.paymentMethodId.startsWith(`${prefix}_pm_`)) {
+        const kept = state.cards.get(`${input.accountId}:${input.customerId}`) ?? [];
+        if (!kept.some((card) => card.paymentMethodId === input.paymentMethodId)) {
+          return Promise.resolve({ ok: false, reason: 'NOT_FOUND', message: 'That card is not saved for them.' });
+        }
+      }
       if (input.paymentMethodId === fakeCards.declined) {
         return Promise.resolve({ ok: false, reason: 'DECLINED', message: 'The card was declined.' });
       }

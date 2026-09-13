@@ -5,6 +5,7 @@ import {
   clearPaymentsAccount,
   enablePayments,
   expireHoldsNow,
+  holdPaymentsBusiness,
   lessonsOn,
   paymentFor,
   paymentsAccountOf,
@@ -18,6 +19,19 @@ import { expectAccessible, snap } from '../support/helpers';
  * of them running at once would each see the other's half-finished state. They are quick.
  */
 test.describe.configure({ mode: 'serial' });
+
+// The two widths run this file at the same time, and both switch the same school's payments on
+// and off. They take turns instead, for as long as the file takes.
+let letGo: (() => Promise<void>) | undefined;
+
+test.beforeAll(async () => {
+  test.setTimeout(10 * 60_000);
+  letGo = await holdPaymentsBusiness();
+});
+
+test.afterAll(async () => {
+  await letGo?.();
+});
 
 test.describe('connecting payments (PAY-01, M3-02)', () => {
   test('an owner sets it up, finishes, and comes back able to take cards', async ({ browser }, testInfo) => {
@@ -113,7 +127,8 @@ test.describe('paying for a lesson (PAY-02, M3-05)', () => {
       await expect(checkout.getByRole('button', { name: 'Pay with a test card' })).toBeVisible({ timeout: 10_000 });
     }).toPass({ timeout: 40_000 });
 
-    const [held] = await lessonsOn('Tom Walsh', day);
+    // By time, not by position: other tests in this file book the same day.
+    const held = (await lessonsOn('Tom Walsh', day)).find((one) => one.time === hour);
     expect(held?.status, 'the slot is held while they pay').toBe('pending_payment');
 
     await checkout.getByRole('button', { name: 'Pay with a test card' }).click();
@@ -125,9 +140,92 @@ test.describe('paying for a lesson (PAY-02, M3-05)', () => {
     await snap(page, testInfo, 'pay-lesson-done');
 
     // The webhook did the work: the lesson is on, and the payment is written down.
-    const [after] = await lessonsOn('Tom Walsh', day);
+    const after = (await lessonsOn('Tom Walsh', day)).find((one) => one.time === hour);
     expect(after?.status).toBe('confirmed');
     expect(await paymentFor(after?.startsAt ?? '')).toEqual({ amountPence: 4200, status: 'paid' });
+
+    await clearPaymentsAccount(owner);
+  });
+
+  test('a card kept on the first lesson pays for the second in one press (M3-07)', async ({ page }, testInfo) => {
+    test.setTimeout(150_000);
+    const day = ownDay(testInfo.project.name);
+    // An account of its own each run, so a card kept last time is not already there.
+    await enablePayments(owner, `fake_acct_saved_${testInfo.project.name}_${String(Date.now())}`);
+    await bookLesson('Tom Walsh', learner, day, '08:00');
+    await bookLesson('Tom Walsh', learner, day, '12:00');
+
+    const openPayment = async (hour: string) => {
+      await page.goto('/app/learner/lessons');
+      const lesson = page
+        .getByRole('article')
+        .filter({ hasText: `at ${hour}` })
+        .filter({ hasText: 'Tom Walsh' });
+      await expect(async () => {
+        await lesson.getByRole('link', { name: /^Pay £/ }).click();
+        await page.waitForURL(/\/app\/learner\/pay\//, { timeout: 5000 });
+      }).toPass({ timeout: 20_000 });
+      return page.getByRole('region', { name: /at \d\d:\d\d$/ });
+    };
+
+    // The first lesson: a card typed in, and kept because the learner said so (D-079).
+    const first = await openPayment('08:00');
+    const keep = first.getByRole('checkbox', { name: /Save this card for next time/ });
+    await expect(keep).not.toBeChecked();
+    await expect(first.getByRole('button', { name: /with Visa/ })).toHaveCount(0);
+    await keep.click();
+    await expect(keep).toBeChecked();
+    await snap(page, testInfo, 'pay-keep-card');
+
+    await expect(async () => {
+      await first.getByRole('button', { name: /^Pay £/ }).click();
+      await expect(first.getByRole('button', { name: 'Pay with a test card' })).toBeVisible({ timeout: 10_000 });
+    }).toPass({ timeout: 40_000 });
+    await first.getByRole('button', { name: 'Pay with a test card' }).click();
+    await expect(first).toContainText('That is paid for, and your lesson is confirmed.', { timeout: 30_000 });
+
+    // The second lesson offers the card, and one press pays for it.
+    const second = await openPayment('12:00');
+    await expect(second).toContainText('Visa ending 4242, expires 12/30');
+    const payWithKept = second.getByRole('button', { name: 'Pay £42 with Visa ending 4242' });
+    await expect(payWithKept).toBeVisible();
+    await expect(second.getByRole('button', { name: 'Use a different card' })).toBeVisible();
+    await expectAccessible(page);
+    await snap(page, testInfo, 'pay-saved-card');
+
+    await expect(async () => {
+      await payWithKept.click();
+      await expect(second).toContainText('That is paid for, and your lesson is confirmed.', { timeout: 10_000 });
+    }).toPass({ timeout: 40_000 });
+    await snap(page, testInfo, 'pay-saved-card-done');
+
+    const paid = (await lessonsOn('Tom Walsh', day)).find((one) => one.time === '12:00');
+    expect(paid?.status, 'the webhook confirmed the second lesson').toBe('confirmed');
+    expect(await paymentFor(paid?.startsAt ?? '')).toEqual({ amountPence: 4200, status: 'paid' });
+
+    // The card is listed where cards are managed, and removing it can be undone.
+    await page.goto('/app/learner/payments');
+    const school = page.getByRole('region', { name: 'Quayside Driving School' });
+    const row = school.locator('li').filter({ hasText: 'Visa ending 4242' });
+    await expect(row).toHaveCount(1);
+    await expect(row).toContainText('Expires 12/30');
+    await expectAccessible(page);
+    await snap(page, testInfo, 'payments-cards');
+
+    await row.getByRole('button', { name: 'Remove Visa ending 4242' }).click();
+    await expect(row).toHaveCount(0);
+    await page.getByRole('button', { name: 'Undo' }).click();
+    await expect(row).toHaveCount(1);
+
+    // Left alone, it goes when the five seconds are up, and stays gone.
+    await row.getByRole('button', { name: 'Remove Visa ending 4242' }).click();
+    await expect(row).toHaveCount(0);
+    await page.waitForTimeout(6000);
+    await expect(async () => {
+      await page.reload();
+      await expect(page.getByRole('heading', { name: 'No saved cards' })).toBeVisible({ timeout: 5000 });
+    }).toPass({ timeout: 30_000 });
+    await snap(page, testInfo, 'payments-no-cards');
 
     await clearPaymentsAccount(owner);
   });

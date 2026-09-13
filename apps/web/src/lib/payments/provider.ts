@@ -54,10 +54,21 @@ export function fakeOnboarding(accountId: string): boolean {
 export function fakeCardOutcome(
   paymentIntentId: string,
   outcome: 'succeeded' | 'failed',
-): { id: string; amountPence: number; metadata: Record<string, string> } | null {
+): { id: string; accountId: string; amountPence: number; metadata: Record<string, string> } | null {
   if (serverEnv.PAYMENTS_PROVIDER === 'stripe') return null;
   const intent = theFake().completePayment(paymentIntentId, outcome);
-  return intent ? { id: intent.id, amountPence: intent.amountPence, metadata: intent.metadata } : null;
+  return intent
+    ? { id: intent.id, accountId: intent.accountId, amountPence: intent.amountPence, metadata: intent.metadata }
+    : null;
+}
+
+/**
+ * Signs an event body the way the fake's webhook check expects, for the paths that stand in
+ * for the provider sending one. Nothing to sign with Stripe, which sends its own.
+ */
+export function signFakeEvent(body: string): string | null {
+  if (serverEnv.PAYMENTS_PROVIDER === 'stripe') return null;
+  return theFake().sign(body, localWebhookSecret);
 }
 
 /**

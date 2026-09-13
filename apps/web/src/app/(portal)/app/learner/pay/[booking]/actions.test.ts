@@ -1,0 +1,207 @@
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+
+const rpc = vi.fn();
+const checkoutLesson = vi.fn<(id: string) => Promise<unknown>>();
+const keptCardsWith = vi.fn<(id: string) => Promise<unknown>>();
+const deliverFakePaymentEvent = vi.fn<(...args: unknown[]) => Promise<boolean>>();
+const provider = {
+  ensureCustomer: vi.fn(),
+  createCheckoutIntent: vi.fn(),
+  chargeSavedMethod: vi.fn(),
+};
+const env = { PAYMENTS_PROVIDER: 'fake', APP_ENV: 'local' };
+
+vi.mock('@/lib/supabase/server', () => ({ createSupabaseServerClient: () => Promise.resolve({ rpc }) }));
+vi.mock('@/lib/auth/session', () => ({
+  requirePortal: () => Promise.resolve({ session: { userId: 'learner-1', email: 'lee@example.test' } }),
+}));
+vi.mock('@/lib/payments/checkout', () => ({ checkoutLesson: (id: string) => checkoutLesson(id) }));
+vi.mock('@/lib/payments/cards', () => ({ keptCardsWith: (id: string) => keptCardsWith(id) }));
+vi.mock('@/lib/payments/provider', () => ({ paymentsProvider: () => provider, fakeCardOutcome: vi.fn() }));
+vi.mock('@/lib/payments/webhook', () => ({
+  deliverFakePaymentEvent: (...args: unknown[]) => deliverFakePaymentEvent(...args),
+}));
+vi.mock('@/env/server', () => ({ serverEnv: env }));
+vi.mock('next/cache', () => ({ revalidatePath: vi.fn() }));
+
+const { payWithSavedCard, startCheckout } = await import('./actions');
+
+const bookingId = '6f1c3a52-9d8e-4b7a-8c61-2f0e9b4d7a13';
+
+const lesson = {
+  bookingId,
+  businessId: 'business-1',
+  businessName: 'Quayside Driving School',
+  accountId: 'acct_1',
+  instructorName: 'Tom Walsh',
+  lessonType: 'Standard lesson',
+  startsAt: '2026-09-17T09:00:00Z',
+  durationMinutes: 60,
+  pricePence: 4200,
+  paid: false,
+  status: 'pending_payment',
+  holdExpiresAt: '2026-09-13T12:15:00Z',
+};
+
+const kept = {
+  businessId: 'business-1',
+  businessName: 'Quayside Driving School',
+  accountId: 'acct_1',
+  customerId: 'cus_lee',
+  cards: [{ paymentMethodId: 'pm_kept', brand: 'visa', last4: '4242', expiryMonth: 12, expiryYear: 2030 }],
+};
+
+const succeeded = {
+  id: 'pi_1',
+  status: 'succeeded',
+  amountPence: 4200,
+  currency: 'gbp',
+  clientSecret: null,
+  accountId: 'acct_1',
+  metadata: { booking_id: bookingId, business_id: 'business-1' },
+  chargeId: 'ch_1',
+};
+
+beforeEach(() => {
+  vi.clearAllMocks();
+  env.PAYMENTS_PROVIDER = 'fake';
+  rpc.mockResolvedValue({ data: { held: true }, error: null });
+  checkoutLesson.mockResolvedValue(lesson);
+  keptCardsWith.mockResolvedValue(kept);
+  provider.chargeSavedMethod.mockResolvedValue({ ok: true, data: succeeded });
+  provider.ensureCustomer.mockResolvedValue({ ok: true, data: { customerId: 'cus_lee' } });
+  provider.createCheckoutIntent.mockResolvedValue({
+    ok: true,
+    data: { ...succeeded, status: 'requires_payment_method', clientSecret: 'pi_1_secret_abc' },
+  });
+  deliverFakePaymentEvent.mockResolvedValue(true);
+});
+
+describe('paying with a kept card (PAY-02, M3-07)', () => {
+  it('charges the card with the learner there, once however often it is pressed', async () => {
+    const result = await payWithSavedCard({ bookingId, paymentMethodId: 'pm_kept' });
+
+    expect(result).toEqual({ ok: true, data: { status: 'paid' } });
+    expect(rpc).toHaveBeenCalledWith('hold_booking_for_payment', { p_booking_id: bookingId });
+    expect(provider.chargeSavedMethod).toHaveBeenCalledWith({
+      accountId: 'acct_1',
+      customerId: 'cus_lee',
+      paymentMethodId: 'pm_kept',
+      amountPence: 4200,
+      onSession: true,
+      metadata: { booking_id: bookingId, business_id: 'business-1' },
+      idempotencyKey: `booking:${bookingId}:4200:card:pm_kept`,
+    });
+    expect(rpc).toHaveBeenCalledWith('set_payment_intent', {
+      p_booking_id: bookingId,
+      p_provider_ref: 'pi_1',
+      p_amount_pence: 4200,
+    });
+  });
+
+  it('lets the webhook confirm the lesson, standing in for the provider while there is no key', async () => {
+    await payWithSavedCard({ bookingId, paymentMethodId: 'pm_kept' });
+
+    expect(deliverFakePaymentEvent).toHaveBeenCalledWith(
+      { id: 'pi_1', accountId: 'acct_1', amountPence: 4200, metadata: succeeded.metadata },
+      'succeeded',
+    );
+  });
+
+  it('waits for the real webhook with Stripe, and sends nothing itself', async () => {
+    env.PAYMENTS_PROVIDER = 'stripe';
+
+    const result = await payWithSavedCard({ bookingId, paymentMethodId: 'pm_kept' });
+
+    expect(result).toEqual({ ok: true, data: { status: 'confirming' } });
+    expect(deliverFakePaymentEvent).not.toHaveBeenCalled();
+  });
+
+  it('will not charge a card that is not kept for this learner with this Business', async () => {
+    const result = await payWithSavedCard({ bookingId, paymentMethodId: 'pm_somebody_else' });
+
+    expect(result).toMatchObject({ ok: false, code: 'NOT_FOUND' });
+    expect(provider.chargeSavedMethod).not.toHaveBeenCalled();
+  });
+
+  it('will not charge anybody who has no cards with this Business', async () => {
+    keptCardsWith.mockResolvedValue(null);
+
+    const result = await payWithSavedCard({ bookingId, paymentMethodId: 'pm_kept' });
+
+    expect(result).toMatchObject({ ok: false, code: 'NOT_FOUND' });
+    expect(provider.chargeSavedMethod).not.toHaveBeenCalled();
+  });
+
+  it('takes nothing for a lesson that is already paid for', async () => {
+    checkoutLesson.mockResolvedValue({ ...lesson, paid: true });
+
+    const result = await payWithSavedCard({ bookingId, paymentMethodId: 'pm_kept' });
+
+    expect(result).toMatchObject({ ok: false, code: 'VALIDATION_FAILED' });
+    expect(provider.chargeSavedMethod).not.toHaveBeenCalled();
+  });
+
+  it('takes nothing when the slot cannot be held', async () => {
+    rpc.mockResolvedValueOnce({ data: null, error: { message: 'VALIDATION_FAILED', code: 'P0001' } });
+
+    const result = await payWithSavedCard({ bookingId, paymentMethodId: 'pm_kept' });
+
+    expect(result).toMatchObject({ ok: false, code: 'VALIDATION_FAILED' });
+    expect(provider.chargeSavedMethod).not.toHaveBeenCalled();
+  });
+
+  it('says a refused card was refused, and records nothing', async () => {
+    provider.chargeSavedMethod.mockResolvedValue({ ok: false, reason: 'DECLINED', message: 'Card declined.' });
+
+    const result = await payWithSavedCard({ bookingId, paymentMethodId: 'pm_kept' });
+
+    expect(result).toEqual({ ok: false, code: 'PAYMENT_FAILED', message: 'That card was refused. Use a different card.' });
+    expect(rpc).not.toHaveBeenCalledWith('set_payment_intent', expect.anything());
+    expect(deliverFakePaymentEvent).not.toHaveBeenCalled();
+  });
+
+  it('sends a learner whose bank wants a check to the card form', async () => {
+    provider.chargeSavedMethod.mockResolvedValue({ ok: false, reason: 'AUTHENTICATION_REQUIRED', message: 'Check.' });
+
+    const asked = await payWithSavedCard({ bookingId, paymentMethodId: 'pm_kept' });
+    expect(asked).toMatchObject({ ok: false, code: 'PAYMENT_FAILED' });
+    expect(asked.ok ? '' : asked.message).toMatch(/bank wants to check/);
+
+    provider.chargeSavedMethod.mockResolvedValue({ ok: true, data: { ...succeeded, status: 'requires_action' } });
+    const partWay = await payWithSavedCard({ bookingId, paymentMethodId: 'pm_kept' });
+    expect(partWay).toMatchObject({ ok: false, code: 'PAYMENT_FAILED' });
+    expect(deliverFakePaymentEvent).not.toHaveBeenCalled();
+  });
+
+  it('refuses what is not a booking and a card', async () => {
+    expect(await payWithSavedCard({ bookingId: 'nope', paymentMethodId: 'pm_kept' })).toMatchObject({
+      ok: false,
+      code: 'VALIDATION_FAILED',
+    });
+    expect(await payWithSavedCard({ bookingId })).toMatchObject({ ok: false, code: 'VALIDATION_FAILED' });
+  });
+});
+
+describe('keeping a card is the learner’s choice (PAY-02, D-079)', () => {
+  it('keeps the card only when they ticked the box, as its own attempt', async () => {
+    await startCheckout({ bookingId, saveCard: true });
+
+    expect(provider.createCheckoutIntent).toHaveBeenCalledWith(
+      expect.objectContaining({ savePaymentMethod: true, idempotencyKey: `booking:${bookingId}:4200:keep` }),
+    );
+  });
+
+  it('keeps nothing when they did not', async () => {
+    await startCheckout({ bookingId });
+
+    expect(provider.createCheckoutIntent).toHaveBeenCalledWith(
+      expect.objectContaining({ savePaymentMethod: false, idempotencyKey: `booking:${bookingId}:4200:once` }),
+    );
+    expect(rpc).toHaveBeenCalledWith('set_payment_intent', {
+      p_booking_id: bookingId,
+      p_provider_ref: 'pi_1',
+      p_amount_pence: 4200,
+    });
+  });
+});

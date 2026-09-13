@@ -32,7 +32,8 @@
     "./cancellation": "./src/cancellation.ts",
     "./reminders": "./src/reminders.ts",
     "./notifications": "./src/notifications/index.ts",
-    "./schemas/notification": "./src/schemas/notification.ts"
+    "./schemas/notification": "./src/schemas/notification.ts",
+    "./cards": "./src/cards.ts"
   },
   "scripts": {
     "lint": "eslint .",

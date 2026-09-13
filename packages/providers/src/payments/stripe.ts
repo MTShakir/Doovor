@@ -194,26 +194,51 @@ export function stripePaymentsProvider(options: StripeOptions): PaymentsProvider
           { customer: input.customerId, type: 'card' },
           { stripeAccount: input.accountId },
         );
-        return methods.data.flatMap((method): SavedCard[] =>
-          method.card
-            ? [
-                {
-                  paymentMethodId: method.id,
-                  brand: method.card.brand,
-                  last4: method.card.last4,
-                  expiryMonth: method.card.exp_month,
-                  expiryYear: method.card.exp_year,
-                },
-              ]
-            : [],
-        );
+        // Paying with the same card twice through the form saves it twice. Stripe lists the
+        // newest first, and the fingerprint is the card itself, so the first of each is kept.
+        const seen = new Set<string>();
+        return methods.data.flatMap((method): SavedCard[] => {
+          if (!method.card) return [];
+          const print = method.card.fingerprint ?? method.id;
+          if (seen.has(print)) return [];
+          seen.add(print);
+          return [
+            {
+              paymentMethodId: method.id,
+              brand: method.card.brand,
+              last4: method.card.last4,
+              expiryMonth: method.card.exp_month,
+              expiryYear: method.card.exp_year,
+            },
+          ];
+        });
       }),
 
-    forgetSavedCard: (input): Promise<PaymentResult<null>> =>
-      call(async (stripe) => {
-        await stripe.paymentMethods.detach(input.paymentMethodId, {}, { stripeAccount: input.accountId });
-        return null;
-      }),
+    forgetSavedCard: async (input): Promise<PaymentResult<null>> => {
+      const done = await call(async (stripe): Promise<'forgotten' | 'not_theirs'> => {
+        const options = { stripeAccount: input.accountId };
+        let doomed = [input.paymentMethodId];
+
+        if (input.customerId !== undefined) {
+          const methods = await stripe.paymentMethods.list({ customer: input.customerId, type: 'card' }, options);
+          const chosen = methods.data.find((method) => method.id === input.paymentMethodId);
+          // A card that is not on this customer is somebody else's card on the same account, and
+          // it is not this customer's to remove.
+          if (!chosen) return 'not_theirs';
+          const print = chosen.card?.fingerprint;
+          if (print) {
+            doomed = methods.data.filter((method) => method.card?.fingerprint === print).map((method) => method.id);
+          }
+        }
+
+        for (const id of doomed) await stripe.paymentMethods.detach(id, {}, options);
+        return 'forgotten';
+      });
+
+      if (!done.ok) return done;
+      if (done.data === 'not_theirs') return { ok: false, reason: 'NOT_FOUND', message: 'That card is not saved for them.' };
+      return { ok: true, data: null };
+    },
 
     createCheckoutIntent: (input: CheckoutIntentInput): Promise<PaymentResult<PaymentIntent>> =>
       call(async (stripe) => {
@@ -269,9 +294,12 @@ export function stripePaymentsProvider(options: StripeOptions): PaymentsProvider
             currency: input.currency ?? 'gbp',
             customer: input.customerId,
             payment_method: input.paymentMethodId,
-            // Nobody is at the keyboard: the bank is told so, and may still ask for them.
-            off_session: true,
             confirm: true,
+            ...(input.onSession
+              ? // Somebody is here, so a card that needs a redirect is not one to offer them.
+                { automatic_payment_methods: { enabled: true, allow_redirects: 'never' as const } }
+              : // Nobody is at the keyboard: the bank is told so, and may still ask for them.
+                { off_session: true }),
             metadata: input.metadata ?? {},
           },
           { stripeAccount: input.accountId, idempotencyKey: input.idempotencyKey },

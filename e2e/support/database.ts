@@ -23,6 +23,24 @@ export async function withDatabase<T>(work: (sql: postgres.Sql) => Promise<T>): 
 }
 
 /**
+ * Keeps the one Business that takes payments in these tests to one spec at a time (M3-07).
+ *
+ * The 390 px and 1440 px runs of a file go at the same moment, and a payments test switches the
+ * school's card payments on and off. One switching them off while the other is half way through
+ * paying fails the other, for a reason that has nothing to do with the app. A session lock in
+ * the database makes the two take turns; the database lets it go on its own if a run dies.
+ * Returns the function that lets it go.
+ */
+export async function holdPaymentsBusiness(): Promise<() => Promise<void>> {
+  const sql = postgres(databaseUrl, { max: 1, idle_timeout: 0, max_lifetime: null });
+  await sql`select pg_advisory_lock(hashtext('e2e:payments-business'))`;
+  return async () => {
+    await sql`select pg_advisory_unlock(hashtext('e2e:payments-business'))`;
+    await sql.end();
+  };
+}
+
+/**
  * Who a learner is linked to, found by the email they signed up with. An invitation is only
  * really accepted if this row exists, and no page shows it until the CRM arrives (M2-04).
  */

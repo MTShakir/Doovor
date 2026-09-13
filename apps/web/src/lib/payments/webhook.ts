@@ -1,5 +1,5 @@
 import 'server-only';
-import { paymentsProvider, webhookSecrets } from '@/lib/payments/provider';
+import { paymentsProvider, signFakeEvent, webhookSecrets } from '@/lib/payments/provider';
 import { getSupabaseServiceClient } from '@/lib/supabase/service';
 
 export interface WebhookAnswer {
@@ -46,4 +46,47 @@ export async function handleProviderEvent(input: { body: string; signature: stri
   }
 
   return { status: 200, body: data };
+}
+
+export interface FakeOutcome {
+  id: string;
+  accountId: string;
+  amountPence: number;
+  metadata: Record<string, string>;
+}
+
+/**
+ * Stands in for the provider telling us how a payment went, while the fake is in use (M3-05,
+ * M3-07).
+ *
+ * With Stripe the event arrives at the webhook route on its own. The fake has nobody to send
+ * it, so this builds the event Stripe would have sent, signs it and hands it to the same handler
+ * the route uses. Nothing here writes to the database itself: what is exercised is the real
+ * path from an event to a lesson. Returns false with Stripe, where there is nothing to stand in
+ * for.
+ */
+export async function deliverFakePaymentEvent(
+  intent: FakeOutcome,
+  outcome: 'succeeded' | 'failed',
+): Promise<boolean> {
+  const body = JSON.stringify({
+    id: `evt_fake_${intent.id}_${outcome}`,
+    type: outcome === 'succeeded' ? 'payment_intent.succeeded' : 'payment_intent.payment_failed',
+    account: intent.accountId,
+    created: Math.floor(Date.now() / 1000),
+    data: {
+      object: {
+        id: intent.id,
+        amount: intent.amountPence,
+        amount_received: outcome === 'succeeded' ? intent.amountPence : 0,
+        metadata: intent.metadata,
+      },
+    },
+  });
+
+  const signature = signFakeEvent(body);
+  if (signature === null) return false;
+
+  const answer = await handleProviderEvent({ body, signature });
+  return answer.status === 200;
 }

@@ -1,3 +1,4 @@
+import { cardExpiry, describeCard } from '@repo/core/cards';
 import { formatPence } from '@repo/core/money';
 import { formatDate, formatMinutes, formatTime } from '@repo/core/time';
 import { PageHeader } from '@repo/ui/app-shell';
@@ -13,6 +14,7 @@ import { connection } from 'next/server';
 import { Suspense } from 'react';
 import { serverEnv } from '@/env/server';
 import { requirePortal } from '@/lib/auth/session';
+import { keptCardsWith } from '@/lib/payments/cards';
 import { checkoutLesson } from '@/lib/payments/checkout';
 import { PayLesson } from './pay-lesson';
 
@@ -44,6 +46,14 @@ async function Checkout({ params }: { params: Promise<{ booking: string }> }) {
   // A slot held while somebody pays goes back to the diary when the hold runs out (R-10).
   const gone = !lesson.paid && ['expired', 'cancelled', 'declined'].includes(lesson.status);
   const heldUntil = gone || lesson.paid || lesson.holdExpiresAt === null ? null : new Date(lesson.holdExpiresAt);
+  // Cards kept with this Business, which only the provider holds (PAY-02, M3-07).
+  const payable = !gone && !lesson.paid && lesson.accountId !== null;
+  const kept = payable ? await keptCardsWith(lesson.businessId) : null;
+  const savedCards = (kept?.cards ?? []).map((card) => ({
+    paymentMethodId: card.paymentMethodId,
+    label: describeCard(card),
+    expiry: cardExpiry(card),
+  }));
 
   return (
     <Card className="flex flex-col gap-4" role="region" aria-labelledby="checkout-title">
@@ -93,6 +103,8 @@ async function Checkout({ params }: { params: Promise<{ booking: string }> }) {
         <PayLesson
           bookingId={lesson.bookingId}
           pricePence={lesson.pricePence}
+          businessName={lesson.businessName}
+          savedCards={savedCards}
           live={serverEnv.PAYMENTS_PROVIDER === 'stripe'}
         />
       )}

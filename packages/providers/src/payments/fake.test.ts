@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { paymentsContract } from './contract.ts';
-import { fakeCards, fakePaymentsProvider } from './fake.ts';
+import { fakeCards, fakePaymentsProvider, fakeSavedCard } from './fake.ts';
 
 describe('the fake provider keeps the contract (M3-01)', () => {
   paymentsContract({
@@ -286,5 +286,109 @@ describe('the corners of the fake', () => {
     expect(event.type).toBe('payment_intent.succeeded');
     expect(event.accountId).toBe('acct_1');
     expect(provider.event('account.updated', {}).accountId).toBeNull();
+  });
+});
+
+describe('cards the fake keeps (PAY-02, M3-07)', () => {
+  const setUp = async () => {
+    const provider = fakePaymentsProvider();
+    const account = await provider.createAccount({ businessName: 'Kept Driving' });
+    if (!account.ok) throw new Error('the fake made no account');
+    const customer = await provider.ensureCustomer({ accountId: account.data.accountId, reference: 'learner-1' });
+    if (!customer.ok) throw new Error('the fake made no customer');
+    return { provider, accountId: account.data.accountId, customerId: customer.data.customerId };
+  };
+
+  type World = Awaited<ReturnType<typeof setUp>>;
+
+  const payOnce = async (world: World, save: boolean, key: string) => {
+    const intent = await world.provider.createCheckoutIntent({
+      accountId: world.accountId,
+      customerId: world.customerId,
+      amountPence: 4200,
+      savePaymentMethod: save,
+      idempotencyKey: key,
+    });
+    if (!intent.ok) throw new Error('the fake would not start a payment');
+    world.provider.completePayment(intent.data.id, 'succeeded');
+  };
+
+  const cardsOf = async (world: World, customerId = world.customerId) => {
+    const cards = await world.provider.listSavedCards({ accountId: world.accountId, customerId });
+    return cards.ok ? cards.data : [];
+  };
+
+  it('keeps a card that went through, for somebody who asked it to', async () => {
+    const world = await setUp();
+    await payOnce(world, true, 'first');
+
+    expect(await cardsOf(world)).toEqual([expect.objectContaining({ ...fakeSavedCard })]);
+  });
+
+  it('keeps nothing for somebody who did not ask', async () => {
+    const world = await setUp();
+    await payOnce(world, false, 'first');
+
+    expect(await cardsOf(world)).toEqual([]);
+  });
+
+  it('keeps the same card once, however many times it is used', async () => {
+    const world = await setUp();
+    await payOnce(world, true, 'first');
+    await payOnce(world, true, 'second');
+
+    expect(await cardsOf(world)).toHaveLength(1);
+  });
+
+  it('charges a kept card for the person it was kept for, and nobody else', async () => {
+    const world = await setUp();
+    await payOnce(world, true, 'first');
+    const [card] = await cardsOf(world);
+    if (!card) throw new Error('no card was kept');
+
+    const paid = await world.provider.chargeSavedMethod({
+      accountId: world.accountId,
+      customerId: world.customerId,
+      paymentMethodId: card.paymentMethodId,
+      amountPence: 4200,
+      onSession: true,
+    });
+    expect(paid.ok && paid.data.status).toBe('succeeded');
+
+    const stranger = await world.provider.ensureCustomer({ accountId: world.accountId, reference: 'learner-2' });
+    if (!stranger.ok) throw new Error('the fake made no second customer');
+    const theirs = await world.provider.chargeSavedMethod({
+      accountId: world.accountId,
+      customerId: stranger.data.customerId,
+      paymentMethodId: card.paymentMethodId,
+      amountPence: 4200,
+    });
+    expect(theirs.ok).toBe(false);
+    if (!theirs.ok) expect(theirs.reason).toBe('NOT_FOUND');
+  });
+
+  it('forgets a card for the person who asks, and nobody else', async () => {
+    const world = await setUp();
+    await payOnce(world, true, 'first');
+    const [card] = await cardsOf(world);
+    if (!card) throw new Error('no card was kept');
+
+    const stranger = await world.provider.ensureCustomer({ accountId: world.accountId, reference: 'learner-2' });
+    if (!stranger.ok) throw new Error('the fake made no second customer');
+    const theirs = await world.provider.forgetSavedCard({
+      accountId: world.accountId,
+      customerId: stranger.data.customerId,
+      paymentMethodId: card.paymentMethodId,
+    });
+    expect(theirs.ok).toBe(false);
+    if (!theirs.ok) expect(theirs.reason).toBe('NOT_FOUND');
+    expect(await cardsOf(world), 'somebody else asking changes nothing').toHaveLength(1);
+
+    await world.provider.forgetSavedCard({
+      accountId: world.accountId,
+      customerId: world.customerId,
+      paymentMethodId: card.paymentMethodId,
+    });
+    expect(await cardsOf(world)).toEqual([]);
   });
 });
