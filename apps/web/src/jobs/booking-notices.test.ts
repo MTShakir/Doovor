@@ -137,3 +137,32 @@ describe('what everybody is told about a lesson (PRD Appendix B)', () => {
     expect(rows).toHaveLength(3);
   });
 });
+
+describe('a lesson that could not be charged the day before (PAY-03, M3-09)', () => {
+  const failed = (reason: string) => ({ name: 'payment.charge_failed', payload: { booking_id: 'booking-1', reason } });
+
+  it('tells the learner, the instructor and the school, and sends the learner to pay', () => {
+    const planned = planBookingNotifications({ event: failed('declined'), notice });
+
+    expect(planned.map((one) => one.userId)).toEqual(['learner-1', 'instructor-1', 'manager-1']);
+    expect(planned[0]?.title).toBe('A payment did not go through');
+    expect(planned[0]?.body).toBe('Wed 16 Sep at 09:00 with Sarah Khan. The card was refused. Pay now to keep the lesson.');
+    expect(planned[0]?.link).toBe('/app/learner/pay/booking-1');
+    expect(planned[1]?.title).toBe('A payment from Jack Taylor did not go through');
+    expect(planned[1]?.body).toBe('Wed 16 Sep at 09:00 with Jack Taylor. The card was refused.');
+    expect(planned[1]?.link).toBe('/app/instructor/diary?view=day&date=2026-09-16');
+  });
+
+  it('says why in words, whatever the reason', () => {
+    const body = (reason: string) => planBookingNotifications({ event: failed(reason), notice })[1]?.body;
+
+    expect(body('no_card')).toContain('There was no card saved to charge.');
+    expect(body('expired_card')).toContain('The saved card has run out.');
+    expect(body('authentication_required')).toContain('The bank wants the card holder to confirm the payment.');
+    expect(body('something_new')).toContain('The card could not be charged.');
+  });
+
+  it('says nothing about a card refused on screen, which the screen already said', () => {
+    expect(kindForEvent({ name: 'payment.failed', payload: { booking_id: 'booking-1' } }, notice)).toBeNull();
+  });
+});

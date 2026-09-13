@@ -2281,6 +2281,10 @@ export type Database = {
       system_expire_payment_holds: { Args: never; Returns: Json }
       system_expire_requests: { Args: never; Returns: number }
       system_extend_recurrences: { Args: { p_weeks?: number }; Returns: number }
+      system_lessons_to_charge: {
+        Args: { p_within_hours?: number }
+        Returns: Json
+      }
       system_mark_notification_failed: {
         Args: { p_error: string; p_id: string }
         Returns: number
@@ -2352,6 +2356,10 @@ export type Database = {
           p_provider_ref: string
         }
         Returns: Json
+      }
+      system_record_charge_failed: {
+        Args: { p_booking_id: string; p_reason: string }
+        Returns: boolean
       }
       system_record_failed_payment: {
         Args: {

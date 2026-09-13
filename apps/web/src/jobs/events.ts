@@ -37,6 +37,14 @@ export const paymentRefund = eventType('payment.refund', {
   schema: staticSchema<{ refund_id: string; payment_id: string; booking_id: string | null }>(),
 });
 
+/**
+ * A lesson paid for the day before could not be charged (PAY-03). The reason is a word, not a
+ * message from the bank, and nothing about the card.
+ */
+export const paymentChargeFailed = eventType('payment.charge_failed', {
+  schema: staticSchema<{ booking_id: string; reason: string }>(),
+});
+
 /** A card set aside for a request, waiting to be taken or let go (R-12). */
 export const paymentAuthorised = eventType('payment.authorised', {
   schema: staticSchema<{ payment_id: string; booking_id: string }>(),

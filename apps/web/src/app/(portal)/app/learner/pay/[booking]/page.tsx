@@ -174,7 +174,7 @@ async function Checkout({ params }: { params: Promise<{ booking: string }> }) {
           {lesson.paymentStatus === 'failed' ? (
             <Note icon={<CalendarX className={iconClass} aria-hidden />}>
               {lesson.paymentMode === 'before_lesson'
-                ? 'We could not charge your card for this lesson. Pay now to keep it.'
+                ? 'This lesson could not be charged the day before. Pay now to keep it.'
                 : 'Your last payment for this lesson did not go through. Try again.'}
             </Note>
           ) : null}

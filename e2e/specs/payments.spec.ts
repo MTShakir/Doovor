@@ -323,45 +323,82 @@ test.describe('paying for a lesson (PAY-02, M3-05)', () => {
     await clearPaymentsAccount(owner);
   });
 
-  test('a lesson charged the day before asks only for a card, and says when it will be taken (M3-09)', async ({ page }, testInfo) => {
+  test('a lesson charged the day before asks only for a card, and is charged or told why not (M3-09)', async ({ page }, testInfo) => {
+    test.setTimeout(150_000);
     const day = ownDay(testInfo.project.name);
+    // A fortnight on, where nothing else in this file books.
+    const later = new Date(`${day}T12:00:00Z`);
+    later.setUTCDate(later.getUTCDate() + 14);
+    const laterDay = later.toISOString().slice(0, 10);
+
     await enablePayments(owner, `fake_acct_before_${testInfo.project.name}_${String(Date.now())}`);
     // The last hour of the day nobody else in this file books, buffer and all.
     await bookLesson('Tom Walsh', learner, day, '21:30', { paymentMode: 'before_lesson' });
+    await bookLesson('Tom Walsh', learner, laterDay, '21:30', { paymentMode: 'before_lesson' });
 
-    await page.goto('/app/learner/lessons');
-    const lesson = page
-      .getByRole('article')
-      // By the day as well: the other width booked the same hour on a day of its own.
-      .filter({ hasText: `${dayLabel(day)} at 21:30` })
-      .filter({ hasText: 'Tom Walsh' });
-    await expect(async () => {
-      await lesson.getByRole('link', { name: 'Set up payment' }).click();
-      await page.waitForURL(/\/app\/learner\/pay\//, { timeout: 5000 });
-    }).toPass({ timeout: 20_000 });
+    /** The job runner is not part of this run, and nobody waits a day: the charge runs now, up to a lesson. */
+    const chargeUpTo = async (onDay: string) => {
+      const lesson = (await lessonsOn('Tom Walsh', onDay)).find((one) => one.time === '21:30');
+      const hours = Math.ceil((Date.parse(lesson?.startsAt ?? '') - Date.now()) / 3_600_000) + 1;
+      const answer = await page.request.post(`/dev/charges?within=${String(hours)}`);
+      expect(answer.ok()).toBe(true);
+      return { lesson, result: (await answer.json()) as { charged: number; failed: number } };
+    };
 
-    const checkout = page.getByRole('region', { name: /at \d\d:\d\d$/ });
-    await expect(checkout).toContainText('Booked');
-    await expect(checkout).toContainText('Save a card and £42 is charged to it at 21:30 on');
-    await expect(checkout).toContainText('Nothing is taken until then.');
-    await expect(checkout.getByRole('button', { name: /^Pay £/ })).toHaveCount(0);
+    const openPayment = async (onDay: string) => {
+      await page.goto('/app/learner/lessons');
+      const lesson = page
+        .getByRole('article')
+        // By the day as well: the other width books the same hour on days of its own.
+        .filter({ hasText: `${dayLabel(onDay)} at 21:30` })
+        .filter({ hasText: 'Tom Walsh' });
+      await expect(async () => {
+        await lesson.getByRole('link', { name: /^Set up payment$|^Pay £/ }).click();
+        await page.waitForURL(/\/app\/learner\/pay\//, { timeout: 5000 });
+      }).toPass({ timeout: 20_000 });
+      return page.getByRole('region', { name: /at \d\d:\d\d$/ });
+    };
+
+    // Nothing to pay now, only a card to have ready.
+    const first = await openPayment(day);
+    await expect(first).toContainText('Booked');
+    await expect(first).toContainText('Save a card and £42 is charged to it at 21:30 on');
+    await expect(first).toContainText('Nothing is taken until then.');
+    await expect(first.getByRole('button', { name: /^Pay £/ })).toHaveCount(0);
     await expectAccessible(page);
     await snap(page, testInfo, 'pay-before-lesson');
 
-    await expect(async () => {
-      await checkout.getByRole('button', { name: 'Save a card' }).click();
-      await expect(checkout.getByRole('button', { name: 'Save a test card' })).toBeVisible({ timeout: 10_000 });
-    }).toPass({ timeout: 40_000 });
-    await checkout.getByRole('button', { name: 'Save a test card' }).click();
+    // No card by the day before: the lesson stays on, and the learner is asked to pay.
+    const unpaid = await chargeUpTo(day);
+    expect(unpaid.result.failed, 'the lesson with no card was written down as failed').toBeGreaterThan(0);
+    await page.reload();
+    await expect(first).toContainText('This lesson could not be charged the day before. Pay now to keep it.');
+    await expect(first).toContainText('To pay');
+    await expect(first.getByRole('button', { name: /^Pay £/ })).toBeVisible();
+    await snap(page, testInfo, 'pay-before-lesson-failed');
 
-    await expect(checkout).toContainText('£42 is charged to your Visa ending 4242 at 21:30 on', { timeout: 30_000 });
-    await expect(checkout.getByRole('button', { name: 'Use a different card' })).toBeVisible();
+    // A card saved in time is charged the day before, and the webhook says so.
+    const second = await openPayment(laterDay);
+    await expect(async () => {
+      await second.getByRole('button', { name: 'Save a card' }).click();
+      await expect(second.getByRole('button', { name: 'Save a test card' })).toBeVisible({ timeout: 10_000 });
+    }).toPass({ timeout: 40_000 });
+    await second.getByRole('button', { name: 'Save a test card' }).click();
+
+    await expect(second).toContainText('£42 is charged to your Visa ending 4242 at 21:30 on', { timeout: 30_000 });
+    await expect(second.getByRole('button', { name: 'Use a different card' })).toBeVisible();
     // The button has just gone from black to grey, and a picture half way through is neither.
     await settled(page);
     await snap(page, testInfo, 'pay-before-lesson-card');
 
-    const booked = (await lessonsOn('Tom Walsh', day)).find((one) => one.time === '21:30');
+    const booked = (await lessonsOn('Tom Walsh', laterDay)).find((one) => one.time === '21:30');
     expect(await paymentFor(booked?.startsAt ?? ''), 'nothing is taken until the day before').toBeNull();
+
+    const paid = await chargeUpTo(laterDay);
+    expect(paid.result.charged, 'the lesson with a card was charged').toBeGreaterThan(0);
+    await page.reload();
+    await expect(second).toContainText('That is paid for, and your lesson is confirmed.');
+    expect(await paymentFor(booked?.startsAt ?? '')).toEqual({ amountPence: 4200, status: 'paid' });
 
     await clearPaymentsAccount(owner);
   });

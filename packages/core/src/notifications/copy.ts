@@ -83,8 +83,8 @@ export function notificationCopy(
 
     case 'payment.failed':
       return audience === 'learner'
-        ? { title: 'A payment did not go through', body: sentence(facts.detail, 'Try again to keep the lesson') }
-        : { title: `A payment from ${them} did not go through`, body: sentence(facts.detail, line) };
+        ? { title: 'A payment did not go through', body: sentence(line, facts.detail, 'Pay now to keep the lesson') }
+        : { title: `A payment from ${them} did not go through`, body: sentence(line, facts.detail) };
 
     case 'lesson_record.added':
       return { title: 'Your lesson record is ready', body: sentence(line, facts.detail) };

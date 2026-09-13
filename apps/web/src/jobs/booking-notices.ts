@@ -56,13 +56,28 @@ export function kindForEvent(event: BookingEvent, notice: BookingNotice): Notifi
       return 'booking.cancelled';
     case 'booking.rescheduled':
       return 'booking.rescheduled';
+    // Only a charge made with nobody there: a card refused on screen is shown on screen (M3-09).
+    case 'payment.charge_failed':
+      return 'payment.failed';
     default:
       return null;
   }
 }
 
+/** Why a charge the day before did not go through, in words that suit both people reading it. */
+const chargeFailures: Record<string, string> = {
+  no_card: 'There was no card saved to charge.',
+  expired_card: 'The saved card has run out.',
+  declined: 'The card was refused.',
+  authentication_required: 'The bank wants the card holder to confirm the payment.',
+};
+
 /** The line under the title, when there is more to say than when the lesson is. */
 function detailFor(event: BookingEvent, notice: BookingNotice): string | undefined {
+  if (event.name === 'payment.charge_failed') {
+    const reason = typeof event.payload.reason === 'string' ? event.payload.reason : '';
+    return chargeFailures[reason] ?? 'The card could not be charged.';
+  }
   const reason = notice.cancel_reason?.trim();
   if (event.name === 'booking.accepted') return 'It is in the diary';
   if (event.name === 'booking.declined') return reason ? `Reason: ${reason}` : 'They could not make that time';
@@ -74,11 +89,13 @@ function detailFor(event: BookingEvent, notice: BookingNotice): string | undefin
   return undefined;
 }
 
-/** Where each of them goes when they tap it. */
-function linkFor(notice: BookingNotice): (audience: 'learner' | 'instructor' | 'school') => string {
+/** Where each of them goes when they tap it. A learner who owes money goes where they pay it. */
+function linkFor(event: BookingEvent, notice: BookingNotice): (audience: 'learner' | 'instructor' | 'school') => string {
   const day = utcToLocal(new Date(notice.starts_at)).date;
   return (audience) => {
-    if (audience === 'learner') return '/app/learner/lessons';
+    if (audience === 'learner') {
+      return event.name === 'payment.charge_failed' ? `/app/learner/pay/${notice.booking_id}` : '/app/learner/lessons';
+    }
     if (audience === 'school') return `/app/school/diary?date=${day}`;
     return `/app/instructor/diary?view=day&date=${day}`;
   };
@@ -119,7 +136,7 @@ export function planBookingNotifications(input: BookingNoticeInput): PlannedNoti
         muted: muted.get(userId),
       })),
     ],
-    linkFor: linkFor(notice),
+    linkFor: linkFor(event, notice),
   });
 }
 

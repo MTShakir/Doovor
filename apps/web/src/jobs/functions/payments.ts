@@ -1,5 +1,6 @@
 import { cron } from 'inngest';
 import { settleAuthorisations } from '../authorisations';
+import { chargeBeforeLessons } from '../charges';
 import { inngest } from '../client';
 import { bookingAccepted, bookingDeclined, paymentAuthorised, paymentRefund } from '../events';
 import { expirePaymentHolds, sendRefund } from '../payments';
@@ -40,4 +41,18 @@ export const authorisationSweep = inngest.createFunction(
     triggers: [cron('TZ=Europe/London */5 * * * *'), bookingAccepted, bookingDeclined, paymentAuthorised],
   },
   () => settleAuthorisations(),
+);
+
+/**
+ * Lessons paid for the day before are charged about a day before they start (PAY-03). Every ten
+ * minutes is close enough to "24 hours before" for anybody, and one run at a time.
+ */
+export const beforeLessonCharges = inngest.createFunction(
+  {
+    id: 'before-lesson-charges',
+    name: 'Charge lessons paid the day before',
+    concurrency: { limit: 1 },
+    triggers: [cron('TZ=Europe/London */10 * * * *')],
+  },
+  () => chargeBeforeLessons(),
 );
