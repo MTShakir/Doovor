@@ -2165,6 +2165,10 @@ export type Database = {
         }
         Returns: string
       }
+      set_payment_mode: {
+        Args: { p_business_id: string; p_mode: string }
+        Returns: string
+      }
       set_payments_account: {
         Args: { p_account_id: string; p_business_id: string }
         Returns: Json

@@ -1,4 +1,5 @@
 import 'server-only';
+import { chosenPaymentMode, type PaymentMode } from '@repo/core/payment-modes';
 import { getAppUrl } from '@/lib/app-url';
 import { requireAccess } from '@/lib/auth/session';
 import { paymentsProvider } from '@/lib/payments/provider';
@@ -17,6 +18,8 @@ export interface PaymentsState {
   requirements: string[];
   /** True when the provider could not be reached, so the page says so rather than guessing. */
   stale: boolean;
+  /** How learners pay this Business, as the owner chose (PAY-03). */
+  paymentMode: PaymentMode;
 }
 
 /** The two screens this can be done from, and nowhere else a link may point (PAY-01). */
@@ -53,7 +56,7 @@ export async function paymentsState(): Promise<PaymentsState | null> {
   const supabase = await createSupabaseServerClient();
   const { data } = await supabase
     .from('businesses')
-    .select('id, name, stripe_account_id, stripe_charges_enabled, stripe_payouts_enabled, stripe_details_submitted')
+    .select('id, name, settings, stripe_account_id, stripe_charges_enabled, stripe_payouts_enabled, stripe_details_submitted')
     .eq('id', membership.businessId)
     .maybeSingle();
   if (!data) return null;
@@ -68,6 +71,7 @@ export async function paymentsState(): Promise<PaymentsState | null> {
     detailsSubmitted: data.stripe_details_submitted,
     requirements: [],
     stale: false,
+    paymentMode: chosenPaymentMode(data.settings),
   };
   if (state.accountId === null) return state;
 

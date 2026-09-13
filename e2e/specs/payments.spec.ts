@@ -65,6 +65,24 @@ test.describe('connecting payments (PAY-01, M3-02)', () => {
     await expect(card).toContainText('You can take card, Apple Pay and Google Pay.');
     await snap(page, testInfo, 'payments-on');
 
+    // Once cards can be taken, the owner chooses when learners are asked for one (PAY-03, M3-09).
+    const how = page.getByRole('region', { name: 'How learners pay' });
+    const choice = how.getByLabel('Learners pay');
+    await expect(choice).toHaveValue('at_booking');
+    await expect(how).toContainText('The slot is held while they pay');
+    await expectAccessible(page);
+
+    await choice.selectOption('offline');
+    await expect(page.getByText('Learners now pay in person')).toBeVisible();
+    await expect(how).toContainText('Learners are not asked for a card.');
+    await expect(choice).toBeEnabled();
+    await snap(page, testInfo, 'payments-mode');
+    await page.reload();
+    await expect(page.getByRole('region', { name: 'How learners pay' }).getByLabel('Learners pay')).toHaveValue('offline');
+
+    await page.getByRole('region', { name: 'How learners pay' }).getByLabel('Learners pay').selectOption('at_booking');
+    await expect(page.getByText('Learners now pay when they book')).toBeVisible();
+
     expect(await paymentsAccountOf(email), 'the account is written down against the Business').toMatch(/^fake_acct_/);
 
     // Left as it was found, so nothing else has to know this test ran.

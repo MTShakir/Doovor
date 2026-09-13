@@ -1,6 +1,7 @@
 'use server';
 
 import { parsePostgresError } from '@repo/core/errors';
+import { paymentModes, type PaymentMode } from '@repo/core/payment-modes';
 import { err, ok, type Result } from '@repo/core/result';
 import { revalidatePath } from 'next/cache';
 import { z } from 'zod';
@@ -92,4 +93,25 @@ export async function refreshPaymentsState(): Promise<Result<{ chargesEnabled: b
   revalidatePath('/app/instructor/money');
   revalidatePath('/app/school/money');
   return ok({ chargesEnabled: live.data.chargesEnabled });
+}
+
+const modeSchema = z.object({ mode: z.enum(paymentModes) });
+
+/**
+ * PAY-03: how learners pay this Business. Owners only, which the database checks as well, and
+ * it applies to lessons booked from now on.
+ */
+export async function setPaymentMode(input: unknown): Promise<Result<{ mode: PaymentMode }>> {
+  const parsed = modeSchema.safeParse(input);
+  if (!parsed.success) return err('VALIDATION_FAILED');
+
+  const business = await ownedBusiness();
+  if (!business) return err('NOT_ALLOWED', 'Only the owner of the business can choose how learners pay.');
+
+  const supabase = await createSupabaseServerClient();
+  const { error } = await supabase.rpc('set_payment_mode', { p_business_id: business.id, p_mode: parsed.data.mode });
+  if (error) return err(parsePostgresError(error).code);
+
+  for (const path of Object.values(moneyScreens)) revalidatePath(path);
+  return ok({ mode: parsed.data.mode });
 }

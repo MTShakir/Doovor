@@ -404,13 +404,15 @@ export async function countProviderEvents(eventId: string): Promise<number> {
  */
 export async function enablePayments(ownerEmail: string, accountId: string): Promise<string> {
   await withDatabase(async (sql) => {
+    // Paid at booking, as a Business is until it chooses otherwise, whatever a test left behind.
     await sql`
       update public.businesses b
          set stripe_account_id = ${accountId},
              stripe_charges_enabled = true,
              stripe_payouts_enabled = true,
              stripe_details_submitted = true,
-             stripe_connected_at = now()
+             stripe_connected_at = now(),
+             settings = coalesce(b.settings, '{}'::jsonb) - 'payment_mode'
         from public.memberships m
         join public.users u on u.id = m.user_id
        where m.business_id = b.id and m.role = 'owner' and lower(u.email) = lower(${ownerEmail})`;

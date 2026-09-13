@@ -1,4 +1,5 @@
 import 'server-only';
+import { asksForCard, chosenPaymentMode } from '@repo/core/payment-modes';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
 
 export interface MyLesson {
@@ -23,7 +24,7 @@ export async function myLessons(): Promise<{ upcoming: MyLesson[]; past: MyLesso
   const { data, error } = await supabase
     .from('bookings')
     .select(
-      'id, starts_at, ends_at, status, payment_status, price_pence, instructor_id, instructor_profiles(display_name), lesson_types(name), pickup_points(label), businesses!bookings_business_id_fkey(stripe_charges_enabled)',
+      'id, starts_at, ends_at, status, payment_status, price_pence, instructor_id, instructor_profiles(display_name), lesson_types(name), pickup_points(label), businesses!bookings_business_id_fkey(stripe_charges_enabled, settings)',
     )
     .order('starts_at', { ascending: false })
     .limit(200);
@@ -46,7 +47,10 @@ export async function myLessons(): Promise<{ upcoming: MyLesson[]; past: MyLesso
     // A request is paid for with an authorisation, and one already authorised has nothing left
     // to do until it is answered (R-12).
     canPayNow:
-      row.businesses.stripe_charges_enabled &&
+      asksForCard({
+        chargesEnabled: row.businesses.stripe_charges_enabled,
+        mode: chosenPaymentMode(row.businesses.settings),
+      }) &&
       (row.status === 'requested' ? ['unpaid', 'failed'] : ['unpaid', 'pending', 'failed']).includes(row.payment_status),
   }));
 
