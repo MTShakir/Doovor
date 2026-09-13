@@ -143,6 +143,41 @@ export type Database = {
           },
         ]
       }
+      billing_customers: {
+        Row: {
+          business_id: string
+          created_at: string
+          id: string
+          learner_id: string
+          provider: string
+          provider_customer_id: string
+        }
+        Insert: {
+          business_id: string
+          created_at?: string
+          id?: string
+          learner_id: string
+          provider?: string
+          provider_customer_id: string
+        }
+        Update: {
+          business_id?: string
+          created_at?: string
+          id?: string
+          learner_id?: string
+          provider?: string
+          provider_customer_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "billing_customers_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "businesses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       booking_recurrences: {
         Row: {
           booked_until: string | null
@@ -1307,6 +1342,75 @@ export type Database = {
           },
         ]
       }
+      payments: {
+        Row: {
+          amount_pence: number
+          booking_id: string | null
+          business_id: string
+          created_at: string
+          fee_pence: number
+          id: string
+          learner_id: string
+          method: Database["public"]["Enums"]["payment_method"]
+          paid_at: string | null
+          payer_id: string | null
+          provider: string
+          provider_ref: string | null
+          receipt_url: string | null
+          refunded_pence: number
+          status: Database["public"]["Enums"]["payment_status"]
+        }
+        Insert: {
+          amount_pence: number
+          booking_id?: string | null
+          business_id: string
+          created_at?: string
+          fee_pence?: number
+          id?: string
+          learner_id: string
+          method: Database["public"]["Enums"]["payment_method"]
+          paid_at?: string | null
+          payer_id?: string | null
+          provider?: string
+          provider_ref?: string | null
+          receipt_url?: string | null
+          refunded_pence?: number
+          status?: Database["public"]["Enums"]["payment_status"]
+        }
+        Update: {
+          amount_pence?: number
+          booking_id?: string | null
+          business_id?: string
+          created_at?: string
+          fee_pence?: number
+          id?: string
+          learner_id?: string
+          method?: Database["public"]["Enums"]["payment_method"]
+          paid_at?: string | null
+          payer_id?: string | null
+          provider?: string
+          provider_ref?: string | null
+          receipt_url?: string | null
+          refunded_pence?: number
+          status?: Database["public"]["Enums"]["payment_status"]
+        }
+        Relationships: [
+          {
+            foreignKeyName: "payments_booking_id_fkey"
+            columns: ["booking_id"]
+            isOneToOne: false
+            referencedRelation: "bookings"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "payments_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "businesses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       pickup_points: {
         Row: {
           address: string
@@ -1877,6 +1981,10 @@ export type Database = {
         Args: { p_approved: boolean; p_profile_id: string; p_reason?: string }
         Returns: Database["public"]["Enums"]["verification_status"]
       }
+      hold_booking_for_payment: {
+        Args: { p_booking_id: string }
+        Returns: Json
+      }
       invitation_details: {
         Args: { p_token: string }
         Returns: {
@@ -1954,6 +2062,10 @@ export type Database = {
           p_reason?: string
           p_starts_at: string
         }
+        Returns: string
+      }
+      set_billing_customer: {
+        Args: { p_business_id: string; p_customer_id: string }
         Returns: string
       }
       set_booking_rules: {
@@ -2133,6 +2245,23 @@ export type Database = {
         }
         Returns: boolean
       }
+      system_record_card_payment: {
+        Args: {
+          p_amount_pence: number
+          p_booking_id: string
+          p_fee_pence?: number
+          p_provider_ref: string
+        }
+        Returns: Json
+      }
+      system_record_failed_payment: {
+        Args: {
+          p_amount_pence: number
+          p_booking_id: string
+          p_provider_ref: string
+        }
+        Returns: Json
+      }
       system_release_sms: {
         Args: { p_business_id: string }
         Returns: undefined
@@ -2213,6 +2342,13 @@ export type Database = {
       membership_status: "invited" | "active" | "deactivated"
       notification_category: "bookings" | "reminders" | "money" | "account"
       notification_channel: "in_app" | "email" | "push" | "sms"
+      payment_method: "card" | "cash" | "bank" | "credit"
+      payment_status:
+        | "pending"
+        | "paid"
+        | "failed"
+        | "refunded"
+        | "partially_refunded"
       pickup_kind: "home" | "school" | "work" | "custom"
       plan_key: "free" | "pro" | "school"
       platform_role: "super_admin" | "support_admin"
@@ -2411,6 +2547,14 @@ export const Constants = {
       membership_status: ["invited", "active", "deactivated"],
       notification_category: ["bookings", "reminders", "money", "account"],
       notification_channel: ["in_app", "email", "push", "sms"],
+      payment_method: ["card", "cash", "bank", "credit"],
+      payment_status: [
+        "pending",
+        "paid",
+        "failed",
+        "refunded",
+        "partially_refunded",
+      ],
       pickup_kind: ["home", "school", "work", "custom"],
       plan_key: ["free", "pro", "school"],
       platform_role: ["super_admin", "support_admin"],

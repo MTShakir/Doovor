@@ -13,6 +13,7 @@ import { StatusPill } from '@repo/ui/status-pill';
 import { TimeSlotGrid } from '@repo/ui/time-slot-grid';
 import { toast } from '@repo/ui/toast';
 import { MapPin } from 'lucide-react';
+import Link from 'next/link';
 import { useEffect, useState, useTransition } from 'react';
 import { FormAlert } from '@/components/form-alert';
 import type { MyLesson } from '@/lib/learner/lessons';
@@ -126,7 +127,12 @@ export function MyLessonRow({ lesson, rules, now, canChange }: MyLessonRowProps)
       </div>
 
       {canChange ? (
-        <div className="flex justify-end gap-2">
+        <div className="flex flex-wrap justify-end gap-2">
+          {lesson.canPayNow ? (
+            <Button asChild>
+              <Link href={`/app/learner/pay/${lesson.id}`}>Pay {formatPence(lesson.pricePence)}</Link>
+            </Button>
+          ) : null}
           <Button variant="secondary" onClick={() => { setSheet('move'); }}>
             Move
           </Button>

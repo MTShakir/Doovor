@@ -196,10 +196,23 @@ export async function bookLesson(
   learnerEmail: string,
   date: string,
   time: string,
-  durationMinutes = 60,
+  options: { durationMinutes?: number; link?: boolean } = {},
 ): Promise<void> {
+  const durationMinutes = options.durationMinutes ?? 60;
   await removeLesson(instructorName, learnerEmail, date, time);
   await withDatabase(async (sql) => {
+    // Booking through the app makes the learner one of that Business's learners, and some
+    // screens assume that link (create_booking does this itself). Only the tests that need it
+    // ask for it, because it also puts the learner on that Business's own lists.
+    if (options.link === true) {
+      await sql`
+        insert into public.learner_relationships (business_id, learner_id, instructor_id, status, source)
+        select p.business_id, u.id, p.id, 'active', 'marketplace'
+          from public.instructor_profiles p
+          join public.users u on lower(u.email) = lower(${learnerEmail})
+         where p.display_name = ${instructorName}
+        on conflict do nothing`;
+    }
     await sql`
       insert into public.bookings (business_id, instructor_id, learner_id, lesson_type_id, starts_at, ends_at,
                                    buffer_minutes, status, price_pence, source)
@@ -344,5 +357,40 @@ export async function countProviderEvents(eventId: string): Promise<number> {
     const rows = await sql<{ count: string }[]>`
       select count(*)::text as count from public.provider_events where event_id = ${eventId}`;
     return Number(rows[0]?.count ?? '0');
+  });
+}
+
+/**
+ * Puts a Business in a state where it can take cards, without walking the connect flow.
+ * Local only. Returns the account id the fake provider will be asked about.
+ */
+export async function enablePayments(ownerEmail: string, accountId: string): Promise<string> {
+  await withDatabase(async (sql) => {
+    await sql`
+      update public.businesses b
+         set stripe_account_id = ${accountId},
+             stripe_charges_enabled = true,
+             stripe_payouts_enabled = true,
+             stripe_details_submitted = true,
+             stripe_connected_at = now()
+        from public.memberships m
+        join public.users u on u.id = m.user_id
+       where m.business_id = b.id and m.role = 'owner' and lower(u.email) = lower(${ownerEmail})`;
+  });
+  return accountId;
+}
+
+/** What a lesson's payment came to, for a test that has just paid for one. */
+export async function paymentFor(startsAt: string): Promise<{ amountPence: number; status: string } | null> {
+  return withDatabase(async (sql) => {
+    const rows = await sql<{ amount_pence: number; status: string }[]>`
+      select p.amount_pence, p.status::text as status
+        from public.payments p
+        join public.bookings b on b.id = p.booking_id
+       where b.starts_at = ${startsAt}::timestamptz
+       order by p.created_at desc
+       limit 1`;
+    const found = rows[0];
+    return found ? { amountPence: found.amount_pence, status: found.status } : null;
   });
 }

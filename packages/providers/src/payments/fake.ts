@@ -61,6 +61,11 @@ export interface FakePaymentsProvider extends PaymentsProvider {
   readonly state: FakeState;
   /** Stands in for somebody finishing Stripe's onboarding (PAY-01). */
   completeOnboarding: (accountId: string) => boolean;
+  /**
+   * Stands in for a card going through, or being refused (PAY-02). Returns the payment as it
+   * now stands, which is what the provider would send in an event.
+   */
+  completePayment: (paymentIntentId: string, outcome?: 'succeeded' | 'failed') => PaymentIntent | null;
   /** Pretends the provider sent an event, for the webhook path (R-11). */
   event: (type: string, data: Record<string, unknown>, accountId?: string) => WebhookEvent;
   /** Signs a body the way the real one does, so the webhook route can be tested. */
@@ -119,6 +124,13 @@ export function fakePaymentsProvider(options: FakePaymentsOptions = {}): FakePay
         requirements: [],
       });
       return true;
+    },
+
+    completePayment: (paymentIntentId, outcome = 'succeeded') => {
+      const intent = state.intents.get(paymentIntentId);
+      if (!intent) return null;
+      if (outcome === 'failed') return put({ ...intent, status: 'requires_payment_method' });
+      return put({ ...intent, status: 'succeeded', clientSecret: null, chargeId: intent.chargeId ?? next('ch') });
     },
 
     reset: () => {

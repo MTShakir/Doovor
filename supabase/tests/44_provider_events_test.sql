@@ -1,6 +1,6 @@
 -- Events from the payments provider, processed exactly once (R-11, M3-03).
 begin;
-select plan(9);
+select plan(10);
 
 select tests.create_fixture();
 
@@ -57,10 +57,17 @@ select is(
 -- Events about something else.
 -- ---------------------------------------------------------------------------------------
 select is(
-  (select public.system_process_stripe_event('evt_2', 'payment_intent.succeeded', 'acct_events',
-     jsonb_build_object('id', 'pi_1')) ->> 'outcome'),
+  (select public.system_process_stripe_event('evt_2', 'charge.dispute.created', 'acct_events',
+     jsonb_build_object('id', 'dp_1')) ->> 'outcome'),
   'recorded',
   'an event nothing acts on yet is still written down'
+);
+
+select is(
+  (select public.system_process_stripe_event('evt_4', 'payment_intent.succeeded', 'acct_events',
+     jsonb_build_object('id', 'pi_nothing', 'amount_received', 4200)) ->> 'outcome'),
+  'no_booking',
+  'a payment that says nothing about what it was for is recorded and left alone'
 );
 
 select is(

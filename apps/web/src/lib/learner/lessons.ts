@@ -13,6 +13,8 @@ export interface MyLesson {
   pricePence: number;
   pickup: string | null;
   durationMinutes: number;
+  /** True when this Business can take a card, so an unpaid lesson can be paid for now. */
+  canPayNow: boolean;
 }
 
 /** The learner's own lessons (PRD 8.2). Row-level security answers for them, not this. */
@@ -21,7 +23,7 @@ export async function myLessons(): Promise<{ upcoming: MyLesson[]; past: MyLesso
   const { data, error } = await supabase
     .from('bookings')
     .select(
-      'id, starts_at, ends_at, status, payment_status, price_pence, instructor_id, instructor_profiles(display_name), lesson_types(name), pickup_points(label)',
+      'id, starts_at, ends_at, status, payment_status, price_pence, instructor_id, instructor_profiles(display_name), lesson_types(name), pickup_points(label), businesses!bookings_business_id_fkey(stripe_charges_enabled)',
     )
     .order('starts_at', { ascending: false })
     .limit(200);
@@ -41,6 +43,7 @@ export async function myLessons(): Promise<{ upcoming: MyLesson[]; past: MyLesso
     pricePence: row.price_pence,
     pickup: row.pickup_points?.label ?? null,
     durationMinutes: Math.round((new Date(row.ends_at).getTime() - new Date(row.starts_at).getTime()) / 60_000),
+    canPayNow: row.businesses.stripe_charges_enabled && ['unpaid', 'pending', 'failed'].includes(row.payment_status),
   }));
 
   return {

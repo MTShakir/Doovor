@@ -48,6 +48,19 @@ export function fakeOnboarding(accountId: string): boolean {
 }
 
 /**
+ * Stands in for a card going through while the fake is in use, so the whole path from the
+ * button to the webhook can be walked locally. With Stripe, the card does this.
+ */
+export function fakeCardOutcome(
+  paymentIntentId: string,
+  outcome: 'succeeded' | 'failed',
+): { id: string; amountPence: number; metadata: Record<string, string> } | null {
+  if (serverEnv.PAYMENTS_PROVIDER === 'stripe') return null;
+  const intent = theFake().completePayment(paymentIntentId, outcome);
+  return intent ? { id: intent.id, amountPence: intent.amountPence, metadata: intent.metadata } : null;
+}
+
+/**
  * The secret the fake signs its events with. Local and test runs have no Stripe endpoint to
  * take a secret from, and a webhook route that cannot be exercised locally is a webhook route
  * nobody finds the bugs in.
