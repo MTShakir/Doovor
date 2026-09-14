@@ -1,8 +1,8 @@
 import { cardExpiry, describeCard } from '@repo/core/cards';
 import { formatPence } from '@repo/core/money';
 import { pricePerHourPence } from '@repo/core/packages';
-import { formatMinutes } from '@repo/core/time';
 import { PageHeader } from '@repo/ui/app-shell';
+import { Button } from '@repo/ui/button';
 import { Card, CardTitle } from '@repo/ui/card';
 import { EmptyState } from '@repo/ui/empty-state';
 import { SkeletonRow } from '@repo/ui/skeleton';
@@ -11,9 +11,11 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { connection } from 'next/server';
 import { Suspense } from 'react';
+import { BalanceHistory, BalanceLines, OwedLessons } from '@/components/money/balance';
 import { requirePortal } from '@/lib/auth/session';
+import { learnerBalance, type Balance } from '@/lib/payments/balance';
 import { keptCardsByBusiness } from '@/lib/payments/cards';
-import { creditWithBusinesses } from '@/lib/payments/packages';
+import { learnerBusinesses, type LearnerBusiness } from '@/lib/payments/packages';
 import { KeptCards } from './kept-cards';
 
 export const metadata: Metadata = { title: 'Payments', robots: { index: false } };
@@ -21,10 +23,10 @@ export const metadata: Metadata = { title: 'Payments', robots: { index: false } 
 export default function LearnerPaymentsPage() {
   return (
     <main className="flex flex-col gap-4 pb-8">
-      <PageHeader title="Payments" subtitle="Your lesson credit, and the cards your instructors keep for you." />
+      <PageHeader title="Payments" subtitle="Your credit, what you owe, and the cards your instructors keep for you." />
       <div className="flex flex-col gap-6 px-4 md:max-w-2xl md:px-8">
         <Suspense fallback={<SkeletonRow />}>
-          <Credit />
+          <Balances />
         </Suspense>
         <section className="flex flex-col gap-2" aria-labelledby="saved-cards">
           <h2 id="saved-cards" className="text-h3 text-black">
@@ -40,29 +42,51 @@ export default function LearnerPaymentsPage() {
 }
 
 /**
- * PAY-04, PAY-06, M3-13: credit with each Business the learner learns with, and the packages
- * that buy more. Credit only ever belongs to one Business, so it is shown one Business at a time.
+ * PAY-04, PAY-06, M3-13, M3-16: the learner's balance with each Business they learn with, the
+ * same one their instructor sees on the learner card: credit, what is owed and since when, the
+ * packages that buy more, and what has happened lately. Credit and money only ever belong to one
+ * Business, so they are shown one Business at a time.
  */
-async function Credit() {
-  // Somebody's own credit, which no shell can know.
+async function Balances() {
+  // Somebody's own money, which no shell can know.
   await connection();
   const { session } = await requirePortal('learner');
-  const businesses = await creditWithBusinesses(session.userId);
-  if (businesses.length === 0) return null;
+  const businesses = await learnerBusinesses(session.userId);
+  const balances = await Promise.all(businesses.map((one) => learnerBalance(one.businessId, session.userId)));
+
+  const shown = businesses
+    .map((business, index) => ({ business, balance: balances[index] ?? null }))
+    .filter((one): one is { business: LearnerBusiness; balance: Balance } => {
+      const { business, balance } = one;
+      if (balance === null) return false;
+      return balance.creditMinutes > 0 || balance.owedPence > 0 || balance.history.length > 0 || business.packages.length > 0;
+    });
+  if (shown.length === 0) return null;
 
   return (
-    <section className="flex flex-col gap-2" aria-labelledby="lesson-credit">
-      <h2 id="lesson-credit" className="text-h3 text-black">
-        Lesson credit
+    <section className="flex flex-col gap-2" aria-labelledby="balances">
+      <h2 id="balances" className="text-h3 text-black">
+        Credit and balances
       </h2>
-      {businesses.map((business) => (
-        <Card key={business.businessId} padding="none" role="region" aria-label={`Credit with ${business.businessName}`}>
-          <div className="flex flex-col gap-1 px-4 pt-4 pb-3">
+      {shown.map(({ business, balance }) => (
+        <Card key={business.businessId} padding="none" role="region" aria-label={`Balance with ${business.businessName}`}>
+          <div className="flex flex-col gap-2 px-4 pt-4 pb-3">
             <CardTitle>{business.businessName}</CardTitle>
-            <p className="text-body text-ink tabular-nums">
-              {business.balanceMinutes > 0 ? `${formatMinutes(business.balanceMinutes)} of credit` : 'No credit yet'}
-            </p>
+            <BalanceLines balance={balance} />
           </div>
+          <OwedLessons
+            balance={balance}
+            action={
+              // Paid on screen where the Business takes cards, and in person where it does not.
+              business.takesCards
+                ? (owed) => (
+                    <Button asChild>
+                      <Link href={`/app/learner/pay/${owed.lesson.id}`}>Pay {formatPence(owed.lesson.pricePence)}</Link>
+                    </Button>
+                  )
+                : undefined
+            }
+          />
           {business.packages.length === 0 ? null : (
             <ul className="flex flex-col border-t border-grey-200">
               {business.packages.map((offer) => (
@@ -83,6 +107,7 @@ async function Credit() {
               ))}
             </ul>
           )}
+          <BalanceHistory history={balance.history} limit={5} />
         </Card>
       ))}
     </section>

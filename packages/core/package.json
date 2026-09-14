@@ -36,7 +36,8 @@
     "./cards": "./src/cards.ts",
     "./payment-modes": "./src/payment-modes.ts",
     "./credit": "./src/credit.ts",
-    "./packages": "./src/packages.ts"
+    "./packages": "./src/packages.ts",
+    "./balance": "./src/balance.ts"
   },
   "scripts": {
     "lint": "eslint .",

@@ -9,17 +9,11 @@ import { Input, Textarea } from '@repo/ui/input';
 import { Sheet } from '@repo/ui/sheet';
 import { Skeleton } from '@repo/ui/skeleton';
 import { TimeSlotGrid } from '@repo/ui/time-slot-grid';
-import { toast, toastWithUndo } from '@repo/ui/toast';
-import { Banknote, Landmark } from 'lucide-react';
+import { toast } from '@repo/ui/toast';
 import { useEffect, useState, useTransition } from 'react';
 import { FormAlert } from '@/components/form-alert';
-import {
-  cancelLesson,
-  moveLesson,
-  recordOfflinePayment,
-  slotsForDay,
-  undoOfflinePayment,
-} from '@/app/(portal)/app/instructor/booking-actions';
+import { MarkPaidSheet } from '@/components/money/mark-paid';
+import { cancelLesson, moveLesson, slotsForDay } from '@/app/(portal)/app/instructor/booking-actions';
 
 export interface ChosenLesson {
   bookingId: string;
@@ -96,25 +90,6 @@ export function LessonSheets({ lesson, rules, action, onClose }: LessonSheetsPro
     });
   };
 
-  /** Two taps: the lesson's Mark paid, then how (PAY-05). A slip is one Undo away. */
-  const markPaid = (method: 'cash' | 'bank') => {
-    setError(null);
-    startTransition(async () => {
-      const result = await recordOfflinePayment({ bookingId, method });
-      if (!result.ok) {
-        setError(result.message);
-        return;
-      }
-      onClose();
-      const { paymentId } = result.data;
-      toastWithUndo(`Marked paid (${method})`, () => {
-        void undoOfflinePayment({ paymentId }).then((undone) => {
-          toast(undone.ok ? `${learnerName}'s lesson is unpaid again` : undone.message);
-        });
-      });
-    });
-  };
-
   const move = () => {
     if (slot === null) return;
     setError(null);
@@ -134,24 +109,8 @@ export function LessonSheets({ lesson, rules, action, onClose }: LessonSheetsPro
 
   return (
     <>
-      <Sheet
-        open={paying}
-        onOpenChange={onClose}
-        title={`How did ${learnerName} pay?`}
-        description={`${formatPence(pricePence)} for ${formatDate(new Date(startsAt))} at ${formatTime(new Date(startsAt))}.`}
-      >
-        <div className="flex flex-col gap-3 pb-2">
-          {error ? <FormAlert>{error}</FormAlert> : null}
-          <Button width="full" size="lg" pending={pending} onClick={() => { markPaid('cash'); }}>
-            <Banknote className="size-5" aria-hidden />
-            Cash
-          </Button>
-          <Button width="full" size="lg" variant="secondary" disabled={pending} onClick={() => { markPaid('bank'); }}>
-            <Landmark className="size-5" aria-hidden />
-            Bank transfer
-          </Button>
-        </div>
-      </Sheet>
+      {/* Two taps: the lesson's Mark paid, then how (PAY-05). */}
+      <MarkPaidSheet lesson={{ bookingId, learnerName, startsAt, pricePence }} open={paying} onClose={onClose} />
 
       <Sheet
         open={cancelling}

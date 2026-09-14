@@ -531,13 +531,33 @@ test.describe('lesson credit (PAY-04, M3-13, M3-14)', () => {
   const buyer = (project: string): string =>
     project === 'mobile' ? 'isla.roberts@example.com' : 'amelia.evans@example.com';
 
+  /** A Wednesday some weeks out for each width, inside the learner's booking horizon and past the seeded diary. */
+  const creditDay = (project: string): string => {
+    const day = new Date();
+    day.setDate(day.getDate() + (project === 'mobile' ? 28 : 35));
+    while (day.getDay() !== 3) day.setDate(day.getDate() + 1);
+    return day.toISOString().slice(0, 10);
+  };
+
+  /**
+   * Minutes as the app says them. Other tests give these learners credit too, not always in
+   * whole hours, so a test never assumes what it started with.
+   */
+  const inWords = (minutes: number): string => {
+    const hours = Math.floor(minutes / 60);
+    const rest = minutes % 60;
+    const hourText = hours === 1 ? '1 hour' : `${String(hours)} hours`;
+    if (hours === 0) return `${String(rest)} minutes`;
+    return rest === 0 ? hourText : `${hourText} ${String(rest)} minutes`;
+  };
+
   test('a learner buys a package, and has the hours as credit', async ({ page }, testInfo) => {
     const email = buyer(testInfo.project.name);
     await enablePayments(owner, `fake_acct_packages_${testInfo.project.name}`);
     const before = await creditWith(email, owner);
 
     await signInThroughForm(page, email, { next: '/app/learner/payments' });
-    const credit = page.getByRole('region', { name: `Credit with ${school}` });
+    const credit = page.getByRole('region', { name: `Balance with ${school}` });
     await expect(credit).toBeVisible();
     await expect(credit.getByRole('link', { name: /^Buy 10 hours/ })).toBeVisible();
     await expectAccessible(page);
@@ -573,8 +593,8 @@ test.describe('lesson credit (PAY-04, M3-13, M3-14)', () => {
 
     await page.waitForURL(/\/app\/learner\/payments$/);
     await expect(page.getByText('5 hours of credit added')).toBeVisible();
-    await expect(page.getByRole('region', { name: `Credit with ${school}` })).toContainText(
-      `${String((before.minutes + 300) / 60)} hours of credit`,
+    await expect(page.getByRole('region', { name: `Balance with ${school}` })).toContainText(
+      `${inWords(before.minutes + 300)} of credit`,
     );
     expect(await creditWith(email, owner)).toEqual({ minutes: before.minutes + 300, lots: before.lots + 1 });
     await settled(page);
@@ -582,23 +602,6 @@ test.describe('lesson credit (PAY-04, M3-13, M3-14)', () => {
 
     await clearPaymentsAccount(owner);
   });
-
-  /** A Wednesday some weeks out for each width, inside the learner's booking horizon and past the seeded diary. */
-  const creditDay = (project: string): string => {
-    const day = new Date();
-    day.setDate(day.getDate() + (project === 'mobile' ? 28 : 35));
-    while (day.getDay() !== 3) day.setDate(day.getDate() + 1);
-    return day.toISOString().slice(0, 10);
-  };
-
-  /** Minutes as the app says them. */
-  const inWords = (minutes: number): string => {
-    const hours = Math.floor(minutes / 60);
-    const rest = minutes % 60;
-    const hourText = hours === 1 ? '1 hour' : `${String(hours)} hours`;
-    if (hours === 0) return `${String(rest)} minutes`;
-    return rest === 0 ? hourText : `${hourText} ${String(rest)} minutes`;
-  };
 
   test('acceptance-03: credit pays for a lesson, and all of it comes back when it is cancelled in time', async ({ page }, testInfo) => {
     const email = buyer(testInfo.project.name);
@@ -611,7 +614,7 @@ test.describe('lesson credit (PAY-04, M3-13, M3-14)', () => {
     expect((await creditWith(email, owner)).minutes, 'the lesson took an hour of credit').toBe(before.minutes - 60);
 
     await signInThroughForm(page, email, { next: '/app/learner/payments' });
-    await expect(page.getByRole('region', { name: `Credit with ${school}` })).toContainText(
+    await expect(page.getByRole('region', { name: `Balance with ${school}` })).toContainText(
       `${inWords(before.minutes - 60)} of credit`,
     );
 
@@ -639,7 +642,7 @@ test.describe('lesson credit (PAY-04, M3-13, M3-14)', () => {
     expect((await creditWith(email, owner)).minutes, 'every minute came back').toBe(before.minutes);
 
     await page.goto('/app/learner/payments');
-    await expect(page.getByRole('region', { name: `Credit with ${school}` })).toContainText(`${inWords(before.minutes)} of credit`);
+    await expect(page.getByRole('region', { name: `Balance with ${school}` })).toContainText(`${inWords(before.minutes)} of credit`);
   });
 
   test('acceptance-06: a payment delivered three times is one payment and one credit entry @desktop-only', async ({ request }, testInfo) => {

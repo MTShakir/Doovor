@@ -9,7 +9,7 @@ vi.mock('@/lib/auth/session', () => ({
 }));
 vi.mock('@/lib/booking/day', () => ({ bookingDay: vi.fn(), lessonOptions: vi.fn() }));
 vi.mock('@/lib/forms', () => ({ fieldErrors: vi.fn() }));
-vi.mock('next/cache', () => ({ revalidatePath: (path: string) => { revalidatePath(path); } }));
+vi.mock('next/cache', () => ({ revalidatePath: (...args: unknown[]) => { revalidatePath(...args); } }));
 
 const { recordOfflinePayment, undoOfflinePayment } = await import('./booking-actions');
 

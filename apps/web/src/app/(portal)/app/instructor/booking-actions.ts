@@ -258,6 +258,7 @@ export async function recordOfflinePayment(input: unknown): Promise<Result<{ pay
 
   revalidatePath('/app/instructor/diary');
   revalidatePath('/app/instructor');
+  revalidatePath('/app/instructor/learners', 'layout');
   return ok({ paymentId: data });
 }
 
@@ -275,5 +276,6 @@ export async function undoOfflinePayment(input: unknown): Promise<Result<null>> 
 
   revalidatePath('/app/instructor/diary');
   revalidatePath('/app/instructor');
+  revalidatePath('/app/instructor/learners', 'layout');
   return ok(null);
 }

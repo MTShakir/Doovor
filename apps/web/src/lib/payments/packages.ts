@@ -1,5 +1,4 @@
 import 'server-only';
-import { balanceMinutes, type CreditLot } from '@repo/core/credit';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
 
 /**
@@ -59,54 +58,56 @@ export async function packageOffer(packageId: string): Promise<PackageOffer | nu
   return data ? offerFrom(data) : null;
 }
 
-export interface CreditWithBusiness {
-  businessId: string;
-  businessName: string;
-  /** What can be booked with now: bought, not used and not run out (PAY-06). */
-  balanceMinutes: number;
-  /** What the Business sells, smallest first. Empty while it cannot take cards. */
-  packages: PackageOffer[];
+export interface PackageForSale {
+  id: string;
+  name: string;
+  minutes: number;
+  pricePence: number;
 }
 
 /**
- * The learner's credit with each Business they learn with, and what each one sells. A Business
- * that sells nothing, and with which they have no credit, has nothing to show and is left out.
+ * What a Business sells, for somebody who works there recording a package paid for in person
+ * (PAY-05, M3-16). Smallest first.
  */
-export async function creditWithBusinesses(learnerId: string, now = new Date()): Promise<CreditWithBusiness[]> {
+export async function packagesForSale(businessId: string): Promise<PackageForSale[]> {
   const supabase = await createSupabaseServerClient();
-  const [relationships, packages, lots] = await Promise.all([
+  const { data } = await supabase
+    .from('packages')
+    .select('id, name, minutes, price_pence')
+    .eq('business_id', businessId)
+    .eq('is_active', true)
+    .gt('price_pence', 0)
+    .order('minutes', { ascending: true });
+  return (data ?? []).map((row) => ({ id: row.id, name: row.name, minutes: row.minutes, pricePence: row.price_pence }));
+}
+
+export interface LearnerBusiness {
+  businessId: string;
+  businessName: string;
+  /** The Business can take a card, so what is owed can be paid on screen. */
+  takesCards: boolean;
+  /** What it sells that can be bought by card now, smallest first. */
+  packages: PackageOffer[];
+}
+
+/** Every Business the learner learns with, whether it takes cards, and the packages it sells. */
+export async function learnerBusinesses(learnerId: string): Promise<LearnerBusiness[]> {
+  const supabase = await createSupabaseServerClient();
+  const [relationships, packages] = await Promise.all([
     supabase
       .from('learner_relationships')
-      .select('business_id, businesses!learner_relationships_business_id_fkey(name)')
+      .select('business_id, businesses!learner_relationships_business_id_fkey(name, stripe_account_id, stripe_charges_enabled)')
       .eq('learner_id', learnerId),
     supabase.from('packages').select(offerColumns).eq('is_active', true).order('minutes', { ascending: true }),
-    supabase
-      .from('credit_lots')
-      .select('id, business_id, minutes_total, minutes_remaining, price_pence, purchased_at, expires_at')
-      .eq('learner_id', learnerId),
   ]);
 
   const offers = (packages.data ?? []).map(offerFrom).filter((offer) => offer.accountId !== null);
-  const lotsByBusiness = new Map<string, CreditLot[]>();
-  for (const row of lots.data ?? []) {
-    const lot: CreditLot = {
-      id: row.id,
-      minutesTotal: row.minutes_total,
-      minutesRemaining: row.minutes_remaining,
-      pricePence: row.price_pence,
-      purchasedAt: new Date(row.purchased_at),
-      expiresAt: row.expires_at === null ? null : new Date(row.expires_at),
-    };
-    lotsByBusiness.set(row.business_id, [...(lotsByBusiness.get(row.business_id) ?? []), lot]);
-  }
-
   return (relationships.data ?? [])
     .map((row) => ({
       businessId: row.business_id,
       businessName: row.businesses.name,
-      balanceMinutes: balanceMinutes(lotsByBusiness.get(row.business_id) ?? [], now),
+      takesCards: row.businesses.stripe_charges_enabled && row.businesses.stripe_account_id !== null,
       packages: offers.filter((offer) => offer.businessId === row.business_id),
     }))
-    .filter((one) => one.balanceMinutes > 0 || one.packages.length > 0)
     .sort((a, b) => a.businessName.localeCompare(b.businessName));
 }

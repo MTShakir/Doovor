@@ -15,8 +15,9 @@ import { Suspense } from 'react';
 import { z } from 'zod';
 import { serverEnv } from '@/env/server';
 import { requirePortal } from '@/lib/auth/session';
+import { learnerBalance } from '@/lib/payments/balance';
 import { keptCardsWith } from '@/lib/payments/cards';
-import { creditWithBusinesses, packageOffer } from '@/lib/payments/packages';
+import { packageOffer } from '@/lib/payments/packages';
 import { BuyPackage } from './buy-package';
 
 export const metadata: Metadata = { title: 'Buy lesson credit', robots: { index: false } };
@@ -54,11 +55,12 @@ async function Purchase({ params }: { params: Promise<{ package: string }> }) {
   if (!offer) notFound();
 
   const buyable = offer.onSale && offer.accountId !== null;
+  // The same balance the Payments screen and the instructor's learner card show (M3-16).
   const [credit, kept] = await Promise.all([
-    creditWithBusinesses(session.userId),
+    learnerBalance(offer.businessId, session.userId),
     buyable ? keptCardsWith(offer.businessId) : Promise.resolve(null),
   ]);
-  const balance = credit.find((one) => one.businessId === offer.businessId)?.balanceMinutes ?? 0;
+  const balance = credit?.creditMinutes ?? 0;
   const savedCards = (kept?.cards ?? []).map((card) => ({
     paymentMethodId: card.paymentMethodId,
     label: describeCard(card),

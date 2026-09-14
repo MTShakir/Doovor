@@ -433,6 +433,8 @@ Inserting a ledger row moves its account and then its lot, by trigger, in the sa
 
 Acceptance test 3: 120 minutes of credit, book 60, the balance shows 60, cancel 72 hours before, one `return` row brings it back to 120.
 
+A learner's balance with a Business (PAY-06) is read by one function, `learner_balance`, which checks the caller (the learner, owners and managers, the learner's instructor, staff) and returns all the facts: usable credit, the lessons that could be owed for, and recent payments, refunds and credit moves. `packages/core/src/balance.ts` decides what is owed, from when, and what is overdue (48 hours), and the learner's Payments screen and the instructor's learner card render that one result (D-090).
+
 ### 8.4 Webhooks, processed exactly once (R-11)
 
 ```mermaid

@@ -618,3 +618,13 @@ export async function offlinePaymentOn(
     return found ? { method: found.method, status: found.status, amountPence: found.amount_pence } : null;
   });
 }
+
+/** Somebody's user id, found by the email they signed up with. */
+export async function userIdOf(email: string): Promise<string> {
+  return withDatabase(async (sql) => {
+    const rows = await sql<{ id: string }[]>`select id from public.users where lower(email) = lower(${email})`;
+    const found = rows[0];
+    if (!found) throw new Error(`No user with the email ${email}`);
+    return found.id;
+  });
+}

@@ -2289,6 +2289,10 @@ export type Database = {
           token: string
         }[]
       }
+      learner_balance: {
+        Args: { p_business_id: string; p_learner_id: string }
+        Returns: Json
+      }
       learner_history: {
         Args: { p_learner_id: string }
         Returns: {
@@ -2323,6 +2327,10 @@ export type Database = {
           p_instructor_id: string
         }
         Returns: string[]
+      }
+      record_offline_package: {
+        Args: { p_learner_id: string; p_method: string; p_package_id: string }
+        Returns: string
       }
       record_offline_payment: {
         Args: { p_booking_id: string; p_method: string }
