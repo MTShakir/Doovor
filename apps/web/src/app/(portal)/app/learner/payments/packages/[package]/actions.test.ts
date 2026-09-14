@@ -221,6 +221,13 @@ describe('paying for a package with a kept card (PAY-02)', () => {
       ok: false,
       code: 'PAYMENT_FAILED',
     });
+
+    // With what the screen needs to ask the bank, the learner is asked there (M3-23).
+    provider.chargeSavedMethod.mockResolvedValueOnce({ ok: true, data: { ...succeeded, status: 'requires_action', clientSecret: 'pi_1_secret' } });
+    expect(await payPackageWithSavedCard({ packageId, attemptId, startNow: true, paymentMethodId: 'pm_kept' })).toEqual({
+      ok: true,
+      data: { status: 'check', clientSecret: 'pi_1_secret', accountId: 'acct_1' },
+    });
     expect(deliverFakePaymentEvent).not.toHaveBeenCalled();
   });
 });

@@ -10,6 +10,7 @@ import { CreditCard, ShieldCheck } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState, useTransition } from 'react';
 import { FormAlert } from '@/components/form-alert';
+import { CardForm, checkWithBank } from '@/components/payments/card-form';
 import { payWithSavedCard, payWithTestCard, startCheckout } from './actions';
 
 export interface KeptCardOption {
@@ -52,7 +53,7 @@ export function PayLesson({ bookingId, pricePence, businessName, savedCards, req
   const router = useRouter();
   const [pending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
-  const [intentId, setIntentId] = useState<string | null>(null);
+  const [checkout, setCheckout] = useState<{ clientSecret: string; accountId: string } | null>(null);
   const [mode, setMode] = useState<'saved' | 'new'>(savedCards.length > 0 ? 'saved' : 'new');
   const [chosen, setChosen] = useState<string>(savedCards[0]?.paymentMethodId ?? '');
   const [saveCard, setSaveCard] = useState(false);
@@ -62,6 +63,8 @@ export function PayLesson({ bookingId, pricePence, businessName, savedCards, req
   const verb = request ? 'Authorise' : 'Pay';
   const done = request ? 'Card authorised' : fee ? 'Fee paid' : 'Lesson paid for';
   const card = savedCards.find((one) => one.paymentMethodId === chosen) ?? savedCards[0];
+  // The client secret is the payment's id and a secret, joined: the id is the first part.
+  const intentId = checkout === null ? null : (checkout.clientSecret.split('_secret')[0] ?? null);
 
   // The money is taken and the webhook is on its way. The page says paid once it lands, which
   // replaces this component, so looking stops by itself.
@@ -85,6 +88,12 @@ export function PayLesson({ bookingId, pricePence, businessName, savedCards, req
         setError(result.message);
         return;
       }
+      if (result.data.status === 'check') {
+        const problem = await checkWithBank(result.data.accountId, result.data.clientSecret);
+        if (problem === null) setConfirming(true);
+        else setError(problem);
+        return;
+      }
       if (result.data.status === 'confirming') {
         setConfirming(true);
         return;
@@ -102,8 +111,7 @@ export function PayLesson({ bookingId, pricePence, businessName, savedCards, req
         setError(result.message);
         return;
       }
-      // The client secret is the payment's id and a secret, joined: the id is the first part.
-      setIntentId(result.data.clientSecret.split('_secret')[0] ?? null);
+      setCheckout({ clientSecret: result.data.clientSecret, accountId: result.data.accountId });
     });
   };
 
@@ -175,7 +183,7 @@ export function PayLesson({ bookingId, pricePence, businessName, savedCards, req
             Use a different card
           </Button>
         </div>
-      ) : intentId === null ? (
+      ) : checkout === null ? (
         <div className="flex flex-col gap-3">
           <Checkbox
             checked={saveCard}
@@ -202,7 +210,14 @@ export function PayLesson({ bookingId, pricePence, businessName, savedCards, req
           ) : null}
         </div>
       ) : live ? (
-        <p className="text-body text-grey-700">Enter your card details to finish.</p>
+        <CardForm
+          accountId={checkout.accountId}
+          clientSecret={checkout.clientSecret}
+          purpose="payment"
+          submitLabel={`${verb} ${price}`}
+          returnPath={`/app/learner/pay/${bookingId}`}
+          onConfirmed={() => { setConfirming(true); }}
+        />
       ) : (
         <div className="flex flex-col gap-2">
           <p className="text-small text-grey-700">

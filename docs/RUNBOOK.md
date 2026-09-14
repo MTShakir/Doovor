@@ -167,6 +167,29 @@ Sandbox `Doovor sandbox`, account `acct_1UFF4RDP3EG8YZIf`. Settings > Connect:
 8. **You:** live mode needs the Connect platform onboarding questionnaire finished (Platform profile >
    View onboarding): company identity, the business model and the loss liability elections.
 
+### 3.7a The Stripe test-mode run (M3-23)
+
+M3 is done when acceptance tests 3 to 6 pass against Stripe test mode, webhook replay included, and
+acceptance-12 books with a card. Everything else runs on the fake. In order:
+
+1. **You:** the two platform profile acknowledgements in 3.7 step 4.
+2. **You:** `stripe login` on this machine. It prints a link; open it while signed in to the Doovor
+   sandbox and allow access. Until then `pnpm stripe:listen` stops with "You have not configured API
+   keys yet".
+3. **You:** choose who works in Stripe test mode during the run. Claude's permission checks treat
+   creating a connected account and taking payments as real-world transactions, even in test mode,
+   and stop there. Either allow those Stripe calls for the run, or do the steps marked "You or
+   Claude" yourself.
+4. **You or Claude:** set `PAYMENTS_PROVIDER=stripe` in `.env.local`, start `pnpm stripe:listen`, and put
+   the signing secret it prints in `STRIPE_CONNECT_WEBHOOK_SECRET`. Restart `pnpm dev`.
+5. **You or Claude:** sign in as the seeded school owner and press **Set up payments** on the Money
+   screen. On Stripe's onboarding pages, use the test values Stripe offers in test mode, and accept
+   the terms for this test account. Back in the app, **I have finished** reads the account's state.
+6. **Claude:** run acceptance-03 to 06 and acceptance-12 with Stripe's test cards in the card form
+   (D-099), replay one delivered event three times with its real signature for acceptance-06, and
+   record the run in PROGRESS.
+7. Afterwards set `PAYMENTS_PROVIDER=fake` again, so every other run stays offline.
+
 ## 4. Routine operations
 
 ### Database changes

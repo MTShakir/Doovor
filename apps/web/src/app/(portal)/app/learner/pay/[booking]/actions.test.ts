@@ -179,7 +179,7 @@ describe('paying with a kept card (PAY-02, M3-07)', () => {
     expect(deliverFakePaymentEvent).not.toHaveBeenCalled();
   });
 
-  it('sends a learner whose bank wants a check to the card form', async () => {
+  it('asks the learner to check with their bank on the screen, or sends them to the card form when it cannot (M3-23)', async () => {
     provider.chargeSavedMethod.mockResolvedValue({ ok: false, reason: 'AUTHENTICATION_REQUIRED', message: 'Check.' });
 
     const asked = await payWithSavedCard({ bookingId, paymentMethodId: 'pm_kept' });
@@ -189,6 +189,15 @@ describe('paying with a kept card (PAY-02, M3-07)', () => {
     provider.chargeSavedMethod.mockResolvedValue({ ok: true, data: { ...succeeded, status: 'requires_action' } });
     const partWay = await payWithSavedCard({ bookingId, paymentMethodId: 'pm_kept' });
     expect(partWay).toMatchObject({ ok: false, code: 'PAYMENT_FAILED' });
+    expect(rpc).not.toHaveBeenCalledWith('set_payment_intent', expect.anything());
+
+    // With what the screen needs to ask the bank, the learner is asked there, and the attempt is kept.
+    provider.chargeSavedMethod.mockResolvedValue({ ok: true, data: { ...succeeded, status: 'requires_action', clientSecret: 'pi_1_secret' } });
+    expect(await payWithSavedCard({ bookingId, paymentMethodId: 'pm_kept' })).toEqual({
+      ok: true,
+      data: { status: 'check', clientSecret: 'pi_1_secret', accountId: 'acct_1' },
+    });
+    expect(rpc).toHaveBeenCalledWith('set_payment_intent', { p_booking_id: bookingId, p_provider_ref: 'pi_1', p_amount_pence: 4200 });
     expect(deliverFakePaymentEvent).not.toHaveBeenCalled();
   });
 
@@ -327,7 +336,7 @@ describe('saving a card for a lesson charged the day before (PAY-03, M3-09)', ()
   it('starts saving a card on the learner’s own customer, taking nothing', async () => {
     const result = await startCardSetup({ bookingId });
 
-    expect(result).toEqual({ ok: true, data: { setupId: 'seti_1', clientSecret: 'seti_1_secret' } });
+    expect(result).toEqual({ ok: true, data: { setupId: 'seti_1', clientSecret: 'seti_1_secret', accountId: 'acct_1' } });
     expect(rpc).toHaveBeenCalledWith('set_billing_customer', { p_business_id: 'business-1', p_customer_id: 'cus_lee' });
     expect(provider.createCardSetup).toHaveBeenCalledWith({
       accountId: 'acct_1',

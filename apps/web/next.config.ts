@@ -17,11 +17,13 @@ const isProduction = process.env.NODE_ENV === 'production';
  */
 const contentSecurityPolicy = [
   "default-src 'self'",
-  "script-src 'self' 'unsafe-inline'" + (isProduction ? '' : " 'unsafe-eval'"),
+  // Stripe.js draws the card fields in frames of its own (D-099).
+  "script-src 'self' 'unsafe-inline' https://js.stripe.com" + (isProduction ? '' : " 'unsafe-eval'"),
   "style-src 'self' 'unsafe-inline'",
   "img-src 'self' data: blob: https:",
   "font-src 'self'",
   "connect-src 'self' https: wss: http://127.0.0.1:54321 ws://127.0.0.1:54321",
+  "frame-src 'self' https://js.stripe.com https://hooks.stripe.com",
   "frame-ancestors 'none'",
   "base-uri 'self'",
   "form-action 'self'",
@@ -32,7 +34,8 @@ const securityHeaders = [
   { key: 'X-Content-Type-Options', value: 'nosniff' },
   { key: 'X-Frame-Options', value: 'DENY' },
   { key: 'Referrer-Policy', value: 'strict-origin-when-cross-origin' },
-  { key: 'Permissions-Policy', value: 'camera=(self), geolocation=(self), microphone=(), payment=(self)' },
+  // Stripe's frame asks the browser for Apple Pay and Google Pay, so it may use the Payment Request API.
+  { key: 'Permissions-Policy', value: 'camera=(self), geolocation=(self), microphone=(), payment=(self "https://js.stripe.com")' },
   { key: 'Content-Security-Policy-Report-Only', value: contentSecurityPolicy },
 ];
 

@@ -127,7 +127,12 @@ const needsCheck = 'Your bank wants to check it is you. Use a different card to 
  * one the provider holds for this learner on this Business's account, found from their own
  * `billing_customers` row, never from the browser.
  */
-export async function payPackageWithSavedCard(input: unknown): Promise<Result<{ status: 'paid' | 'confirming' }>> {
+export type SavedCardPurchase =
+  | { status: 'paid' | 'confirming' }
+  /** The bank wants the learner, who is on the screen, to check it is them (M3-23). */
+  | { status: 'check'; clientSecret: string; accountId: string };
+
+export async function payPackageWithSavedCard(input: unknown): Promise<Result<SavedCardPurchase>> {
   const parsed = savedCardSchema.safeParse(input);
   if (!parsed.success) return err('VALIDATION_FAILED');
   if (!parsed.data.startNow) return err('VALIDATION_FAILED', startNowMessage);
@@ -157,7 +162,11 @@ export async function payPackageWithSavedCard(input: unknown): Promise<Result<{ 
     if (charged.reason === 'DECLINED') return err('PAYMENT_FAILED', 'That card was refused. Use a different card.');
     return err('UNKNOWN', 'We could not take the payment. Try again.');
   }
-  // A bank that asks for a check part way through cannot be answered from here yet (M3-23).
+  // The bank asks for a check part way through: the learner is here, so the screen asks them,
+  // and the webhook adds the credit once they have (M3-23).
+  if (charged.data.status === 'requires_action' && charged.data.clientSecret !== null) {
+    return ok({ status: 'check', clientSecret: charged.data.clientSecret, accountId: kept.accountId });
+  }
   if (charged.data.status !== 'succeeded' && charged.data.status !== 'processing') {
     return err('PAYMENT_FAILED', needsCheck);
   }

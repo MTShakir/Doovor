@@ -150,9 +150,12 @@ const needsCheck = 'Your bank wants to check it is you. Use a different card to 
  * from that customer's own list. The learner is here pressing the button, so the bank is told
  * so. What records the payment is the webhook, exactly as for a card typed in.
  */
-export async function payWithSavedCard(
-  input: unknown,
-): Promise<Result<{ status: 'paid' | 'authorised' | 'confirming' }>> {
+export type SavedCardPayment =
+  | { status: 'paid' | 'authorised' | 'confirming' }
+  /** The bank wants the learner, who is on the screen, to check it is them (M3-23). */
+  | { status: 'check'; clientSecret: string; accountId: string };
+
+export async function payWithSavedCard(input: unknown): Promise<Result<SavedCardPayment>> {
   const parsed = savedCardSchema.safeParse(input);
   if (!parsed.success) return err('VALIDATION_FAILED');
 
@@ -184,7 +187,12 @@ export async function payWithSavedCard(
   }
 
   const went = lesson.request ? 'requires_capture' : 'succeeded';
-  // A bank that asks for a check part way through cannot be answered from here yet (M3-23).
+  // The bank asks for a check part way through: the learner is here, so the screen asks them,
+  // and the webhook records the payment once they have (M3-23).
+  if (charged.data.status === 'requires_action' && charged.data.clientSecret !== null) {
+    await recordAttempt(lesson.bookingId, charged.data.id, charged.data.amountPence);
+    return ok({ status: 'check', clientSecret: charged.data.clientSecret, accountId: kept.accountId });
+  }
   if (charged.data.status !== went && charged.data.status !== 'processing') {
     return err('PAYMENT_FAILED', needsCheck);
   }
@@ -221,7 +229,7 @@ const setupSchema = z.object({ bookingId: z.uuid() });
  * card kept at checkout is (D-080), and the charge made later is the one the learner is told
  * about on this screen: that is their agreement to it.
  */
-export async function startCardSetup(input: unknown): Promise<Result<{ setupId: string; clientSecret: string }>> {
+export async function startCardSetup(input: unknown): Promise<Result<{ setupId: string; clientSecret: string; accountId: string }>> {
   const parsed = setupSchema.safeParse(input);
   if (!parsed.success) return err('VALIDATION_FAILED');
 
@@ -256,7 +264,7 @@ export async function startCardSetup(input: unknown): Promise<Result<{ setupId: 
     return err('UNKNOWN', 'We could not start saving your card. Try again.');
   }
 
-  return ok({ setupId: setup.data.id, clientSecret: setup.data.clientSecret });
+  return ok({ setupId: setup.data.id, clientSecret: setup.data.clientSecret, accountId: lesson.accountId });
 }
 
 const testSetupSchema = z.object({ bookingId: z.uuid(), setupId: z.string().min(3).max(100) });

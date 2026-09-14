@@ -11,6 +11,7 @@ import { CreditCard, ShieldCheck } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useState, useTransition } from 'react';
 import { FormAlert } from '@/components/form-alert';
+import { CardForm, checkWithBank } from '@/components/payments/card-form';
 import type { KeptCardOption } from '../../../pay/[booking]/pay-lesson';
 import { payPackageWithSavedCard, payPackageWithTestCard, startPackageCheckout } from './actions';
 
@@ -42,13 +43,15 @@ export function BuyPackage({ packageId, attemptId, name, minutes, pricePence, bu
   const [pending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
   const [startNow, setStartNow] = useState(false);
-  const [intentId, setIntentId] = useState<string | null>(null);
+  const [checkout, setCheckout] = useState<{ clientSecret: string; accountId: string } | null>(null);
   const [mode, setMode] = useState<'saved' | 'new'>(savedCards.length > 0 ? 'saved' : 'new');
   const [chosen, setChosen] = useState<string>(savedCards[0]?.paymentMethodId ?? '');
   const [saveCard, setSaveCard] = useState(false);
 
   const price = formatPence(pricePence);
   const card = savedCards.find((one) => one.paymentMethodId === chosen) ?? savedCards[0];
+  // The client secret is the payment's id and a secret, joined: the id is the first part.
+  const intentId = checkout === null ? null : (checkout.clientSecret.split('_secret')[0] ?? null);
 
   const bought = (confirming: boolean) => {
     toast(confirming ? 'Payment taken. Your credit shows in a few seconds.' : `${formatMinutes(minutes)} of credit added`);
@@ -71,6 +74,12 @@ export function BuyPackage({ packageId, attemptId, name, minutes, pricePence, bu
         setError(result.message);
         return;
       }
+      if (result.data.status === 'check') {
+        const problem = await checkWithBank(result.data.accountId, result.data.clientSecret);
+        if (problem === null) bought(true);
+        else setError(problem);
+        return;
+      }
       bought(result.data.status === 'confirming');
     });
   };
@@ -84,8 +93,7 @@ export function BuyPackage({ packageId, attemptId, name, minutes, pricePence, bu
         setError(result.message);
         return;
       }
-      // The client secret is the payment's id and a secret, joined: the id is the first part.
-      setIntentId(result.data.clientSecret.split('_secret')[0] ?? null);
+      setCheckout({ clientSecret: result.data.clientSecret, accountId: result.data.accountId });
     });
   };
 
@@ -110,7 +118,7 @@ export function BuyPackage({ packageId, attemptId, name, minutes, pricePence, bu
     <div className="flex flex-col gap-3">
       <Checkbox
         checked={startNow}
-        disabled={intentId !== null}
+        disabled={checkout !== null}
         onCheckedChange={(value) => {
           setStartNow(value === true);
           if (value === true && error === startNowMessage) setError(null);
@@ -155,7 +163,7 @@ export function BuyPackage({ packageId, attemptId, name, minutes, pricePence, bu
             Use a different card
           </Button>
         </div>
-      ) : intentId === null ? (
+      ) : checkout === null ? (
         <div className="flex flex-col gap-3">
           <Checkbox
             checked={saveCard}
@@ -182,7 +190,14 @@ export function BuyPackage({ packageId, attemptId, name, minutes, pricePence, bu
           ) : null}
         </div>
       ) : live ? (
-        <p className="text-body text-grey-700">Enter your card details to finish.</p>
+        <CardForm
+          accountId={checkout.accountId}
+          clientSecret={checkout.clientSecret}
+          purpose="payment"
+          submitLabel={`Pay ${price}`}
+          returnPath={`/app/learner/payments/packages/${packageId}`}
+          onConfirmed={() => { bought(true); }}
+        />
       ) : (
         <div className="flex flex-col gap-2">
           <p className="text-small text-grey-700">

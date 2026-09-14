@@ -10,7 +10,7 @@ M1 Instructor core is approved and merged to `main`, all 24 tasks, with its fift
 
 M2 Learners and bookings is approved and merged to `main`, and was pushed to staging on 13 September 2026.
 
-M3 Payments is in progress on branch `m3-payments`: M3-01 to M3-22 are built, with the Stripe test-mode halves of M3-08 to M3-10 waiting for the M3-23 run. The app now lives on `app.doovor.com` with the public site on `doovor.com` (D-084).
+M3 Payments is in progress on branch `m3-payments`: M3-01 to M3-22 are built, and M3-23 has its card form. The Stripe test-mode run, which also covers the Stripe halves of M3-08 to M3-10, waits on the owner items under Blockers. The app now lives on `app.doovor.com` with the public site on `doovor.com` (D-084).
 
 ## M3 progress
 
@@ -38,6 +38,7 @@ M3 Payments is in progress on branch `m3-payments`: M3-01 to M3-22 are built, wi
 | M3-20 | Receipts: email, sequential numbers, VAT lines only when registered, receipt page | PAY-08 | Done. Every payment received gets a receipt numbered in its Business's own series, with the name, address and VAT number frozen as they were, what was paid for, the amount and how it was paid, and the VAT in the price only for a Business registered for VAT. A job emails it once, and cash waits out its ten-minute undo window first. The owner sets the address and VAT number on the Money screen. The receipt page prints, and each payment in both histories links to its receipt (D-095). Snapshot tests cover the email with and without VAT; pgTAP covers numbering, VAT to the penny, frozen details and who reads receipts; end to end at both widths |
 | M3-21 | Money dashboard: week, month, tax year; paid, unpaid, credit sold, refunds | MNY-01 | Done. The Money screen opens with "Money in" for this week, this month or this tax year: paid by card, cash and bank transfer, unpaid lessons and fees, credit sold and refunds. Periods are days in London, and the tax year runs from 6 April to 5 April. Owners and managers see the whole Business; a school instructor sees their own lessons and no credit sold (D-096). Unit tests cover the 5 and 6 April boundary in London time, and summer time either side of midnight; pgTAP shows a payment at 23:59:59 on 5 April and cash at 00:00 on 6 April landing in different tax years, and who may read what; end to end at both widths |
 | M3-22 | Payment notifications: received, failed or overdue, credit low (2 hours left) | NTF-03 | Done. A payment received tells the learner in the app and on their phone, since the receipt is their email, and the instructor on every channel. The person who marked cash paid is not told, and nobody is told until the cash can no longer be undone. A school's owners and managers get one summary of the day before each morning. A lesson or fee still owed two days after it was due is told once to the learner, the instructor and the school; for a lesson paid in person, the instructor is asked to mark it paid instead of the learner being chased. Using credit that leaves 2 hours or less tells the learner and their instructor, once for each package bought (D-098). Failed payments were wired in M3-09 and M3-19. pgTAP covers who each notification concerns, the undo window, when money is overdue and the 2-hour line. Unit tests cover the words, the recipients, the jobs, and a London day when the clocks go back. End to end, a card payment writes both notifications through the real job |
+| M3-23 | Stripe test-mode runs of acceptance tests 3 to 6 and acceptance-12 with card; milestone report | 17.2 | In progress. The card form is built. Card details go into Stripe's Payment Element on the pay, package and save card screens, dressed as our inputs, with our own words for what went wrong. A kept card the bank wants to check is checked on the screen (D-099). Unit tests cover the error words and the bank check in both checkout actions; the fake runs are unchanged. The run against Stripe test mode waits on the owner items under Blockers (RUNBOOK 3.7a) |
 
 ## M2 progress
 
@@ -153,11 +154,11 @@ Decisions D-036 to D-050 were logged during this stretch. Two were security fixe
 
 | Suite | Result |
 |---|---|
-| Unit (Vitest) | 830 passed across 7 packages; `packages/core` and `packages/providers` both above the 90% line coverage gate |
+| Unit (Vitest) | 834 passed across 7 packages; `packages/core` and `packages/providers` both above the 90% line coverage gate |
 | Database (pgTAP) | 875 assertions in 65 files, all passing, including against a database an end to end run has left data in, and none of them depends on the date or the day of the week they run on (D-070); SQL lint clean |
 | End to end (Playwright) | 274 at 390 px and 1440 px on 14 September, none skipped, including acceptance-01 to 06, 09 and 12 and the payment journeys for M3-05 to M3-22. One run had the saved-card removal step fail once under full load and passed when its file ran again; it is being watched; green in CI on every push since 13 September |
 | Lint, typecheck, copy guard | Clean |
-| CI on GitHub | Read after every push. Green on af53a68 (14 September). Two pushes that day failed and were fixed in the next: a pgTAP test that only passed from Thursday to Sunday (c06c1e0), and an accessibility check that caught the portal's loading skeleton mid-scan (635fe19) |
+| CI on GitHub | Read after every push. Green on fa288bf (14 September). Two pushes that day failed and were fixed in the next: a pgTAP test that only passed from Thursday to Sunday (c06c1e0), and an accessibility check that caught the portal's loading skeleton mid-scan (635fe19) |
 | Staging (hosted) | All 46 migrations applied, M2 pushed on 2026-09-13. Security Advisor: 0 errors, 39 warnings, 38 of them the expected `security definer` pattern (D-051) and one the dashboard switch for leaked password protection |
 
 ## In progress
@@ -178,5 +179,6 @@ Decisions D-036 to D-050 were logged during this stretch. Two were security fixe
 | Leaked password protection | One dashboard switch on staging, found by the M1 security advisor. RUNBOOK 3.1 step 4 | Product owner |
 | VAPID key pair for staging and production | Push from those environments. Generated with one command, no account needed. RUNBOOK 3.2a | Product owner |
 | Stripe platform profile acknowledgements | The Stripe test-mode runs in M3-23: connected accounts cannot be created until they are accepted | Product owner, in the Stripe dashboard |
-| Stripe CLI on this machine | The local webhook signing secret and `pnpm stripe:listen`. RUNBOOK 3.7 | Product owner, one install command |
+| Stripe CLI signed in on this machine | The local webhook signing secret and `pnpm stripe:listen`. Installed (1.50.11) on 14 September, not yet signed in. RUNBOOK 3.7a | Product owner, `stripe login` |
+| Who operates Stripe test mode in the run | Creating the test connected account, onboarding it with Stripe's test values and accepting its terms, and taking test payments. Claude's permission checks stop at creating a connected account, even in test mode. RUNBOOK 3.7a | Product owner: allow it for the run, or do those steps |
 | Inngest connected to Vercel | Emails, reminders and payment jobs from staging and production | Product owner |
