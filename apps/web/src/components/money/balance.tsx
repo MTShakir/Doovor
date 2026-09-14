@@ -3,7 +3,7 @@ import { formatPence } from '@repo/core/money';
 import { formatDate, formatMinutes, formatTime } from '@repo/core/time';
 import { StatusPill } from '@repo/ui/status-pill';
 import type { ReactNode } from 'react';
-import type { Balance, BalanceHistoryEntry, LessonInstructor } from '@/lib/payments/balance';
+import type { Balance, BalanceHistoryEntry, LessonInstructor, OwedBack } from '@/lib/payments/balance';
 
 /**
  * A learner's balance with a Business, as both of the people it matters to see it (PAY-06, M3-16).
@@ -13,7 +13,7 @@ import type { Balance, BalanceHistoryEntry, LessonInstructor } from '@/lib/payme
  * the same words are read on both sides.
  */
 
-/** Credit, then what is owed, with the part that is overdue in red. */
+/** Credit, then what is owed, with the part that is overdue in red, then anything owed back. */
 export function BalanceLines({ balance }: { balance: Balance }) {
   return (
     <ul className="flex flex-col gap-1" aria-label="Balance">
@@ -30,13 +30,16 @@ export function BalanceLines({ balance }: { balance: Balance }) {
       ) : (
         <li className="text-body text-ink">Nothing owed</li>
       )}
+      {balance.owedBackPence > 0 ? (
+        <li className="text-body text-ink tabular-nums">{formatPence(balance.owedBackPence)} owed back</li>
+      ) : null}
     </ul>
   );
 }
 
 /**
- * The lessons owed for, the longest owed first. What can be done about one depends on who is
- * looking, so each screen brings its own action.
+ * The lessons owed for, and the fees for lessons called off late, the longest owed first. What
+ * can be done about one depends on who is looking, so each screen brings its own action.
  */
 export function OwedLessons({
   balance,
@@ -59,11 +62,48 @@ export function OwedLessons({
                 <span className="text-body font-medium text-ink">
                   {formatDate(owed.lesson.startsAt)} at {formatTime(owed.lesson.startsAt)}
                 </span>
-                <span className="text-small text-grey-700">{instructor === null ? 'Lesson' : `With ${instructor.name}`}</span>
+                <span className="text-small text-grey-700">
+                  {owed.lateFee
+                    ? instructor === null
+                      ? 'Late cancellation fee'
+                      : `Late cancellation fee, with ${instructor.name}`
+                    : instructor === null
+                      ? 'Lesson'
+                      : `With ${instructor.name}`}
+                </span>
               </span>
               <span className="flex shrink-0 flex-col items-end gap-1">
                 <StatusPill status={owed.overdue ? 'overdue' : 'unpaid'} />
-                <span className="text-small text-grey-700 tabular-nums">{formatPence(owed.lesson.pricePence)}</span>
+                <span className="text-small text-grey-700 tabular-nums">{formatPence(owed.amountPence)}</span>
+              </span>
+            </div>
+            {control ? <div className="flex flex-wrap justify-end gap-2">{control}</div> : null}
+          </li>
+        );
+      })}
+    </ul>
+  );
+}
+
+/**
+ * Cash and bank transfers the Business owes back, such as for a lesson it called off (R-08,
+ * M3-18), the longest owed first. The screen that can mark one handed back brings the action.
+ */
+export function OwedBackList({ balance, action }: { balance: Balance; action?: (owed: OwedBack) => ReactNode }) {
+  if (balance.owedBack.length === 0) return null;
+
+  return (
+    <ul className="flex flex-col border-t border-grey-200" aria-label="Owed back">
+      {balance.owedBack.map((owed) => {
+        const control = action?.(owed);
+        return (
+          <li key={owed.refundId} className="flex flex-col gap-2 border-b border-grey-200 px-4 py-3 last:border-b-0">
+            <div className="flex items-start gap-3">
+              <span className="flex min-w-0 flex-1 flex-col gap-0.5">
+                <span className="text-body font-medium text-ink">{formatPence(owed.amountPence)} owed back</span>
+                <span className="text-small text-grey-700">
+                  {owed.lessonAt === null ? `Since ${formatDate(owed.at)}` : `For the lesson on ${formatDate(owed.lessonAt)}`}
+                </span>
               </span>
             </div>
             {control ? <div className="flex flex-wrap justify-end gap-2">{control}</div> : null}

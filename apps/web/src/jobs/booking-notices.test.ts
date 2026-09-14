@@ -82,15 +82,16 @@ describe('what everybody is told about a lesson (PRD Appendix B)', () => {
       event: { name: 'booking.cancelled', payload: {} },
       notice: { ...notice, late_cancellation: true, fee_pence: 4200 },
     });
-    expect(planned[0]?.body).toBe('Wed 16 Sep at 09:00 with Sarah Khan. A fee of £42 applies.');
+    expect(planned[0]?.body).toBe('Wed 16 Sep at 09:00 with Sarah Khan. A fee of £42 is owed.');
+    expect(planned[1]?.body).toBe('Wed 16 Sep at 09:00 with Jack Taylor. Jack Taylor cancelled late, so a fee of £42 is owed.');
   });
 
   it('says the fee was kept from credit, not charged, for a lesson paid with credit (R-07)', () => {
     const planned = planBookingNotifications({
-      event: { name: 'booking.cancelled', payload: { credit_kept_minutes: 60, credit_returned_minutes: 0 } },
+      event: { name: 'booking.cancelled', payload: { by: 'learner', late: true, fee_pence: 4200, credit_kept_minutes: 60, credit_returned_minutes: 0 } },
       notice: { ...notice, late_cancellation: true, fee_pence: 4200, payment_status: 'paid_credit' },
     });
-    expect(planned[0]?.body).toBe('Wed 16 Sep at 09:00 with Sarah Khan. 1 hour of credit is kept as the fee.');
+    expect(planned[0]?.body).toBe('Wed 16 Sep at 09:00 with Sarah Khan. 1 hour of your credit is kept as the fee.');
   });
 
   it('takes each of them to the screen that answers it', () => {
@@ -192,5 +193,68 @@ describe('asking to be paid when a lesson is marked done (PAY-03, M3-10)', () =>
   it('asks nothing of a lesson paid for another way, or already paid', () => {
     expect(planBookingNotifications({ event: done, notice: { ...owed, payment_mode: 'at_booking' } })).toEqual([]);
     expect(planBookingNotifications({ event: done, notice: { ...owed, payment_status: 'paid_cash' } })).toEqual([]);
+  });
+});
+
+describe('the email about a cancelled lesson (PAY-09, R-06, R-08, M3-18)', () => {
+  const cancelled = { ...notice, status: 'cancelled', version: 4 };
+  const event = (payload: Record<string, unknown>) => ({
+    name: 'booking.cancelled',
+    payload: {
+      booking_id: 'booking-1',
+      fee_pence: 0,
+      kept_pence: 0,
+      card_refund_pence: 0,
+      offline_refund_pence: 0,
+      credit_returned_minutes: 0,
+      credit_kept_minutes: 0,
+      window_hours: 48,
+      fee_percent: 100,
+      ...payload,
+    },
+  });
+
+  it('acceptance-04: emails the learner who cancelled a card lesson a day before, saying why the whole fee was kept', () => {
+    const planned = planBookingNotifications({
+      event: event({ by: 'learner', late: true, fee_pence: 4200, kept_pence: 4200, minutes_before: 1440 }),
+      notice: { ...cancelled, late_cancellation: true, fee_pence: 4200, payment_status: 'paid_card' },
+    });
+
+    const learner = planned[0];
+    expect(learner?.userId).toBe('learner-1');
+    expect(learner?.channels).toContain('email');
+    expect(learner?.title).toBe('Lesson cancelled');
+    expect(learner?.body).toBe(
+      'Wed 16 Sep at 09:00 with Sarah Khan. You cancelled 24 hours before it started. Cancelling less than 48 hours before a lesson costs the full price, so the £42 you paid is kept as the fee.',
+    );
+    // The instructor and the school are told what happened, not lectured on the policy.
+    expect(planned[1]?.body).toBe('Wed 16 Sep at 09:00 with Jack Taylor. Jack Taylor cancelled late, so the £42 they paid is kept as the fee.');
+  });
+
+  it('acceptance-05: tells the learner an instructor cancelled on why, and that it all goes back to their card', () => {
+    const planned = planBookingNotifications({
+      event: event({ by: 'instructor', late: true, card_refund_pence: 4200, minutes_before: 180 }),
+      notice: { ...cancelled, late_cancellation: true, cancel_reason: 'Car in for repair', payment_status: 'paid_card' },
+    });
+
+    expect(planned[0]?.body).toBe('Wed 16 Sep at 09:00 with Sarah Khan. Reason: Car in for repair. £42 is going back to your card.');
+    expect(planned[2]?.body).toBe("Wed 16 Sep at 09:00 with Sarah Khan. Reason: Car in for repair. £42 is going back to Jack Taylor's card.");
+  });
+
+  it('tells the instructor when cash has to be handed back', () => {
+    const planned = planBookingNotifications({
+      event: event({ by: 'business', offline_refund_pence: 4200 }),
+      notice: { ...cancelled, cancel_reason: 'School closed that day.', payment_status: 'paid_cash' },
+    });
+
+    expect(planned[0]?.body).toBe('Wed 16 Sep at 09:00 with Sarah Khan. Reason: School closed that day. You are owed back the £42 you paid.');
+    expect(planned[1]?.body).toBe('Wed 16 Sep at 09:00 with Jack Taylor. Reason: School closed that day. Jack Taylor is owed back the £42 they paid.');
+  });
+
+  it('tells a learner who cancelled in time there is no charge', () => {
+    const planned = planBookingNotifications({ event: event({ by: 'learner', late: false, minutes_before: 5000 }), notice: cancelled });
+
+    expect(planned[0]?.body).toBe('Wed 16 Sep at 09:00 with Sarah Khan. There is no charge.');
+    expect(planned[1]?.body).toBe('Wed 16 Sep at 09:00 with Jack Taylor.');
   });
 });

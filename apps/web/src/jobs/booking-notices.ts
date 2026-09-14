@@ -7,6 +7,7 @@
  * `dispatch.ts` is; `notify.ts` wires it to the real ones.
  */
 
+import { cancelledMoneyWords, type CancelActor, type CancelledMoney } from '@repo/core/cancellation';
 import { formatPence } from '@repo/core/money';
 import {
   planNotifications,
@@ -14,7 +15,7 @@ import {
   type NotificationKind,
   type PlannedNotification,
 } from '@repo/core/notifications';
-import { formatDate, formatMinutes, formatTime, utcToLocal } from '@repo/core/time';
+import { formatDate, formatTime, utcToLocal } from '@repo/core/time';
 
 /** What `system_booking_notice` answers. */
 export interface BookingNotice {
@@ -79,6 +80,46 @@ const chargeFailures: Record<string, string> = {
   authentication_required: 'The bank wants the card holder to confirm the payment.',
 };
 
+const actors: readonly CancelActor[] = ['learner', 'instructor', 'business', 'system'];
+
+function numberIn(payload: Record<string, unknown>, key: string): number | null {
+  const value = payload[key];
+  return typeof value === 'number' && Number.isFinite(value) ? value : null;
+}
+
+/**
+ * What a cancellation did about money, as its event records it (M3-18). An event written before
+ * the event said all of this falls back on what the lesson says, and on saying less.
+ */
+function cancelledMoney(event: BookingEvent, notice: BookingNotice): CancelledMoney {
+  const { payload } = event;
+  const by = actors.find((actor) => actor === payload.by) ?? (notice.cancel_reason?.trim() ? 'instructor' : 'learner');
+  const minutesBefore = numberIn(payload, 'minutes_before');
+  const windowHours = numberIn(payload, 'window_hours');
+  const lateFeePercent = numberIn(payload, 'fee_percent');
+  return {
+    by,
+    late: typeof payload.late === 'boolean' ? payload.late : notice.late_cancellation === true,
+    feePence: numberIn(payload, 'fee_pence') ?? notice.fee_pence ?? 0,
+    keptPence: numberIn(payload, 'kept_pence') ?? 0,
+    cardRefundPence: numberIn(payload, 'card_refund_pence') ?? 0,
+    offlineRefundPence: numberIn(payload, 'offline_refund_pence') ?? 0,
+    creditReturnedMinutes: numberIn(payload, 'credit_returned_minutes') ?? 0,
+    creditKeptMinutes: numberIn(payload, 'credit_kept_minutes') ?? 0,
+    policy:
+      minutesBefore !== null && windowHours !== null && lateFeePercent !== null ? { minutesBefore, windowHours, lateFeePercent } : null,
+  };
+}
+
+/** Sentences one after another, each closed, so a reason typed without a full stop still reads right. */
+function sentences(parts: (string | undefined)[]): string | undefined {
+  const closed = parts
+    .map((part) => part?.trim() ?? '')
+    .filter((part) => part !== '')
+    .map((part) => (/[.?!]$/.test(part) ? part : `${part}.`));
+  return closed.length === 0 ? undefined : closed.join(' ');
+}
+
 /** The line under the title, when there is more to say than when the lesson is. */
 function detailFor(event: BookingEvent, notice: BookingNotice): string | undefined {
   if (event.name === 'booking.completed') {
@@ -92,14 +133,21 @@ function detailFor(event: BookingEvent, notice: BookingNotice): string | undefin
   if (event.name === 'booking.accepted') return 'It is in the diary';
   if (event.name === 'booking.declined') return reason ? `Reason: ${reason}` : 'They could not make that time';
   if (event.name === 'booking.cancelled') {
-    const fee = notice.fee_pence ?? 0;
-    // A lesson paid with credit pays its late fee with credit (R-07).
-    const kept = typeof event.payload.credit_kept_minutes === 'number' ? event.payload.credit_kept_minutes : 0;
-    if (reason) return `Reason: ${reason}`;
-    if (kept > 0) return `${formatMinutes(kept)} of credit is kept as the fee`;
-    return notice.late_cancellation && fee > 0 ? `A fee of ${formatPence(fee)} applies` : undefined;
+    const money = cancelledMoneyWords(cancelledMoney(event, notice), { kind: 'business', learnerName: notice.learner_name }, formatPence);
+    return sentences([reason ? `Reason: ${reason}` : undefined, ...money]);
   }
   return undefined;
+}
+
+/**
+ * What only the learner is told: why a fee was kept, and where their money is going
+ * (acceptance-04, acceptance-05). Everybody else reads `detailFor`.
+ */
+function learnerDetailFor(event: BookingEvent, notice: BookingNotice): string | undefined {
+  if (event.name !== 'booking.cancelled') return undefined;
+  const reason = notice.cancel_reason?.trim();
+  const money = cancelledMoneyWords(cancelledMoney(event, notice), { kind: 'learner' }, formatPence);
+  return sentences([reason ? `Reason: ${reason}` : undefined, ...money]);
 }
 
 /** Where each of them goes when they tap it. A learner who owes money goes where they pay it. */
@@ -141,6 +189,7 @@ export function planBookingNotifications(input: BookingNoticeInput): PlannedNoti
       instructorName: notice.instructor_name,
       when: `${formatDate(startsAt)} at ${formatTime(startsAt)}`,
       detail: detailFor(event, notice),
+      learnerDetail: learnerDetailFor(event, notice),
     },
     recipients: [
       { userId: notice.learner_user_id, audience: 'learner', muted: muted.get(notice.learner_user_id) },

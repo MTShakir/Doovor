@@ -377,7 +377,7 @@ The browser shows the confirmation screen as soon as Stripe confirms, then polls
 
 ### 7.8 Cancellation, reschedule and no-show (BOK-08, BOK-09, R-06 to R-09)
 
-The policy is a pure function in core, `evaluateCancellation({ booking, policy, actor, now })`, returning `{ late, feePercent, feePence, creditMinutesReturned, refundPence }`:
+The policy is a pure function in core, `cancellationOutcome({ startsAt, now, by, windowHours, lateFeePercent, pricePence, paidWith, creditMinutes, status })` in `packages/core/src/cancellation.ts`, returning `{ late, feePence, refundPence, creditReturnedMinutes, creditKeptMinutes, reasonRequired, paidWith }`. The warning before somebody presses cancel and the words in the notification afterwards (`cancelledMoneyWords`) come from the same file. Only a lesson that is on can be cancelled late: a request or a slot held for a card costs nothing to let go (D-092).
 
 | Case | Outcome |
 |---|---|
@@ -388,7 +388,7 @@ The policy is a pure function in core, `evaluateCancellation({ booking, policy, 
 | Learner reschedules | Only outside the cancellation window (BOK-08). Inside it, the learner sees the cancellation terms instead |
 | Instructor reschedules | Any time. Learner notified |
 
-`cancel_booking` applies the outcome in one transaction: status change, ledger rows, refund rows (card refunds are sent to Stripe by a follow-up job and reconciled by webhook), `booking_events` and an outbox event for notifications.
+`cancel_booking` applies the outcome in one transaction: the status change; credit given back less any fee (`give_back_credit`); money given back less the fee, oldest payment first (`settle_cancelled_payments`), where a card refund is sent to Stripe by the refund job and reconciled by webhook and cash or a bank transfer is owed back until somebody marks it handed back (`settle_offline_refund`); an audit row; and a `booking.cancelled` outbox event carrying the policy (window, percentage, minutes before the start) and what became of the money, from which the notification job writes the learner's explanation (acceptance test 4, D-092).
 
 ### 7.9 Error codes and copy (acceptance tests 1 and 2)
 
@@ -433,7 +433,7 @@ Inserting a ledger row moves its account and then its lot, by trigger, in the sa
 
 Acceptance test 3: 120 minutes of credit, book 60, the balance shows 60, cancel 72 hours before, one `return` row brings it back to 120.
 
-A learner's balance with a Business (PAY-06) is read by one function, `learner_balance`, which checks the caller (the learner, owners and managers, the learner's instructor, staff) and returns all the facts: usable credit, the lessons that could be owed for, and recent payments, refunds and credit moves. `packages/core/src/balance.ts` decides what is owed, from when, and what is overdue (48 hours), and the learner's Payments screen and the instructor's learner card render that one result (D-090).
+A learner's balance with a Business (PAY-06) is read by one function, `learner_balance`, which checks the caller (the learner, owners and managers, the learner's instructor, staff) and returns all the facts: usable credit, the lessons that could be owed for, lessons called off late whose fee nobody has paid, and recent payments (with anything on its way back against them), refunds (with the lesson they were for) and credit moves. `packages/core/src/balance.ts` decides what is owed, from when, and what is overdue (48 hours), and the learner's Payments screen and the instructor's learner card render that one result (D-090).
 
 ### 8.4 Webhooks, processed exactly once (R-11)
 
@@ -470,8 +470,8 @@ sequenceDiagram
 
 ### 8.5 Refunds, fees and receipts
 
-- **Refunds (PAY-07):** `issue_refund` records the refund (full or partial, back the way it was paid or as credit) with reason and actor, and writes an audit row. Card refunds are sent to Stripe by a job with an idempotency key and the refund's own id in its metadata, and are settled from Stripe's answer and from the `refund.created`, `refund.updated` and `refund.failed` events, which also record refunds made in the Stripe dashboard. Cash and bank refunds are settled when written down. Unused credit is refunded by the minute at its lot's price and leaves the balance at once, coming back if the refund fails. A lesson's payment status is worked out again from all its payments after any refund. Only owners, managers and staff can refund, not school instructors (D-091).
-- **Late cancellation and no-show fees (PAY-09):** credit is used first. Otherwise the fee is kept from the original card payment (partial refund of the rest). For unpaid bookings, the fee is charged to the saved card off-session or added to the amount owed (PAY-06, shown in red when overdue).
+- **Refunds (PAY-07):** `issue_refund` records the refund (full or partial, back the way it was paid or as credit) with reason and actor, and writes an audit row. Card refunds are sent to Stripe by a job with an idempotency key and the refund's own id in its metadata, and are settled from Stripe's answer and from the `refund.created`, `refund.updated` and `refund.failed` events, which also record refunds made in the Stripe dashboard. Cash and bank refunds issued by hand are settled when written down; those a cancellation makes are owed back until marked handed back (D-092). Unused credit is refunded by the minute at its lot's price and leaves the balance at once, coming back if the refund fails. A lesson's payment status is worked out again from all its payments after any refund. Only owners, managers and staff can refund, not school instructors (D-091).
+- **Late cancellation and no-show fees (PAY-09):** credit is used first (R-07). Otherwise the fee is kept from what was paid, oldest payment first, and the rest goes back: to the card through the refund job, or owed back in cash or by transfer (D-092). For an unpaid booking the fee is added to the amount owed (PAY-06, shown in red when overdue) and can be paid in person; charging it to the saved card off-session comes with no-show fees (M3-19).
 - **Receipts (PAY-08):** a receipt email (React Email) with the Business name and address and lesson details, plus a printable receipt page. VAT lines appear only when the Business has a VAT number. Receipt numbers are sequential per Business.
 
 ### 8.6 Money dashboard (MNY-01)

@@ -49,16 +49,42 @@ function stageOf(lesson: CheckoutLesson): Stage {
   return 'due';
 }
 
-/** What became of the money, or the credit, for a lesson that is not going ahead (R-07, R-08). */
+/**
+ * What became of the money, or the credit, for a lesson that is not going ahead (R-06 to R-08,
+ * PAY-09): a late fee comes out of what was paid, and the rest goes back the way it came.
+ */
 function goneMoney(lesson: CheckoutLesson): string {
-  if (lesson.paymentMode === 'credit') {
-    if (lesson.paymentStatus === 'refunded') return 'The credit it used has gone back to you.';
-    if (lesson.paymentStatus === 'partially_refunded') {
-      return 'Part of the credit it used was kept as the late cancellation fee, and the rest has gone back to you.';
+  if (lesson.paidPence === 0) {
+    if (lesson.paymentStatus === 'paid_credit' || lesson.paymentStatus === 'refunded' || lesson.paymentStatus === 'partially_refunded') {
+      if (lesson.paymentStatus === 'refunded') return 'The credit it used has gone back to you.';
+      if (lesson.paymentStatus === 'partially_refunded') {
+        return 'Part of the credit it used was kept as the late cancellation fee, and the rest has gone back to you.';
+      }
+      return 'The credit it used was kept as the late cancellation fee.';
     }
-    return 'The credit it used was kept as the late cancellation fee.';
+    if (lesson.feePence > 0) return `A late cancellation fee of ${formatPence(lesson.feePence)} is owed.`;
+    return 'Nothing has been taken from your card.';
   }
-  return lesson.refunded ? 'Your payment is being refunded to your card.' : 'Nothing has been taken from your card.';
+
+  const card = lesson.paidBy === 'card';
+  const back = formatPence(lesson.refundPence);
+  const goingBack = card
+    ? lesson.refundPending
+      ? 'is going back to your card'
+      : 'has gone back to your card'
+    : lesson.refundPending
+      ? 'is owed back to you'
+      : 'has been given back to you';
+
+  if (lesson.refundPence >= lesson.paidPence) {
+    return `The ${formatPence(lesson.paidPence)} you paid ${goingBack}.`;
+  }
+  if (lesson.refundPence > 0) {
+    const kept = formatPence(lesson.paidPence - lesson.refundPence);
+    return `${kept} of what you paid was kept as the late cancellation fee, and ${back} ${goingBack}.`;
+  }
+  if (lesson.feePence > 0) return `The ${formatPence(lesson.paidPence)} you paid was kept as the late cancellation fee.`;
+  return `Nothing of the ${formatPence(lesson.paidPence)} you paid has been refunded yet. ${lesson.businessName} can tell you why.`;
 }
 
 function Note({ icon, children }: { icon: ReactNode; children: ReactNode }) {

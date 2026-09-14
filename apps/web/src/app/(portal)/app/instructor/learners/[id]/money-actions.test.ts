@@ -9,7 +9,7 @@ vi.mock('@/lib/auth/session', () => ({
 }));
 vi.mock('next/cache', () => ({ revalidatePath: (path: string) => { revalidatePath(path); } }));
 
-const { issueRefund, recordOfflinePackage, refundOptions } = await import('./money-actions');
+const { issueRefund, markHandedBack, recordOfflinePackage, refundOptions } = await import('./money-actions');
 
 const learnerId = '11111111-1111-4111-8111-111111111111';
 const packageId = '33333333-3333-4333-8333-333333333333';
@@ -136,5 +136,31 @@ describe('what can be refunded, and refunding it (PAY-07, M3-17)', () => {
       ok: false,
       code: 'NOT_ALLOWED',
     });
+  });
+});
+
+describe('cash owed back, handed back (R-08, M3-18)', () => {
+  const refundId = '66666666-6666-4666-8666-666666666666';
+
+  it('settles it through the function that decides who may', async () => {
+    rpc.mockResolvedValue({ data: { applied: true }, error: null });
+
+    expect(await markHandedBack({ refundId, learnerId })).toEqual({ ok: true, data: null });
+    expect(rpc).toHaveBeenCalledWith('settle_offline_refund', { p_refund_id: refundId });
+    expect(revalidatePath).toHaveBeenCalledWith(`/app/instructor/learners/${learnerId}`);
+  });
+
+  it('asks nothing of the database for a refund it does not recognise', async () => {
+    expect(await markHandedBack({ refundId: 'nope', learnerId })).toMatchObject({ ok: false, code: 'VALIDATION_FAILED' });
+    expect(rpc).not.toHaveBeenCalled();
+  });
+
+  it('passes on what the database refused: somebody else, or handed back already', async () => {
+    rpc.mockResolvedValueOnce({ data: null, error: { code: '42501', message: 'NOT_ALLOWED' } });
+    expect(await markHandedBack({ refundId, learnerId })).toMatchObject({ ok: false, code: 'NOT_ALLOWED' });
+
+    rpc.mockResolvedValueOnce({ data: null, error: { code: 'P0001', message: 'VALIDATION_FAILED', details: '{"field": "status"}' } });
+    expect(await markHandedBack({ refundId, learnerId })).toMatchObject({ ok: false, code: 'VALIDATION_FAILED' });
+    expect(revalidatePath).not.toHaveBeenCalled();
   });
 });

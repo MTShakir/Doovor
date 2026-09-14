@@ -11,7 +11,7 @@ import { ChevronLeft, Mail, MessageSquare, Phone } from 'lucide-react';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { Fragment, Suspense } from 'react';
-import { BalanceHistory, BalanceLines, OwedLessons } from '@/components/money/balance';
+import { BalanceHistory, BalanceLines, OwedBackList, OwedLessons } from '@/components/money/balance';
 import { MarkPaidButton } from '@/components/money/mark-paid';
 import { requirePortal } from '@/lib/auth/session';
 import { learnerCard, type LearnerCard } from '@/lib/learners/card';
@@ -20,6 +20,7 @@ import { learnerNotes } from '@/lib/learners/notes';
 import { learnerBalance } from '@/lib/payments/balance';
 import { packagesForSale } from '@/lib/payments/packages';
 import { BookLesson } from '../../book-lesson';
+import { HandBack } from './hand-back';
 import { Notes } from './notes';
 import { RefundPayment } from './refund-payment';
 import { SellPackage } from './sell-package';
@@ -164,8 +165,9 @@ function Lessons({ card }: { card: LearnerCard }) {
 }
 
 /**
- * PAY-05, PAY-06, M3-16: the learner's balance here, the same one they see on their own Payments
- * screen, what they owe with a way to mark it paid, and a package paid for in person.
+ * PAY-05, PAY-06, M3-16, M3-18: the learner's balance here, the same one they see on their own
+ * Payments screen, what they owe with a way to mark it paid, money owed back with a way to mark it
+ * handed back, and a package paid for in person.
  */
 async function Money({ card, access }: { card: LearnerCard; access: AccessContext }) {
   const [balance, packages] = await Promise.all([
@@ -194,9 +196,18 @@ async function Money({ card, access }: { card: LearnerCard; access: AccessContex
                 bookingId: owed.lesson.id,
                 learnerName: card.fullName,
                 startsAt: owed.lesson.startsAt.toISOString(),
-                pricePence: owed.lesson.pricePence,
+                pricePence: owed.amountPence,
+                lateFee: owed.lateFee,
               }}
             />
+          ) : null
+        }
+      />
+      <OwedBackList
+        balance={balance}
+        action={(owed) =>
+          runsIt || (owed.instructorId !== null && mine.has(owed.instructorId)) ? (
+            <HandBack refundId={owed.refundId} learnerId={card.learnerId} learnerName={card.fullName} amountPence={owed.amountPence} />
           ) : null
         }
       />
@@ -209,10 +220,13 @@ async function Money({ card, access }: { card: LearnerCard; access: AccessContex
         history={balance.history}
         limit={10}
         action={
-          // Money goes back only by the people who run the Business (PAY-07, PRD 6.2).
+          // Money goes back only by the people who run the Business (PAY-07, PRD 6.2), and only
+          // while some of it is not already on its way back or owed back (M3-18).
           runsIt
             ? (entry) =>
-                entry.kind === 'payment' && entry.method !== 'credit' && entry.refundedPence < entry.amountPence ? (
+                entry.kind === 'payment' &&
+                entry.method !== 'credit' &&
+                entry.refundedPence + entry.pendingRefundPence < entry.amountPence ? (
                   <RefundPayment paymentId={entry.id} learnerId={card.learnerId} learnerName={card.fullName} />
                 ) : null
             : undefined

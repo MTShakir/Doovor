@@ -1,9 +1,10 @@
-import { expect, test } from '@playwright/test';
+import { expect, test, type Page } from '@playwright/test';
 import { authFile, roles } from '../support/accounts';
 import {
   acceptRequests,
   bookAsLearner,
   bookLesson,
+  clearNotifications,
   clearPaymentsAccount,
   creditFromPayment,
   creditWith,
@@ -12,7 +13,11 @@ import {
   finishedLessonOwed,
   giveCredit,
   holdPaymentsBusiness,
+  lessonEvents,
+  lessonIdAt,
+  lessonMoney,
   lessonsOn,
+  notificationChannels,
   packagePurchaseParts,
   paymentFor,
   paymentsAccountOf,
@@ -691,5 +696,176 @@ test.describe('lesson credit (PAY-04, M3-13, M3-14)', () => {
     });
 
     await clearPaymentsAccount(owner);
+  });
+});
+
+test.describe('calling off a lesson that was paid for (PAY-09, R-06, R-08, M3-18)', () => {
+  const owner = roles.schoolOwner.email;
+
+  /** Tomorrow in London: always inside the default policy's 48 hours. */
+  const tomorrow = (): string =>
+    new Intl.DateTimeFormat('en-CA', { timeZone: 'Europe/London' }).format(new Date(Date.now() + 24 * 3_600_000));
+
+  /** Pays for a lesson from the learner's own list with the test card, the way a learner does. */
+  const payFromLessons = async (page: Page, instructor: string, day: string, hour: string) => {
+    await page.goto('/app/learner/lessons');
+    const lesson = page
+      .getByRole('article')
+      .filter({ hasText: `${dayLabel(day)} at ${hour}` })
+      .filter({ hasText: instructor });
+    await expect(async () => {
+      await lesson.getByRole('link', { name: /^Pay £/ }).click();
+      await page.waitForURL(/\/app\/learner\/pay\//, { timeout: 5000 });
+    }).toPass({ timeout: 20_000 });
+
+    const checkout = page.getByRole('region', { name: /at \d\d:\d\d$/ });
+    await expect(async () => {
+      await checkout.getByRole('button', { name: /^Pay £/ }).click();
+      await expect(checkout.getByRole('button', { name: 'Pay with a test card' })).toBeVisible({ timeout: 10_000 });
+    }).toPass({ timeout: 40_000 });
+    await checkout.getByRole('button', { name: 'Pay with a test card' }).click();
+    await expect(checkout).toContainText('That is paid for, and your lesson is confirmed.', { timeout: 30_000 });
+  };
+
+  /** The learner's notification about one lesson, found by when the lesson was. */
+  const noticeAbout = (page: Page, day: string, hour: string) =>
+    page.getByRole('article').filter({ hasText: 'Lesson cancelled' }).filter({ hasText: `${dayLabel(day)} at ${hour}` });
+
+  test.describe('by the learner', () => {
+    test.use({ storageState: authFile('payer') });
+    const learner = roles.payer.email;
+
+    test('acceptance-04: a card lesson cancelled a day before keeps the whole fee, and the learner is told why', async ({ page }, testInfo) => {
+      test.setTimeout(150_000);
+      const day = tomorrow();
+      // Before the seed's first lesson of any day, and a time of its own for each width.
+      const hour = testInfo.project.name === 'mobile' ? '05:00' : '06:30';
+      await enablePayments(owner, `fake_acct_late_${testInfo.project.name}_${String(Date.now())}`);
+      await clearNotifications(learner);
+      await bookLesson('Tom Walsh', learner, day, hour);
+      await payFromLessons(page, 'Tom Walsh', day, hour);
+      const bookingId = await lessonIdAt('Tom Walsh', day, hour);
+
+      // What cancelling costs is on the screen before the button is pressed (R-06).
+      await page.goto('/app/learner/lessons');
+      const lesson = page
+        .getByRole('article')
+        .filter({ hasText: `${dayLabel(day)} at ${hour}` })
+        .filter({ hasText: 'Tom Walsh' });
+      const sheet = page.getByRole('dialog', { name: 'Cancel this lesson?' });
+      await expect(async () => {
+        await lesson.getByRole('button', { name: 'Cancel' }).click();
+        await expect(sheet).toBeVisible({ timeout: 5000 });
+      }).toPass({ timeout: 20_000 });
+      await expect(sheet).toContainText('This is a late cancellation, so the £42 you paid is kept as the fee.');
+      await expectAccessible(page);
+      await snap(page, testInfo, 'cancel-paid-lesson-late');
+
+      await sheet.getByRole('button', { name: 'Yes, cancel it' }).click();
+      await expect(page.getByText('Lesson cancelled')).toBeVisible();
+
+      // The full fee is kept: the payment stands, and nothing goes back to the card.
+      expect(await lessonMoney(bookingId)).toEqual({
+        paymentStatus: 'paid_card',
+        payments: [{ method: 'card', status: 'paid', amountPence: 4200, refundedPence: 0 }],
+        refunds: [],
+      });
+
+      // The job that tells everybody runs on what the cancellation recorded, and emails the learner.
+      const [cancelled] = await lessonEvents(bookingId, 'booking.cancelled');
+      expect(cancelled?.payload).toMatchObject({ by: 'learner', late: true, fee_pence: 4200, kept_pence: 4200, window_hours: 48, fee_percent: 100 });
+      const told = await page.request.post('/dev/events', { data: cancelled });
+      expect(told.status()).toBe(200);
+      expect(await notificationChannels(learner, 'booking.cancelled', bookingId), 'the learner is emailed').toContain('email');
+
+      await page.goto('/notifications');
+      const notice = noticeAbout(page, day, hour);
+      await expect(notice).toContainText(/You cancelled \d+ hours? before it started\./);
+      await expect(notice).toContainText('Cancelling less than 48 hours before a lesson costs the full price, so the £42 you paid is kept as the fee.');
+      await expectAccessible(page);
+      await settled(page);
+      await snap(page, testInfo, 'late-fee-explained');
+
+      // The lesson's own page says the same.
+      await page.goto(`/app/learner/pay/${bookingId}`);
+      await expect(page.getByRole('region', { name: /at \d\d:\d\d$/ })).toContainText('The £42 you paid was kept as the late cancellation fee.');
+
+      await clearPaymentsAccount(owner);
+    });
+  });
+
+  test.describe('by the instructor', () => {
+    /**
+     * Emma Clarke's own learners, one for each width: an instructor sees the learners they teach,
+     * and these are hers. Their lessons here are paid by card, so their credit is not touched.
+     */
+    const learnerFor = (project: string) =>
+      project === 'mobile'
+        ? { email: 'isla.roberts@example.com', name: 'Isla Roberts' }
+        : { email: 'amelia.evans@example.com', name: 'Amelia Evans' };
+
+    test('acceptance-05: the instructor cancels a paid lesson, and the learner is refunded in full without asking', async ({ page, browser }, testInfo) => {
+      test.setTimeout(150_000);
+      const { email: learner, name } = learnerFor(testInfo.project.name);
+      const day = tomorrow();
+      // After the seed's last lesson of any day, and a time of its own for each width.
+      const hour = testInfo.project.name === 'mobile' ? '20:00' : '21:30';
+      await enablePayments(owner, `fake_acct_refund_${testInfo.project.name}_${String(Date.now())}`);
+      await clearNotifications(learner);
+      await bookLesson('Emma Clarke', learner, day, hour);
+      await signInThroughForm(page, learner, { next: '/app/learner/lessons' });
+      await payFromLessons(page, 'Emma Clarke', day, hour);
+      const bookingId = await lessonIdAt('Emma Clarke', day, hour);
+
+      // Emma Clarke calls it off from her diary, a day before, and says why (R-08).
+      const instructor = await browser.newContext({ storageState: authFile('schoolInstructor') });
+      const diary = await instructor.newPage();
+      await diary.goto(`/app/instructor/diary?view=day&date=${day}`);
+      const lesson = diary.getByRole('article', { name: `${hour} ${name}` });
+      const sheet = diary.getByRole('dialog', { name: `Cancel ${name}?` });
+      await expect(async () => {
+        await lesson.getByRole('button', { name: 'Cancel' }).click();
+        await expect(sheet).toBeVisible({ timeout: 5000 });
+      }).toPass({ timeout: 20_000 });
+      await expect(sheet).toContainText('Because you are, they are charged nothing. The £42 they paid goes back to their card.');
+      await sheet.getByLabel('Why?').fill('Car in for repair');
+      await expectAccessible(diary);
+      await snap(diary, testInfo, 'instructor-cancels-paid-lesson');
+      await sheet.getByRole('button', { name: 'Cancel the lesson' }).click();
+      await expect(diary.getByText(`Lesson with ${name} cancelled`)).toBeVisible();
+      await instructor.close();
+
+      // All of it is on its way back, and nobody asked for it.
+      expect((await lessonMoney(bookingId)).refunds).toEqual([{ kind: 'card', status: 'pending', amountPence: 4200 }]);
+      const [refund] = await lessonEvents(bookingId, 'payment.refund');
+      expect(refund, 'the refund job was asked to send it').toBeDefined();
+      const sent = await page.request.post('/dev/events', { data: refund });
+      expect(await sent.json()).toEqual({ sent: true });
+      expect(await lessonMoney(bookingId)).toEqual({
+        paymentStatus: 'refunded',
+        payments: [{ method: 'card', status: 'refunded', amountPence: 4200, refundedPence: 4200 }],
+        refunds: [{ kind: 'card', status: 'succeeded', amountPence: 4200 }],
+      });
+
+      // The learner is told why, and where their money went.
+      const [cancelled] = await lessonEvents(bookingId, 'booking.cancelled');
+      expect((await page.request.post('/dev/events', { data: cancelled })).status()).toBe(200);
+      await page.goto('/notifications');
+      await expect(noticeAbout(page, day, hour)).toContainText('Reason: Car in for repair. £42 is going back to your card.');
+
+      await page.goto(`/app/learner/pay/${bookingId}`);
+      await expect(page.getByRole('region', { name: /at \d\d:\d\d$/ })).toContainText('The £42 you paid has gone back to your card.');
+
+      await page.goto('/app/learner/payments');
+      const recent = page
+        .getByRole('region', { name: 'Balance with Quayside Driving School' })
+        .getByRole('list', { name: 'Recent payments and credit' });
+      await expect(recent.getByRole('listitem').filter({ hasText: `Lesson on ${dayLabel(day)}` }).first()).toContainText('Card, refunded');
+      await expect(recent).toContainText('Paid back');
+      await settled(page);
+      await snap(page, testInfo, 'refunded-in-full');
+
+      await clearPaymentsAccount(owner);
+    });
   });
 });

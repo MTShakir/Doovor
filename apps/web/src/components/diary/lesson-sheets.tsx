@@ -21,6 +21,8 @@ export interface ChosenLesson {
   startsAt: string;
   durationMinutes: number;
   pricePence: number;
+  /** Where its money stands, so the sheet can say what goes back when it is called off (R-08). */
+  paymentStatus?: string;
 }
 
 export interface LessonSheetsProps {
@@ -31,9 +33,24 @@ export interface LessonSheetsProps {
   onClose: () => void;
 }
 
+/** Everything a learner paid goes back when the instructor calls the lesson off (R-08, M3-18). */
+function paidBack(paymentStatus: string | undefined, price: string): string | null {
+  switch (paymentStatus) {
+    case 'paid_card':
+      return `The ${price} they paid goes back to their card.`;
+    case 'paid_cash':
+    case 'paid_bank':
+      return `The ${price} they paid is owed back to them: mark it handed back on their learner card once it is.`;
+    case 'paid_credit':
+      return 'The credit it used goes back to them.';
+    default:
+      return null;
+  }
+}
+
 /** BOK-08, BOK-09, PAY-05: what an instructor does to a lesson that is already in. */
 export function LessonSheets({ lesson, rules, action, onClose }: LessonSheetsProps) {
-  const { bookingId, learnerName, startsAt, durationMinutes, pricePence } = lesson;
+  const { bookingId, learnerName, startsAt, durationMinutes, pricePence, paymentStatus } = lesson;
   const { cancellationWindowHours, lateFeePercent } = rules;
   const [pending, startTransition] = useTransition();
   const cancelling = action === 'cancel';
@@ -130,10 +147,12 @@ export function LessonSheets({ lesson, rules, action, onClose }: LessonSheetsPro
               This is inside the {cancellationWindowHours} hour window, so the learner would have been charged
               {' '}
               {formatPence(Math.round((pricePence * lateFeePercent) / 100))} had they cancelled. Because you are, they
-              are charged nothing.
+              are charged nothing. {paidBack(paymentStatus, formatPence(pricePence))}
             </FormAlert>
           ) : (
-            <p className="text-small text-grey-700">{cancellationWarning(outcome, formatPence)}</p>
+            <p className="text-small text-grey-700">
+              {paidBack(paymentStatus, formatPence(pricePence)) ?? cancellationWarning(outcome, formatPence)}
+            </p>
           )}
           <Field label="Why?" hint="The learner is told, so a few words help.">
             <Textarea value={reason} onChange={(event) => { setReason(event.target.value); }} />

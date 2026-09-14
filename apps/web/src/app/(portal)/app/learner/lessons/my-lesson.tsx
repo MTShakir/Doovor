@@ -1,6 +1,6 @@
 'use client';
 
-import { cancellationOutcome, cancellationWarning } from '@repo/core/cancellation';
+import { cancellationOutcome, cancellationWarning, type PaidWith } from '@repo/core/cancellation';
 import { lessonState, lessonStateLabel } from '@repo/core/diary';
 import { formatPence } from '@repo/core/money';
 import { formatDate, formatMinutes, formatTime, todayInZone, utcToLocal } from '@repo/core/time';
@@ -28,6 +28,22 @@ export interface MyLessonRowProps {
   canChange: boolean;
 }
 
+/** How a lesson was paid for, which decides what cancelling it gives back (PAY-09). */
+function paidWith(paymentStatus: string): PaidWith {
+  switch (paymentStatus) {
+    case 'paid_card':
+      return 'card';
+    case 'paid_cash':
+      return 'cash';
+    case 'paid_bank':
+      return 'bank';
+    case 'paid_credit':
+      return 'credit';
+    default:
+      return 'none';
+  }
+}
+
 /** One of a learner's own lessons (PRD 8.2, BOK-08, BOK-09). */
 export function MyLessonRow({ lesson, rules, now, canChange }: MyLessonRowProps) {
   const [pending, startTransition] = useTransition();
@@ -50,9 +66,11 @@ export function MyLessonRow({ lesson, rules, now, canChange }: MyLessonRowProps)
     windowHours: rules.cancellationWindowHours,
     lateFeePercent: rules.lateFeePercent,
     pricePence: lesson.pricePence,
+    paidWith: paidWith(lesson.paymentStatus),
     // A lesson is paid with credit all or nothing, so the credit it used is its length (PAY-04).
-    paidWith: lesson.paymentStatus === 'paid_credit' ? 'credit' : 'none',
     creditMinutes: lesson.durationMinutes,
+    // A request or a held slot is never a late cancellation (M3-18).
+    status: lesson.status as never,
   });
 
   useEffect(() => {

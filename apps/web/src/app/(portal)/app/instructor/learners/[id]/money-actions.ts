@@ -34,6 +34,26 @@ export async function recordOfflinePackage(input: unknown): Promise<Result<{ lot
   return ok({ lotId: data });
 }
 
+const handBackSchema = z.object({ refundId: z.uuid(), learnerId: z.uuid() });
+
+/**
+ * R-08, PAY-07, M3-18: cash or a bank transfer owed back, marked handed back. The function decides
+ * who may, and settles the refund, the payment and the lesson together.
+ */
+export async function markHandedBack(input: unknown): Promise<Result<null>> {
+  const parsed = handBackSchema.safeParse(input);
+  if (!parsed.success) return err('VALIDATION_FAILED');
+
+  await requirePortal('instructor');
+  const supabase = await createSupabaseServerClient();
+  const { error } = await supabase.rpc('settle_offline_refund', { p_refund_id: parsed.data.refundId });
+  if (error) return err(parsePostgresError(error).code);
+
+  revalidatePath(`/app/instructor/learners/${parsed.data.learnerId}`);
+  revalidatePath('/app/instructor/diary');
+  return ok(null);
+}
+
 const optionsSchema = z.object({ paymentId: z.uuid() });
 
 // The function answers JSON, so it is read the way any input is.

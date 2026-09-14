@@ -1,19 +1,20 @@
 import { expect, test } from '@playwright/test';
 import { authFile, roles } from '../support/accounts';
-import { bookLesson, clearDiary, offlinePaymentOn, userIdOf } from '../support/database';
+import { bookLesson, clearDiary, lateFeeOwed, lessonIdAt, lessonMoney, offlinePaymentOn, userIdOf } from '../support/database';
 import { dayLabel, expectAccessible, settled, snap } from '../support/helpers';
 
 /**
- * Cash and bank transfers, recorded in two taps (PAY-05, M3-15).
+ * Cash and bank transfers, recorded in two taps (PAY-05, M3-15), and given back (M3-18).
  *
- * Saturdays in Sarah Khan's diary belong to this file, a week of its own for each width.
+ * Saturdays in Sarah Khan's diary belong to this file, a week of its own for each width and each
+ * test: the tests run at the same time, and all of them are about Jack Taylor's money.
  */
 test.describe('lessons paid in person (PAY-05, M3-15)', () => {
   test.use({ storageState: authFile('instructor') });
 
-  const saturday = (project: string): string => {
+  const saturday = (project: string, weeksLater = 0): string => {
     const day = new Date();
-    day.setDate(day.getDate() + 7 * (3 + (project === 'mobile' ? 0 : 1)));
+    day.setDate(day.getDate() + 7 * (3 + (project === 'mobile' ? 0 : 1) + weeksLater));
     while (day.getDay() !== 6) day.setDate(day.getDate() + 1);
     return day.toISOString().slice(0, 10);
   };
@@ -91,5 +92,90 @@ test.describe('lessons paid in person (PAY-05, M3-15)', () => {
     expect(await offlinePaymentOn('Sarah Khan', day, '10:00')).toEqual({ method: 'cash', status: 'refunded', amountPence: 4200 });
     await settled(page);
     await snap(page, testInfo, 'refunded');
+  });
+
+  test('cash for a lesson the instructor calls off is owed back until it is handed back, and a late fee is paid in person (R-06, R-08, M3-18)', async ({
+    page,
+    browser,
+  }, testInfo) => {
+    const day = saturday(testInfo.project.name, 2);
+    await bookLesson('Sarah Khan', roles.learner.email, day, '12:00');
+
+    // Paid in cash, then called off: nothing is charged, and the cash is owed back (R-08).
+    await page.goto(`/app/instructor/diary?view=day&date=${day}`);
+    const lesson = page.getByRole('article', { name: '12:00 Jack Taylor' });
+    const paid = page.getByRole('dialog', { name: 'How did Jack Taylor pay?' });
+    await expect(async () => {
+      await lesson.getByRole('button', { name: 'Mark paid' }).click();
+      await expect(paid).toBeVisible({ timeout: 5000 });
+    }).toPass({ timeout: 20_000 });
+    await paid.getByRole('button', { name: 'Cash' }).click();
+    await expect(lesson.getByText('Paid (cash)', { exact: true })).toBeVisible();
+
+    const cancel = page.getByRole('dialog', { name: 'Cancel Jack Taylor?' });
+    await lesson.getByRole('button', { name: 'Cancel' }).click();
+    await expect(cancel).toContainText('The £42 they paid is owed back to them: mark it handed back on their learner card once it is.');
+    await cancel.getByLabel('Why?').fill('Car off the road');
+    await cancel.getByRole('button', { name: 'Cancel the lesson' }).click();
+    await expect(page.getByText('Lesson with Jack Taylor cancelled')).toBeVisible();
+
+    const bookingId = await lessonIdAt('Sarah Khan', day, '12:00');
+    expect((await lessonMoney(bookingId)).refunds).toEqual([{ kind: 'offline', status: 'pending', amountPence: 4200 }]);
+
+    // A fee for another lesson, called off late by the learner and not paid (R-06).
+    const feeDay = dayLabel(day);
+    await lateFeeOwed('Sarah Khan', roles.learner.email, day, '15:00', 2100);
+
+    // The learner sees what is owed back to them: at least this, with the other width's at the same time.
+    const learner = await browser.newContext({ storageState: authFile('learner') });
+    const theirs = await learner.newPage();
+    await theirs.goto('/app/learner/payments');
+    const balance = theirs.getByRole('region', { name: 'Balance with Sarah Khan Driving' });
+    await expect(balance.getByRole('list', { name: 'Balance' })).toContainText(/£\d+ owed back/);
+    const theirFee = balance.getByRole('list', { name: 'Lessons owed for' }).getByRole('listitem').filter({ hasText: `${feeDay} at 15:00` });
+    await expect(theirFee).toContainText('Late cancellation fee, with Sarah Khan');
+    await expect(theirFee).toContainText('£21');
+    await expectAccessible(theirs);
+    await settled(theirs);
+    await snap(theirs, testInfo, 'owed-back-learner');
+    await learner.close();
+
+    // Sarah marks the cash handed back, from the learner card, in two taps.
+    await page.goto(`/app/instructor/learners/${await userIdOf(roles.learner.email)}`);
+    const money = page.getByRole('region', { name: 'Money' });
+    const owedBack = money.getByRole('list', { name: 'Owed back' }).getByRole('listitem').filter({ hasText: `For the lesson on ${feeDay}` });
+    await expect(owedBack).toContainText('£42 owed back');
+    // Nothing is left to refund on the payment: all of it is already owed back.
+    const cashEntry = money.getByRole('list', { name: 'Recent payments and credit' }).getByRole('listitem').filter({ hasText: `Lesson on ${feeDay}` });
+    await expect(cashEntry).toContainText('Cash');
+    await expect(cashEntry.getByRole('button', { name: 'Refund' })).toHaveCount(0);
+    const handBack = page.getByRole('dialog', { name: 'Hand back £42 to Jack Taylor?' });
+    await expect(async () => {
+      await owedBack.getByRole('button', { name: 'Mark handed back' }).click();
+      await expect(handBack).toBeVisible({ timeout: 5000 });
+    }).toPass({ timeout: 20_000 });
+    await expectAccessible(page);
+    await snap(page, testInfo, 'hand-back');
+    await handBack.getByRole('button', { name: 'It is handed back' }).click();
+    await expect(page.getByText('£42 handed back to Jack Taylor')).toBeVisible();
+    await expect(owedBack).toHaveCount(0);
+    expect(await lessonMoney(bookingId)).toMatchObject({
+      paymentStatus: 'refunded',
+      payments: [{ method: 'cash', status: 'refunded', amountPence: 4200, refundedPence: 4200 }],
+      refunds: [{ kind: 'offline', status: 'succeeded', amountPence: 4200 }],
+    });
+
+    // And the fee, paid in cash, is the fee and not the lesson (PAY-05).
+    const fee = money.getByRole('list', { name: 'Lessons owed for' }).getByRole('listitem').filter({ hasText: `${feeDay} at 15:00` });
+    await expect(fee).toContainText('Late cancellation fee');
+    const feeSheet = page.getByRole('dialog', { name: 'How did Jack Taylor pay?' });
+    await fee.getByRole('button', { name: 'Mark paid' }).click();
+    await expect(feeSheet).toContainText(`£21 late cancellation fee for ${feeDay} at 15:00.`);
+    await feeSheet.getByRole('button', { name: 'Cash' }).click();
+    await expect(page.getByText('Marked paid (cash)')).toBeVisible();
+    await expect(fee).toHaveCount(0);
+    expect(await offlinePaymentOn('Sarah Khan', day, '15:00')).toEqual({ method: 'cash', status: 'paid', amountPence: 2100 });
+    await settled(page);
+    await snap(page, testInfo, 'fee-paid');
   });
 });

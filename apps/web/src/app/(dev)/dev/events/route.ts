@@ -1,0 +1,39 @@
+import { NextResponse, type NextRequest } from 'next/server';
+import { z } from 'zod';
+import { serverEnv } from '@/env/server';
+import { notifyAboutBooking } from '@/jobs/notify';
+import { sendRefund } from '@/jobs/payments';
+
+const eventSchema = z.object({
+  name: z.string().min(1),
+  payload: z.record(z.string(), z.unknown()),
+});
+
+/**
+ * Runs the job one outbox event would start, in this process, while the fake provider is in use
+ * (M3-18).
+ *
+ * The job runner is not part of a local end to end run, and the fake keeps its payments in this
+ * process, so this is how a test walks from a lesson being cancelled to the refund reaching the
+ * card and the learner being told. The test reads the event the database wrote and hands it
+ * here; this does only what the job for that event does. Not reachable in production, and never
+ * with Stripe.
+ */
+export async function POST(request: NextRequest): Promise<NextResponse> {
+  if (serverEnv.APP_ENV === 'production' || serverEnv.PAYMENTS_PROVIDER === 'stripe') {
+    return new NextResponse('Not found', { status: 404 });
+  }
+
+  const parsed = eventSchema.safeParse(await request.json().catch(() => null));
+  if (!parsed.success) return NextResponse.json({ error: 'An event is a name and a payload.' }, { status: 400 });
+  const { name, payload } = parsed.data;
+
+  if (name === 'payment.refund') {
+    const refundId = typeof payload.refund_id === 'string' ? payload.refund_id : '';
+    return NextResponse.json(await sendRefund(refundId));
+  }
+  if (name.startsWith('booking.')) {
+    return NextResponse.json(await notifyAboutBooking({ name, payload }));
+  }
+  return NextResponse.json({ error: `Nothing here runs for ${name}.` }, { status: 400 });
+}

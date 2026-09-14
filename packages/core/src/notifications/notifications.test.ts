@@ -103,6 +103,14 @@ describe('the words (NTF-03)', () => {
     const copy = notificationCopy('booking.cancelled', 'learner', { ...lesson, detail: 'A fee of £42 applies' });
     expect(copy.body).toBe('Wed 16 Sep at 09:00 with Sarah Khan. A fee of £42 applies.');
   });
+
+  it('tells the learner what only the learner needs to hear, and the others the rest (acceptance-04)', () => {
+    const facts = { ...lesson, detail: 'Jack Taylor cancelled late, so the £42 they paid is kept as the fee.', learnerDetail: 'You cancelled 24 hours before it started.' };
+    expect(notificationCopy('booking.cancelled', 'learner', facts).body).toBe('Wed 16 Sep at 09:00 with Sarah Khan. You cancelled 24 hours before it started.');
+    expect(notificationCopy('booking.cancelled', 'instructor', facts).body).toBe(
+      'Wed 16 Sep at 09:00 with Jack Taylor. Jack Taylor cancelled late, so the £42 they paid is kept as the fee.',
+    );
+  });
 });
 
 describe('channels, once settings are applied (NTF-04)', () => {

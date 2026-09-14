@@ -628,3 +628,115 @@ export async function userIdOf(email: string): Promise<string> {
     return found.id;
   });
 }
+
+/** A lesson's id, by who teaches it and when it starts: the newest there, whatever became of it. */
+export async function lessonIdAt(instructorName: string, date: string, time: string): Promise<string> {
+  return withDatabase(async (sql) => {
+    const rows = await sql<{ id: string }[]>`
+      select b.id
+        from public.bookings b
+        join public.instructor_profiles p on p.id = b.instructor_id
+       where p.display_name = ${instructorName}
+         and b.starts_at = (${date}::date + ${time}::time) at time zone 'Europe/London'
+       order by b.created_at desc
+       limit 1`;
+    const found = rows[0];
+    if (!found) throw new Error(`No lesson for ${instructorName} at ${time} on ${date}`);
+    return found.id;
+  });
+}
+
+export interface OutboxEvent {
+  name: string;
+  payload: Record<string, unknown>;
+}
+
+/** The newest events of one name the database wrote about a lesson, as the job runner is sent them. */
+export async function lessonEvents(bookingId: string, name: string): Promise<OutboxEvent[]> {
+  return withDatabase(async (sql) => {
+    const rows = await sql<{ name: string; payload: Record<string, unknown> }[]>`
+      select name, payload
+        from public.outbox_events
+       where name = ${name}
+         and payload ->> 'booking_id' = ${bookingId}
+       order by created_at desc`;
+    return rows.map((row) => ({ name: row.name, payload: row.payload }));
+  });
+}
+
+export interface LessonMoney {
+  paymentStatus: string;
+  payments: { method: string; status: string; amountPence: number; refundedPence: number }[];
+  refunds: { kind: string; status: string; amountPence: number }[];
+}
+
+/** Where a lesson's money stands: the lesson's word for it, its payments and its refunds (PAY-07, PAY-09). */
+export async function lessonMoney(bookingId: string): Promise<LessonMoney> {
+  return withDatabase(async (sql) => {
+    const [lesson] = await sql<{ payment_status: string }[]>`
+      select payment_status::text as payment_status from public.bookings where id = ${bookingId}`;
+    const payments = await sql<{ method: string; status: string; amount_pence: number; refunded_pence: number }[]>`
+      select method::text as method, status::text as status, amount_pence, refunded_pence
+        from public.payments
+       where booking_id = ${bookingId} and status in ('paid', 'refunded', 'partially_refunded')
+       order by created_at`;
+    const refunds = await sql<{ kind: string; status: string; amount_pence: number }[]>`
+      select kind::text as kind, status::text as status, amount_pence
+        from public.refunds
+       where booking_id = ${bookingId}
+       order by created_at`;
+    return {
+      paymentStatus: lesson?.payment_status ?? 'missing',
+      payments: payments.map((one) => ({
+        method: one.method,
+        status: one.status,
+        amountPence: one.amount_pence,
+        refundedPence: one.refunded_pence,
+      })),
+      refunds: refunds.map((one) => ({ kind: one.kind, status: one.status, amountPence: one.amount_pence })),
+    };
+  });
+}
+
+/** The channels somebody's notification about something went out on, or null when there is none. */
+export async function notificationChannels(email: string, kind: string, entityId: string): Promise<string[] | null> {
+  return withDatabase(async (sql) => {
+    const rows = await sql<{ channels: string[] }[]>`
+      select n.channels::text[] as channels
+        from public.notifications n
+        join public.users u on u.id = n.user_id
+       where lower(u.email) = lower(${email})
+         and n.kind = ${kind}
+         and n.entity_id = ${entityId}::uuid
+       order by n.created_at desc
+       limit 1`;
+    return rows[0]?.channels ?? null;
+  });
+}
+
+/**
+ * A lesson the learner called off late and has not paid the fee for (R-06, M3-18), as
+ * cancel_booking leaves one. Written straight in, because a test cannot cancel a lesson two days
+ * before without it being two days away. Local only. Returns the lesson.
+ */
+export async function lateFeeOwed(instructorName: string, learnerEmail: string, date: string, time: string, feePence = 4200): Promise<string> {
+  await removeLesson(instructorName, learnerEmail, date, time);
+  return withDatabase(async (sql) => {
+    const rows = await sql<{ id: string }[]>`
+      insert into public.bookings (business_id, instructor_id, learner_id, lesson_type_id, starts_at, ends_at,
+                                   buffer_minutes, status, payment_mode, price_pence, source, cancelled_at,
+                                   cancelled_by, late_cancellation, fee_pence)
+      select p.business_id, p.id, u.id, t.id,
+             (${date}::date + ${time}::time) at time zone 'Europe/London',
+             (${date}::date + ${time}::time + interval '1 hour') at time zone 'Europe/London',
+             30, 'cancelled', 'offline', 4200, 'instructor', now(), u.id, true, ${feePence}
+        from public.instructor_profiles p
+        join public.lesson_types t on t.business_id = p.business_id and t.name = 'Standard lesson'
+        join public.users u on lower(u.email) = lower(${learnerEmail})
+       where p.display_name = ${instructorName}
+      returning id`;
+    const id = rows[0]?.id;
+    if (!id) throw new Error(`Could not put a late cancellation in ${instructorName}'s diary`);
+    return id;
+  });
+}

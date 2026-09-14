@@ -16,6 +16,11 @@ export interface NotificationFacts {
   when?: string;
   /** Whatever else the line needs: a reason, a fee in words, how long until the lesson. */
   detail?: string;
+  /**
+   * The same, said to the learner, when they need to be told something the others do not: why
+   * a fee was kept, or where their money is going (acceptance-04).
+   */
+  learnerDetail?: string;
 }
 
 export interface NotificationCopy {
@@ -73,7 +78,7 @@ export function notificationCopy(
 
     case 'booking.cancelled':
       return audience === 'learner'
-        ? { title: 'Lesson cancelled', body: sentence(line, facts.detail) }
+        ? { title: 'Lesson cancelled', body: sentence(line, facts.learnerDetail ?? facts.detail) }
         : { title: `${them}'s lesson was cancelled`, body: sentence(line, facts.detail) };
 
     case 'payment.received':
