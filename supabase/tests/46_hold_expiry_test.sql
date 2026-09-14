@@ -56,7 +56,7 @@ select is(
 
 select tests.clear_authentication();
 select tests.authenticate_as(:'ian_user');
-select public.create_booking(:'ian', :'lou', :'lesson_type',
+select public.create_booking(:'ian', :'lee', :'lesson_type',
        (:'slot_a'::timestamptz + interval '4 hours'), 60) as by_instructor \gset
 
 select is(

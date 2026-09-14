@@ -206,6 +206,8 @@ All helpers live in a `private` schema that PostgREST does not expose, are `STAB
 | `private.auth_instructor_id(business_id)` | The caller's instructor profile ID in that Business, if any |
 | `private.auth_is_staff(level)` | True for platform staff with an `aal2` session. `level` is `support` or `super` |
 | `private.auth_can_see_learner(learner_id)` | True for the learner, staff of a Business with a relationship to them, and platform staff |
+| `private.auth_taught_learner_ids()` | Set of learner IDs on the lessons the caller teaches, as an instructor with an active membership. Lets a lesson's instructor read who it is with, a cover lesson included, and nothing else about them (D-097) |
+| `private.auth_can_book_learner(business_id, learner_id)` | True for somebody who manages bookings at the Business, for any of its learners, and for an instructor, for the learners assigned to them. `create_booking` and `book_weekly` check it before writing anything (PRD 6.2, D-097) |
 
 ### 6.3 Policy patterns
 
@@ -215,7 +217,7 @@ Every table gets one of five patterns. A pgTAP meta-test lists every table in `p
 |---|---|---|---|
 | **Tenant staff** | `lesson_types`, `packages`, `working_hours`, `coverage_areas`, `learner_notes` | Members of the Business (instructors limited to their own rows where relevant) and support staff | Direct writes allowed only where the permission matrix allows (for example `set_prices`) |
 | **Learner-visible tenant data** | `bookings`, `payments`, `lesson_records`, `credit_accounts`, `learner_relationships` | Members of the Business (instructors see their own learners), plus the learner where `learner_id = (select auth.uid())` | No direct writes. Only RPCs |
-| **Owned by user** | `users`, `learner_profiles`, `learner_private`, `pickup_points`, `notification_preferences`, `push_subscriptions` | Self; Business staff may read contact fields of learners they have a relationship with (never `learner_private`) | Self |
+| **Owned by user** | `users`, `learner_profiles`, `learner_private`, `pickup_points`, `notification_preferences`, `push_subscriptions` | Self; Business staff may read contact fields of learners they have a relationship with, and an instructor the `users` row of the learners on their lessons (never `learner_private`, D-097) | Self |
 | **Public reference** | `skills`, `postcodes`, `cities`, `city_areas`, `regions` | Everyone | Staff or system only |
 | **Platform and append-only** | `audit_log`, `platform_settings`, `provider_events`, `rate_limit_buckets` | Super Admin (support read for audit log) | Only `SECURITY DEFINER` functions. Update and delete are blocked by trigger |
 

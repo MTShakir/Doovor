@@ -82,6 +82,8 @@ test.describe('diary week view (DIA-03, M1-20)', () => {
     } else {
       await expect(mondayHeading).toBeVisible();
     }
+    // The view chips highlight a different view at each width, so both are read at both.
+    await expectAccessible(page);
   });
 });
 

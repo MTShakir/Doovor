@@ -2,12 +2,18 @@ import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { NavLink } from '@/components/nav-link';
 import type { ChosenView, DiaryView } from '@/lib/diary/range';
 
+const chosen = 'bg-black text-white';
+const notChosen = 'text-black hover:bg-grey-200';
+
 const views: { value: DiaryView; label: string; whenResponsive: string }[] = [
   // Nothing chosen means the day on a phone and the week on a desktop, so the highlight
   // follows the same rule (DIA-03). Neither is aria-current: neither is definitively the one.
-  { value: 'day', label: 'Day', whenResponsive: 'md:bg-transparent md:text-black' },
-  { value: 'week', label: 'Week', whenResponsive: 'bg-transparent text-black md:bg-black md:text-white' },
-  { value: 'month', label: 'Month', whenResponsive: '' },
+  // Each gets one set of colours per width and never two at once: which of two clashing
+  // utilities wins is decided by the stylesheet's order, not the order they are written in,
+  // and it once left Week white on grey on a phone (D-009).
+  { value: 'day', label: 'Day', whenResponsive: `${chosen} md:bg-transparent md:text-black md:hover:bg-grey-200` },
+  { value: 'week', label: 'Week', whenResponsive: `${notChosen} md:bg-black md:text-white md:hover:bg-black` },
+  { value: 'month', label: 'Month', whenResponsive: notChosen },
 ];
 
 /** Nothing chosen stays nothing chosen, so the arrows keep whichever view the screen shows. */
@@ -55,8 +61,8 @@ export function DiaryNav({ view, date, previous, next, today }: {
               href={href(option.value, date)}
               aria-current={option.value === view ? 'page' : undefined}
               className={`flex h-10 items-center rounded-full px-4 text-small font-semibold focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-black ${
-                option.value === view ? 'bg-black text-white' : 'text-black hover:bg-grey-200'
-              } ${view === 'responsive' && option.value !== 'month' ? `bg-black text-white ${option.whenResponsive}` : ''}`}
+                view === 'responsive' ? option.whenResponsive : option.value === view ? chosen : notChosen
+              }`}
             >
               {option.label}
             </NavLink>
