@@ -1,6 +1,6 @@
 import { expect, test } from '@playwright/test';
 import { authFile, roles } from '../support/accounts';
-import { bookLesson, clearDiary, offlinePaymentOn } from '../support/database';
+import { bookLesson, clearDiary, offlinePaymentOn, userIdOf } from '../support/database';
 import { dayLabel, expectAccessible, settled, snap } from '../support/helpers';
 
 /**
@@ -65,5 +65,31 @@ test.describe('lessons paid in person (PAY-05, M3-15)', () => {
     const mine = theirs.getByRole('article').filter({ hasText: `${dayLabel(day)} at 10:00` });
     await expect(mine.getByText('Paid (cash)', { exact: true })).toBeVisible();
     await learner.close();
+
+    // Sarah runs her own Business, so she can hand the money back, from the learner card (PAY-07, M3-17).
+    await page.goto(`/app/instructor/learners/${await userIdOf(roles.learner.email)}`);
+    const money = page.getByRole('region', { name: 'Money' });
+    const entry = money.getByRole('list', { name: 'Recent payments and credit' }).getByRole('listitem').filter({ hasText: `Lesson on ${dayLabel(day)}` });
+    const refund = page.getByRole('dialog', { name: 'Refund Jack Taylor' });
+    await expect(async () => {
+      await entry.getByRole('button', { name: 'Refund' }).click();
+      await expect(refund).toBeVisible({ timeout: 5000 });
+    }).toPass({ timeout: 20_000 });
+    await expect(refund.getByLabel('Amount')).toHaveValue('42.00');
+    await expect(refund.getByLabel('How it goes back')).toHaveValue('payment');
+    await expect(refund.getByRole('option', { name: 'Handed back in cash' })).toHaveCount(1);
+    await expect(refund.getByRole('button', { name: 'Refund £42' })).toBeDisabled();
+    await refund.getByLabel('Why').fill('The car broke down on the way');
+    await expectAccessible(page);
+    await snap(page, testInfo, 'refund-sheet');
+
+    await refund.getByRole('button', { name: 'Refund £42' }).click();
+    await expect(page.getByText('£42 refunded', { exact: true })).toBeVisible();
+    await expect(entry).toContainText('Cash, refunded');
+    await expect(entry.getByRole('button', { name: 'Refund' })).toHaveCount(0);
+    await expect(money.getByRole('list', { name: 'Recent payments and credit' })).toContainText('Paid back');
+    expect(await offlinePaymentOn('Sarah Khan', day, '10:00')).toEqual({ method: 'cash', status: 'refunded', amountPence: 4200 });
+    await settled(page);
+    await snap(page, testInfo, 'refunded');
   });
 });

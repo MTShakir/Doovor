@@ -2289,6 +2289,16 @@ export type Database = {
           token: string
         }[]
       }
+      issue_refund: {
+        Args: {
+          p_amount_pence?: number
+          p_minutes?: number
+          p_payment_id: string
+          p_reason: string
+          p_to?: string
+        }
+        Returns: string
+      }
       learner_balance: {
         Args: { p_business_id: string; p_learner_id: string }
         Returns: Json
@@ -2336,6 +2346,7 @@ export type Database = {
         Args: { p_booking_id: string; p_method: string }
         Returns: string
       }
+      refund_options: { Args: { p_payment_id: string }; Returns: Json }
       request_account_deletion: { Args: { p_reason?: string }; Returns: string }
       reschedule_booking: {
         Args: {
@@ -2602,6 +2613,10 @@ export type Database = {
         Args: { p_payment_id: string }
         Returns: boolean
       }
+      system_record_provider_refund: {
+        Args: { p_account_id: string; p_refund: Json }
+        Returns: Json
+      }
       system_refund_to_send: { Args: { p_refund_id: string }; Returns: Json }
       system_release_sms: {
         Args: { p_business_id: string }
@@ -2708,7 +2723,7 @@ export type Database = {
       pickup_kind: "home" | "school" | "work" | "custom"
       plan_key: "free" | "pro" | "school"
       platform_role: "super_admin" | "support_admin"
-      refund_kind: "card" | "credit"
+      refund_kind: "card" | "credit" | "offline"
       refund_status: "pending" | "succeeded" | "failed" | "cancelled"
       transmission: "manual" | "automatic" | "both"
       verification_status: "unsubmitted" | "pending" | "approved" | "rejected"
@@ -2927,7 +2942,7 @@ export const Constants = {
       pickup_kind: ["home", "school", "work", "custom"],
       plan_key: ["free", "pro", "school"],
       platform_role: ["super_admin", "support_admin"],
-      refund_kind: ["card", "credit"],
+      refund_kind: ["card", "credit", "offline"],
       refund_status: ["pending", "succeeded", "failed", "cancelled"],
       transmission: ["manual", "automatic", "both"],
       verification_status: ["unsubmitted", "pending", "approved", "rejected"],

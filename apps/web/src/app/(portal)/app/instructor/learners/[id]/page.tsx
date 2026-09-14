@@ -21,6 +21,7 @@ import { learnerBalance } from '@/lib/payments/balance';
 import { packagesForSale } from '@/lib/payments/packages';
 import { BookLesson } from '../../book-lesson';
 import { Notes } from './notes';
+import { RefundPayment } from './refund-payment';
 import { SellPackage } from './sell-package';
 import { StatusControl } from './status-control';
 
@@ -204,7 +205,19 @@ async function Money({ card, access }: { card: LearnerCard; access: AccessContex
           <SellPackage learnerId={card.learnerId} learnerName={card.fullName} packages={packages} />
         </div>
       )}
-      <BalanceHistory history={balance.history} limit={10} />
+      <BalanceHistory
+        history={balance.history}
+        limit={10}
+        action={
+          // Money goes back only by the people who run the Business (PAY-07, PRD 6.2).
+          runsIt
+            ? (entry) =>
+                entry.kind === 'payment' && entry.method !== 'credit' && entry.refundedPence < entry.amountPence ? (
+                  <RefundPayment paymentId={entry.id} learnerId={card.learnerId} learnerName={card.fullName} />
+                ) : null
+            : undefined
+        }
+      />
     </Card>
   );
 }

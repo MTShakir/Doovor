@@ -77,6 +77,8 @@ describe('sending a refund the database decided on (PAY-07, M3-06)', () => {
       paymentIntentId: 'pi_1',
       amountPence: 4200,
       reason: 'requested_by_customer',
+      // The provider's events about it carry this back, so the webhook finds it (M3-17).
+      metadata: { refund_id: 'ref-1' },
       idempotencyKey: 'refund:ref-1',
     });
     expect(rpc).toHaveBeenLastCalledWith('system_settle_refund', {

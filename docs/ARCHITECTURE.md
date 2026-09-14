@@ -470,7 +470,7 @@ sequenceDiagram
 
 ### 8.5 Refunds, fees and receipts
 
-- **Refunds (PAY-07):** `issue_refund` records the refund (full or partial, to card or back to credit) with reason and actor, and writes an audit row. Card refunds are sent to Stripe by a job with an idempotency key and confirmed by the `charge.refunded` webhook. Only roles in the permission matrix can refund (not school instructors).
+- **Refunds (PAY-07):** `issue_refund` records the refund (full or partial, back the way it was paid or as credit) with reason and actor, and writes an audit row. Card refunds are sent to Stripe by a job with an idempotency key and the refund's own id in its metadata, and are settled from Stripe's answer and from the `refund.created`, `refund.updated` and `refund.failed` events, which also record refunds made in the Stripe dashboard. Cash and bank refunds are settled when written down. Unused credit is refunded by the minute at its lot's price and leaves the balance at once, coming back if the refund fails. A lesson's payment status is worked out again from all its payments after any refund. Only owners, managers and staff can refund, not school instructors (D-091).
 - **Late cancellation and no-show fees (PAY-09):** credit is used first. Otherwise the fee is kept from the original card payment (partial refund of the rest). For unpaid bookings, the fee is charged to the saved card off-session or added to the amount owed (PAY-06, shown in red when overdue).
 - **Receipts (PAY-08):** a receipt email (React Email) with the Business name and address and lesson details, plus a printable receipt page. VAT lines appear only when the Business has a VAT number. Receipt numbers are sequential per Business.
 

@@ -103,6 +103,8 @@ export async function sendRefund(refundId: string): Promise<RefundResult> {
     paymentIntentId: refund.intent_id,
     amountPence: refund.amount_pence,
     reason: 'requested_by_customer',
+    // So the provider's own events about it find this refund, however early they arrive (M3-17).
+    metadata: { refund_id: refund.refund_id },
     idempotencyKey: `refund:${refund.refund_id}`,
   });
   // Left pending on purpose, so the next run tries again: money owed back is still owed back.

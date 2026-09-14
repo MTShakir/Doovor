@@ -74,6 +74,8 @@ test.describe('what a learner has and owes (PAY-06, M3-16)', () => {
     await expect(cardLines).toHaveText(learnerSees);
     const cardOwed = money.getByRole('list', { name: 'Lessons owed for' }).getByRole('listitem');
     await expect(cardOwed).toHaveCount(owedCount);
+    // A school instructor sees the money, and is never offered a refund (PAY-07, PRD 6.2).
+    await expect(money.getByRole('button', { name: 'Refund' })).toHaveCount(0);
     await expectAccessible(card);
 
     // A package paid for in cash, recorded from the card.

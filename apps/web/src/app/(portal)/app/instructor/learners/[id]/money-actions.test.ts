@@ -9,7 +9,7 @@ vi.mock('@/lib/auth/session', () => ({
 }));
 vi.mock('next/cache', () => ({ revalidatePath: (path: string) => { revalidatePath(path); } }));
 
-const { recordOfflinePackage } = await import('./money-actions');
+const { issueRefund, recordOfflinePackage, refundOptions } = await import('./money-actions');
 
 const learnerId = '11111111-1111-4111-8111-111111111111';
 const packageId = '33333333-3333-4333-8333-333333333333';
@@ -56,5 +56,85 @@ describe('a package paid for in person (PAY-04, PAY-05, M3-16)', () => {
       code: 'VALIDATION_FAILED',
     });
     expect(revalidatePath).not.toHaveBeenCalled();
+  });
+});
+
+const paymentId = '55555555-5555-4555-8555-555555555555';
+
+describe('what can be refunded, and refunding it (PAY-07, M3-17)', () => {
+  it('reads what is left to give back for a lesson, and for credit bought', async () => {
+    rpc.mockResolvedValueOnce({
+      data: {
+        payment_id: paymentId, method: 'card', status: 'paid', amount_pence: 4200, refunded_pence: 0, pending_pence: 1000,
+        refundable_pence: 3200, lesson_at: '2026-09-15T09:00:00Z', lesson_minutes: 60, lot: null,
+      },
+      error: null,
+    });
+    expect(await refundOptions({ paymentId })).toEqual({
+      ok: true,
+      data: { paymentId, method: 'card', amountPence: 4200, refundablePence: 3200, lessonAt: '2026-09-15T09:00:00Z', lessonMinutes: 60, lot: null },
+    });
+
+    rpc.mockResolvedValueOnce({
+      data: {
+        payment_id: paymentId, method: 'cash', status: 'paid', amount_pence: 38000, refunded_pence: 0, pending_pence: 0,
+        refundable_pence: 38000, lesson_at: null, lesson_minutes: null,
+        lot: { minutes_total: 600, usable_minutes: 540, price_pence: 38000, value_pence: 34200 },
+      },
+      error: null,
+    });
+    const credit = await refundOptions({ paymentId });
+    expect(credit).toMatchObject({ ok: true, data: { lot: { minutesTotal: 600, usableMinutes: 540, pricePence: 38000, valuePence: 34200 } } });
+  });
+
+  it('says who may not, as the database decides', async () => {
+    rpc.mockResolvedValueOnce({ data: null, error: { code: '42501', message: 'NOT_ALLOWED' } });
+    expect(await refundOptions({ paymentId })).toMatchObject({ ok: false, code: 'NOT_ALLOWED' });
+  });
+
+  it('refunds a lesson by an amount, or credit by the minute, always with a reason', async () => {
+    rpc.mockResolvedValue({ data: 'refund-1', error: null });
+
+    expect(await issueRefund({ paymentId, learnerId, reason: ' Lesson ran short ', to: 'payment', amountPence: 1000 })).toEqual({
+      ok: true,
+      data: { refundId: 'refund-1' },
+    });
+    expect(rpc).toHaveBeenLastCalledWith('issue_refund', {
+      p_payment_id: paymentId,
+      p_reason: 'Lesson ran short',
+      p_amount_pence: 1000,
+      p_minutes: undefined,
+      p_to: 'payment',
+    });
+    expect(revalidatePath).toHaveBeenCalledWith(`/app/instructor/learners/${learnerId}`);
+
+    await issueRefund({ paymentId, learnerId, reason: 'Moving away', to: 'payment', minutes: 120 });
+    expect(rpc).toHaveBeenLastCalledWith('issue_refund', {
+      p_payment_id: paymentId,
+      p_reason: 'Moving away',
+      p_amount_pence: undefined,
+      p_minutes: 120,
+      p_to: 'payment',
+    });
+  });
+
+  it('refuses a refund with no reason, both an amount and minutes, or nothing to give back', async () => {
+    for (const bad of [
+      { paymentId, learnerId, reason: '  ', to: 'payment' },
+      { paymentId, learnerId, reason: 'Both', to: 'payment', amountPence: 100, minutes: 30 },
+      { paymentId, learnerId, reason: 'Nothing', to: 'payment', amountPence: 0 },
+      { paymentId, learnerId, reason: 'Where', to: 'cheque' },
+    ]) {
+      expect(await issueRefund(bad)).toMatchObject({ ok: false, code: 'VALIDATION_FAILED' });
+    }
+    expect(rpc).not.toHaveBeenCalled();
+  });
+
+  it('passes on what the database refused', async () => {
+    rpc.mockResolvedValue({ data: null, error: { code: '42501', message: 'NOT_ALLOWED' } });
+    expect(await issueRefund({ paymentId, learnerId, reason: 'Goodwill', to: 'payment' })).toMatchObject({
+      ok: false,
+      code: 'NOT_ALLOWED',
+    });
   });
 });

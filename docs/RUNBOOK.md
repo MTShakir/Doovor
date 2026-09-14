@@ -158,9 +158,11 @@ Sandbox `Doovor sandbox`, account `acct_1UFF4RDP3EG8YZIf`. Settings > Connect:
    Authentication and a webhook to one is refused, so the endpoint is created in M6 against
    `https://app.doovor.com/api/webhooks/stripe` (D-084). It listens on `account.updated`,
    `payment_intent.succeeded`, `payment_intent.payment_failed`, `payment_intent.amount_capturable_updated`
-   (a request's card authorised, M3-08), `payment_intent.canceled`, `charge.refunded` and
+   (a request's card authorised, M3-08), `payment_intent.canceled`, `refund.created`, `refund.updated`,
+   `refund.failed` (refunds reconciled, including ones made in the Stripe dashboard, M3-17) and
    `charge.dispute.created`, with "Listen to events on connected accounts" ticked, and its secret goes in
-   `STRIPE_CONNECT_WEBHOOK_SECRET`.
+   `STRIPE_CONNECT_WEBHOOK_SECRET`. `charge.refunded` is not needed: newer API versions leave the refunds
+   out of it, and the refund events carry them.
    `STRIPE_WEBHOOK_SECRET` is for platform events (Stripe Billing, M5) and stays empty until then.
 8. **You:** live mode needs the Connect platform onboarding questionnaire finished (Platform profile >
    View onboarding): company identity, the business model and the loss liability elections.

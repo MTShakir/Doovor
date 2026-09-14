@@ -74,8 +74,19 @@ export function OwedLessons({
   );
 }
 
-/** What has happened to the learner's money with the Business, newest first. */
-export function BalanceHistory({ history, limit }: { history: BalanceHistoryEntry[]; limit: number }) {
+/**
+ * What has happened to the learner's money with the Business, newest first. A screen that can do
+ * something about an entry, such as refund it, brings its own action.
+ */
+export function BalanceHistory({
+  history,
+  limit,
+  action,
+}: {
+  history: BalanceHistoryEntry[];
+  limit: number;
+  action?: (entry: BalanceHistoryEntry) => ReactNode;
+}) {
   const shown = history.slice(0, limit);
   if (shown.length === 0) return null;
 
@@ -85,15 +96,19 @@ export function BalanceHistory({ history, limit }: { history: BalanceHistoryEntr
       <ul className="flex flex-col" aria-label="Recent payments and credit">
         {shown.map((entry) => {
           const line = historyLine(entry);
+          const control = action?.(entry);
           return (
-            <li key={entry.id} className="flex items-start gap-3 px-4 py-2">
-              <span className="flex min-w-0 flex-1 flex-col">
-                <span className="text-body text-ink">{line.title}</span>
-                <span className="text-small text-grey-700">
-                  {formatDate(entry.at)} · {line.detail}
+            <li key={entry.id} className="flex flex-col gap-1 px-4 py-2">
+              <div className="flex items-start gap-3">
+                <span className="flex min-w-0 flex-1 flex-col">
+                  <span className="text-body text-ink">{line.title}</span>
+                  <span className="text-small text-grey-700">
+                    {formatDate(entry.at)} · {line.detail}
+                  </span>
                 </span>
-              </span>
-              {line.amount === null ? null : <span className="shrink-0 text-body text-ink tabular-nums">{line.amount}</span>}
+                {line.amount === null ? null : <span className="shrink-0 text-body text-ink tabular-nums">{line.amount}</span>}
+              </div>
+              {control ? <div className="flex justify-end">{control}</div> : null}
             </li>
           );
         })}
