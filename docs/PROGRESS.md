@@ -10,7 +10,7 @@ M1 Instructor core is approved and merged to `main`, all 24 tasks, with its fift
 
 M2 Learners and bookings is approved and merged to `main`, and was pushed to staging on 13 September 2026.
 
-M3 Payments is in progress on branch `m3-payments`: M3-01 to M3-19 are built, with the Stripe test-mode halves of M3-08 to M3-10 waiting for the M3-23 run. The app now lives on `app.doovor.com` with the public site on `doovor.com` (D-084).
+M3 Payments is in progress on branch `m3-payments`: M3-01 to M3-20 are built, with the Stripe test-mode halves of M3-08 to M3-10 waiting for the M3-23 run. The app now lives on `app.doovor.com` with the public site on `doovor.com` (D-084).
 
 ## M3 progress
 
@@ -35,6 +35,7 @@ M3 Payments is in progress on branch `m3-payments`: M3-01 to M3-19 are built, wi
 | M3-17 | Refunds: `issue_refund` (full or partial, card or credit), refund job, webhook reconcile, audit row | PAY-07, NFR-SEC-06 | Done. An owner or manager refunds from the learner card's history, always with a reason kept in the audit log: a lesson by an amount, back the way it was paid (to the card through the refund job, or handed back in cash or by transfer) or as credit, and unused credit by the time left at the price it was bought for, which leaves the balance at once and comes back if the refund fails (D-091). The webhook settles refunds from the provider's refund events, finds its own by the id they carry, and records ones made in the Stripe dashboard. A school instructor cannot refund, in pgTAP and on screen. Recording a refund on a lesson recomputes the lesson's payment status from all its payments, so a refunded duplicate leaves it paid. The hosted webhook needs the refund events added (RUNBOOK 3.7) |
 | M3-18 | Cancellation money effects: late fee kept with explanation email; instructor cancel refunds in full | PAY-09, R-06, R-08 | Done. Cancelling settles the lesson's money in the same transaction (D-092): a learner cancelling late leaves the fee kept out of what they paid, oldest payment first, and the rest goes back; in time, or when the instructor or the Business cancels, all of it goes back, to the card through the refund job or owed back for cash and transfers until it is marked handed back from the learner card. A fee on an unpaid lesson is owed in both balances and can be marked paid in person for the fee. The cancel sheets, the pay screen and the notification say what happens to the money, and the learner's email explains a kept fee: when they cancelled, the policy, and what it came out of. Withdrawing a request or dropping a held slot is no longer a late cancellation. acceptance-04 and acceptance-05 are green in pgTAP, in unit tests of the email, and end to end at both widths, where the refund reaches the fake card and the notification is written by the real job |
 | M3-19 | No-show fee to saved card or credit | PAY-09, R-09 | Done. A no-show settles its money as a late cancellation, out of credit or what was paid, and records the seven days the learner has to dispute it. A fee nothing has paid, for a no-show or a late cancellation, is charged by a job to the card the learner keeps, or is owed and paid on the pay screen or in person, and the "Save this card" box now says fees can be charged to it (D-093). The learner disputes from their lessons within the seven days, and an owner or manager waives the fee, which gives back whatever paid it, or keeps it, from the learner card, with a note the learner sees (D-094). Learner, instructor and school are told at each step. pgTAP, unit and end to end green at both widths |
+| M3-20 | Receipts: email, sequential numbers, VAT lines only when registered, receipt page | PAY-08 | Done. Every payment received gets a receipt numbered in its Business's own series, with the name, address and VAT number frozen as they were, what was paid for, the amount and how it was paid, and the VAT in the price only for a Business registered for VAT. A job emails it once, and cash waits out its ten-minute undo window first. The owner sets the address and VAT number on the Money screen. The receipt page prints, and each payment in both histories links to its receipt (D-095). Snapshot tests cover the email with and without VAT; pgTAP covers numbering, VAT to the penny, frozen details and who reads receipts; end to end at both widths |
 
 ## M2 progress
 
@@ -150,11 +151,11 @@ Decisions D-036 to D-050 were logged during this stretch. Two were security fixe
 
 | Suite | Result |
 |---|---|
-| Unit (Vitest) | 787 passed across 7 packages; `packages/core` and `packages/providers` both above the 90% line coverage gate |
-| Database (pgTAP) | 835 assertions in 62 files, all passing, including against a database an end to end run has left data in, and none of them depends on the date or the day of the week they run on (D-070); SQL lint clean |
-| End to end (Playwright) | 268 passed at 390 px and 1440 px on 14 September, none skipped, including acceptance-01 to 06, 09 and 12 and the payment journeys for M3-05 to M3-19; green in CI on every push since 13 September |
+| Unit (Vitest) | 805 passed across 7 packages; `packages/core` and `packages/providers` both above the 90% line coverage gate |
+| Database (pgTAP) | 849 assertions in 63 files, all passing, including against a database an end to end run has left data in, and none of them depends on the date or the day of the week they run on (D-070); SQL lint clean |
+| End to end (Playwright) | 270 passed at 390 px and 1440 px on 14 September, none skipped, including acceptance-01 to 06, 09 and 12 and the payment journeys for M3-05 to M3-20; green in CI on every push since 13 September |
 | Lint, typecheck, copy guard | Clean |
-| CI on GitHub | Read after every push. Green on 4990e56 (14 September). Two pushes that day failed and were fixed in the next: a pgTAP test that only passed from Thursday to Sunday (c06c1e0), and an accessibility check that caught the portal's loading skeleton mid-scan (635fe19) |
+| CI on GitHub | Read after every push. Green on c6b9d50 (14 September). Two pushes that day failed and were fixed in the next: a pgTAP test that only passed from Thursday to Sunday (c06c1e0), and an accessibility check that caught the portal's loading skeleton mid-scan (635fe19) |
 | Staging (hosted) | All 46 migrations applied, M2 pushed on 2026-09-13. Security Advisor: 0 errors, 39 warnings, 38 of them the expected `security definer` pattern (D-051) and one the dashboard switch for leaked password protection |
 
 ## In progress

@@ -158,6 +158,8 @@ export type HistoryEntry =
       refundedPence: number;
       /** Already on its way back to a card, or owed back in person (M3-18). */
       pendingRefundPence: number;
+      /** Its receipt has been issued, so there is one to open (PAY-08). */
+      hasReceipt: boolean;
       /** The lesson it paid for, when it paid for one. */
       lessonAt: Date | null;
       /** The minutes of credit it bought, when it bought a package. */

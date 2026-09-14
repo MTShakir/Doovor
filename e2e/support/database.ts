@@ -758,3 +758,27 @@ export async function forgetKeptCards(learnerEmail: string, ownerEmail: string):
          and lower(owner.email) = lower(${ownerEmail})`;
   });
 }
+
+/** The newest payment received for a lesson, for a test that has just paid for it. */
+export async function paymentIdFor(bookingId: string): Promise<string> {
+  return withDatabase(async (sql) => {
+    const rows = await sql<{ id: string }[]>`
+      select id from public.payments
+       where booking_id = ${bookingId} and status in ('paid', 'partially_refunded', 'refunded')
+       order by created_at desc
+       limit 1`;
+    const found = rows[0];
+    if (!found) throw new Error(`No payment for lesson ${bookingId}`);
+    return found.id;
+  });
+}
+
+/** What a payment's receipt says, and whether it was emailed (PAY-08). Null before it is issued. */
+export async function receiptFor(paymentId: string): Promise<{ number: number; vatPence: number | null; emailed: boolean } | null> {
+  return withDatabase(async (sql) => {
+    const rows = await sql<{ number: number; vat_pence: number | null; emailed_at: string | null }[]>`
+      select number, vat_pence, emailed_at from public.receipts where payment_id = ${paymentId}`;
+    const found = rows[0];
+    return found ? { number: found.number, vatPence: found.vat_pence, emailed: found.emailed_at !== null } : null;
+  });
+}

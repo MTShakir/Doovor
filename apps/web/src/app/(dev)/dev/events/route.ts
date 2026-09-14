@@ -4,6 +4,7 @@ import { serverEnv } from '@/env/server';
 import { chargeFee } from '@/jobs/fees';
 import { notifyAboutBooking } from '@/jobs/notify';
 import { sendRefund } from '@/jobs/payments';
+import { sendReceipt } from '@/jobs/receipts';
 
 const eventSchema = z.object({
   name: z.string().min(1),
@@ -32,6 +33,10 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
   if (name === 'payment.refund') {
     const refundId = typeof payload.refund_id === 'string' ? payload.refund_id : '';
     return NextResponse.json(await sendRefund(refundId));
+  }
+  if (name === 'payment.received') {
+    const paymentId = typeof payload.payment_id === 'string' ? payload.payment_id : '';
+    return NextResponse.json(await sendReceipt(paymentId));
   }
   if (name === 'payment.fee_charge') {
     const bookingId = typeof payload.booking_id === 'string' ? payload.booking_id : '';

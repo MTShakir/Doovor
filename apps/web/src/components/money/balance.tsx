@@ -2,6 +2,7 @@ import { historyLine, type OwedLesson } from '@repo/core/balance';
 import { formatPence } from '@repo/core/money';
 import { formatDate, formatMinutes, formatTime } from '@repo/core/time';
 import { StatusPill } from '@repo/ui/status-pill';
+import Link from 'next/link';
 import type { ReactNode } from 'react';
 import type { Balance, BalanceHistoryEntry, LessonInstructor, OwedBack } from '@/lib/payments/balance';
 
@@ -146,7 +147,20 @@ export function BalanceHistory({
                 </span>
                 {line.amount === null ? null : <span className="shrink-0 text-body text-ink tabular-nums">{line.amount}</span>}
               </div>
-              {control ? <div className="flex justify-end">{control}</div> : null}
+              {control || (entry.kind === 'payment' && entry.hasReceipt) ? (
+                <div className="flex flex-wrap items-center justify-end gap-2">
+                  {/* The receipt the learner was sent, for either of them to open (PAY-08). */}
+                  {entry.kind === 'payment' && entry.hasReceipt ? (
+                    <Link
+                      href={`/receipts/${entry.id}`}
+                      className="flex h-12 items-center rounded-full px-4 text-body font-semibold text-black underline-offset-4 hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-black"
+                    >
+                      Receipt
+                    </Link>
+                  ) : null}
+                  {control}
+                </div>
+              ) : null}
             </li>
           );
         })}

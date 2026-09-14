@@ -1,6 +1,7 @@
 import { render } from '@react-email/render';
 import { createElement } from 'react';
 import { NotificationEmail, type NotificationEmailProps } from './notification.tsx';
+import { ReceiptEmail, type ReceiptEmailProps } from './receipt.tsx';
 
 export interface RenderedEmail {
   subject: string;
@@ -14,4 +15,11 @@ export async function renderNotificationEmail(props: NotificationEmailProps): Pr
   const element = createElement(NotificationEmail, props);
   const [html, text] = await Promise.all([render(element), render(element, { plainText: true })]);
   return { subject: props.title, html, text };
+}
+
+/** A receipt, as an email ready to hand to a provider (PAY-08, M3-20). */
+export async function renderReceiptEmail(props: ReceiptEmailProps): Promise<RenderedEmail> {
+  const element = createElement(ReceiptEmail, props);
+  const [html, text] = await Promise.all([render(element), render(element, { plainText: true })]);
+  return { subject: `${props.receipt.title} from ${props.receipt.businessName}`, html, text };
 }

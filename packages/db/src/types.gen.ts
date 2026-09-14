@@ -1938,6 +1938,90 @@ export type Database = {
         }
         Relationships: []
       }
+      receipts: {
+        Row: {
+          amount_pence: number
+          business_address: Json | null
+          business_id: string
+          business_name: string
+          credit_minutes: number | null
+          emailed_at: string | null
+          id: string
+          instructor_name: string | null
+          issued_at: string
+          kind: Database["public"]["Enums"]["receipt_kind"]
+          learner_id: string
+          lesson_minutes: number | null
+          lesson_starts_at: string | null
+          lesson_type: string | null
+          method: Database["public"]["Enums"]["payment_method"]
+          number: number
+          payment_id: string
+          vat_number: string | null
+          vat_pence: number | null
+          vat_rate_percent: number | null
+        }
+        Insert: {
+          amount_pence: number
+          business_address?: Json | null
+          business_id: string
+          business_name: string
+          credit_minutes?: number | null
+          emailed_at?: string | null
+          id?: string
+          instructor_name?: string | null
+          issued_at?: string
+          kind: Database["public"]["Enums"]["receipt_kind"]
+          learner_id: string
+          lesson_minutes?: number | null
+          lesson_starts_at?: string | null
+          lesson_type?: string | null
+          method: Database["public"]["Enums"]["payment_method"]
+          number: number
+          payment_id: string
+          vat_number?: string | null
+          vat_pence?: number | null
+          vat_rate_percent?: number | null
+        }
+        Update: {
+          amount_pence?: number
+          business_address?: Json | null
+          business_id?: string
+          business_name?: string
+          credit_minutes?: number | null
+          emailed_at?: string | null
+          id?: string
+          instructor_name?: string | null
+          issued_at?: string
+          kind?: Database["public"]["Enums"]["receipt_kind"]
+          learner_id?: string
+          lesson_minutes?: number | null
+          lesson_starts_at?: string | null
+          lesson_type?: string | null
+          method?: Database["public"]["Enums"]["payment_method"]
+          number?: number
+          payment_id?: string
+          vat_number?: string | null
+          vat_pence?: number | null
+          vat_rate_percent?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "receipts_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "businesses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "receipts_payment_id_fkey"
+            columns: ["payment_id"]
+            isOneToOne: true
+            referencedRelation: "payments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       refunds: {
         Row: {
           amount_pence: number
@@ -2582,6 +2666,7 @@ export type Database = {
       system_expire_requests: { Args: never; Returns: number }
       system_extend_recurrences: { Args: { p_weeks?: number }; Returns: number }
       system_fee_to_charge: { Args: { p_booking_id: string }; Returns: Json }
+      system_issue_receipt: { Args: { p_payment_id: string }; Returns: Json }
       system_lessons_to_charge: {
         Args: { p_within_hours?: number }
         Returns: Json
@@ -2599,6 +2684,10 @@ export type Database = {
         Returns: number
       }
       system_mark_outbox_sent: { Args: { p_ids: string[] }; Returns: number }
+      system_mark_receipt_emailed: {
+        Args: { p_receipt_id: string }
+        Returns: boolean
+      }
       system_notification_mutes: {
         Args: {
           p_category: Database["public"]["Enums"]["notification_category"]
@@ -2799,6 +2888,12 @@ export type Database = {
       pickup_kind: "home" | "school" | "work" | "custom"
       plan_key: "free" | "pro" | "school"
       platform_role: "super_admin" | "support_admin"
+      receipt_kind:
+        | "lesson"
+        | "late_cancellation_fee"
+        | "no_show_fee"
+        | "credit"
+        | "other"
       refund_kind: "card" | "credit" | "offline"
       refund_status: "pending" | "succeeded" | "failed" | "cancelled"
       transmission: "manual" | "automatic" | "both"
@@ -3019,6 +3114,13 @@ export const Constants = {
       pickup_kind: ["home", "school", "work", "custom"],
       plan_key: ["free", "pro", "school"],
       platform_role: ["super_admin", "support_admin"],
+      receipt_kind: [
+        "lesson",
+        "late_cancellation_fee",
+        "no_show_fee",
+        "credit",
+        "other",
+      ],
       refund_kind: ["card", "credit", "offline"],
       refund_status: ["pending", "succeeded", "failed", "cancelled"],
       transmission: ["manual", "automatic", "both"],

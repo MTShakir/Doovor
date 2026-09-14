@@ -57,6 +57,11 @@ export const paymentFeeCharge = eventType('payment.fee_charge', {
   schema: staticSchema<{ booking_id: string }>(),
 });
 
+/** Money a learner paid a Business has arrived, which is what a receipt is for (PAY-08). */
+export const paymentReceived = eventType('payment.received', {
+  schema: staticSchema<{ payment_id: string; booking_id?: string | null }>(),
+});
+
 /** A card set aside for a request, waiting to be taken or let go (R-12). */
 export const paymentAuthorised = eventType('payment.authorised', {
   schema: staticSchema<{ payment_id: string; booking_id: string }>(),

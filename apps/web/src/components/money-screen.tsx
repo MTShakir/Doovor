@@ -8,8 +8,10 @@ import { BadgePoundSterling, CreditCard } from 'lucide-react';
 import { connection } from 'next/server';
 import { Suspense } from 'react';
 import { paymentsState, requirementInWords } from '@/lib/payments/connect';
+import { receiptDetails } from '@/lib/payments/receipts';
 import { ConnectPayments } from '@/app/(portal)/app/instructor/money/connect-payments';
 import { PaymentModeChoice } from '@/app/(portal)/app/instructor/money/payment-mode';
+import { ReceiptDetailsForm } from '@/app/(portal)/app/instructor/money/receipt-details';
 
 export function MoneyScreen({ screen }: { screen: 'instructor' | 'school' }) {
   return (
@@ -97,7 +99,39 @@ async function Payments({ screen }: { screen: 'instructor' | 'school' }) {
       )}
     </Card>
     {ready ? <HowLearnersPay mode={state.paymentMode} canManage={state.canManage} /> : null}
+    <Receipts businessId={state.businessId} canManage={state.canManage} />
     </>
+  );
+}
+
+/** PAY-08, M3-20: what goes on the receipts learners are sent, set by the owner. */
+async function Receipts({ businessId, canManage }: { businessId: string; canManage: boolean }) {
+  const details = await receiptDetails(businessId);
+  const lines = [details.line1, details.line2, details.town, details.postcode].filter((line) => line.trim() !== '');
+
+  return (
+    <Card className="flex flex-col gap-3" role="region" aria-labelledby="receipts-title">
+      <div className="flex flex-col gap-1">
+        <CardTitle id="receipts-title">Receipts</CardTitle>
+        <CardDescription>Every payment gets a numbered receipt by email, with your address on it.</CardDescription>
+      </div>
+      {canManage ? (
+        <ReceiptDetailsForm initial={details} />
+      ) : (
+        <div className="flex flex-col gap-1">
+          {lines.length === 0 ? (
+            <p className="text-body text-grey-700">No address yet. The owner of the business adds it.</p>
+          ) : (
+            lines.map((line) => (
+              <p key={line} className="text-body text-ink">
+                {line}
+              </p>
+            ))
+          )}
+          {details.vatNumber === '' ? null : <p className="text-body text-ink">VAT number {details.vatNumber}</p>}
+        </div>
+      )}
+    </Card>
   );
 }
 

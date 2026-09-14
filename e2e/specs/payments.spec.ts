@@ -21,13 +21,15 @@ import {
   notificationChannels,
   packagePurchaseParts,
   paymentFor,
+  paymentIdFor,
   paymentsAccountOf,
+  receiptFor,
   removeLesson,
   removeLessonById,
   requestLesson,
   setBookingStatus,
 } from '../support/database';
-import { dayLabel, expectAccessible, settled, snap } from '../support/helpers';
+import { dayLabel, expectAccessible, fillUntil, settled, snap } from '../support/helpers';
 import { signInThroughForm } from '../support/sign-in';
 import { fakeSignature } from '../support/webhooks';
 
@@ -143,7 +145,7 @@ test.describe('paying for a lesson (PAY-02, M3-05)', () => {
     await page.goto('/app/learner/lessons');
     const lesson = page
       .getByRole('article')
-      .filter({ hasText: `at ${hour}` })
+      .filter({ hasText: `${dayLabel(day)} at ${hour}` })
       .filter({ hasText: 'Tom Walsh' });
     await expect(lesson).toBeVisible();
 
@@ -197,7 +199,7 @@ test.describe('paying for a lesson (PAY-02, M3-05)', () => {
       await page.goto('/app/learner/lessons');
       const lesson = page
         .getByRole('article')
-        .filter({ hasText: `at ${hour}` })
+        .filter({ hasText: `${dayLabel(day)} at ${hour}` })
         .filter({ hasText: 'Tom Walsh' });
       await expect(async () => {
         await lesson.getByRole('link', { name: /^Pay £/ }).click();
@@ -288,7 +290,7 @@ test.describe('paying for a lesson (PAY-02, M3-05)', () => {
       await page.goto('/app/learner/lessons');
       const lesson = page
         .getByRole('article')
-        .filter({ hasText: `at ${hour}` })
+        .filter({ hasText: `${dayLabel(day)} at ${hour}` })
         .filter({ hasText: 'Tom Walsh' });
       await expect(async () => {
         await lesson.getByRole('link', { name: /^Authorise £/ }).click();
@@ -465,7 +467,7 @@ test.describe('paying for a lesson (PAY-02, M3-05)', () => {
     await page.goto('/app/learner/lessons');
     const lesson = page
       .getByRole('article')
-      .filter({ hasText: 'at 18:00' })
+      .filter({ hasText: `${dayLabel(day)} at 18:00` })
       .filter({ hasText: 'Tom Walsh' });
     await expect(async () => {
       await lesson.getByRole('link', { name: /^Pay £/ }).click();
@@ -505,7 +507,7 @@ test.describe('paying for a lesson (PAY-02, M3-05)', () => {
     await page.goto('/app/learner/lessons');
     const lesson = page
       .getByRole('article')
-      .filter({ hasText: 'at 16:00' })
+      .filter({ hasText: `${dayLabel(day)} at 16:00` })
       .filter({ hasText: 'Tom Walsh' });
     await expect(async () => {
       await lesson.getByRole('link', { name: /^Pay £/ }).click();
@@ -700,33 +702,33 @@ test.describe('lesson credit (PAY-04, M3-13, M3-14)', () => {
   });
 });
 
+/** Pays for a lesson from the learner's own list with the test card, the way a learner does. */
+const payFromLessons = async (page: Page, instructor: string, day: string, hour: string) => {
+  await page.goto('/app/learner/lessons');
+  const lesson = page
+    .getByRole('article')
+    .filter({ hasText: `${dayLabel(day)} at ${hour}` })
+    .filter({ hasText: instructor });
+  await expect(async () => {
+    await lesson.getByRole('link', { name: /^Pay £/ }).click();
+    await page.waitForURL(/\/app\/learner\/pay\//, { timeout: 5000 });
+  }).toPass({ timeout: 20_000 });
+
+  const checkout = page.getByRole('region', { name: /at \d\d:\d\d$/ });
+  await expect(async () => {
+    await checkout.getByRole('button', { name: /^Pay £/ }).click();
+    await expect(checkout.getByRole('button', { name: 'Pay with a test card' })).toBeVisible({ timeout: 10_000 });
+  }).toPass({ timeout: 40_000 });
+  await checkout.getByRole('button', { name: 'Pay with a test card' }).click();
+  await expect(checkout).toContainText('That is paid for, and your lesson is confirmed.', { timeout: 30_000 });
+};
+
 test.describe('calling off a lesson that was paid for (PAY-09, R-06, R-08, M3-18)', () => {
   const owner = roles.schoolOwner.email;
 
   /** Tomorrow in London: always inside the default policy's 48 hours. */
   const tomorrow = (): string =>
     new Intl.DateTimeFormat('en-CA', { timeZone: 'Europe/London' }).format(new Date(Date.now() + 24 * 3_600_000));
-
-  /** Pays for a lesson from the learner's own list with the test card, the way a learner does. */
-  const payFromLessons = async (page: Page, instructor: string, day: string, hour: string) => {
-    await page.goto('/app/learner/lessons');
-    const lesson = page
-      .getByRole('article')
-      .filter({ hasText: `${dayLabel(day)} at ${hour}` })
-      .filter({ hasText: instructor });
-    await expect(async () => {
-      await lesson.getByRole('link', { name: /^Pay £/ }).click();
-      await page.waitForURL(/\/app\/learner\/pay\//, { timeout: 5000 });
-    }).toPass({ timeout: 20_000 });
-
-    const checkout = page.getByRole('region', { name: /at \d\d:\d\d$/ });
-    await expect(async () => {
-      await checkout.getByRole('button', { name: /^Pay £/ }).click();
-      await expect(checkout.getByRole('button', { name: 'Pay with a test card' })).toBeVisible({ timeout: 10_000 });
-    }).toPass({ timeout: 40_000 });
-    await checkout.getByRole('button', { name: 'Pay with a test card' }).click();
-    await expect(checkout).toContainText('That is paid for, and your lesson is confirmed.', { timeout: 30_000 });
-  };
 
   /** The learner's notification about one lesson, found by when the lesson was. */
   const noticeAbout = (page: Page, day: string, hour: string) =>
@@ -1021,6 +1023,113 @@ test.describe('fees for lessons nobody came to (PAY-09, R-09, M3-19)', () => {
     await settled(page);
     await snap(page, testInfo, 'no-show-fee-charged');
 
+    await clearPaymentsAccount(owner);
+  });
+});
+
+test.describe('receipts (PAY-08, M3-20)', () => {
+  test.use({ storageState: authFile('payer') });
+
+  const owner = roles.schoolOwner.email;
+  const learner = roles.payer.email;
+
+  /** A Friday some weeks out for each width, past the seeded diary and the other tests' days. */
+  const receiptDay = (project: string): string => {
+    const day = new Date();
+    day.setDate(day.getDate() + 7 * (40 + (project === 'mobile' ? 0 : 1)));
+    while (day.getDay() !== 5) day.setDate(day.getDate() + 1);
+    return day.toISOString().slice(0, 10);
+  };
+
+  /** The owner says what goes on receipts, from the Money screen. */
+  const saveReceiptDetails = async (browser: Browser, vatNumber: string, testInfo: TestInfo | null) => {
+    const context = await browser.newContext({ storageState: authFile('schoolOwner') });
+    const money = await context.newPage();
+    await money.goto('/app/school/money');
+    const receipts = money.getByRole('region', { name: 'Receipts' });
+    // Typed until each value sticks: a value typed before the page is interactive is lost (D-043).
+    await fillUntil(receipts.getByLabel('Address line 1'), '4 Quay Street');
+    await fillUntil(receipts.getByLabel('Address line 2 (optional)'), '');
+    await fillUntil(receipts.getByLabel('Town or city'), 'Manchester');
+    await fillUntil(receipts.getByLabel('Postcode'), 'm1 2qf');
+    await fillUntil(receipts.getByLabel('VAT number'), vatNumber);
+    if (testInfo) {
+      await expectAccessible(money);
+      await snap(money, testInfo, 'receipt-details');
+    }
+    await expect(async () => {
+      await receipts.getByRole('button', { name: 'Save receipt details' }).click();
+      await expect(money.getByText(vatNumber === '' ? 'Receipt details saved' : 'Receipt details saved, with VAT', { exact: true })).toBeVisible({
+        timeout: 5000,
+      });
+    }).toPass({ timeout: 20_000 });
+    await context.close();
+  };
+
+  test('every payment gets a numbered receipt by email, with VAT shown only when the Business is registered', async ({ page, browser }, testInfo) => {
+    test.setTimeout(240_000);
+    const day = receiptDay(testInfo.project.name);
+    await enablePayments(owner, `fake_acct_receipts_${testInfo.project.name}_${String(Date.now())}`);
+    await saveReceiptDetails(browser, '', testInfo);
+
+    // A lesson paid by card, at a Business not registered for VAT.
+    await bookLesson('Tom Walsh', learner, day, '11:00');
+    await payFromLessons(page, 'Tom Walsh', day, '11:00');
+    const first = await paymentIdFor(await lessonIdAt('Tom Walsh', day, '11:00'));
+    const sent = await page.request.post('/dev/events', { data: { name: 'payment.received', payload: { payment_id: first } } });
+    expect(await sent.json()).toMatchObject({ sent: true });
+    const firstReceipt = await receiptFor(first);
+    expect(firstReceipt, 'the receipt was issued and emailed').toMatchObject({ vatPence: null, emailed: true });
+
+    await page.goto('/app/learner/payments');
+    const entry = page
+      .getByRole('region', { name: 'Balance with Quayside Driving School' })
+      .getByRole('list', { name: 'Recent payments and credit' })
+      .getByRole('listitem')
+      .filter({ hasText: `Lesson on ${dayLabel(day)}` })
+      .first();
+    await expect(async () => {
+      await entry.getByRole('link', { name: 'Receipt' }).click();
+      await page.waitForURL(/\/receipts\//, { timeout: 5000 });
+    }).toPass({ timeout: 20_000 });
+
+    const receipt = page.getByRole('region', { name: /^Receipt \d+$/ });
+    await expect(receipt.getByRole('heading', { name: `Receipt ${String(firstReceipt?.number)}` })).toBeVisible();
+    await expect(receipt).toContainText('Quayside Driving School');
+    await expect(receipt).toContainText('4 Quay Street');
+    await expect(receipt).toContainText('M1 2QF');
+    await expect(receipt).toContainText(`Standard lesson, 1 hour on ${dayLabel(day)} at 11:00 with Tom Walsh`);
+    await expect(receipt).toContainText('Paid by card');
+    await expect(receipt).not.toContainText('VAT');
+    await expectAccessible(page);
+    await settled(page);
+    await snap(page, testInfo, 'receipt');
+
+    // Registered for VAT: the next receipt shows the number and the VAT in the price.
+    await saveReceiptDetails(browser, 'GB 123 4567 89', null);
+    await bookLesson('Tom Walsh', learner, day, '15:00');
+    await payFromLessons(page, 'Tom Walsh', day, '15:00');
+    const second = await paymentIdFor(await lessonIdAt('Tom Walsh', day, '15:00'));
+    expect(await (await page.request.post('/dev/events', { data: { name: 'payment.received', payload: { payment_id: second } } })).json()).toMatchObject({
+      sent: true,
+    });
+    const secondReceipt = await receiptFor(second);
+    expect(secondReceipt?.number, 'numbered one after another').toBe((firstReceipt?.number ?? 0) + 1);
+    expect(secondReceipt?.vatPence).toBe(700);
+
+    await page.goto(`/receipts/${second}`);
+    const vatReceipt = page.getByRole('region', { name: /^Receipt \d+$/ });
+    await expect(vatReceipt).toContainText('VAT number GB123456789');
+    await expect(vatReceipt).toContainText('VAT at 20% included');
+    await expect(vatReceipt).toContainText('£7');
+    await settled(page);
+    await snap(page, testInfo, 'receipt-with-vat');
+
+    // The first receipt still says what it said.
+    await page.goto(`/receipts/${first}`);
+    await expect(page.getByRole('region', { name: /^Receipt \d+$/ })).not.toContainText('VAT');
+
+    await saveReceiptDetails(browser, '', null);
     await clearPaymentsAccount(owner);
   });
 });

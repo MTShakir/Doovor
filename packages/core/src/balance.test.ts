@@ -143,20 +143,20 @@ describe('a line of history', () => {
   const day = new Date('2026-09-15T09:00:00Z');
 
   it('says what a payment was for, how it was paid and what came back', () => {
-    expect(historyLine({ kind: 'payment', at: day, amountPence: 4200, method: 'cash', refundedPence: 0, pendingRefundPence: 0, lessonAt: day, creditMinutes: null })).toEqual({
+    expect(historyLine({ kind: 'payment', at: day, amountPence: 4200, method: 'cash', refundedPence: 0, pendingRefundPence: 0, hasReceipt: false, lessonAt: day, creditMinutes: null })).toEqual({
       title: 'Lesson on Tue 15 Sep',
       detail: 'Cash',
       amount: '£42',
     });
-    expect(historyLine({ kind: 'payment', at: day, amountPence: 38000, method: 'card', refundedPence: 0, pendingRefundPence: 0, lessonAt: null, creditMinutes: 600 })).toEqual({
+    expect(historyLine({ kind: 'payment', at: day, amountPence: 38000, method: 'card', refundedPence: 0, pendingRefundPence: 0, hasReceipt: false, lessonAt: null, creditMinutes: 600 })).toEqual({
       title: '10 hours of credit bought',
       detail: 'Card',
       amount: '£380',
     });
-    expect(historyLine({ kind: 'payment', at: day, amountPence: 4200, method: 'card', refundedPence: 4200, pendingRefundPence: 0, lessonAt: day, creditMinutes: null }).detail).toBe(
+    expect(historyLine({ kind: 'payment', at: day, amountPence: 4200, method: 'card', refundedPence: 4200, pendingRefundPence: 0, hasReceipt: false, lessonAt: day, creditMinutes: null }).detail).toBe(
       'Card, refunded',
     );
-    expect(historyLine({ kind: 'payment', at: day, amountPence: 4200, method: 'bank', refundedPence: 2100, pendingRefundPence: 0, lessonAt: day, creditMinutes: null }).detail).toBe(
+    expect(historyLine({ kind: 'payment', at: day, amountPence: 4200, method: 'bank', refundedPence: 2100, pendingRefundPence: 0, hasReceipt: false, lessonAt: day, creditMinutes: null }).detail).toBe(
       'Bank transfer, £21 refunded',
     );
   });
