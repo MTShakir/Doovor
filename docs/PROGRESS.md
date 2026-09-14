@@ -38,6 +38,10 @@ M3 Payments is in progress on branch `m3-payments`: M3-01 to M3-21 are built, wi
 | M3-20 | Receipts: email, sequential numbers, VAT lines only when registered, receipt page | PAY-08 | Done. Every payment received gets a receipt numbered in its Business's own series, with the name, address and VAT number frozen as they were, what was paid for, the amount and how it was paid, and the VAT in the price only for a Business registered for VAT. A job emails it once, and cash waits out its ten-minute undo window first. The owner sets the address and VAT number on the Money screen. The receipt page prints, and each payment in both histories links to its receipt (D-095). Snapshot tests cover the email with and without VAT; pgTAP covers numbering, VAT to the penny, frozen details and who reads receipts; end to end at both widths |
 | M3-21 | Money dashboard: week, month, tax year; paid, unpaid, credit sold, refunds | MNY-01 | Done. The Money screen opens with "Money in" for this week, this month or this tax year: paid by card, cash and bank transfer, unpaid lessons and fees, credit sold and refunds. Periods are days in London, and the tax year runs from 6 April to 5 April. Owners and managers see the whole Business; a school instructor sees their own lessons and no credit sold (D-096). Unit tests cover the 5 and 6 April boundary in London time, and summer time either side of midnight; pgTAP shows a payment at 23:59:59 on 5 April and cash at 00:00 on 6 April landing in different tax years, and who may read what; end to end at both widths |
 
+Fixed during M3:
+
+- The diary's view chips, on a diary opened without choosing a view, showed Week as white on grey on a phone, because each chip was given two sets of colours and the stylesheet picked one. Each chip now has one set per width, and the diary test that opens that page runs the accessibility check at both widths (DIA-03, D-009).
+
 ## M2 progress
 
 | Task | What | PRD | State |
