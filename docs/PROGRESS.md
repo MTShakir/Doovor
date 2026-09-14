@@ -10,7 +10,7 @@ M1 Instructor core is approved and merged to `main`, all 24 tasks, with its fift
 
 M2 Learners and bookings is approved and merged to `main`, and was pushed to staging on 13 September 2026.
 
-M3 Payments is in progress on branch `m3-payments`: M3-01 to M3-14 are built, with the Stripe test-mode halves of M3-08 to M3-10 waiting for the M3-23 run. The app now lives on `app.doovor.com` with the public site on `doovor.com` (D-084).
+M3 Payments is in progress on branch `m3-payments`: M3-01 to M3-15 are built, with the Stripe test-mode halves of M3-08 to M3-10 waiting for the M3-23 run. The app now lives on `app.doovor.com` with the public site on `doovor.com` (D-084).
 
 ## M3 progress
 
@@ -30,6 +30,7 @@ M3 Payments is in progress on branch `m3-payments`: M3-01 to M3-14 are built, wi
 | M3-12 | Ledger schema: `credit_accounts`, `credit_lots`, `credit_ledger` append-only, balance never below nothing | PAY-04, PAY-12 | Done. The ledger is the truth: a row moves its lot and its account by trigger, and nothing else can change either (D-085). A lesson cannot use more than there is, a lot cannot be given back more than was bought, a payment buys one lot once, and credit with one Business cannot be spent with another or held by anybody who is not its learner. pgTAP checks that every balance and every lot still equals its ledger after four hundred random moves, 177 applied and 223 refused. The learner, the Business's owners and managers, and the instructor who teaches the learner see it; nobody writes to it directly |
 | M3-13 | Package purchase: checkout, and a credit lot created by the webhook | PAY-04, PAY-12, R-11 | Done. Payments shows a learner their credit with each Business they learn with and the packages it sells; a package opens on a screen of its own with its price, price an hour, time limit and what credit is for, and is bought with a kept card or a new one. The learner has to ask for their lessons to start straight away, and is told what changing their mind within 14 days gives back (D-086). The webhook writes the payment, the lot and its purchase row once, from what the payment says it buys; money from somebody who does not learn with the Business is refunded, and an event from another Business's account changes nothing (D-087). acceptance-06 is green in pgTAP and through the route |
 | M3-14 | Credit in `create_booking` and `cancel_booking` | PAY-04, R-07, R-10 | Done. A lesson is paid from credit whenever there is enough for all of it, in the transaction that books it, oldest lots first, whoever books it, weekly slots included; nothing is held and no card is asked for (D-088). Cancelling in time, or by the instructor, gives every minute back to the lots it came from; late, the fee is kept from that credit, and the cancel warning, the notice and the pay screen say so in minutes rather than money. A request is paid from credit when it is made and gets it back when it is declined or lapses; a lesson made a different length pays for its new length. acceptance-03 is green in pgTAP and end to end at both widths |
+| M3-15 | Offline payments: cash or bank in two taps | PAY-05 | Done. An unpaid lesson in the instructor's diary has Mark paid; Cash or Bank transfer records it, and the lesson shows "Paid (cash)" or "Paid (bank)" in the diary and in the learner's own lessons. Undo takes a slip back out for ten minutes (D-089). A lesson held for a card is confirmed by it, and a card payment that lands afterwards is refunded. Requests, lessons called off and free lessons are refused, and only the lesson's instructor or somebody who manages bookings can record one. A package paid for in person is recorded from the learner card, which comes with balances (M3-16) |
 
 ## M2 progress
 
@@ -145,9 +146,9 @@ Decisions D-036 to D-050 were logged during this stretch. Two were security fixe
 
 | Suite | Result |
 |---|---|
-| Unit (Vitest) | 710 passed across 7 packages; `packages/core` and `packages/providers` both above the 90% line coverage gate |
-| Database (pgTAP) | 710 assertions in 56 files, all passing, and none of them depends on the date or the day of the week they run on (D-070); SQL lint clean |
-| End to end (Playwright) | 252 passed at 390 px and 1440 px on 14 September, none skipped, including acceptance-01, 02, 03, 06, 09 and 12 and the payment journeys for M3-05 to M3-14; green in CI on every push since 13 September |
+| Unit (Vitest) | 716 passed across 7 packages; `packages/core` and `packages/providers` both above the 90% line coverage gate |
+| Database (pgTAP) | 731 assertions in 57 files, all passing, including against a database an end to end run has left data in, and none of them depends on the date or the day of the week they run on (D-070); SQL lint clean |
+| End to end (Playwright) | 254 passed at 390 px and 1440 px on 14 September, none skipped, including acceptance-01, 02, 03, 06, 09 and 12 and the payment journeys for M3-05 to M3-15; green in CI on every push since 13 September |
 | Lint, typecheck, copy guard | Clean |
 | CI on GitHub | Read after every push. Green on c06c1e0 (14 September). The push before it failed on a pgTAP test that only passed from Thursday to Sunday, fixed in c06c1e0 |
 | Staging (hosted) | All 46 migrations applied, M2 pushed on 2026-09-13. Security Advisor: 0 errors, 39 warnings, 38 of them the expected `security definer` pattern (D-051) and one the dashboard switch for leaked password protection |

@@ -2324,6 +2324,10 @@ export type Database = {
         }
         Returns: string[]
       }
+      record_offline_payment: {
+        Args: { p_booking_id: string; p_method: string }
+        Returns: string
+      }
       request_account_deletion: { Args: { p_reason?: string }; Returns: string }
       reschedule_booking: {
         Args: {
@@ -2613,6 +2617,7 @@ export type Database = {
         Args: { p_today?: string }
         Returns: number
       }
+      undo_offline_payment: { Args: { p_payment_id: string }; Returns: string }
     }
     Enums: {
       booking_payment_mode:

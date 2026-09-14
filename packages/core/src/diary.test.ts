@@ -1,5 +1,14 @@
 import { describe, expect, it } from 'vitest';
-import { byDay, gapsBetween, isOff, lessonState, teachingMinutes, type DiaryLesson, type LessonFacts } from './diary.ts';
+import {
+  byDay,
+  gapsBetween,
+  isOff,
+  lessonState,
+  lessonStateLabel,
+  teachingMinutes,
+  type DiaryLesson,
+  type LessonFacts,
+} from './diary.ts';
 
 const standard: LessonFacts = { status: 'confirmed', paymentStatus: 'unpaid', kind: 'standard', source: 'instructor' };
 
@@ -47,6 +56,17 @@ describe('one word for a lesson (DIA-04, M1-19)', () => {
 
   it('says completed for one that is done and not paid for', () => {
     expect(lessonState({ ...standard, status: 'completed' })).toBe('completed');
+  });
+
+  it('says how a lesson paid in person was paid (PAY-05)', () => {
+    expect(lessonStateLabel({ ...standard, paymentStatus: 'paid_cash' })).toBe('Paid (cash)');
+    expect(lessonStateLabel({ ...standard, status: 'completed', paymentStatus: 'paid_bank' })).toBe('Paid (bank)');
+    // A card, credit, or anything that is not paid keeps the pill's usual word.
+    expect(lessonStateLabel({ ...standard, paymentStatus: 'paid_card' })).toBeUndefined();
+    expect(lessonStateLabel({ ...standard, paymentStatus: 'paid_credit' })).toBeUndefined();
+    expect(lessonStateLabel(standard)).toBeUndefined();
+    // A cancelled lesson is cancelled, whatever paid for it.
+    expect(lessonStateLabel({ ...standard, status: 'cancelled', paymentStatus: 'paid_cash' })).toBeUndefined();
   });
 });
 

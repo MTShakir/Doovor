@@ -1,7 +1,7 @@
 'use client';
 
 import { cancellationOutcome, cancellationWarning } from '@repo/core/cancellation';
-import { lessonState } from '@repo/core/diary';
+import { lessonState, lessonStateLabel } from '@repo/core/diary';
 import { formatPence } from '@repo/core/money';
 import { formatDate, formatMinutes, formatTime, todayInZone, utcToLocal } from '@repo/core/time';
 import { Button } from '@repo/ui/button';
@@ -123,7 +123,9 @@ export function MyLessonRow({ lesson, rules, now, canChange }: MyLessonRowProps)
           )}
         </span>
         <span className="flex shrink-0 flex-col items-end gap-1">
-          <StatusPill status={state} />
+          <StatusPill status={state}>
+            {lessonStateLabel({ status: lesson.status as never, paymentStatus: lesson.paymentStatus as never, kind: 'standard' })}
+          </StatusPill>
           <span className="text-small text-grey-700 tabular-nums">{formatPence(lesson.pricePence)}</span>
         </span>
       </div>

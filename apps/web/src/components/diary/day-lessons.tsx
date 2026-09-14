@@ -39,7 +39,7 @@ export function DayLessons({ lessons, gaps, now, showInstructor = false, canAnsw
   const [moved, setMoved] = useState<Record<string, Date>>({});
   const [dragging, setDragging] = useState<string | null>(null);
   const [over, setOver] = useState<number | null>(null);
-  const [sheet, setSheet] = useState<{ id: string; action: 'move' | 'cancel' } | null>(null);
+  const [sheet, setSheet] = useState<{ id: string; action: 'move' | 'cancel' | 'paid' } | null>(null);
   const holding = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const shown = lessons.map((lesson) => {
@@ -114,6 +114,7 @@ export function DayLessons({ lessons, gaps, now, showInstructor = false, canAnsw
                   canMarkNoShow={now.getTime() >= lesson.startsAt.getTime() + 15 * 60_000}
                   onComplete={() => { after('done', () => completeLesson({ bookingId: lesson.id })); }}
                   onNoShow={() => { after('no show', () => markNoShow({ bookingId: lesson.id })); }}
+                  onMarkPaid={rules ? () => { setSheet({ id: lesson.id, action: 'paid' }); } : undefined}
                 />
               </div>
               {gap ? (

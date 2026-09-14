@@ -91,6 +91,7 @@ export async function setBookingStatus(
  * | Wednesday | booking               |
  * | Thursday  | booking-requests      |
  * | Friday    | acceptance            |
+ * | Saturday  | offline-payments      |
  *
  * Within a weekday, each width takes its own week, because both widths run at once.
  */
@@ -594,4 +595,26 @@ export async function bookAsLearner(
       return booked.id;
     }),
   );
+}
+
+/** How a lesson was paid in person, if it was (PAY-05): the newest offline payment for it. */
+export async function offlinePaymentOn(
+  instructorName: string,
+  date: string,
+  time: string,
+): Promise<{ method: string; status: string; amountPence: number } | null> {
+  return withDatabase(async (sql) => {
+    const rows = await sql<{ method: string; status: string; amount_pence: number }[]>`
+      select p.method::text as method, p.status::text as status, p.amount_pence
+        from public.payments p
+        join public.bookings b on b.id = p.booking_id
+        join public.instructor_profiles i on i.id = b.instructor_id
+       where i.display_name = ${instructorName}
+         and p.provider = 'offline'
+         and b.starts_at = (${date}::date + ${time}::time) at time zone 'Europe/London'
+       order by p.created_at desc
+       limit 1`;
+    const found = rows[0];
+    return found ? { method: found.method, status: found.status, amountPence: found.amount_pence } : null;
+  });
 }
