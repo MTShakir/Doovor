@@ -3,6 +3,7 @@ import { z } from 'zod';
 import { serverEnv } from '@/env/server';
 import { chargeFee } from '@/jobs/fees';
 import { notifyAboutBooking } from '@/jobs/notify';
+import { notifyAboutPayment, notifyCreditLow } from '@/jobs/payment-notify';
 import { sendRefund } from '@/jobs/payments';
 import { sendReceipt } from '@/jobs/receipts';
 
@@ -34,9 +35,15 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     const refundId = typeof payload.refund_id === 'string' ? payload.refund_id : '';
     return NextResponse.json(await sendRefund(refundId));
   }
+  // Two jobs start from a payment received: its receipt, and telling people about it (M3-22).
   if (name === 'payment.received') {
     const paymentId = typeof payload.payment_id === 'string' ? payload.payment_id : '';
-    return NextResponse.json(await sendReceipt(paymentId));
+    return NextResponse.json({ receipt: await sendReceipt(paymentId), notices: await notifyAboutPayment(paymentId) });
+  }
+  if (name === 'credit.low') {
+    const businessId = typeof payload.business_id === 'string' ? payload.business_id : '';
+    const learnerId = typeof payload.learner_id === 'string' ? payload.learner_id : '';
+    return NextResponse.json(await notifyCreditLow(businessId, learnerId));
   }
   if (name === 'payment.fee_charge') {
     const bookingId = typeof payload.booking_id === 'string' ? payload.booking_id : '';

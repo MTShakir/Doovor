@@ -494,7 +494,10 @@ Jobs are Inngest functions in `apps/web/src/jobs`, served from `/api/inngest`. E
 | `payment.refund` | `refund/requested` | Sends the refund to Stripe with an idempotency key | PAY-07 |
 | `receipt-send` | `payment.received` | Issues the receipt, sleeping first for money recorded in person until its undo window has passed, and emails it under the key `receipt:{id}` | PAY-08 |
 | `fee-charge` | `payment.fee_charge` | Charges a late cancellation or no-show fee nothing has paid to the learner's kept card, with nobody there, under the key `fee:{booking}:{amount}`. A refused, expired or authentication-required card is recorded, which tells both sides; no card leaves the fee owed (D-093) | PAY-09 |
-| `payment.followups` | Webhook follow-up events | Receipt email, instructor notification, credit-low check | PAY-08, NTF-03 |
+| `payment-received-notices` | `payment.received` | Tells the learner (in the app and by push, since the receipt is their email) and the instructor, but not whoever marked cash paid. Money recorded in person waits out its undo window first (D-098) | NTF-03 |
+| `payment-overdue-sweep` | Cron, daily at 10:00 London | Tells the learner, the instructor and the school once about each lesson or fee still owed two days after it was due, looking back 30 days. A lesson booked to be paid in person asks the instructor to mark it paid rather than chasing the learner | NTF-03, PAY-06 |
+| `credit-low-notices` | `credit.low`, written when using credit leaves 2 hours or less | Tells the learner and their instructor what is left, once for each package bought | NTF-03 |
+| `daily-payment-summaries` | Cron, daily at 08:00 London | One summary of the day before for the owners and managers of each school that took money | NTF-03 |
 | `credit.expiry` | Cron, daily | Expires lots past `expires_at` with ledger rows | PAY-04 |
 | `badge.expiry` | Cron, daily at 08:00 London | Reminders at 60, 30 and 7 days, deduplicated by threshold. Expired badges drop out of search automatically because listing checks the date | INS-03 |
 | `booking.notices` | `booking.created`, `.accepted`, `.declined`, `.cancelled`, `.no_show`, `.disputed`, `.dispute_decided`, `.rescheduled`, `.completed`, `payment.charge_failed` | Reads who the lesson concerns, applies the catalogue and their settings, and writes one notification each | NTF-01, NTF-03, NTF-04 |

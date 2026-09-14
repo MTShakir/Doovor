@@ -47,6 +47,10 @@ export const notificationKinds = [
   'booking.dispute_decided',
   'payment.received',
   'payment.failed',
+  // Appendix B's "Payment failed or overdue", overdue half: a lesson or fee owed for two days.
+  'payment.overdue',
+  // Appendix B's "Payment received" for a school: one summary a day, not a message a payment.
+  'payment.daily_summary',
   'payment.requested',
   'lesson_record.added',
   'credit.low',
@@ -137,6 +141,21 @@ export const notificationCatalogue: Record<NotificationKind, NotificationSpec> =
     audiences: ['learner', 'instructor', 'school'],
     channels: PUSH_AND_EMAIL,
     essential: true,
+  },
+  'payment.overdue': {
+    kind: 'payment.overdue',
+    category: 'money',
+    audiences: ['learner', 'instructor', 'school'],
+    channels: PUSH_AND_EMAIL,
+    essential: true,
+  },
+  // A digest rather than a service message about somebody's own money, so it can be switched off.
+  'payment.daily_summary': {
+    kind: 'payment.daily_summary',
+    category: 'money',
+    audiences: ['school'],
+    channels: PUSH_AND_EMAIL,
+    essential: false,
   },
   // The payment link a learner is sent when a lesson paid for afterwards is marked done
   // (PAY-03, PRD 10.2 step 4). A service message: it is about money they owe.

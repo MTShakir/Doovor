@@ -62,6 +62,14 @@ export const paymentReceived = eventType('payment.received', {
   schema: staticSchema<{ payment_id: string; booking_id?: string | null }>(),
 });
 
+/**
+ * Using credit has left a learner 2 hours or less with a Business (NTF-03, M3-22). Who to tell,
+ * and what is left by the time they are told, is the database's to say.
+ */
+export const creditLow = eventType('credit.low', {
+  schema: staticSchema<{ business_id: string; learner_id: string; balance_minutes: number }>(),
+});
+
 /** A card set aside for a request, waiting to be taken or let go (R-12). */
 export const paymentAuthorised = eventType('payment.authorised', {
   schema: staticSchema<{ payment_id: string; booking_id: string }>(),

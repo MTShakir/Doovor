@@ -1,5 +1,5 @@
 import 'server-only';
-import { notificationCatalogue, type NotificationChannel } from '@repo/core/notifications';
+import { notificationCatalogue, type NotificationCategory, type NotificationChannel } from '@repo/core/notifications';
 import { getSupabaseServiceClient } from '@/lib/supabase/service';
 import {
   kindForEvent,
@@ -9,11 +9,33 @@ import {
   rowContextFor,
   type BookingEvent,
   type BookingNotice,
+  type NotificationRow,
 } from './booking-notices';
 
 export interface NotifyResult {
   /** How many rows were written. A repeat of the same event writes none (ARCHITECTURE 10). */
   written: number;
+}
+
+/** What each of these people has switched off for one group of notifications (NTF-04). */
+export async function mutedChannels(userIds: string[], category: NotificationCategory): Promise<Map<string, NotificationChannel[]>> {
+  const muted = new Map<string, NotificationChannel[]>();
+  if (userIds.length === 0) return muted;
+
+  const { data, error } = await getSupabaseServiceClient().rpc('system_notification_mutes', { p_user_ids: userIds, p_category: category });
+  if (error) throw new Error(`Could not read notification settings: ${error.message}`);
+  for (const row of data) {
+    muted.set(row.user_id, [...(muted.get(row.user_id) ?? []), row.channel]);
+  }
+  return muted;
+}
+
+/** Writes notifications, each once: a row whose key is already there is left alone. */
+export async function writeNotifications(rows: NotificationRow[]): Promise<number> {
+  if (rows.length === 0) return 0;
+  const { data, error } = await getSupabaseServiceClient().rpc('system_notify', { p_rows: rows });
+  if (error) throw new Error(`Could not write notifications: ${error.message}`);
+  return data;
 }
 
 /**
@@ -36,21 +58,7 @@ export async function notifyAboutBooking(event: BookingEvent): Promise<NotifyRes
   const kind = kindForEvent(event, notice);
   if (kind === null) return { written: 0 };
 
-  const mutes = await supabase.rpc('system_notification_mutes', {
-    p_user_ids: peopleInvolved(notice),
-    p_category: notificationCatalogue[kind].category,
-  });
-  if (mutes.error) throw new Error(`Could not read notification settings: ${mutes.error.message}`);
-
-  const muted = new Map<string, NotificationChannel[]>();
-  for (const row of mutes.data) {
-    muted.set(row.user_id, [...(muted.get(row.user_id) ?? []), row.channel]);
-  }
-
+  const muted = await mutedChannels(peopleInvolved(notice), notificationCatalogue[kind].category);
   const planned = planBookingNotifications({ event, notice, muted });
-  if (planned.length === 0) return { written: 0 };
-
-  const written = await supabase.rpc('system_notify', { p_rows: notificationRows(planned, rowContextFor(notice)) });
-  if (written.error) throw new Error(`Could not write notifications: ${written.error.message}`);
-  return { written: written.data };
+  return { written: await writeNotifications(notificationRows(planned, rowContextFor(notice))) };
 }

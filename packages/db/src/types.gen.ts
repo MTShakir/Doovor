@@ -2664,6 +2664,14 @@ export type Database = {
         Args: { p_older_than?: string }
         Returns: number
       }
+      system_credit_notice: {
+        Args: { p_business_id: string; p_learner_id: string }
+        Returns: Json
+      }
+      system_daily_payment_summaries: {
+        Args: { p_from: string; p_to: string }
+        Returns: Json
+      }
       system_drop_push_target: { Args: { p_id: string }; Returns: number }
       system_due_reminders: { Args: { p_within_hours?: number }; Returns: Json }
       system_expire_payment_holds: { Args: never; Returns: Json }
@@ -2703,6 +2711,8 @@ export type Database = {
         }[]
       }
       system_notify: { Args: { p_rows: Json }; Returns: number }
+      system_overdue_lessons: { Args: never; Returns: Json }
+      system_payment_notice: { Args: { p_payment_id: string }; Returns: Json }
       system_process_stripe_event: {
         Args: {
           p_account_id: string

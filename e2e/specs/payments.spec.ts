@@ -1077,9 +1077,17 @@ test.describe('receipts (PAY-08, M3-20)', () => {
     await payFromLessons(page, 'Tom Walsh', day, '11:00');
     const first = await paymentIdFor(await lessonIdAt('Tom Walsh', day, '11:00'));
     const sent = await page.request.post('/dev/events', { data: { name: 'payment.received', payload: { payment_id: first } } });
-    expect(await sent.json()).toMatchObject({ sent: true });
+    expect(await sent.json()).toMatchObject({ receipt: { sent: true }, notices: { written: 2 } });
     const firstReceipt = await receiptFor(first);
     expect(firstReceipt, 'the receipt was issued and emailed').toMatchObject({ vatPence: null, emailed: true });
+    // The instructor is told it arrived; the learner too, but not by a second email (NTF-03, M3-22).
+    expect(await notificationChannels('tom.walsh@example.com', 'payment.received', first)).toEqual(['in_app', 'push', 'email']);
+    expect(await notificationChannels(learner, 'payment.received', first)).toEqual(['in_app', 'push']);
+    await page.goto('/notifications');
+    const told = page.getByRole('article').filter({ hasText: 'Payment received' }).filter({ hasText: `${dayLabel(day)} at 11:00` });
+    await expect(told).toContainText(`£42 by card. ${dayLabel(day)} at 11:00 with Tom Walsh.`);
+    await settled(page);
+    await snap(page, testInfo, 'payment-received-notice');
 
     await page.goto('/app/learner/payments');
     const entry = page
@@ -1111,7 +1119,7 @@ test.describe('receipts (PAY-08, M3-20)', () => {
     await payFromLessons(page, 'Tom Walsh', day, '15:00');
     const second = await paymentIdFor(await lessonIdAt('Tom Walsh', day, '15:00'));
     expect(await (await page.request.post('/dev/events', { data: { name: 'payment.received', payload: { payment_id: second } } })).json()).toMatchObject({
-      sent: true,
+      receipt: { sent: true },
     });
     const secondReceipt = await receiptFor(second);
     expect(secondReceipt?.number, 'numbered one after another').toBe((firstReceipt?.number ?? 0) + 1);
