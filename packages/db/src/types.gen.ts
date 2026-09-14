@@ -289,6 +289,7 @@ export type Database = {
           created_at: string
           created_by: string | null
           credit_minutes: number
+          dispute_until: string | null
           ends_at: string
           expires_at: string | null
           fee_pence: number | null
@@ -321,6 +322,7 @@ export type Database = {
           created_at?: string
           created_by?: string | null
           credit_minutes?: number
+          dispute_until?: string | null
           ends_at: string
           expires_at?: string | null
           fee_pence?: number | null
@@ -353,6 +355,7 @@ export type Database = {
           created_at?: string
           created_by?: string | null
           credit_minutes?: number
+          dispute_until?: string | null
           ends_at?: string
           expires_at?: string | null
           fee_pence?: number | null
@@ -2512,6 +2515,7 @@ export type Database = {
       system_expire_payment_holds: { Args: never; Returns: Json }
       system_expire_requests: { Args: never; Returns: number }
       system_extend_recurrences: { Args: { p_weeks?: number }; Returns: number }
+      system_fee_to_charge: { Args: { p_booking_id: string }; Returns: Json }
       system_lessons_to_charge: {
         Args: { p_within_hours?: number }
         Returns: Json
@@ -2599,6 +2603,10 @@ export type Database = {
           p_provider_ref: string
         }
         Returns: Json
+      }
+      system_record_fee_charge_failed: {
+        Args: { p_booking_id: string; p_reason: string }
+        Returns: boolean
       }
       system_record_package_payment: {
         Args: {

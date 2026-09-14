@@ -258,3 +258,70 @@ describe('the email about a cancelled lesson (PAY-09, R-06, R-08, M3-18)', () =>
     expect(planned[1]?.body).toBe('Wed 16 Sep at 09:00 with Jack Taylor.');
   });
 });
+
+describe('a lesson nobody came to, and a fee charged to the kept card (PAY-09, R-09, M3-19)', () => {
+  const missed = { ...notice, status: 'no_show', version: 5, late_cancellation: true, fee_pence: 4200 };
+  const noShow = (payload: Record<string, unknown>) => ({
+    name: 'booking.no_show',
+    payload: {
+      booking_id: 'booking-1',
+      fee_pence: 4200,
+      fee_percent: 100,
+      kept_pence: 0,
+      card_refund_pence: 0,
+      offline_refund_pence: 0,
+      credit_returned_minutes: 0,
+      credit_kept_minutes: 0,
+      charging: false,
+      ...payload,
+    },
+  });
+
+  it('tells the learner, the instructor and the school, and the learner why a fee is kept', () => {
+    const planned = planBookingNotifications({ event: noShow({ kept_pence: 4200 }), notice: { ...missed, payment_status: 'paid_card' } });
+
+    expect(planned.map((one) => [one.userId, one.kind])).toEqual([
+      ['learner-1', 'booking.no_show'],
+      ['instructor-1', 'booking.no_show'],
+      ['manager-1', 'booking.no_show'],
+    ]);
+    expect(planned[0]?.title).toBe('Marked as a no-show');
+    expect(planned[0]?.channels).toContain('email');
+    expect(planned[0]?.body).toBe(
+      'Wed 16 Sep at 09:00 with Sarah Khan. Missing a lesson costs the full price, as cancelling late does, so the £42 you paid is kept as the fee.',
+    );
+    expect(planned[1]?.title).toBe('Jack Taylor did not turn up');
+    expect(planned[1]?.body).toBe('Wed 16 Sep at 09:00 with Jack Taylor. The £42 they paid is kept as the fee.');
+  });
+
+  it('says a fee nothing paid is being charged to the saved card', () => {
+    const planned = planBookingNotifications({ event: noShow({ charging: true }), notice: missed });
+    expect(planned[0]?.body).toContain('so the £42 fee is being charged to your saved card.');
+  });
+
+  it('says so for a late cancellation too', () => {
+    const planned = planBookingNotifications({
+      event: {
+        name: 'booking.cancelled',
+        payload: { by: 'learner', late: true, fee_pence: 4200, kept_pence: 0, charging: true, window_hours: 48, fee_percent: 100, minutes_before: 600 },
+      },
+      notice: { ...notice, status: 'cancelled', late_cancellation: true, fee_pence: 4200 },
+    });
+    expect(planned[0]?.body).toContain('so the £42 fee is being charged to your saved card.');
+  });
+
+  it('asks the learner to pay a fee the card would not pay, without telling them to keep a lesson', () => {
+    const failed = { name: 'payment.charge_failed', payload: { booking_id: 'booking-1', reason: 'declined', fee: true } };
+    const planned = planBookingNotifications({ event: failed, notice: { ...missed, payment_status: 'failed' } });
+
+    expect(planned[0]?.title).toBe('A payment did not go through');
+    expect(planned[0]?.body).toBe(
+      'Wed 16 Sep at 09:00 with Sarah Khan. The £42 no-show fee could not be charged to your saved card. The card was refused. Pay it now.',
+    );
+    expect(planned[0]?.link).toBe('/app/learner/pay/booking-1');
+    expect(planned[1]?.body).toBe('Wed 16 Sep at 09:00 with Jack Taylor. The £42 no-show fee could not be charged. The card was refused.');
+
+    const late = planBookingNotifications({ event: failed, notice: { ...missed, status: 'cancelled' } });
+    expect(late[1]?.body).toContain('The £42 late cancellation fee could not be charged.');
+  });
+});

@@ -77,15 +77,14 @@ async function Balances() {
           <OwedLessons
             balance={balance}
             action={
-              // Paid on screen where the Business takes cards, and in person where it does not. A
-              // late cancellation fee is paid in person for now: charging it to a card is M3-19.
+              // Paid on screen where the Business takes cards, and in person where it does not. A fee
+              // is paid the same way as a lesson (PAY-09).
               business.takesCards
-                ? (owed) =>
-                    owed.lateFee ? null : (
-                      <Button asChild>
-                        <Link href={`/app/learner/pay/${owed.lesson.id}`}>Pay {formatPence(owed.amountPence)}</Link>
-                      </Button>
-                    )
+                ? (owed) => (
+                    <Button asChild>
+                      <Link href={`/app/learner/pay/${owed.lesson.id}`}>Pay {formatPence(owed.amountPence)}</Link>
+                    </Button>
+                  )
                 : undefined
             }
           />

@@ -31,7 +31,8 @@ type Payable = CheckoutLesson & { accountId: string; request: boolean };
 /**
  * Checks the lesson can be paid for before any money is asked for, and holds the slot for a
  * lesson that is on (R-10). A request holds its own slot until it is answered, and is paid for
- * with an authorisation rather than a payment (R-12).
+ * with an authorisation rather than a payment (R-12). A fee for a lesson called off late or nobody
+ * came to has no slot to hold (PAY-09).
  */
 async function payableLesson(bookingId: string): Promise<Result<Payable>> {
   const lesson = await checkoutLesson(bookingId);
@@ -41,7 +42,7 @@ async function payableLesson(bookingId: string): Promise<Result<Payable>> {
   if (lesson.accountId === null) return err('NOT_ALLOWED', 'This instructor cannot take card payments yet.');
 
   const request = lesson.status === 'requested';
-  if (!request) {
+  if (!request && lesson.feeOwed === null) {
     const supabase = await createSupabaseServerClient();
     const held = await supabase.rpc('hold_booking_for_payment', { p_booking_id: lesson.bookingId });
     if (held.error) return err(parsePostgresError(held.error).code);
@@ -61,6 +62,17 @@ async function recordAttempt(bookingId: string, intentId: string, amountPence: n
     p_provider_ref: intentId,
     p_amount_pence: amountPence,
   });
+}
+
+/** What a payment says it is for. A fee says which, so the provider's records do too. */
+function metadataFor(lesson: Payable): Record<string, string> {
+  const base = { booking_id: lesson.bookingId, business_id: lesson.businessId };
+  return lesson.feeOwed === null ? base : { ...base, fee: lesson.status };
+}
+
+/** The start of an attempt's key: a fee is not the lesson, so paying one never reuses a lesson's attempt. */
+function attemptFor(lesson: Payable): string {
+  return `${lesson.feeOwed === null ? 'booking' : 'fee'}:${lesson.bookingId}`;
 }
 
 /**
@@ -97,15 +109,15 @@ export async function startCheckout(input: unknown): Promise<Result<Checkout>> {
   const keep = parsed.data.saveCard ? 'keep' : 'once';
   const intent = await provider.createCheckoutIntent({
     accountId: lesson.accountId,
-    amountPence: lesson.pricePence,
+    amountPence: lesson.amountPence,
     customerId: customer.data.customerId,
     holdOnly: lesson.request,
     savePaymentMethod: parsed.data.saveCard,
-    metadata: { booking_id: lesson.bookingId, business_id: lesson.businessId },
+    metadata: metadataFor(lesson),
     // One attempt per version of this lesson and per choice about the card: a retry reuses the
     // same payment (R-11), and changing one's mind about keeping the card is a new attempt,
     // because the provider refuses the same key with different instructions.
-    idempotencyKey: `booking:${lesson.bookingId}:${String(lesson.pricePence)}:${keep}:${lesson.request ? 'hold' : 'take'}`,
+    idempotencyKey: `${attemptFor(lesson)}:${String(lesson.amountPence)}:${keep}:${lesson.request ? 'hold' : 'take'}`,
     statementDescriptor: 'LESSON',
   });
   if (!intent.ok || intent.data.clientSecret === null) {
@@ -157,12 +169,12 @@ export async function payWithSavedCard(
     accountId: kept.accountId,
     customerId: kept.customerId,
     paymentMethodId: card.paymentMethodId,
-    amountPence: lesson.pricePence,
+    amountPence: lesson.amountPence,
     holdOnly: lesson.request,
     onSession: true,
-    metadata: { booking_id: lesson.bookingId, business_id: lesson.businessId },
+    metadata: metadataFor(lesson),
     // Pressing the button twice pays once (R-11).
-    idempotencyKey: `booking:${lesson.bookingId}:${String(lesson.pricePence)}:card:${card.paymentMethodId}:${lesson.request ? 'hold' : 'take'}`,
+    idempotencyKey: `${attemptFor(lesson)}:${String(lesson.amountPence)}:card:${card.paymentMethodId}:${lesson.request ? 'hold' : 'take'}`,
   });
 
   if (!charged.ok) {
@@ -195,6 +207,7 @@ export async function payWithSavedCard(
 
   revalidatePath(`/app/learner/pay/${lesson.bookingId}`);
   revalidatePath('/app/learner/lessons');
+  revalidatePath('/app/learner/payments');
   if (serverEnv.PAYMENTS_PROVIDER === 'stripe') return ok({ status: 'confirming' });
   return ok({ status: lesson.request ? 'authorised' : 'paid' });
 }

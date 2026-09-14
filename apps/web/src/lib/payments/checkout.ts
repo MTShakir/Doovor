@@ -20,8 +20,12 @@ export interface CheckoutLesson {
   requestExpiresAt: string | null;
   /** Their card is authorised for this lesson: set aside by the bank, not yet taken (R-12). */
   authorised: boolean;
-  /** The fee for calling it off late, for a lesson that was (R-06). */
+  /** The fee for calling it off late, or not coming, for a lesson that was (R-06, R-09). */
   feePence: number;
+  /** A fee nothing has paid, which is what paying now pays (PAY-09, M3-19). */
+  feeOwed: 'late_cancellation' | 'no_show' | null;
+  /** What paying now costs: the fee when one is owed, and the lesson otherwise. */
+  amountPence: number;
   /** Money paid for it, as opposed to credit: what a fee can be kept from (PAY-09, M3-18). */
   paidPence: number;
   /** How that money was paid: to a card, or in person. */
@@ -59,6 +63,15 @@ export async function checkoutLesson(bookingId: string): Promise<CheckoutLesson 
   const back = (refunds.data ?? []).filter((one) => one.kind !== 'credit');
 
   const paidStatuses = ['paid_card', 'paid_cash', 'paid_bank', 'paid_credit'];
+  const feePence = data.fee_pence ?? 0;
+  const feeOwed =
+    feePence > 0 && taken.length === 0 && (data.payment_status === 'unpaid' || data.payment_status === 'failed')
+      ? data.status === 'no_show'
+        ? 'no_show'
+        : data.status === 'cancelled'
+          ? 'late_cancellation'
+          : null
+      : null;
   return {
     bookingId: data.id,
     businessId: data.business_id,
@@ -76,7 +89,9 @@ export async function checkoutLesson(bookingId: string): Promise<CheckoutLesson 
     holdExpiresAt: data.hold_expires_at,
     requestExpiresAt: data.status === 'requested' ? data.expires_at : null,
     authorised: (payments.data ?? []).some((one) => one.status === 'authorised'),
-    feePence: data.fee_pence ?? 0,
+    feePence,
+    feeOwed,
+    amountPence: feeOwed === null ? data.price_pence : feePence,
     paidPence: taken.reduce((sum, one) => sum + one.amount_pence, 0),
     paidBy: taken.length === 0 ? null : taken.some((one) => one.method === 'card') ? 'card' : 'in_person',
     refundPence: back.reduce((sum, one) => sum + one.amount_pence, 0),

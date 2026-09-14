@@ -1,4 +1,4 @@
-import { expect, test, type Page } from '@playwright/test';
+import { expect, test, type Browser, type Page, type TestInfo } from '@playwright/test';
 import { authFile, roles } from '../support/accounts';
 import {
   acceptRequests,
@@ -11,6 +11,7 @@ import {
   enablePayments,
   expireHoldsNow,
   finishedLessonOwed,
+  forgetKeptCards,
   giveCredit,
   holdPaymentsBusiness,
   lessonEvents,
@@ -867,5 +868,159 @@ test.describe('calling off a lesson that was paid for (PAY-09, R-06, R-08, M3-18
 
       await clearPaymentsAccount(owner);
     });
+  });
+});
+
+test.describe('fees for lessons nobody came to (PAY-09, R-09, M3-19)', () => {
+  const owner = roles.schoolOwner.email;
+
+  /** Emma Clarke's own learners, one for each width, as in the cancellation tests above. */
+  const learnerFor = (project: string) =>
+    project === 'mobile'
+      ? { email: 'isla.roberts@example.com', name: 'Isla Roberts' }
+      : { email: 'amelia.evans@example.com', name: 'Amelia Evans' };
+
+  /** A day in the past in London, one for each width, early, before the seed's first lesson. */
+  const pastDay = (project: string): string =>
+    new Intl.DateTimeFormat('en-CA', { timeZone: 'Europe/London' }).format(
+      new Date(Date.now() - (project === 'mobile' ? 1 : 2) * 24 * 3_600_000),
+    );
+
+  /** Emma Clarke marks a lesson as a no-show from her diary, once the diary is listening. */
+  const markNoShow = async (browser: Browser, day: string, hour: string, name: string, testInfo: TestInfo) => {
+    const context = await browser.newContext({ storageState: authFile('schoolInstructor') });
+    const diary = await context.newPage();
+    await diary.goto(`/app/instructor/diary?view=day&date=${day}`);
+    const lesson = diary.getByRole('article', { name: `${hour} ${name}` });
+    await expect(lesson.getByRole('button', { name: 'No show' })).toBeVisible();
+    await expect(diary.locator('[data-diary-live="on"]')).toBeAttached();
+    await lesson.getByRole('button', { name: 'No show' }).click();
+    await expect(diary.getByText('Marked as no show')).toBeVisible();
+    await settled(diary);
+    await snap(diary, testInfo, `no-show-${hour.replace(':', '')}`);
+    await context.close();
+  };
+
+  test('a no-show with no card kept owes the fee, and the learner pays it on screen', async ({ page, browser }, testInfo) => {
+    test.setTimeout(150_000);
+    const { email: learner, name } = learnerFor(testInfo.project.name);
+    const day = pastDay(testInfo.project.name);
+    const hour = '05:00';
+    await enablePayments(owner, `fake_acct_noshow_${testInfo.project.name}_${String(Date.now())}`);
+    await forgetKeptCards(learner, owner);
+    await clearNotifications(learner);
+    await bookLesson('Emma Clarke', learner, day, hour);
+    const bookingId = await lessonIdAt('Emma Clarke', day, hour);
+
+    await markNoShow(browser, day, hour, name, testInfo);
+
+    // Nothing paid, and no card to charge: the fee is owed (PAY-06).
+    const [missed] = await lessonEvents(bookingId, 'booking.no_show');
+    expect(missed?.payload).toMatchObject({ fee_pence: 4200, fee_percent: 100, charging: false });
+    expect((await lessonMoney(bookingId)).paymentStatus).toBe('unpaid');
+    expect((await page.request.post('/dev/events', { data: missed })).status()).toBe(200);
+
+    await signInThroughForm(page, learner, { next: '/notifications' });
+    const notice = page.getByRole('article').filter({ hasText: 'Marked as a no-show' }).filter({ hasText: `${dayLabel(day)} at ${hour}` });
+    await expect(notice).toContainText('Missing a lesson costs the full price, as cancelling late does, so a fee of £42 is owed.');
+
+    // Owed in the balance, with a way to pay it where the Business takes cards.
+    await page.goto('/app/learner/payments');
+    const owed = page
+      .getByRole('region', { name: 'Balance with Quayside Driving School' })
+      .getByRole('list', { name: 'Lessons owed for' })
+      .getByRole('listitem')
+      .filter({ hasText: `${dayLabel(day)} at ${hour}` });
+    await expect(owed).toContainText('No-show fee, with Emma Clarke');
+    await expectAccessible(page);
+    await snap(page, testInfo, 'no-show-fee-owed');
+
+    await expect(async () => {
+      await owed.getByRole('link', { name: 'Pay £42' }).click();
+      await page.waitForURL(/\/app\/learner\/pay\//, { timeout: 5000 });
+    }).toPass({ timeout: 20_000 });
+    const checkout = page.getByRole('region', { name: /at \d\d:\d\d$/ });
+    await expect(checkout).toContainText('This lesson was marked as a no-show, which costs what cancelling late does. The £42 fee is still to pay.');
+    await expectAccessible(page);
+    await snap(page, testInfo, 'no-show-fee-pay');
+
+    await expect(async () => {
+      await checkout.getByRole('button', { name: 'Pay £42' }).click();
+      await expect(checkout.getByRole('button', { name: 'Pay with a test card' })).toBeVisible({ timeout: 10_000 });
+    }).toPass({ timeout: 40_000 });
+    await checkout.getByRole('button', { name: 'Pay with a test card' }).click();
+    await expect(page.getByText('Fee paid')).toBeVisible();
+    await expect(checkout).toContainText('The £42 you paid was kept as the no-show fee.', { timeout: 30_000 });
+
+    expect(await lessonMoney(bookingId)).toEqual({
+      paymentStatus: 'paid_card',
+      payments: [{ method: 'card', status: 'paid', amountPence: 4200, refundedPence: 0 }],
+      refunds: [],
+    });
+
+    await clearPaymentsAccount(owner);
+  });
+
+  test('a no-show fee is charged to the card the learner keeps with the Business', async ({ page, browser }, testInfo) => {
+    test.setTimeout(180_000);
+    const { email: learner, name } = learnerFor(testInfo.project.name);
+    const day = pastDay(testInfo.project.name);
+    const hour = '06:30';
+    await enablePayments(owner, `fake_acct_kept_fee_${testInfo.project.name}_${String(Date.now())}`);
+    await forgetKeptCards(learner, owner);
+    await clearNotifications(learner);
+
+    // First a lesson paid with a card the learner chose to keep, told it can be charged a fee.
+    const later = new Intl.DateTimeFormat('en-CA', { timeZone: 'Europe/London' }).format(new Date(Date.now() + 9 * 24 * 3_600_000));
+    // Both widths run at once with Emma Clarke's diary, so each takes its own time.
+    const laterHour = testInfo.project.name === 'mobile' ? '05:00' : '06:30';
+    await bookLesson('Emma Clarke', learner, later, laterHour);
+    await signInThroughForm(page, learner, { next: '/app/learner/lessons' });
+    const upcoming = page
+      .getByRole('article')
+      .filter({ hasText: `${dayLabel(later)} at ${laterHour}` })
+      .filter({ hasText: 'Emma Clarke' });
+    await expect(async () => {
+      await upcoming.getByRole('link', { name: /^Pay £/ }).click();
+      await page.waitForURL(/\/app\/learner\/pay\//, { timeout: 5000 });
+    }).toPass({ timeout: 20_000 });
+    const checkout = page.getByRole('region', { name: /at \d\d:\d\d$/ });
+    const keep = checkout.getByRole('checkbox', { name: /Save this card for next time/ });
+    await expect(checkout).toContainText('can charge it a late cancellation or no-show fee under its cancellation policy');
+    await keep.click();
+    await expect(keep).toBeChecked();
+    await expect(async () => {
+      await checkout.getByRole('button', { name: /^Pay £/ }).click();
+      await expect(checkout.getByRole('button', { name: 'Pay with a test card' })).toBeVisible({ timeout: 10_000 });
+    }).toPass({ timeout: 40_000 });
+    await checkout.getByRole('button', { name: 'Pay with a test card' }).click();
+    await expect(checkout).toContainText('That is paid for, and your lesson is confirmed.', { timeout: 30_000 });
+
+    // Then a lesson nobody came to.
+    await bookLesson('Emma Clarke', learner, day, hour);
+    const bookingId = await lessonIdAt('Emma Clarke', day, hour);
+    await markNoShow(browser, day, hour, name, testInfo);
+
+    const [missed] = await lessonEvents(bookingId, 'booking.no_show');
+    expect(missed?.payload).toMatchObject({ fee_pence: 4200, charging: true });
+    const [charge] = await lessonEvents(bookingId, 'payment.fee_charge');
+    expect(charge, 'the fee job was asked to charge it').toBeDefined();
+    const charged = await page.request.post('/dev/events', { data: charge });
+    expect(await charged.json()).toEqual({ charged: true });
+    expect(await lessonMoney(bookingId)).toEqual({
+      paymentStatus: 'paid_card',
+      payments: [{ method: 'card', status: 'paid', amountPence: 4200, refundedPence: 0 }],
+      refunds: [],
+    });
+
+    expect((await page.request.post('/dev/events', { data: missed })).status()).toBe(200);
+    await page.goto('/notifications');
+    await expect(
+      page.getByRole('article').filter({ hasText: 'Marked as a no-show' }).filter({ hasText: `${dayLabel(day)} at ${hour}` }),
+    ).toContainText('so the £42 fee is being charged to your saved card.');
+    await settled(page);
+    await snap(page, testInfo, 'no-show-fee-charged');
+
+    await clearPaymentsAccount(owner);
   });
 });

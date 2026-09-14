@@ -33,6 +33,8 @@ export interface PayLessonProps {
   request: boolean;
   /** True when this environment has a real payments provider behind it. */
   live: boolean;
+  /** Paying a late cancellation or no-show fee, not a lesson (PAY-09, M3-19). */
+  fee?: boolean;
 }
 
 /** How long to keep looking for the webhook before leaving the learner with a message instead. */
@@ -46,7 +48,7 @@ const CONFIRM_POLLS = 15;
  * authorises the card instead of charging it. Either way what happened is written down by the
  * webhook, never by this screen.
  */
-export function PayLesson({ bookingId, pricePence, businessName, savedCards, request, live }: PayLessonProps) {
+export function PayLesson({ bookingId, pricePence, businessName, savedCards, request, live, fee = false }: PayLessonProps) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
@@ -58,7 +60,7 @@ export function PayLesson({ bookingId, pricePence, businessName, savedCards, req
 
   const price = formatPence(pricePence);
   const verb = request ? 'Authorise' : 'Pay';
-  const done = request ? 'Card authorised' : 'Lesson paid for';
+  const done = request ? 'Card authorised' : fee ? 'Fee paid' : 'Lesson paid for';
   const card = savedCards.find((one) => one.paymentMethodId === chosen) ?? savedCards[0];
 
   // The money is taken and the webhook is on its way. The page says paid once it lands, which
@@ -126,7 +128,11 @@ export function PayLesson({ bookingId, pricePence, businessName, savedCards, req
   if (confirming) {
     return (
       <p className="text-body text-ink" role="status">
-        {request ? 'Card authorised. Sending your request, which takes a few seconds.' : 'Payment taken. Confirming your lesson, which takes a few seconds.'}
+        {request
+          ? 'Card authorised. Sending your request, which takes a few seconds.'
+          : fee
+            ? 'Payment taken. Recording it, which takes a few seconds.'
+            : 'Payment taken. Confirming your lesson, which takes a few seconds.'}
       </p>
     );
   }
@@ -175,7 +181,7 @@ export function PayLesson({ bookingId, pricePence, businessName, savedCards, req
             checked={saveCard}
             onCheckedChange={(value) => { setSaveCard(value === true); }}
             label="Save this card for next time"
-            description={`${businessName} keeps it, so your next lesson takes one press. You can remove it in Payments.`}
+            description={`${businessName} keeps it, so your next lesson takes one press, and can charge it a late cancellation or no-show fee under its cancellation policy. You can remove it in Payments.`}
           />
           <Button width="responsive" size="lg" pending={pending} onClick={start}>
             <CreditCard className="size-5" aria-hidden />

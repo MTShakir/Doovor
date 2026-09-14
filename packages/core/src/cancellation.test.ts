@@ -5,6 +5,7 @@ import {
   cancellationWarning,
   cancelledMoneyWords,
   isLateCancellation,
+  noShowMoneyWords,
   noShowOutcome,
   type CancelActor,
   type CancelledMoney,
@@ -267,6 +268,7 @@ describe('what the people told about a cancellation read afterwards (acceptance-
     offlineRefundPence: 0,
     creditReturnedMinutes: 0,
     creditKeptMinutes: 0,
+    charging: false,
     policy: null,
   };
   const policy = { minutesBefore: 24 * 60 + 17, windowHours: 48, lateFeePercent: 100 };
@@ -321,5 +323,57 @@ describe('what the people told about a cancellation read afterwards (acceptance-
     expect(words({ creditReturnedMinutes: 90 })).toBe('1 hour 30 minutes of credit is back.');
     expect(words({}, business)).toBe('');
     expect(words({ by: 'instructor' })).toBe('');
+  });
+});
+
+describe('the fee charged to a kept card, and lessons nobody came to (PAY-09, R-09, M3-19)', () => {
+  const nothing = {
+    feePence: 0,
+    keptPence: 0,
+    cardRefundPence: 0,
+    offlineRefundPence: 0,
+    creditReturnedMinutes: 0,
+    creditKeptMinutes: 0,
+    charging: false,
+  };
+  const learner = { kind: 'learner' } as const;
+  const business = { kind: 'business', learnerName: 'Jack Taylor' } as const;
+
+  it('says a late fee nothing paid is being charged to the saved card, rather than owed', () => {
+    const late = { ...nothing, by: 'learner' as const, late: true, feePence: 4200, charging: true, policy: { minutesBefore: 600, windowHours: 48, lateFeePercent: 100 } };
+
+    expect(cancelledMoneyWords(late, learner, formatPence).join(' ')).toBe(
+      'You cancelled 10 hours before it started. Cancelling less than 48 hours before a lesson costs the full price, so the £42 fee is being charged to your saved card.',
+    );
+    expect(cancelledMoneyWords(late, business, formatPence)).toEqual(['Jack Taylor cancelled late, so the £42 fee is being charged to their saved card.']);
+  });
+
+  it('tells a learner nobody saw that missing a lesson costs what cancelling late does, and what paid it', () => {
+    const words = (money: Partial<typeof nothing> & { lateFeePercent?: number | null }, reader: typeof learner | typeof business = learner) =>
+      noShowMoneyWords({ ...nothing, lateFeePercent: 100, ...money }, reader, formatPence).join(' ');
+
+    expect(words({ feePence: 4200, keptPence: 4200 })).toBe('Missing a lesson costs the full price, as cancelling late does, so the £42 you paid is kept as the fee.');
+    expect(words({ feePence: 2100, keptPence: 2100, cardRefundPence: 2100, lateFeePercent: 50 })).toBe(
+      'Missing a lesson costs half the price, as cancelling late does, so £21 of what you paid is kept as the fee and £21 is going back to your card.',
+    );
+    expect(words({ feePence: 4200, creditKeptMinutes: 60 })).toBe('Missing a lesson costs the full price, as cancelling late does, so 1 hour of your credit is kept as the fee.');
+    expect(words({ feePence: 4200, charging: true })).toBe('Missing a lesson costs the full price, as cancelling late does, so the £42 fee is being charged to your saved card.');
+    expect(words({ feePence: 4200 })).toBe('Missing a lesson costs the full price, as cancelling late does, so a fee of £42 is owed.');
+    expect(words({ feePence: 4200, lateFeePercent: null })).toBe('A fee of £42 is owed.');
+  });
+
+  it('tells the Business what came of it, without the policy', () => {
+    expect(noShowMoneyWords({ ...nothing, lateFeePercent: 100, feePence: 4200, keptPence: 4200 }, business, formatPence)).toEqual([
+      'The £42 they paid is kept as the fee.',
+    ]);
+    expect(noShowMoneyWords({ ...nothing, lateFeePercent: 100, feePence: 4200, charging: true }, business, formatPence)).toEqual([
+      'The £42 fee is being charged to their saved card.',
+    ]);
+  });
+
+  it('says there is no charge when the policy keeps nothing, and gives back what was paid', () => {
+    expect(noShowMoneyWords({ ...nothing, lateFeePercent: 0 }, learner, formatPence)).toEqual(['There is no charge.']);
+    expect(noShowMoneyWords({ ...nothing, lateFeePercent: 0, cardRefundPence: 4200 }, learner, formatPence)).toEqual(['£42 is going back to your card.']);
+    expect(noShowMoneyWords({ ...nothing, lateFeePercent: 0 }, business, formatPence)).toEqual([]);
   });
 });

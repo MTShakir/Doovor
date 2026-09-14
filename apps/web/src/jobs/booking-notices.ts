@@ -7,7 +7,13 @@
  * `dispatch.ts` is; `notify.ts` wires it to the real ones.
  */
 
-import { cancelledMoneyWords, type CancelActor, type CancelledMoney } from '@repo/core/cancellation';
+import {
+  cancelledMoneyWords,
+  noShowMoneyWords,
+  type CancelActor,
+  type CancelledMoney,
+  type NoShowMoney,
+} from '@repo/core/cancellation';
 import { formatPence } from '@repo/core/money';
 import {
   planNotifications,
@@ -59,6 +65,8 @@ export function kindForEvent(event: BookingEvent, notice: BookingNotice): Notifi
       return 'booking.answered';
     case 'booking.cancelled':
       return 'booking.cancelled';
+    case 'booking.no_show':
+      return 'booking.no_show';
     case 'booking.rescheduled':
       return 'booking.rescheduled';
     // A lesson paid for afterwards asks for the money when it is marked done (PAY-03, M3-10).
@@ -87,6 +95,20 @@ function numberIn(payload: Record<string, unknown>, key: string): number | null 
   return typeof value === 'number' && Number.isFinite(value) ? value : null;
 }
 
+/** What happened to a lesson's money, as the event that called it off or marked it records it. */
+function feeMoney(event: BookingEvent, notice: BookingNotice) {
+  const { payload } = event;
+  return {
+    feePence: numberIn(payload, 'fee_pence') ?? notice.fee_pence ?? 0,
+    keptPence: numberIn(payload, 'kept_pence') ?? 0,
+    cardRefundPence: numberIn(payload, 'card_refund_pence') ?? 0,
+    offlineRefundPence: numberIn(payload, 'offline_refund_pence') ?? 0,
+    creditReturnedMinutes: numberIn(payload, 'credit_returned_minutes') ?? 0,
+    creditKeptMinutes: numberIn(payload, 'credit_kept_minutes') ?? 0,
+    charging: payload.charging === true,
+  };
+}
+
 /**
  * What a cancellation did about money, as its event records it (M3-18). An event written before
  * the event said all of this falls back on what the lesson says, and on saying less.
@@ -98,17 +120,22 @@ function cancelledMoney(event: BookingEvent, notice: BookingNotice): CancelledMo
   const windowHours = numberIn(payload, 'window_hours');
   const lateFeePercent = numberIn(payload, 'fee_percent');
   return {
+    ...feeMoney(event, notice),
     by,
     late: typeof payload.late === 'boolean' ? payload.late : notice.late_cancellation === true,
-    feePence: numberIn(payload, 'fee_pence') ?? notice.fee_pence ?? 0,
-    keptPence: numberIn(payload, 'kept_pence') ?? 0,
-    cardRefundPence: numberIn(payload, 'card_refund_pence') ?? 0,
-    offlineRefundPence: numberIn(payload, 'offline_refund_pence') ?? 0,
-    creditReturnedMinutes: numberIn(payload, 'credit_returned_minutes') ?? 0,
-    creditKeptMinutes: numberIn(payload, 'credit_kept_minutes') ?? 0,
     policy:
       minutesBefore !== null && windowHours !== null && lateFeePercent !== null ? { minutesBefore, windowHours, lateFeePercent } : null,
   };
+}
+
+/** What marking a lesson as a no-show did about money, as its event records it (R-09, M3-19). */
+function noShowMoney(event: BookingEvent, notice: BookingNotice): NoShowMoney {
+  return { ...feeMoney(event, notice), lateFeePercent: numberIn(event.payload, 'fee_percent') };
+}
+
+/** Which fee a charge was for, by what became of the lesson. */
+function feeName(notice: BookingNotice): string {
+  return notice.status === 'no_show' ? 'no-show fee' : 'late cancellation fee';
 }
 
 /** Sentences one after another, each closed, so a reason typed without a full stop still reads right. */
@@ -127,7 +154,12 @@ function detailFor(event: BookingEvent, notice: BookingNotice): string | undefin
   }
   if (event.name === 'payment.charge_failed') {
     const reason = typeof event.payload.reason === 'string' ? event.payload.reason : '';
-    return chargeFailures[reason] ?? 'The card could not be charged.';
+    const why = chargeFailures[reason] ?? 'The card could not be charged.';
+    // A fee, rather than a lesson charged the day before (PAY-09, M3-19).
+    if (event.payload.fee === true && notice.fee_pence) {
+      return sentences([`The ${formatPence(notice.fee_pence)} ${feeName(notice)} could not be charged`, why]);
+    }
+    return why;
   }
   const reason = notice.cancel_reason?.trim();
   if (event.name === 'booking.accepted') return 'It is in the diary';
@@ -135,6 +167,9 @@ function detailFor(event: BookingEvent, notice: BookingNotice): string | undefin
   if (event.name === 'booking.cancelled') {
     const money = cancelledMoneyWords(cancelledMoney(event, notice), { kind: 'business', learnerName: notice.learner_name }, formatPence);
     return sentences([reason ? `Reason: ${reason}` : undefined, ...money]);
+  }
+  if (event.name === 'booking.no_show') {
+    return sentences(noShowMoneyWords(noShowMoney(event, notice), { kind: 'business', learnerName: notice.learner_name }, formatPence));
   }
   return undefined;
 }
@@ -144,6 +179,18 @@ function detailFor(event: BookingEvent, notice: BookingNotice): string | undefin
  * (acceptance-04, acceptance-05). Everybody else reads `detailFor`.
  */
 function learnerDetailFor(event: BookingEvent, notice: BookingNotice): string | undefined {
+  if (event.name === 'booking.no_show') {
+    return sentences(noShowMoneyWords(noShowMoney(event, notice), { kind: 'learner' }, formatPence));
+  }
+  // A fee that could not be charged is not a lesson to keep: it is money to pay (M3-19).
+  if (event.name === 'payment.charge_failed' && event.payload.fee === true && notice.fee_pence) {
+    const reason = typeof event.payload.reason === 'string' ? event.payload.reason : '';
+    return sentences([
+      `The ${formatPence(notice.fee_pence)} ${feeName(notice)} could not be charged to your saved card`,
+      chargeFailures[reason] ?? 'The card could not be charged.',
+      'Pay it now',
+    ]);
+  }
   if (event.name !== 'booking.cancelled') return undefined;
   const reason = notice.cancel_reason?.trim();
   const money = cancelledMoneyWords(cancelledMoney(event, notice), { kind: 'learner' }, formatPence);

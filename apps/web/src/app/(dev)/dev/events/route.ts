@@ -1,6 +1,7 @@
 import { NextResponse, type NextRequest } from 'next/server';
 import { z } from 'zod';
 import { serverEnv } from '@/env/server';
+import { chargeFee } from '@/jobs/fees';
 import { notifyAboutBooking } from '@/jobs/notify';
 import { sendRefund } from '@/jobs/payments';
 
@@ -32,7 +33,11 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     const refundId = typeof payload.refund_id === 'string' ? payload.refund_id : '';
     return NextResponse.json(await sendRefund(refundId));
   }
-  if (name.startsWith('booking.')) {
+  if (name === 'payment.fee_charge') {
+    const bookingId = typeof payload.booking_id === 'string' ? payload.booking_id : '';
+    return NextResponse.json(await chargeFee(bookingId));
+  }
+  if (name.startsWith('booking.') || name === 'payment.charge_failed') {
     return NextResponse.json(await notifyAboutBooking({ name, payload }));
   }
   return NextResponse.json({ error: `Nothing here runs for ${name}.` }, { status: 400 });

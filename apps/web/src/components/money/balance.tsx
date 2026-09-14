@@ -63,13 +63,11 @@ export function OwedLessons({
                   {formatDate(owed.lesson.startsAt)} at {formatTime(owed.lesson.startsAt)}
                 </span>
                 <span className="text-small text-grey-700">
-                  {owed.lateFee
+                  {owed.fee === null
                     ? instructor === null
-                      ? 'Late cancellation fee'
-                      : `Late cancellation fee, with ${instructor.name}`
-                    : instructor === null
                       ? 'Lesson'
-                      : `With ${instructor.name}`}
+                      : `With ${instructor.name}`
+                    : `${owed.fee === 'no_show' ? 'No-show fee' : 'Late cancellation fee'}${instructor === null ? '' : `, with ${instructor.name}`}`}
                 </span>
               </span>
               <span className="flex shrink-0 flex-col items-end gap-1">

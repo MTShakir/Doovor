@@ -49,7 +49,13 @@ const lesson = {
   holdExpiresAt: '2026-09-13T12:15:00Z',
   requestExpiresAt: null,
   authorised: false,
-  refunded: false,
+  feePence: 0,
+  feeOwed: null,
+  amountPence: 4200,
+  paidPence: 0,
+  paidBy: null,
+  refundPence: 0,
+  refundPending: false,
   paymentMode: 'at_booking',
   paymentStatus: 'pending',
 };
@@ -263,6 +269,47 @@ describe('asking for a lesson authorises the card instead (R-12, M3-08)', () => 
 
     expect(result).toMatchObject({ ok: false, code: 'VALIDATION_FAILED' });
     expect(provider.chargeSavedMethod).not.toHaveBeenCalled();
+  });
+});
+
+describe('paying a fee for a lesson called off late or nobody came to (PAY-09, M3-19)', () => {
+  const fee = { ...lesson, status: 'no_show', holdExpiresAt: null, paymentStatus: 'failed', feePence: 2100, feeOwed: 'no_show', amountPence: 2100 };
+
+  it('charges the fee, not the lesson, with a key of its own and nothing to hold', async () => {
+    checkoutLesson.mockResolvedValue(fee);
+
+    const result = await payWithSavedCard({ bookingId, paymentMethodId: 'pm_kept' });
+
+    expect(result).toEqual({ ok: true, data: { status: 'paid' } });
+    expect(rpc).not.toHaveBeenCalledWith('hold_booking_for_payment', expect.anything());
+    expect(provider.chargeSavedMethod).toHaveBeenCalledWith(
+      expect.objectContaining({
+        amountPence: 2100,
+        holdOnly: false,
+        metadata: { booking_id: bookingId, business_id: 'business-1', fee: 'no_show' },
+        idempotencyKey: `fee:${bookingId}:2100:card:pm_kept:take`,
+      }),
+    );
+  });
+
+  it('starts paying a fee with a card typed in, as its own attempt', async () => {
+    checkoutLesson.mockResolvedValue({ ...fee, status: 'cancelled', feeOwed: 'late_cancellation' });
+    provider.createCheckoutIntent.mockResolvedValue({
+      ok: true,
+      data: { ...succeeded, amountPence: 2100, status: 'requires_payment_method', clientSecret: 'pi_1_secret_abc' },
+    });
+
+    await startCheckout({ bookingId });
+
+    expect(provider.createCheckoutIntent).toHaveBeenCalledWith(
+      expect.objectContaining({
+        amountPence: 2100,
+        metadata: { booking_id: bookingId, business_id: 'business-1', fee: 'cancelled' },
+        idempotencyKey: `fee:${bookingId}:2100:once:take`,
+      }),
+    );
+    expect(rpc).toHaveBeenCalledWith('set_payment_intent', { p_booking_id: bookingId, p_provider_ref: 'pi_1', p_amount_pence: 2100 });
+    expect(rpc).not.toHaveBeenCalledWith('hold_booking_for_payment', expect.anything());
   });
 });
 

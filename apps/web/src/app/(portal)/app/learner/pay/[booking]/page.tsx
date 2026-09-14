@@ -36,11 +36,13 @@ export default function PayPage({ params }: { params: Promise<{ booking: string 
 }
 
 /** Where a lesson stands with its money, which decides everything else on the screen. */
-type Stage = 'gone' | 'paid' | 'authorised' | 'capturing' | 'request' | 'before' | 'due';
+type Stage = 'fee' | 'gone' | 'paid' | 'authorised' | 'capturing' | 'request' | 'before' | 'due';
 
 function stageOf(lesson: CheckoutLesson): Stage {
+  // A lesson called off late, or nobody came to, whose fee nothing has paid: the fee is what to pay (PAY-09).
+  if (lesson.feeOwed !== null) return 'fee';
   // A lesson that is not going ahead says so first, whatever became of what paid for it.
-  if (['expired', 'cancelled', 'declined'].includes(lesson.status)) return 'gone';
+  if (['expired', 'cancelled', 'declined', 'no_show'].includes(lesson.status)) return 'gone';
   if (lesson.paid) return 'paid';
   if (lesson.authorised) return lesson.status === 'requested' ? 'authorised' : 'capturing';
   if (lesson.status === 'requested') return 'request';
@@ -54,15 +56,16 @@ function stageOf(lesson: CheckoutLesson): Stage {
  * PAY-09): a late fee comes out of what was paid, and the rest goes back the way it came.
  */
 function goneMoney(lesson: CheckoutLesson): string {
+  const fee = lesson.status === 'no_show' ? 'no-show fee' : 'late cancellation fee';
   if (lesson.paidPence === 0) {
     if (lesson.paymentStatus === 'paid_credit' || lesson.paymentStatus === 'refunded' || lesson.paymentStatus === 'partially_refunded') {
       if (lesson.paymentStatus === 'refunded') return 'The credit it used has gone back to you.';
       if (lesson.paymentStatus === 'partially_refunded') {
-        return 'Part of the credit it used was kept as the late cancellation fee, and the rest has gone back to you.';
+        return `Part of the credit it used was kept as the ${fee}, and the rest has gone back to you.`;
       }
-      return 'The credit it used was kept as the late cancellation fee.';
+      return `The credit it used was kept as the ${fee}.`;
     }
-    if (lesson.feePence > 0) return `A late cancellation fee of ${formatPence(lesson.feePence)} is owed.`;
+    if (lesson.feePence > 0) return `A ${fee} of ${formatPence(lesson.feePence)} is owed.`;
     return 'Nothing has been taken from your card.';
   }
 
@@ -81,9 +84,9 @@ function goneMoney(lesson: CheckoutLesson): string {
   }
   if (lesson.refundPence > 0) {
     const kept = formatPence(lesson.paidPence - lesson.refundPence);
-    return `${kept} of what you paid was kept as the late cancellation fee, and ${back} ${goingBack}.`;
+    return `${kept} of what you paid was kept as the ${fee}, and ${back} ${goingBack}.`;
   }
-  if (lesson.feePence > 0) return `The ${formatPence(lesson.paidPence)} you paid was kept as the late cancellation fee.`;
+  if (lesson.feePence > 0) return `The ${formatPence(lesson.paidPence)} you paid was kept as the ${fee}.`;
   return `Nothing of the ${formatPence(lesson.paidPence)} you paid has been refunded yet. ${lesson.businessName} can tell you why.`;
 }
 
@@ -115,11 +118,11 @@ async function Checkout({ params }: { params: Promise<{ booking: string }> }) {
 
   const stage = stageOf(lesson);
   const startsAt = new Date(lesson.startsAt);
-  const price = formatPence(lesson.pricePence);
+  const price = formatPence(lesson.amountPence);
   const iconClass = 'size-5';
 
   // Cards kept with this Business, which only the provider holds (PAY-02, M3-07).
-  const payable = (stage === 'due' || stage === 'request' || stage === 'before') && lesson.accountId !== null;
+  const payable = (stage === 'due' || stage === 'request' || stage === 'before' || stage === 'fee') && lesson.accountId !== null;
   const kept = payable ? await keptCardsWith(lesson.businessId) : null;
   const savedCards = (kept?.cards ?? []).map((card) => ({
     paymentMethodId: card.paymentMethodId,
@@ -128,6 +131,7 @@ async function Checkout({ params }: { params: Promise<{ booking: string }> }) {
   }));
 
   const pill = {
+    fee: <StatusPill status="unpaid">Fee to pay</StatusPill>,
     gone: lesson.status === 'expired' ? <StatusPill status="pending">Slot gone</StatusPill> : <StatusPill status="cancelled" />,
     paid: <StatusPill status="paid">Paid</StatusPill>,
     authorised: <StatusPill status="pending">Request sent</StatusPill>,
@@ -166,12 +170,38 @@ async function Checkout({ params }: { params: Promise<{ booking: string }> }) {
         <p className="text-small text-grey-700">This slot is held for you until {formatTime(heldUntil)}.</p>
       )}
 
-      {stage === 'gone' ? (
+      {stage === 'fee' ? (
+        <div className="flex flex-col gap-3">
+          <Note icon={<CalendarX className={iconClass} aria-hidden />}>
+            {lesson.feeOwed === 'no_show'
+              ? 'This lesson was marked as a no-show, which costs what cancelling late does.'
+              : 'This lesson was cancelled late.'}{' '}
+            {lesson.paymentStatus === 'failed'
+              ? `Your saved card could not be charged the ${price} fee, so pay it here.`
+              : `The ${price} fee is still to pay.`}
+          </Note>
+          {lesson.accountId === null ? (
+            <p className="text-small text-grey-700">Pay {lesson.businessName} in person.</p>
+          ) : (
+            <PayLesson
+              bookingId={lesson.bookingId}
+              pricePence={lesson.amountPence}
+              businessName={lesson.businessName}
+              savedCards={savedCards}
+              request={false}
+              live={serverEnv.PAYMENTS_PROVIDER === 'stripe'}
+              fee
+            />
+          )}
+        </div>
+      ) : stage === 'gone' ? (
         <div className="flex flex-col gap-3">
           <Note icon={<CalendarX className={iconClass} aria-hidden />}>
             {lesson.status === 'expired'
               ? 'This slot is no longer held for you, so the lesson is not booked.'
-              : 'This lesson is not going ahead.'}{' '}
+              : lesson.status === 'no_show'
+                ? 'This lesson was marked as a no-show.'
+                : 'This lesson is not going ahead.'}{' '}
             {goneMoney(lesson)}
           </Note>
           <LessonsButton />
@@ -196,7 +226,8 @@ async function Checkout({ params }: { params: Promise<{ booking: string }> }) {
           <Note icon={<Clock className={iconClass} aria-hidden />}>
             {card
               ? `${price} is charged to your ${card.label} ${chargeSoon ? 'shortly' : `at ${formatTime(chargeAt)} on ${formatDate(chargeAt)}`}, a day before the lesson.`
-              : `Save a card and ${price} is charged to it ${chargeSoon ? 'shortly' : `at ${formatTime(chargeAt)} on ${formatDate(chargeAt)}`}, a day before the lesson. Nothing is taken until then.`}
+              : `Save a card and ${price} is charged to it ${chargeSoon ? 'shortly' : `at ${formatTime(chargeAt)} on ${formatDate(chargeAt)}`}, a day before the lesson. Nothing is taken until then.`}{' '}
+            {lesson.businessName} can also charge it a late cancellation or no-show fee under its cancellation policy.
           </Note>
           {card ? <LessonsButton /> : null}
           <SaveCard bookingId={lesson.bookingId} replacing={card !== undefined} live={serverEnv.PAYMENTS_PROVIDER === 'stripe'} />
@@ -235,7 +266,7 @@ async function Checkout({ params }: { params: Promise<{ booking: string }> }) {
         </>
       )}
 
-      {stage === 'due' || stage === 'request' ? (
+      {stage === 'due' || stage === 'request' || (stage === 'fee' && lesson.accountId !== null) ? (
         <p className="text-small text-grey-700">
           {lesson.businessName} takes the payment. {lesson.instructorName} is told as soon as it goes through.
         </p>

@@ -2,7 +2,8 @@ import { cron } from 'inngest';
 import { settleAuthorisations } from '../authorisations';
 import { chargeBeforeLessons } from '../charges';
 import { inngest } from '../client';
-import { bookingAccepted, bookingDeclined, paymentAuthorised, paymentRefund } from '../events';
+import { bookingAccepted, bookingDeclined, paymentAuthorised, paymentFeeCharge, paymentRefund } from '../events';
+import { chargeFee } from '../fees';
 import { expirePaymentHolds, sendRefund } from '../payments';
 
 /**
@@ -25,6 +26,15 @@ export const holdSweep = inngest.createFunction(
 export const refundSend = inngest.createFunction(
   { id: 'refund-send', name: 'Send a refund', triggers: [paymentRefund] },
   ({ event }) => sendRefund(event.data.refund_id),
+);
+
+/**
+ * A fee nothing has paid is charged to the card the learner keeps (PAY-09). A retry charges once,
+ * because the charge goes under a key of its own, and a fee paid meanwhile is left alone.
+ */
+export const feeCharge = inngest.createFunction(
+  { id: 'fee-charge', name: 'Charge a late cancellation or no-show fee', triggers: [paymentFeeCharge] },
+  ({ event }) => chargeFee(event.data.booking_id),
 );
 
 /**

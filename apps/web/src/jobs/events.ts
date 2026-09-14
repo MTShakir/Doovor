@@ -29,6 +29,7 @@ export const bookingDeclined = bookingEvent('booking.declined');
 export const bookingCancelled = bookingEvent('booking.cancelled');
 export const bookingRescheduled = bookingEvent('booking.rescheduled');
 export const bookingCompleted = bookingEvent('booking.completed');
+export const bookingNoShow = bookingEvent('booking.no_show');
 
 /**
  * Money that has to go back (PAY-07, R-10). The refund is already decided and written down;
@@ -44,6 +45,14 @@ export const paymentRefund = eventType('payment.refund', {
  */
 export const paymentChargeFailed = eventType('payment.charge_failed', {
   schema: staticSchema<{ booking_id: string; reason: string }>(),
+});
+
+/**
+ * A fee for a lesson called off late, or nobody came to, that nothing has paid: to be charged to
+ * the card the learner keeps with the Business (PAY-09). The amount is the database's to say.
+ */
+export const paymentFeeCharge = eventType('payment.fee_charge', {
+  schema: staticSchema<{ booking_id: string }>(),
 });
 
 /** A card set aside for a request, waiting to be taken or let go (R-12). */

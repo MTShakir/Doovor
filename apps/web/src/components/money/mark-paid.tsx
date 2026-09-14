@@ -16,8 +16,8 @@ export interface MarkPaidLesson {
   startsAt: string;
   /** What is owed: the price of the lesson, or the fee for one called off late. */
   pricePence: number;
-  /** Paying the fee for a lesson called off late, not for the lesson (M3-18). */
-  lateFee?: boolean;
+  /** Paying the fee for a lesson called off late or nobody came to, not for the lesson (M3-18, M3-19). */
+  fee?: 'late_cancellation' | 'no_show';
 }
 
 /**
@@ -25,7 +25,8 @@ export interface MarkPaidLesson {
  * is one Undo away (D-089). Opened from the diary and from the learner card.
  */
 export function MarkPaidSheet({ lesson, open, onClose }: { lesson: MarkPaidLesson; open: boolean; onClose: () => void }) {
-  const { bookingId, learnerName, startsAt, pricePence, lateFee = false } = lesson;
+  const { bookingId, learnerName, startsAt, pricePence, fee } = lesson;
+  const feeName = fee === undefined ? '' : fee === 'no_show' ? ' no-show fee' : ' late cancellation fee';
   const [pending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
 
@@ -41,7 +42,7 @@ export function MarkPaidSheet({ lesson, open, onClose }: { lesson: MarkPaidLesso
       const { paymentId } = result.data;
       toastWithUndo(`Marked paid (${method})`, () => {
         void undoOfflinePayment({ paymentId }).then((undone) => {
-          toast(undone.ok ? `${learnerName}'s ${lateFee ? 'fee' : 'lesson'} is unpaid again` : undone.message);
+          toast(undone.ok ? `${learnerName}'s ${fee === undefined ? 'lesson' : 'fee'} is unpaid again` : undone.message);
         });
       });
     });
@@ -52,7 +53,7 @@ export function MarkPaidSheet({ lesson, open, onClose }: { lesson: MarkPaidLesso
       open={open}
       onOpenChange={onClose}
       title={`How did ${learnerName} pay?`}
-      description={`${formatPence(pricePence)}${lateFee ? ' late cancellation fee' : ''} for ${formatDate(new Date(startsAt))} at ${formatTime(new Date(startsAt))}.`}
+      description={`${formatPence(pricePence)}${feeName} for ${formatDate(new Date(startsAt))} at ${formatTime(new Date(startsAt))}.`}
     >
       <div className="flex flex-col gap-3 pb-2">
         {error ? <FormAlert>{error}</FormAlert> : null}

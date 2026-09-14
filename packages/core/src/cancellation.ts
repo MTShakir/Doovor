@@ -165,10 +165,8 @@ export function cancellationWarning(outcome: CancellationOutcome, formatMoney: M
 // Afterwards: what a cancellation did, for the people told about it (acceptance-04).
 // ---------------------------------------------------------------------------------------
 
-/** What `cancel_booking` did about money, as its event records it. */
-export interface CancelledMoney {
-  by: CancelActor;
-  late: boolean;
+/** What happened to the money for a lesson with a fee: kept, given back, or still to pay. */
+interface FeeMoney {
   feePence: number;
   /** Money already paid that was kept as the fee. */
   keptPence: number;
@@ -177,8 +175,22 @@ export interface CancelledMoney {
   offlineRefundPence: number;
   creditReturnedMinutes: number;
   creditKeptMinutes: number;
+  /** A fee nothing paid is being charged to the card the learner keeps with the Business (M3-19). */
+  charging: boolean;
+}
+
+/** What `cancel_booking` did about money, as its event records it. */
+export interface CancelledMoney extends FeeMoney {
+  by: CancelActor;
+  late: boolean;
   /** How long before the start it was cancelled, and the policy it was cancelled under. */
   policy: { minutesBefore: number; windowHours: number; lateFeePercent: number } | null;
+}
+
+/** What `mark_no_show` did about money, as its event records it (R-09, M3-19). */
+export interface NoShowMoney extends FeeMoney {
+  /** The percentage of the price the policy keeps, when the event said. */
+  lateFeePercent: number | null;
 }
 
 /** Who is reading: the learner, or somebody at the Business, who is told the learner's name. */
@@ -201,41 +213,33 @@ function capitalise(text: string): string {
   return text.charAt(0).toUpperCase() + text.slice(1);
 }
 
-/**
- * What a cancellation did about money, in whole sentences, for the person reading about it
- * afterwards. When a fee was kept the learner is told why: when they cancelled, the policy, and
- * what the fee came out of (acceptance-04). Otherwise they are told what comes back, and how.
- */
-export function cancelledMoneyWords(money: CancelledMoney, reader: CancelledReader, formatMoney: Money): string[] {
+/** Whether a fee was kept or is to be paid at all. */
+function hasFee(money: FeeMoney): boolean {
+  return money.feePence > 0 || money.creditKeptMinutes > 0;
+}
+
+/** What paid the fee, or what is still to pay it, as the end of a sentence. */
+function feePhrase(money: FeeMoney, learner: boolean, formatMoney: Money): string {
+  const your = learner ? 'your' : 'their';
+  if (money.creditKeptMinutes > 0) {
+    const back = money.creditReturnedMinutes > 0 ? ` and ${formatMinutes(money.creditReturnedMinutes)} is back` : '';
+    return `${formatMinutes(money.creditKeptMinutes)} of ${your} credit is kept as the fee${back}`;
+  }
+  if (money.keptPence > 0) {
+    const backToCard = money.cardRefundPence > 0 ? ` and ${formatMoney(money.cardRefundPence)} is going back to ${your} card` : '';
+    const owedBack = money.offlineRefundPence > 0 ? ` and ${learner ? 'you are' : 'they are'} owed back ${formatMoney(money.offlineRefundPence)}` : '';
+    return backToCard === '' && owedBack === ''
+      ? `the ${formatMoney(money.keptPence)} ${learner ? 'you' : 'they'} paid is kept as the fee`
+      : `${formatMoney(money.keptPence)} of what ${learner ? 'you' : 'they'} paid is kept as the fee${backToCard}${owedBack}`;
+  }
+  if (money.charging) return `the ${formatMoney(money.feePence)} fee is being charged to ${your} saved card`;
+  return `a fee of ${formatMoney(money.feePence)} is owed`;
+}
+
+/** Everything that goes back when no fee is kept, one sentence each. */
+function givenBack(money: FeeMoney, reader: CancelledReader, formatMoney: Money): string[] {
   const learner = reader.kind === 'learner';
   const name = reader.kind === 'business' ? reader.learnerName : '';
-  const fee = money.by === 'learner' && money.late && (money.feePence > 0 || money.creditKeptMinutes > 0);
-
-  if (fee) {
-    let kept: string;
-    if (money.creditKeptMinutes > 0) {
-      kept = `${formatMinutes(money.creditKeptMinutes)} of ${learner ? 'your' : 'their'} credit is kept as the fee`;
-      if (money.creditReturnedMinutes > 0) kept += ` and ${formatMinutes(money.creditReturnedMinutes)} is back`;
-    } else if (money.keptPence > 0) {
-      const backToCard = money.cardRefundPence > 0 ? ` and ${formatMoney(money.cardRefundPence)} is going back to ${learner ? 'your' : 'their'} card` : '';
-      const owedBack = money.offlineRefundPence > 0 ? ` and ${learner ? 'you are' : 'they are'} owed back ${formatMoney(money.offlineRefundPence)}` : '';
-      kept =
-        backToCard === '' && owedBack === ''
-          ? `the ${formatMoney(money.keptPence)} ${learner ? 'you' : 'they'} paid is kept as the fee`
-          : `${formatMoney(money.keptPence)} of what ${learner ? 'you' : 'they'} paid is kept as the fee${backToCard}${owedBack}`;
-    } else {
-      kept = `a fee of ${formatMoney(money.feePence)} is owed`;
-    }
-
-    if (!learner) return [`${name} cancelled late, so ${kept}.`];
-    if (money.policy === null) return [`${capitalise(kept)}.`];
-    const { minutesBefore, windowHours, lateFeePercent } = money.policy;
-    return [
-      `${before(minutesBefore)}.`,
-      `Cancelling less than ${formatMinutes(windowHours * 60)} before a lesson costs ${share(lateFeePercent)}, so ${kept}.`,
-    ];
-  }
-
   const lines: string[] = [];
   if (money.cardRefundPence > 0) {
     lines.push(`${formatMoney(money.cardRefundPence)} is going back to ${learner ? 'your' : `${name}'s`} card.`);
@@ -250,6 +254,47 @@ export function cancelledMoneyWords(money: CancelledMoney, reader: CancelledRead
   if (money.creditReturnedMinutes > 0) {
     lines.push(`${formatMinutes(money.creditReturnedMinutes)} of credit is back${learner ? '' : ` with ${name}`}.`);
   }
+  return lines;
+}
+
+/**
+ * What a cancellation did about money, in whole sentences, for the person reading about it
+ * afterwards. When a fee was kept the learner is told why: when they cancelled, the policy, and
+ * what the fee came out of (acceptance-04). Otherwise they are told what comes back, and how.
+ */
+export function cancelledMoneyWords(money: CancelledMoney, reader: CancelledReader, formatMoney: Money): string[] {
+  const learner = reader.kind === 'learner';
+
+  if (money.by === 'learner' && money.late && hasFee(money)) {
+    const kept = feePhrase(money, learner, formatMoney);
+    if (reader.kind === 'business') return [`${reader.learnerName} cancelled late, so ${kept}.`];
+    if (money.policy === null) return [`${capitalise(kept)}.`];
+    const { minutesBefore, windowHours, lateFeePercent } = money.policy;
+    return [
+      `${before(minutesBefore)}.`,
+      `Cancelling less than ${formatMinutes(windowHours * 60)} before a lesson costs ${share(lateFeePercent)}, so ${kept}.`,
+    ];
+  }
+
+  const lines = givenBack(money, reader, formatMoney);
   if (lines.length === 0 && learner && money.by === 'learner') lines.push('There is no charge.');
   return lines;
+}
+
+/**
+ * What marking a lesson as a no-show did about money (R-09, M3-19). Nobody coming counts as
+ * cancelling late, so the learner is told that, and what paid the fee or is to pay it; the
+ * Business is told what came of it.
+ */
+export function noShowMoneyWords(money: NoShowMoney, reader: CancelledReader, formatMoney: Money): string[] {
+  const learner = reader.kind === 'learner';
+  if (!hasFee(money)) {
+    const lines = givenBack(money, reader, formatMoney);
+    if (lines.length === 0 && learner) lines.push('There is no charge.');
+    return lines;
+  }
+
+  const kept = feePhrase(money, learner, formatMoney);
+  if (!learner || money.lateFeePercent === null) return [`${capitalise(kept)}.`];
+  return [`Missing a lesson costs ${share(money.lateFeePercent)}, as cancelling late does, so ${kept}.`];
 }

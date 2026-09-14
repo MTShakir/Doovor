@@ -161,7 +161,7 @@ export function BuyPackage({ packageId, attemptId, name, minutes, pricePence, bu
             checked={saveCard}
             onCheckedChange={(value) => { setSaveCard(value === true); }}
             label="Save this card for next time"
-            description={`${businessName} keeps it, so paying them next time takes one press. You can remove it in Payments.`}
+            description={`${businessName} keeps it, so paying them next time takes one press, and can charge it a late cancellation or no-show fee under its cancellation policy. You can remove it in Payments.`}
           />
           <Button width="responsive" size="lg" pending={pending} onClick={start}>
             <CreditCard className="size-5" aria-hidden />

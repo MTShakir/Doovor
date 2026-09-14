@@ -38,8 +38,9 @@ const HOUR = 3_600_000;
  * nothing is owed for: paid, free, not going ahead, or still a request or a hold for a card.
  */
 export function moneyDueAt(lesson: MoneyLesson): Date | null {
-  // Called off late with nobody having paid: the fee is owed from then (PAY-09, M3-18).
-  if (lesson.status === 'cancelled') {
+  // Called off late, or nobody came, with nobody having paid: the fee is owed from then
+  // (PAY-09, R-09, M3-18, M3-19).
+  if (lesson.status === 'cancelled' || lesson.status === 'no_show') {
     if (lesson.feePence <= 0) return null;
     if (lesson.paymentStatus !== 'unpaid' && lesson.paymentStatus !== 'failed') return null;
     return lesson.cancelledAt ?? lesson.startsAt;
@@ -61,9 +62,17 @@ export function moneyDueAt(lesson: MoneyLesson): Date | null {
   }
 }
 
-/** What is owed for a lesson: the fee, for one called off late, and the price otherwise. */
+/** Which fee is owed for a lesson, if what is owed is a fee rather than the lesson. */
+export type OwedFee = 'late_cancellation' | 'no_show';
+
+function feeFor(lesson: MoneyLesson): OwedFee | null {
+  if (lesson.status === 'cancelled') return 'late_cancellation';
+  return lesson.status === 'no_show' ? 'no_show' : null;
+}
+
+/** What is owed for a lesson: the fee, for one called off late or nobody came to, and the price otherwise. */
 export function amountOwedPence(lesson: MoneyLesson): number {
-  return lesson.status === 'cancelled' ? lesson.feePence : lesson.pricePence;
+  return feeFor(lesson) === null ? lesson.pricePence : lesson.feePence;
 }
 
 export interface OwedLesson {
@@ -73,8 +82,8 @@ export interface OwedLesson {
   overdue: boolean;
   /** What is owed for it: a late cancellation fee is not the price of the lesson. */
   amountPence: number;
-  /** Owed as the fee for calling it off late, rather than for a lesson. */
-  lateFee: boolean;
+  /** Owed as a fee, for calling it off late or not coming, rather than for a lesson. */
+  fee: OwedFee | null;
 }
 
 /** The lessons owed for now, the longest owed first. */
@@ -88,7 +97,7 @@ export function owedLessons(lessons: readonly MoneyLesson[], now: Date): OwedLes
       dueAt,
       overdue: now.getTime() - dueAt.getTime() >= OVERDUE_AFTER_HOURS * HOUR,
       amountPence: amountOwedPence(lesson),
-      lateFee: lesson.status === 'cancelled',
+      fee: feeFor(lesson),
     });
   }
   return owed.sort((a, b) => a.dueAt.getTime() - b.dueAt.getTime());

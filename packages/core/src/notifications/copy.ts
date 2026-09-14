@@ -81,6 +81,11 @@ export function notificationCopy(
         ? { title: 'Lesson cancelled', body: sentence(line, facts.learnerDetail ?? facts.detail) }
         : { title: `${them}'s lesson was cancelled`, body: sentence(line, facts.detail) };
 
+    case 'booking.no_show':
+      return audience === 'learner'
+        ? { title: 'Marked as a no-show', body: sentence(line, facts.learnerDetail ?? facts.detail) }
+        : { title: `${them} did not turn up`, body: sentence(line, facts.detail) };
+
     case 'payment.received':
       return audience === 'learner'
         ? { title: 'Payment received', body: sentence(facts.detail, line) }
@@ -88,7 +93,11 @@ export function notificationCopy(
 
     case 'payment.failed':
       return audience === 'learner'
-        ? { title: 'A payment did not go through', body: sentence(line, facts.detail, 'Pay now to keep the lesson') }
+        ? {
+            title: 'A payment did not go through',
+            // A fee is not a lesson to keep, so what the learner is told replaces the whole line.
+            body: facts.learnerDetail ? sentence(line, facts.learnerDetail) : sentence(line, facts.detail, 'Pay now to keep the lesson'),
+          }
         : { title: `A payment from ${them} did not go through`, body: sentence(line, facts.detail) };
 
     case 'payment.requested':

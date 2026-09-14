@@ -197,7 +197,7 @@ async function Money({ card, access }: { card: LearnerCard; access: AccessContex
                 learnerName: card.fullName,
                 startsAt: owed.lesson.startsAt.toISOString(),
                 pricePence: owed.amountPence,
-                lateFee: owed.lateFee,
+                fee: owed.fee ?? undefined,
               }}
             />
           ) : null

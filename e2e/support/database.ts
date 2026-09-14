@@ -740,3 +740,21 @@ export async function lateFeeOwed(instructorName: string, learnerEmail: string, 
     return id;
   });
 }
+
+/**
+ * Forgets that a Business keeps cards for a learner, so no fee is charged to a card with nobody
+ * there (PAY-09, M3-19) and a test starts from nothing kept. Local only.
+ */
+export async function forgetKeptCards(learnerEmail: string, ownerEmail: string): Promise<void> {
+  await withDatabase(async (sql) => {
+    await sql`
+      delete from public.billing_customers bc
+       using public.users learner, public.memberships m, public.users owner
+       where learner.id = bc.learner_id
+         and lower(learner.email) = lower(${learnerEmail})
+         and m.business_id = bc.business_id
+         and m.role = 'owner'
+         and owner.id = m.user_id
+         and lower(owner.email) = lower(${ownerEmail})`;
+  });
+}

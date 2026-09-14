@@ -384,7 +384,7 @@ The policy is a pure function in core, `cancellationOutcome({ startsAt, now, by,
 | Learner cancels outside the window (default 48 h) | Full refund to card, or full credit returned (R-07) |
 | Learner cancels inside the window | Fee kept per policy (0, 50 or 100%). Credit covers the fee first (R-07). Email explains why (acceptance test 4) |
 | Instructor or Business cancels | Reason required. Learner always gets a full refund or full credit (R-08, acceptance test 5) |
-| No-show | Only allowed from 15 minutes after start. Treated as a late cancellation. Learner can dispute within 7 days (R-09) |
+| No-show | Only allowed from 15 minutes after start. Settles its money as a late cancellation by the learner, and records `dispute_until`, 7 days on, for the learner to dispute (R-09, D-093) |
 | Learner reschedules | Only outside the cancellation window (BOK-08). Inside it, the learner sees the cancellation terms instead |
 | Instructor reschedules | Any time. Learner notified |
 
@@ -471,7 +471,7 @@ sequenceDiagram
 ### 8.5 Refunds, fees and receipts
 
 - **Refunds (PAY-07):** `issue_refund` records the refund (full or partial, back the way it was paid or as credit) with reason and actor, and writes an audit row. Card refunds are sent to Stripe by a job with an idempotency key and the refund's own id in its metadata, and are settled from Stripe's answer and from the `refund.created`, `refund.updated` and `refund.failed` events, which also record refunds made in the Stripe dashboard. Cash and bank refunds issued by hand are settled when written down; those a cancellation makes are owed back until marked handed back (D-092). Unused credit is refunded by the minute at its lot's price and leaves the balance at once, coming back if the refund fails. A lesson's payment status is worked out again from all its payments after any refund. Only owners, managers and staff can refund, not school instructors (D-091).
-- **Late cancellation and no-show fees (PAY-09):** credit is used first (R-07). Otherwise the fee is kept from what was paid, oldest payment first, and the rest goes back: to the card through the refund job, or owed back in cash or by transfer (D-092). For an unpaid booking the fee is added to the amount owed (PAY-06, shown in red when overdue) and can be paid in person; charging it to the saved card off-session comes with no-show fees (M3-19).
+- **Late cancellation and no-show fees (PAY-09):** credit is used first (R-07). Otherwise the fee is kept from what was paid, oldest payment first, and the rest goes back: to the card through the refund job, or owed back in cash or by transfer (D-092). For an unpaid booking the fee is charged by the fee job to the card the learner keeps with the Business, with nobody there, at a Business that takes cards and does not take payment in person. Without a card, or when the charge fails, the fee is owed (PAY-06, shown in red when overdue) and is paid on the pay screen or in person. A no-show settles the same way (D-093).
 - **Receipts (PAY-08):** a receipt email (React Email) with the Business name and address and lesson details, plus a printable receipt page. VAT lines appear only when the Business has a VAT number. Receipt numbers are sequential per Business.
 
 ### 8.6 Money dashboard (MNY-01)
@@ -492,10 +492,11 @@ Jobs are Inngest functions in `apps/web/src/jobs`, served from `/api/inngest`. E
 | `payment.auto-charge` | `booking/confirmed` with "pay before lesson" | Sleeps until 24 h before, charges the saved card off-session, handles authentication-required failures | PAY-03 |
 | `payment.link-after-lesson` | `booking/completed` with "pay after lesson" | Sends the payment link | PAY-03 |
 | `payment.refund` | `refund/requested` | Sends the refund to Stripe with an idempotency key | PAY-07 |
+| `fee-charge` | `payment.fee_charge` | Charges a late cancellation or no-show fee nothing has paid to the learner's kept card, with nobody there, under the key `fee:{booking}:{amount}`. A refused, expired or authentication-required card is recorded, which tells both sides; no card leaves the fee owed (D-093) | PAY-09 |
 | `payment.followups` | Webhook follow-up events | Receipt email, instructor notification, credit-low check | PAY-08, NTF-03 |
 | `credit.expiry` | Cron, daily | Expires lots past `expires_at` with ledger rows | PAY-04 |
 | `badge.expiry` | Cron, daily at 08:00 London | Reminders at 60, 30 and 7 days, deduplicated by threshold. Expired badges drop out of search automatically because listing checks the date | INS-03 |
-| `booking.notices` | `booking.created`, `.accepted`, `.declined`, `.cancelled`, `.rescheduled` | Reads who the lesson concerns, applies the catalogue and their settings, and writes one notification each | NTF-01, NTF-03, NTF-04 |
+| `booking.notices` | `booking.created`, `.accepted`, `.declined`, `.cancelled`, `.no_show`, `.rescheduled`, `.completed`, `payment.charge_failed` | Reads who the lesson concerns, applies the catalogue and their settings, and writes one notification each | NTF-01, NTF-03, NTF-04 |
 | `notification.dispatch` | Notifications not yet sent | Fans out to push, email and SMS on the channels the notification already carries (SMS on Pro, capped at 200 a month) | NTF-01 to 04 |
 | `ledger.reconcile` | Cron, nightly | Asserts cached balances equal ledger sums and alerts on drift | PAY-04 |
 | `account.deletion` | `account/deletion-requested` | Exports, anonymises and deletes per the retention rules (M6) | NFR-PRV-03 |

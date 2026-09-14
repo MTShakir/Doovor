@@ -39,6 +39,9 @@ export const notificationKinds = [
   'booking.reminder',
   'booking.rescheduled',
   'booking.cancelled',
+  // Nobody came (R-09). Appendix B has no row of its own: a no-show counts as a late
+  // cancellation, and is told to the same people on the same channels (D-093).
+  'booking.no_show',
   'payment.received',
   'payment.failed',
   'payment.requested',
@@ -92,6 +95,13 @@ export const notificationCatalogue: Record<NotificationKind, NotificationSpec> =
   },
   'booking.cancelled': {
     kind: 'booking.cancelled',
+    category: 'bookings',
+    audiences: ['learner', 'instructor', 'school'],
+    channels: PUSH_AND_EMAIL,
+    essential: true,
+  },
+  'booking.no_show': {
+    kind: 'booking.no_show',
     category: 'bookings',
     audiences: ['learner', 'instructor', 'school'],
     channels: PUSH_AND_EMAIL,

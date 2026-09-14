@@ -18,7 +18,7 @@ const lesson = { learnerName: 'Jack Taylor', instructorName: 'Sarah Khan', when:
 
 describe('the catalogue (PRD Appendix B, NTF-03)', () => {
   it('has every kind of notification Phase 1 sends', () => {
-    expect(notificationKinds).toHaveLength(14);
+    expect(notificationKinds).toHaveLength(15);
     for (const kind of notificationKinds) expect(notificationCatalogue[kind].kind).toBe(kind);
   });
 
@@ -102,6 +102,20 @@ describe('the words (NTF-03)', () => {
   it('adds the reason or the fee when there is one', () => {
     const copy = notificationCopy('booking.cancelled', 'learner', { ...lesson, detail: 'A fee of £42 applies' });
     expect(copy.body).toBe('Wed 16 Sep at 09:00 with Sarah Khan. A fee of £42 applies.');
+  });
+
+  it('says who did not turn up, and tells a learner a fee that could not be charged is not a lesson to keep (R-09, M3-19)', () => {
+    expect(notificationCopy('booking.no_show', 'learner', { ...lesson, learnerDetail: 'A fee of £42 is owed.' })).toEqual({
+      title: 'Marked as a no-show',
+      body: 'Wed 16 Sep at 09:00 with Sarah Khan. A fee of £42 is owed.',
+    });
+    expect(notificationCopy('booking.no_show', 'instructor', { ...lesson, detail: 'A fee of £42 is owed.' }).title).toBe('Jack Taylor did not turn up');
+    expect(notificationCopy('payment.failed', 'learner', { ...lesson, learnerDetail: 'The no-show fee could not be charged. Pay it now.' }).body).toBe(
+      'Wed 16 Sep at 09:00 with Sarah Khan. The no-show fee could not be charged. Pay it now.',
+    );
+    expect(notificationCopy('payment.failed', 'learner', { ...lesson, detail: 'The card was refused.' }).body).toBe(
+      'Wed 16 Sep at 09:00 with Sarah Khan. The card was refused. Pay now to keep the lesson.',
+    );
   });
 
   it('tells the learner what only the learner needs to hear, and the others the rest (acceptance-04)', () => {

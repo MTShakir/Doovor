@@ -65,7 +65,7 @@ describe('a late cancellation fee nobody has paid (PAY-09, M3-18)', () => {
     expect(moneyDueAt(calledOff())).toEqual(at(-4));
     expect(amountOwedPence(calledOff())).toBe(2100);
     expect(owedLessons([calledOff()], now)).toEqual([
-      { lesson: calledOff(), dueAt: at(-4), overdue: false, amountPence: 2100, lateFee: true },
+      { lesson: calledOff(), dueAt: at(-4), overdue: false, amountPence: 2100, fee: 'late_cancellation' },
     ]);
   });
 
@@ -75,6 +75,14 @@ describe('a late cancellation fee nobody has paid (PAY-09, M3-18)', () => {
       expect(moneyDueAt(calledOff({ paymentStatus }))).toBeNull();
     }
     expect(moneyDueAt(calledOff({ paymentStatus: 'failed' }))).toEqual(at(-4));
+  });
+
+  it('owes a no-show fee the same way, from the lesson, and says which fee it is (R-09, M3-19)', () => {
+    const missed = lesson({ status: 'no_show', startsAt: at(-30), endsAt: at(-29), feePence: 4200 });
+    expect(moneyDueAt(missed)).toEqual(at(-30));
+    expect(owedLessons([missed], now)[0]).toMatchObject({ amountPence: 4200, fee: 'no_show' });
+    expect(moneyDueAt({ ...missed, paymentStatus: 'paid_card' })).toBeNull();
+    expect(owedLessons([lesson()], now)[0]?.fee).toBeNull();
   });
 
   it('adds the fee, not the price, to what is owed, and money owed back is counted apart', () => {
