@@ -2482,6 +2482,10 @@ export type Database = {
         Args: { p_booking_id: string; p_reason?: string }
         Returns: Json
       }
+      money_summary: {
+        Args: { p_business_id: string; p_from: string; p_to: string }
+        Returns: Json
+      }
       open_slots: {
         Args: {
           p_date: string

@@ -476,7 +476,7 @@ sequenceDiagram
 
 ### 8.6 Money dashboard (MNY-01)
 
-Aggregates this week, this month and this UK tax year (6 April to 5 April, computed in `packages/core/src/time/taxYear.ts`): paid by method, unpaid, credit sold, refunds. Queries run over `payments`, `refunds`, `credit_lots` and `bookings` with RLS. School instructors see only their own earnings unless the school allows more.
+Aggregates this week, this month and this UK tax year (6 April to 5 April), with each period's days worked out in London in `packages/core/src/money-periods.ts`: paid by method, unpaid, credit sold and refunds. One `security definer` function, `money_summary`, reads `payments`, `refunds`, `credit_lots` and `bookings` after checking the caller. School instructors see only their own lessons, with no credit sold, unless the school allows more, which is MNY-06 (D-096).
 
 ## 9. Background jobs (Inngest)
 
