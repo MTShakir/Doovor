@@ -279,8 +279,10 @@ export function stripePaymentsProvider(options: StripeOptions): PaymentsProvider
             amount: input.amountPence,
             currency: input.currency ?? 'gbp',
             customer: input.customerId,
-            // Card, Apple Pay and Google Pay, decided by the Payment Element (PAY-02).
-            automatic_payment_methods: { enabled: true },
+            // Card, Apple Pay, Google Pay and Link, decided by the Payment Element (PAY-02). Nothing
+            // that sends the learner off to another site to pay: the screen that waits for the
+            // webhook is the one they paid on (D-099).
+            automatic_payment_methods: { enabled: true, allow_redirects: 'never' },
             // A lesson that has to be accepted first is held, not taken (R-12).
             capture_method: input.holdOnly ? 'manual' : 'automatic',
             ...(input.savePaymentMethod ? { setup_future_usage: 'off_session' as const } : {}),

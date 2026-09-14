@@ -150,10 +150,13 @@ Sandbox `Doovor sandbox`, account `acct_1UFF4RDP3EG8YZIf`. Settings > Connect:
    rather than into chat or the repository: `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY` (`pk_test_...`) and
    `STRIPE_SECRET_KEY` (`sk_test_...`). Leave `PAYMENTS_PROVIDER=fake` until M3-23; the fake is what
    every test run uses, and the keys sit unused until the provider is switched to `stripe`.
-6. Webhooks, locally: `pnpm stripe:listen` (`stripe listen --forward-connect-to
-   localhost:3000/api/webhooks/stripe`) prints a signing secret of its own. It goes in
-   `STRIPE_CONNECT_WEBHOOK_SECRET`. Direct charges raise their events on the connected account, so a
-   plain `--forward-to` never sees them.
+6. Webhooks, locally: `pnpm stripe:listen` runs `stripe listen --forward-connect-to
+   localhost:3000/api/webhooks/stripe` as the account whose test key is in `.env.local`, whatever
+   account `stripe login` last signed in to, and keeps the listener's signing secret in
+   `STRIPE_WEBHOOK_SECRET` and `STRIPE_CONNECT_WEBHOOK_SECRET` without printing it. Restart the app
+   afterwards: it reads `.env.local` when it starts. Direct charges raise their events on the
+   connected account, so a plain `--forward-to` never sees them. On 14 September the CLI was signed in
+   to the main Doovor account rather than the sandbox, and forwarded nothing.
 7. Webhooks, hosted: waits for a URL Stripe can reach. Preview deployments are behind Vercel
    Authentication and a webhook to one is refused, so the endpoint is created in M6 against
    `https://app.doovor.com/api/webhooks/stripe` (D-084). It listens on `account.updated`,
@@ -173,20 +176,18 @@ M3 is done when acceptance tests 3 to 6 pass against Stripe test mode, webhook r
 acceptance-12 books with a card. Those runs are in `e2e/specs/stripe/acceptance.spec.ts` and only run
 from `pnpm test:e2e:stripe`; every other run stays on the fake.
 
-1. **You, done on 14 September:** the platform profile acknowledgements in 3.7 step 4, and
-   `stripe login` on this machine.
-2. **You:** `pnpm stripe:test-account`. It makes the Express test account for the seeded school the
+1. **You, done on 14 September:** the platform profile acknowledgements in 3.7 step 4. The Stripe CLI
+   is installed; the listener signs in with the key in `.env.local` (3.7 step 6).
+2. **You, done on 14 September (`acct_1UFhbxDLGcFcDy7q`):** `pnpm stripe:test-account`. It makes the Express test account for the seeded school the
    way the app makes one, keeps its id in `.env.local` as `E2E_STRIPE_ACCOUNT_ID`, and prints the
    link to Stripe's onboarding. Finish onboarding with the test values Stripe offers on each step,
    then run the command again: it says when the account can take cards. It refuses a live key.
    Claude's permission checks stop at creating a connected account, even in test mode, so this
    step is yours.
-3. **Claude:** in `.env.local`, set `PAYMENTS_PROVIDER=stripe`, and put the secret that
-   `stripe listen --print-secret` prints in both `STRIPE_WEBHOOK_SECRET` and
-   `STRIPE_CONNECT_WEBHOOK_SECRET`. The app wants both set when Stripe is on, and the listener
-   signs everything with the one secret.
-4. **Claude:** start `pnpm dev`, `pnpm stripe:listen` and `pnpm dev:jobs`, each running on its own.
-   /dev/events is closed with Stripe, so the job runner sends refunds and notifications.
+3. **Claude:** in `.env.local`, set `PAYMENTS_PROVIDER=stripe`.
+4. **Claude:** start `pnpm stripe:listen` first, since it writes the webhook secrets, then `pnpm dev`
+   and `pnpm dev:jobs`, each running on its own. /dev/events is closed with Stripe, so the job
+   runner sends refunds and notifications.
 5. **Claude:** `pnpm test:e2e:stripe`. It types Stripe's test card into the card form (D-099), waits
    for Stripe's events through the listener and for the job runner, checks Stripe's own record of
    each payment and refund, and for acceptance-06 delivers one real event twice more, signed as

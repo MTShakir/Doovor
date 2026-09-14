@@ -315,7 +315,7 @@ describe('taking money (PAY-02, PAY-03, R-12)', () => {
       expect(intent.data.chargeId).toBeNull();
     }
     const body = calls[0]?.args[0] as Record<string, unknown>;
-    expect(body.automatic_payment_methods).toEqual({ enabled: true });
+    expect(body.automatic_payment_methods).toEqual({ enabled: true, allow_redirects: 'never' });
     expect(body.capture_method).toBe('automatic');
     expect(body.setup_future_usage).toBeUndefined();
     expect((calls[0]?.args[1] as { idempotencyKey?: string }).idempotencyKey).toBe('booking-1:1');

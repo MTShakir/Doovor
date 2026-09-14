@@ -834,3 +834,17 @@ export async function packagePaymentRef(learnerEmail: string, ownerEmail: string
     return rows[0]?.provider_ref ?? null;
   });
 }
+
+/** The newest payment for a lesson whatever became of it, with the provider's id for it (M3-23). */
+export async function newestPaymentFor(bookingId: string): Promise<{ status: string; amountPence: number; providerRef: string | null } | null> {
+  return withDatabase(async (sql) => {
+    const rows = await sql<{ status: string; amount_pence: number; provider_ref: string | null }[]>`
+      select status::text as status, amount_pence, provider_ref
+        from public.payments
+       where booking_id = ${bookingId}
+       order by created_at desc
+       limit 1`;
+    const found = rows[0];
+    return found ? { status: found.status, amountPence: found.amount_pence, providerRef: found.provider_ref } : null;
+  });
+}

@@ -13,15 +13,18 @@ import {
   enablePayments,
   lessonIdAt,
   lessonMoney,
+  newestPaymentFor,
   notificationDelivery,
   packagePaymentRef,
+  requestLesson,
 } from '../../support/database';
-import { chooseDate, dayLabel, settled, snap } from '../../support/helpers';
+import { chooseDate, dayLabel, settled, snap, tapUntil } from '../../support/helpers';
 import { signInThroughForm } from '../../support/sign-in';
 import { jobRunnerIsUp, payInCardForm, stripeAccountId, stripeGet, stripeSignature } from '../../support/stripe';
 
 /**
- * The money acceptance tests against Stripe test mode (PRD 17.2 tests 3 to 6 and 12, M3-23).
+ * The money acceptance tests against Stripe test mode (PRD 17.2 tests 3 to 6 and 12, M3-23), and the
+ * authorisation M3-08 has to show there.
  *
  * The journeys in payments.spec.ts and self-booking.spec.ts, with Stripe where those have the
  * fake: a test card typed into the card form (D-099), Stripe's events reaching the app through
@@ -348,4 +351,81 @@ test('acceptance-06 with Stripe: the event for a card payment delivered three ti
   expect(await countProviderEvents(event.id), 'the event is recorded once').toBe(1);
   expect(await creditFromPayment(String(intent)), 'one payment and one credit entry').toEqual({ payments: 1, lots: 1, purchases: 1 });
   expect((await creditWith(email, owner)).minutes).toBe(before.minutes + 300);
+});
+
+test('a request authorises the card at Stripe, which is taken when it is accepted and released when it is declined (M3-08)', async ({ browser }, testInfo) => {
+  test.setTimeout(600_000);
+  const learner = { email: 'amelia.evans@example.com', name: 'Amelia Evans' };
+  const day = weeksOut(8, 4);
+  await clearDiary('Emma Clarke', day);
+  await requestLesson('Emma Clarke', learner.email, day, '10:00');
+  await requestLesson('Emma Clarke', learner.email, day, '15:00');
+  const toAccept = await lessonIdAt('Emma Clarke', day, '10:00');
+  const toDecline = await lessonIdAt('Emma Clarke', day, '15:00');
+
+  const learnerContext = await browser.newContext();
+  const page = await learnerContext.newPage();
+  await signInThroughForm(page, learner.email, { next: '/app/learner/lessons' });
+
+  /** Authorises a request with a test card, and waits for Stripe to say the money is set aside. */
+  const authorise = async (hour: string, bookingId: string): Promise<string> => {
+    await page.goto('/app/learner/lessons');
+    const lesson = page.getByRole('article').filter({ hasText: `${dayLabel(day)} at ${hour}` }).filter({ hasText: 'Emma Clarke' });
+    await expect(async () => {
+      await lesson.getByRole('link', { name: /^Authorise £/ }).click();
+      await page.waitForURL(new RegExp(`/app/learner/pay/${bookingId}`), { timeout: 5000 });
+    }).toPass({ timeout: 20_000 });
+    const checkout = page.getByRole('region', { name: /at \d\d:\d\d$/ });
+    await expect(checkout).toContainText('Your card is only charged if they do.');
+    await expect(async () => {
+      await checkout.getByRole('button', { name: /^Authorise £/ }).click();
+      await expect(checkout.getByRole('form', { name: 'Card details' })).toBeVisible({ timeout: 10_000 });
+    }).toPass({ timeout: 40_000 });
+    await payInCardForm(page, /^Authorise £/);
+    await expect(checkout).toContainText('Card authorised.');
+    await expect
+      .poll(async () => (await newestPaymentFor(bookingId))?.status, { timeout: WEBHOOK, message: 'Stripe told the app the card is authorised' })
+      .toBe('authorised');
+    const intent = (await newestPaymentFor(bookingId))?.providerRef ?? '';
+    expect(await stripeGet<StripePaymentIntent>(`payment_intents/${intent}`, account), 'held at Stripe, not taken').toMatchObject({
+      status: 'requires_capture',
+      amount: 4200,
+    });
+    return intent;
+  };
+
+  const accepted = await authorise('10:00', toAccept);
+  const declined = await authorise('15:00', toDecline);
+  await settled(page);
+  await snap(page, testInfo, 'stripe-request-authorised');
+
+  // Emma Clarke answers both from her diary.
+  const instructor = await browser.newContext({ storageState: authFile('schoolInstructor') });
+  const diary = await instructor.newPage();
+  await diary.goto(`/app/instructor/diary?view=day&date=${day}`);
+  const morning = diary.getByRole('article', { name: `10:00 ${learner.name}` });
+  await expect(morning).toContainText('Pending');
+  await morning.getByRole('button', { name: 'Accept' }).click();
+  await expect(diary.getByText(`Lesson with ${learner.name} confirmed`)).toBeVisible();
+
+  const afternoon = diary.getByRole('article', { name: `15:00 ${learner.name}` });
+  await tapUntil(afternoon.getByRole('button', { name: 'Decline' }), diary.getByRole('dialog', { name: new RegExp(`^Decline ${learner.name}`) }));
+  await diary.getByLabel('Why, in a word or two?').fill('Away that afternoon');
+  await diary.getByRole('button', { name: 'Decline the lesson' }).click();
+  await expect(diary.getByText(`Lesson with ${learner.name} declined`)).toBeVisible();
+  await instructor.close();
+
+  // The runner takes the accepted one and lets the declined one go, and Stripe says so.
+  await expect
+    .poll(async () => (await newestPaymentFor(toAccept))?.status, { timeout: JOBS, message: 'the accepted request was charged: is pnpm dev:jobs running?' })
+    .toBe('paid');
+  expect(await stripeGet<StripePaymentIntent>(`payment_intents/${accepted}`, account), 'taken at Stripe').toMatchObject({ status: 'succeeded' });
+  await expect
+    .poll(async () => (await newestPaymentFor(toDecline))?.status, { timeout: JOBS, message: 'the declined request was let go' })
+    .toBe('cancelled');
+  expect(await stripeGet<StripePaymentIntent>(`payment_intents/${declined}`, account), 'released at Stripe').toMatchObject({ status: 'canceled' });
+
+  await page.goto(`/app/learner/pay/${toDecline}`);
+  await expect(page.getByRole('region', { name: /at \d\d:\d\d$/ })).toContainText('Nothing has been taken from your card.');
+  await learnerContext.close();
 });

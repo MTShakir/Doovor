@@ -1,7 +1,7 @@
 import { createHmac } from 'node:crypto';
 import { existsSync } from 'node:fs';
 import path from 'node:path';
-import { expect, type Page } from '@playwright/test';
+import { expect, type Locator, type Page } from '@playwright/test';
 
 /**
  * What a test needs to work against Stripe test mode (RUNBOOK 3.7a, M3-23): the connected account
@@ -33,6 +33,24 @@ export function stripeAccountId(): string {
 export const visaThatWorks = '4242424242424242';
 
 /**
+ * Waits until something has stayed where it is for a moment. Once a card is complete, Stripe grows
+ * its frame to offer Link, and scrolling moves everything again; a click sent while either is under
+ * way goes to Stripe's frame, which was where the button is now, rather than to the button.
+ */
+async function stoppedMoving(locator: Locator, samples = 3): Promise<void> {
+  let last = '';
+  let still = 0;
+  const giveUp = Date.now() + 15_000;
+  while (still < samples) {
+    if (Date.now() > giveUp) throw new Error('The card form kept moving for 15 seconds.');
+    await locator.page().waitForTimeout(300);
+    const now = JSON.stringify(await locator.boundingBox());
+    still = now === last ? still + 1 : 0;
+    last = now;
+  }
+}
+
+/**
  * Types a test card into the card form and presses its button, the way a learner does. The
  * fields are Stripe's, inside its own frame, so they are found by the names Stripe gives them.
  */
@@ -44,8 +62,15 @@ export async function payInCardForm(page: Page, button: string | RegExp, card = 
   await fields.locator('input[name="cvc"]').fill('123');
   const postcode = fields.locator('input[name="postalCode"]');
   if (await postcode.isVisible()) await postcode.fill('M1 2QF');
-  await expect(form.getByRole('button', { name: button })).toBeEnabled();
-  await form.getByRole('button', { name: button }).click();
+
+  // Scrolled to and settled first, the way a person scrolls down and then taps: a click that has
+  // to scroll the page itself arrives at the card frame the scroll has just moved away.
+  const pay = form.getByRole('button', { name: button });
+  await expect(pay).toBeEnabled();
+  await stoppedMoving(pay);
+  await pay.scrollIntoViewIfNeeded();
+  await stoppedMoving(pay);
+  await pay.click();
 }
 
 /** Reads Stripe's own record, as the platform, on the connected account when one is given. */
