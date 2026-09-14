@@ -50,7 +50,9 @@ export function MyLessonRow({ lesson, rules, now, canChange }: MyLessonRowProps)
     windowHours: rules.cancellationWindowHours,
     lateFeePercent: rules.lateFeePercent,
     pricePence: lesson.pricePence,
-    paidWith: 'none',
+    // A lesson is paid with credit all or nothing, so the credit it used is its length (PAY-04).
+    paidWith: lesson.paymentStatus === 'paid_credit' ? 'credit' : 'none',
+    creditMinutes: lesson.durationMinutes,
   });
 
   useEffect(() => {

@@ -39,13 +39,26 @@ export default function PayPage({ params }: { params: Promise<{ booking: string 
 type Stage = 'gone' | 'paid' | 'authorised' | 'capturing' | 'request' | 'before' | 'due';
 
 function stageOf(lesson: CheckoutLesson): Stage {
-  if (lesson.paid) return 'paid';
+  // A lesson that is not going ahead says so first, whatever became of what paid for it.
   if (['expired', 'cancelled', 'declined'].includes(lesson.status)) return 'gone';
+  if (lesson.paid) return 'paid';
   if (lesson.authorised) return lesson.status === 'requested' ? 'authorised' : 'capturing';
   if (lesson.status === 'requested') return 'request';
   // Charged the day before, and not yet: nothing to pay now, only a card to have ready (PAY-03).
   if (lesson.paymentMode === 'before_lesson' && lesson.paymentStatus === 'unpaid') return 'before';
   return 'due';
+}
+
+/** What became of the money, or the credit, for a lesson that is not going ahead (R-07, R-08). */
+function goneMoney(lesson: CheckoutLesson): string {
+  if (lesson.paymentMode === 'credit') {
+    if (lesson.paymentStatus === 'refunded') return 'The credit it used has gone back to you.';
+    if (lesson.paymentStatus === 'partially_refunded') {
+      return 'Part of the credit it used was kept as the late cancellation fee, and the rest has gone back to you.';
+    }
+    return 'The credit it used was kept as the late cancellation fee.';
+  }
+  return lesson.refunded ? 'Your payment is being refunded to your card.' : 'Nothing has been taken from your card.';
 }
 
 function Note({ icon, children }: { icon: ReactNode; children: ReactNode }) {
@@ -133,7 +146,7 @@ async function Checkout({ params }: { params: Promise<{ booking: string }> }) {
             {lesson.status === 'expired'
               ? 'This slot is no longer held for you, so the lesson is not booked.'
               : 'This lesson is not going ahead.'}{' '}
-            {lesson.refunded ? 'Your payment is being refunded to your card.' : 'Nothing has been taken from your card.'}
+            {goneMoney(lesson)}
           </Note>
           <LessonsButton />
         </div>

@@ -179,4 +179,26 @@ describe('cancellationWarning', () => {
     expect(cancellationWarning(late, formatPence)).toContain('£42 is charged');
     expect(cancellationWarning(lateButFree, formatPence)).toContain('no fee');
   });
+
+  it('talks about credit, not money, for a lesson paid with credit (R-07)', () => {
+    const credit = { ...base, by: 'learner' as const, paidWith: 'credit' as const, creditMinutes: 90 };
+
+    const inTime = cancellationOutcome({ ...credit, now: before(72) });
+    const late = cancellationOutcome({ ...credit, now: before(2) });
+    const half = cancellationOutcome({ ...credit, now: before(2), lateFeePercent: 50 });
+
+    expect(cancellationWarning(inTime, formatPence)).toBe('No charge: the credit it used comes back to you.');
+    expect(late).toMatchObject({ creditReturnedMinutes: 0, creditKeptMinutes: 90 });
+    expect(cancellationWarning(late, formatPence)).toBe(
+      'This is a late cancellation, so 1 hour 30 minutes of your credit is kept as the fee.',
+    );
+    expect(half).toMatchObject({ creditReturnedMinutes: 45, creditKeptMinutes: 45 });
+    expect(cancellationWarning(half, formatPence)).toContain('45 minutes of your credit is kept');
+  });
+
+  it('keeps, returns and rounds odd minutes the way the database does (R-07)', () => {
+    // 45 minutes at half: 22.5 back, rounded up to 23, so 22 are kept.
+    const odd = cancellationOutcome({ ...base, by: 'learner', paidWith: 'credit', creditMinutes: 45, now: before(2), lateFeePercent: 50 });
+    expect(odd).toMatchObject({ creditReturnedMinutes: 23, creditKeptMinutes: 22 });
+  });
 });

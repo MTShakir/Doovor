@@ -2,6 +2,7 @@ import { expect, test } from '@playwright/test';
 import { authFile, roles } from '../support/accounts';
 import {
   acceptRequests,
+  bookAsLearner,
   bookLesson,
   clearPaymentsAccount,
   creditFromPayment,
@@ -9,6 +10,7 @@ import {
   enablePayments,
   expireHoldsNow,
   finishedLessonOwed,
+  giveCredit,
   holdPaymentsBusiness,
   lessonsOn,
   packagePurchaseParts,
@@ -518,7 +520,7 @@ test.describe('paying for a lesson (PAY-02, M3-05)', () => {
   });
 });
 
-test.describe('buying a package (PAY-04, M3-13)', () => {
+test.describe('lesson credit (PAY-04, M3-13, M3-14)', () => {
   const owner = roles.schoolOwner.email;
   const school = 'Quayside Driving School';
 
@@ -579,6 +581,65 @@ test.describe('buying a package (PAY-04, M3-13)', () => {
     await snap(page, testInfo, 'credit-added');
 
     await clearPaymentsAccount(owner);
+  });
+
+  /** A Wednesday some weeks out for each width, inside the learner's booking horizon and past the seeded diary. */
+  const creditDay = (project: string): string => {
+    const day = new Date();
+    day.setDate(day.getDate() + (project === 'mobile' ? 28 : 35));
+    while (day.getDay() !== 3) day.setDate(day.getDate() + 1);
+    return day.toISOString().slice(0, 10);
+  };
+
+  /** Minutes as the app says them. */
+  const inWords = (minutes: number): string => {
+    const hours = Math.floor(minutes / 60);
+    const rest = minutes % 60;
+    const hourText = hours === 1 ? '1 hour' : `${String(hours)} hours`;
+    if (hours === 0) return `${String(rest)} minutes`;
+    return rest === 0 ? hourText : `${hourText} ${String(rest)} minutes`;
+  };
+
+  test('acceptance-03: credit pays for a lesson, and all of it comes back when it is cancelled in time', async ({ page }, testInfo) => {
+    const email = buyer(testInfo.project.name);
+    const day = creditDay(testInfo.project.name);
+    await giveCredit(email, owner, 120, 7600);
+    const before = await creditWith(email, owner);
+
+    // Booked the way the app books: create_booking takes the hour from credit (PAY-04).
+    await bookAsLearner(email, 'Emma Clarke', day, '11:00');
+    expect((await creditWith(email, owner)).minutes, 'the lesson took an hour of credit').toBe(before.minutes - 60);
+
+    await signInThroughForm(page, email, { next: '/app/learner/payments' });
+    await expect(page.getByRole('region', { name: `Credit with ${school}` })).toContainText(
+      `${inWords(before.minutes - 60)} of credit`,
+    );
+
+    await page.goto('/app/learner/lessons');
+    const lesson = page
+      .getByRole('article')
+      .filter({ hasText: `${dayLabel(day)} at 11:00` })
+      .filter({ hasNotText: 'Cancelled' });
+    await expect(lesson.getByText('Credit', { exact: true })).toBeVisible();
+    await expect(lesson.getByRole('link', { name: /^Pay / })).toHaveCount(0);
+    await settled(page);
+    await snap(page, testInfo, 'lesson-paid-with-credit');
+
+    const sheet = page.getByRole('dialog', { name: 'Cancel this lesson?' });
+    await expect(async () => {
+      await lesson.getByRole('button', { name: 'Cancel' }).click();
+      await expect(sheet).toBeVisible({ timeout: 5000 });
+    }).toPass({ timeout: 20_000 });
+    await expect(sheet).toContainText('No charge: the credit it used comes back to you.');
+    await expectAccessible(page);
+    await snap(page, testInfo, 'cancel-credit-lesson');
+
+    await sheet.getByRole('button', { name: 'Yes, cancel it' }).click();
+    await expect(page.getByText('Lesson cancelled')).toBeVisible();
+    expect((await creditWith(email, owner)).minutes, 'every minute came back').toBe(before.minutes);
+
+    await page.goto('/app/learner/payments');
+    await expect(page.getByRole('region', { name: `Credit with ${school}` })).toContainText(`${inWords(before.minutes)} of credit`);
   });
 
   test('acceptance-06: a payment delivered three times is one payment and one credit entry @desktop-only', async ({ request }, testInfo) => {

@@ -14,7 +14,7 @@ import {
   type NotificationKind,
   type PlannedNotification,
 } from '@repo/core/notifications';
-import { formatDate, formatTime, utcToLocal } from '@repo/core/time';
+import { formatDate, formatMinutes, formatTime, utcToLocal } from '@repo/core/time';
 
 /** What `system_booking_notice` answers. */
 export interface BookingNotice {
@@ -93,7 +93,10 @@ function detailFor(event: BookingEvent, notice: BookingNotice): string | undefin
   if (event.name === 'booking.declined') return reason ? `Reason: ${reason}` : 'They could not make that time';
   if (event.name === 'booking.cancelled') {
     const fee = notice.fee_pence ?? 0;
+    // A lesson paid with credit pays its late fee with credit (R-07).
+    const kept = typeof event.payload.credit_kept_minutes === 'number' ? event.payload.credit_kept_minutes : 0;
     if (reason) return `Reason: ${reason}`;
+    if (kept > 0) return `${formatMinutes(kept)} of credit is kept as the fee`;
     return notice.late_cancellation && fee > 0 ? `A fee of ${formatPence(fee)} applies` : undefined;
   }
   return undefined;

@@ -369,7 +369,7 @@ The browser shows the confirmation screen as soon as Stripe confirms, then polls
 
 1. Pick learner (recent learners first). 2. Pick slot (engine output, duration defaults to the learner's usual length). 3. Confirm.
 
-`create_booking` then, in one transaction: locks the learner's `credit_accounts` row (`FOR UPDATE`), inserts the confirmed booking (the exclusion constraints decide overlaps), consumes credit lots oldest first, writes `credit_ledger` rows of type `use`, updates the cached balance (a `CHECK balance_minutes >= 0` makes overdraw impossible) and writes `booking_events`. Any failure rolls back all of it. With no credit and a pay-later or offline Business setting, the booking is confirmed as `unpaid`.
+`create_booking` then, in one transaction: inserts the booking (the exclusion constraints decide overlaps, and its trigger takes the diary and learner locks), locks the learner's `credit_accounts` row (`FOR UPDATE`), and when the usable credit covers the whole lesson consumes lots oldest first as `credit_ledger` rows of type `use`, which move the cached balance (a `CHECK balance_minutes >= 0` makes overdraw impossible), and marks the lesson `paid_credit`. Any failure rolls back all of it. Credit that covers only part of a lesson is not used (D-088). With no credit and a pay-later or offline Business setting, the booking is confirmed as `unpaid`. A request is paid from credit when it is made and gets it back when it is declined or lapses; a trigger on the move to `expired` covers every path that notices a lapse.
 
 ### 7.7 Recurring lessons (BOK-05, R-13)
 

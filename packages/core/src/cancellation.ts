@@ -6,6 +6,8 @@
  * warns somebody and the transaction that charges them cannot disagree.
  */
 
+import { formatMinutes } from './time/format.ts';
+
 export type CancelActor = 'learner' | 'instructor' | 'business' | 'system';
 
 export type PaidWith = 'none' | 'card' | 'cash' | 'bank' | 'credit';
@@ -32,6 +34,8 @@ export interface CancellationOutcome {
   refundPence: number;
   /** Minutes of credit that go back to the learner (R-07). */
   creditReturnedMinutes: number;
+  /** Minutes of credit kept as the fee: what the lesson used and does not give back (R-07). */
+  creditKeptMinutes: number;
   /** An instructor calling a lesson off has to say why (R-08). */
   reasonRequired: boolean;
 }
@@ -63,19 +67,22 @@ export function cancellationOutcome(input: CancellationInput): CancellationOutco
       feePence: 0,
       refundPence: paidPence(input),
       creditReturnedMinutes: credit,
+      creditKeptMinutes: 0,
       reasonRequired: input.by === 'instructor' || input.by === 'business',
     };
   }
 
   const percent = Math.min(100, Math.max(0, input.lateFeePercent));
   const feePence = Math.round((input.pricePence * percent) / 100);
+  // The credit pays the fee, so what comes back is the part the fee did not take (R-07).
+  const returned = Math.round((credit * (100 - percent)) / 100);
 
   return {
     late: true,
     feePence,
     refundPence: Math.max(0, paidPence(input) - feePence),
-    // The credit pays the fee, so what comes back is the part the fee did not take (R-07).
-    creditReturnedMinutes: Math.round((credit * (100 - percent)) / 100),
+    creditReturnedMinutes: returned,
+    creditKeptMinutes: credit - returned,
     reasonRequired: false,
   };
 }
@@ -85,12 +92,14 @@ export function noShowOutcome(input: Omit<CancellationInput, 'by'>): Cancellatio
   const percent = Math.min(100, Math.max(0, input.lateFeePercent));
   const credit = input.paidWith === 'credit' ? Math.max(0, input.creditMinutes ?? 0) : 0;
   const feePence = Math.round((input.pricePence * percent) / 100);
+  const returned = Math.round((credit * (100 - percent)) / 100);
 
   return {
     late: true,
     feePence,
     refundPence: Math.max(0, paidPence({ ...input, by: 'learner' }) - feePence),
-    creditReturnedMinutes: Math.round((credit * (100 - percent)) / 100),
+    creditReturnedMinutes: returned,
+    creditKeptMinutes: credit - returned,
     reasonRequired: false,
   };
 }
@@ -107,7 +116,15 @@ export const DISPUTE_DAYS = 7;
 
 /** What the screen says before somebody presses cancel. */
 export function cancellationWarning(outcome: CancellationOutcome, formatMoney: (pence: number) => string): string {
-  if (!outcome.late) return 'No charge: this is inside the free cancellation window.';
+  if (!outcome.late) {
+    return outcome.creditReturnedMinutes > 0
+      ? 'No charge: the credit it used comes back to you.'
+      : 'No charge: this is inside the free cancellation window.';
+  }
+  // A lesson paid with credit pays its fee with credit, never with money (R-07).
+  if (outcome.creditKeptMinutes > 0) {
+    return `This is a late cancellation, so ${formatMinutes(outcome.creditKeptMinutes)} of your credit is kept as the fee.`;
+  }
   if (outcome.feePence === 0) return 'This is a late cancellation, but there is no fee.';
   return `This is a late cancellation, so ${formatMoney(outcome.feePence)} is charged.`;
 }

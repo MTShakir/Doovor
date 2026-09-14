@@ -533,3 +533,65 @@ export async function creditFromPayment(providerRef: string): Promise<{ payments
     };
   });
 }
+
+/**
+ * Gives a learner credit with the Business an owner runs, as buying a package does: a card payment
+ * and the lot it fills, through the same function the webhook uses. Local only.
+ *
+ * Lessons are paid from credit first, and the credit ledger keeps every lesson it paid for, so
+ * those lessons can never be deleted. Give credit only to learners whose lessons no spec clears
+ * away: Emma Clarke's, not Sarah Khan's or Tom Walsh's.
+ */
+export async function giveCredit(learnerEmail: string, ownerEmail: string, minutes: number, pricePence: number): Promise<void> {
+  await withDatabase(async (sql) => {
+    await sql.begin(async (tx) => {
+      const [who] = await tx<{ business_id: string; learner_id: string }[]>`
+        select m.business_id, learner.id as learner_id
+          from public.memberships m
+          join public.users owner on owner.id = m.user_id
+          join public.users learner on lower(learner.email) = lower(${learnerEmail})
+         where m.role = 'owner'
+           and lower(owner.email) = lower(${ownerEmail})`;
+      if (!who) throw new Error(`No Business run by ${ownerEmail}, or no ${learnerEmail}`);
+      const [payment] = await tx<{ id: string }[]>`
+        insert into public.payments (business_id, learner_id, amount_pence, method, status, paid_at)
+        values (${who.business_id}::uuid, ${who.learner_id}::uuid, ${pricePence}, 'card', 'paid', now())
+        returning id`;
+      if (!payment) throw new Error('The payment was not written');
+      await tx`
+        select private.add_credit_lot(${who.business_id}::uuid, ${who.learner_id}::uuid, ${minutes}::int, ${pricePence}::int,
+                                      ${payment.id}::uuid, null::uuid, null::timestamptz, now(), null::uuid)`;
+    });
+  });
+}
+
+/**
+ * Books a lesson the way a learner does in the app: through create_booking, signed in as them,
+ * so every rule applies, credit included (PAY-04). Local only. Returns the lesson.
+ */
+export async function bookAsLearner(
+  learnerEmail: string,
+  instructorName: string,
+  date: string,
+  time: string,
+  durationMinutes = 60,
+): Promise<string> {
+  return withDatabase(async (sql) =>
+    sql.begin(async (tx) => {
+      const [who] = await tx<{ learner_id: string; instructor_id: string; lesson_type_id: string }[]>`
+        select learner.id as learner_id, p.id as instructor_id, t.id as lesson_type_id
+          from public.instructor_profiles p
+          join public.lesson_types t on t.business_id = p.business_id and t.name = 'Standard lesson'
+          join public.users learner on lower(learner.email) = lower(${learnerEmail})
+         where p.display_name = ${instructorName}`;
+      if (!who) throw new Error(`No ${instructorName}, or no ${learnerEmail}`);
+      await tx`select set_config('request.jwt.claims', ${JSON.stringify({ sub: who.learner_id, role: 'authenticated' })}, true)`;
+      await tx`set local role authenticated`;
+      const [booked] = await tx<{ id: string }[]>`
+        select public.create_booking(${who.instructor_id}::uuid, ${who.learner_id}::uuid, ${who.lesson_type_id}::uuid,
+                                     (${date}::date + ${time}::time) at time zone 'Europe/London', ${durationMinutes}::int)::text as id`;
+      if (!booked) throw new Error('create_booking answered nothing');
+      return booked.id;
+    }),
+  );
+}

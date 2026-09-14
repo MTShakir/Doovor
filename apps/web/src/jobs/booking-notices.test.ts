@@ -85,6 +85,14 @@ describe('what everybody is told about a lesson (PRD Appendix B)', () => {
     expect(planned[0]?.body).toBe('Wed 16 Sep at 09:00 with Sarah Khan. A fee of £42 applies.');
   });
 
+  it('says the fee was kept from credit, not charged, for a lesson paid with credit (R-07)', () => {
+    const planned = planBookingNotifications({
+      event: { name: 'booking.cancelled', payload: { credit_kept_minutes: 60, credit_returned_minutes: 0 } },
+      notice: { ...notice, late_cancellation: true, fee_pence: 4200, payment_status: 'paid_credit' },
+    });
+    expect(planned[0]?.body).toBe('Wed 16 Sep at 09:00 with Sarah Khan. 1 hour of credit is kept as the fee.');
+  });
+
   it('takes each of them to the screen that answers it', () => {
     const planned = planBookingNotifications({
       event: { name: 'booking.rescheduled', payload: {} },
