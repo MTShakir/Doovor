@@ -10,7 +10,7 @@ M1 Instructor core is approved and merged to `main`, all 24 tasks, with its fift
 
 M2 Learners and bookings is approved and merged to `main`, and was pushed to staging on 13 September 2026.
 
-M3 Payments is built on branch `m3-payments`: M3-01 to M3-23 are done, and on 14 September acceptance tests 3 to 6 and 12, and the M3-08 authorisation, passed against Stripe test mode. The milestone report waits for approval. The app now lives on `app.doovor.com` with the public site on `doovor.com` (D-084).
+M3 Payments is built on branch `m3-payments`: M3-01 to M3-23 are done, and on 14 September acceptance tests 3 to 6 and 12, and the M3-08 authorisation, passed against Stripe test mode. The milestone report is at https://claude.ai/code/artifact/2defdd40-fd63-4827-b54f-4eece5b627f5 and waits for approval. The app now lives on `app.doovor.com` with the public site on `doovor.com` (D-084).
 
 ## M3 progress
 
@@ -164,7 +164,7 @@ Decisions D-036 to D-050 were logged during this stretch. Two were security fixe
 | Stripe test mode | 6 of 6 on 14 September (`pnpm test:e2e:stripe`): acceptance-03 to 06, acceptance-12 and the M3-08 authorisation, against the sandbox with the listener and the job runner, in 6.8 minutes from a clean database |
 | End to end (Playwright) | 276 at 390 px and 1440 px on 14 September, none skipped, including acceptance-01 to 06, 09 and 12, the payment journeys for M3-05 to M3-22 and cover lessons (D-097). One run had the saved-card removal step fail once under full load and passed when its file ran again; it is being watched; green in CI on every push since 13 September |
 | Lint, typecheck, copy guard | Clean |
-| CI on GitHub | Read after every push. Green on e827035 (14 September). Two pushes that day failed and were fixed in the next: a pgTAP test that only passed from Thursday to Sunday (c06c1e0), and an accessibility check that caught the portal's loading skeleton mid-scan (635fe19) |
+| CI on GitHub | Read after every push. Green on bef6eea (14 September). Two pushes that day failed and were fixed in the next: a pgTAP test that only passed from Thursday to Sunday (c06c1e0), and an accessibility check that caught the portal's loading skeleton mid-scan (635fe19) |
 | Staging (hosted) | All 46 migrations applied, M2 pushed on 2026-09-13. Security Advisor: 0 errors, 39 warnings, 38 of them the expected `security definer` pattern (D-051) and one the dashboard switch for leaked password protection |
 
 ## In progress
