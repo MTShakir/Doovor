@@ -1,5 +1,6 @@
 import { expect, test } from '@playwright/test';
 import { countProviderEvents } from '../support/database';
+import { fakeSignature as sign } from '../support/webhooks';
 
 /**
  * The webhook route (R-11, M3-03), through the real server: the signature is checked on the
@@ -10,15 +11,6 @@ import { countProviderEvents } from '../support/database';
  */
 test.describe('events from the payments provider (R-11, M3-03)', () => {
   const endpoint = '/api/webhooks/stripe';
-
-  /** The fake's signature, which is the one the app checks while it is the provider in use. */
-  const sign = (body: string, secret = 'whsec_local_fake'): string => {
-    let hash = 5381;
-    for (const character of `${secret}.${body}`) {
-      hash = ((hash << 5) + hash + (character.codePointAt(0) ?? 0)) % 0xffffffff;
-    }
-    return `fake_sig_${hash.toString(16)}`;
-  };
 
   const event = (id: string, type = 'payment_intent.succeeded'): string =>
     JSON.stringify({

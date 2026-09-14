@@ -467,3 +467,69 @@ export async function paymentFor(startsAt: string): Promise<{ amountPence: numbe
     return found ? { amountPence: found.amount_pence, status: found.status } : null;
   });
 }
+
+/**
+ * A learner's credit with the Business an owner runs (PAY-04): the minutes they can book with now,
+ * and how many lots they came in. Credit is never taken away by a test, so tests compare before
+ * with after.
+ */
+export async function creditWith(learnerEmail: string, ownerEmail: string): Promise<{ minutes: number; lots: number }> {
+  return withDatabase(async (sql) => {
+    const rows = await sql<{ minutes: string; lots: string }[]>`
+      select coalesce(sum(l.minutes_remaining) filter (where l.expires_at is null or l.expires_at > now()), 0)::text as minutes,
+             count(l.id)::text as lots
+        from public.credit_lots l
+        join public.users learner on learner.id = l.learner_id
+        join public.memberships m on m.business_id = l.business_id and m.role = 'owner'
+        join public.users owner on owner.id = m.user_id
+       where lower(learner.email) = lower(${learnerEmail})
+         and lower(owner.email) = lower(${ownerEmail})`;
+    return { minutes: Number(rows[0]?.minutes ?? '0'), lots: Number(rows[0]?.lots ?? '0') };
+  });
+}
+
+/** What a webhook for buying a package needs to say: the package, its Business and the learner. */
+export async function packagePurchaseParts(
+  ownerEmail: string,
+  packageName: string,
+  learnerEmail: string,
+): Promise<{ packageId: string; businessId: string; learnerId: string; minutes: number; pricePence: number }> {
+  return withDatabase(async (sql) => {
+    const rows = await sql<{ id: string; business_id: string; learner_id: string; minutes: number; price_pence: number }[]>`
+      select p.id, p.business_id, learner.id as learner_id, p.minutes, p.price_pence
+        from public.packages p
+        join public.memberships m on m.business_id = p.business_id and m.role = 'owner'
+        join public.users owner on owner.id = m.user_id
+        join public.users learner on lower(learner.email) = lower(${learnerEmail})
+       where lower(owner.email) = lower(${ownerEmail})
+         and p.name = ${packageName}
+       limit 1`;
+    const found = rows[0];
+    if (!found) throw new Error(`No package called ${packageName} for ${ownerEmail}`);
+    return {
+      packageId: found.id,
+      businessId: found.business_id,
+      learnerId: found.learner_id,
+      minutes: found.minutes,
+      pricePence: found.price_pence,
+    };
+  });
+}
+
+/** What one payment became (R-11, acceptance-06): its payment rows, its lots and its purchase rows. */
+export async function creditFromPayment(providerRef: string): Promise<{ payments: number; lots: number; purchases: number }> {
+  return withDatabase(async (sql) => {
+    const rows = await sql<{ payments: string; lots: string; purchases: string }[]>`
+      select (select count(*) from public.payments where provider_ref = ${providerRef})::text as payments,
+             (select count(*) from public.credit_lots l join public.payments p on p.id = l.payment_id
+               where p.provider_ref = ${providerRef})::text as lots,
+             (select count(*) from public.credit_ledger c join public.payments p on p.id = c.payment_id
+               where p.provider_ref = ${providerRef} and c.kind = 'purchase')::text as purchases`;
+    const found = rows[0];
+    return {
+      payments: Number(found?.payments ?? '0'),
+      lots: Number(found?.lots ?? '0'),
+      purchases: Number(found?.purchases ?? '0'),
+    };
+  });
+}

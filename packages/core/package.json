@@ -35,7 +35,8 @@
     "./schemas/notification": "./src/schemas/notification.ts",
     "./cards": "./src/cards.ts",
     "./payment-modes": "./src/payment-modes.ts",
-    "./credit": "./src/credit.ts"
+    "./credit": "./src/credit.ts",
+    "./packages": "./src/packages.ts"
   },
   "scripts": {
     "lint": "eslint .",

@@ -680,6 +680,7 @@ export type Database = {
           business_id: string
           created_at: string
           created_by: string | null
+          early_start_requested_at: string | null
           expires_at: string | null
           id: string
           learner_id: string
@@ -694,6 +695,7 @@ export type Database = {
           business_id: string
           created_at?: string
           created_by?: string | null
+          early_start_requested_at?: string | null
           expires_at?: string | null
           id?: string
           learner_id: string
@@ -708,6 +710,7 @@ export type Database = {
           business_id?: string
           created_at?: string
           created_by?: string | null
+          early_start_requested_at?: string | null
           expires_at?: string | null
           id?: string
           learner_id?: string
@@ -2569,6 +2572,16 @@ export type Database = {
         Args: {
           p_amount_pence: number
           p_booking_id: string
+          p_provider_ref: string
+        }
+        Returns: Json
+      }
+      system_record_package_payment: {
+        Args: {
+          p_account_id: string
+          p_amount_pence: number
+          p_fee_pence?: number
+          p_metadata: Json
           p_provider_ref: string
         }
         Returns: Json

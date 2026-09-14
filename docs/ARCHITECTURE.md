@@ -461,7 +461,9 @@ sequenceDiagram
 ```
 
 - Recording the event and applying it happen in the same transaction, so a crash can never mark an event processed without its effect.
-- Concurrent duplicate deliveries serialise on the unique index. Defence in depth: `payments.provider_ref` and `credit_lots.payment_id` are unique too. Acceptance test 6 replays one event three times and asserts one payment and one credit entry.
+- Concurrent duplicate deliveries serialise on the unique index. Defence in depth: `payments.provider_ref` and `credit_lots.payment_id` are unique too. Acceptance test 6 replays one package payment three times and asserts one payment and one credit entry, in pgTAP and through the route.
+- An event about a lesson, payment or package is applied only when it comes from that Business's own connected account (D-087).
+- A package payment carries what it buys in its metadata (package, learner, minutes, days), written by the server when the payment starts. The webhook writes the payment, the lot and its `purchase` row together (`system_record_package_payment`, D-086).
 - Follow-up work (emails, push, analytics) runs in Inngest with its own idempotency keys, so the webhook responds fast.
 
 ### 8.5 Refunds, fees and receipts

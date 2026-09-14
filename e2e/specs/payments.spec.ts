@@ -4,11 +4,14 @@ import {
   acceptRequests,
   bookLesson,
   clearPaymentsAccount,
+  creditFromPayment,
+  creditWith,
   enablePayments,
   expireHoldsNow,
   finishedLessonOwed,
   holdPaymentsBusiness,
   lessonsOn,
+  packagePurchaseParts,
   paymentFor,
   paymentsAccountOf,
   removeLesson,
@@ -17,6 +20,8 @@ import {
   setBookingStatus,
 } from '../support/database';
 import { dayLabel, expectAccessible, settled, snap } from '../support/helpers';
+import { signInThroughForm } from '../support/sign-in';
+import { fakeSignature } from '../support/webhooks';
 
 /**
  * Everything about one Business taking money (PAY-01, PAY-02, PAY-03, R-10, M3-02, M3-05).
@@ -508,6 +513,118 @@ test.describe('paying for a lesson (PAY-02, M3-05)', () => {
     await checkout.getByRole('button', { name: 'Test a refused card' }).click();
     await expect(page.getByText('The card was refused. Try another one.')).toBeVisible();
     await expect(checkout).toContainText('To pay');
+
+    await clearPaymentsAccount(owner);
+  });
+});
+
+test.describe('buying a package (PAY-04, M3-13)', () => {
+  const owner = roles.schoolOwner.email;
+  const school = 'Quayside Driving School';
+
+  /**
+   * Learners of the school's that none of the lesson payments above belong to, one for each
+   * width. Lessons are paid from credit first, so credit would change how their lessons are paid.
+   */
+  const buyer = (project: string): string =>
+    project === 'mobile' ? 'isla.roberts@example.com' : 'amelia.evans@example.com';
+
+  test('a learner buys a package, and has the hours as credit', async ({ page }, testInfo) => {
+    const email = buyer(testInfo.project.name);
+    await enablePayments(owner, `fake_acct_packages_${testInfo.project.name}`);
+    const before = await creditWith(email, owner);
+
+    await signInThroughForm(page, email, { next: '/app/learner/payments' });
+    const credit = page.getByRole('region', { name: `Credit with ${school}` });
+    await expect(credit).toBeVisible();
+    await expect(credit.getByRole('link', { name: /^Buy 10 hours/ })).toBeVisible();
+    await expectAccessible(page);
+    await settled(page);
+    await snap(page, testInfo, 'lesson-credit');
+
+    await expect(async () => {
+      await credit.getByRole('link', { name: /^Buy 5 hours/ }).click();
+      await page.waitForURL(/\/app\/learner\/payments\/packages\//, { timeout: 5000 });
+    }).toPass({ timeout: 20_000 });
+
+    const purchase = page.getByRole('region', { name: '5 hours' });
+    await expect(purchase).toContainText('£195');
+    await expect(purchase).toContainText('£39 an hour');
+    await expect(purchase).toContainText(`It is for lessons with ${school} only.`);
+    await expect(purchase).toContainText('Use them within a year of buying.');
+
+    // Nothing is asked of the card until the learner has said their lessons may start (D-086).
+    const pay = purchase.getByRole('button', { name: 'Pay £195 for 5 hours' });
+    const unticked = purchase.getByText('Tick "Start my lessons straight away" to buy this package.');
+    await expect(async () => {
+      await pay.click();
+      await expect(unticked).toBeVisible({ timeout: 5000 });
+    }).toPass({ timeout: 20_000 });
+    await expectAccessible(page);
+    await settled(page);
+    await snap(page, testInfo, 'package-purchase');
+
+    await purchase.getByRole('checkbox', { name: /^Start my lessons straight away/ }).click();
+    await expect(unticked).toBeHidden();
+    await pay.click();
+    await purchase.getByRole('button', { name: 'Pay with a test card' }).click();
+
+    await page.waitForURL(/\/app\/learner\/payments$/);
+    await expect(page.getByText('5 hours of credit added')).toBeVisible();
+    await expect(page.getByRole('region', { name: `Credit with ${school}` })).toContainText(
+      `${String((before.minutes + 300) / 60)} hours of credit`,
+    );
+    expect(await creditWith(email, owner)).toEqual({ minutes: before.minutes + 300, lots: before.lots + 1 });
+    await settled(page);
+    await snap(page, testInfo, 'credit-added');
+
+    await clearPaymentsAccount(owner);
+  });
+
+  test('acceptance-06: a payment delivered three times is one payment and one credit entry @desktop-only', async ({ request }, testInfo) => {
+    const account = await enablePayments(owner, `fake_acct_acceptance06_${String(Date.now())}`);
+    const parts = await packagePurchaseParts(owner, '10 hours', buyer(testInfo.project.name));
+    const intent = `pi_acceptance06_${String(Date.now())}`;
+
+    const body = JSON.stringify({
+      id: `evt_${intent}`,
+      type: 'payment_intent.succeeded',
+      account,
+      created: Math.floor(Date.now() / 1000),
+      data: {
+        object: {
+          id: intent,
+          amount: parts.pricePence,
+          amount_received: parts.pricePence,
+          metadata: {
+            package_id: parts.packageId,
+            business_id: parts.businessId,
+            learner_id: parts.learnerId,
+            minutes: String(parts.minutes),
+            expiry_days: '365',
+            starts_now: 'yes',
+          },
+        },
+      },
+    });
+    const headers = { 'content-type': 'application/json', 'stripe-signature': fakeSignature(body) };
+
+    const deliveries = await Promise.all(
+      [1, 2, 3].map(() => request.post('/api/webhooks/stripe', { data: body, headers })),
+    );
+    for (const delivery of deliveries) expect(delivery.status(), 'every delivery is answered 200').toBe(200);
+
+    const outcomes = await Promise.all(deliveries.map((one) => one.json() as Promise<{ outcome: string }>));
+    expect(outcomes.map((one) => one.outcome).sort(), 'one of them did the work').toEqual([
+      'credit_added',
+      'duplicate',
+      'duplicate',
+    ]);
+    expect(await creditFromPayment(intent), 'and it made one payment and one credit entry').toEqual({
+      payments: 1,
+      lots: 1,
+      purchases: 1,
+    });
 
     await clearPaymentsAccount(owner);
   });
