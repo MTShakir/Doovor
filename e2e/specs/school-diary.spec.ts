@@ -1,14 +1,19 @@
 import { expect, test } from '@playwright/test';
 import { authFile } from '../support/accounts';
 import { findLesson, setBookingStatus } from '../support/database';
-import { expectAccessible, snap } from '../support/helpers';
+import { expectAccessible, nextWeekday, snap } from '../support/helpers';
 
-/** The school diary (DIA-09, M1-22). The seeded school has three instructors. */
+/**
+ * The school diary (DIA-09, M1-22). The seeded school has three instructors. A Tuesday in the
+ * fortnight the seed fills, worked out rather than written down.
+ */
+const tuesday = nextWeekday(2);
+
 test.describe('school diary (DIA-09, M1-22)', () => {
   test.use({ storageState: authFile('schoolManager') });
 
   test('shows every instructor at the school side by side', async ({ page }, testInfo) => {
-    await page.goto('/app/school/diary?date=2026-09-15');
+    await page.goto(`/app/school/diary?date=${tuesday}`);
     await expect(page.getByRole('heading', { level: 1, name: 'Diary' })).toBeVisible();
 
     // The definition of done: a manager sees all of them, not only their own.
@@ -20,7 +25,7 @@ test.describe('school diary (DIA-09, M1-22)', () => {
   });
 
   test('narrows to one instructor, and to one kind of car', async ({ page }) => {
-    await page.goto('/app/school/diary?date=2026-09-15');
+    await page.goto(`/app/school/diary?date=${tuesday}`);
 
     await page.getByLabel('Transmission').selectOption('automatic');
     await expect(page).toHaveURL(/transmission=automatic/);
@@ -38,7 +43,7 @@ test.describe('school diary (DIA-09, M1-22)', () => {
     const page = await context.newPage();
 
     // The school diary is not theirs to open: the gate sends them to their own portal.
-    await page.goto('/app/school/diary?date=2026-09-15');
+    await page.goto(`/app/school/diary?date=${tuesday}`);
     await expect(page).toHaveURL(/\/app\/instructor$/);
     await context.close();
   });

@@ -14,15 +14,17 @@ import { signInThroughForm } from '../support/sign-in';
 test.describe('disputing a no-show (R-09, M3-19)', () => {
   const learner = { email: 'olivia.brown@example.com', name: 'Olivia Brown' };
 
+  // Two days apart and an hour of their own, so a run that crosses midnight between the two
+  // widths still gives each a lesson, and a notification, that the other cannot mistake for its own.
   const pastDay = (project: string): string =>
     new Intl.DateTimeFormat('en-CA', { timeZone: 'Europe/London' }).format(
-      new Date(Date.now() - (project === 'mobile' ? 2 : 3) * 24 * 3_600_000),
+      new Date(Date.now() - (project === 'mobile' ? 2 : 4) * 24 * 3_600_000),
     );
 
   test('the learner disputes a no-show within the week, and the owner waives the fee', async ({ page, browser }, testInfo) => {
     test.setTimeout(120_000);
     const day = pastDay(testInfo.project.name);
-    const hour = '06:00';
+    const hour = testInfo.project.name === 'mobile' ? '06:00' : '05:00';
     await bookLesson('Sarah Khan', learner.email, day, hour);
     const bookingId = await lessonIdAt('Sarah Khan', day, hour);
 

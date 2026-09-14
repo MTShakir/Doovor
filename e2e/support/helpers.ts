@@ -94,6 +94,29 @@ export async function expectAccessible(page: Page, options: { exclude?: string[]
   expect(blocking, 'serious or critical accessibility issues').toEqual([]);
 }
 
+/** A local day moved on or back by whole days: calendar arithmetic, with no zone to cross. */
+export function addDays(date: string, days: number): string {
+  const [year = 0, month = 1, day = 1] = date.split('-').map(Number);
+  return new Date(Date.UTC(year, month - 1, day + days)).toISOString().slice(0, 10);
+}
+
+/**
+ * The next day of the week after today in London, 1 to 7 days ahead (0 is Sunday): inside the
+ * fortnight the seed fills, and never today. The seed is anchored to the day it ran, so a date
+ * written into a test goes stale, and one that happens to be today is no day to move away from.
+ */
+export function nextWeekday(weekday: number, now = new Date()): string {
+  const today = new Intl.DateTimeFormat('en-CA', { timeZone: 'Europe/London' }).format(now);
+  let day = addDays(today, 1);
+  while (new Date(`${day}T12:00:00Z`).getUTCDay() !== weekday) day = addDays(day, 1);
+  return day;
+}
+
+/** A local day in British words, with the parts asked for: "Tuesday 22 September", "September 2026". */
+export function dayWords(date: string, parts: Intl.DateTimeFormatOptions): string {
+  return new Intl.DateTimeFormat('en-GB', { ...parts, timeZone: 'UTC' }).format(new Date(`${date}T12:00:00Z`));
+}
+
 /**
  * The day as the app writes it: Wed 14 Oct. The browser abbreviates September to Sept and the
  * library the app formats with writes Sep, so the month is cut to three letters here.
