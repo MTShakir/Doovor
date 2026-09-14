@@ -1376,6 +1376,64 @@ export type Database = {
           },
         ]
       }
+      no_show_disputes: {
+        Row: {
+          booking_id: string
+          business_id: string
+          created_at: string
+          decided_at: string | null
+          decided_by: string | null
+          id: string
+          learner_id: string
+          note: string | null
+          outcome: Database["public"]["Enums"]["no_show_dispute_outcome"] | null
+          reason: string
+        }
+        Insert: {
+          booking_id: string
+          business_id: string
+          created_at?: string
+          decided_at?: string | null
+          decided_by?: string | null
+          id?: string
+          learner_id: string
+          note?: string | null
+          outcome?:
+            | Database["public"]["Enums"]["no_show_dispute_outcome"]
+            | null
+          reason: string
+        }
+        Update: {
+          booking_id?: string
+          business_id?: string
+          created_at?: string
+          decided_at?: string | null
+          decided_by?: string | null
+          id?: string
+          learner_id?: string
+          note?: string | null
+          outcome?:
+            | Database["public"]["Enums"]["no_show_dispute_outcome"]
+            | null
+          reason?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "no_show_disputes_booking_id_fkey"
+            columns: ["booking_id"]
+            isOneToOne: true
+            referencedRelation: "bookings"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "no_show_disputes_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "businesses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       notification_preferences: {
         Row: {
           category: Database["public"]["Enums"]["notification_category"]
@@ -2260,9 +2318,17 @@ export type Database = {
         Args: { p_accept: boolean; p_booking_id: string; p_reason?: string }
         Returns: string
       }
+      decide_no_show_dispute: {
+        Args: { p_dispute_id: string; p_note?: string; p_outcome: string }
+        Returns: Json
+      }
       decide_verification: {
         Args: { p_approved: boolean; p_profile_id: string; p_reason?: string }
         Returns: Database["public"]["Enums"]["verification_status"]
+      }
+      dispute_no_show: {
+        Args: { p_booking_id: string; p_reason: string }
+        Returns: string
       }
       hold_booking_for_payment: {
         Args: { p_booking_id: string }
@@ -2718,6 +2784,7 @@ export type Database = {
         | "custom"
       membership_role: "owner" | "manager" | "instructor"
       membership_status: "invited" | "active" | "deactivated"
+      no_show_dispute_outcome: "waived" | "kept"
       notification_category: "bookings" | "reminders" | "money" | "account"
       notification_channel: "in_app" | "email" | "push" | "sms"
       payment_method: "card" | "cash" | "bank" | "credit"
@@ -2936,6 +3003,7 @@ export const Constants = {
       ],
       membership_role: ["owner", "manager", "instructor"],
       membership_status: ["invited", "active", "deactivated"],
+      no_show_dispute_outcome: ["waived", "kept"],
       notification_category: ["bookings", "reminders", "money", "account"],
       notification_channel: ["in_app", "email", "push", "sms"],
       payment_method: ["card", "cash", "bank", "credit"],

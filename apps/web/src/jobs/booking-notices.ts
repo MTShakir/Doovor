@@ -9,6 +9,7 @@
 
 import {
   cancelledMoneyWords,
+  disputeDecisionWords,
   noShowMoneyWords,
   type CancelActor,
   type CancelledMoney,
@@ -67,6 +68,10 @@ export function kindForEvent(event: BookingEvent, notice: BookingNotice): Notifi
       return 'booking.cancelled';
     case 'booking.no_show':
       return 'booking.no_show';
+    case 'booking.disputed':
+      return 'booking.disputed';
+    case 'booking.dispute_decided':
+      return 'booking.dispute_decided';
     case 'booking.rescheduled':
       return 'booking.rescheduled';
     // A lesson paid for afterwards asks for the money when it is marked done (PAY-03, M3-10).
@@ -180,7 +185,18 @@ function detailFor(event: BookingEvent, notice: BookingNotice): string | undefin
  */
 function learnerDetailFor(event: BookingEvent, notice: BookingNotice): string | undefined {
   if (event.name === 'booking.no_show') {
-    return sentences(noShowMoneyWords(noShowMoney(event, notice), { kind: 'learner' }, formatPence));
+    const until = typeof event.payload.dispute_until === 'string' ? new Date(event.payload.dispute_until) : null;
+    return sentences([
+      ...noShowMoneyWords(noShowMoney(event, notice), { kind: 'learner' }, formatPence),
+      // They can say it was wrong, for as long as R-09 gives them (M3-19).
+      until === null || Number.isNaN(until.getTime())
+        ? undefined
+        : `If that is wrong, you can dispute it from your lessons until ${formatDate(until)}`,
+    ]);
+  }
+  if (event.name === 'booking.dispute_decided') {
+    const outcome = event.payload.outcome === 'kept' ? 'kept' : 'waived';
+    return sentences(disputeDecisionWords({ ...feeMoney(event, notice), outcome }, formatPence));
   }
   // A fee that could not be charged is not a lesson to keep: it is money to pay (M3-19).
   if (event.name === 'payment.charge_failed' && event.payload.fee === true && notice.fee_pence) {
@@ -205,6 +221,10 @@ function linkFor(event: BookingEvent, notice: BookingNotice): (audience: 'learne
       return event.name === 'payment.charge_failed' || event.name === 'booking.completed'
         ? `/app/learner/pay/${notice.booking_id}`
         : '/app/learner/lessons';
+    }
+    // A dispute is decided where the learner's money is: their learner card.
+    if (event.name === 'booking.disputed') {
+      return audience === 'school' ? '/app/school/learners' : `/app/instructor/learners/${notice.learner_user_id}`;
     }
     if (audience === 'school') return `/app/school/diary?date=${day}`;
     return `/app/instructor/diary?view=day&date=${day}`;

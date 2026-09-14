@@ -243,7 +243,7 @@ test.describe('booking a lesson (BOK-01, M2-16)', () => {
 
     await absent.getByRole('button', { name: 'No show' }).click();
     await expect(page.getByText('Marked as no show')).toBeVisible();
-    await expect(absent).toContainText('Cancelled');
+    await expect(absent).toContainText('No-show');
     await snap(page, testInfo, 'diary-after-the-lesson');
   });
 });

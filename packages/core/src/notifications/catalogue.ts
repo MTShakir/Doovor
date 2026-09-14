@@ -42,6 +42,9 @@ export const notificationKinds = [
   // Nobody came (R-09). Appendix B has no row of its own: a no-show counts as a late
   // cancellation, and is told to the same people on the same channels (D-093).
   'booking.no_show',
+  // A no-show disputed, and the dispute decided (R-09). Service messages about a fee (D-094).
+  'booking.disputed',
+  'booking.dispute_decided',
   'payment.received',
   'payment.failed',
   'payment.requested',
@@ -104,6 +107,20 @@ export const notificationCatalogue: Record<NotificationKind, NotificationSpec> =
     kind: 'booking.no_show',
     category: 'bookings',
     audiences: ['learner', 'instructor', 'school'],
+    channels: PUSH_AND_EMAIL,
+    essential: true,
+  },
+  'booking.disputed': {
+    kind: 'booking.disputed',
+    category: 'bookings',
+    audiences: ['instructor', 'school'],
+    channels: PUSH_AND_EMAIL,
+    essential: true,
+  },
+  'booking.dispute_decided': {
+    kind: 'booking.dispute_decided',
+    category: 'bookings',
+    audiences: ['learner'],
     channels: PUSH_AND_EMAIL,
     essential: true,
   },

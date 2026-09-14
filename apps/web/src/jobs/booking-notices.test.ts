@@ -325,3 +325,39 @@ describe('a lesson nobody came to, and a fee charged to the kept card (PAY-09, R
     expect(late[1]?.body).toContain('The £42 late cancellation fee could not be charged.');
   });
 });
+
+describe('disputing a no-show (R-09, M3-19)', () => {
+  const missed = { ...notice, status: 'no_show', version: 6, late_cancellation: true, fee_pence: 4200 };
+
+  it('tells the learner until when they can dispute a no-show', () => {
+    const planned = planBookingNotifications({
+      event: { name: 'booking.no_show', payload: { booking_id: 'booking-1', fee_pence: 4200, fee_percent: 100, dispute_until: '2026-09-23T08:20:00Z' } },
+      notice: missed,
+    });
+    expect(planned[0]?.body).toBe(
+      'Wed 16 Sep at 09:00 with Sarah Khan. Missing a lesson costs the full price, as cancelling late does, so a fee of £42 is owed. If that is wrong, you can dispute it from your lessons until Wed 23 Sep.',
+    );
+  });
+
+  it('tells the instructor and the school, and takes them where it is decided', () => {
+    const planned = planBookingNotifications({ event: { name: 'booking.disputed', payload: { booking_id: 'booking-1', dispute_id: 'dispute-1' } }, notice: missed });
+
+    expect(planned.map((one) => [one.userId, one.title])).toEqual([
+      ['instructor-1', 'Jack Taylor disputed a no-show'],
+      ['manager-1', 'Jack Taylor disputed a no-show'],
+    ]);
+    expect(planned[0]?.body).toBe('Wed 16 Sep at 09:00 with Jack Taylor. Decide whether the fee stands.');
+    expect(planned.map((one) => one.link)).toEqual(['/app/instructor/learners/learner-1', '/app/school/learners']);
+  });
+
+  it('tells the learner how it was decided, and what came back', () => {
+    const decided = (payload: Record<string, unknown>) =>
+      planBookingNotifications({ event: { name: 'booking.dispute_decided', payload: { booking_id: 'booking-1', fee_pence: 4200, ...payload } }, notice: missed });
+
+    const waived = decided({ outcome: 'waived', card_refund_pence: 4200 });
+    expect(waived.map((one) => one.userId)).toEqual(['learner-1']);
+    expect(waived[0]?.title).toBe('Your no-show dispute was answered');
+    expect(waived[0]?.body).toBe('Wed 16 Sep at 09:00 with Sarah Khan. The £42 fee is waived. £42 is going back to your card.');
+    expect(decided({ outcome: 'kept' })[0]?.body).toBe('Wed 16 Sep at 09:00 with Sarah Khan. The fee stands.');
+  });
+});

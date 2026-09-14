@@ -4,6 +4,7 @@ import {
   cancellationOutcome,
   cancellationWarning,
   cancelledMoneyWords,
+  disputeDecisionWords,
   isLateCancellation,
   noShowMoneyWords,
   noShowOutcome,
@@ -375,5 +376,30 @@ describe('the fee charged to a kept card, and lessons nobody came to (PAY-09, R-
     expect(noShowMoneyWords({ ...nothing, lateFeePercent: 0 }, learner, formatPence)).toEqual(['There is no charge.']);
     expect(noShowMoneyWords({ ...nothing, lateFeePercent: 0, cardRefundPence: 4200 }, learner, formatPence)).toEqual(['£42 is going back to your card.']);
     expect(noShowMoneyWords({ ...nothing, lateFeePercent: 0 }, business, formatPence)).toEqual([]);
+  });
+});
+
+describe('what the learner is told when a dispute is decided (R-09, M3-19)', () => {
+  const decision = {
+    outcome: 'waived' as const,
+    feePence: 4200,
+    keptPence: 0,
+    cardRefundPence: 0,
+    offlineRefundPence: 0,
+    creditReturnedMinutes: 0,
+    creditKeptMinutes: 0,
+    charging: false,
+  };
+
+  it('says the fee is waived and what comes back, or that nothing is owed', () => {
+    expect(disputeDecisionWords({ ...decision, cardRefundPence: 4200 }, formatPence)).toEqual(['The £42 fee is waived.', '£42 is going back to your card.']);
+    expect(disputeDecisionWords({ ...decision, creditReturnedMinutes: 60 }, formatPence)).toEqual(['The £42 fee is waived.', '1 hour of credit is back.']);
+    expect(disputeDecisionWords({ ...decision, offlineRefundPence: 4200 }, formatPence)).toEqual(['The £42 fee is waived.', 'You are owed back the £42 you paid.']);
+    expect(disputeDecisionWords(decision, formatPence)).toEqual(['The £42 fee is waived, so nothing is owed.']);
+    expect(disputeDecisionWords({ ...decision, feePence: 0 }, formatPence)).toEqual(['The fee is waived, so nothing is owed.']);
+  });
+
+  it('says the fee stands when it is kept', () => {
+    expect(disputeDecisionWords({ ...decision, outcome: 'kept' }, formatPence)).toEqual(['The fee stands.']);
   });
 });

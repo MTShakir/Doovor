@@ -298,3 +298,19 @@ export function noShowMoneyWords(money: NoShowMoney, reader: CancelledReader, fo
   if (!learner || money.lateFeePercent === null) return [`${capitalise(kept)}.`];
   return [`Missing a lesson costs ${share(money.lateFeePercent)}, as cancelling late does, so ${kept}.`];
 }
+
+/** How a dispute about a no-show was decided, and what that did about money (R-09, M3-19). */
+export interface DisputeDecision extends FeeMoney {
+  outcome: 'waived' | 'kept';
+}
+
+/**
+ * What the learner is told when their dispute is decided: the fee waived and what comes back, or
+ * the fee standing.
+ */
+export function disputeDecisionWords(decision: DisputeDecision, formatMoney: Money): string[] {
+  if (decision.outcome === 'kept') return ['The fee stands.'];
+  const back = givenBack(decision, { kind: 'learner' }, formatMoney);
+  const waived = decision.feePence > 0 ? `The ${formatMoney(decision.feePence)} fee is waived` : 'The fee is waived';
+  return back.length === 0 ? [`${waived}, so nothing is owed.`] : [`${waived}.`, ...back];
+}

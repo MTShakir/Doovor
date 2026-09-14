@@ -18,9 +18,11 @@ import { learnerCard, type LearnerCard } from '@/lib/learners/card';
 import { learnerHistory, type LearnerHistoryEntry } from '@/lib/learners/history';
 import { learnerNotes } from '@/lib/learners/notes';
 import { learnerBalance } from '@/lib/payments/balance';
+import { noShowDisputes } from '@/lib/payments/disputes';
 import { packagesForSale } from '@/lib/payments/packages';
 import { BookLesson } from '../../book-lesson';
 import { HandBack } from './hand-back';
+import { NoShowDisputes } from './no-show-disputes';
 import { Notes } from './notes';
 import { RefundPayment } from './refund-payment';
 import { SellPackage } from './sell-package';
@@ -170,9 +172,10 @@ function Lessons({ card }: { card: LearnerCard }) {
  * handed back, and a package paid for in person.
  */
 async function Money({ card, access }: { card: LearnerCard; access: AccessContext }) {
-  const [balance, packages] = await Promise.all([
+  const [balance, packages, disputes] = await Promise.all([
     learnerBalance(card.businessId, card.learnerId),
     packagesForSale(card.businessId),
+    noShowDisputes(card.businessId, card.learnerId),
   ]);
   if (!balance) return null;
 
@@ -211,6 +214,7 @@ async function Money({ card, access }: { card: LearnerCard; access: AccessContex
           ) : null
         }
       />
+      <NoShowDisputes disputes={disputes} learnerId={card.learnerId} learnerName={card.fullName} canDecide={runsIt} />
       {packages.length === 0 ? null : (
         <div className="flex border-t border-grey-200 px-4 py-3">
           <SellPackage learnerId={card.learnerId} learnerName={card.fullName} packages={packages} />

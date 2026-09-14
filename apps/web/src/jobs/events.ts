@@ -30,6 +30,8 @@ export const bookingCancelled = bookingEvent('booking.cancelled');
 export const bookingRescheduled = bookingEvent('booking.rescheduled');
 export const bookingCompleted = bookingEvent('booking.completed');
 export const bookingNoShow = bookingEvent('booking.no_show');
+export const bookingDisputed = bookingEvent('booking.disputed');
+export const bookingDisputeDecided = bookingEvent('booking.dispute_decided');
 
 /**
  * Money that has to go back (PAY-07, R-10). The refund is already decided and written down;

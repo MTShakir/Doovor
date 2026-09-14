@@ -54,6 +54,35 @@ export async function markHandedBack(input: unknown): Promise<Result<null>> {
   return ok(null);
 }
 
+const decisionSchema = z.object({
+  disputeId: z.uuid(),
+  learnerId: z.uuid(),
+  outcome: z.enum(['waived', 'kept']),
+  note: z.string().trim().max(1000).default(''),
+});
+
+/**
+ * R-09, PAY-07, M3-19: an owner or manager decides a learner's dispute of a no-show. Waiving gives
+ * back whatever paid the fee; the function decides who may, and does it all together.
+ */
+export async function decideNoShowDispute(input: unknown): Promise<Result<null>> {
+  const parsed = decisionSchema.safeParse(input);
+  if (!parsed.success) return err('VALIDATION_FAILED');
+
+  await requirePortal('instructor');
+  const supabase = await createSupabaseServerClient();
+  const { error } = await supabase.rpc('decide_no_show_dispute', {
+    p_dispute_id: parsed.data.disputeId,
+    p_outcome: parsed.data.outcome,
+    p_note: parsed.data.note === '' ? undefined : parsed.data.note,
+  });
+  if (error) return err(parsePostgresError(error).code);
+
+  revalidatePath(`/app/instructor/learners/${parsed.data.learnerId}`);
+  revalidatePath('/app/instructor/diary');
+  return ok(null);
+}
+
 const optionsSchema = z.object({ paymentId: z.uuid() });
 
 // The function answers JSON, so it is read the way any input is.

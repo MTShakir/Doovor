@@ -18,6 +18,7 @@ import { useEffect, useState, useTransition } from 'react';
 import { FormAlert } from '@/components/form-alert';
 import type { MyLesson } from '@/lib/learner/lessons';
 import { cancelMyLesson, moveMyLesson, myInstructorSlots } from './actions';
+import { NoShowDispute } from './no-show-dispute';
 
 export interface MyLessonRowProps {
   lesson: MyLesson;
@@ -147,6 +148,8 @@ export function MyLessonRow({ lesson, rules, now, canChange }: MyLessonRowProps)
           <span className="text-small text-grey-700 tabular-nums">{formatPence(lesson.pricePence)}</span>
         </span>
       </div>
+
+      {lesson.status === 'no_show' ? <NoShowDispute lesson={lesson} now={now} /> : null}
 
       {!canChange && lesson.canPayNow && lesson.status === 'completed' ? (
         // Paid for after it happened, and not yet (PAY-03): the one thing left to do about it.

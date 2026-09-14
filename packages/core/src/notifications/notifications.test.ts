@@ -18,7 +18,7 @@ const lesson = { learnerName: 'Jack Taylor', instructorName: 'Sarah Khan', when:
 
 describe('the catalogue (PRD Appendix B, NTF-03)', () => {
   it('has every kind of notification Phase 1 sends', () => {
-    expect(notificationKinds).toHaveLength(15);
+    expect(notificationKinds).toHaveLength(17);
     for (const kind of notificationKinds) expect(notificationCatalogue[kind].kind).toBe(kind);
   });
 
@@ -102,6 +102,17 @@ describe('the words (NTF-03)', () => {
   it('adds the reason or the fee when there is one', () => {
     const copy = notificationCopy('booking.cancelled', 'learner', { ...lesson, detail: 'A fee of £42 applies' });
     expect(copy.body).toBe('Wed 16 Sep at 09:00 with Sarah Khan. A fee of £42 applies.');
+  });
+
+  it('tells the Business a no-show was disputed, and the learner how it was decided (R-09, M3-19)', () => {
+    expect(notificationCopy('booking.disputed', 'instructor', lesson)).toEqual({
+      title: 'Jack Taylor disputed a no-show',
+      body: 'Wed 16 Sep at 09:00 with Jack Taylor. Decide whether the fee stands.',
+    });
+    expect(notificationCopy('booking.dispute_decided', 'learner', { ...lesson, learnerDetail: 'The fee stands.' })).toEqual({
+      title: 'Your no-show dispute was answered',
+      body: 'Wed 16 Sep at 09:00 with Sarah Khan. The fee stands.',
+    });
   });
 
   it('says who did not turn up, and tells a learner a fee that could not be charged is not a lesson to keep (R-09, M3-19)', () => {

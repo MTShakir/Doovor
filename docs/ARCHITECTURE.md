@@ -384,7 +384,7 @@ The policy is a pure function in core, `cancellationOutcome({ startsAt, now, by,
 | Learner cancels outside the window (default 48 h) | Full refund to card, or full credit returned (R-07) |
 | Learner cancels inside the window | Fee kept per policy (0, 50 or 100%). Credit covers the fee first (R-07). Email explains why (acceptance test 4) |
 | Instructor or Business cancels | Reason required. Learner always gets a full refund or full credit (R-08, acceptance test 5) |
-| No-show | Only allowed from 15 minutes after start. Settles its money as a late cancellation by the learner, and records `dispute_until`, 7 days on, for the learner to dispute (R-09, D-093) |
+| No-show | Only allowed from 15 minutes after start. Settles its money as a late cancellation by the learner, and records `dispute_until`, 7 days on (R-09, D-093). The learner disputes from their lessons with `dispute_no_show`; an owner or manager waives the fee, giving back whatever paid it, or keeps it, with `decide_no_show_dispute` (D-094) |
 | Learner reschedules | Only outside the cancellation window (BOK-08). Inside it, the learner sees the cancellation terms instead |
 | Instructor reschedules | Any time. Learner notified |
 
@@ -496,7 +496,7 @@ Jobs are Inngest functions in `apps/web/src/jobs`, served from `/api/inngest`. E
 | `payment.followups` | Webhook follow-up events | Receipt email, instructor notification, credit-low check | PAY-08, NTF-03 |
 | `credit.expiry` | Cron, daily | Expires lots past `expires_at` with ledger rows | PAY-04 |
 | `badge.expiry` | Cron, daily at 08:00 London | Reminders at 60, 30 and 7 days, deduplicated by threshold. Expired badges drop out of search automatically because listing checks the date | INS-03 |
-| `booking.notices` | `booking.created`, `.accepted`, `.declined`, `.cancelled`, `.no_show`, `.rescheduled`, `.completed`, `payment.charge_failed` | Reads who the lesson concerns, applies the catalogue and their settings, and writes one notification each | NTF-01, NTF-03, NTF-04 |
+| `booking.notices` | `booking.created`, `.accepted`, `.declined`, `.cancelled`, `.no_show`, `.disputed`, `.dispute_decided`, `.rescheduled`, `.completed`, `payment.charge_failed` | Reads who the lesson concerns, applies the catalogue and their settings, and writes one notification each | NTF-01, NTF-03, NTF-04 |
 | `notification.dispatch` | Notifications not yet sent | Fans out to push, email and SMS on the channels the notification already carries (SMS on Pro, capped at 200 a month) | NTF-01 to 04 |
 | `ledger.reconcile` | Cron, nightly | Asserts cached balances equal ledger sums and alerts on drift | PAY-04 |
 | `account.deletion` | `account/deletion-requested` | Exports, anonymises and deletes per the retention rules (M6) | NFR-PRV-03 |

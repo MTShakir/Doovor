@@ -68,6 +68,11 @@ describe('one word for a lesson (DIA-04, M1-19)', () => {
     // A cancelled lesson is cancelled, whatever paid for it.
     expect(lessonStateLabel({ ...standard, status: 'cancelled', paymentStatus: 'paid_cash' })).toBeUndefined();
   });
+
+  it('calls a lesson nobody came to a no-show, not a cancellation (R-09)', () => {
+    expect(lessonState({ ...standard, status: 'no_show' })).toBe('cancelled');
+    expect(lessonStateLabel({ ...standard, status: 'no_show', paymentStatus: 'paid_card' })).toBe('No-show');
+  });
 });
 
 describe('the shape of a day (DIA-03, M1-19)', () => {

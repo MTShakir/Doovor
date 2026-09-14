@@ -9,7 +9,7 @@ vi.mock('@/lib/auth/session', () => ({
 }));
 vi.mock('next/cache', () => ({ revalidatePath: (path: string) => { revalidatePath(path); } }));
 
-const { issueRefund, markHandedBack, recordOfflinePackage, refundOptions } = await import('./money-actions');
+const { decideNoShowDispute, issueRefund, markHandedBack, recordOfflinePackage, refundOptions } = await import('./money-actions');
 
 const learnerId = '11111111-1111-4111-8111-111111111111';
 const packageId = '33333333-3333-4333-8333-333333333333';
@@ -161,6 +161,32 @@ describe('cash owed back, handed back (R-08, M3-18)', () => {
 
     rpc.mockResolvedValueOnce({ data: null, error: { code: 'P0001', message: 'VALIDATION_FAILED', details: '{"field": "status"}' } });
     expect(await markHandedBack({ refundId, learnerId })).toMatchObject({ ok: false, code: 'VALIDATION_FAILED' });
+    expect(revalidatePath).not.toHaveBeenCalled();
+  });
+});
+
+describe('deciding a no-show dispute (R-09, M3-19)', () => {
+  const disputeId = '77777777-7777-4777-8777-777777777777';
+
+  it('waives or keeps the fee through the function that decides who may, with a note if given', async () => {
+    rpc.mockResolvedValue({ data: { outcome: 'waived' }, error: null });
+
+    expect(await decideNoShowDispute({ disputeId, learnerId, outcome: 'waived', note: ' Sorry ' })).toEqual({ ok: true, data: null });
+    expect(rpc).toHaveBeenLastCalledWith('decide_no_show_dispute', { p_dispute_id: disputeId, p_outcome: 'waived', p_note: 'Sorry' });
+    expect(revalidatePath).toHaveBeenCalledWith(`/app/instructor/learners/${learnerId}`);
+
+    await decideNoShowDispute({ disputeId, learnerId, outcome: 'kept' });
+    expect(rpc).toHaveBeenLastCalledWith('decide_no_show_dispute', { p_dispute_id: disputeId, p_outcome: 'kept', p_note: undefined });
+  });
+
+  it('asks nothing of the database for an outcome it does not know', async () => {
+    expect(await decideNoShowDispute({ disputeId, learnerId, outcome: 'maybe' })).toMatchObject({ ok: false, code: 'VALIDATION_FAILED' });
+    expect(rpc).not.toHaveBeenCalled();
+  });
+
+  it('passes on what the database refused: a school instructor, or decided already', async () => {
+    rpc.mockResolvedValueOnce({ data: null, error: { code: '42501', message: 'NOT_ALLOWED' } });
+    expect(await decideNoShowDispute({ disputeId, learnerId, outcome: 'waived' })).toMatchObject({ ok: false, code: 'NOT_ALLOWED' });
     expect(revalidatePath).not.toHaveBeenCalled();
   });
 });

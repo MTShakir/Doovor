@@ -86,6 +86,12 @@ export function notificationCopy(
         ? { title: 'Marked as a no-show', body: sentence(line, facts.learnerDetail ?? facts.detail) }
         : { title: `${them} did not turn up`, body: sentence(line, facts.detail) };
 
+    case 'booking.disputed':
+      return { title: `${them} disputed a no-show`, body: sentence(line, facts.detail ?? 'Decide whether the fee stands') };
+
+    case 'booking.dispute_decided':
+      return { title: 'Your no-show dispute was answered', body: sentence(line, facts.learnerDetail ?? facts.detail) };
+
     case 'payment.received':
       return audience === 'learner'
         ? { title: 'Payment received', body: sentence(facts.detail, line) }

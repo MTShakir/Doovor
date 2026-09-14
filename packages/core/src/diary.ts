@@ -64,6 +64,8 @@ export function lessonState(facts: LessonFacts): LessonState {
  * (PAY-05). Undefined when the pill's usual word says it all.
  */
 export function lessonStateLabel(facts: LessonFacts): string | undefined {
+  // Off like a cancellation, but nobody called it off: nobody came (R-09).
+  if (facts.status === 'no_show') return 'No-show';
   if (lessonState(facts) !== 'paid') return undefined;
   if (facts.paymentStatus === 'paid_cash') return 'Paid (cash)';
   if (facts.paymentStatus === 'paid_bank') return 'Paid (bank)';
