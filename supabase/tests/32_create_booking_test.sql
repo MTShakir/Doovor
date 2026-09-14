@@ -61,6 +61,9 @@ select is(
   'the slot is held until half an hour after the lesson ends (R-01)'
 );
 
+-- The next lesson in Ian's diary is for another learner, Lou, who is Ivy's: the school's manager
+-- books it, because a school instructor books only the learners assigned to them (PRD 6.2).
+select tests.authenticate_as(:'manager_user');
 select throws_ok(
   $$ select public.create_booking('b1000000-0000-0000-0000-000000000001', 'c0000000-0000-0000-0000-000000000002',
        'b2000000-0000-0000-0000-000000000001', pg_temp.at_local(3, '11:15'), 60) $$,
@@ -75,6 +78,7 @@ select lives_ok(
 -- ---------------------------------------------------------------------------------------
 -- Who may book what.
 -- ---------------------------------------------------------------------------------------
+select tests.authenticate_as(:'ian_user');
 select throws_ok(
   $$ select public.create_booking('b1000000-0000-0000-0000-000000000001', 'c0000000-0000-0000-0000-000000000003',
        'b2000000-0000-0000-0000-000000000001', pg_temp.at_local(3, '14:00'), 60) $$,

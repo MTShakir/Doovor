@@ -41,6 +41,7 @@ M3 Payments is in progress on branch `m3-payments`: M3-01 to M3-21 are built, wi
 Fixed during M3:
 
 - The diary's view chips, on a diary opened without choosing a view, showed Week as white on grey on a phone, because each chip was given two sets of colours and the stylesheet picked one. Each chip now has one set per width, and the diary test that opens that page runs the accessibility check at both widths (DIA-03, D-009).
+- A cover lesson, where a school books one instructor's learner with another instructor, crashed the covering instructor's diary for that day, because only the learner's own instructor could read their name. The instructor on a lesson now reads who it is with, and nothing else about them; `create_booking` and `book_weekly` keep a school instructor to their own learners (PRD 6.2), which also closes a weekly plan the nightly sweep would book for anybody at all; and the diary shows a lesson without a readable name as "Unnamed learner" rather than failing (D-097, DIA-03, BOK-01). pgTAP proves what the covering instructor gains and everything that stays hidden, a unit test reproduces the crash, and end to end a cover lesson shows in the covering instructor's diary at both widths while the learner stays off her list.
 
 ## M2 progress
 
@@ -156,9 +157,9 @@ Decisions D-036 to D-050 were logged during this stretch. Two were security fixe
 
 | Suite | Result |
 |---|---|
-| Unit (Vitest) | 811 passed across 7 packages; `packages/core` and `packages/providers` both above the 90% line coverage gate |
-| Database (pgTAP) | 859 assertions in 64 files, all passing, including against a database an end to end run has left data in, and none of them depends on the date or the day of the week they run on (D-070); SQL lint clean |
-| End to end (Playwright) | 274 at 390 px and 1440 px on 14 September, none skipped, including acceptance-01 to 06, 09 and 12 and the payment journeys for M3-05 to M3-21. One run had the saved-card removal step fail once under full load and passed when its file ran again; it is being watched; green in CI on every push since 13 September |
+| Unit (Vitest) | 814 passed across 7 packages; `packages/core` and `packages/providers` both above the 90% line coverage gate |
+| Database (pgTAP) | 887 assertions in 65 files, all passing, including against a database an end to end run has left data in, and none of them depends on the date or the day of the week they run on (D-070); SQL lint clean |
+| End to end (Playwright) | 274 at 390 px and 1440 px on 14 September, none skipped, including acceptance-01 to 06, 09 and 12 and the payment journeys for M3-05 to M3-21. One run had the saved-card removal step fail once under full load and passed when its file ran again; it is being watched; green in CI on every push since 13 September. The cover lesson fix (D-097) added a spec and an accessibility check: with them, the diary, booking, learner, school and acceptance specs passed at both widths (94 runs), and the whole suite has not been run again since |
 | Lint, typecheck, copy guard | Clean |
 | CI on GitHub | Read after every push. Green on ad777eb (14 September). Two pushes that day failed and were fixed in the next: a pgTAP test that only passed from Thursday to Sunday (c06c1e0), and an accessibility check that caught the portal's loading skeleton mid-scan (635fe19) |
 | Staging (hosted) | All 46 migrations applied, M2 pushed on 2026-09-13. Security Advisor: 0 errors, 39 warnings, 38 of them the expected `security definer` pattern (D-051) and one the dashboard switch for leaked password protection |
