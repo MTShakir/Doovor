@@ -782,3 +782,55 @@ export async function receiptFor(paymentId: string): Promise<{ number: number; v
     return found ? { number: found.number, vatPence: found.vat_pence, emailed: found.emailed_at !== null } : null;
   });
 }
+
+/**
+ * A notification, and whether it has gone out on its channels (M3-23). With Stripe the job runner
+ * writes and sends it, a minute or two after the change, so a test waits on this.
+ */
+export async function notificationDelivery(email: string, kind: string, entityId: string): Promise<{ channels: string[]; sent: boolean } | null> {
+  return withDatabase(async (sql) => {
+    const rows = await sql<{ channels: string[]; sent: boolean }[]>`
+      select n.channels::text[] as channels, n.sent_at is not null as sent
+        from public.notifications n
+        join public.users u on u.id = n.user_id
+       where lower(u.email) = lower(${email})
+         and n.kind = ${kind}
+         and n.entity_id = ${entityId}::uuid
+       order by n.created_at desc
+       limit 1`;
+    return rows[0] ?? null;
+  });
+}
+
+/** The provider's id for the newest card payment for a lesson: how Stripe knows it (M3-23). */
+export async function cardPaymentRefFor(bookingId: string): Promise<string> {
+  return withDatabase(async (sql) => {
+    const rows = await sql<{ provider_ref: string | null }[]>`
+      select provider_ref from public.payments
+       where booking_id = ${bookingId} and method = 'card' and status in ('paid', 'partially_refunded', 'refunded')
+       order by created_at desc
+       limit 1`;
+    const found = rows[0]?.provider_ref;
+    if (!found) throw new Error(`No card payment for lesson ${bookingId}`);
+    return found;
+  });
+}
+
+/** The provider's id for the newest package a learner bought by card from the Business an owner runs (M3-23). */
+export async function packagePaymentRef(learnerEmail: string, ownerEmail: string): Promise<string | null> {
+  return withDatabase(async (sql) => {
+    const rows = await sql<{ provider_ref: string | null }[]>`
+      select p.provider_ref
+        from public.payments p
+        join public.credit_lots l on l.payment_id = p.id
+        join public.users learner on learner.id = p.learner_id
+        join public.memberships m on m.business_id = p.business_id and m.role = 'owner'
+        join public.users owner on owner.id = m.user_id
+       where lower(learner.email) = lower(${learnerEmail})
+         and lower(owner.email) = lower(${ownerEmail})
+         and p.method = 'card'
+       order by p.created_at desc
+       limit 1`;
+    return rows[0]?.provider_ref ?? null;
+  });
+}

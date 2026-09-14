@@ -5,6 +5,7 @@
   "type": "module",
   "scripts": {
     "test:e2e": "playwright test",
+    "test:e2e:stripe": "node run-stripe.ts",
     "lint": "eslint .",
     "typecheck": "tsc --noEmit"
   },

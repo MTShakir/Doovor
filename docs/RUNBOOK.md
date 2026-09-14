@@ -170,25 +170,30 @@ Sandbox `Doovor sandbox`, account `acct_1UFF4RDP3EG8YZIf`. Settings > Connect:
 ### 3.7a The Stripe test-mode run (M3-23)
 
 M3 is done when acceptance tests 3 to 6 pass against Stripe test mode, webhook replay included, and
-acceptance-12 books with a card. Everything else runs on the fake. In order:
+acceptance-12 books with a card. Those runs are in `e2e/specs/stripe/acceptance.spec.ts` and only run
+from `pnpm test:e2e:stripe`; every other run stays on the fake.
 
-1. **You:** the two platform profile acknowledgements in 3.7 step 4.
-2. **You:** `stripe login` on this machine. It prints a link; open it while signed in to the Doovor
-   sandbox and allow access. Until then `pnpm stripe:listen` stops with "You have not configured API
-   keys yet".
-3. **You:** choose who works in Stripe test mode during the run. Claude's permission checks treat
-   creating a connected account and taking payments as real-world transactions, even in test mode,
-   and stop there. Either allow those Stripe calls for the run, or do the steps marked "You or
-   Claude" yourself.
-4. **You or Claude:** set `PAYMENTS_PROVIDER=stripe` in `.env.local`, start `pnpm stripe:listen`, and put
-   the signing secret it prints in `STRIPE_CONNECT_WEBHOOK_SECRET`. Restart `pnpm dev`.
-5. **You or Claude:** sign in as the seeded school owner and press **Set up payments** on the Money
-   screen. On Stripe's onboarding pages, use the test values Stripe offers in test mode, and accept
-   the terms for this test account. Back in the app, **I have finished** reads the account's state.
-6. **Claude:** run acceptance-03 to 06 and acceptance-12 with Stripe's test cards in the card form
-   (D-099), replay one delivered event three times with its real signature for acceptance-06, and
-   record the run in PROGRESS.
-7. Afterwards set `PAYMENTS_PROVIDER=fake` again, so every other run stays offline.
+1. **You, done on 14 September:** the platform profile acknowledgements in 3.7 step 4, and
+   `stripe login` on this machine.
+2. **You:** `pnpm stripe:test-account`. It makes the Express test account for the seeded school the
+   way the app makes one, keeps its id in `.env.local` as `E2E_STRIPE_ACCOUNT_ID`, and prints the
+   link to Stripe's onboarding. Finish onboarding with the test values Stripe offers on each step,
+   then run the command again: it says when the account can take cards. It refuses a live key.
+   Claude's permission checks stop at creating a connected account, even in test mode, so this
+   step is yours.
+3. **Claude:** in `.env.local`, set `PAYMENTS_PROVIDER=stripe`, and put the secret that
+   `stripe listen --print-secret` prints in both `STRIPE_WEBHOOK_SECRET` and
+   `STRIPE_CONNECT_WEBHOOK_SECRET`. The app wants both set when Stripe is on, and the listener
+   signs everything with the one secret.
+4. **Claude:** start `pnpm dev`, `pnpm stripe:listen` and `pnpm dev:jobs`, each running on its own.
+   /dev/events is closed with Stripe, so the job runner sends refunds and notifications.
+5. **Claude:** `pnpm test:e2e:stripe`. It types Stripe's test card into the card form (D-099), waits
+   for Stripe's events through the listener and for the job runner, checks Stripe's own record of
+   each payment and refund, and for acceptance-06 delivers one real event twice more, signed as
+   Stripe signs it. If a permission check stops Claude here too, run it yourself: the output says
+   what failed.
+6. Afterwards set `PAYMENTS_PROVIDER=fake` again and stop the listener and the runner, so every
+   other run stays offline.
 
 ## 4. Routine operations
 
