@@ -30,7 +30,7 @@ describe('which host a request belongs on (D-084)', () => {
   it('leaves every app page, and every other host, alone', () => {
     expect(hostRedirect(app, '/app/instructor', '')).toBeNull();
     expect(hostRedirect('localhost:3000', '/app/instructor', '')).toBeNull();
-    expect(hostRedirect('driving-hub-git-m3-payments.vercel.app', '/', '')).toBeNull();
+    expect(hostRedirect('web-git-m3-payments.vercel.app', '/', '')).toBeNull();
     expect(hostRedirect(null, '/app', '')).toBeNull();
   });
 });

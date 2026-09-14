@@ -103,9 +103,9 @@ Do these once, in order. Items marked **You** need the product owner's accounts.
 3. Set `NEXT_PUBLIC_AUTH_GOOGLE_ENABLED=true` in Vercel. The button stays hidden until then.
 4. Locally (optional): add `http://127.0.0.1:54321/auth/v1/callback` as a redirect URI, put the client ID and secret in `.env.local` (`SUPABASE_AUTH_EXTERNAL_GOOGLE_CLIENT_ID`, `SUPABASE_AUTH_EXTERNAL_GOOGLE_SECRET`), set `NEXT_PUBLIC_AUTH_GOOGLE_ENABLED=true`, then run `pnpm db:stop` and `pnpm db:start`.
 
-### 3.5 Vercel (team `driving-hub`)
+### 3.5 Vercel (team `Doovor`)
 
-1. **You:** New Project, import `MTShakir/DrivingHUB` (this installs the Vercel GitHub app on the repository).
+1. **You:** New Project, import `MTShakir/Doovor` (this installs the Vercel GitHub app on the repository).
 2. **You:** Root Directory `apps/web` and Framework Preset **Next.js** (Settings > Build and Deployment). Both matter: with the repository root as the root directory, Vercel does not detect Next.js, fails with "No Output Directory named public", and ignores `apps/web/vercel.json`, so the app builds outside London. Leave the build and install commands on their defaults; keep "Include files outside the root directory" on, since the app uses workspace packages.
 3. **You:** Environment Variables. Set each for **all environments** unless noted: a variable scoped to Production only still fails every preview build, because the app checks its settings at build time.
 
