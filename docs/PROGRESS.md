@@ -1,6 +1,6 @@
 # Progress
 
-Last updated: 12 September 2026
+Last updated: 14 September 2026
 
 ## Status
 
@@ -8,7 +8,9 @@ M0 Foundation is approved, merged to `main` and live: the app runs on the brand 
 
 M1 Instructor core is approved and merged to `main`, all 24 tasks, with its fifteen migrations applied to staging. The milestone report is at https://claude.ai/code/artifact/92224816-1b7a-4eef-bd86-0ab470cb16ae
 
-M2 Learners and bookings has started on branch `m2-learners-bookings`. An instructor signs up, is set up in five minutes, is verified by a person, and has a diary that keeps itself up to date.
+M2 Learners and bookings is approved and merged to `main`, and was pushed to staging on 13 September 2026.
+
+M3 Payments is in progress on branch `m3-payments`: M3-01 to M3-12 are built, with acceptance-06 waiting for credit purchases (M3-13) and the Stripe test-mode halves of M3-08 to M3-10 waiting for the M3-23 run. The app now lives on `app.doovor.com` with the public site on `doovor.com` (D-084).
 
 ## M3 progress
 
@@ -25,6 +27,7 @@ M2 Learners and bookings has started on branch `m2-learners-bookings`. An instru
 | M3-09 | Pay before lesson: charge the saved card the day before, with a fallback to paying on screen | PAY-03, NTF-03 | Done locally. An owner chooses how learners pay, and each lesson keeps the terms it was booked on. A lesson paid the day before asks the learner only for a card, saved with nothing taken, and says when it will be charged. A job charges the newest working card with nobody there; a lesson it cannot charge stays on, tells the learner, instructor and school why (D-082), and asks the learner to pay on screen, where their bank can check it is them. Paying on screen when the bank asks mid-charge waits for the Payment Element in M3-23 |
 | M3-10 | Pay after lesson: the payment link when a lesson is marked done | PAY-03 | Done locally. Marking a lesson done that is paid for afterwards sends the learner "Pay for your lesson" by inbox, push and email, linked straight to its pay screen (D-083); the learner history shows a Pay button until it is paid, and paying marks it paid. The owner can now choose all four ways of being paid on the Money screen |
 | M3-11 | Credit ledger in core: oldest lots first, returns, fees, expiry, refund valuation | PAY-04, PAY-07, R-07 | Done. Pure rules in packages/core/src/credit.ts: lessons take whole lessons of credit from the oldest lots, a cancelled lesson returns every minute to its own lot and keeps any fee from the same lots, expired credit leaves the balance lot by lot, and unused credit is refunded at the price its lot was bought for, rounded down but worked out from what is left so pieces always add up to the whole |
+| M3-12 | Ledger schema: `credit_accounts`, `credit_lots`, `credit_ledger` append-only, balance never below nothing | PAY-04, PAY-12 | Done. The ledger is the truth: a row moves its lot and its account by trigger, and nothing else can change either (D-085). A lesson cannot use more than there is, a lot cannot be given back more than was bought, a payment buys one lot once, and credit with one Business cannot be spent with another or held by anybody who is not its learner. pgTAP checks that every balance and every lot still equals its ledger after four hundred random moves, 177 applied and 223 refused. The learner, the Business's owners and managers, and the instructor who teaches the learner see it; nobody writes to it directly |
 
 ## M2 progress
 
@@ -140,11 +143,11 @@ Decisions D-036 to D-050 were logged during this stretch. Two were security fixe
 
 | Suite | Result |
 |---|---|
-| Unit (Vitest) | 532 passed across 7 packages; `packages/core` line coverage 97.4%, `packages/providers` 100%, both above the 90% gate |
-| Database (pgTAP) | 510 assertions in 43 files, all passing; SQL lint clean |
-| End to end (Playwright) | 229 passed at 390 px and 1440 px, including acceptance-01, 02, 09 and 12 at both widths, none skipped, stable across repeated full runs |
+| Unit (Vitest) | 689 passed across 7 packages; `packages/core` line coverage 97.7%, `packages/providers` 97.5%, both above the 90% gate |
+| Database (pgTAP) | 669 assertions in 54 files, all passing, and none of them depends on the date or the day of the week they run on (D-070); SQL lint clean |
+| End to end (Playwright) | Green in CI at 390 px and 1440 px on every push since 13 September, including the payment journeys for M3-05 to M3-10 |
 | Lint, typecheck, copy guard | Clean |
-| CI on GitHub | Last read green on M1. Not read for the M2 branch: the repository is private and this machine has no GitHub CLI |
+| CI on GitHub | Read after every push. Green on c06c1e0 (14 September). The push before it failed on a pgTAP test that only passed from Thursday to Sunday, fixed in c06c1e0 |
 | Staging (hosted) | All 46 migrations applied, M2 pushed on 2026-09-13. Security Advisor: 0 errors, 39 warnings, 38 of them the expected `security definer` pattern (D-051) and one the dashboard switch for leaked password protection |
 
 ## In progress
@@ -163,5 +166,7 @@ Decisions D-036 to D-050 were logged during this stretch. Two were security fixe
 | Twilio account off trial | Text codes to a number that is not pre-registered, on staging | Product owner |
 | Mapbox access token | The real map on the coverage step. The drawn fallback ships meanwhile (D-058) | Product owner |
 | Leaked password protection | One dashboard switch on staging, found by the M1 security advisor. RUNBOOK 3.1 step 4 | Product owner |
-| Resend API key for the app | Real email from staging and production. Local and test runs write to the log and send nothing. RUNBOOK 3.2 step 3 | Product owner |
 | VAPID key pair for staging and production | Push from those environments. Generated with one command, no account needed. RUNBOOK 3.2a | Product owner |
+| Stripe platform profile acknowledgements | The Stripe test-mode runs in M3-23: connected accounts cannot be created until they are accepted | Product owner, in the Stripe dashboard |
+| Stripe CLI on this machine | The local webhook signing secret and `pnpm stripe:listen`. RUNBOOK 3.7 | Product owner, one install command |
+| Inngest connected to Vercel | Emails, reminders and payment jobs from staging and production | Product owner |

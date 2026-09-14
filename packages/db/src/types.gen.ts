@@ -545,6 +545,210 @@ export type Database = {
           },
         ]
       }
+      credit_accounts: {
+        Row: {
+          balance_minutes: number
+          business_id: string
+          created_at: string
+          id: string
+          learner_id: string
+          updated_at: string
+        }
+        Insert: {
+          balance_minutes?: number
+          business_id: string
+          created_at?: string
+          id?: string
+          learner_id: string
+          updated_at?: string
+        }
+        Update: {
+          balance_minutes?: number
+          business_id?: string
+          created_at?: string
+          id?: string
+          learner_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "credit_accounts_business_id_learner_id_fkey"
+            columns: ["business_id", "learner_id"]
+            isOneToOne: true
+            referencedRelation: "learner_card"
+            referencedColumns: ["business_id", "learner_id"]
+          },
+          {
+            foreignKeyName: "credit_accounts_business_id_learner_id_fkey"
+            columns: ["business_id", "learner_id"]
+            isOneToOne: true
+            referencedRelation: "learner_list"
+            referencedColumns: ["business_id", "learner_id"]
+          },
+          {
+            foreignKeyName: "credit_accounts_business_id_learner_id_fkey"
+            columns: ["business_id", "learner_id"]
+            isOneToOne: true
+            referencedRelation: "learner_relationships"
+            referencedColumns: ["business_id", "learner_id"]
+          },
+        ]
+      }
+      credit_ledger: {
+        Row: {
+          actor_id: string | null
+          booking_id: string | null
+          business_id: string
+          created_at: string
+          id: string
+          kind: Database["public"]["Enums"]["credit_entry_kind"]
+          learner_id: string
+          lot_id: string
+          minutes: number
+          payment_id: string | null
+          reason: string | null
+          refund_id: string | null
+        }
+        Insert: {
+          actor_id?: string | null
+          booking_id?: string | null
+          business_id: string
+          created_at?: string
+          id?: string
+          kind: Database["public"]["Enums"]["credit_entry_kind"]
+          learner_id: string
+          lot_id: string
+          minutes: number
+          payment_id?: string | null
+          reason?: string | null
+          refund_id?: string | null
+        }
+        Update: {
+          actor_id?: string | null
+          booking_id?: string | null
+          business_id?: string
+          created_at?: string
+          id?: string
+          kind?: Database["public"]["Enums"]["credit_entry_kind"]
+          learner_id?: string
+          lot_id?: string
+          minutes?: number
+          payment_id?: string | null
+          reason?: string | null
+          refund_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "credit_ledger_actor_id_fkey"
+            columns: ["actor_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "credit_ledger_booking_id_fkey"
+            columns: ["booking_id"]
+            isOneToOne: false
+            referencedRelation: "bookings"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "credit_ledger_lot_id_business_id_learner_id_fkey"
+            columns: ["lot_id", "business_id", "learner_id"]
+            isOneToOne: false
+            referencedRelation: "credit_lots"
+            referencedColumns: ["id", "business_id", "learner_id"]
+          },
+          {
+            foreignKeyName: "credit_ledger_payment_id_fkey"
+            columns: ["payment_id"]
+            isOneToOne: false
+            referencedRelation: "payments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "credit_ledger_refund_id_fkey"
+            columns: ["refund_id"]
+            isOneToOne: false
+            referencedRelation: "refunds"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      credit_lots: {
+        Row: {
+          business_id: string
+          created_at: string
+          created_by: string | null
+          expires_at: string | null
+          id: string
+          learner_id: string
+          minutes_remaining: number
+          minutes_total: number
+          package_id: string | null
+          payment_id: string | null
+          price_pence: number
+          purchased_at: string
+        }
+        Insert: {
+          business_id: string
+          created_at?: string
+          created_by?: string | null
+          expires_at?: string | null
+          id?: string
+          learner_id: string
+          minutes_remaining?: number
+          minutes_total: number
+          package_id?: string | null
+          payment_id?: string | null
+          price_pence: number
+          purchased_at?: string
+        }
+        Update: {
+          business_id?: string
+          created_at?: string
+          created_by?: string | null
+          expires_at?: string | null
+          id?: string
+          learner_id?: string
+          minutes_remaining?: number
+          minutes_total?: number
+          package_id?: string | null
+          payment_id?: string | null
+          price_pence?: number
+          purchased_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "credit_lots_business_id_learner_id_fkey"
+            columns: ["business_id", "learner_id"]
+            isOneToOne: false
+            referencedRelation: "credit_accounts"
+            referencedColumns: ["business_id", "learner_id"]
+          },
+          {
+            foreignKeyName: "credit_lots_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "credit_lots_package_id_fkey"
+            columns: ["package_id"]
+            isOneToOne: false
+            referencedRelation: "packages"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "credit_lots_payment_id_fkey"
+            columns: ["payment_id"]
+            isOneToOne: true
+            referencedRelation: "payments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       deletion_requests: {
         Row: {
           created_at: string
@@ -2433,6 +2637,14 @@ export type Database = {
       business_status: "pending" | "active" | "suspended"
       business_type: "independent" | "school"
       coverage_rule: "include" | "exclude"
+      credit_entry_kind:
+        | "purchase"
+        | "use"
+        | "return"
+        | "fee"
+        | "expiry"
+        | "adjustment"
+        | "refund"
       exception_kind: "open" | "blocked"
       experience_level: "none" | "some" | "test_booked"
       instructor_qualification: "adi" | "pdi"
@@ -2640,6 +2852,15 @@ export const Constants = {
       business_status: ["pending", "active", "suspended"],
       business_type: ["independent", "school"],
       coverage_rule: ["include", "exclude"],
+      credit_entry_kind: [
+        "purchase",
+        "use",
+        "return",
+        "fee",
+        "expiry",
+        "adjustment",
+        "refund",
+      ],
       exception_kind: ["open", "blocked"],
       experience_level: ["none", "some", "test_booked"],
       instructor_qualification: ["adi", "pdi"],

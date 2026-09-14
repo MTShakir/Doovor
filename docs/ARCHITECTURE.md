@@ -425,9 +425,11 @@ The friendly pre-check runs inside the RPC for good messages. The constraint is 
 
 Credit is time (minutes) bought as a package from one Business. Three tables keep it correct:
 
-- `credit_lots`: one row per package purchase with `minutes_total`, `minutes_remaining`, `price_pence` and `expires_at`. Lots are consumed oldest first. Lots let expiry (package `expiry_days`) and refunds of unused credit value each purchase correctly: a refund is worth `floor(price_pence * minutes_remaining / minutes_total)`, all integer arithmetic.
-- `credit_ledger`: append-only record of every movement (`purchase`, `use`, `return`, `fee`, `expiry`, `adjustment`, `refund`) with minutes, lot, booking, payment, actor and reason. Update and delete are blocked by trigger.
-- `credit_accounts`: cached balance per Business and learner, updated in the same transaction and locked with `FOR UPDATE`. `CHECK (balance_minutes >= 0)`. A nightly job and a pgTAP test assert that the balance equals the sum of the ledger.
+- `credit_lots`: one row per package purchase (or credit given) with `minutes_total`, `minutes_remaining`, `price_pence` and `expires_at`, and the `payment_id` that bought it, unique. Lots are consumed oldest first. Lots let expiry (package `expiry_days`) and refunds of unused credit value each purchase correctly: a refund is worth `floor(price_pence * minutes_remaining / minutes_total)`, all integer arithmetic (`packages/core/src/credit.ts`). A lot starts empty and its first ledger row fills it; what it was bought as never changes.
+- `credit_ledger`: append-only record of every movement (`purchase`, `use`, `return`, `fee`, `expiry`, `adjustment`, `refund`) with signed minutes, lot, booking, payment, refund, actor and reason. Checks tie each kind to its direction and to what it must point at (a lesson for `use`, `return` and `fee`; a person and a reason for `adjustment`). Update, delete and truncate are blocked by trigger.
+- `credit_accounts`: cached balance per Business and learner, `CHECK (balance_minutes >= 0)`, locked with `FOR UPDATE` by the functions that move credit. An account exists only for a learner the Business has a relationship with (PAY-12).
+
+Inserting a ledger row moves its account and then its lot, by trigger, in the same statement, and a guard refuses any other change to either number (D-085). The balance is therefore the sum of the ledger by construction; a pgTAP test checks it after hundreds of random moves, some of them refused. Nothing a ledger row points at is deleted by cascade, so the money history outlives the people in it (NFR-PRV-03).
 
 Acceptance test 3: 120 minutes of credit, book 60, the balance shows 60, cancel 72 hours before, one `return` row brings it back to 120.
 
