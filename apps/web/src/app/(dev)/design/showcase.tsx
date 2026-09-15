@@ -17,6 +17,7 @@ import {
   WhereLessonsStart,
 } from '@/components/public/instructor-profile';
 import { SchoolHeader, SchoolInstructors } from '@/components/public/school-profile';
+import { BookingLinkCard } from '@/components/share/booking-link-card';
 import { NoSignalBanner } from '@/components/offline/connection-banner';
 import { KeptRecordsNotice } from '@/components/offline/kept-records-notice';
 import { CardFieldsSkeleton } from '@/components/payments/card-form';
@@ -654,6 +655,18 @@ export function DesignShowcase() {
         </div>
         <div className="max-w-xl">
           <SchoolInstructors idPrefix="empty-school-" instructors={[]} />
+        </div>
+        <Label>Booking link: ready to share with its QR code, waiting for approval, and paused while a badge is out of date (PUB-03, M5-05)</Label>
+        <div className="grid items-start gap-6 md:grid-cols-2">
+          <BookingLinkCard
+            instructorName="Sarah Khan"
+            bookingUrl="https://app.example.com/book/sarah-khan"
+            profileUrl="https://example.com/instructors/leeds/sarah-khan"
+          />
+          <div className="flex flex-col gap-6">
+            <BookingLinkCard instructorName="Aisha Rahman" bookingUrl={null} profileUrl={null} />
+            <BookingLinkCard instructorName="Emma Clarke" bookingUrl={null} profileUrl={null} unavailable="badge-expired" />
+          </div>
         </div>
       </Section>
 

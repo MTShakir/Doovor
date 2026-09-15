@@ -16,6 +16,7 @@
     "./places": "./src/places.ts",
     "./public-profile": "./src/public-profile.ts",
     "./structured-data": "./src/structured-data.ts",
+    "./share": "./src/share.ts",
     "./schemas/auth": "./src/schemas/auth.ts",
     "./schemas/onboarding": "./src/schemas/onboarding.ts",
     "./schemas/profile": "./src/schemas/profile.ts",
@@ -58,12 +59,14 @@
   "dependencies": {
     "@date-fns/tz": "^1.5.0",
     "date-fns": "^4.4.0",
+    "uqr": "0.1.3",
     "zod": "catalog:"
   },
   "devDependencies": {
     "@repo/config": "workspace:*",
     "@vitest/coverage-v8": "catalog:",
     "eslint": "catalog:",
+    "jsqr": "1.4.0",
     "typescript": "catalog:",
     "vitest": "catalog:"
   }

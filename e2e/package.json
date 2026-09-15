@@ -15,6 +15,7 @@
     "@repo/config": "workspace:*",
     "@types/node": "catalog:",
     "eslint": "catalog:",
+    "jsqr": "1.4.0",
     "postgres": "^3.4.9",
     "typescript": "catalog:"
   }

@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import { instructorProfilePath } from '@repo/core/public-profile';
 import type { Specialism } from '@repo/core/schemas/profile';
 import { formatCalendarDate } from '@repo/core/time';
 import { PageHeader } from '@repo/ui/app-shell';
@@ -7,8 +8,12 @@ import { SkeletonRow } from '@repo/ui/skeleton';
 import { StatusPill } from '@repo/ui/status-pill';
 import { Suspense } from 'react';
 import { FormAlert } from '@/components/form-alert';
+import { BookingLinkCard } from '@/components/share/booking-link-card';
+import { getAppUrl } from '@/lib/app-url';
 import { requirePortal } from '@/lib/auth/session';
 import { getGeoProvider } from '@/lib/geo/provider';
+import { instructorProfile } from '@/lib/public/instructor-profile';
+import { getSiteUrl } from '@/lib/site-url';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
 import { ProfileForm } from './profile-form';
 import { CoverageEditor } from '../coverage-editor';
@@ -58,7 +63,7 @@ async function Profile() {
   const { data: profile } = await supabase
     .from('instructor_profiles')
     .select(
-      'display_name, bio, photo_path, languages, years_teaching, transmission, car_make, car_model, dual_controls, specialisms, qualification, badge_number, badge_expiry, verification_status, supervisor_business_id, supervisor_instructor_id, base_postcode, radius_miles',
+      'display_name, bio, photo_path, languages, years_teaching, transmission, car_make, car_model, dual_controls, specialisms, qualification, badge_number, badge_expiry, verification_status, supervisor_business_id, supervisor_instructor_id, base_postcode, radius_miles, public_slug',
     )
     .eq('id', membership.instructorProfileId)
     .single();
@@ -77,8 +82,23 @@ async function Profile() {
     .order('outcode');
   const supervised = profile.supervisor_business_id !== null || profile.supervisor_instructor_id !== null;
 
+  // PUB-03: the link and the profile exist once the platform has approved the badge (INS-05), and
+  // the link takes bookings while the badge is in date (INS-03). The card says which.
+  const published =
+    profile.verification_status === 'approved' && profile.public_slug ? await instructorProfile(profile.public_slug) : null;
+  const bookingUrl = published?.takingBookings ? `${getAppUrl()}/book/${published.slug}` : null;
+  const profileUrl = published
+    ? `${getSiteUrl()}${instructorProfilePath(published.place?.citySlug ?? null, published.slug)}`
+    : null;
+
   return (
     <>
+      <BookingLinkCard
+        instructorName={profile.display_name}
+        bookingUrl={bookingUrl}
+        profileUrl={profileUrl}
+        unavailable={published && !published.takingBookings ? 'badge-expired' : 'approval'}
+      />
       <Card className="flex flex-col gap-2">
         <div className="flex items-start justify-between gap-3">
           <CardTitle>{profile.qualification === 'pdi' ? 'Trainee instructor' : 'Approved driving instructor'}</CardTitle>
