@@ -31,8 +31,8 @@ begin
                                buffer_minutes, status, price_pence, source)
   values (p_business, p_instructor, p_learner, p_type, v_starts, v_starts + interval '1 hour', 0, 'completed', 4200, 'instructor')
   returning id into v_booking;
-  insert into public.lesson_records (id, business_id, booking_id, learner_id, instructor_id, summary, visibility)
-  values (v_record, p_business, v_booking, p_learner, p_instructor, 'A lesson', p_visibility::public.lesson_record_visibility);
+  insert into public.lesson_records (id, business_id, booking_id, learner_id, instructor_id, lesson_starts_at, summary, visibility)
+  values (v_record, p_business, v_booking, p_learner, p_instructor, v_starts, 'A lesson', p_visibility::public.lesson_record_visibility);
   insert into public.skill_ratings (lesson_record_id, skill_code, rating, business_id, learner_id)
   values (v_record, 'JUNCTIONS', 3, p_business, p_learner);
   return v_record;

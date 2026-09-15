@@ -9,7 +9,10 @@ import { PickupPointPicker } from '@repo/ui/pickup-point-picker';
 import { FormAlert } from '@/components/form-alert';
 import { RadiusMap } from '@/components/map/radius-map';
 import { CardFieldsSkeleton } from '@/components/payments/card-form';
+import { LessonRecordCard } from '@/components/progress/lesson-record-card';
+import { SkillMap } from '@/components/progress/skill-map';
 import { SetupChecklist } from '@/components/setup-checklist';
+import type { RecordedLesson } from '@/lib/lessons/records';
 import { Button } from '@repo/ui/button';
 import { Card, CardDescription, CardTitle } from '@repo/ui/card';
 import { Checkbox } from '@repo/ui/checkbox';
@@ -24,6 +27,7 @@ import { MonthCalendar } from '@repo/ui/month-calendar';
 import { OtpInput } from '@repo/ui/otp-input';
 import { PostcodeSearch } from '@repo/ui/postcode-search';
 import { ProgressBar, ProgressRing } from '@repo/ui/progress';
+import { skillMap } from '@repo/core/skill-map';
 import type { SkillRating } from '@repo/core/skills';
 import { RatingScale } from '@repo/ui/rating-scale';
 import { RatingStars } from '@repo/ui/rating-stars';
@@ -40,7 +44,7 @@ import { TimeSlotGrid } from '@repo/ui/time-slot-grid';
 import { toast, toastWithUndo } from '@repo/ui/toast';
 import { CalendarX, Car } from 'lucide-react';
 import Link from 'next/link';
-import { useState, type ReactNode } from 'react';
+import { Suspense, useState, type ReactNode } from 'react';
 
 const sections = [
   'Colour',
@@ -74,6 +78,44 @@ function Label({ children }: { children: ReactNode }) {
 }
 
 const pillStatuses: PillStatus[] = ['confirmed', 'pending', 'completed', 'paid', 'cancelled', 'attention', 'unpaid', 'overdue', 'credit', 'gap-fill', 'test-day'];
+
+const exampleRecords: RecordedLesson[] = [
+  {
+    id: 'example-record-1',
+    lessonStartsAt: '2026-09-12T06:00:00+00:00',
+    instructorName: 'Sarah Khan',
+    schoolName: null,
+    summary: 'Good junctions, and mirrors checked early before every signal.',
+    nextFocus: 'Lane choice on roundabouts',
+    homework: 'Read the Highway Code rules on roundabouts',
+    ratings: [
+      { skillCode: 'MIRRORS', rating: 4 },
+      { skillCode: 'JUNCTIONS', rating: 3 },
+      { skillCode: 'ROUNDABOUT', rating: 2 },
+    ],
+  },
+  {
+    id: 'example-record-2',
+    lessonStartsAt: '2025-12-02T15:30:00+00:00',
+    instructorName: 'Emma Clarke',
+    schoolName: 'Leeds School of Motoring',
+    summary: 'First lesson. Controls and moving off, in a quiet car park.',
+    nextFocus: null,
+    homework: null,
+    ratings: [
+      { skillCode: 'CTRL', rating: 1 },
+      { skillCode: 'MOVEOFF', rating: 1 },
+    ],
+  },
+];
+
+const exampleSkillMap = skillMap([
+  { skillCode: 'CTRL', rating: 5, at: new Date('2026-09-12T06:00:00Z'), times: 6 },
+  { skillCode: 'MOVEOFF', rating: 4, at: new Date('2026-09-12T06:00:00Z'), times: 5 },
+  { skillCode: 'MIRRORS', rating: 4, at: new Date('2026-09-12T06:00:00Z'), times: 4 },
+  { skillCode: 'JUNCTIONS', rating: 3, at: new Date('2026-09-12T06:00:00Z'), times: 3 },
+  { skillCode: 'ROUNDABOUT', rating: 2, at: new Date('2026-09-12T06:00:00Z'), times: 1 },
+]);
 
 const slots = ['09:00', '10:30', '12:00', '13:30', '15:00', '16:30', '18:00'].map((label, index) => ({
   id: label,
@@ -434,11 +476,31 @@ export function DesignShowcase() {
           <ProgressRing value={100} label="Profile complete" size={72} />
         </div>
         <div className="grid max-w-xl gap-4">
-          {(['Moving off', 'Junctions', 'Roundabouts', 'Manoeuvres', 'Independent driving', 'Dual carriageways'] as const).map(
-            (skill, index) => (
-              <SkillBar key={skill} skill={skill} rating={index} />
-            ),
-          )}
+          {(
+            [
+              ['Moving off', null],
+              ['Junctions', 1],
+              ['Roundabouts', 2],
+              ['Manoeuvres', 3],
+              ['Independent driving', 4],
+              ['Cockpit checks and Show me Tell me', 5],
+            ] as const
+          ).map(([skill, rating]) => (
+            <SkillBar key={skill} skill={skill} rating={rating} />
+          ))}
+        </div>
+        <Label>Lesson record: with next steps and an independent instructor, and a first lesson a year ago at a school (M4-06)</Label>
+        {/* Formatting a lesson's time reads the clock, which a page built ahead of time must leave to the visit. */}
+        <Suspense fallback={<SkeletonRow />}>
+          <div className="grid items-start gap-4 md:grid-cols-2">
+            {exampleRecords.map((record) => (
+              <LessonRecordCard key={record.id} record={record} thisYear="2026" />
+            ))}
+          </div>
+        </Suspense>
+        <Label>Skill map (M4-07)</Label>
+        <div className="max-w-md">
+          <SkillMap progress={exampleSkillMap} />
         </div>
         <NumberStepper
           label="Lesson length"

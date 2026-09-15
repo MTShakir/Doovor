@@ -3,12 +3,14 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 const rpc = vi.fn();
 const getSession = vi.fn();
 const revalidatePath = vi.fn();
+const lessonRecordPage = vi.fn();
 
 vi.mock('@/lib/supabase/server', () => ({ createSupabaseServerClient: () => Promise.resolve({ rpc }) }));
 vi.mock('@/lib/auth/session', () => ({ getSession: () => getSession() as unknown }));
 vi.mock('next/cache', () => ({ revalidatePath: (...args: unknown[]) => { revalidatePath(...args); } }));
+vi.mock('@/lib/lessons/records', () => ({ lessonRecordPage: (...args: unknown[]) => lessonRecordPage(...args) as unknown }));
 
-const { POST } = await import('./route');
+const { GET, POST } = await import('./route');
 
 const id = '6f1c8b52-3a6e-4d1f-9b1e-2f4c5d6e7f80';
 const bookingId = '0b7e2c1a-9d4f-4a3b-8c2d-1e0f9a8b7c6d';
@@ -115,5 +117,65 @@ describe('saving a lesson record from the phone (PRG-01, PRG-09, M4-05)', () => 
     });
     expect((await POST(sameSite)).status).toBe(201);
     expect(rpc).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe('reading a learner\'s lesson records a page at a time (PRG-03, M4-06)', () => {
+  const learner = '3d9a4c1e-7b2f-4e8a-9c6d-5f0e1a2b3c4d';
+  const page = {
+    records: [
+      {
+        id,
+        lessonStartsAt: '2026-09-12T06:00:00+00:00',
+        instructorName: 'Sarah Khan',
+        schoolName: null,
+        summary: 'Good junctions today',
+        nextFocus: 'Roundabouts',
+        homework: null,
+        ratings: [{ skillCode: 'JUNCTIONS', rating: 3 }],
+      },
+    ],
+    next: `2026-09-12T06:00:00+00:00_${id}`,
+  };
+  const read = (query: string) => GET(new Request(`https://app.example.com/api/v1/lesson-records?${query}`));
+
+  beforeEach(() => {
+    lessonRecordPage.mockResolvedValue(page);
+  });
+
+  it('sends the first page, and where the next one starts', async () => {
+    const answer = await read(`learner=${learner}`);
+
+    expect(answer.status).toBe(200);
+    expect(await answer.json()).toEqual({ ok: true, data: page });
+    expect(lessonRecordPage).toHaveBeenCalledWith(learner, undefined);
+    expect(answer.headers.get('cache-control')).toBe('no-store');
+  });
+
+  it('sends the page after a cursor, with the time just as the database wrote it', async () => {
+    const before = new URLSearchParams({ learner, before: `2026-09-12T06:00:00+00:00_${id}` });
+    await read(before.toString());
+    expect(lessonRecordPage).toHaveBeenCalledWith(learner, { startsAt: '2026-09-12T06:00:00+00:00', id });
+  });
+
+  it('asks the database nothing for a learner that is not an id or a cursor it did not write', async () => {
+    expect((await read('learner=me')).status).toBe(422);
+    expect((await read(`learner=${learner}&before=yesterday`)).status).toBe(422);
+    expect((await read('')).status).toBe(422);
+    expect(lessonRecordPage).not.toHaveBeenCalled();
+  });
+
+  it('sends nothing to somebody who is not signed in', async () => {
+    getSession.mockResolvedValue(null);
+    const answer = await read(`learner=${learner}`);
+    expect(answer.status).toBe(401);
+    expect(lessonRecordPage).not.toHaveBeenCalled();
+  });
+
+  it('answers a failed read with a message to try again, not what the database said', async () => {
+    lessonRecordPage.mockRejectedValue(new Error('connection to server lost'));
+    const answer = await read(`learner=${learner}`);
+    expect(answer.status).toBe(500);
+    expect(await answer.json()).toEqual({ ok: false, code: 'UNKNOWN', message: 'Something went wrong. Try again.' });
   });
 });

@@ -1,6 +1,6 @@
 -- Saving a lesson record (PRG-01, PRG-09, M4-02).
 begin;
-select plan(20);
+select plan(21);
 
 select tests.create_fixture();
 
@@ -68,6 +68,13 @@ select results_eq(
               from public.lesson_records where booking_id = %L $$, :'taught'),
   $$ values (1, 'Good junctions today', 'Roundabouts', 48, 'learner') $$,
   'one record for the lesson, as it was first saved, for the learner'
+);
+select is(
+  (select r.lesson_starts_at = b.starts_at
+     from public.lesson_records r join public.bookings b on b.id = r.booking_id
+    where r.id = :'record'::uuid),
+  true,
+  'kept with when the lesson started, which is when it goes on the learner''s timeline (PRG-03)'
 );
 select results_eq(
   format($$ select skill_code, rating::int, learner_id, business_id from public.skill_ratings

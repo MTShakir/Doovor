@@ -6,7 +6,7 @@ import { labelFor, sectionsFor, type Portal } from '@/lib/navigation';
 
 /** Milestone that delivers each Phase 1 section (docs/PLAN.md). */
 const arrivesIn: Record<Portal, Record<string, string>> = {
-  learner: { '': 'M2', progress: 'M4', payments: 'M3' },
+  learner: { '': 'M2', payments: 'M3' },
   instructor: {},
   school: { '': 'M5', instructors: 'M5', settings: 'M5' },
   admin: {

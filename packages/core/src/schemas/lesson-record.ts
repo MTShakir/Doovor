@@ -31,3 +31,31 @@ export const lessonRecordSchema = z.object({
 
 export type LessonRecordInput = z.input<typeof lessonRecordSchema>;
 export type LessonRecord = z.output<typeof lessonRecordSchema>;
+
+/**
+ * Where the next page of a learner's lesson records starts (PRG-03, M4-06): after the record with
+ * this lesson time and id, newest first. The id settles two records for lessons at the same time.
+ */
+export interface LessonRecordCursor {
+  /** The lesson's start, exactly as the database wrote it, so no fraction of a second is lost. */
+  startsAt: string;
+  id: string;
+}
+
+export function encodeLessonRecordCursor(cursor: LessonRecordCursor): string {
+  return `${cursor.startsAt}_${cursor.id}`;
+}
+
+export const lessonRecordCursorSchema = z
+  .string()
+  .transform((value) => {
+    const split = value.lastIndexOf('_');
+    return { startsAt: split < 0 ? '' : value.slice(0, split), id: value.slice(split + 1) };
+  })
+  .pipe(z.object({ startsAt: z.iso.datetime({ offset: true }), id: z.uuid() }));
+
+/** Asking for a page of one learner's lesson records: the first, or the one after a cursor. */
+export const lessonRecordPageSchema = z.object({
+  learner: z.uuid(),
+  before: lessonRecordCursorSchema.optional(),
+});

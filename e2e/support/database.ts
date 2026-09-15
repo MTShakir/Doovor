@@ -867,6 +867,54 @@ export async function newestPaymentFor(bookingId: string): Promise<{ status: str
   });
 }
 
+export interface RecordedLessonSeed {
+  date: string;
+  time: string;
+  summary: string;
+  /** Skill codes and their ratings: `{ DUALCW: 4 }`. */
+  ratings: Record<string, number>;
+  nextFocus?: string;
+  homework?: string;
+}
+
+/**
+ * Lessons that happened, each with its record, as an instructor saving them would leave them
+ * (PRG-03, M4-06, M4-07). Written in the order given, so a test can have an older lesson's record
+ * arrive after a newer one's. Marked paid, so they owe nobody anything. Whatever was at those
+ * times is cleared first. Local only.
+ */
+export async function recordLessons(instructorName: string, learnerEmail: string, lessons: RecordedLessonSeed[]): Promise<void> {
+  for (const lesson of lessons) await removeLesson(instructorName, learnerEmail, lesson.date, lesson.time);
+  await withDatabase(async (sql) => {
+    for (const lesson of lessons) {
+      const [booking] = await sql<{ id: string; business_id: string; instructor_id: string; learner_id: string; starts_at: Date }[]>`
+        insert into public.bookings (business_id, instructor_id, learner_id, lesson_type_id, starts_at, ends_at,
+                                     buffer_minutes, status, payment_mode, payment_status, price_pence, source)
+        select p.business_id, p.id, u.id, t.id,
+               (${lesson.date}::date + ${lesson.time}::time) at time zone 'Europe/London',
+               (${lesson.date}::date + ${lesson.time}::time + interval '1 hour') at time zone 'Europe/London',
+               30, 'completed', 'offline', 'paid_cash', 4200, 'instructor'
+          from public.instructor_profiles p
+          join public.lesson_types t on t.business_id = p.business_id and t.name = 'Standard lesson'
+          join public.users u on lower(u.email) = lower(${learnerEmail})
+         where p.display_name = ${instructorName}
+        returning id, business_id, instructor_id, learner_id, starts_at`;
+      if (!booking) throw new Error(`No lesson made for ${instructorName} at ${lesson.time} on ${lesson.date}`);
+      await sql`
+        with record as (
+          insert into public.lesson_records (id, business_id, booking_id, learner_id, instructor_id, lesson_starts_at,
+                                             summary, next_focus, homework)
+          values (gen_random_uuid(), ${booking.business_id}, ${booking.id}, ${booking.learner_id}, ${booking.instructor_id},
+                  ${booking.starts_at}, ${lesson.summary}, ${lesson.nextFocus ?? null}, ${lesson.homework ?? null})
+          returning id
+        )
+        insert into public.skill_ratings (lesson_record_id, skill_code, rating, business_id, learner_id)
+        select record.id, rated.key, rated.value::smallint, ${booking.business_id}, ${booking.learner_id}
+          from record, jsonb_each_text(${sql.json(lesson.ratings)}::jsonb) as rated`;
+    }
+  });
+}
+
 /** A lesson's record as saved, with its ratings and how long it took (PRG-01, M4-05). Null before one is saved. */
 export async function lessonRecordFor(
   bookingId: string,

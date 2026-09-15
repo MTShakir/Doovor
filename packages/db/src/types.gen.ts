@@ -1283,6 +1283,7 @@ export type Database = {
           id: string
           instructor_id: string
           learner_id: string
+          lesson_starts_at: string
           next_focus: string | null
           seconds_taken: number | null
           summary: string
@@ -1296,6 +1297,7 @@ export type Database = {
           id: string
           instructor_id: string
           learner_id: string
+          lesson_starts_at: string
           next_focus?: string | null
           seconds_taken?: number | null
           summary: string
@@ -1309,6 +1311,7 @@ export type Database = {
           id?: string
           instructor_id?: string
           learner_id?: string
+          lesson_starts_at?: string
           next_focus?: string | null
           seconds_taken?: number | null
           summary?: string
@@ -2466,6 +2469,31 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "users"
             referencedColumns: ["id"]
+          },
+        ]
+      }
+      skill_progress: {
+        Row: {
+          last_rated_at: string | null
+          learner_id: string | null
+          rating: number | null
+          skill_code: string | null
+          times: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "skill_ratings_learner_id_fkey"
+            columns: ["learner_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "skill_ratings_skill_code_fkey"
+            columns: ["skill_code"]
+            isOneToOne: false
+            referencedRelation: "skills"
+            referencedColumns: ["code"]
           },
         ]
       }

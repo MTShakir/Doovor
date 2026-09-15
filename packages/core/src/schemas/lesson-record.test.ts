@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { lessonRecordSchema } from './lesson-record.ts';
+import { encodeLessonRecordCursor, lessonRecordPageSchema, lessonRecordSchema } from './lesson-record.ts';
 
 const record = {
   id: '6f1c8b52-3a6e-4d1f-9b1e-2f4c5d6e7f80',
@@ -41,5 +41,28 @@ describe('a lesson record as the phone sends it (PRG-01, M4-05)', () => {
   it('needs ids made on the phone', () => {
     expect(lessonRecordSchema.safeParse({ ...record, id: 'not-an-id' }).success).toBe(false);
     expect(lessonRecordSchema.safeParse({ ...record, bookingId: undefined }).success).toBe(false);
+  });
+});
+
+describe('a page of lesson records (PRG-03, M4-06)', () => {
+  const learner = '3d9a4c1e-7b2f-4e8a-9c6d-5f0e1a2b3c4d';
+
+  it('starts the next page after the last record shown, as the database wrote its time', () => {
+    const cursor = encodeLessonRecordCursor({ startsAt: '2026-09-12T06:00:00.123456+00:00', id: record.id });
+    expect(lessonRecordPageSchema.parse({ learner, before: cursor })).toEqual({
+      learner,
+      before: { startsAt: '2026-09-12T06:00:00.123456+00:00', id: record.id },
+    });
+  });
+
+  it('asks for the first page with no cursor', () => {
+    expect(lessonRecordPageSchema.parse({ learner })).toEqual({ learner });
+  });
+
+  it('refuses a cursor it did not write, and a learner that is not an id', () => {
+    for (const before of ['yesterday', `2026-09-12_${record.id}`, '2026-09-12T06:00:00+00:00_12', record.id, '']) {
+      expect(lessonRecordPageSchema.safeParse({ learner, before }).success, before).toBe(false);
+    }
+    expect(lessonRecordPageSchema.safeParse({ learner: 'me' }).success).toBe(false);
   });
 });

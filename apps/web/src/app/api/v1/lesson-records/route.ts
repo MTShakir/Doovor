@@ -1,7 +1,8 @@
 import { defaultErrorCopy, parsePostgresError, type DomainErrorCode } from '@repo/core/errors';
-import { lessonRecordSchema } from '@repo/core/schemas/lesson-record';
+import { lessonRecordPageSchema, lessonRecordSchema } from '@repo/core/schemas/lesson-record';
 import { revalidatePath } from 'next/cache';
 import { getSession } from '@/lib/auth/session';
+import { lessonRecordPage } from '@/lib/lessons/records';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
 
 const noStore = { 'cache-control': 'no-store' };
@@ -74,4 +75,28 @@ export async function POST(request: Request): Promise<Response> {
     { ok: true, data: { id: saved.id, saved: saved.saved, completed: saved.completed } },
     { status: saved.saved ? 201 : 200, headers: noStore },
   );
+}
+
+/**
+ * A page of one learner's lesson records, the latest lesson first (PRG-03, M4-06):
+ * `?learner=<id>` for the first page, and `&before=<next>` from a page for the one after it.
+ * Whoever asks gets only the records they may read, so a learner they may not see has none.
+ */
+export async function GET(request: Request): Promise<Response> {
+  const session = await getSession();
+  if (!session) return refuse('NOT_AUTHENTICATED', 401);
+
+  const search = new URL(request.url).searchParams;
+  const parsed = lessonRecordPageSchema.safeParse({
+    learner: search.get('learner') ?? undefined,
+    before: search.get('before') ?? undefined,
+  });
+  if (!parsed.success) return refuse('VALIDATION_FAILED', 422);
+
+  try {
+    const page = await lessonRecordPage(parsed.data.learner, parsed.data.before);
+    return Response.json({ ok: true, data: page }, { headers: noStore });
+  } catch {
+    return refuse('UNKNOWN', 500);
+  }
 }

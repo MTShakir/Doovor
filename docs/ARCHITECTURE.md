@@ -161,7 +161,7 @@ The logical model follows PRD section 12. Conventions: UUID primary keys (`gen_r
 | Catalogue | `lesson_types`, `lesson_prices`, `packages` | Price per lesson type and duration (R-05). `lesson_prices.instructor_id` is null for the Business default and set for an instructor override (SCH-04) |
 | Bookings | `bookings`, `booking_events`, `recurrences` | See section 7. `booking_events` records every status change with actor and reason |
 | Money | `payments`, `refunds`, `credit_lots`, `credit_ledger`, `credit_accounts`, `billing_customers`, `provider_events` | See section 8 |
-| Progress | `skills`, `lesson_records`, `skill_ratings` | `skills` is reference data from PRD Appendix A. `lesson_records.id` is generated on the device so offline saves are idempotent |
+| Progress | `skills`, `lesson_records`, `skill_ratings`, view `skill_progress` | `skills` is reference data from PRD Appendix A. `lesson_records.id` is generated on the device so offline saves are idempotent. A record keeps its lesson's start (`lesson_starts_at`), which orders the timeline, and `skill_progress` rolls ratings up to each area's latest, as the reader (D-102) |
 | Notifications | `notifications`, `notification_preferences`, `push_subscriptions`, `sms_usage` | `notifications.dedupe_key` is unique so a retried job never double-sends |
 | Platform | `platform_settings`, `feature_flags`, `audit_log`, `impersonation_sessions`, `rate_limit_buckets`, `outbox_events`, `job_failures`, `deletion_requests`, `data_exports` | `audit_log` is append-only. `outbox_events` guarantees job delivery (section 9) |
 

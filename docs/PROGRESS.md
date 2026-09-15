@@ -12,7 +12,7 @@ M2 Learners and bookings is approved and merged to `main`, and was pushed to sta
 
 M3 Payments is approved and merged to `main` (ad2cb83), with its 25 migrations applied to staging on 15 September 2026. Acceptance tests 3 to 6 and 12, and the M3-08 authorisation, passed against Stripe test mode. The milestone report is at https://claude.ai/code/artifact/2defdd40-fd63-4827-b54f-4eece5b627f5. The app now lives on `app.doovor.com` with the public site on `doovor.com` (D-084).
 
-M4 Progress and offline is in progress on branch `m4-progress-offline`: M4-01 to M4-05 are done.
+M4 Progress and offline is in progress on branch `m4-progress-offline`: M4-01 to M4-07 are done.
 
 ## M4 progress
 
@@ -23,6 +23,8 @@ M4 Progress and offline is in progress on branch `m4-progress-offline`: M4-01 to
 | M4-03 | RLS for records: learner reads own across Businesses, instructor reads own learners, `visibility` respected | PRG-03, 6.2 | Done. The learner reads their records from every Business they learn with, except one kept for the Business; owners and managers read their own Business's; an instructor reads the records they wrote and every record for a learner assigned to them; nobody else reads any, and ratings follow their record. pgTAP: 16 cross-tenant assertions with a learner at two Businesses and a cover lesson |
 | M4-04 | Lesson in progress screen: timer, learner name, skills checklist | 7.5 | Done. Today now lists the day's lessons with the pickup, the money, Navigate and Write record, and a big Start lesson for the lesson under way or next; the plan had only the setup checklist there. A lesson opens on a timer, the learner's name and the 23 skill areas to tap, kept on the phone through a reload (D-101). The rating control is on the design page. Reviewed at both widths from the end to end screenshots |
 | M4-05 | Lesson record form: tap skills, rate 1 to 5, summary, next focus, optional homework; seconds-taken captured | PRG-01 | Done. The tapped skills are rated first, then a line about the lesson, the focus for next time and optional homework, with how long the form took. It posts to `/api/v1/lesson-records`, the route M4-11's outbox will use, which takes JSON from the app's own origin only. Done in the diary opens the record (D-101). Playwright writes and saves one in about 10 seconds at both widths and reads it back from the database; the route has 7 integration tests and the schema and the day's rules have unit tests |
+| M4-06 | Learner timeline of lesson records | PRG-03 | Done. The Progress tab lists the learner's records from every Business they learn with, newest lesson first by when the lesson happened, not when the record arrived (D-102). Records come 10 at a time, with Show older records adding the next page underneath from `GET /api/v1/lesson-records` (D-103). Each card shows when and with whom, what the instructor wrote, each skill as a skill bar, and the focus for next time and homework. On a phone the records and the skill map sit under two tabs; on a wide screen they are side by side. Playwright pages back through 12 records at both widths, including one sent late, and checks their order; the route has 5 more integration tests, and the loader has 9 unit tests for its cursor, page size and school names |
+| M4-07 | Learner skill map with progress bars; instructor view for own learners | PRG-03 | Done. All 23 areas in test report order, each at the rating from the latest lesson that rated it, with a line saying how many are worked on and how many are driven independently. The `skill_progress` view rolls ratings up in the database and runs as the reader, so a learner's map covers every Business and a Business's map covers its own records (D-102). The instructor opens the same screen from a Progress summary on the learner card; an instructor who does not teach the learner gets Page not found, and the route returns no records. pgTAP: 11 assertions across the learner, two instructors, the owner and a stranger, with the older lesson's record arriving last. Playwright checks both views at both widths; the record card and the skill map are on the design page |
 
 ## M3 progress
 
@@ -171,8 +173,8 @@ Decisions D-036 to D-050 were logged during this stretch. Two were security fixe
 
 | Suite | Result |
 |---|---|
-| Unit (Vitest) | 861 passed across 7 packages; `packages/core` and `packages/providers` both above the 90% line coverage gate |
-| Database (pgTAP) | 945 assertions in 69 files, all passing, including against a database an end to end run has left data in, and none of them depends on the date or the day of the week they run on (D-070); SQL lint clean |
+| Unit (Vitest) | 883 passed across 7 packages; `packages/core` and `packages/providers` both above the 90% line coverage gate |
+| Database (pgTAP) | 957 assertions in 70 files, all passing, including against a database an end to end run has left data in, and none of them depends on the date or the day of the week they run on (D-070); SQL lint clean |
 | Stripe test mode | 6 of 6 on 14 September (`pnpm test:e2e:stripe`): acceptance-03 to 06, acceptance-12 and the M3-08 authorisation, against the sandbox with the listener and the job runner, in 6.8 minutes from a clean database |
 | End to end (Playwright) | 276 at 390 px and 1440 px on 14 September, none skipped, including acceptance-01 to 06, 09 and 12, the payment journeys for M3-05 to M3-22 and cover lessons (D-097). One run had the saved-card removal step fail once under full load and passed when its file ran again; it is being watched; green in CI on every push since 13 September |
 | Lint, typecheck, copy guard | Clean |

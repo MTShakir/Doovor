@@ -66,6 +66,11 @@ export function skillArea(code: SkillCode): SkillArea {
   return found;
 }
 
+/** Things about skill areas, sorted the way the test report lists the areas. */
+export function inReportOrder<T extends { skillCode: SkillCode }>(items: readonly T[]): T[] {
+  return [...items].sort((a, b) => skillCodes.indexOf(a.skillCode) - skillCodes.indexOf(b.skillCode));
+}
+
 /**
  * The rating scale (PRG-02): how much help the learner needed with an area on the day, from the
  * first time it was introduced to driving it on their own.

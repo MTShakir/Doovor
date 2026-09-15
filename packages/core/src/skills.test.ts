@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { isSkillCode, isSkillRating, skillArea, skillAreas, skillCodes, skillRatingLabels, skillRatings } from './skills.ts';
+import { inReportOrder, isSkillCode, isSkillRating, skillArea, skillAreas, skillCodes, skillRatingLabels, skillRatings } from './skills.ts';
 
 describe('the skill map (PRG-02, PRD Appendix A, M4-01)', () => {
   it('has the 23 areas of Appendix A, in the order of the test report', () => {
@@ -36,6 +36,17 @@ describe('the skill map (PRG-02, PRD Appendix A, M4-01)', () => {
     expect(isSkillCode('roundabout')).toBe(false);
     expect(isSkillCode('PARKING')).toBe(false);
     expect(isSkillCode(7)).toBe(false);
+  });
+
+  it('sorts ratings the way the test report lists the areas, whatever order they were tapped in', () => {
+    const tapped = [
+      { skillCode: 'ROUNDABOUT', rating: 2 },
+      { skillCode: 'CTRL', rating: 4 },
+      { skillCode: 'MIRRORS', rating: 3 },
+    ] as const;
+    expect(inReportOrder(tapped).map((one) => one.skillCode)).toEqual(['CTRL', 'MIRRORS', 'ROUNDABOUT']);
+    // The list it was given is left as it was.
+    expect(tapped[0].skillCode).toBe('ROUNDABOUT');
   });
 });
 

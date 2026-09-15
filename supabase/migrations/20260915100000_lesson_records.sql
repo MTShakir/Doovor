@@ -20,6 +20,10 @@ create table public.lesson_records (
   learner_id uuid not null references public.users (id) on delete cascade,
   -- Whoever taught the lesson, which is who writes its record.
   instructor_id uuid not null references public.instructor_profiles (id),
+  -- When the lesson started, kept with its record: a timeline and a skill map go by when lessons
+  -- happened, not by when a phone found signal to send them, and not every reader of a record can
+  -- read the booking behind it.
+  lesson_starts_at timestamptz not null,
   summary text not null check (char_length(btrim(summary)) between 1 and 500),
   next_focus text check (next_focus is null or char_length(next_focus) <= 300),
   homework text check (homework is null or char_length(homework) <= 500),
@@ -32,8 +36,9 @@ create table public.lesson_records (
 comment on table public.lesson_records is
   'A lesson record (PRG-01). Its id is made on the device, so saving it again is saving the same record. Written by save_lesson_record only.';
 
-create index lesson_records_learner_idx on public.lesson_records (learner_id, created_at desc);
-create index lesson_records_business_idx on public.lesson_records (business_id, created_at desc);
+-- A learner's timeline, newest lesson first, a page at a time (PRG-03).
+create index lesson_records_learner_idx on public.lesson_records (learner_id, lesson_starts_at desc, id desc);
+create index lesson_records_business_idx on public.lesson_records (business_id, lesson_starts_at desc);
 create index lesson_records_instructor_idx on public.lesson_records (instructor_id);
 
 create table public.skill_ratings (
@@ -210,10 +215,10 @@ begin
     v_completed := true;
   end if;
 
-  insert into public.lesson_records (id, business_id, booking_id, learner_id, instructor_id, summary,
-                                     next_focus, homework, seconds_taken)
-  values (p_id, v_booking.business_id, p_booking_id, v_booking.learner_id, v_booking.instructor_id, v_summary,
-          v_next_focus, v_homework, p_seconds_taken);
+  insert into public.lesson_records (id, business_id, booking_id, learner_id, instructor_id, lesson_starts_at,
+                                     summary, next_focus, homework, seconds_taken)
+  values (p_id, v_booking.business_id, p_booking_id, v_booking.learner_id, v_booking.instructor_id, v_booking.starts_at,
+          v_summary, v_next_focus, v_homework, p_seconds_taken);
 
   insert into public.skill_ratings (lesson_record_id, skill_code, rating, business_id, learner_id)
   select p_id, value ->> 'skill_code', (value ->> 'rating')::smallint, v_booking.business_id, v_booking.learner_id
