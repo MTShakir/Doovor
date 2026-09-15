@@ -547,8 +547,8 @@ sequenceDiagram
   Note over DB: outbox event notifies the learner (lesson record added)
 ```
 
-- Serwist with `@serwist/turbopack`, which compiles the service worker through a route handler and works with the Turbopack build that Next 16 uses by default. The spike passed in M2 (D-073): the worker is written in `apps/web/src/app/sw.ts`, compiled by the route at `/serwist/[path]` and served from `/sw.js` through a rewrite so its scope is the whole app. It is registered when somebody turns push on, not before, and it precaches nothing until M4 decides what to keep offline.
-- Precached: the app shell, the Today view, the lesson record screen and the skill map. Runtime cache: today's and tomorrow's lesson data (network first, cache fallback). Public pages are not cached by the service worker.
+- Serwist with `@serwist/turbopack`, which compiles the service worker through a route handler and works with the Turbopack build that Next 16 uses by default. The spike passed in M2 (D-073): the worker is written in `apps/web/src/app/sw.ts`, compiled by the route at `/serwist/[path]` and served from `/sw.js` through a rewrite so its scope is the whole app. Since M4-08 it is registered on every portal page once the page has loaded, and precaches nothing from the build (D-104).
+- Kept on the device: Today and a lesson's screen, network first with a four second wait, each time one opens with signal (the first page a device opens is kept as soon as the worker runs), and the build files they are drawn with. Any other screen gets a plain page saying there is no connection. Kept screens are deleted when the sign in page opens. Today's and tomorrow's lesson data go into IndexedDB in M4-09. Public pages are not cached by the service worker (D-104).
 - The outbox is per device. Saving is idempotent on the client-generated ID, so a retry never creates a second record. If a record already exists for the booking from another device, the server keeps the first and returns a conflict that the UI shows.
 - Acceptance test 8 runs in Playwright with `context.setOffline(true)`, saves a record, goes back online and checks the learner's timeline.
 

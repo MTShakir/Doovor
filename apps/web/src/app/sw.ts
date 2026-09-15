@@ -1,14 +1,26 @@
 /// <reference lib="webworker" />
 
 /**
- * The service worker (NTF-01, PRG-09, M2-29).
+ * The service worker (NTF-01, PRG-09, PRD 8.1, M2-29, M4-08).
  *
- * Two jobs, and only two for now: keep the static shell available, and receive a push while
- * the app is closed. Offline lesson records and the rest of the caching arrive with the
- * offline work in M4, so nothing here decides what a page does.
+ * Three jobs: keep the screens an instructor needs where there is no signal, answer any other
+ * screen with a page saying there is no connection, and receive a push while the app is closed.
+ * Everything else, the API and every Server Action included, goes to the network untouched.
+ * Sending lesson records saved with no signal arrives in M4-11.
  */
 
-import { Serwist, type PrecacheEntry, type SerwistGlobalConfig } from 'serwist';
+import {
+  CacheFirst,
+  ExpirationPlugin,
+  NetworkFirst,
+  NetworkOnly,
+  Serwist,
+  StaleWhileRevalidate,
+  type PrecacheEntry,
+  type SerwistGlobalConfig,
+  type SerwistPlugin,
+} from 'serwist';
+import { isBuildAsset, isKeptOffline, offlineCaches, offlineFallbackPath } from '../lib/pwa/offline-pages';
 
 declare global {
   interface WorkerGlobalScope extends SerwistGlobalConfig {
@@ -19,6 +31,22 @@ declare global {
 
 declare const self: ServiceWorkerGlobalScope;
 
+const day = 24 * 60 * 60;
+
+/**
+ * Only a whole screen that opened is worth keeping. A redirect to sign in, an error, or a page the
+ * network answered with something else would be served later as if it were the screen.
+ */
+const wholeScreensOnly: SerwistPlugin = {
+  cacheWillUpdate: ({ response }) =>
+    Promise.resolve(response.status === 200 && response.type === 'basic' && !response.redirected ? response : null),
+};
+
+/** A request for a page rather than for data behind it: a navigation, or a copy asked for by a page. */
+function asksForScreen(request: Request): boolean {
+  return request.headers.get('RSC') !== '1' && (request.mode === 'navigate' || request.destination === '');
+}
+
 const serwist = new Serwist({
   precacheEntries: self.__SW_MANIFEST,
   // A new worker takes over at once: an app that keeps yesterday's code is an app that
@@ -26,6 +54,58 @@ const serwist = new Serwist({
   skipWaiting: true,
   clientsClaim: true,
   navigationPreload: true,
+  disableDevLogs: true,
+  runtimeCaching: [
+    {
+      // Today and a lesson's screen: fresh while there is signal, the last copy when there is not.
+      matcher: ({ request, url, sameOrigin }) =>
+        sameOrigin && request.method === 'GET' && isKeptOffline(url.pathname) && asksForScreen(request),
+      handler: new NetworkFirst({
+        cacheName: offlineCaches.pages,
+        networkTimeoutSeconds: 4,
+        // A lesson opened to write its record carries a query; the copy of the screen is the same.
+        matchOptions: { ignoreSearch: true, ignoreVary: true },
+        plugins: [wholeScreensOnly, new ExpirationPlugin({ maxEntries: 40, maxAgeSeconds: 3 * day, purgeOnQuotaError: true })],
+      }),
+    },
+    {
+      // Any other screen needs the network, and says so when there is none (the catch handler).
+      matcher: ({ request, sameOrigin }) => sameOrigin && request.mode === 'navigate',
+      handler: new NetworkOnly(),
+    },
+    {
+      // The build's own files are named by their contents, so a copy is never out of date. While
+      // developing, names stay put as their contents change, so the network comes first there.
+      matcher: ({ url, sameOrigin }) => sameOrigin && isBuildAsset(url.pathname),
+      handler:
+        process.env.NODE_ENV === 'production'
+          ? new CacheFirst({
+              cacheName: offlineCaches.assets,
+              plugins: [new ExpirationPlugin({ maxEntries: 300, maxAgeSeconds: 30 * day, purgeOnQuotaError: true })],
+            })
+          : new NetworkFirst({ cacheName: offlineCaches.assets, networkTimeoutSeconds: 4 }),
+    },
+    {
+      matcher: ({ url, sameOrigin }) => sameOrigin && (url.pathname.startsWith('/icons/') || url.pathname === '/manifest.webmanifest'),
+      handler: new StaleWhileRevalidate({ cacheName: offlineCaches.icons }),
+    },
+  ],
+});
+
+/** A screen with no connection and no copy kept gets the page that says so. */
+serwist.setCatchHandler(async ({ request }) => {
+  if (request.destination === 'document') {
+    const page = await caches.match(offlineFallbackPath, { cacheName: offlineCaches.fallback });
+    if (page) return page;
+  }
+  return Response.error();
+});
+
+// The page saying there is no connection is kept when the worker installs, while there is one.
+self.addEventListener('install', (event: ExtendableEvent) => {
+  event.waitUntil(
+    caches.open(offlineCaches.fallback).then((cache) => cache.add(new Request(offlineFallbackPath, { cache: 'reload' }))),
+  );
 });
 
 serwist.addEventListeners();
@@ -62,10 +142,9 @@ self.addEventListener('push', (event: PushEvent) => {
     (async () => {
       // The open app first, because that is the one somebody is looking at.
       await tellOpenTabs(payload);
-      // No icon yet: the app's icons come with the manifest in M5, and a broken icon looks
-      // worse than the browser's own.
       await self.registration.showNotification(title, {
         body: payload.body ?? '',
+        icon: '/icons/192.png',
         tag: payload.tag,
         data: { url: payload.url ?? '/notifications' },
       });

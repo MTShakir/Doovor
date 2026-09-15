@@ -45,7 +45,8 @@ export async function proxy(request: NextRequest) {
 
 export const config = {
   matcher: [
-    // The service worker and the webhooks are fetched by machines, with no session at all.
-    '/((?!_next/static|_next/image|api/health|api/inngest|api/webhooks|favicon.ico|sw.js|serwist/|.*\\.(?:png|jpg|jpeg|gif|svg|webp|ico|txt|xml|webmanifest)$).*)',
+    // The service worker, the page it keeps for no connection, and the webhooks are fetched by
+    // machines, with no session at all.
+    '/((?!_next/static|_next/image|api/health|api/inngest|api/webhooks|favicon.ico|sw.js|serwist/|offline$|.*\\.(?:png|jpg|jpeg|gif|svg|webp|ico|txt|xml|webmanifest)$).*)',
   ],
 };

@@ -9,6 +9,7 @@ import { PickupPointPicker } from '@repo/ui/pickup-point-picker';
 import { FormAlert } from '@/components/form-alert';
 import { RadiusMap } from '@/components/map/radius-map';
 import { CardFieldsSkeleton } from '@/components/payments/card-form';
+import { InstallCard } from '@/components/pwa/install-prompt';
 import { LessonRecordCard } from '@/components/progress/lesson-record-card';
 import { SkillMap } from '@/components/progress/skill-map';
 import { SetupChecklist } from '@/components/setup-checklist';
@@ -517,6 +518,11 @@ export function DesignShowcase() {
         <div className="grid gap-4 md:grid-cols-2">
           <SetupChecklist state={{ learners: 0, paymentsConnected: false, verified: false, listed: true }} />
           <SetupChecklist state={{ learners: 3, paymentsConnected: false, verified: true, listed: true }} />
+        </div>
+        <Label>Install offer: the browser&apos;s own prompt, and the steps on an iPhone or iPad (M4-08)</Label>
+        <div className="grid items-start gap-4 md:grid-cols-2">
+          <InstallCard offer="button" why="It opens in one tap, and Today still opens where there is no signal." onInstall={() => toast('Installing')} onDismiss={() => toast('Not now')} />
+          <InstallCard offer="ios-steps" why="Your lessons, payments and progress, one tap away." onInstall={() => undefined} onDismiss={() => toast('Not now')} />
         </div>
       </Section>
 

@@ -7,6 +7,7 @@ import { CalendarX } from 'lucide-react';
 import { connection } from 'next/server';
 import { Suspense } from 'react';
 import { TodayLessons } from '@/components/lessons/today-lessons';
+import { InstallPrompt } from '@/components/pwa/install-prompt';
 import { SetupChecklist } from '@/components/setup-checklist';
 import { requirePortal } from '@/lib/auth/session';
 import { teachingProfiles, todaysLessons } from '@/lib/lessons/teaching';
@@ -30,6 +31,7 @@ export default function InstructorHomePage() {
         <Suspense fallback={<SkeletonRow />}>
           <Lessons />
         </Suspense>
+        <InstallPrompt why="It opens in one tap, and Today still opens where there is no signal." />
       </div>
     </main>
   );
