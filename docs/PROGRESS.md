@@ -1,6 +1,6 @@
 # Progress
 
-Last updated: 14 September 2026
+Last updated: 15 September 2026
 
 ## Status
 
@@ -10,7 +10,15 @@ M1 Instructor core is approved and merged to `main`, all 24 tasks, with its fift
 
 M2 Learners and bookings is approved and merged to `main`, and was pushed to staging on 13 September 2026.
 
-M3 Payments is built on branch `m3-payments`: M3-01 to M3-23 are done, and on 14 September acceptance tests 3 to 6 and 12, and the M3-08 authorisation, passed against Stripe test mode. The milestone report is at https://claude.ai/code/artifact/2defdd40-fd63-4827-b54f-4eece5b627f5 and waits for approval. The app now lives on `app.doovor.com` with the public site on `doovor.com` (D-084).
+M3 Payments is approved and merged to `main` (ad2cb83), with its 25 migrations applied to staging on 15 September 2026. Acceptance tests 3 to 6 and 12, and the M3-08 authorisation, passed against Stripe test mode. The milestone report is at https://claude.ai/code/artifact/2defdd40-fd63-4827-b54f-4eece5b627f5. The app now lives on `app.doovor.com` with the public site on `doovor.com` (D-084).
+
+M4 Progress and offline is in progress on branch `m4-progress-offline`: M4-01 is done.
+
+## M4 progress
+
+| Task | What | PRD | State |
+|---|---|---|---|
+| M4-01 | Skills reference data from Appendix A (codes, names, sub-skills) and rating scale in core | PRG-02 | Done. The 23 areas of the DVSA test report, in its order, with what each covers, and the rating scale from Introduced to Independent, in `packages/core/src/skills.ts`. The same areas are in `public.skills`, seeded by migration: anybody may read them and nobody but a migration writes them. A unit test and a pgTAP test each pin their list to Appendix A |
 
 ## M3 progress
 
@@ -159,21 +167,21 @@ Decisions D-036 to D-050 were logged during this stretch. Two were security fixe
 
 | Suite | Result |
 |---|---|
-| Unit (Vitest) | 837 passed across 7 packages; `packages/core` and `packages/providers` both above the 90% line coverage gate |
-| Database (pgTAP) | 903 assertions in 66 files, all passing, including against a database an end to end run has left data in, and none of them depends on the date or the day of the week they run on (D-070); SQL lint clean |
+| Unit (Vitest) | 843 passed across 7 packages; `packages/core` and `packages/providers` both above the 90% line coverage gate |
+| Database (pgTAP) | 909 assertions in 67 files, all passing, including against a database an end to end run has left data in, and none of them depends on the date or the day of the week they run on (D-070); SQL lint clean |
 | Stripe test mode | 6 of 6 on 14 September (`pnpm test:e2e:stripe`): acceptance-03 to 06, acceptance-12 and the M3-08 authorisation, against the sandbox with the listener and the job runner, in 6.8 minutes from a clean database |
 | End to end (Playwright) | 276 at 390 px and 1440 px on 14 September, none skipped, including acceptance-01 to 06, 09 and 12, the payment journeys for M3-05 to M3-22 and cover lessons (D-097). One run had the saved-card removal step fail once under full load and passed when its file ran again; it is being watched; green in CI on every push since 13 September |
 | Lint, typecheck, copy guard | Clean |
 | CI on GitHub | Read after every push. Green on bef6eea (14 September). The run for 2737fd7, a docs-only commit, crossed midnight into 15 September and failed two tests on their dates rather than the code: the diary tests were pinned to 15 September, which had become today, and the no-show dispute test gave both widths the same slot when they ran either side of midnight. The diary tests now start from the next Tuesday the seed fills, and each width of the dispute test has its own day and hour. Two pushes that day failed and were fixed in the next: a pgTAP test that only passed from Thursday to Sunday (c06c1e0), and an accessibility check that caught the portal's loading skeleton mid-scan (635fe19) |
-| Staging (hosted) | All 46 migrations applied, M2 pushed on 2026-09-13. Security Advisor: 0 errors, 39 warnings, 38 of them the expected `security definer` pattern (D-051) and one the dashboard switch for leaked password protection |
+| Staging (hosted) | All 71 migrations applied, M3 pushed on 2026-09-15 after approval; the dry run listed exactly M3's 25 first. Security Advisor: 0 errors, 39 warnings, 38 of them the expected `security definer` pattern (D-051) and one the dashboard switch for leaked password protection |
 
 ## In progress
 
-- M3 Payments. M2 was approved on 2026-09-13, merged into `main` and pushed to staging.
+- M4 Progress and offline. M3 was approved on 2026-09-15, merged into `main` and pushed to staging.
 
 ## Next
 
-- M3: payments. Stripe Connect, the Payment Element, credit, and the money side of cancellation.
+- M4: lesson records in under 60 seconds, the skill map, and the Today view and records working with no signal (M4-02 to M4-13).
 
 ## Blockers
 

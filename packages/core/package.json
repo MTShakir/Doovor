@@ -40,7 +40,8 @@
     "./balance": "./src/balance.ts",
     "./receipts": "./src/receipts.ts",
     "./money-periods": "./src/money-periods.ts",
-    "./schemas/receipt-details": "./src/schemas/receipt-details.ts"
+    "./schemas/receipt-details": "./src/schemas/receipt-details.ts",
+    "./skills": "./src/skills.ts"
   },
   "scripts": {
     "lint": "eslint .",

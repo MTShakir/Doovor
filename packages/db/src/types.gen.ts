@@ -2095,6 +2095,27 @@ export type Database = {
           },
         ]
       }
+      skills: {
+        Row: {
+          code: string
+          name: string
+          position: number
+          sub_skills: string[]
+        }
+        Insert: {
+          code: string
+          name: string
+          position: number
+          sub_skills?: string[]
+        }
+        Update: {
+          code?: string
+          name?: string
+          position?: number
+          sub_skills?: string[]
+        }
+        Relationships: []
+      }
       sms_usage: {
         Row: {
           business_id: string
