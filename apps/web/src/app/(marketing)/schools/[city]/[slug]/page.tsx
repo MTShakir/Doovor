@@ -2,10 +2,12 @@ import type { Metadata, Route } from 'next';
 import { brand } from '@repo/config/brand';
 import { isPlaceSlug } from '@repo/core/places';
 import { instructorProfilePath, schoolProfilePath } from '@repo/core/public-profile';
+import { schoolStructuredData } from '@repo/core/structured-data';
 import { Skeleton } from '@repo/ui/skeleton';
 import { notFound, permanentRedirect } from 'next/navigation';
 import { Suspense } from 'react';
 import { PriceList } from '@/components/public/instructor-profile';
+import { JsonLdScript } from '@/components/public/json-ld';
 import { SchoolHeader, SchoolInstructors } from '@/components/public/school-profile';
 import { schoolProfile } from '@/lib/public/school-profile';
 import { getSiteUrl } from '@/lib/site-url';
@@ -57,12 +59,34 @@ async function SchoolProfile({ params }: Pick<Props, 'params'>) {
     permanentRedirect(schoolProfilePath(school.place?.citySlug ?? null, school.slug) as Route);
   }
 
+  const site = getSiteUrl();
+  const url = `${site}${schoolProfilePath(school.place?.citySlug ?? null, school.slug)}`;
+  const logoUrl = avatarUrl(school.logoPath);
+  const place = school.place;
+  const structured = schoolStructuredData({
+    url,
+    name: school.name,
+    ...(logoUrl === undefined ? {} : { logoUrl }),
+    cityName: place?.cityName ?? null,
+    instructors: school.instructors.map((instructor) => ({
+      name: instructor.name,
+      url: `${site}${instructorProfilePath(instructor.citySlug, instructor.slug)}`,
+    })),
+    lessons: school.lessons,
+    breadcrumbs: [
+      { name: brand.name, url: site },
+      ...(place?.hasHub ? [{ name: `Driving lessons in ${place.cityName}`, url: `${site}/driving-lessons/${place.citySlug}` }] : []),
+      { name: school.name, url },
+    ],
+  });
+
   return (
     <div className="grid gap-8 md:grid-cols-[minmax(0,1fr)_20rem] md:items-start">
+      <JsonLdScript data={structured} />
       <div className="flex flex-col gap-8">
         <SchoolHeader
           name={school.name}
-          logoUrl={avatarUrl(school.logoPath)}
+          logoUrl={logoUrl}
           cityName={school.place?.cityName ?? null}
           instructorCount={school.instructors.length}
         />

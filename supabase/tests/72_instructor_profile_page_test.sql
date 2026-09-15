@@ -1,6 +1,6 @@
 -- The public instructor profile, and nothing private on it (PUB-01, INS-05, M5-02).
 begin;
-select plan(19);
+select plan(20);
 
 select tests.create_fixture();
 
@@ -75,6 +75,11 @@ select results_eq(
        from public.instructor_profile_page('ian-one') as p $$,
   $$ values ('Ian', 'Toyota Yaris', true, 1, '10 hours', 'bee-school') $$,
   'with the car, the prices, the packages and the school, taking bookings'
+);
+select is(
+  (select array_agg(k order by k) from jsonb_object_keys(public.instructor_profile_page('ian-one') -> 'business') as k),
+  array['citySlug', 'name', 'slug', 'type'],
+  'the Business is named with where its own profile lives, and nothing more'
 );
 select is(public.instructor_profile_page('ivy-two'), null, 'an instructor not yet checked has no profile');
 select is(public.instructor_profile_page('nobody-at-all'), null, 'and a slug that is nobody''s has none either');

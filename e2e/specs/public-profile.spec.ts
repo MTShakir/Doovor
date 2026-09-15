@@ -22,6 +22,14 @@ test.describe('public instructor profile (PUB-01, M5-02)', () => {
     expect(html).not.toContain('LS6 3QS');
     expect(html).not.toContain('416234');
 
+    // Search engines read who she is and what she charges (PUB-02, M5-04).
+    const structured = JSON.parse((await page.locator('script[type="application/ld+json"]').textContent()) ?? '{}') as {
+      '@graph': { '@type': string; name?: string; offers?: { price: string; priceCurrency: string }[] }[];
+    };
+    expect(structured['@graph'].map((node) => node['@type'])).toEqual(['Person', 'Service', 'BreadcrumbList']);
+    expect(structured['@graph'][0]?.name).toBe('Sarah Khan');
+    expect(structured['@graph'][1]?.offers?.[0]).toMatchObject({ priceCurrency: 'GBP', price: expect.stringMatching(/^\d+\.\d\d$/) });
+
     const times = page.getByRole('region', { name: 'Next free times' }).getByRole('listitem').getByRole('link');
     await expect(times.first()).toBeVisible();
     expect(await times.count()).toBeLessThanOrEqual(3);
@@ -55,6 +63,7 @@ test.describe('public instructor profile (PUB-01, M5-02)', () => {
     await page.goto('/instructors/manchester/emma-clarke');
     await expect(page.getByRole('heading', { level: 1, name: 'Emma Clarke' })).toBeVisible();
     await expect(page.getByText('Teaches with Quayside Driving School')).toBeVisible();
+    await expect(page.getByRole('link', { name: 'Quayside Driving School' })).toHaveAttribute('href', '/schools/manchester/quayside-driving-school');
     await expect(page.getByRole('list', { name: 'At a glance' })).toContainText('Automatic');
     await expectAccessible(page);
     await settled(page);
@@ -76,6 +85,11 @@ test.describe('public school profile (PUB-01, M5-03)', () => {
     await expect(instructors.getByRole('link', { name: /^Tom Walsh/ })).toBeVisible();
     await expect(instructors.getByRole('link', { name: /Aisha Rahman/ })).toHaveCount(0);
     await expect(page.getByRole('region', { name: 'Prices' })).toBeVisible();
+    const structured = JSON.parse((await page.locator('script[type="application/ld+json"]').textContent()) ?? '{}') as {
+      '@graph': { '@type': string | string[]; employee?: { name: string }[] }[];
+    };
+    expect(structured['@graph'][0]?.['@type']).toEqual(['LocalBusiness', 'EducationalOrganization']);
+    expect(structured['@graph'][0]?.employee?.map((person) => person.name)).toEqual(expect.arrayContaining(['Emma Clarke', 'Tom Walsh']));
     await expectAccessible(page);
     await settled(page);
     await snap(page, testInfo, 'public-school');

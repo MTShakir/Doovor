@@ -53,7 +53,12 @@ const profileSchema = z.object({
   listed: z.boolean(),
   takingBookings: z.boolean(),
   instantBook: z.boolean(),
-  business: z.object({ name: z.string(), type: z.enum(['independent', 'school']), slug: z.string() }),
+  business: z.object({
+    name: z.string(),
+    type: z.enum(['independent', 'school']),
+    slug: z.string(),
+    citySlug: z.string().nullable(),
+  }),
   lessons: z.array(lessonSchema),
   packages: z.array(
     z.object({ name: z.string(), minutes: z.number(), pricePence: z.number(), expiryDays: z.number().nullable() }),

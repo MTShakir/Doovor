@@ -580,7 +580,7 @@ export function DesignShowcase() {
           <ProfileHeader
             name="Sarah Khan"
             qualification="adi"
-            schoolName={null}
+            school={null}
             transmission="manual"
             car="Volkswagen Polo"
             dualControls
@@ -589,7 +589,7 @@ export function DesignShowcase() {
           <ProfileHeader
             name="Aisha Rahman"
             qualification="pdi"
-            schoolName="Quayside Driving School"
+            school={{ name: 'Quayside Driving School', href: '#school' }}
             transmission="both"
             car={null}
             dualControls={false}

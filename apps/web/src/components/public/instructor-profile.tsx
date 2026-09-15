@@ -18,8 +18,8 @@ export interface ProfileHeaderProps {
   name: string;
   photoUrl?: string;
   qualification: Qualification;
-  /** A school the instructor teaches with; nothing for somebody who runs their own Business. */
-  schoolName: string | null;
+  /** The school the instructor teaches with, and its page; nothing for somebody who runs their own Business. */
+  school: { name: string; href: string } | null;
   transmission: 'manual' | 'automatic' | 'both';
   car: string | null;
   dualControls: boolean;
@@ -27,7 +27,7 @@ export interface ProfileHeaderProps {
 }
 
 /** Who they are, and the facts a learner decides on first. Every profile is a checked instructor. */
-export function ProfileHeader({ name, photoUrl, qualification, schoolName, transmission, car, dualControls, lessons }: ProfileHeaderProps) {
+export function ProfileHeader({ name, photoUrl, qualification, school, transmission, car, dualControls, lessons }: ProfileHeaderProps) {
   const hourly = hourlyFromPence(lessons);
   const facts = [
     transmissions.find((one) => one.value === transmission)?.label ?? transmission,
@@ -42,7 +42,14 @@ export function ProfileHeader({ name, photoUrl, qualification, schoolName, trans
         <div className="flex min-w-0 flex-col gap-1">
           <h1 className="text-h1 text-black">{name}</h1>
           <p className="text-small text-grey-700">{qualificationWords(qualification)}, checked by us</p>
-          {schoolName === null ? null : <p className="text-small text-grey-700">Teaches with {schoolName}</p>}
+          {school === null ? null : (
+            <p className="text-small text-grey-700">
+              Teaches with{' '}
+              <a href={school.href} className="font-semibold text-blue underline underline-offset-4">
+                {school.name}
+              </a>
+            </p>
+          )}
         </div>
       </div>
       {facts.length === 0 ? null : (

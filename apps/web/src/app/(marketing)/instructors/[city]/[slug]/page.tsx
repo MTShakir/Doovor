@@ -1,7 +1,8 @@
 import type { Metadata, Route } from 'next';
 import { brand } from '@repo/config/brand';
 import { isPlaceSlug } from '@repo/core/places';
-import { instructorProfilePath, qualificationWords } from '@repo/core/public-profile';
+import { instructorProfilePath, qualificationWords, schoolProfilePath } from '@repo/core/public-profile';
+import { instructorStructuredData } from '@repo/core/structured-data';
 import { Skeleton } from '@repo/ui/skeleton';
 import { notFound, permanentRedirect } from 'next/navigation';
 import { Suspense } from 'react';
@@ -13,6 +14,7 @@ import {
   ProfileHeader,
   WhereLessonsStart,
 } from '@/components/public/instructor-profile';
+import { JsonLdScript } from '@/components/public/json-ld';
 import { getAppUrl } from '@/lib/app-url';
 import { instructorProfile, nextOpenTimes, type InstructorProfilePage } from '@/lib/public/instructor-profile';
 import { getSiteUrl } from '@/lib/site-url';
@@ -63,15 +65,36 @@ async function InstructorProfile({ params }: Pick<Props, 'params'>) {
 
   const bookingUrl = `${getAppUrl()}/book/${profile.slug}`;
   const canBook = profile.takingBookings && profile.lessons.length > 0;
+  const site = getSiteUrl();
+  const photoUrl = avatarUrl(profile.photoPath);
+  const schoolUrl = profile.business.type === 'school' ? schoolProfilePath(profile.business.citySlug, profile.business.slug) : null;
+  const place = profile.place;
+  const structured = instructorStructuredData({
+    url: `${site}${path}`,
+    bookingUrl,
+    name: profile.name,
+    ...(photoUrl === undefined ? {} : { imageUrl: photoUrl }),
+    jobTitle: qualificationWords(profile.qualification),
+    languages: profile.languages,
+    cityName: place?.cityName ?? null,
+    school: schoolUrl === null ? null : { name: profile.business.name, url: `${site}${schoolUrl}` },
+    lessons: profile.lessons,
+    breadcrumbs: [
+      { name: brand.name, url: site },
+      ...(place?.hasHub ? [{ name: `Driving lessons in ${place.cityName}`, url: `${site}/driving-lessons/${place.citySlug}` }] : []),
+      { name: profile.name, url: `${site}${path}` },
+    ],
+  });
 
   return (
     <div className="grid gap-8 md:grid-cols-[minmax(0,1fr)_20rem] md:items-start">
+      <JsonLdScript data={structured} />
       <div className="flex flex-col gap-8">
         <ProfileHeader
           name={profile.name}
-          photoUrl={avatarUrl(profile.photoPath)}
+          photoUrl={photoUrl}
           qualification={profile.qualification}
-          schoolName={profile.business.type === 'school' ? profile.business.name : null}
+          school={schoolUrl === null ? null : { name: profile.business.name, href: schoolUrl }}
           transmission={profile.transmission}
           car={profile.car}
           dualControls={profile.dualControls}

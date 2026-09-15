@@ -57,7 +57,13 @@ as $$
            -- A badge out of date takes no new bookings (INS-03); the profile still says who they are.
            'takingBookings', i.badge_expiry is null or i.badge_expiry >= current_date,
            'instantBook', i.instant_book,
-           'business', jsonb_build_object('name', b.name, 'type', b.type, 'slug', b.slug),
+           'business', jsonb_build_object(
+             'name', b.name,
+             'type', b.type,
+             'slug', b.slug,
+             -- Where the school's own profile lives, for the link to it (M5-03).
+             'citySlug', (select bp.city_slug from public.place_of_postcode(b.base_postcode) bp)
+           ),
            'lessons', coalesce(
              (
                select jsonb_agg(
