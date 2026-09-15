@@ -12,7 +12,14 @@ M2 Learners and bookings is approved and merged to `main`, and was pushed to sta
 
 M3 Payments is approved and merged to `main` (ad2cb83), with its 25 migrations applied to staging on 15 September 2026. Acceptance tests 3 to 6 and 12, and the M3-08 authorisation, passed against Stripe test mode. The milestone report is at https://claude.ai/code/artifact/2defdd40-fd63-4827-b54f-4eece5b627f5. The app now lives on `app.doovor.com` with the public site on `doovor.com` (D-084).
 
-M4 Progress and offline is complete on branch `m4-progress-offline`, all 13 tasks, and waiting for approval to merge into `main`. Acceptance test 8 passes with the network off at both widths. The milestone report is at https://claude.ai/code/artifact/0a2ee4ec-a088-4063-a1d3-0c8b96f43aa9
+M4 Progress and offline is approved and merged to `main` (89262cf), with its 4 migrations applied to staging on 15 September 2026. Acceptance test 8 passes with the network off at both widths. The milestone report is at https://claude.ai/code/artifact/0a2ee4ec-a088-4063-a1d3-0c8b96f43aa9
+
+M5 Public profiles, schools and admin is in progress on branch `m5-public-schools-admin`.
+
+## M5 progress
+
+| Task | What | PRD | State |
+|---|---|---|---|
 
 ## M4 progress
 
@@ -184,16 +191,16 @@ Decisions D-036 to D-050 were logged during this stretch. Two were security fixe
 | Stripe test mode | 6 of 6 on 14 September (`pnpm test:e2e:stripe`): acceptance-03 to 06, acceptance-12 and the M3-08 authorisation, against the sandbox with the listener and the job runner, in 6.8 minutes from a clean database |
 | End to end (Playwright) | 303 at 390 px and 1440 px, all passing from a fresh database on 15 September in 9.9 minutes, none skipped. They include acceptance-01 to 06, 08, 09 and 12, the payment journeys for M3-05 to M3-22, cover lessons (D-097), and M4's lesson records, progress and offline work (M4-04 to M4-13). The two full runs before that one failed three tests between them, each on the tests' timing rather than on the app. The notifications test emptied Jack Taylor's and Sarah Khan's inboxes while the lesson record test was reading Jack's; it now uses the school's owner and manager, whose inboxes no other test reads. A payments test tapped again while its page was still opening, then waited for a button that had gone, as one did in M4-11's run; the 17 retried taps that lead to another page now go through `tapThrough` in `e2e/support/helpers.ts`, which waits for a tap already on its way. An accessibility scan caught a toast part way through fading out; scans now run with reduced motion, which the app and its toasts honour by changing at once. M4's last three full runs took 10 to 13 minutes locally, from 8 before M4. Timed with the service worker blocked, the worker accounts for about a fifth of that, and keeping the first page it sees for about a third of the worker's share. It stays on in every test, as it is for everybody using the app |
 | Lint, typecheck, copy guard | Clean |
-| CI on GitHub | Read after every push. Green on every M4 run that finished, most recently 12b08f5 (15 September), with the three test fixes. The runs for 7f75f4c and bb6f9f4 were cancelled when the next push arrived, because CI keeps only a branch's newest run; 30edc0c, which carries both, was green. The run for 2737fd7, a docs-only commit, crossed midnight into 15 September and failed two tests on their dates rather than the code: the diary tests were pinned to 15 September, which had become today, and the no-show dispute test gave both widths the same slot when they ran either side of midnight. The diary tests now start from the next Tuesday the seed fills, and each width of the dispute test has its own day and hour. Two pushes that day failed and were fixed in the next: a pgTAP test that only passed from Thursday to Sunday (c06c1e0), and an accessibility check that caught the portal's loading skeleton mid-scan (635fe19) |
-| Staging (hosted) | All 71 migrations applied, M3 pushed on 2026-09-15 after approval; the dry run listed exactly M3's 25 first. Security Advisor: 0 errors, 39 warnings, 38 of them the expected `security definer` pattern (D-051) and one the dashboard switch for leaked password protection |
+| CI on GitHub | Read after every push. Green on `main` after merging M4 (89262cf, 15 September), and on every M4 run that finished before it, most recently 12b08f5 with the three test fixes. The runs for 7f75f4c and bb6f9f4 were cancelled when the next push arrived, because CI keeps only a branch's newest run; 30edc0c, which carries both, was green. The run for 2737fd7, a docs-only commit, crossed midnight into 15 September and failed two tests on their dates rather than the code: the diary tests were pinned to 15 September, which had become today, and the no-show dispute test gave both widths the same slot when they ran either side of midnight. The diary tests now start from the next Tuesday the seed fills, and each width of the dispute test has its own day and hour. Two pushes that day failed and were fixed in the next: a pgTAP test that only passed from Thursday to Sunday (c06c1e0), and an accessibility check that caught the portal's loading skeleton mid-scan (635fe19) |
+| Staging (hosted) | All 75 migrations applied. M4 was pushed on 2026-09-15 after approval; the dry run listed exactly M4's 4, and the app redeployed from `main` serves the manifest, the page for no connection and the service worker. Security Advisor: 0 errors and 56 warnings, 55 of them the expected `security definer` pattern (D-051), including M4's `save_lesson_record`, and one the dashboard switch for leaked password protection |
 
 ## In progress
 
-- Nothing. M4 Progress and offline is waiting for approval to merge into `main` and to push its 4 migrations to staging.
+- M5 Public profiles, schools and admin. M4 was approved on 2026-09-15, merged into `main` and pushed to staging.
 
 ## Next
 
-- M5 Public profiles, schools and admin, once M4 is approved: public pages that rank and load fast, a working school portal, and a Super Admin that can run the platform.
+- M5: public profiles and city pages that rank and load fast, a working school portal, and a Super Admin that can run the platform (M5-01 to M5-24).
 
 ## Blockers
 
