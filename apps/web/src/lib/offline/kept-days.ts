@@ -97,6 +97,11 @@ export async function keptDay(day: LocalDate): Promise<KeptDay> {
   };
 }
 
+/** One kept lesson, or null for a lesson the phone does not have. */
+export async function keptLesson(id: string): Promise<KeptLesson | null> {
+  return (await keptStore().lessons.get(id)) ?? null;
+}
+
 /** Takes the kept lessons off the phone, for whenever somebody lands on sign in. */
 export async function forgetKeptDays(): Promise<void> {
   const db = keptStore();

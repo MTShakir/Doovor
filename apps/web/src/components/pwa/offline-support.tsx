@@ -3,7 +3,7 @@
 import { usePathname } from 'next/navigation';
 import { useEffect, useRef } from 'react';
 import { listenForInstall } from '@/lib/pwa/install-store';
-import { isBuildAsset, isKeptOffline } from '@/lib/pwa/offline-pages';
+import { isBuildAsset, isKeptOffline, keptLessonPath, todayPath } from '@/lib/pwa/offline-pages';
 
 // The install prompt comes once, early: listen from the moment this code runs.
 listenForInstall();
@@ -54,10 +54,11 @@ export function OfflineSupport() {
 
   useEffect(() => {
     if (!('serviceWorker' in navigator) || !navigator.onLine || !isKeptOffline(pathname)) return;
+    // Today also keeps the screen its lessons open on with no signal, which nobody visits with signal.
+    const alongside = pathname === todayPath ? [keptLessonPath] : [];
     // A page the worker already served has been kept on the way through.
     const servedByWorker = pathname === firstPath.current && navigator.serviceWorker.controller !== null;
-    if (servedByWorker) return;
-    void keep([pathname, ...loadedBuildFiles()]);
+    void keep(servedByWorker ? alongside : [pathname, ...alongside, ...loadedBuildFiles()]);
   }, [pathname]);
 
   return null;

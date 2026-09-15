@@ -1,5 +1,6 @@
 import { AppShell } from '@repo/ui/app-shell';
 import type { ReactNode } from 'react';
+import { ConnectionBanner } from '@/components/offline/connection-banner';
 import { KeepTeachingDays } from '@/components/offline/keep-teaching-days';
 import { PortalGate } from '@/components/portal-gate';
 import { PortalSidebar, PortalTabBar } from '@/components/portal-nav';
@@ -12,6 +13,7 @@ export const instant = false;
 export default function InstructorLayout({ children }: { children: ReactNode }) {
   return (
     <AppShell sidebar={<PortalSidebar portal="instructor" footer={<SidebarFooter />} />} tabBar={<PortalTabBar portal="instructor" />}>
+      <ConnectionBanner />
       <PortalGate portal="instructor">{children}</PortalGate>
       <OfflineSupport />
       <KeepTeachingDays />

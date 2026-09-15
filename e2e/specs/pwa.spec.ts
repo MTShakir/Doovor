@@ -1,6 +1,6 @@
 import { expect, test, type Page } from '@playwright/test';
 import { authFile } from '../support/accounts';
-import { bookLesson, removeLesson } from '../support/database';
+import { bookLesson, lessonIdAt, removeLesson } from '../support/database';
 import { addDays, expectAccessible, settled, snap } from '../support/helpers';
 import { signInThroughForm } from '../support/sign-in';
 
@@ -74,6 +74,21 @@ async function keptLessons(page: Page): Promise<KeptLesson[]> {
 /** "07:30", as a lesson's start reads in London. */
 const londonTime = (instant: string): string =>
   new Intl.DateTimeFormat('en-GB', { timeZone: 'Europe/London', hour: '2-digit', minute: '2-digit' }).format(new Date(instant));
+
+/**
+ * Whether a kept screen can be drawn with no signal: its copy is kept, and so is every build file
+ * it names. The pattern is the one in apps/web/src/lib/pwa/offline-pages.ts.
+ */
+async function readyWithNoSignal(page: Page, path: string): Promise<boolean> {
+  return page.evaluate(async (screen) => {
+    const copy = await (await caches.open('offline-pages')).match(screen, { ignoreSearch: true });
+    if (copy === undefined) return false;
+    const files = await caches.open('offline-assets');
+    const named = (await copy.text()).match(/\/_next\/static\/[A-Za-z0-9_.~%@+\-[\]/]+/g) ?? [];
+    const kept = await Promise.all(named.map(async (file) => (await files.match(file)) !== undefined));
+    return kept.every(Boolean);
+  }, path);
+}
 
 /** A PNG's width and height, from its header. */
 function pngSize(bytes: Buffer): string {
@@ -274,6 +289,59 @@ test.describe('Today with no signal (PRD 8.1, PRG-09, M4-08)', () => {
       }
     } finally {
       await removeLesson('Emma Clarke', learner.email, tomorrow, hour);
+    }
+  });
+
+  test('draws Today from the phone\'s copy of the day under a banner, and opens a lesson from it (M4-10)', async ({ page, context }, testInfo) => {
+    // An hour of its own for each width, clear of the other tests' lessons and the seed's.
+    const hour = testInfo.project.name === 'mobile' ? '00:30' : '13:00';
+    await removeLesson('Emma Clarke', learner.email, today(), hour);
+
+    try {
+      await page.goto('/app/instructor');
+      await expect(page.getByRole('heading', { level: 1, name: 'Today' })).toBeVisible();
+      await expect.poll(() => keptScreens(page), { timeout: 30_000 }).toEqual(expect.arrayContaining(['/app/instructor', '/app/instructor/lessons/offline']));
+      // The screen for kept lessons has never been drawn here: it is kept with the code it runs on.
+      await expect.poll(() => readyWithNoSignal(page, '/app/instructor/lessons/offline'), { timeout: 30_000 }).toBe(true);
+
+      // Booked after Today's screen was kept, and read into the phone's copy when the signal comes back.
+      await bookLesson('Emma Clarke', learner.email, today(), hour);
+      const bookingId = await lessonIdAt('Emma Clarke', today(), hour);
+      await context.setOffline(true);
+      await context.setOffline(false);
+      await expect.poll(async () => (await keptLessons(page)).some((one) => one.id === bookingId), { timeout: 30_000 }).toBe(true);
+
+      await context.setOffline(true);
+      try {
+        await page.reload();
+        const banner = page.getByRole('status').filter({ hasText: 'No signal.' });
+        await expect(banner).toContainText('Today and its lessons still open');
+        // The kept screen never had this lesson; the phone's copy of the day does.
+        await expect(page.getByRole('list', { name: "Today's lessons" }).getByRole('article', { name: `${hour} ${learner.name}` })).toBeVisible();
+        await expect(page.getByText(/^Lessons as of \d\d:\d\d$/)).toBeVisible();
+        await expectAccessible(page);
+        await settled(page);
+        await snap(page, testInfo, 'today-no-signal-kept-day');
+
+        // A lesson whose own screen was never opened opens from the phone's copy.
+        await page.goto(`/app/instructor/lessons/${bookingId}`);
+        await expect(page).toHaveURL(new RegExp(`/app/instructor/lessons/offline\\?lesson=${bookingId}$`));
+        await expect(page.getByRole('heading', { level: 1, name: learner.name })).toBeVisible();
+        await expect(banner).toBeVisible();
+        await settled(page);
+        await snap(page, testInfo, 'kept-lesson-no-signal');
+
+        // The installed app opens on its start page, which with no signal is Today.
+        await page.goto('/start');
+        await expect(page).toHaveURL(/\/app\/instructor$/);
+        await expect(page.getByRole('heading', { level: 1, name: 'Today' })).toBeVisible();
+      } finally {
+        await context.setOffline(false);
+      }
+
+      await expect(page.getByRole('status').filter({ hasText: 'No signal.' })).toBeHidden();
+    } finally {
+      await removeLesson('Emma Clarke', learner.email, today(), hour);
     }
   });
 

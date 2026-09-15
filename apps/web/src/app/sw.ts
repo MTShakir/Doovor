@@ -4,9 +4,9 @@
  * The service worker (NTF-01, PRG-09, PRD 8.1, M2-29, M4-08).
  *
  * Three jobs: keep the screens an instructor needs where there is no signal, answer any other
- * screen with a page saying there is no connection, and receive a push while the app is closed.
- * Everything else, the API and every Server Action included, goes to the network untouched.
- * Sending lesson records saved with no signal arrives in M4-11.
+ * screen with a stand-in or a page saying there is no connection, and receive a push while the app
+ * is closed. Everything else, the API and every Server Action included, goes to the network
+ * untouched. Sending lesson records saved with no signal arrives in M4-11.
  */
 
 import {
@@ -20,7 +20,16 @@ import {
   type SerwistGlobalConfig,
   type SerwistPlugin,
 } from 'serwist';
-import { isBuildAsset, isKeptOffline, offlineCaches, offlineFallbackPath } from '../lib/pwa/offline-pages';
+import {
+  buildFilesIn,
+  isBuildAsset,
+  isKeptOffline,
+  keptLessonPath,
+  offlineCaches,
+  offlineFallbackPath,
+  offlineStandIn,
+  todayPath,
+} from '../lib/pwa/offline-pages';
 
 declare global {
   interface WorkerGlobalScope extends SerwistGlobalConfig {
@@ -40,6 +49,26 @@ const day = 24 * 60 * 60;
 const wholeScreensOnly: SerwistPlugin = {
   cacheWillUpdate: ({ response }) =>
     Promise.resolve(response.status === 200 && response.type === 'basic' && !response.redirected ? response : null),
+};
+
+/**
+ * A kept screen is only any use with the build's files it runs on, so each one it names that the
+ * device does not have yet is kept alongside it (M4-10). The screen for kept lessons is kept without
+ * ever being drawn, so nothing else would have fetched the code for its components.
+ */
+const keepItsFiles: SerwistPlugin = {
+  cacheDidUpdate: async ({ cacheName, request }) => {
+    const page = await (await caches.open(cacheName)).match(request);
+    if (page === undefined) return;
+    const files = await caches.open(offlineCaches.assets);
+    await Promise.all(
+      buildFilesIn(await page.text()).map(async (path) => {
+        if ((await files.match(path)) !== undefined) return;
+        const answer = await fetch(path).catch(() => null);
+        if (answer?.ok === true) await files.put(path, answer);
+      }),
+    );
+  },
 };
 
 /** A request for a page rather than for data behind it: a navigation, or a copy asked for by a page. */
@@ -65,7 +94,11 @@ const serwist = new Serwist({
         networkTimeoutSeconds: 4,
         // A lesson opened to write its record carries a query; the copy of the screen is the same.
         matchOptions: { ignoreSearch: true, ignoreVary: true },
-        plugins: [wholeScreensOnly, new ExpirationPlugin({ maxEntries: 40, maxAgeSeconds: 3 * day, purgeOnQuotaError: true })],
+        plugins: [
+          wholeScreensOnly,
+          new ExpirationPlugin({ maxEntries: 40, maxAgeSeconds: 3 * day, purgeOnQuotaError: true }),
+          keepItsFiles,
+        ],
       }),
     },
     {
@@ -92,9 +125,17 @@ const serwist = new Serwist({
   ],
 });
 
-/** A screen with no connection and no copy kept gets the page that says so. */
-serwist.setCatchHandler(async ({ request }) => {
+/**
+ * A screen with no connection and no copy kept: a lesson opens on the screen that draws the lessons
+ * the phone keeps, the installed app's start opens Today, and anything else gets the page saying
+ * there is no connection (M4-10).
+ */
+serwist.setCatchHandler(async ({ request, url }) => {
   if (request.destination === 'document') {
+    const kept = await caches.open(offlineCaches.pages);
+    const has = async (path: string) => (await kept.match(path, { ignoreSearch: true, ignoreVary: true })) !== undefined;
+    const standIn = offlineStandIn(url, { today: await has(todayPath), keptLesson: await has(keptLessonPath) });
+    if (standIn !== null) return Response.redirect(new URL(standIn, self.location.origin).href, 302);
     const page = await caches.match(offlineFallbackPath, { cacheName: offlineCaches.fallback });
     if (page) return page;
   }

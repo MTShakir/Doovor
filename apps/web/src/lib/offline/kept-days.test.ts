@@ -2,7 +2,7 @@
 import 'fake-indexeddb/auto';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { TeachingLesson } from '@/lib/lessons/teaching';
-import { forgetKeptDays, keepDays, keptDay, type KeptDaysAnswer } from './kept-days';
+import { forgetKeptDays, keepDays, keptDay, keptLesson, type KeptDaysAnswer } from './kept-days';
 
 const lesson = (id: string, startsAt: string, learnerName = 'Jack Taylor'): TeachingLesson => ({
   id,
@@ -67,6 +67,12 @@ describe('the lessons a phone keeps for no signal (PRG-09, M4-09)', () => {
     expect(await keepDays(vi.fn<typeof fetch>().mockResolvedValue(Response.json({ ok: false, code: 'NOT_AUTHENTICATED' }, { status: 401 })))).toBe('refused');
 
     expect((await keptDay('2026-09-15')).lessons).toHaveLength(2);
+  });
+
+  it('finds one kept lesson by its id, and nothing for a lesson it does not have', async () => {
+    await keepDays(answering(sarah));
+    expect(await keptLesson('c')).toMatchObject({ learnerName: 'Olivia Brown', day: '2026-09-16' });
+    expect(await keptLesson('elsewhere')).toBeNull();
   });
 
   it('tells a day with no lessons from a day it has never read', async () => {

@@ -1,12 +1,10 @@
 import { setupComplete, type SetupState } from '@repo/core/setup-checklist';
 import { formatDateWithYear } from '@repo/core/time';
 import { PageHeader } from '@repo/ui/app-shell';
-import { EmptyState } from '@repo/ui/empty-state';
 import { SkeletonRow } from '@repo/ui/skeleton';
-import { CalendarX } from 'lucide-react';
 import { connection } from 'next/server';
 import { Suspense } from 'react';
-import { TodayLessons } from '@/components/lessons/today-lessons';
+import { TodayLessonsLive } from '@/components/lessons/today-lessons-live';
 import { InstallPrompt } from '@/components/pwa/install-prompt';
 import { SetupChecklist } from '@/components/setup-checklist';
 import { requirePortal } from '@/lib/auth/session';
@@ -42,16 +40,8 @@ async function Lessons() {
   const { access } = await requirePortal('instructor');
   const now = new Date();
   const lessons = await todaysLessons(teachingProfiles(access), now);
-  if (lessons.length === 0) {
-    return (
-      <EmptyState
-        icon={CalendarX}
-        title="No lessons today"
-        description="Lessons you book for today show up here, with where to pick each learner up."
-      />
-    );
-  }
-  return <TodayLessons lessons={lessons} now={now.toISOString()} />;
+  // With no signal, the list draws itself from the phone's copy of the day (M4-10).
+  return <TodayLessonsLive lessons={lessons} now={now.toISOString()} />;
 }
 
 /** Today's date is not something a shell can be prerendered with (Cache Components). */

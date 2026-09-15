@@ -19,6 +19,11 @@ export interface TodayLessonsProps {
   lessons: TeachingLesson[];
   /** When the page was put together, so the server and the phone agree what "next" is. */
   now: string;
+  /**
+   * With no signal, a lesson opens as a whole page the service worker can answer, rather than as
+   * data the app fetches from the server, which would never arrive (M4-10).
+   */
+  plainLinks?: boolean;
 }
 
 /**
@@ -26,8 +31,9 @@ export interface TodayLessonsProps {
  * where to go and whether it is paid, and one big button for the lesson to start. A lesson that
  * has been taught and has no record yet says so, since writing it is the one thing left to do.
  */
-export function TodayLessons({ lessons, now }: TodayLessonsProps) {
+export function TodayLessons({ lessons, now, plainLinks = false }: TodayLessonsProps) {
   const moment = new Date(now);
+  const Go = plainLinks ? 'a' : Link;
   const dayLessons = lessons.map((lesson) => ({
     ...lesson,
     startsAt: new Date(lesson.startsAt),
@@ -76,10 +82,10 @@ export function TodayLessons({ lessons, now }: TodayLessonsProps) {
                   <div className="flex flex-wrap justify-end gap-2">
                     {toRecord ? (
                       <Button asChild variant="secondary">
-                        <Link href={`/app/instructor/lessons/${lesson.id}?record=1`}>
+                        <Go href={`/app/instructor/lessons/${lesson.id}?record=1`}>
                           <NotebookPen className="size-5" aria-hidden />
                           Write record
-                        </Link>
+                        </Go>
                       </Button>
                     ) : null}
                     {route !== null ? (
@@ -100,7 +106,7 @@ export function TodayLessons({ lessons, now }: TodayLessonsProps) {
       {next === null ? null : (
         <div className="flex flex-col gap-1">
           <Button asChild width="responsive" size="lg">
-            <Link href={`/app/instructor/lessons/${next.id}`}>Start lesson</Link>
+            <Go href={`/app/instructor/lessons/${next.id}`}>Start lesson</Go>
           </Button>
           <p className="text-center text-small text-grey-700 md:text-left">
             {formatTime(next.startsAt)} with {next.learnerName}
