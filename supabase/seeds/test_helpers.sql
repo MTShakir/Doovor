@@ -67,6 +67,9 @@ begin
 end;
 $$;
 
+-- Also one that can sign in through the app with the seed's password, as the e2e tests' own
+-- instructors do (M5-07): the auth server reads its token columns as text, never null, and finds
+-- an email sign-in by its identity.
 create or replace function tests.create_user_with_id(p_id uuid, p_email text, p_full_name text default '')
 returns uuid
 language plpgsql
@@ -76,12 +79,16 @@ as $$
 begin
   insert into auth.users (
     instance_id, id, aud, role, email, encrypted_password, email_confirmed_at,
-    raw_app_meta_data, raw_user_meta_data, created_at, updated_at
+    raw_app_meta_data, raw_user_meta_data, created_at, updated_at,
+    confirmation_token, recovery_token, email_change_token_new, email_change
   ) values (
     '00000000-0000-0000-0000-000000000000', p_id, 'authenticated', 'authenticated', p_email,
     extensions.crypt('Password123!', extensions.gen_salt('bf')), now(),
-    '{"provider": "email", "providers": ["email"]}', jsonb_build_object('full_name', p_full_name), now(), now()
+    '{"provider": "email", "providers": ["email"]}', jsonb_build_object('full_name', p_full_name), now(), now(),
+    '', '', '', ''
   );
+  insert into auth.identities (user_id, provider_id, provider, identity_data, created_at, updated_at)
+  values (p_id, p_id::text, 'email', jsonb_build_object('sub', p_id::text, 'email', p_email, 'email_verified', true), now(), now());
   return p_id;
 end;
 $$;

@@ -54,12 +54,15 @@ select is_empty(
 --   fields for an instructor the platform has checked, and the times are ones they publish (PUB-01).
 --   school_profile_page: the public school page, a fixed list of fields for a school in good
 --   standing and the instructors on it a learner could find anyway (PUB-01, M5-03).
+--   city_page: the city, area and transmission pages, the instructors search may show there, each
+--   a fixed list of fields (PRD 8.3, M5-07).
 select is_empty(
   $$ select distinct routine_name from information_schema.routine_privileges
       where routine_schema = 'public' and grantee in ('PUBLIC', 'anon')
         and routine_name not in ('covers_postcode', 'invitation_details', 'slot_problem',
                                  'booking_page', 'open_slots', 'place_of_postcode',
-                                 'instructor_profile_page', 'next_open_slots', 'school_profile_page') $$,
+                                 'instructor_profile_page', 'next_open_slots', 'school_profile_page',
+                                 'city_page') $$,
   'no public function is executable by anon unless allowlisted'
 );
 

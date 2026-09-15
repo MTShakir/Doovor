@@ -34,6 +34,7 @@ describe('which host a request belongs on (D-084)', () => {
     expect(isSitePath('/instructors')).toBe(false);
     expect(isSitePath('/instructors/manchester/emma-clarke')).toBe(true);
     expect(isSitePath('/schools/manchester/quayside-driving-school')).toBe(true);
+    expect(isSitePath('/driving-lessons/london/croydon')).toBe(true);
   });
 
   it('sends the app’s bare root to getting started, which knows where somebody signed in belongs', () => {

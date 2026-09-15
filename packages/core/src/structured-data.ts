@@ -133,6 +133,11 @@ export function schoolStructuredData(input: SchoolStructuredDataInput): JsonLd {
   };
 }
 
+/** PRD 14.6: breadcrumb markup on city and area pages, home first and the page itself last. */
+export function breadcrumbStructuredData(crumbs: readonly Crumb[]): JsonLd {
+  return { '@context': 'https://schema.org', ...breadcrumbList(crumbs) };
+}
+
 /**
  * JSON-LD for a script tag. "<" is written as its escape, so text somebody typed, such as a
  * name with "</script>" in it, can never end the tag early.

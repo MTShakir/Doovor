@@ -11,6 +11,8 @@ import { getSupabaseAnonymousClient } from '@/lib/supabase/anonymous';
 export const profileTags = {
   /** Every profile, for a change to who has one at all or to a whole Business's rules. */
   all: 'instructor-profiles',
+  /** Every city, area and automatic page (M5-07), which one instructor's change can alter. */
+  places: 'place-pages',
   /** Everything on one instructor's profile. */
   instructor: (instructorId: string) => `instructor-profile:${instructorId}`,
   /** A profile looked up by its address, including one that is not there (yet). */
@@ -110,9 +112,14 @@ export async function nextOpenTimes(instructorId: string, durationMinutes: numbe
   return data.map((one) => new Date(one).toISOString());
 }
 
-/** After a change to what one instructor's profile shows: the next visitor reads it fresh. Server Actions only. */
+/**
+ * After a change to what one instructor's profile shows: the next visitor reads it fresh, and the
+ * place pages too, rather than working out which of them list the instructor before and after
+ * (D-114). Server Actions only.
+ */
 export function expireInstructorProfile(instructorId: string): void {
   updateTag(profileTags.instructor(instructorId));
+  updateTag(profileTags.places);
 }
 
 /**

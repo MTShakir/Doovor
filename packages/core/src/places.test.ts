@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { districtPlace, isPlaceSlug, placeName, placeSlug } from './places';
+import { districtPlace, INDEXABLE_MIN_INSTRUCTORS, isPlaceSlug, isThinPlace, placeHeading, placeName, placePagePath, placeSlug } from './places';
 
 /**
  * The same names and answers are pinned in supabase/tests/71_cities_test.sql, against the
@@ -40,5 +40,27 @@ describe('places from local authority districts (PRD 8.3, M5-01)', () => {
     for (const bad of ['', 'Leeds', 'leeds/', '-leeds', 'leeds-', 'kings--lynn', 'st.helens', 'x'.repeat(81)]) {
       expect(isPlaceSlug(bad)).toBe(false);
     }
+  });
+});
+
+describe('city, area and automatic pages (PRD 8.3, M5-07)', () => {
+  it('lives at the addresses the PRD sets out', () => {
+    expect(placePagePath({ citySlug: 'manchester', cityName: 'Manchester' })).toBe('/driving-lessons/manchester');
+    expect(placePagePath({ citySlug: 'london', cityName: 'London', area: { slug: 'croydon', name: 'Croydon' } })).toBe('/driving-lessons/london/croydon');
+    expect(placePagePath({ citySlug: 'leeds', cityName: 'Leeds', automatic: true })).toBe('/driving-lessons/leeds/automatic');
+  });
+
+  it('says what the page is about, as search shows it', () => {
+    expect(placeHeading({ citySlug: 'manchester', cityName: 'Manchester' })).toBe('Driving lessons in Manchester');
+    expect(placeHeading({ citySlug: 'london', cityName: 'London', area: { slug: 'croydon', name: 'Croydon' } })).toBe('Driving lessons in Croydon, London');
+    expect(placeHeading({ citySlug: 'leeds', cityName: 'Leeds', automatic: true })).toBe('Automatic driving lessons in Leeds');
+  });
+
+  it('keeps a page out of search until at least three instructors are listed on it', () => {
+    expect(INDEXABLE_MIN_INSTRUCTORS).toBe(3);
+    expect(isThinPlace(0)).toBe(true);
+    expect(isThinPlace(2)).toBe(true);
+    expect(isThinPlace(3)).toBe(false);
+    expect(isThinPlace(40)).toBe(false);
   });
 });

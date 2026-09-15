@@ -16,6 +16,7 @@ import {
   ProfileHeader,
   WhereLessonsStart,
 } from '@/components/public/instructor-profile';
+import { Breadcrumbs, PlaceLinks } from '@/components/public/place-links';
 import { SchoolHeader, SchoolInstructors } from '@/components/public/school-profile';
 import { BookingLinkCard } from '@/components/share/booking-link-card';
 import { NoSignalBanner } from '@/components/offline/connection-banner';
@@ -666,6 +667,31 @@ export function DesignShowcase() {
           <div className="flex flex-col gap-6">
             <BookingLinkCard instructorName="Aisha Rahman" bookingUrl={null} profileUrl={null} />
             <BookingLinkCard instructorName="Emma Clarke" bookingUrl={null} profileUrl={null} unavailable="badge-expired" />
+          </div>
+        </div>
+        <Label>
+          Place pages: the breadcrumb of an area, with the page itself named but not linked; its city with how many are listed in each area; and the
+          way back to the city. With no places to link, nothing is shown (PRD 8.3, M5-07)
+        </Label>
+        <div className="grid items-start gap-6 md:grid-cols-2">
+          <Breadcrumbs
+            crumbs={[
+              { name: brand.name, href: '#home' },
+              { name: 'Driving lessons in London', href: '#london' },
+              { name: 'Croydon', href: '#croydon' },
+            ]}
+          />
+          <div className="flex flex-col gap-6">
+            <PlaceLinks
+              idPrefix="areas-example-"
+              title="Areas of London"
+              links={[
+                { href: '#camden', name: 'Camden', count: 4 },
+                { href: '#croydon', name: 'Croydon', count: 1 },
+                { href: '#hackney', name: 'Hackney', count: 3 },
+              ]}
+            />
+            <PlaceLinks idPrefix="city-example-" title="More in London" links={[{ href: '#london', name: 'All driving lessons in London' }]} />
           </div>
         </div>
       </Section>

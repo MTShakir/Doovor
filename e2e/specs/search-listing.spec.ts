@@ -1,19 +1,19 @@
-import { expect, test, type Page } from '@playwright/test';
-import { authFile } from '../support/accounts';
-import { makeInstructor, setListed } from '../support/database';
-import { addDays, expectAccessible, settled, snap } from '../support/helpers';
+import { expect, test, type Locator, type Page } from '@playwright/test';
+import { makeInstructor } from '../support/database';
+import { addDays, expectAccessible, freshPublicPages, robotsOf, settled, snap } from '../support/helpers';
+import { signInThroughForm } from '../support/sign-in';
 
 const today = (): string => new Intl.DateTimeFormat('en-CA', { timeZone: 'Europe/London' }).format(new Date());
 
-/** What the page tells search engines: "noindex" when it is out of search, nothing when it is in. */
-async function robots(page: Page): Promise<string | null> {
-  const tag = page.locator('meta[name="robots"]');
-  return (await tag.count()) === 0 ? null : tag.first().getAttribute('content');
+/** An instructor in the list on the Leeds page (PRD 8.3, M5-07), which the page's reader has open. */
+function onLeedsPage(page: Page, name: string): Locator {
+  return page.getByRole('region', { name: 'Instructors' }).getByRole('link', { name: new RegExp(`^${name}`) });
 }
 
 /**
  * Out of search (PUB-04, INS-03, M5-06). Instructors made for these tests alone run their badges
- * out, so nobody another test is using is ever out of date.
+ * out or hide their profiles, one for each width, so nobody another test is using is ever out of
+ * search, and the two widths never flip the same switch.
  */
 test.describe('in search and out of it (PUB-04, INS-03, M5-06)', () => {
   test('acceptance-10: an instructor with an expired badge disappears from search and the profile shows "Not taking new bookings"', async ({
@@ -29,7 +29,7 @@ test.describe('in search and out of it (PUB-04, INS-03, M5-06)', () => {
       await expect(page.getByRole('link', { name: 'Book a lesson' })).toHaveCount(0);
       await expect(page.getByRole('region', { name: 'Next free times' })).toHaveCount(0);
       // Search engines are told to leave it out.
-      expect(await robots(page)).toContain('noindex');
+      expect(await robotsOf(page)).toContain('noindex');
       await expectAccessible(page);
       await settled(page);
       await snap(page, testInfo, 'acceptance-10');
@@ -42,51 +42,67 @@ test.describe('in search and out of it (PUB-04, INS-03, M5-06)', () => {
       await page.goto(`/instructors/leeds/${current.slug}`);
       await expect(page.getByRole('heading', { level: 1, name: current.name })).toBeVisible();
       await expect(page.getByRole('link', { name: 'Book a lesson' })).toBeVisible();
-      expect(await robots(page)).toBeNull();
+      expect(await robotsOf(page)).toBeNull();
+
+      // The Leeds page lists the one whose badge is in date, and not the other.
+      await freshPublicPages(page);
+      await page.goto('/driving-lessons/leeds');
+      await expect(onLeedsPage(page, current.name)).toBeVisible();
+      await expect(onLeedsPage(page, expired.name)).toHaveCount(0);
     } finally {
       await current.remove();
       await expired.remove();
     }
   });
 
-  test.describe('an instructor who hides their profile from search', () => {
-    test.use({ storageState: authFile('instructor') });
+  test('an instructor who hides their profile from search keeps the booking link, and comes back when they choose (PUB-04)', async ({
+    page,
+  }, testInfo) => {
+    const instructor = await makeInstructor(`Hana Hidden ${testInfo.project.name}`, addDays(today(), 365));
+    try {
+      await freshPublicPages(page);
+      await page.goto('/driving-lessons/leeds');
+      await expect(onLeedsPage(page, instructor.name)).toBeVisible();
 
-    test('keeps the booking link, and comes back when they choose (PUB-04)', async ({ page }, testInfo) => {
-      try {
-        await page.goto('/app/instructor/profile');
-        const show = page.getByRole('switch', { name: 'Show me in search' });
-        await expect(show).toBeChecked();
+      await signInThroughForm(page, instructor.email, { next: '/app/instructor/profile' });
+      const show = page.getByRole('switch', { name: 'Show me in search' });
+      await expect(show).toBeChecked();
 
-        // A tap before the page is interactive does nothing (D-043), so it is tapped again only while it
-        // has not moved: a second tap on a switch that did move would put it back.
-        await expect(async () => {
-          if (await show.isChecked()) await show.click();
-          await expect(show).not.toBeChecked({ timeout: 2000 });
-        }).toPass({ timeout: 15_000 });
-        await expect(page.getByText('Your profile is hidden from search')).toBeVisible();
-        await settled(page);
-        await snap(page, testInfo, 'search-listing-hidden');
+      // A tap before the page is interactive does nothing (D-043), so it is tapped again only while it
+      // has not moved: a second tap on a switch that did move would put it back.
+      await expect(async () => {
+        if (await show.isChecked()) await show.click();
+        await expect(show).not.toBeChecked({ timeout: 2000 });
+      }).toPass({ timeout: 15_000 });
+      await expect(page.getByText('Your profile is hidden from search')).toBeVisible();
+      await settled(page);
+      await snap(page, testInfo, 'search-listing-hidden');
 
-        await page.goto('/instructors/leeds/sarah-khan');
-        await expect(page.getByRole('heading', { level: 1, name: 'Sarah Khan' })).toBeVisible();
-        expect(await robots(page)).toContain('noindex');
-        // The booking link works as before.
-        await page.goto('/book/sarah-khan');
-        await expect(page.getByLabel('Which lesson?')).toBeVisible();
+      // Search engines are told to leave the profile out, and the Leeds page no longer lists it,
+      // with nothing but the switch to tell the app.
+      await page.goto(`/instructors/leeds/${instructor.slug}`);
+      await expect(page.getByRole('heading', { level: 1, name: instructor.name })).toBeVisible();
+      expect(await robotsOf(page)).toContain('noindex');
+      await page.goto('/driving-lessons/leeds');
+      await expect(page.getByRole('heading', { level: 1, name: 'Driving lessons in Leeds' })).toBeVisible();
+      await expect(onLeedsPage(page, instructor.name)).toHaveCount(0);
+      // The booking link works as before.
+      await page.goto(`/book/${instructor.slug}`);
+      await expect(page.getByLabel('Which lesson?')).toBeVisible();
 
-        await page.goto('/app/instructor/profile');
-        await expect(async () => {
-          if (!(await show.isChecked())) await show.click();
-          await expect(show).toBeChecked({ timeout: 2000 });
-        }).toPass({ timeout: 15_000 });
-        await expect(page.getByText('Your profile is in search')).toBeVisible();
-        await page.goto('/instructors/leeds/sarah-khan');
-        await expect(page.getByRole('heading', { level: 1, name: 'Sarah Khan' })).toBeVisible();
-        expect(await robots(page)).toBeNull();
-      } finally {
-        await setListed('Sarah Khan', true);
-      }
-    });
+      await page.goto('/app/instructor/profile');
+      await expect(async () => {
+        if (!(await show.isChecked())) await show.click();
+        await expect(show).toBeChecked({ timeout: 2000 });
+      }).toPass({ timeout: 15_000 });
+      await expect(page.getByText('Your profile is in search')).toBeVisible();
+      await page.goto(`/instructors/leeds/${instructor.slug}`);
+      await expect(page.getByRole('heading', { level: 1, name: instructor.name })).toBeVisible();
+      expect(await robotsOf(page)).toBeNull();
+      await page.goto('/driving-lessons/leeds');
+      await expect(onLeedsPage(page, instructor.name)).toBeVisible();
+    } finally {
+      await instructor.remove();
+    }
   });
 });

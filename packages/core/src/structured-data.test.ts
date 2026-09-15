@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import vocabulary from './schema-org-subset.json' with { type: 'json' };
 import {
+  breadcrumbStructuredData,
   instructorStructuredData,
   priceText,
   schoolStructuredData,
@@ -149,6 +150,19 @@ describe('structured data for the public pages (PUB-02, M5-04)', () => {
       employee: [
         { '@type': 'Person', name: 'Emma Clarke', url: 'https://example.com/instructors/manchester/emma-clarke' },
         { '@type': 'Person', name: 'Tom Walsh', url: 'https://example.com/instructors/manchester/tom-walsh' },
+      ],
+    });
+  });
+
+  it('marks a city page with its breadcrumbs alone, valid schema.org', () => {
+    const data = breadcrumbStructuredData(crumbs.slice(0, 2));
+    expect(problems(data)).toEqual([]);
+    expect(data).toEqual({
+      '@context': 'https://schema.org',
+      '@type': 'BreadcrumbList',
+      itemListElement: [
+        { '@type': 'ListItem', position: 1, name: 'Home', item: 'https://example.com' },
+        { '@type': 'ListItem', position: 2, name: 'Driving lessons in Leeds', item: 'https://example.com/driving-lessons/leeds' },
       ],
     });
   });

@@ -119,6 +119,21 @@ export async function expectAccessible(page: Page, options: { exclude?: string[]
   }
 }
 
+/** What a public page tells search engines: "noindex" when it is to be left out, nothing when it is in. */
+export async function robotsOf(page: Page): Promise<string | null> {
+  const tag = page.locator('meta[name="robots"]');
+  return (await tag.count()) === 0 ? null : tag.first().getAttribute('content');
+}
+
+/**
+ * Public pages read fresh (M5-07), after a test changed the database behind the app's back. A
+ * change made through the app expires them itself, and a test of that change leaves this out.
+ */
+export async function freshPublicPages(page: Page): Promise<void> {
+  const answer = await page.request.post('/dev/public-pages');
+  expect(answer.ok()).toBe(true);
+}
+
 /** A local day moved on or back by whole days: calendar arithmetic, with no zone to cross. */
 export function addDays(date: string, days: number): string {
   const [year = 0, month = 1, day = 1] = date.split('-').map(Number);

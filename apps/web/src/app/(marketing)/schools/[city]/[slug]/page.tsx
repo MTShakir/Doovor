@@ -1,6 +1,6 @@
 import type { Metadata, Route } from 'next';
 import { brand } from '@repo/config/brand';
-import { isPlaceSlug } from '@repo/core/places';
+import { isPlaceSlug, placePagePath } from '@repo/core/places';
 import { instructorProfilePath, schoolProfilePath } from '@repo/core/public-profile';
 import { schoolStructuredData } from '@repo/core/structured-data';
 import { Skeleton } from '@repo/ui/skeleton';
@@ -8,6 +8,7 @@ import { notFound, permanentRedirect } from 'next/navigation';
 import { Suspense } from 'react';
 import { PriceList } from '@/components/public/instructor-profile';
 import { JsonLdScript } from '@/components/public/json-ld';
+import { PlaceLinks } from '@/components/public/place-links';
 import { SchoolHeader, SchoolInstructors } from '@/components/public/school-profile';
 import { schoolProfile } from '@/lib/public/school-profile';
 import { getSiteUrl } from '@/lib/site-url';
@@ -102,6 +103,17 @@ async function SchoolProfile({ params }: Pick<Props, 'params'>) {
             hourlyFromPence: instructor.hourlyFromPence,
           }))}
         />
+        {place?.hasHub ? (
+          <PlaceLinks
+            title={`More in ${place.cityName}`}
+            links={[
+              {
+                href: placePagePath({ citySlug: place.citySlug, cityName: place.cityName }),
+                name: `Driving lessons in ${place.cityName}`,
+              },
+            ]}
+          />
+        ) : null}
       </div>
       <aside aria-label="Prices" className="flex flex-col gap-6 md:rounded-card md:border md:border-grey-200 md:p-6">
         <PriceList lessons={school.lessons} packages={school.packages} />

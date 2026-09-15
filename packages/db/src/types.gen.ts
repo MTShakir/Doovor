@@ -2592,6 +2592,10 @@ export type Database = {
         Args: { p_booking_id: string; p_reason?: string }
         Returns: Json
       }
+      city_page: {
+        Args: { p_area?: string; p_city: string; p_transmission?: string }
+        Returns: Json
+      }
       complete_booking: { Args: { p_booking_id: string }; Returns: string }
       covers_postcode: {
         Args: { p_instructor_id: string; p_postcode: string }

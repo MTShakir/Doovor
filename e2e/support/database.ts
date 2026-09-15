@@ -938,31 +938,71 @@ export async function lessonRecordFor(
 export interface MadeInstructor {
   slug: string;
   name: string;
+  /** Signs in with the seed's password (supabase/seeds/test_helpers.sql). */
+  email: string;
   remove: () => Promise<void>;
+}
+
+/** A postcode in the cache, as a lookup would have left it, for a base somewhere the seed has none. */
+export interface CachedPostcode {
+  postcode: string;
+  latitude: number;
+  longitude: number;
+  district: string;
+}
+
+export async function cachePostcode(place: CachedPostcode): Promise<void> {
+  const outcode = place.postcode.split(' ')[0] ?? '';
+  await withDatabase(async (sql) => {
+    await sql`
+      insert into public.postcodes (postcode, outcode, area, latitude, longitude, admin_district)
+      values (${place.postcode}, ${outcode}, ${outcode.replace(/[0-9].*$/, '')}, ${place.latitude}, ${place.longitude}, ${place.district})
+      on conflict (postcode) do nothing`;
+  });
 }
 
 /**
  * A checked instructor with a Business of their own, made for one test and removed after it
  * (M5-06). Nothing else knows them, so a test can run their badge out without touching anybody
- * another test is using. Based in Leeds, with a price, and a badge that runs out on the day given.
+ * another test is using. Based in Leeds unless told otherwise, with a price, and a badge that runs
+ * out on the day given.
  */
-export async function makeInstructor(name: string, badgeExpiry: string): Promise<MadeInstructor> {
+export async function makeInstructor(
+  name: string,
+  badgeExpiry: string,
+  options: { postcode?: string; transmission?: 'manual' | 'automatic' | 'both' } = {},
+): Promise<MadeInstructor> {
+  const postcode = options.postcode ?? 'LS6 3QS';
+  const transmission = options.transmission ?? 'manual';
   const userId = crypto.randomUUID();
   const slug = `${name.toLowerCase().replace(/[^a-z0-9]+/g, '-')}-${userId.slice(0, 8)}`;
+  const email = `${slug}@example.com`;
   await withDatabase(async (sql) => {
-    await sql`select tests.create_user_with_id(${userId}::uuid, ${`${slug}@example.com`}, ${name})`;
+    await sql`select tests.create_user_with_id(${userId}::uuid, ${email}, ${name})`;
+    // A mobile they have verified, as every instructor has before their portal (AUTH-02): one of
+    // the numbers set aside for drama, above the seed's, tried again if another test has it.
+    for (let attempt = 0; ; attempt += 1) {
+      const phone = `447700900${String(500 + Math.floor(Math.random() * 500))}`;
+      try {
+        await sql`update auth.users set phone = ${phone}, phone_confirmed_at = now() where id = ${userId}`;
+        break;
+      } catch (error) {
+        if (attempt >= 5 || (error as { code?: string }).code !== '23505') throw error;
+      }
+    }
     const [business] = await sql<{ id: string }[]>`
       insert into public.businesses (type, name, slug, base_postcode)
-      values ('independent', ${`${name} Driving`}, ${`${slug}-driving`}, 'LS6 3QS')
+      values ('independent', ${`${name} Driving`}, ${`${slug}-driving`}, ${postcode})
       returning id`;
     if (!business) throw new Error('No Business was made');
     await sql`insert into public.memberships (business_id, user_id, role) values (${business.id}, ${userId}, 'owner')`;
     await sql`
       insert into public.instructor_profiles (user_id, business_id, display_name, public_slug, verification_status, verified_at,
-                                              badge_expiry, base_postcode, base_location)
-      select ${userId}, ${business.id}, ${name}, ${slug}, 'approved', now(), ${badgeExpiry}::date, p.postcode, p.location
+                                              badge_expiry, base_postcode, base_location, transmission, onboarding_completed_at)
+      select ${userId}, ${business.id}, ${name}, ${slug}, 'approved', now(), ${badgeExpiry}::date, p.postcode, p.location,
+             ${transmission}::public.transmission, now()
         from public.postcodes p
-       where p.postcode = 'LS6 3QS'`;
+       where p.postcode = ${postcode}`;
     const [type] = await sql<{ id: string }[]>`
       insert into public.lesson_types (business_id, name) values (${business.id}, 'Standard lesson') returning id`;
     if (!type) throw new Error('No lesson type was made');
@@ -973,17 +1013,11 @@ export async function makeInstructor(name: string, badgeExpiry: string): Promise
   return {
     slug,
     name,
+    email,
     remove: () =>
       withDatabase(async (sql) => {
         await sql`delete from public.businesses where slug = ${`${slug}-driving`}`;
         await sql`delete from auth.users where id = ${userId}`;
       }),
   };
-}
-
-/** Puts an instructor's choice to be in search back, whatever a failed test left (PUB-04). */
-export async function setListed(instructorName: string, listed: boolean): Promise<void> {
-  await withDatabase(async (sql) => {
-    await sql`update public.instructor_profiles set is_listed = ${listed} where display_name = ${instructorName}`;
-  });
 }

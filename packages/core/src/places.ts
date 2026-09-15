@@ -59,3 +59,34 @@ export function districtPlace(district: string): Place {
 export function isPlaceSlug(value: string): boolean {
   return value.length <= 80 && SLUG.test(value);
 }
+
+/**
+ * A place page is thin, and carries noindex, until at least this many instructors search may show
+ * are listed on it (PRD 8.3).
+ */
+export const INDEXABLE_MIN_INSTRUCTORS = 3;
+
+/** Whether search engines should leave a city, area or transmission page out (PRD 8.3, M5-07). */
+export function isThinPlace(instructorCount: number): boolean {
+  return instructorCount < INDEXABLE_MIN_INSTRUCTORS;
+}
+
+export interface PlacePage {
+  citySlug: string;
+  cityName: string;
+  area?: { slug: string; name: string } | null;
+  automatic?: boolean;
+}
+
+/** The address of a city, area or automatic page: /driving-lessons/london/croydon. */
+export function placePagePath({ citySlug, area, automatic }: PlacePage): string {
+  const base = `/driving-lessons/${citySlug}`;
+  if (automatic) return `${base}/automatic`;
+  return area ? `${base}/${area.slug}` : base;
+}
+
+/** The heading a place page carries, which is also what search shows as its title. */
+export function placeHeading({ cityName, area, automatic }: PlacePage): string {
+  if (automatic) return `Automatic driving lessons in ${cityName}`;
+  return area ? `Driving lessons in ${area.name}, ${cityName}` : `Driving lessons in ${cityName}`;
+}
