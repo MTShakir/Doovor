@@ -24,6 +24,8 @@ export const roles = {
   /** A trainee instructor (PDI), supervised by the school she teaches for (INS-04). */
   trainee: { email: 'aisha.rahman@example.com', landing: '/app/instructor', heading: 'Today' },
   learner: { email: 'jack.taylor@example.com', landing: '/app/learner', heading: 'Home' },
+  /** A learner of the school's, so payment tests never touch anybody else's lists. */
+  payer: { email: 'polly.payne@example.com', landing: '/app/learner', heading: 'Home' },
 } as const;
 
 export type RoleKey = keyof typeof roles;

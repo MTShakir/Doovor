@@ -18,7 +18,7 @@ const lesson = { learnerName: 'Jack Taylor', instructorName: 'Sarah Khan', when:
 
 describe('the catalogue (PRD Appendix B, NTF-03)', () => {
   it('has every kind of notification Phase 1 sends', () => {
-    expect(notificationKinds).toHaveLength(13);
+    expect(notificationKinds).toHaveLength(19);
     for (const kind of notificationKinds) expect(notificationCatalogue[kind].kind).toBe(kind);
   });
 
@@ -102,6 +102,66 @@ describe('the words (NTF-03)', () => {
   it('adds the reason or the fee when there is one', () => {
     const copy = notificationCopy('booking.cancelled', 'learner', { ...lesson, detail: 'A fee of £42 applies' });
     expect(copy.body).toBe('Wed 16 Sep at 09:00 with Sarah Khan. A fee of £42 applies.');
+  });
+
+  it('closes a sentence before the next one starts', () => {
+    expect(notificationCopy('booking.requested', 'instructor', lesson).body).toBe('Wed 16 Sep at 09:00. Accept it or decline it.');
+    expect(notificationCopy('payment.received', 'instructor', { ...lesson, detail: '£42 by card' }).body).toBe(
+      '£42 by card. Wed 16 Sep at 09:00 with Jack Taylor.',
+    );
+    expect(notificationCopy('payment.received', 'learner', { instructorName: 'Sarah Khan', detail: '£380 for 10 hours of credit' }).body).toBe(
+      '£380 for 10 hours of credit.',
+    );
+    expect(notificationCopy('credit.low', 'learner', { detail: '1 hour left with Quayside Driving School' }).body).toBe(
+      '1 hour left with Quayside Driving School. Top it up before your next lesson.',
+    );
+  });
+
+  it('says a payment is overdue, and sums up the day before for a school (NTF-03, M3-22)', () => {
+    expect(notificationCopy('payment.overdue', 'learner', { ...lesson, learnerDetail: '£42 has been owed since Tue 15 Sep. Pay it now.' })).toEqual({
+      title: 'Payment overdue',
+      body: 'Wed 16 Sep at 09:00 with Sarah Khan. £42 has been owed since Tue 15 Sep. Pay it now.',
+    });
+    expect(notificationCopy('payment.overdue', 'instructor', { ...lesson, detail: '£42 has been owed since Tue 15 Sep.' }).title).toBe(
+      'A payment from Jack Taylor is overdue',
+    );
+    expect(notificationCopy('payment.daily_summary', 'school', { detail: '£420 from 10 payments on Mon 14 Sep' })).toEqual({
+      title: 'Payments yesterday',
+      body: '£420 from 10 payments on Mon 14 Sep.',
+    });
+  });
+
+  it('tells the Business a no-show was disputed, and the learner how it was decided (R-09, M3-19)', () => {
+    expect(notificationCopy('booking.disputed', 'instructor', lesson)).toEqual({
+      title: 'Jack Taylor disputed a no-show',
+      body: 'Wed 16 Sep at 09:00 with Jack Taylor. Decide whether the fee stands.',
+    });
+    expect(notificationCopy('booking.dispute_decided', 'learner', { ...lesson, learnerDetail: 'The fee stands.' })).toEqual({
+      title: 'Your no-show dispute was answered',
+      body: 'Wed 16 Sep at 09:00 with Sarah Khan. The fee stands.',
+    });
+  });
+
+  it('says who did not turn up, and tells a learner a fee that could not be charged is not a lesson to keep (R-09, M3-19)', () => {
+    expect(notificationCopy('booking.no_show', 'learner', { ...lesson, learnerDetail: 'A fee of £42 is owed.' })).toEqual({
+      title: 'Marked as a no-show',
+      body: 'Wed 16 Sep at 09:00 with Sarah Khan. A fee of £42 is owed.',
+    });
+    expect(notificationCopy('booking.no_show', 'instructor', { ...lesson, detail: 'A fee of £42 is owed.' }).title).toBe('Jack Taylor did not turn up');
+    expect(notificationCopy('payment.failed', 'learner', { ...lesson, learnerDetail: 'The no-show fee could not be charged. Pay it now.' }).body).toBe(
+      'Wed 16 Sep at 09:00 with Sarah Khan. The no-show fee could not be charged. Pay it now.',
+    );
+    expect(notificationCopy('payment.failed', 'learner', { ...lesson, detail: 'The card was refused.' }).body).toBe(
+      'Wed 16 Sep at 09:00 with Sarah Khan. The card was refused. Pay now to keep the lesson.',
+    );
+  });
+
+  it('tells the learner what only the learner needs to hear, and the others the rest (acceptance-04)', () => {
+    const facts = { ...lesson, detail: 'Jack Taylor cancelled late, so the £42 they paid is kept as the fee.', learnerDetail: 'You cancelled 24 hours before it started.' };
+    expect(notificationCopy('booking.cancelled', 'learner', facts).body).toBe('Wed 16 Sep at 09:00 with Sarah Khan. You cancelled 24 hours before it started.');
+    expect(notificationCopy('booking.cancelled', 'instructor', facts).body).toBe(
+      'Wed 16 Sep at 09:00 with Jack Taylor. Jack Taylor cancelled late, so the £42 they paid is kept as the fee.',
+    );
   });
 });
 

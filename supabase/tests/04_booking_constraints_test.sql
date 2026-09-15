@@ -122,8 +122,9 @@ select throws_ok(
   '23514', null, 'a lesson must end after it starts'
 );
 
--- Visibility by role, on a clean set of bookings.
-delete from public.bookings;
+-- Visibility by role, on a clean set of bookings. Only the fixture's own: everybody below is
+-- one of its people, and a lesson elsewhere that credit paid for can never be deleted (D-085).
+delete from public.bookings where business_id in ('aaaa0000-0000-0000-0000-000000000000', 'bbbb0000-0000-0000-0000-000000000000');
 insert into public.bookings (id, business_id, instructor_id, learner_id, lesson_type_id, starts_at, ends_at, buffer_minutes, status, price_pence, source) values
   ('f0000000-0000-0000-0000-000000000001', 'aaaa0000-0000-0000-0000-000000000000', 'a1000000-0000-0000-0000-000000000001', 'c0000000-0000-0000-0000-000000000001', 'a2000000-0000-0000-0000-000000000001', '2026-09-20 09:00+01', '2026-09-20 10:00+01', 30, 'confirmed', 4000, 'instructor'),
   ('f0000000-0000-0000-0000-000000000002', 'bbbb0000-0000-0000-0000-000000000000', 'b1000000-0000-0000-0000-000000000001', 'c0000000-0000-0000-0000-000000000001', 'b2000000-0000-0000-0000-000000000001', '2026-09-20 12:00+01', '2026-09-20 13:00+01', 30, 'confirmed', 4200, 'instructor'),

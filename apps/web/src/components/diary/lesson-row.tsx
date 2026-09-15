@@ -1,11 +1,11 @@
 'use client';
 
-import { lessonState } from '@repo/core/diary';
+import { lessonState, lessonStateLabel } from '@repo/core/diary';
 import { formatPence } from '@repo/core/money';
 import { formatTime } from '@repo/core/time';
 import { StatusPill } from '@repo/ui/status-pill';
 import { Button } from '@repo/ui/button';
-import { CalendarClock, Check, MapPin, X } from 'lucide-react';
+import { Banknote, CalendarClock, Check, MapPin, X } from 'lucide-react';
 import type { DiaryEntry } from '@/lib/diary/lessons';
 import { RequestActions } from './request-actions';
 
@@ -23,6 +23,7 @@ export function LessonRow({
   canMarkNoShow = false,
   onComplete,
   onNoShow,
+  onMarkPaid,
 }: {
   lesson: DiaryEntry;
   showInstructor?: boolean;
@@ -36,11 +37,23 @@ export function LessonRow({
   canMarkNoShow?: boolean;
   onComplete?: () => void;
   onNoShow?: () => void;
+  /** PAY-05: a lesson somebody paid for in person, in cash or by bank transfer. */
+  onMarkPaid?: () => void;
 }) {
   const state = lessonState(lesson.facts);
   const off = state === 'cancelled';
   const asked = lesson.facts.status === 'requested';
   const done = lesson.facts.status === 'completed' || lesson.facts.status === 'no_show';
+  // Paid in person is recorded on a lesson that is on or has happened, with a price, and not paid another way.
+  const payable =
+    canAnswer && !asked && !off && lesson.pricePence > 0 && ['unpaid', 'pending', 'failed'].includes(lesson.facts.paymentStatus);
+  const markPaid =
+    payable && onMarkPaid ? (
+      <Button variant="secondary" onClick={onMarkPaid}>
+        <Banknote className="size-5" aria-hidden />
+        Mark paid
+      </Button>
+    ) : null;
 
   return (
     <article
@@ -70,7 +83,7 @@ export function LessonRow({
           ) : null}
         </span>
         <span className="flex shrink-0 flex-col items-end gap-1">
-          <StatusPill status={state} />
+          <StatusPill status={state}>{lessonStateLabel(lesson.facts)}</StatusPill>
           <span className="text-small text-grey-700 tabular-nums">
             {formatPence(lesson.pricePence)}
           </span>
@@ -83,7 +96,7 @@ export function LessonRow({
         </div>
       ) : null}
       {canAnswer && !asked && !off && !done && started && onComplete ? (
-        <div className="flex justify-end gap-2">
+        <div className="flex flex-wrap justify-end gap-2">
           <Button onClick={onComplete}>
             <Check className="size-5" aria-hidden />
             Done
@@ -93,10 +106,11 @@ export function LessonRow({
               No show
             </Button>
           ) : null}
+          {markPaid}
         </div>
       ) : null}
       {canAnswer && !asked && !off && !done && !started && onMove && onCancel ? (
-        <div className="flex justify-end gap-2">
+        <div className="flex flex-wrap justify-end gap-2">
           <Button variant="secondary" onClick={onMove}>
             <CalendarClock className="size-5" aria-hidden />
             Move
@@ -105,8 +119,11 @@ export function LessonRow({
             <X className="size-5" aria-hidden />
             Cancel
           </Button>
+          {markPaid}
         </div>
       ) : null}
+      {/* Taught, and still to be paid: paying is the one thing left to do about it. */}
+      {done && markPaid ? <div className="flex flex-wrap justify-end gap-2">{markPaid}</div> : null}
     </article>
   );
 }

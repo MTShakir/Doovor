@@ -3,6 +3,10 @@ import { defineConfig } from '@playwright/test';
 const isCI = Boolean(process.env.CI);
 const baseURL = process.env.E2E_BASE_URL ?? 'http://localhost:3000';
 
+/** The Stripe test-mode run (`pnpm test:e2e:stripe`, RUNBOOK 3.7a): its specs run only when asked for. */
+const stripeRun = process.env.E2E_PAYMENTS === 'stripe';
+const stripeSpecs = /[\\/]specs[\\/]stripe[\\/]/;
+
 /**
  * Every flow runs at 390 px (touch phone) and 1440 px (desktop), as the brief requires.
  * Retries stay at zero: a flaky test is a bug to fix, not to hide.
@@ -40,7 +44,7 @@ export default defineConfig({
     {
       name: 'mobile',
       dependencies: ['setup'],
-      testIgnore: /.*\.setup\.ts/,
+      testIgnore: [/.*\.setup\.ts/, stripeSpecs],
       grepInvert: /@desktop-only/,
       use: {
         browserName: 'chromium',
@@ -53,10 +57,22 @@ export default defineConfig({
     {
       name: 'desktop',
       dependencies: ['setup'],
-      testIgnore: /.*\.setup\.ts/,
+      testIgnore: [/.*\.setup\.ts/, stripeSpecs],
       grepInvert: /@phone-only/,
       use: { browserName: 'chromium', viewport: { width: 1440, height: 900 } },
     },
+    ...(stripeRun
+      ? [
+          {
+            // Against Stripe test mode, one test at a time; a test opens a phone of its own where it needs one.
+            name: 'stripe',
+            dependencies: ['setup'],
+            testMatch: stripeSpecs,
+            fullyParallel: false,
+            use: { browserName: 'chromium' as const, viewport: { width: 1440, height: 900 } },
+          },
+        ]
+      : []),
   ],
   webServer: {
     command: isCI ? 'pnpm --filter @repo/web start' : 'pnpm --filter @repo/web dev',

@@ -3,6 +3,7 @@
 // Usage: pnpm db:env [--force] (CI: node scripts/local-env.mjs --app-env=test)
 // CI runs it after `pnpm db:start`; locally it saves copying keys by hand.
 import { execFileSync } from 'node:child_process';
+import { createECDH } from 'node:crypto';
 import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 
@@ -34,11 +35,20 @@ for (const key of ['API_URL', 'PUBLISHABLE_KEY', 'SECRET_KEY']) {
   }
 }
 
+// A web push key pair of its own for this checkout (NTF-01). It only identifies this copy of the
+// app to push services, so a fresh one per machine is right, and without one the settings
+// screen says push is not set up and nothing about push can be tried. Same shape web-push makes:
+// an uncompressed P-256 public key and its private scalar, both base64url.
+const vapid = createECDH('prime256v1');
+vapid.generateKeys();
+
 const values = {
   APP_ENV: appEnv,
   NEXT_PUBLIC_SUPABASE_URL: stack.API_URL,
   NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: stack.PUBLISHABLE_KEY,
   SUPABASE_SECRET_KEY: stack.SECRET_KEY,
+  NEXT_PUBLIC_VAPID_PUBLIC_KEY: vapid.getPublicKey('base64url'),
+  VAPID_PRIVATE_KEY: vapid.getPrivateKey('base64url'),
 };
 const lines = readFileSync(path.join(root, '.env.example'), 'utf8')
   .split(/\r?\n/)

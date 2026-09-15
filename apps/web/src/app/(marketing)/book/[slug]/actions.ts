@@ -32,7 +32,7 @@ const bookSchema = z.object({
 });
 
 /** BOK-02: the learner books the slot themselves. The RPC holds them to the rules (R-04). */
-export async function bookAsLearner(input: unknown): Promise<Result<{ bookingId: string }>> {
+export async function bookAsLearner(input: unknown): Promise<Result<{ bookingId: string; payNow: boolean }>> {
   const parsed = bookSchema.safeParse(input);
   if (!parsed.success) return err('VALIDATION_FAILED');
 
@@ -49,7 +49,15 @@ export async function bookAsLearner(input: unknown): Promise<Result<{ bookingId:
   });
   if (error) return err(parsePostgresError(error).code);
 
-  return ok({ bookingId: data });
+  // A Business that takes cards wants paying at booking, so the learner is sent to do that
+  // rather than left to find it later (PAY-03).
+  const business = await supabase
+    .from('instructor_profiles')
+    .select('businesses!instructor_profiles_business_id_fkey(stripe_charges_enabled)')
+    .eq('id', parsed.data.instructorId)
+    .maybeSingle();
+
+  return ok({ bookingId: data, payNow: business.data?.businesses.stripe_charges_enabled === true });
 }
 
 const holdSchema = z.object({

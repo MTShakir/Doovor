@@ -2,7 +2,7 @@
 
 Status: Draft for approval | 11 September 2026 | Scope: Phase 1 (M0 to M6), shaped for Phases 2 to 5
 
-This document explains how the system is built and why. Requirement IDs refer to `docs/DrivingHub_PRD.md`. Decision IDs (`D-001`) refer to `docs/DECISIONS.md`.
+This document explains how the system is built and why. Requirement IDs refer to `docs/Doovor_PRD.md`. Decision IDs (`D-001`) refer to `docs/DECISIONS.md`.
 
 ## 1. Guiding principles
 
@@ -206,6 +206,8 @@ All helpers live in a `private` schema that PostgREST does not expose, are `STAB
 | `private.auth_instructor_id(business_id)` | The caller's instructor profile ID in that Business, if any |
 | `private.auth_is_staff(level)` | True for platform staff with an `aal2` session. `level` is `support` or `super` |
 | `private.auth_can_see_learner(learner_id)` | True for the learner, staff of a Business with a relationship to them, and platform staff |
+| `private.auth_taught_learner_ids()` | Set of learner IDs on the lessons the caller teaches, as an instructor with an active membership. Lets a lesson's instructor read who it is with, a cover lesson included, and nothing else about them (D-097) |
+| `private.auth_can_book_learner(business_id, learner_id)` | True for somebody who manages bookings at the Business, for any of its learners, and for an instructor, for the learners assigned to them. `create_booking` and `book_weekly` check it before writing anything (PRD 6.2, D-097) |
 
 ### 6.3 Policy patterns
 
@@ -215,7 +217,7 @@ Every table gets one of five patterns. A pgTAP meta-test lists every table in `p
 |---|---|---|---|
 | **Tenant staff** | `lesson_types`, `packages`, `working_hours`, `coverage_areas`, `learner_notes` | Members of the Business (instructors limited to their own rows where relevant) and support staff | Direct writes allowed only where the permission matrix allows (for example `set_prices`) |
 | **Learner-visible tenant data** | `bookings`, `payments`, `lesson_records`, `credit_accounts`, `learner_relationships` | Members of the Business (instructors see their own learners), plus the learner where `learner_id = (select auth.uid())` | No direct writes. Only RPCs |
-| **Owned by user** | `users`, `learner_profiles`, `learner_private`, `pickup_points`, `notification_preferences`, `push_subscriptions` | Self; Business staff may read contact fields of learners they have a relationship with (never `learner_private`) | Self |
+| **Owned by user** | `users`, `learner_profiles`, `learner_private`, `pickup_points`, `notification_preferences`, `push_subscriptions` | Self; Business staff may read contact fields of learners they have a relationship with, and an instructor the `users` row of the learners on their lessons (never `learner_private`, D-097) | Self |
 | **Public reference** | `skills`, `postcodes`, `cities`, `city_areas`, `regions` | Everyone | Staff or system only |
 | **Platform and append-only** | `audit_log`, `platform_settings`, `provider_events`, `rate_limit_buckets` | Super Admin (support read for audit log) | Only `SECURITY DEFINER` functions. Update and delete are blocked by trigger |
 
@@ -369,7 +371,7 @@ The browser shows the confirmation screen as soon as Stripe confirms, then polls
 
 1. Pick learner (recent learners first). 2. Pick slot (engine output, duration defaults to the learner's usual length). 3. Confirm.
 
-`create_booking` then, in one transaction: locks the learner's `credit_accounts` row (`FOR UPDATE`), inserts the confirmed booking (the exclusion constraints decide overlaps), consumes credit lots oldest first, writes `credit_ledger` rows of type `use`, updates the cached balance (a `CHECK balance_minutes >= 0` makes overdraw impossible) and writes `booking_events`. Any failure rolls back all of it. With no credit and a pay-later or offline Business setting, the booking is confirmed as `unpaid`.
+`create_booking` then, in one transaction: inserts the booking (the exclusion constraints decide overlaps, and its trigger takes the diary and learner locks), locks the learner's `credit_accounts` row (`FOR UPDATE`), and when the usable credit covers the whole lesson consumes lots oldest first as `credit_ledger` rows of type `use`, which move the cached balance (a `CHECK balance_minutes >= 0` makes overdraw impossible), and marks the lesson `paid_credit`. Any failure rolls back all of it. Credit that covers only part of a lesson is not used (D-088). With no credit and a pay-later or offline Business setting, the booking is confirmed as `unpaid`. A request is paid from credit when it is made and gets it back when it is declined or lapses; a trigger on the move to `expired` covers every path that notices a lapse.
 
 ### 7.7 Recurring lessons (BOK-05, R-13)
 
@@ -377,18 +379,18 @@ The browser shows the confirmation screen as soon as Stripe confirms, then polls
 
 ### 7.8 Cancellation, reschedule and no-show (BOK-08, BOK-09, R-06 to R-09)
 
-The policy is a pure function in core, `evaluateCancellation({ booking, policy, actor, now })`, returning `{ late, feePercent, feePence, creditMinutesReturned, refundPence }`:
+The policy is a pure function in core, `cancellationOutcome({ startsAt, now, by, windowHours, lateFeePercent, pricePence, paidWith, creditMinutes, status })` in `packages/core/src/cancellation.ts`, returning `{ late, feePence, refundPence, creditReturnedMinutes, creditKeptMinutes, reasonRequired, paidWith }`. The warning before somebody presses cancel and the words in the notification afterwards (`cancelledMoneyWords`) come from the same file. Only a lesson that is on can be cancelled late: a request or a slot held for a card costs nothing to let go (D-092).
 
 | Case | Outcome |
 |---|---|
 | Learner cancels outside the window (default 48 h) | Full refund to card, or full credit returned (R-07) |
 | Learner cancels inside the window | Fee kept per policy (0, 50 or 100%). Credit covers the fee first (R-07). Email explains why (acceptance test 4) |
 | Instructor or Business cancels | Reason required. Learner always gets a full refund or full credit (R-08, acceptance test 5) |
-| No-show | Only allowed from 15 minutes after start. Treated as a late cancellation. Learner can dispute within 7 days (R-09) |
+| No-show | Only allowed from 15 minutes after start. Settles its money as a late cancellation by the learner, and records `dispute_until`, 7 days on (R-09, D-093). The learner disputes from their lessons with `dispute_no_show`; an owner or manager waives the fee, giving back whatever paid it, or keeps it, with `decide_no_show_dispute` (D-094) |
 | Learner reschedules | Only outside the cancellation window (BOK-08). Inside it, the learner sees the cancellation terms instead |
 | Instructor reschedules | Any time. Learner notified |
 
-`cancel_booking` applies the outcome in one transaction: status change, ledger rows, refund rows (card refunds are sent to Stripe by a follow-up job and reconciled by webhook), `booking_events` and an outbox event for notifications.
+`cancel_booking` applies the outcome in one transaction: the status change; credit given back less any fee (`give_back_credit`); money given back less the fee, oldest payment first (`settle_cancelled_payments`), where a card refund is sent to Stripe by the refund job and reconciled by webhook and cash or a bank transfer is owed back until somebody marks it handed back (`settle_offline_refund`); an audit row; and a `booking.cancelled` outbox event carrying the policy (window, percentage, minutes before the start) and what became of the money, from which the notification job writes the learner's explanation (acceptance test 4, D-092).
 
 ### 7.9 Error codes and copy (acceptance tests 1 and 2)
 
@@ -409,6 +411,7 @@ The friendly pre-check runs inside the RPC for good messages. The constraint is 
 - **Recommended charge type: direct charges on the connected account** (D-011, needs sign-off, see PRD section 20). The Business is the merchant of record, the learner's statement shows the Business, Stripe's card fees come out of the Business's balance (the PRD's pass-through on the Free plan) and refunds and disputes sit with the Business. `application_fee_amount` is 0 for a Business's own learners in Phase 1 and carries the capped marketplace fee in Phase 3.
 - Customers and saved cards are created on the connected account, per Business and learner (`billing_customers`). A learner with two instructors saves a card with each. That matches "credit held against that Business only".
 - Apple Pay and Google Pay through the Payment Element. The payment method domain is registered on each connected account when it is created.
+- A card typed in goes into the Payment Element (`apps/web/src/components/payments/card-form.tsx`). It loads Stripe.js for the connected account (`stripeAccount`), draws the fields for the payment's or set-up's client secret, and confirms in the browser; the webhook records what happened. Checkout offers only methods that pay on the screen (card, Apple Pay, Google Pay and Link), with no redirects. The error words come from `apps/web/src/lib/payments/card-errors.ts`. When a kept card needs the bank's check, the charge answers with its client secret and the screen runs `handleNextAction` (D-099). The Permissions-Policy header lets Stripe's frame use the Payment Request API, and the report-only CSP lists Stripe's script and frame origins.
 - Everything goes through `PaymentsProvider` (`createCheckoutIntent`, `captureHold`, `cancelHold`, `chargeSavedMethod`, `refund`, `createAccountLink`, `verifyWebhook`). Tests use an in-memory fake. Acceptance tests 3 to 6 also run against Stripe test mode.
 
 ### 8.2 Payment modes (PAY-03)
@@ -425,11 +428,15 @@ The friendly pre-check runs inside the RPC for good messages. The constraint is 
 
 Credit is time (minutes) bought as a package from one Business. Three tables keep it correct:
 
-- `credit_lots`: one row per package purchase with `minutes_total`, `minutes_remaining`, `price_pence` and `expires_at`. Lots are consumed oldest first. Lots let expiry (package `expiry_days`) and refunds of unused credit value each purchase correctly: a refund is worth `floor(price_pence * minutes_remaining / minutes_total)`, all integer arithmetic.
-- `credit_ledger`: append-only record of every movement (`purchase`, `use`, `return`, `fee`, `expiry`, `adjustment`, `refund`) with minutes, lot, booking, payment, actor and reason. Update and delete are blocked by trigger.
-- `credit_accounts`: cached balance per Business and learner, updated in the same transaction and locked with `FOR UPDATE`. `CHECK (balance_minutes >= 0)`. A nightly job and a pgTAP test assert that the balance equals the sum of the ledger.
+- `credit_lots`: one row per package purchase (or credit given) with `minutes_total`, `minutes_remaining`, `price_pence` and `expires_at`, and the `payment_id` that bought it, unique. Lots are consumed oldest first. Lots let expiry (package `expiry_days`) and refunds of unused credit value each purchase correctly: a refund is worth `floor(price_pence * minutes_remaining / minutes_total)`, all integer arithmetic (`packages/core/src/credit.ts`). A lot starts empty and its first ledger row fills it; what it was bought as never changes.
+- `credit_ledger`: append-only record of every movement (`purchase`, `use`, `return`, `fee`, `expiry`, `adjustment`, `refund`) with signed minutes, lot, booking, payment, refund, actor and reason. Checks tie each kind to its direction and to what it must point at (a lesson for `use`, `return` and `fee`; a person and a reason for `adjustment`). Update, delete and truncate are blocked by trigger.
+- `credit_accounts`: cached balance per Business and learner, `CHECK (balance_minutes >= 0)`, locked with `FOR UPDATE` by the functions that move credit. An account exists only for a learner the Business has a relationship with (PAY-12).
+
+Inserting a ledger row moves its account and then its lot, by trigger, in the same statement, and a guard refuses any other change to either number (D-085). The balance is therefore the sum of the ledger by construction; a pgTAP test checks it after hundreds of random moves, some of them refused. Nothing a ledger row points at is deleted by cascade, so the money history outlives the people in it (NFR-PRV-03).
 
 Acceptance test 3: 120 minutes of credit, book 60, the balance shows 60, cancel 72 hours before, one `return` row brings it back to 120.
+
+A learner's balance with a Business (PAY-06) is read by one function, `learner_balance`, which checks the caller (the learner, owners and managers, the learner's instructor, staff) and returns all the facts: usable credit, the lessons that could be owed for, lessons called off late whose fee nobody has paid, and recent payments (with anything on its way back against them), refunds (with the lesson they were for) and credit moves. `packages/core/src/balance.ts` decides what is owed, from when, and what is overdue (48 hours), and the learner's Payments screen and the instructor's learner card render that one result (D-090).
 
 ### 8.4 Webhooks, processed exactly once (R-11)
 
@@ -459,18 +466,20 @@ sequenceDiagram
 ```
 
 - Recording the event and applying it happen in the same transaction, so a crash can never mark an event processed without its effect.
-- Concurrent duplicate deliveries serialise on the unique index. Defence in depth: `payments.provider_ref` and `credit_lots.payment_id` are unique too. Acceptance test 6 replays one event three times and asserts one payment and one credit entry.
+- Concurrent duplicate deliveries serialise on the unique index. Defence in depth: `payments.provider_ref` and `credit_lots.payment_id` are unique too. Acceptance test 6 replays one package payment three times and asserts one payment and one credit entry, in pgTAP and through the route.
+- An event about a lesson, payment or package is applied only when it comes from that Business's own connected account (D-087).
+- A package payment carries what it buys in its metadata (package, learner, minutes, days), written by the server when the payment starts. The webhook writes the payment, the lot and its `purchase` row together (`system_record_package_payment`, D-086).
 - Follow-up work (emails, push, analytics) runs in Inngest with its own idempotency keys, so the webhook responds fast.
 
 ### 8.5 Refunds, fees and receipts
 
-- **Refunds (PAY-07):** `issue_refund` records the refund (full or partial, to card or back to credit) with reason and actor, and writes an audit row. Card refunds are sent to Stripe by a job with an idempotency key and confirmed by the `charge.refunded` webhook. Only roles in the permission matrix can refund (not school instructors).
-- **Late cancellation and no-show fees (PAY-09):** credit is used first. Otherwise the fee is kept from the original card payment (partial refund of the rest). For unpaid bookings, the fee is charged to the saved card off-session or added to the amount owed (PAY-06, shown in red when overdue).
-- **Receipts (PAY-08):** a receipt email (React Email) with the Business name and address and lesson details, plus a printable receipt page. VAT lines appear only when the Business has a VAT number. Receipt numbers are sequential per Business.
+- **Refunds (PAY-07):** `issue_refund` records the refund (full or partial, back the way it was paid or as credit) with reason and actor, and writes an audit row. Card refunds are sent to Stripe by a job with an idempotency key and the refund's own id in its metadata, and are settled from Stripe's answer and from the `refund.created`, `refund.updated` and `refund.failed` events, which also record refunds made in the Stripe dashboard. Cash and bank refunds issued by hand are settled when written down; those a cancellation makes are owed back until marked handed back (D-092). Unused credit is refunded by the minute at its lot's price and leaves the balance at once, coming back if the refund fails. A lesson's payment status is worked out again from all its payments after any refund. Only owners, managers and staff can refund, not school instructors (D-091).
+- **Late cancellation and no-show fees (PAY-09):** credit is used first (R-07). Otherwise the fee is kept from what was paid, oldest payment first, and the rest goes back: to the card through the refund job, or owed back in cash or by transfer (D-092). For an unpaid booking the fee is charged by the fee job to the card the learner keeps with the Business, with nobody there, at a Business that takes cards and does not take payment in person. Without a card, or when the charge fails, the fee is owed (PAY-06, shown in red when overdue) and is paid on the pay screen or in person. A no-show settles the same way (D-093).
+- **Receipts (PAY-08):** `system_issue_receipt` issues a receipt when a payment is received: the next number for its Business from `private.receipt_counters`, and what it says frozen on the row (name, address, VAT number, what was paid for, amount, method). VAT shows only when the Business has a VAT number, as the VAT included in the price at 20%. The `receipt-send` job emails it once (React Email, `packages/emails/src/receipt.tsx`) and the printable page is `/receipts/{payment}`. Cash and bank payments wait out their ten-minute undo window first (D-089). The words come from `packages/core/src/receipts.ts` for both the email and the page (D-095).
 
 ### 8.6 Money dashboard (MNY-01)
 
-Aggregates this week, this month and this UK tax year (6 April to 5 April, computed in `packages/core/src/time/taxYear.ts`): paid by method, unpaid, credit sold, refunds. Queries run over `payments`, `refunds`, `credit_lots` and `bookings` with RLS. School instructors see only their own earnings unless the school allows more.
+Aggregates this week, this month and this UK tax year (6 April to 5 April), with each period's days worked out in London in `packages/core/src/money-periods.ts`: paid by method, unpaid, credit sold and refunds. One `security definer` function, `money_summary`, reads `payments`, `refunds`, `credit_lots` and `bookings` after checking the caller. School instructors see only their own lessons, with no credit sold, unless the school allows more, which is MNY-06 (D-096).
 
 ## 9. Background jobs (Inngest)
 
@@ -486,10 +495,15 @@ Jobs are Inngest functions in `apps/web/src/jobs`, served from `/api/inngest`. E
 | `payment.auto-charge` | `booking/confirmed` with "pay before lesson" | Sleeps until 24 h before, charges the saved card off-session, handles authentication-required failures | PAY-03 |
 | `payment.link-after-lesson` | `booking/completed` with "pay after lesson" | Sends the payment link | PAY-03 |
 | `payment.refund` | `refund/requested` | Sends the refund to Stripe with an idempotency key | PAY-07 |
-| `payment.followups` | Webhook follow-up events | Receipt email, instructor notification, credit-low check | PAY-08, NTF-03 |
+| `receipt-send` | `payment.received` | Issues the receipt, sleeping first for money recorded in person until its undo window has passed, and emails it under the key `receipt:{id}` | PAY-08 |
+| `fee-charge` | `payment.fee_charge` | Charges a late cancellation or no-show fee nothing has paid to the learner's kept card, with nobody there, under the key `fee:{booking}:{amount}`. A refused, expired or authentication-required card is recorded, which tells both sides; no card leaves the fee owed (D-093) | PAY-09 |
+| `payment-received-notices` | `payment.received` | Tells the learner (in the app and by push, since the receipt is their email) and the instructor, but not whoever marked cash paid. Money recorded in person waits out its undo window first (D-098) | NTF-03 |
+| `payment-overdue-sweep` | Cron, daily at 10:00 London | Tells the learner, the instructor and the school once about each lesson or fee still owed two days after it was due, looking back 30 days. A lesson booked to be paid in person asks the instructor to mark it paid rather than chasing the learner | NTF-03, PAY-06 |
+| `credit-low-notices` | `credit.low`, written when using credit leaves 2 hours or less | Tells the learner and their instructor what is left, once for each package bought | NTF-03 |
+| `daily-payment-summaries` | Cron, daily at 08:00 London | One summary of the day before for the owners and managers of each school that took money | NTF-03 |
 | `credit.expiry` | Cron, daily | Expires lots past `expires_at` with ledger rows | PAY-04 |
 | `badge.expiry` | Cron, daily at 08:00 London | Reminders at 60, 30 and 7 days, deduplicated by threshold. Expired badges drop out of search automatically because listing checks the date | INS-03 |
-| `booking.notices` | `booking.created`, `.accepted`, `.declined`, `.cancelled`, `.rescheduled` | Reads who the lesson concerns, applies the catalogue and their settings, and writes one notification each | NTF-01, NTF-03, NTF-04 |
+| `booking.notices` | `booking.created`, `.accepted`, `.declined`, `.cancelled`, `.no_show`, `.disputed`, `.dispute_decided`, `.rescheduled`, `.completed`, `payment.charge_failed` | Reads who the lesson concerns, applies the catalogue and their settings, and writes one notification each | NTF-01, NTF-03, NTF-04 |
 | `notification.dispatch` | Notifications not yet sent | Fans out to push, email and SMS on the channels the notification already carries (SMS on Pro, capped at 200 a month) | NTF-01 to 04 |
 | `ledger.reconcile` | Cron, nightly | Asserts cached balances equal ledger sums and alerts on drift | PAY-04 |
 | `account.deletion` | `account/deletion-requested` | Exports, anonymises and deletes per the retention rules (M6) | NFR-PRV-03 |

@@ -53,6 +53,7 @@ describe('what the email says (NTF-03, M2-28)', () => {
 
   it('names the button after where it goes', () => {
     expect(actionLabel('/app/learner/lessons')).toBe('See your lessons');
+    expect(actionLabel('/app/learner/pay/booking-1')).toBe('Pay now');
     expect(actionLabel('/app/instructor/diary?view=day&date=2026-09-16')).toBe('Open your diary');
     expect(actionLabel('/app/school/diary?date=2026-09-16')).toBe('Open the school diary');
     expect(actionLabel('/app/instructor/learners/abc')).toBe('See the learner');

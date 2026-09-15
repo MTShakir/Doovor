@@ -6,7 +6,9 @@ import { Avatar } from '@repo/ui/avatar';
 import { AvatarPicker } from '@repo/ui/avatar-picker';
 import { PhotoUpload } from '@repo/ui/photo-upload';
 import { PickupPointPicker } from '@repo/ui/pickup-point-picker';
+import { FormAlert } from '@/components/form-alert';
 import { RadiusMap } from '@/components/map/radius-map';
+import { CardFieldsSkeleton } from '@/components/payments/card-form';
 import { SetupChecklist } from '@/components/setup-checklist';
 import { Button } from '@repo/ui/button';
 import { Card, CardDescription, CardTitle } from '@repo/ui/card';
@@ -69,7 +71,7 @@ function Label({ children }: { children: ReactNode }) {
   return <p className="text-caption font-semibold text-grey-700">{children}</p>;
 }
 
-const pillStatuses: PillStatus[] = ['confirmed', 'pending', 'completed', 'paid', 'cancelled', 'unpaid', 'overdue', 'credit', 'gap-fill', 'test-day'];
+const pillStatuses: PillStatus[] = ['confirmed', 'pending', 'completed', 'paid', 'cancelled', 'attention', 'unpaid', 'overdue', 'credit', 'gap-fill', 'test-day'];
 
 const slots = ['09:00', '10:30', '12:00', '13:30', '15:00', '16:30', '18:00'].map((label, index) => ({
   id: label,
@@ -207,6 +209,21 @@ export function DesignShowcase() {
             }}
             onUseLocation={() => toast('Location is used only to find nearby instructors')}
           />
+        </div>
+        <Label>Card details (M3-23). The fields are drawn by the payment provider in its own frame, dressed as the inputs above</Label>
+        <div className="grid gap-6 md:grid-cols-2">
+          <div className="flex flex-col gap-3">
+            <CardFieldsSkeleton />
+            <Button width="responsive" size="lg" disabled>
+              Pay £42
+            </Button>
+          </div>
+          <div className="flex flex-col gap-3">
+            <FormAlert>The card was refused. Try another one.</FormAlert>
+            <Button width="responsive" size="lg">
+              Pay £42
+            </Button>
+          </div>
         </div>
       </Section>
 

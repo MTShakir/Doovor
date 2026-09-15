@@ -90,10 +90,12 @@ select is(
 -- ---------------------------------------------------------------------------------------
 -- Open ended slots are kept booked by the sweep.
 -- ---------------------------------------------------------------------------------------
+-- The slot starts on Thursday next week, whatever day this runs (D-070): four to ten days
+-- ahead, so the week after it is always inside the four weeks the sweep looks at.
 create temp table ongoing as
 select * from public.book_weekly(
-  :'ian', :'lou', :'lesson_type',
-  (date_trunc('week', (now() at time zone 'Europe/London')::date + 21) + interval '3 days' + interval '11 hours')
+  :'ian', :'lee', :'lesson_type',
+  ((date_trunc('week', (now() at time zone 'Europe/London')::date + 7)::date + 3) + time '11:00')
     at time zone 'Europe/London',
   60, 1, true
 );

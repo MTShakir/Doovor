@@ -20,6 +20,8 @@
     "@repo/providers": "workspace:*",
     "@repo/ui": "workspace:*",
     "@serwist/turbopack": "9.5.12",
+    "@stripe/react-stripe-js": "6.10.0",
+    "@stripe/stripe-js": "9.16.0",
     "@supabase/ssr": "catalog:",
     "@supabase/supabase-js": "catalog:",
     "esbuild": "^0.28.2",

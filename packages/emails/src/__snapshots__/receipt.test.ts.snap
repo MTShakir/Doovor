@@ -1,0 +1,81 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`the receipt email (PAY-08, M3-20) > for a Business not registered for VAT: who was paid, what for, how much, and no VAT at all 1`] = `
+"Doovor
+
+Hello Polly
+
+
+RECEIPT 42
+
+Mon 14 Sep 2026
+
+Quayside Driving School
+
+4 Quay Street
+
+Manchester
+
+M1 2QF
+
+Standard lesson, 1 hour 30 minutes on Tue 15 Sep at 10:00 with Emma Clarke
+
+£62
+
+Total
+
+Paid by card
+
+£62
+
+See the receipt https://example.com/app/receipts/payment-1
+
+----------------------------------------
+
+You are getting this because you have a Doovor account.
+
+Maxterz LTD"
+`;
+
+exports[`the receipt email (PAY-08, M3-20) > for a Business registered for VAT: its VAT number, and the VAT in the price 1`] = `
+"Doovor
+
+Hello Polly
+
+
+RECEIPT 42
+
+Mon 14 Sep 2026
+
+Quayside Driving School
+
+4 Quay Street
+
+Manchester
+
+M1 2QF
+
+VAT number GB123456789
+
+Standard lesson, 1 hour 30 minutes on Tue 15 Sep at 10:00 with Emma Clarke
+
+£62
+
+VAT at 20% included
+
+£10.33
+
+Total
+
+Paid by card
+
+£62
+
+See the receipt https://example.com/app/receipts/payment-1
+
+----------------------------------------
+
+You are getting this because you have a Doovor account.
+
+Maxterz LTD"
+`;

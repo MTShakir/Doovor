@@ -39,8 +39,19 @@ export const notificationKinds = [
   'booking.reminder',
   'booking.rescheduled',
   'booking.cancelled',
+  // Nobody came (R-09). Appendix B has no row of its own: a no-show counts as a late
+  // cancellation, and is told to the same people on the same channels (D-093).
+  'booking.no_show',
+  // A no-show disputed, and the dispute decided (R-09). Service messages about a fee (D-094).
+  'booking.disputed',
+  'booking.dispute_decided',
   'payment.received',
   'payment.failed',
+  // Appendix B's "Payment failed or overdue", overdue half: a lesson or fee owed for two days.
+  'payment.overdue',
+  // Appendix B's "Payment received" for a school: one summary a day, not a message a payment.
+  'payment.daily_summary',
+  'payment.requested',
   'lesson_record.added',
   'credit.low',
   'verification.decided',
@@ -96,6 +107,27 @@ export const notificationCatalogue: Record<NotificationKind, NotificationSpec> =
     channels: PUSH_AND_EMAIL,
     essential: true,
   },
+  'booking.no_show': {
+    kind: 'booking.no_show',
+    category: 'bookings',
+    audiences: ['learner', 'instructor', 'school'],
+    channels: PUSH_AND_EMAIL,
+    essential: true,
+  },
+  'booking.disputed': {
+    kind: 'booking.disputed',
+    category: 'bookings',
+    audiences: ['instructor', 'school'],
+    channels: PUSH_AND_EMAIL,
+    essential: true,
+  },
+  'booking.dispute_decided': {
+    kind: 'booking.dispute_decided',
+    category: 'bookings',
+    audiences: ['learner'],
+    channels: PUSH_AND_EMAIL,
+    essential: true,
+  },
   'payment.received': {
     kind: 'payment.received',
     category: 'money',
@@ -107,6 +139,30 @@ export const notificationCatalogue: Record<NotificationKind, NotificationSpec> =
     kind: 'payment.failed',
     category: 'money',
     audiences: ['learner', 'instructor', 'school'],
+    channels: PUSH_AND_EMAIL,
+    essential: true,
+  },
+  'payment.overdue': {
+    kind: 'payment.overdue',
+    category: 'money',
+    audiences: ['learner', 'instructor', 'school'],
+    channels: PUSH_AND_EMAIL,
+    essential: true,
+  },
+  // A digest rather than a service message about somebody's own money, so it can be switched off.
+  'payment.daily_summary': {
+    kind: 'payment.daily_summary',
+    category: 'money',
+    audiences: ['school'],
+    channels: PUSH_AND_EMAIL,
+    essential: false,
+  },
+  // The payment link a learner is sent when a lesson paid for afterwards is marked done
+  // (PAY-03, PRD 10.2 step 4). A service message: it is about money they owe.
+  'payment.requested': {
+    kind: 'payment.requested',
+    category: 'money',
+    audiences: ['learner'],
     channels: PUSH_AND_EMAIL,
     essential: true,
   },

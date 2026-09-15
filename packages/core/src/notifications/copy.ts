@@ -16,6 +16,11 @@ export interface NotificationFacts {
   when?: string;
   /** Whatever else the line needs: a reason, a fee in words, how long until the lesson. */
   detail?: string;
+  /**
+   * The same, said to the learner, when they need to be told something the others do not: why
+   * a fee was kept, or where their money is going (acceptance-04).
+   */
+  learnerDetail?: string;
 }
 
 export interface NotificationCopy {
@@ -27,6 +32,16 @@ export interface NotificationCopy {
 function sentence(...parts: (string | undefined)[]): string {
   const line = parts.filter((part) => part && part.trim() !== '').join(' ');
   return line === '' ? '' : /[.?!]$/.test(line) ? line : `${line}.`;
+}
+
+/**
+ * A part that is a sentence of its own, closed with a full stop so what follows starts afresh:
+ * "£42 by card. Wed 16 Sep at 09:00", not "£42 by card Wed 16 Sep at 09:00".
+ */
+function closed(part: string | undefined): string | undefined {
+  const text = part?.trim() ?? '';
+  if (text === '') return undefined;
+  return /[.?!]$/.test(text) ? text : `${text}.`;
 }
 
 function theirName(audience: NotificationAudience, facts: NotificationFacts): string | undefined {
@@ -56,7 +71,7 @@ export function notificationCopy(
         : { title: `${them} has a lesson booked`, body: line };
 
     case 'booking.requested':
-      return { title: `${them} asked for a lesson`, body: sentence(facts.when, 'Accept it or decline it') };
+      return { title: `${them} asked for a lesson`, body: sentence(closed(facts.when), 'Accept it or decline it') };
 
     case 'booking.answered':
       return { title: 'Your lesson request was answered', body: sentence(line, facts.detail) };
@@ -73,25 +88,53 @@ export function notificationCopy(
 
     case 'booking.cancelled':
       return audience === 'learner'
-        ? { title: 'Lesson cancelled', body: sentence(line, facts.detail) }
+        ? { title: 'Lesson cancelled', body: sentence(line, facts.learnerDetail ?? facts.detail) }
         : { title: `${them}'s lesson was cancelled`, body: sentence(line, facts.detail) };
 
+    case 'booking.no_show':
+      return audience === 'learner'
+        ? { title: 'Marked as a no-show', body: sentence(line, facts.learnerDetail ?? facts.detail) }
+        : { title: `${them} did not turn up`, body: sentence(line, facts.detail) };
+
+    case 'booking.disputed':
+      return { title: `${them} disputed a no-show`, body: sentence(line, facts.detail ?? 'Decide whether the fee stands') };
+
+    case 'booking.dispute_decided':
+      return { title: 'Your no-show dispute was answered', body: sentence(line, facts.learnerDetail ?? facts.detail) };
+
+    // The lesson's time only when there was a lesson: credit bought has none to add.
     case 'payment.received':
       return audience === 'learner'
-        ? { title: 'Payment received', body: sentence(facts.detail, line) }
-        : { title: `${them} paid`, body: sentence(facts.detail, line) };
+        ? { title: 'Payment received', body: sentence(closed(facts.detail), facts.when ? line : undefined) }
+        : { title: `${them} paid`, body: sentence(closed(facts.detail), facts.when ? line : undefined) };
 
     case 'payment.failed':
       return audience === 'learner'
-        ? { title: 'A payment did not go through', body: sentence(facts.detail, 'Try again to keep the lesson') }
-        : { title: `A payment from ${them} did not go through`, body: sentence(facts.detail, line) };
+        ? {
+            title: 'A payment did not go through',
+            // A fee is not a lesson to keep, so what the learner is told replaces the whole line.
+            body: facts.learnerDetail ? sentence(line, facts.learnerDetail) : sentence(line, facts.detail, 'Pay now to keep the lesson'),
+          }
+        : { title: `A payment from ${them} did not go through`, body: sentence(line, facts.detail) };
+
+    case 'payment.overdue':
+      return audience === 'learner'
+        ? { title: 'Payment overdue', body: sentence(line, facts.learnerDetail ?? facts.detail) }
+        : { title: `A payment from ${them} is overdue`, body: sentence(line, facts.detail) };
+
+    // Sent the next morning, so the day is whole.
+    case 'payment.daily_summary':
+      return { title: 'Payments yesterday', body: sentence(facts.detail) };
+
+    case 'payment.requested':
+      return { title: 'Pay for your lesson', body: sentence(line, facts.detail) };
 
     case 'lesson_record.added':
       return { title: 'Your lesson record is ready', body: sentence(line, facts.detail) };
 
     case 'credit.low':
       return audience === 'learner'
-        ? { title: 'Your credit is running low', body: sentence(facts.detail, 'Top it up before your next lesson') }
+        ? { title: 'Your credit is running low', body: sentence(closed(facts.detail), 'Top it up before your next lesson') }
         : { title: `${them} is running low on credit`, body: sentence(facts.detail) };
 
     case 'verification.decided':

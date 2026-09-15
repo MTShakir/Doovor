@@ -36,7 +36,7 @@ export async function lessonsBetween(from: Date, to: Date, instructorIds?: strin
     instructorName: row.instructor_profiles.display_name,
     startsAt: new Date(row.starts_at),
     endsAt: new Date(row.ends_at),
-    learnerName: row.users.full_name,
+    learnerName: learnerName(row.users),
     lessonType: row.lesson_types.name,
     pickup: row.pickup_points?.label ?? null,
     pricePence: row.price_pence,
@@ -47,4 +47,14 @@ export async function lessonsBetween(from: Date, to: Date, instructorIds?: strin
       source: row.source,
     },
   }));
+}
+
+/**
+ * Who a lesson is with, as the diary says it. The generated types promise a learner, but
+ * row-level security decides whether one comes back: the lesson's instructor and the people who
+ * run the Business always get the name (D-097), and a lesson that ever arrives without it shows
+ * under a neutral label rather than taking the whole diary down.
+ */
+function learnerName(learner: { full_name: string } | null): string {
+  return learner === null || learner.full_name === '' ? 'Unnamed learner' : learner.full_name;
 }

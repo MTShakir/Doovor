@@ -2,7 +2,7 @@
 
 Project guide for every coding session. Read this first, then `docs/ARCHITECTURE.md`, `docs/PLAN.md` and `docs/PROGRESS.md`.
 
-The product requirements live in `docs/DrivingHub_PRD.md`. Every feature must trace to a PRD ID (for example `BOK-07`, `PAY-04`, `R-02`). The PRD wins on product behaviour. The engineering brief (Section 10 rules below) wins on technical choices.
+The product requirements live in `docs/Doovor_PRD.md`. Every feature must trace to a PRD ID (for example `BOK-07`, `PAY-04`, `R-02`). The PRD wins on product behaviour. The engineering brief (Section 10 rules below) wins on technical choices.
 
 ## Stack (pinned in the lockfile)
 
@@ -50,6 +50,7 @@ Run from the repo root.
 | `pnpm install` | Install dependencies |
 | `pnpm dev` | Start the web app |
 | `pnpm dev:jobs` | Start the job runner on this machine, pointed at the app (D-052) |
+| `pnpm stripe:listen` | Forward connected account events from Stripe to the local webhook (needs the Stripe CLI) |
 | `pnpm db:start` / `pnpm db:stop` | Start or stop the local Supabase stack (Docker required) |
 | `pnpm db:reset` | Re-apply all migrations and seed data locally |
 | `pnpm db:migration <name>` | Create a new SQL migration |

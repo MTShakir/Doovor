@@ -62,6 +62,11 @@ export function seedPeople(today: string): SeedPerson[] {
       learner: { dateOfBirth: seventeenYearsAgo(today), postcode: 'M16 0RA', transmission: 'manual', experience: 'some' },
     },
     {
+      // Waiting, so the seed books no lessons for them: the payment tests bring their own.
+      key: 'polly', fullName: 'Polly Payne', email: 'polly.payne@example.com', intendedRole: 'learner', phone: '+447700900021',
+      learner: { dateOfBirth: '2004-03-12', postcode: 'M15 4FN', transmission: 'manual', experience: 'some' },
+    },
+    {
       key: 'isla', fullName: 'Isla Roberts', email: 'isla.roberts@example.com', intendedRole: 'learner', phone: '+447700900016',
       learner: { dateOfBirth: '2001-01-30', postcode: 'M11 3FF', transmission: 'automatic', experience: 'some' },
     },
@@ -170,6 +175,7 @@ export const instructors: SeedInstructor[] = [
     learners: [
       { key: 'harry', usualMinutes: 90, status: 'active' },
       { key: 'mia', usualMinutes: 120, status: 'test_booked' },
+      { key: 'polly', usualMinutes: 60, status: 'waiting' },
     ],
   },
   {

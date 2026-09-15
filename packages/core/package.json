@@ -32,7 +32,15 @@
     "./cancellation": "./src/cancellation.ts",
     "./reminders": "./src/reminders.ts",
     "./notifications": "./src/notifications/index.ts",
-    "./schemas/notification": "./src/schemas/notification.ts"
+    "./schemas/notification": "./src/schemas/notification.ts",
+    "./cards": "./src/cards.ts",
+    "./payment-modes": "./src/payment-modes.ts",
+    "./credit": "./src/credit.ts",
+    "./packages": "./src/packages.ts",
+    "./balance": "./src/balance.ts",
+    "./receipts": "./src/receipts.ts",
+    "./money-periods": "./src/money-periods.ts",
+    "./schemas/receipt-details": "./src/schemas/receipt-details.ts"
   },
   "scripts": {
     "lint": "eslint .",

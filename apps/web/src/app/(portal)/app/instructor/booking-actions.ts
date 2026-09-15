@@ -240,3 +240,42 @@ export async function markNoShow(input: unknown): Promise<Result<null>> {
   revalidatePath('/app/instructor');
   return ok(null);
 }
+
+const offlineSchema = lessonSchema.extend({ method: z.enum(['cash', 'bank']) });
+
+/** PAY-05: the learner paid in person, in cash or by bank transfer. Returns the payment, for undo. */
+export async function recordOfflinePayment(input: unknown): Promise<Result<{ paymentId: string }>> {
+  const parsed = offlineSchema.safeParse(input);
+  if (!parsed.success) return err('VALIDATION_FAILED');
+
+  await requirePortal('instructor');
+  const supabase = await createSupabaseServerClient();
+  const { data, error } = await supabase.rpc('record_offline_payment', {
+    p_booking_id: parsed.data.bookingId,
+    p_method: parsed.data.method,
+  });
+  if (error) return err(parsePostgresError(error).code);
+
+  revalidatePath('/app/instructor/diary');
+  revalidatePath('/app/instructor');
+  revalidatePath('/app/instructor/learners', 'layout');
+  return ok({ paymentId: data });
+}
+
+const undoPaymentSchema = z.object({ paymentId: z.uuid() });
+
+/** PAY-05: takes back a payment recorded by mistake, straight after it was recorded. */
+export async function undoOfflinePayment(input: unknown): Promise<Result<null>> {
+  const parsed = undoPaymentSchema.safeParse(input);
+  if (!parsed.success) return err('VALIDATION_FAILED');
+
+  await requirePortal('instructor');
+  const supabase = await createSupabaseServerClient();
+  const { error } = await supabase.rpc('undo_offline_payment', { p_payment_id: parsed.data.paymentId });
+  if (error) return err(parsePostgresError(error).code);
+
+  revalidatePath('/app/instructor/diary');
+  revalidatePath('/app/instructor');
+  revalidatePath('/app/instructor/learners', 'layout');
+  return ok(null);
+}

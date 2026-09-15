@@ -28,3 +28,49 @@ export const bookingAccepted = bookingEvent('booking.accepted');
 export const bookingDeclined = bookingEvent('booking.declined');
 export const bookingCancelled = bookingEvent('booking.cancelled');
 export const bookingRescheduled = bookingEvent('booking.rescheduled');
+export const bookingCompleted = bookingEvent('booking.completed');
+export const bookingNoShow = bookingEvent('booking.no_show');
+export const bookingDisputed = bookingEvent('booking.disputed');
+export const bookingDisputeDecided = bookingEvent('booking.dispute_decided');
+
+/**
+ * Money that has to go back (PAY-07, R-10). The refund is already decided and written down;
+ * the event only says which one, so the job can send it.
+ */
+export const paymentRefund = eventType('payment.refund', {
+  schema: staticSchema<{ refund_id: string; payment_id: string; booking_id: string | null }>(),
+});
+
+/**
+ * A lesson paid for the day before could not be charged (PAY-03). The reason is a word, not a
+ * message from the bank, and nothing about the card.
+ */
+export const paymentChargeFailed = eventType('payment.charge_failed', {
+  schema: staticSchema<{ booking_id: string; reason: string }>(),
+});
+
+/**
+ * A fee for a lesson called off late, or nobody came to, that nothing has paid: to be charged to
+ * the card the learner keeps with the Business (PAY-09). The amount is the database's to say.
+ */
+export const paymentFeeCharge = eventType('payment.fee_charge', {
+  schema: staticSchema<{ booking_id: string }>(),
+});
+
+/** Money a learner paid a Business has arrived, which is what a receipt is for (PAY-08). */
+export const paymentReceived = eventType('payment.received', {
+  schema: staticSchema<{ payment_id: string; booking_id?: string | null }>(),
+});
+
+/**
+ * Using credit has left a learner 2 hours or less with a Business (NTF-03, M3-22). Who to tell,
+ * and what is left by the time they are told, is the database's to say.
+ */
+export const creditLow = eventType('credit.low', {
+  schema: staticSchema<{ business_id: string; learner_id: string; balance_minutes: number }>(),
+});
+
+/** A card set aside for a request, waiting to be taken or let go (R-12). */
+export const paymentAuthorised = eventType('payment.authorised', {
+  schema: staticSchema<{ payment_id: string; booking_id: string }>(),
+});

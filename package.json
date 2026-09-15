@@ -26,9 +26,12 @@
     "db:test": "node scripts/availability-vectors.mjs && node scripts/supabase.mjs test db",
     "db:lint": "node scripts/supabase.mjs db lint --schema public,private --level warning --fail-on warning",
     "test:e2e": "pnpm --filter @repo/e2e test:e2e",
+    "test:e2e:stripe": "pnpm --filter @repo/e2e test:e2e:stripe",
     "db:seed": "pnpm --filter @repo/db seed",
     "db:env": "node scripts/local-env.mjs",
-    "dev:jobs": "pnpm dlx inngest-cli@1.44.0 dev --no-discovery -u http://localhost:3000/api/inngest"
+    "dev:jobs": "pnpm dlx inngest-cli@1.44.0 dev --no-discovery -u http://localhost:3000/api/inngest",
+    "stripe:listen": "node scripts/stripe-listen.mjs",
+    "stripe:test-account": "pnpm --filter @repo/providers stripe:test-account"
   },
   "devDependencies": {
     "prettier": "^3.9.0",

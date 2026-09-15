@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import { formatDateTime, formatMinutes } from '@repo/core/time';
+import type { AccessContext } from '@repo/db';
 import { PageHeader } from '@repo/ui/app-shell';
 import { Button } from '@repo/ui/button';
 import { Card, CardTitle } from '@repo/ui/card';
@@ -10,12 +11,21 @@ import { ChevronLeft, Mail, MessageSquare, Phone } from 'lucide-react';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { Fragment, Suspense } from 'react';
+import { BalanceHistory, BalanceLines, OwedBackList, OwedLessons } from '@/components/money/balance';
+import { MarkPaidButton } from '@/components/money/mark-paid';
 import { requirePortal } from '@/lib/auth/session';
 import { learnerCard, type LearnerCard } from '@/lib/learners/card';
 import { learnerHistory, type LearnerHistoryEntry } from '@/lib/learners/history';
 import { learnerNotes } from '@/lib/learners/notes';
+import { learnerBalance } from '@/lib/payments/balance';
+import { noShowDisputes } from '@/lib/payments/disputes';
+import { packagesForSale } from '@/lib/payments/packages';
 import { BookLesson } from '../../book-lesson';
+import { HandBack } from './hand-back';
+import { NoShowDisputes } from './no-show-disputes';
 import { Notes } from './notes';
+import { RefundPayment } from './refund-payment';
+import { SellPackage } from './sell-package';
 import { StatusControl } from './status-control';
 
 export const metadata: Metadata = { title: 'Learner' };
@@ -83,6 +93,7 @@ async function Learner({ params }: LearnerPageProps) {
           />
         ) : null}
         <Lessons card={card} />
+        <Money card={card} access={access} />
         <Pickups card={card} />
         <Notes learnerId={card.learnerId} notes={notes} viewerId={session.userId} />
         <History entries={history} />
@@ -150,6 +161,80 @@ function Lessons({ card }: { card: LearnerCard }) {
       <ListRow
         title="Last lesson"
         trailing={card.lastLessonAt === null ? 'None yet' : formatDateTime(new Date(card.lastLessonAt))}
+      />
+    </Card>
+  );
+}
+
+/**
+ * PAY-05, PAY-06, M3-16, M3-18: the learner's balance here, the same one they see on their own
+ * Payments screen, what they owe with a way to mark it paid, money owed back with a way to mark it
+ * handed back, and a package paid for in person.
+ */
+async function Money({ card, access }: { card: LearnerCard; access: AccessContext }) {
+  const [balance, packages, disputes] = await Promise.all([
+    learnerBalance(card.businessId, card.learnerId),
+    packagesForSale(card.businessId),
+    noShowDisputes(card.businessId, card.learnerId),
+  ]);
+  if (!balance) return null;
+
+  // A lesson is marked paid by the instructor who taught it, or by somebody who runs the Business.
+  const here = access.memberships.filter((one) => one.businessId === card.businessId);
+  const runsIt = here.some((one) => one.role === 'owner' || one.role === 'manager');
+  const mine = new Set(here.map((one) => one.instructorProfileId).filter((id): id is string => id !== null));
+
+  return (
+    <Card padding="none" role="region" aria-labelledby="money-title">
+      <div className="flex flex-col gap-2 px-4 pt-4 pb-3">
+        <CardTitle id="money-title">Money</CardTitle>
+        <BalanceLines balance={balance} />
+      </div>
+      <OwedLessons
+        balance={balance}
+        action={(owed, instructor) =>
+          runsIt || (instructor !== null && mine.has(instructor.id)) ? (
+            <MarkPaidButton
+              lesson={{
+                bookingId: owed.lesson.id,
+                learnerName: card.fullName,
+                startsAt: owed.lesson.startsAt.toISOString(),
+                pricePence: owed.amountPence,
+                fee: owed.fee ?? undefined,
+              }}
+            />
+          ) : null
+        }
+      />
+      <OwedBackList
+        balance={balance}
+        action={(owed) =>
+          runsIt || (owed.instructorId !== null && mine.has(owed.instructorId)) ? (
+            <HandBack refundId={owed.refundId} learnerId={card.learnerId} learnerName={card.fullName} amountPence={owed.amountPence} />
+          ) : null
+        }
+      />
+      <NoShowDisputes disputes={disputes} learnerId={card.learnerId} learnerName={card.fullName} canDecide={runsIt} />
+      {packages.length === 0 ? null : (
+        <div className="flex border-t border-grey-200 px-4 py-3">
+          <SellPackage learnerId={card.learnerId} learnerName={card.fullName} packages={packages} />
+        </div>
+      )}
+      <BalanceHistory
+        history={balance.history}
+        limit={10}
+        action={
+          // Money goes back only by the people who run the Business (PAY-07, PRD 6.2), and only
+          // while some of it is not already on its way back or owed back (M3-18).
+          runsIt
+            ? (entry) =>
+                entry.kind === 'payment' &&
+                entry.method !== 'credit' &&
+                entry.refundedPence + entry.pendingRefundPence < entry.amountPence ? (
+                  <RefundPayment paymentId={entry.id} learnerId={card.learnerId} learnerName={card.fullName} />
+                ) : null
+            : undefined
+        }
       />
     </Card>
   );

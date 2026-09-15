@@ -143,6 +143,41 @@ export type Database = {
           },
         ]
       }
+      billing_customers: {
+        Row: {
+          business_id: string
+          created_at: string
+          id: string
+          learner_id: string
+          provider: string
+          provider_customer_id: string
+        }
+        Insert: {
+          business_id: string
+          created_at?: string
+          id?: string
+          learner_id: string
+          provider?: string
+          provider_customer_id: string
+        }
+        Update: {
+          business_id?: string
+          created_at?: string
+          id?: string
+          learner_id?: string
+          provider?: string
+          provider_customer_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "billing_customers_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "businesses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       booking_recurrences: {
         Row: {
           booked_until: string | null
@@ -254,6 +289,7 @@ export type Database = {
           created_at: string
           created_by: string | null
           credit_minutes: number
+          dispute_until: string | null
           ends_at: string
           expires_at: string | null
           fee_pence: number | null
@@ -286,6 +322,7 @@ export type Database = {
           created_at?: string
           created_by?: string | null
           credit_minutes?: number
+          dispute_until?: string | null
           ends_at: string
           expires_at?: string | null
           fee_pence?: number | null
@@ -318,6 +355,7 @@ export type Database = {
           created_at?: string
           created_by?: string | null
           credit_minutes?: number
+          dispute_until?: string | null
           ends_at?: string
           expires_at?: string | null
           fee_pence?: number | null
@@ -410,6 +448,9 @@ export type Database = {
           status: Database["public"]["Enums"]["business_status"]
           stripe_account_id: string | null
           stripe_charges_enabled: boolean
+          stripe_connected_at: string | null
+          stripe_details_submitted: boolean
+          stripe_payouts_enabled: boolean
           timezone: string
           type: Database["public"]["Enums"]["business_type"]
           updated_at: string
@@ -432,6 +473,9 @@ export type Database = {
           status?: Database["public"]["Enums"]["business_status"]
           stripe_account_id?: string | null
           stripe_charges_enabled?: boolean
+          stripe_connected_at?: string | null
+          stripe_details_submitted?: boolean
+          stripe_payouts_enabled?: boolean
           timezone?: string
           type: Database["public"]["Enums"]["business_type"]
           updated_at?: string
@@ -454,6 +498,9 @@ export type Database = {
           status?: Database["public"]["Enums"]["business_status"]
           stripe_account_id?: string | null
           stripe_charges_enabled?: boolean
+          stripe_connected_at?: string | null
+          stripe_details_submitted?: boolean
+          stripe_payouts_enabled?: boolean
           timezone?: string
           type?: Database["public"]["Enums"]["business_type"]
           updated_at?: string
@@ -498,6 +545,213 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "instructor_profiles"
             referencedColumns: ["id", "business_id"]
+          },
+        ]
+      }
+      credit_accounts: {
+        Row: {
+          balance_minutes: number
+          business_id: string
+          created_at: string
+          id: string
+          learner_id: string
+          updated_at: string
+        }
+        Insert: {
+          balance_minutes?: number
+          business_id: string
+          created_at?: string
+          id?: string
+          learner_id: string
+          updated_at?: string
+        }
+        Update: {
+          balance_minutes?: number
+          business_id?: string
+          created_at?: string
+          id?: string
+          learner_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "credit_accounts_business_id_learner_id_fkey"
+            columns: ["business_id", "learner_id"]
+            isOneToOne: true
+            referencedRelation: "learner_card"
+            referencedColumns: ["business_id", "learner_id"]
+          },
+          {
+            foreignKeyName: "credit_accounts_business_id_learner_id_fkey"
+            columns: ["business_id", "learner_id"]
+            isOneToOne: true
+            referencedRelation: "learner_list"
+            referencedColumns: ["business_id", "learner_id"]
+          },
+          {
+            foreignKeyName: "credit_accounts_business_id_learner_id_fkey"
+            columns: ["business_id", "learner_id"]
+            isOneToOne: true
+            referencedRelation: "learner_relationships"
+            referencedColumns: ["business_id", "learner_id"]
+          },
+        ]
+      }
+      credit_ledger: {
+        Row: {
+          actor_id: string | null
+          booking_id: string | null
+          business_id: string
+          created_at: string
+          id: string
+          kind: Database["public"]["Enums"]["credit_entry_kind"]
+          learner_id: string
+          lot_id: string
+          minutes: number
+          payment_id: string | null
+          reason: string | null
+          refund_id: string | null
+        }
+        Insert: {
+          actor_id?: string | null
+          booking_id?: string | null
+          business_id: string
+          created_at?: string
+          id?: string
+          kind: Database["public"]["Enums"]["credit_entry_kind"]
+          learner_id: string
+          lot_id: string
+          minutes: number
+          payment_id?: string | null
+          reason?: string | null
+          refund_id?: string | null
+        }
+        Update: {
+          actor_id?: string | null
+          booking_id?: string | null
+          business_id?: string
+          created_at?: string
+          id?: string
+          kind?: Database["public"]["Enums"]["credit_entry_kind"]
+          learner_id?: string
+          lot_id?: string
+          minutes?: number
+          payment_id?: string | null
+          reason?: string | null
+          refund_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "credit_ledger_actor_id_fkey"
+            columns: ["actor_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "credit_ledger_booking_id_fkey"
+            columns: ["booking_id"]
+            isOneToOne: false
+            referencedRelation: "bookings"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "credit_ledger_lot_id_business_id_learner_id_fkey"
+            columns: ["lot_id", "business_id", "learner_id"]
+            isOneToOne: false
+            referencedRelation: "credit_lots"
+            referencedColumns: ["id", "business_id", "learner_id"]
+          },
+          {
+            foreignKeyName: "credit_ledger_payment_id_fkey"
+            columns: ["payment_id"]
+            isOneToOne: false
+            referencedRelation: "payments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "credit_ledger_refund_id_fkey"
+            columns: ["refund_id"]
+            isOneToOne: false
+            referencedRelation: "refunds"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      credit_lots: {
+        Row: {
+          business_id: string
+          created_at: string
+          created_by: string | null
+          early_start_requested_at: string | null
+          expires_at: string | null
+          id: string
+          learner_id: string
+          minutes_remaining: number
+          minutes_total: number
+          package_id: string | null
+          payment_id: string | null
+          price_pence: number
+          purchased_at: string
+        }
+        Insert: {
+          business_id: string
+          created_at?: string
+          created_by?: string | null
+          early_start_requested_at?: string | null
+          expires_at?: string | null
+          id?: string
+          learner_id: string
+          minutes_remaining?: number
+          minutes_total: number
+          package_id?: string | null
+          payment_id?: string | null
+          price_pence: number
+          purchased_at?: string
+        }
+        Update: {
+          business_id?: string
+          created_at?: string
+          created_by?: string | null
+          early_start_requested_at?: string | null
+          expires_at?: string | null
+          id?: string
+          learner_id?: string
+          minutes_remaining?: number
+          minutes_total?: number
+          package_id?: string | null
+          payment_id?: string | null
+          price_pence?: number
+          purchased_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "credit_lots_business_id_learner_id_fkey"
+            columns: ["business_id", "learner_id"]
+            isOneToOne: false
+            referencedRelation: "credit_accounts"
+            referencedColumns: ["business_id", "learner_id"]
+          },
+          {
+            foreignKeyName: "credit_lots_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "credit_lots_package_id_fkey"
+            columns: ["package_id"]
+            isOneToOne: false
+            referencedRelation: "packages"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "credit_lots_payment_id_fkey"
+            columns: ["payment_id"]
+            isOneToOne: true
+            referencedRelation: "payments"
+            referencedColumns: ["id"]
           },
         ]
       }
@@ -1122,6 +1376,64 @@ export type Database = {
           },
         ]
       }
+      no_show_disputes: {
+        Row: {
+          booking_id: string
+          business_id: string
+          created_at: string
+          decided_at: string | null
+          decided_by: string | null
+          id: string
+          learner_id: string
+          note: string | null
+          outcome: Database["public"]["Enums"]["no_show_dispute_outcome"] | null
+          reason: string
+        }
+        Insert: {
+          booking_id: string
+          business_id: string
+          created_at?: string
+          decided_at?: string | null
+          decided_by?: string | null
+          id?: string
+          learner_id: string
+          note?: string | null
+          outcome?:
+            | Database["public"]["Enums"]["no_show_dispute_outcome"]
+            | null
+          reason: string
+        }
+        Update: {
+          booking_id?: string
+          business_id?: string
+          created_at?: string
+          decided_at?: string | null
+          decided_by?: string | null
+          id?: string
+          learner_id?: string
+          note?: string | null
+          outcome?:
+            | Database["public"]["Enums"]["no_show_dispute_outcome"]
+            | null
+          reason?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "no_show_disputes_booking_id_fkey"
+            columns: ["booking_id"]
+            isOneToOne: true
+            referencedRelation: "bookings"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "no_show_disputes_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "businesses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       notification_preferences: {
         Row: {
           category: Database["public"]["Enums"]["notification_category"]
@@ -1295,6 +1607,75 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "lesson_types"
             referencedColumns: ["id", "business_id"]
+          },
+        ]
+      }
+      payments: {
+        Row: {
+          amount_pence: number
+          booking_id: string | null
+          business_id: string
+          created_at: string
+          fee_pence: number
+          id: string
+          learner_id: string
+          method: Database["public"]["Enums"]["payment_method"]
+          paid_at: string | null
+          payer_id: string | null
+          provider: string
+          provider_ref: string | null
+          receipt_url: string | null
+          refunded_pence: number
+          status: Database["public"]["Enums"]["payment_status"]
+        }
+        Insert: {
+          amount_pence: number
+          booking_id?: string | null
+          business_id: string
+          created_at?: string
+          fee_pence?: number
+          id?: string
+          learner_id: string
+          method: Database["public"]["Enums"]["payment_method"]
+          paid_at?: string | null
+          payer_id?: string | null
+          provider?: string
+          provider_ref?: string | null
+          receipt_url?: string | null
+          refunded_pence?: number
+          status?: Database["public"]["Enums"]["payment_status"]
+        }
+        Update: {
+          amount_pence?: number
+          booking_id?: string | null
+          business_id?: string
+          created_at?: string
+          fee_pence?: number
+          id?: string
+          learner_id?: string
+          method?: Database["public"]["Enums"]["payment_method"]
+          paid_at?: string | null
+          payer_id?: string | null
+          provider?: string
+          provider_ref?: string | null
+          receipt_url?: string | null
+          refunded_pence?: number
+          status?: Database["public"]["Enums"]["payment_status"]
+        }
+        Relationships: [
+          {
+            foreignKeyName: "payments_booking_id_fkey"
+            columns: ["booking_id"]
+            isOneToOne: false
+            referencedRelation: "bookings"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "payments_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "businesses"
+            referencedColumns: ["id"]
           },
         ]
       }
@@ -1473,6 +1854,39 @@ export type Database = {
         }
         Relationships: []
       }
+      provider_events: {
+        Row: {
+          account_id: string | null
+          event_id: string
+          event_type: string
+          id: string
+          outcome: string | null
+          processed_at: string | null
+          provider: string
+          received_at: string
+        }
+        Insert: {
+          account_id?: string | null
+          event_id: string
+          event_type: string
+          id?: string
+          outcome?: string | null
+          processed_at?: string | null
+          provider?: string
+          received_at?: string
+        }
+        Update: {
+          account_id?: string | null
+          event_id?: string
+          event_type?: string
+          id?: string
+          outcome?: string | null
+          processed_at?: string | null
+          provider?: string
+          received_at?: string
+        }
+        Relationships: []
+      }
       push_subscriptions: {
         Row: {
           auth: string
@@ -1523,6 +1937,163 @@ export type Database = {
           window_started_at?: string
         }
         Relationships: []
+      }
+      receipts: {
+        Row: {
+          amount_pence: number
+          business_address: Json | null
+          business_id: string
+          business_name: string
+          credit_minutes: number | null
+          emailed_at: string | null
+          id: string
+          instructor_name: string | null
+          issued_at: string
+          kind: Database["public"]["Enums"]["receipt_kind"]
+          learner_id: string
+          lesson_minutes: number | null
+          lesson_starts_at: string | null
+          lesson_type: string | null
+          method: Database["public"]["Enums"]["payment_method"]
+          number: number
+          payment_id: string
+          vat_number: string | null
+          vat_pence: number | null
+          vat_rate_percent: number | null
+        }
+        Insert: {
+          amount_pence: number
+          business_address?: Json | null
+          business_id: string
+          business_name: string
+          credit_minutes?: number | null
+          emailed_at?: string | null
+          id?: string
+          instructor_name?: string | null
+          issued_at?: string
+          kind: Database["public"]["Enums"]["receipt_kind"]
+          learner_id: string
+          lesson_minutes?: number | null
+          lesson_starts_at?: string | null
+          lesson_type?: string | null
+          method: Database["public"]["Enums"]["payment_method"]
+          number: number
+          payment_id: string
+          vat_number?: string | null
+          vat_pence?: number | null
+          vat_rate_percent?: number | null
+        }
+        Update: {
+          amount_pence?: number
+          business_address?: Json | null
+          business_id?: string
+          business_name?: string
+          credit_minutes?: number | null
+          emailed_at?: string | null
+          id?: string
+          instructor_name?: string | null
+          issued_at?: string
+          kind?: Database["public"]["Enums"]["receipt_kind"]
+          learner_id?: string
+          lesson_minutes?: number | null
+          lesson_starts_at?: string | null
+          lesson_type?: string | null
+          method?: Database["public"]["Enums"]["payment_method"]
+          number?: number
+          payment_id?: string
+          vat_number?: string | null
+          vat_pence?: number | null
+          vat_rate_percent?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "receipts_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "businesses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "receipts_payment_id_fkey"
+            columns: ["payment_id"]
+            isOneToOne: true
+            referencedRelation: "payments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      refunds: {
+        Row: {
+          amount_pence: number
+          booking_id: string | null
+          business_id: string
+          created_at: string
+          id: string
+          kind: Database["public"]["Enums"]["refund_kind"]
+          learner_id: string
+          payment_id: string | null
+          provider: string
+          provider_ref: string | null
+          reason: string
+          requested_by: string | null
+          settled_at: string | null
+          status: Database["public"]["Enums"]["refund_status"]
+        }
+        Insert: {
+          amount_pence: number
+          booking_id?: string | null
+          business_id: string
+          created_at?: string
+          id?: string
+          kind?: Database["public"]["Enums"]["refund_kind"]
+          learner_id: string
+          payment_id?: string | null
+          provider?: string
+          provider_ref?: string | null
+          reason: string
+          requested_by?: string | null
+          settled_at?: string | null
+          status?: Database["public"]["Enums"]["refund_status"]
+        }
+        Update: {
+          amount_pence?: number
+          booking_id?: string | null
+          business_id?: string
+          created_at?: string
+          id?: string
+          kind?: Database["public"]["Enums"]["refund_kind"]
+          learner_id?: string
+          payment_id?: string | null
+          provider?: string
+          provider_ref?: string | null
+          reason?: string
+          requested_by?: string | null
+          settled_at?: string | null
+          status?: Database["public"]["Enums"]["refund_status"]
+        }
+        Relationships: [
+          {
+            foreignKeyName: "refunds_booking_id_fkey"
+            columns: ["booking_id"]
+            isOneToOne: false
+            referencedRelation: "bookings"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "refunds_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "businesses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "refunds_payment_id_fkey"
+            columns: ["payment_id"]
+            isOneToOne: false
+            referencedRelation: "payments"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       sms_usage: {
         Row: {
@@ -1831,9 +2402,21 @@ export type Database = {
         Args: { p_accept: boolean; p_booking_id: string; p_reason?: string }
         Returns: string
       }
+      decide_no_show_dispute: {
+        Args: { p_dispute_id: string; p_note?: string; p_outcome: string }
+        Returns: Json
+      }
       decide_verification: {
         Args: { p_approved: boolean; p_profile_id: string; p_reason?: string }
         Returns: Database["public"]["Enums"]["verification_status"]
+      }
+      dispute_no_show: {
+        Args: { p_booking_id: string; p_reason: string }
+        Returns: string
+      }
+      hold_booking_for_payment: {
+        Args: { p_booking_id: string }
+        Returns: Json
       }
       invitation_details: {
         Args: { p_token: string }
@@ -1858,6 +2441,20 @@ export type Database = {
           invitation_id: string
           token: string
         }[]
+      }
+      issue_refund: {
+        Args: {
+          p_amount_pence?: number
+          p_minutes?: number
+          p_payment_id: string
+          p_reason: string
+          p_to?: string
+        }
+        Returns: string
+      }
+      learner_balance: {
+        Args: { p_business_id: string; p_learner_id: string }
+        Returns: Json
       }
       learner_history: {
         Args: { p_learner_id: string }
@@ -1885,6 +2482,10 @@ export type Database = {
         Args: { p_booking_id: string; p_reason?: string }
         Returns: Json
       }
+      money_summary: {
+        Args: { p_business_id: string; p_from: string; p_to: string }
+        Returns: Json
+      }
       open_slots: {
         Args: {
           p_date: string
@@ -1894,6 +2495,15 @@ export type Database = {
         }
         Returns: string[]
       }
+      record_offline_package: {
+        Args: { p_learner_id: string; p_method: string; p_package_id: string }
+        Returns: string
+      }
+      record_offline_payment: {
+        Args: { p_booking_id: string; p_method: string }
+        Returns: string
+      }
+      refund_options: { Args: { p_payment_id: string }; Returns: Json }
       request_account_deletion: { Args: { p_reason?: string }; Returns: string }
       reschedule_booking: {
         Args: {
@@ -1914,6 +2524,10 @@ export type Database = {
         }
         Returns: string
       }
+      set_billing_customer: {
+        Args: { p_business_id: string; p_customer_id: string }
+        Returns: string
+      }
       set_booking_rules: {
         Args: { p_business_id: string; p_rules: Json }
         Returns: Json
@@ -1930,6 +2544,31 @@ export type Database = {
         }
         Returns: string
       }
+      set_payment_intent: {
+        Args: {
+          p_amount_pence: number
+          p_booking_id: string
+          p_provider_ref: string
+        }
+        Returns: string
+      }
+      set_payment_mode: {
+        Args: { p_business_id: string; p_mode: string }
+        Returns: string
+      }
+      set_payments_account: {
+        Args: { p_account_id: string; p_business_id: string }
+        Returns: Json
+      }
+      set_payments_state: {
+        Args: {
+          p_business_id: string
+          p_charges_enabled: boolean
+          p_details_submitted: boolean
+          p_payouts_enabled: boolean
+        }
+        Returns: number
+      }
       set_supervisor: {
         Args: { p_instructor_id: string; p_supervised: boolean }
         Returns: boolean
@@ -1943,6 +2582,7 @@ export type Database = {
         }
         Returns: number
       }
+      settle_offline_refund: { Args: { p_refund_id: string }; Returns: Json }
       slot_problem: {
         Args: {
           p_duration_minutes: number
@@ -1963,6 +2603,7 @@ export type Database = {
         }
         Returns: Database["public"]["Enums"]["verification_status"]
       }
+      system_authorisations_due: { Args: never; Returns: Json }
       system_booking_notice: { Args: { p_booking_id: string }; Returns: Json }
       system_claim_badge_reminders: {
         Args: { p_today?: string }
@@ -2023,10 +2664,25 @@ export type Database = {
         Args: { p_older_than?: string }
         Returns: number
       }
+      system_credit_notice: {
+        Args: { p_business_id: string; p_learner_id: string }
+        Returns: Json
+      }
+      system_daily_payment_summaries: {
+        Args: { p_from: string; p_to: string }
+        Returns: Json
+      }
       system_drop_push_target: { Args: { p_id: string }; Returns: number }
       system_due_reminders: { Args: { p_within_hours?: number }; Returns: Json }
+      system_expire_payment_holds: { Args: never; Returns: Json }
       system_expire_requests: { Args: never; Returns: number }
       system_extend_recurrences: { Args: { p_weeks?: number }; Returns: number }
+      system_fee_to_charge: { Args: { p_booking_id: string }; Returns: Json }
+      system_issue_receipt: { Args: { p_payment_id: string }; Returns: Json }
+      system_lessons_to_charge: {
+        Args: { p_within_hours?: number }
+        Returns: Json
+      }
       system_mark_notification_failed: {
         Args: { p_error: string; p_id: string }
         Returns: number
@@ -2040,6 +2696,10 @@ export type Database = {
         Returns: number
       }
       system_mark_outbox_sent: { Args: { p_ids: string[] }; Returns: number }
+      system_mark_receipt_emailed: {
+        Args: { p_receipt_id: string }
+        Returns: boolean
+      }
       system_notification_mutes: {
         Args: {
           p_category: Database["public"]["Enums"]["notification_category"]
@@ -2051,6 +2711,17 @@ export type Database = {
         }[]
       }
       system_notify: { Args: { p_rows: Json }; Returns: number }
+      system_overdue_lessons: { Args: never; Returns: Json }
+      system_payment_notice: { Args: { p_payment_id: string }; Returns: Json }
+      system_process_stripe_event: {
+        Args: {
+          p_account_id: string
+          p_event_id: string
+          p_event_type: string
+          p_payload: Json
+        }
+        Returns: Json
+      }
       system_push_targets: {
         Args: { p_user_id: string }
         Returns: {
@@ -2069,15 +2740,85 @@ export type Database = {
         }
         Returns: boolean
       }
+      system_record_capture_failed: {
+        Args: { p_payment_id: string }
+        Returns: boolean
+      }
+      system_record_card_authorisation: {
+        Args: {
+          p_amount_pence: number
+          p_booking_id: string
+          p_provider_ref: string
+        }
+        Returns: Json
+      }
+      system_record_card_payment: {
+        Args: {
+          p_amount_pence: number
+          p_booking_id: string
+          p_fee_pence?: number
+          p_provider_ref: string
+        }
+        Returns: Json
+      }
+      system_record_charge_failed: {
+        Args: { p_booking_id: string; p_reason: string }
+        Returns: boolean
+      }
+      system_record_failed_payment: {
+        Args: {
+          p_amount_pence: number
+          p_booking_id: string
+          p_provider_ref: string
+        }
+        Returns: Json
+      }
+      system_record_fee_charge_failed: {
+        Args: { p_booking_id: string; p_reason: string }
+        Returns: boolean
+      }
+      system_record_package_payment: {
+        Args: {
+          p_account_id: string
+          p_amount_pence: number
+          p_fee_pence?: number
+          p_metadata: Json
+          p_provider_ref: string
+        }
+        Returns: Json
+      }
+      system_record_payment_cancelled: {
+        Args: { p_payment_id: string }
+        Returns: boolean
+      }
+      system_record_provider_refund: {
+        Args: { p_account_id: string; p_refund: Json }
+        Returns: Json
+      }
+      system_refund_to_send: { Args: { p_refund_id: string }; Returns: Json }
       system_release_sms: {
         Args: { p_business_id: string }
         Returns: undefined
+      }
+      system_set_payments_state: {
+        Args: {
+          p_account_id: string
+          p_charges_enabled: boolean
+          p_details_submitted: boolean
+          p_payouts_enabled: boolean
+        }
+        Returns: number
+      }
+      system_settle_refund: {
+        Args: { p_provider_ref: string; p_refund_id: string; p_status?: string }
+        Returns: Json
       }
       system_touch_push_target: { Args: { p_id: string }; Returns: undefined }
       system_unlist_expired_badges: {
         Args: { p_today?: string }
         Returns: number
       }
+      undo_offline_payment: { Args: { p_payment_id: string }; Returns: string }
     }
     Enums: {
       booking_payment_mode:
@@ -2115,6 +2856,14 @@ export type Database = {
       business_status: "pending" | "active" | "suspended"
       business_type: "independent" | "school"
       coverage_rule: "include" | "exclude"
+      credit_entry_kind:
+        | "purchase"
+        | "use"
+        | "return"
+        | "fee"
+        | "expiry"
+        | "adjustment"
+        | "refund"
       exception_kind: "open" | "blocked"
       experience_level: "none" | "some" | "test_booked"
       instructor_qualification: "adi" | "pdi"
@@ -2138,11 +2887,29 @@ export type Database = {
         | "custom"
       membership_role: "owner" | "manager" | "instructor"
       membership_status: "invited" | "active" | "deactivated"
+      no_show_dispute_outcome: "waived" | "kept"
       notification_category: "bookings" | "reminders" | "money" | "account"
       notification_channel: "in_app" | "email" | "push" | "sms"
+      payment_method: "card" | "cash" | "bank" | "credit"
+      payment_status:
+        | "pending"
+        | "paid"
+        | "failed"
+        | "refunded"
+        | "partially_refunded"
+        | "cancelled"
+        | "authorised"
       pickup_kind: "home" | "school" | "work" | "custom"
       plan_key: "free" | "pro" | "school"
       platform_role: "super_admin" | "support_admin"
+      receipt_kind:
+        | "lesson"
+        | "late_cancellation_fee"
+        | "no_show_fee"
+        | "credit"
+        | "other"
+      refund_kind: "card" | "credit" | "offline"
+      refund_status: "pending" | "succeeded" | "failed" | "cancelled"
       transmission: "manual" | "automatic" | "both"
       verification_status: "unsubmitted" | "pending" | "approved" | "rejected"
     }
@@ -2311,6 +3078,15 @@ export const Constants = {
       business_status: ["pending", "active", "suspended"],
       business_type: ["independent", "school"],
       coverage_rule: ["include", "exclude"],
+      credit_entry_kind: [
+        "purchase",
+        "use",
+        "return",
+        "fee",
+        "expiry",
+        "adjustment",
+        "refund",
+      ],
       exception_kind: ["open", "blocked"],
       experience_level: ["none", "some", "test_booked"],
       instructor_qualification: ["adi", "pdi"],
@@ -2336,11 +3112,31 @@ export const Constants = {
       ],
       membership_role: ["owner", "manager", "instructor"],
       membership_status: ["invited", "active", "deactivated"],
+      no_show_dispute_outcome: ["waived", "kept"],
       notification_category: ["bookings", "reminders", "money", "account"],
       notification_channel: ["in_app", "email", "push", "sms"],
+      payment_method: ["card", "cash", "bank", "credit"],
+      payment_status: [
+        "pending",
+        "paid",
+        "failed",
+        "refunded",
+        "partially_refunded",
+        "cancelled",
+        "authorised",
+      ],
       pickup_kind: ["home", "school", "work", "custom"],
       plan_key: ["free", "pro", "school"],
       platform_role: ["super_admin", "support_admin"],
+      receipt_kind: [
+        "lesson",
+        "late_cancellation_fee",
+        "no_show_fee",
+        "credit",
+        "other",
+      ],
+      refund_kind: ["card", "credit", "offline"],
+      refund_status: ["pending", "succeeded", "failed", "cancelled"],
       transmission: ["manual", "automatic", "both"],
       verification_status: ["unsubmitted", "pending", "approved", "rejected"],
     },

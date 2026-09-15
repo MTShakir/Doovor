@@ -16,6 +16,8 @@ export const statusPillVariants = cva(
         completed: 'bg-green text-black',
         paid: 'bg-green text-black',
         cancelled: 'bg-grey-100 text-grey-700 line-through',
+        /** Something a person has to finish, such as payments that are nearly set up. */
+        attention: 'bg-yellow text-black',
         unpaid: 'border border-red bg-white text-red',
         overdue: 'bg-red text-white',
         credit: 'border border-black bg-white text-black',
@@ -35,6 +37,7 @@ const defaultLabels: Record<PillStatus, string> = {
   completed: 'Completed',
   paid: 'Paid',
   cancelled: 'Cancelled',
+  attention: 'Attention',
   unpaid: 'Unpaid',
   overdue: 'Overdue',
   credit: 'Credit',

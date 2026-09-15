@@ -1,7 +1,7 @@
 import { expect, test } from '@playwright/test';
 import { authFile } from '../support/accounts';
 import { bookLesson, clearDiary, removeLesson } from '../support/database';
-import { expectAccessible, snap, tapUntil } from '../support/helpers';
+import { dayLabel, expectAccessible, snap, tapUntil } from '../support/helpers';
 
 /** What a learner opens the app for: their own lessons, and the two things they may do to one. */
 test.describe('my lessons (BOK-08, BOK-09, M2-26)', () => {
@@ -15,29 +15,15 @@ test.describe('my lessons (BOK-08, BOK-09, M2-26)', () => {
   };
 
   /**
-   * A Wednesday of its own for each width: past the fortnight the seed fills, and well inside
-   * the eight weeks a learner may book ahead (R-04).
+   * A Monday of its own for each width: past the fortnight the seed fills, and well inside the
+   * eight weeks a learner may book ahead (R-04). Mondays belong to this spec: see the table in
+   * support/database.ts.
    */
   const ownDay = (project: string): string => {
     const day = new Date();
     day.setDate(day.getDate() + 7 * (4 + (project === 'mobile' ? 0 : 1)));
-    while (day.getDay() !== 3) day.setDate(day.getDate() + 1);
+    while (day.getDay() !== 1) day.setDate(day.getDate() + 1);
     return new Intl.DateTimeFormat('en-CA', { timeZone: 'Europe/London' }).format(day);
-  };
-
-  /**
-   * The day as the page writes it: Wed 14 Oct. The browser abbreviates September to Sept and
-   * the library the app formats with writes Sep, so the month is cut to three letters here.
-   */
-  const dayLabel = (date: string): string => {
-    const parts = new Intl.DateTimeFormat('en-GB', {
-      weekday: 'short',
-      day: 'numeric',
-      month: 'short',
-      timeZone: 'Europe/London',
-    }).formatToParts(new Date(`${date}T12:00:00Z`));
-    const part = (type: Intl.DateTimeFormatPartTypes): string => parts.find((one) => one.type === type)?.value ?? '';
-    return `${part('weekday')} ${part('day')} ${part('month').slice(0, 3)}`;
   };
 
   test('shows what is booked and what has happened', async ({ page }, testInfo) => {

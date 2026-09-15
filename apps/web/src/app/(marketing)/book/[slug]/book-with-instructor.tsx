@@ -31,6 +31,8 @@ export function BookWithInstructor({ page, slug, chosen, learner, signedIn }: Bo
   const [pending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
   const [booked, setBooked] = useState<string | null>(null);
+  /** The booking to pay for, when this Business takes the money at booking (PAY-03). */
+  const [payNow, setPayNow] = useState<string | null>(null);
 
   const first = page.lessons[0];
   const [lessonKey, setLessonKey] = useState(
@@ -85,6 +87,7 @@ export function BookWithInstructor({ page, slug, chosen, learner, signedIn }: Bo
         return;
       }
       setBooked(slot);
+      setPayNow(result.data.payNow ? result.data.bookingId : null);
     });
   };
 
@@ -99,9 +102,20 @@ export function BookWithInstructor({ page, slug, chosen, learner, signedIn }: Bo
           {formatDate(new Date(booked))} at {formatTime(new Date(booked))} with {page.name}.
           {page.instantBook ? ' It is in their diary.' : ' They will confirm it shortly.'}
         </CardDescription>
-        <Button asChild width="responsive">
-          <Link href="/app/learner">See my lessons</Link>
-        </Button>
+        {payNow === null ? (
+          <Button asChild width="responsive">
+            <Link href="/app/learner">See my lessons</Link>
+          </Button>
+        ) : (
+          <div className="flex flex-col gap-2">
+            <Button asChild width="responsive">
+              <Link href={`/app/learner/pay/${payNow}`}>Pay for it now</Link>
+            </Button>
+            <Button asChild variant="secondary" width="responsive">
+              <Link href="/app/learner">See my lessons</Link>
+            </Button>
+          </div>
+        )}
       </Card>
     );
   }

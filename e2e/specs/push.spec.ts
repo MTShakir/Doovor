@@ -24,7 +24,10 @@ test.describe('web push (NTF-01, M2-29)', () => {
   /**
    * The worker is compiled the first time it is asked for, and two browsers asking at the
    * same moment on a cold server race each other. One warm-up first, as a warm server is.
+   * One worker for the file too: a warm-up in each of two workers is the same race again.
    */
+  test.describe.configure({ mode: 'serial' });
+
   test.beforeAll(async () => {
     const response = await fetch(`${origin}/sw.js`);
     expect(response.status).toBe(200);

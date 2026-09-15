@@ -1,7 +1,7 @@
 'use client';
 
-import { cancellationOutcome, cancellationWarning } from '@repo/core/cancellation';
-import { lessonState } from '@repo/core/diary';
+import { cancellationOutcome, cancellationWarning, type PaidWith } from '@repo/core/cancellation';
+import { lessonState, lessonStateLabel } from '@repo/core/diary';
 import { formatPence } from '@repo/core/money';
 import { formatDate, formatMinutes, formatTime, todayInZone, utcToLocal } from '@repo/core/time';
 import { Button } from '@repo/ui/button';
@@ -13,10 +13,12 @@ import { StatusPill } from '@repo/ui/status-pill';
 import { TimeSlotGrid } from '@repo/ui/time-slot-grid';
 import { toast } from '@repo/ui/toast';
 import { MapPin } from 'lucide-react';
+import Link from 'next/link';
 import { useEffect, useState, useTransition } from 'react';
 import { FormAlert } from '@/components/form-alert';
 import type { MyLesson } from '@/lib/learner/lessons';
 import { cancelMyLesson, moveMyLesson, myInstructorSlots } from './actions';
+import { NoShowDispute } from './no-show-dispute';
 
 export interface MyLessonRowProps {
   lesson: MyLesson;
@@ -25,6 +27,22 @@ export interface MyLessonRowProps {
   /** The moment the page was rendered, so the server and the browser agree on what is past. */
   now: string;
   canChange: boolean;
+}
+
+/** How a lesson was paid for, which decides what cancelling it gives back (PAY-09). */
+function paidWith(paymentStatus: string): PaidWith {
+  switch (paymentStatus) {
+    case 'paid_card':
+      return 'card';
+    case 'paid_cash':
+      return 'cash';
+    case 'paid_bank':
+      return 'bank';
+    case 'paid_credit':
+      return 'credit';
+    default:
+      return 'none';
+  }
 }
 
 /** One of a learner's own lessons (PRD 8.2, BOK-08, BOK-09). */
@@ -49,7 +67,11 @@ export function MyLessonRow({ lesson, rules, now, canChange }: MyLessonRowProps)
     windowHours: rules.cancellationWindowHours,
     lateFeePercent: rules.lateFeePercent,
     pricePence: lesson.pricePence,
-    paidWith: 'none',
+    paidWith: paidWith(lesson.paymentStatus),
+    // A lesson is paid with credit all or nothing, so the credit it used is its length (PAY-04).
+    creditMinutes: lesson.durationMinutes,
+    // A request or a held slot is never a late cancellation (M3-18).
+    status: lesson.status as never,
   });
 
   useEffect(() => {
@@ -120,13 +142,37 @@ export function MyLessonRow({ lesson, rules, now, canChange }: MyLessonRowProps)
           )}
         </span>
         <span className="flex shrink-0 flex-col items-end gap-1">
-          <StatusPill status={state} />
+          <StatusPill status={state}>
+            {lessonStateLabel({ status: lesson.status as never, paymentStatus: lesson.paymentStatus as never, kind: 'standard' })}
+          </StatusPill>
           <span className="text-small text-grey-700 tabular-nums">{formatPence(lesson.pricePence)}</span>
         </span>
       </div>
 
+      {lesson.status === 'no_show' ? <NoShowDispute lesson={lesson} now={now} /> : null}
+
+      {!canChange && lesson.canPayNow && lesson.status === 'completed' ? (
+        // Paid for after it happened, and not yet (PAY-03): the one thing left to do about it.
+        <div className="flex flex-wrap justify-end gap-2">
+          <Button asChild>
+            <Link href={`/app/learner/pay/${lesson.id}`}>Pay {formatPence(lesson.pricePence)}</Link>
+          </Button>
+        </div>
+      ) : null}
+
       {canChange ? (
-        <div className="flex justify-end gap-2">
+        <div className="flex flex-wrap justify-end gap-2">
+          {lesson.canPayNow ? (
+            <Button asChild>
+              <Link href={`/app/learner/pay/${lesson.id}`}>
+                {lesson.status === 'requested'
+                  ? `Authorise ${formatPence(lesson.pricePence)}`
+                  : lesson.paymentMode === 'before_lesson' && lesson.paymentStatus === 'unpaid'
+                    ? 'Set up payment'
+                    : `Pay ${formatPence(lesson.pricePence)}`}
+              </Link>
+            </Button>
+          ) : null}
           <Button variant="secondary" onClick={() => { setSheet('move'); }}>
             Move
           </Button>
