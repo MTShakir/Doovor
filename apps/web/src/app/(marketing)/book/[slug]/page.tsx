@@ -9,14 +9,30 @@ import { Suspense } from 'react';
 import { getAccess } from '@/lib/auth/session';
 import { bookingPage } from '@/lib/booking/public';
 import { instructorProfile, nextOpenTimes } from '@/lib/public/instructor-profile';
+import { sharedLinkMetadata } from '@/lib/public/metadata';
+import { instructorCard } from '@/lib/public/share-cards';
+import { getAppUrl } from '@/lib/app-url';
 import { getSiteUrl } from '@/lib/site-url';
 import { BookWithInstructor } from './book-with-instructor';
 
 /** Named for the instructor, and kept out of search: the profile is the page to find (D-109). */
 export async function generateMetadata({ params }: BookPageProps): Promise<Metadata> {
   const { slug } = await params;
-  const page = await bookingPage(slug);
-  return { title: page ? `Book a lesson with ${page.name}` : 'Book a lesson', robots: { index: false, follow: true } };
+  const [page, published] = await Promise.all([bookingPage(slug), instructorProfile(slug)]);
+  const title = page ? `Book a lesson with ${page.name}` : 'Book a lesson';
+  return {
+    title,
+    robots: { index: false, follow: true },
+    // A shared booking link previews with the instructor's own share image (PRD 14.6, M5-08).
+    ...(page && published
+      ? sharedLinkMetadata({
+          title,
+          description: `Choose a time and book a driving lesson with ${page.name}.`,
+          url: `${getAppUrl()}/book/${slug}`,
+          image: { path: instructorProfilePath(published.place?.citySlug ?? null, published.slug), card: instructorCard(published) },
+        })
+      : {}),
+  };
 }
 
 interface BookPageProps {

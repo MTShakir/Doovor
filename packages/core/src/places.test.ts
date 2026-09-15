@@ -45,9 +45,9 @@ describe('places from local authority districts (PRD 8.3, M5-01)', () => {
 
 describe('city, area and automatic pages (PRD 8.3, M5-07)', () => {
   it('lives at the addresses the PRD sets out', () => {
-    expect(placePagePath({ citySlug: 'manchester', cityName: 'Manchester' })).toBe('/driving-lessons/manchester');
-    expect(placePagePath({ citySlug: 'london', cityName: 'London', area: { slug: 'croydon', name: 'Croydon' } })).toBe('/driving-lessons/london/croydon');
-    expect(placePagePath({ citySlug: 'leeds', cityName: 'Leeds', automatic: true })).toBe('/driving-lessons/leeds/automatic');
+    expect(placePagePath({ citySlug: 'manchester' })).toBe('/driving-lessons/manchester');
+    expect(placePagePath({ citySlug: 'london', area: { slug: 'croydon' } })).toBe('/driving-lessons/london/croydon');
+    expect(placePagePath({ citySlug: 'leeds', automatic: true })).toBe('/driving-lessons/leeds/automatic');
   });
 
   it('says what the page is about, as search shows it', () => {

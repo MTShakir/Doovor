@@ -18,29 +18,31 @@ import { JsonLdScript } from '@/components/public/json-ld';
 import { PlaceLinks } from '@/components/public/place-links';
 import { getAppUrl } from '@/lib/app-url';
 import { instructorProfile, nextOpenTimes, type InstructorProfilePage } from '@/lib/public/instructor-profile';
+import { publicPageMetadata } from '@/lib/public/metadata';
+import { instructorCard } from '@/lib/public/share-cards';
 import { getSiteUrl } from '@/lib/site-url';
 import { avatarUrl } from '@/lib/storage/images';
 
 type Props = PageProps<'/instructors/[city]/[slug]'>;
 
-/** The profile's own words for search and sharing, and where it lives for good (PRD 14.6). */
+/** The profile's own words for search and sharing, where it lives for good, and its share image (PRD 14.6). */
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug } = await params;
   const profile = isPlaceSlug(slug) ? await instructorProfile(slug) : null;
   if (!profile) return { title: 'Instructor not found', robots: { index: false } };
 
   const where = profile.place?.cityName;
-  const title = where ? `${profile.name}, driving instructor in ${where}` : `${profile.name}, driving instructor`;
-  const description =
-    profile.bio ?? `${qualificationWords(profile.qualification)} on ${brand.name}. See prices and free times, and book a lesson.`;
-  return {
-    title,
-    description,
-    alternates: { canonical: `${getSiteUrl()}${instructorProfilePath(profile.place?.citySlug ?? null, profile.slug)}` },
+  return publicPageMetadata({
+    title: where ? `${profile.name}, driving instructor in ${where}` : `${profile.name}, driving instructor`,
+    description:
+      profile.bio ?? `${qualificationWords(profile.qualification)} on ${brand.name}. See prices and free times, and book a lesson.`,
+    path: instructorProfilePath(profile.place?.citySlug ?? null, profile.slug),
     // Out of search, hidden by the instructor (PUB-04) or with a badge out of date (INS-03): still there
     // for anybody with the link, but not for search engines.
-    ...(profile.inSearch ? {} : { robots: { index: false, follow: true } }),
-  };
+    indexable: profile.inSearch,
+    card: instructorCard(profile),
+    type: 'profile',
+  });
 }
 
 export default function InstructorProfileRoute({ params }: Props) {
@@ -127,7 +129,7 @@ async function InstructorProfile({ params }: Pick<Props, 'params'>) {
             title={`More in ${place.cityName}`}
             links={[
               {
-                href: placePagePath({ citySlug: place.citySlug, cityName: place.cityName }),
+                href: placePagePath({ citySlug: place.citySlug }),
                 name: `Driving lessons in ${place.cityName}`,
               },
             ]}

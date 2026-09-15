@@ -9,6 +9,8 @@ import { JsonLdScript } from '@/components/public/json-ld';
 import { Breadcrumbs, PlaceLinks } from '@/components/public/place-links';
 import { SchoolInstructors } from '@/components/public/school-profile';
 import { cityPage, type CityPage } from '@/lib/public/city-page';
+import { publicPageMetadata } from '@/lib/public/metadata';
+import { placeCard } from '@/lib/public/share-cards';
 import { getSiteUrl } from '@/lib/site-url';
 import { avatarUrl } from '@/lib/storage/images';
 
@@ -26,12 +28,12 @@ async function load({ city, area, automatic }: PlaceParams): Promise<CityPage | 
 
 function describe(page: CityPage, automatic: boolean) {
   const place = { citySlug: page.city.slug, cityName: page.city.name, area: page.area, automatic };
-  return { heading: placeHeading(place), path: placePagePath(place), cityPath: placePagePath({ citySlug: page.city.slug, cityName: page.city.name }) };
+  return { heading: placeHeading(place), path: placePagePath(place), cityPath: placePagePath({ citySlug: page.city.slug }) };
 }
 
 /**
- * What search shows for the page, where it lives for good, and noindex while it lists fewer than
- * three instructors (PRD 8.3).
+ * What search shows for the page, where it lives for good, its share image, and noindex while it
+ * lists fewer than three instructors (PRD 8.3, 14.6).
  */
 export async function placeMetadata(params: PlaceParams): Promise<Metadata> {
   const page = await load(params);
@@ -40,15 +42,16 @@ export async function placeMetadata(params: PlaceParams): Promise<Metadata> {
   const { heading, path } = describe(page, params.automatic);
   const count = page.instructors.length;
   const where = page.area ? `${page.area.name}, ${page.city.name}` : page.city.name;
-  return {
+  return publicPageMetadata({
     title: heading,
     description:
       count === 0
         ? `Driving lessons in ${where} on ${brand.name}. Instructors checked by us, with their prices and free times.`
         : `${String(count)} driving ${count === 1 ? 'instructor' : 'instructors'} in ${where}, checked by us. See prices and free times, and book a lesson.`,
-    alternates: { canonical: `${getSiteUrl()}${path}` },
-    ...(isThinPlace(count) ? { robots: { index: false, follow: true } } : {}),
-  };
+    path,
+    indexable: !isThinPlace(count),
+    card: placeCard(page, params.automatic),
+  });
 }
 
 export function PlaceSkeleton() {
@@ -108,7 +111,7 @@ export async function PlaceContent({ params }: { params: Promise<PlaceParams> })
             idPrefix="areas-"
             title={`Areas of ${page.city.name}`}
             links={page.areas.map((one) => ({
-              href: placePagePath({ citySlug: page.city.slug, cityName: page.city.name, area: one }),
+              href: placePagePath({ citySlug: page.city.slug, area: one }),
               name: one.name,
               count: one.instructorCount,
             }))}
@@ -121,7 +124,7 @@ export async function PlaceContent({ params }: { params: Promise<PlaceParams> })
                 ? []
                 : [
                     {
-                      href: placePagePath({ citySlug: page.city.slug, cityName: page.city.name, automatic: true }),
+                      href: placePagePath({ citySlug: page.city.slug, automatic: true }),
                       name: `Automatic driving lessons in ${page.city.name}`,
                       count: page.automaticCount,
                     },

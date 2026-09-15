@@ -17,6 +17,8 @@
     "./public-profile": "./src/public-profile.ts",
     "./structured-data": "./src/structured-data.ts",
     "./share": "./src/share.ts",
+    "./share-card": "./src/share-card.ts",
+    "./sitemap": "./src/sitemap.ts",
     "./schemas/auth": "./src/schemas/auth.ts",
     "./schemas/onboarding": "./src/schemas/onboarding.ts",
     "./schemas/profile": "./src/schemas/profile.ts",

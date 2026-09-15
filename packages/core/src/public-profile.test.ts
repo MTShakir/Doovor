@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { coverageWords, hourlyFromPence, instructorProfilePath, joinWords, qualificationWords, schoolProfilePath } from './public-profile';
+import { coverageWords, hourlyFromPence, initialsFor, instructorProfilePath, joinWords, qualificationWords, schoolProfilePath } from './public-profile';
 
 describe('the public instructor profile (PUB-01, M5-02)', () => {
   it('lives under the city its base is in, and under "uk" when that is not known yet', () => {
@@ -7,6 +7,13 @@ describe('the public instructor profile (PUB-01, M5-02)', () => {
     expect(instructorProfilePath(null, 'sarah-khan')).toBe('/instructors/uk/sarah-khan');
     expect(schoolProfilePath('manchester', 'quayside-driving-school')).toBe('/schools/manchester/quayside-driving-school');
     expect(schoolProfilePath(null, 'quayside-driving-school')).toBe('/schools/uk/quayside-driving-school');
+  });
+
+  it('stands initials in for a photo: first and last names, whatever the spacing', () => {
+    expect(initialsFor('Sarah Khan')).toBe('SK');
+    expect(initialsFor('  mary ann   smith ')).toBe('MS');
+    expect(initialsFor('Cher')).toBe('C');
+    expect(initialsFor('')).toBe('');
   });
 
   it('says what kind of instructor somebody is, in words a learner knows', () => {

@@ -62,7 +62,7 @@ select is_empty(
         and routine_name not in ('covers_postcode', 'invitation_details', 'slot_problem',
                                  'booking_page', 'open_slots', 'place_of_postcode',
                                  'instructor_profile_page', 'next_open_slots', 'school_profile_page',
-                                 'city_page') $$,
+                                 'city_page', 'sitemap_entries') $$,
   'no public function is executable by anon unless allowlisted'
 );
 

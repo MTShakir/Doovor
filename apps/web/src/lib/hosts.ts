@@ -1,16 +1,17 @@
 import { brand } from '@repo/config/brand';
+import { sitePagePaths } from '@repo/core/sitemap';
 
 /**
- * The pages the public site serves on the bare domain: its home, and the public pages under these
- * prefixes (PRD 8.3). Everything else on it belongs to the app. Each public page adds its prefix
- * here when it arrives (M5, D-109).
+ * The pages the public site serves on the bare domain: its own pages, which its sitemap lists, and
+ * the public pages under these prefixes (PRD 8.3). Everything else on it belongs to the app. Each
+ * public page adds its prefix here when it arrives (M5, D-109).
  */
 const siteHome = '/';
 const sitePrefixes: readonly string[] = ['/instructors/', '/schools/', '/driving-lessons/'];
 
 /** Whether a path is one of the public site's pages. */
 export function isSitePath(pathname: string): boolean {
-  return pathname === siteHome || sitePrefixes.some((prefix) => pathname.startsWith(prefix));
+  return sitePagePaths.includes(pathname) || sitePrefixes.some((prefix) => pathname.startsWith(prefix));
 }
 
 export interface HostRedirect {

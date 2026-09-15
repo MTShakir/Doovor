@@ -60,6 +60,11 @@ const nextConfig: NextConfig = {
     reactDebugChannel: false,
   },
   transpilePackages: ['@repo/config', '@repo/core', '@repo/ui'],
+  // Share images read the typeface from disk as they are drawn (M5-08), which a trace may not see.
+  outputFileTracingIncludes: {
+    '/**/share.png': ['src/assets/fonts/*.woff'],
+    '/dev/share-images/*': ['src/assets/fonts/*.woff'],
+  },
   /** The worker is compiled at /serwist/sw.js and served from the root, so its scope is the app. */
   rewrites() {
     return Promise.resolve([{ source: '/sw.js', destination: '/serwist/sw.js' }]);

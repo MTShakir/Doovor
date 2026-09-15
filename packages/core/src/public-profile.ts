@@ -18,6 +18,14 @@ export function schoolProfilePath(citySlug: string | null, slug: string): string
   return `/schools/${citySlug ?? 'uk'}/${slug}`;
 }
 
+/** What stands in for a photo: the first letters of the first and last names. */
+export function initialsFor(name: string): string {
+  const parts = name.trim().split(/\s+/).filter(Boolean);
+  const first = parts[0]?.[0] ?? '';
+  const last = parts.length > 1 ? (parts[parts.length - 1]?.[0] ?? '') : '';
+  return (first + last).toUpperCase();
+}
+
 /** A trainee has to say so (R-18); both are named as a learner would know them. */
 export function qualificationWords(qualification: Qualification): string {
   return qualification === 'adi' ? 'Approved driving instructor' : 'Trainee driving instructor';

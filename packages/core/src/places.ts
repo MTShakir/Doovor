@@ -71,15 +71,20 @@ export function isThinPlace(instructorCount: number): boolean {
   return instructorCount < INDEXABLE_MIN_INSTRUCTORS;
 }
 
-export interface PlacePage {
+/** Which place page: a city, one of its areas, or its automatic lessons, by their addresses alone. */
+export interface PlaceAddress {
   citySlug: string;
-  cityName: string;
-  area?: { slug: string; name: string } | null;
+  area?: { slug: string } | null;
   automatic?: boolean;
 }
 
+export interface PlacePage extends PlaceAddress {
+  cityName: string;
+  area?: { slug: string; name: string } | null;
+}
+
 /** The address of a city, area or automatic page: /driving-lessons/london/croydon. */
-export function placePagePath({ citySlug, area, automatic }: PlacePage): string {
+export function placePagePath({ citySlug, area, automatic }: PlaceAddress): string {
   const base = `/driving-lessons/${citySlug}`;
   if (automatic) return `${base}/automatic`;
   return area ? `${base}/${area.slug}` : base;

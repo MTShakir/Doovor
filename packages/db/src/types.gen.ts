@@ -2836,6 +2836,7 @@ export type Database = {
         Returns: number
       }
       settle_offline_refund: { Args: { p_refund_id: string }; Returns: Json }
+      sitemap_entries: { Args: never; Returns: Json }
       slot_problem: {
         Args: {
           p_duration_minutes: number

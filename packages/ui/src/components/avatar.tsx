@@ -1,5 +1,6 @@
 'use client';
 
+import { initialsFor } from '@repo/core/public-profile';
 import { cva, type VariantProps } from 'class-variance-authority';
 import { Check } from 'lucide-react';
 import { Avatar as AvatarPrimitive } from 'radix-ui';
@@ -23,13 +24,6 @@ export interface AvatarProps extends VariantProps<typeof avatarVariants> {
   /** The name is written beside it, so it is a picture and not read out a second time. */
   decorative?: boolean;
   className?: string;
-}
-
-export function initialsFor(name: string): string {
-  const parts = name.trim().split(/\s+/).filter(Boolean);
-  const first = parts[0]?.[0] ?? '';
-  const last = parts.length > 1 ? (parts[parts.length - 1]?.[0] ?? '') : '';
-  return (first + last).toUpperCase();
 }
 
 export function Avatar({ name, src, verified = false, decorative = false, size, className }: AvatarProps) {

@@ -10,24 +10,31 @@ import { PriceList } from '@/components/public/instructor-profile';
 import { JsonLdScript } from '@/components/public/json-ld';
 import { PlaceLinks } from '@/components/public/place-links';
 import { SchoolHeader, SchoolInstructors } from '@/components/public/school-profile';
+import { publicPageMetadata } from '@/lib/public/metadata';
 import { schoolProfile } from '@/lib/public/school-profile';
+import { schoolCard } from '@/lib/public/share-cards';
 import { getSiteUrl } from '@/lib/site-url';
 import { avatarUrl } from '@/lib/storage/images';
 
 type Props = PageProps<'/schools/[city]/[slug]'>;
 
-/** The school's name for search and sharing, and where it lives for good (PRD 14.6). */
+/**
+ * The school's name for search and sharing, where it lives for good, and its share image (PRD 14.6).
+ * Out of search while none of its instructors is in it (D-115).
+ */
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug } = await params;
   const school = isPlaceSlug(slug) ? await schoolProfile(slug) : null;
   if (!school) return { title: 'School not found', robots: { index: false } };
 
   const where = school.place?.cityName;
-  return {
+  return publicPageMetadata({
     title: where ? `${school.name}, driving school in ${where}` : `${school.name}, driving school`,
     description: `Driving lessons with ${school.name} on ${brand.name}: its instructors, prices and packages.`,
-    alternates: { canonical: `${getSiteUrl()}${schoolProfilePath(school.place?.citySlug ?? null, school.slug)}` },
-  };
+    path: schoolProfilePath(school.place?.citySlug ?? null, school.slug),
+    indexable: school.instructors.some((instructor) => instructor.takingBookings),
+    card: schoolCard(school),
+  });
 }
 
 export default function SchoolProfileRoute({ params }: Props) {
@@ -108,7 +115,7 @@ async function SchoolProfile({ params }: Pick<Props, 'params'>) {
             title={`More in ${place.cityName}`}
             links={[
               {
-                href: placePagePath({ citySlug: place.citySlug, cityName: place.cityName }),
+                href: placePagePath({ citySlug: place.citySlug }),
                 name: `Driving lessons in ${place.cityName}`,
               },
             ]}

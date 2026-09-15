@@ -57,6 +57,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@repo/ui/tabs';
 import { TimeSlotGrid } from '@repo/ui/time-slot-grid';
 import { toast, toastWithUndo } from '@repo/ui/toast';
 import { CalendarX, Car } from 'lucide-react';
+import Image from 'next/image';
 import Link from 'next/link';
 import { Suspense, useState, type ReactNode } from 'react';
 
@@ -693,6 +694,28 @@ export function DesignShowcase() {
             />
             <PlaceLinks idPrefix="city-example-" title="More in London" links={[{ href: '#london', name: 'All driving lessons in London' }]} />
           </div>
+        </div>
+        <Label>
+          Share images, drawn for link previews: an instructor taking bookings, a trainee with a photo whose badge is out of date, a school,
+          and an area (PRD 14.6, M5-08)
+        </Label>
+        <div className="grid gap-4 md:grid-cols-2">
+          {[
+            { sample: 'instructor', alt: 'Share image for an instructor taking bookings' },
+            { sample: 'instructor-paused', alt: 'Share image for a trainee with a photo, not taking new bookings' },
+            { sample: 'school', alt: 'Share image for a driving school' },
+            { sample: 'place', alt: 'Share image for an area page' },
+          ].map(({ sample, alt }) => (
+            <Image
+              key={sample}
+              src={`/dev/share-images/${sample}.png`}
+              alt={alt}
+              width={1200}
+              height={630}
+              unoptimized
+              className="h-auto w-full rounded-card border border-grey-200"
+            />
+          ))}
         </div>
       </Section>
 
