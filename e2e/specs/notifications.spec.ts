@@ -9,14 +9,15 @@ import { expectAccessible, snap } from '../support/helpers';
  *
  * An account of its own for every test and every width. Clearing an inbox and marking it read
  * are both about the whole inbox, and everything here runs at the same time as everything
- * else.
+ * else. So none of these is an account whose inbox another test reads: a lesson record tells
+ * Jack Taylor, and a disputed no-show tells Sarah Khan.
  */
 test.describe('notifications (NTF-01, NTF-04, M2-27)', () => {
   const accounts: Record<string, RoleKey[]> = {
-    mobile: ['learner', 'schoolInstructor'],
-    desktop: ['instructor', 'trainee'],
+    mobile: ['schoolOwner', 'schoolInstructor'],
+    desktop: ['schoolManager', 'trainee'],
   };
-  const who = (project: string, nth: number): RoleKey => accounts[project]?.[nth] ?? 'learner';
+  const who = (project: string, nth: number): RoleKey => accounts[project]?.[nth] ?? 'schoolOwner';
 
   test('shows what somebody has been told, and clears it', async ({ browser }, testInfo) => {
     const role = who(testInfo.project.name, 0);
