@@ -1,5 +1,6 @@
 import { AppShell } from '@repo/ui/app-shell';
 import type { ReactNode } from 'react';
+import { KeepTeachingDays } from '@/components/offline/keep-teaching-days';
 import { PortalGate } from '@/components/portal-gate';
 import { PortalSidebar, PortalTabBar } from '@/components/portal-nav';
 import { OfflineSupport } from '@/components/pwa/offline-support';
@@ -13,6 +14,7 @@ export default function InstructorLayout({ children }: { children: ReactNode }) 
     <AppShell sidebar={<PortalSidebar portal="instructor" footer={<SidebarFooter />} />} tabBar={<PortalTabBar portal="instructor" />}>
       <PortalGate portal="instructor">{children}</PortalGate>
       <OfflineSupport />
+      <KeepTeachingDays />
     </AppShell>
   );
 }

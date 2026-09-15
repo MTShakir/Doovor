@@ -44,7 +44,8 @@
     "./skills": "./src/skills.ts",
     "./lesson-records": "./src/lesson-records.ts",
     "./skill-map": "./src/skill-map.ts",
-    "./schemas/lesson-record": "./src/schemas/lesson-record.ts"
+    "./schemas/lesson-record": "./src/schemas/lesson-record.ts",
+    "./schemas/kept-days": "./src/schemas/kept-days.ts"
   },
   "scripts": {
     "lint": "eslint .",

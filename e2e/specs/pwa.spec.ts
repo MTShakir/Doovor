@@ -1,7 +1,7 @@
 import { expect, test, type Page } from '@playwright/test';
 import { authFile } from '../support/accounts';
 import { bookLesson, removeLesson } from '../support/database';
-import { expectAccessible, settled, snap } from '../support/helpers';
+import { addDays, expectAccessible, settled, snap } from '../support/helpers';
 import { signInThroughForm } from '../support/sign-in';
 
 declare global {
@@ -27,6 +27,53 @@ async function keptScreens(page: Page): Promise<string[]> {
     return (await cache.keys()).map((request) => new URL(request.url).pathname);
   });
 }
+
+interface KeptLesson {
+  id: string;
+  day: string;
+  startsAt: string;
+  learnerName: string;
+}
+
+/**
+ * The lessons kept on the device for no signal, read straight from IndexedDB. The database is named
+ * in apps/web/src/lib/offline/kept-days.ts. One that does not exist yet is not made by looking.
+ */
+async function keptLessons(page: Page): Promise<KeptLesson[]> {
+  return page.evaluate(
+    () =>
+      new Promise<KeptLesson[]>((resolve) => {
+        const opening = indexedDB.open('kept-teaching');
+        opening.onupgradeneeded = () => {
+          opening.transaction?.abort();
+        };
+        opening.onerror = () => {
+          resolve([]);
+        };
+        opening.onsuccess = () => {
+          const db = opening.result;
+          if (!db.objectStoreNames.contains('lessons')) {
+            db.close();
+            resolve([]);
+            return;
+          }
+          const all = db.transaction('lessons').objectStore('lessons').getAll();
+          all.onsuccess = () => {
+            db.close();
+            resolve(all.result as KeptLesson[]);
+          };
+          all.onerror = () => {
+            db.close();
+            resolve([]);
+          };
+        };
+      }),
+  );
+}
+
+/** "07:30", as a lesson's start reads in London. */
+const londonTime = (instant: string): string =>
+  new Intl.DateTimeFormat('en-GB', { timeZone: 'Europe/London', hour: '2-digit', minute: '2-digit' }).format(new Date(instant));
 
 /** A PNG's width and height, from its header. */
 function pngSize(bytes: Buffer): string {
@@ -199,7 +246,41 @@ test.describe('Today with no signal (PRD 8.1, PRG-09, M4-08)', () => {
     await removeLesson('Emma Clarke', learner.email, today(), hour);
   });
 
-  test('signing out takes the kept screens off the device', async ({ browser }, testInfo) => {
+  test('keeps today\'s and tomorrow\'s lessons on the device, and they are still there with no signal (M4-09)', async ({ page, context }, testInfo) => {
+    const hour = testInfo.project.name === 'mobile' ? '05:30' : '07:30';
+    const tomorrow = addDays(today(), 1);
+    await bookLesson('Emma Clarke', learner.email, tomorrow, hour);
+    const isTomorrows = (kept: KeptLesson[]) =>
+      kept.some((one) => one.day === tomorrow && one.learnerName === learner.name && londonTime(one.startsAt) === hour);
+
+    try {
+      await page.goto('/app/instructor');
+      await expect(page.getByRole('heading', { level: 1, name: 'Today' })).toBeVisible();
+      await expect.poll(async () => isTomorrows(await keptLessons(page)), { timeout: 30_000 }).toBe(true);
+      // Today's too, under today.
+      expect((await keptLessons(page)).every((one) => one.day === today() || one.day === tomorrow)).toBe(true);
+      // Opening the app again with no signal needs its screen kept as well as its lessons.
+      await expect.poll(() => keptScreens(page), { timeout: 30_000 }).toContain('/app/instructor');
+
+      await context.setOffline(true);
+      try {
+        await page.reload();
+        await expect(page.getByRole('heading', { level: 1, name: 'Today' })).toBeVisible();
+        // The phone could not read them again, and what it kept is still there.
+        await page.evaluate(() => new Promise((resolve) => setTimeout(resolve, 500)));
+        expect(isTomorrows(await keptLessons(page))).toBe(true);
+      } finally {
+        await context.setOffline(false);
+      }
+    } finally {
+      await removeLesson('Emma Clarke', learner.email, tomorrow, hour);
+    }
+  });
+
+  test('signing out takes the kept screens and lessons off the device', async ({ browser }, testInfo) => {
+    // A lesson of its own to be kept, clear of the other test's today: a buffer follows each lesson.
+    const hour = testInfo.project.name === 'mobile' ? '02:30' : '04:00';
+    await bookLesson('Emma Clarke', learner.email, today(), hour);
     // A session of its own: signing out ends the one it signs out of, which other tests share.
     const context = await browser.newContext({ storageState: { cookies: [], origins: [] } });
     try {
@@ -207,13 +288,18 @@ test.describe('Today with no signal (PRD 8.1, PRG-09, M4-08)', () => {
       await signInThroughForm(page, 'emma.clarke@example.com', { next: '/app/instructor' });
       await expect(page.getByRole('heading', { level: 1, name: 'Today' })).toBeVisible();
       await expect.poll(() => keptScreens(page), { timeout: 30_000 }).toContain('/app/instructor');
+      await expect
+        .poll(async () => (await keptLessons(page)).some((one) => one.day === today() && londonTime(one.startsAt) === hour), { timeout: 30_000 })
+        .toBe(true);
 
       if (testInfo.project.name === 'mobile') await page.goto('/app/instructor/more');
       await page.getByRole('button', { name: 'Sign out' }).click();
       await expect(page).toHaveURL(/\/sign-in$/);
       await expect.poll(() => keptScreens(page)).toEqual([]);
+      await expect.poll(() => keptLessons(page)).toEqual([]);
     } finally {
       await context.close();
+      await removeLesson('Emma Clarke', learner.email, today(), hour);
     }
   });
 });

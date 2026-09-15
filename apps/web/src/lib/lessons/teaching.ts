@@ -58,15 +58,23 @@ function teachingLesson(row: Row): TeachingLesson {
 
 /** Today's lessons in London for the profiles given, in the order they happen. */
 export async function todaysLessons(profileIds: string[], now = new Date()): Promise<TeachingLesson[]> {
+  return lessonsFromToday(profileIds, 1, now);
+}
+
+/**
+ * The lessons the profiles given teach from the start of today in London, over `days` days, in the
+ * order they happen: today and tomorrow are what a phone keeps for no signal (PRG-09, M4-09).
+ */
+export async function lessonsFromToday(profileIds: string[], days: number, now = new Date()): Promise<TeachingLesson[]> {
   if (profileIds.length === 0) return [];
   const today = todayInZone(now);
   const from = localToUtc(today, '00:00');
-  const to = localToUtc(addDaysToLocalDate(today, 1), '00:00');
+  const to = localToUtc(addDaysToLocalDate(today, days), '00:00');
   // Midnight exists on every day in London: the clocks change at 01:00 and 02:00.
   if (from === null || to === null) return [];
 
   const supabase = await createSupabaseServerClient();
-  const { data } = await supabase
+  const { data, error } = await supabase
     .from('bookings')
     .select(columns)
     .in('instructor_id', profileIds)
@@ -74,7 +82,9 @@ export async function todaysLessons(profileIds: string[], now = new Date()): Pro
     .lt('starts_at', to.toISOString())
     .not('status', 'in', '(requested,pending_payment,declined,expired)')
     .order('starts_at');
-  return ((data ?? []) as unknown as Row[]).map(teachingLesson);
+  // A failed read is not an empty day: a phone would throw away the lessons it keeps for one.
+  if (error) throw error;
+  return (data as unknown as Row[]).map(teachingLesson);
 }
 
 /** One lesson the profiles given teach, or null for one they do not. */
