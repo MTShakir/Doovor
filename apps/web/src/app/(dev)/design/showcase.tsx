@@ -8,6 +8,14 @@ import { PhotoUpload } from '@repo/ui/photo-upload';
 import { PickupPointPicker } from '@repo/ui/pickup-point-picker';
 import { FormAlert } from '@/components/form-alert';
 import { RadiusMap } from '@/components/map/radius-map';
+import {
+  AboutInstructor,
+  BookAction,
+  NextTimes,
+  PriceList,
+  ProfileHeader,
+  WhereLessonsStart,
+} from '@/components/public/instructor-profile';
 import { NoSignalBanner } from '@/components/offline/connection-banner';
 import { KeptRecordsNotice } from '@/components/offline/kept-records-notice';
 import { CardFieldsSkeleton } from '@/components/payments/card-form';
@@ -62,6 +70,7 @@ const sections = [
   'Progress',
   'Checklist',
   'Coverage',
+  'Public profile',
   'Scheduling',
   'Overlays',
   'Navigation',
@@ -561,6 +570,72 @@ export function DesignShowcase() {
             onAdd={() => toast('The add form arrives with learner management')}
           />
           <PickupPointPicker label="Nothing added yet" options={[]} onChange={() => undefined} />
+        </div>
+      </Section>
+
+      <Section title="Public profile">
+        <Label>Header: an independent instructor with prices, and a trainee at a school with no car or prices yet (PUB-01, M5-02)</Label>
+        <div className="grid items-start gap-6 md:grid-cols-2">
+          <ProfileHeader
+            name="Sarah Khan"
+            qualification="adi"
+            schoolName={null}
+            transmission="manual"
+            car="Volkswagen Polo"
+            dualControls
+            lessons={[{ durationMinutes: 60, pricePence: 4200 }, { durationMinutes: 120, pricePence: 8200 }]}
+          />
+          <ProfileHeader
+            name="Aisha Rahman"
+            qualification="pdi"
+            schoolName="Quayside Driving School"
+            transmission="both"
+            car={null}
+            dualControls={false}
+            lessons={[]}
+          />
+        </div>
+        <Label>Booking: open, and a badge out of date (INS-03)</Label>
+        <div className="grid max-w-xl gap-4 md:grid-cols-2">
+          <BookAction bookingUrl="#book" canBook />
+          <BookAction bookingUrl="#book" canBook={false} />
+        </div>
+        <Label>Next free times: three to choose from, and none in the next two weeks</Label>
+        {/* Formatting a time reads the clock, which a page built ahead of time must leave to the visit. */}
+        <Suspense fallback={<SkeletonRow />}>
+          <div className="grid items-start gap-6 md:grid-cols-2">
+            <NextTimes idPrefix="free-" bookingUrl="#book" times={['2026-09-17T12:30:00.000Z', '2026-09-17T13:00:00.000Z', '2026-09-18T08:00:00.000Z']} />
+            <NextTimes idPrefix="full-" bookingUrl="#book" times={[]} />
+          </div>
+        </Suspense>
+        <Label>About, with everything said and with only languages; where lessons start, with districts added</Label>
+        <div className="grid items-start gap-6 md:grid-cols-2">
+          <AboutInstructor
+            idPrefix="full-"
+            bio="Calm, patient instructor with 9 years of experience. Nervous drivers are very welcome."
+            yearsTeaching={9}
+            languages={['English', 'Urdu']}
+            specialisms={['nervous_drivers', 'motorway']}
+          />
+          <AboutInstructor idPrefix="short-" bio={null} yearsTeaching={0} languages={['English']} specialisms={[]} />
+        </div>
+        <div className="max-w-xl">
+          <WhereLessonsStart radiusMiles={8} outcode="LS6" alsoCovers={['LS17', 'LS18']} areaCentre={null} />
+        </div>
+        <Label>Prices, with packages, and nothing published yet</Label>
+        <div className="grid items-start gap-6 md:grid-cols-2">
+          <PriceList
+            idPrefix="priced-"
+            lessons={[
+              { name: 'Standard lesson', durationMinutes: 60, pricePence: 4200 },
+              { name: 'Standard lesson', durationMinutes: 120, pricePence: 8200 },
+            ]}
+            packages={[
+              { name: '10 hours', minutes: 600, pricePence: 40000, expiryDays: 365 },
+              { name: 'Test ready', minutes: 1200, pricePence: 78000, expiryDays: null },
+            ]}
+          />
+          <PriceList idPrefix="unpriced-" lessons={[]} packages={[]} />
         </div>
       </Section>
 

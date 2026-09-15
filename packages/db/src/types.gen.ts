@@ -2635,6 +2635,7 @@ export type Database = {
         Args: { p_booking_id: string }
         Returns: Json
       }
+      instructor_profile_page: { Args: { p_slug: string }; Returns: Json }
       invitation_details: {
         Args: { p_token: string }
         Returns: {
@@ -2702,6 +2703,14 @@ export type Database = {
       money_summary: {
         Args: { p_business_id: string; p_from: string; p_to: string }
         Returns: Json
+      }
+      next_open_slots: {
+        Args: {
+          p_duration_minutes: number
+          p_instructor_id: string
+          p_limit?: number
+        }
+        Returns: string[]
       }
       open_slots: {
         Args: {

@@ -2,7 +2,7 @@ import path from 'node:path';
 import AxeBuilder from '@axe-core/playwright';
 import { expect, type Locator, type Page, type TestInfo } from '@playwright/test';
 
-const MILESTONE = process.env.E2E_MILESTONE ?? 'm4';
+const MILESTONE = process.env.E2E_MILESTONE ?? 'm5';
 
 /** Where a named screenshot lives: e2e/screenshots/<milestone>/<viewport>/<name>.png */
 export function snapPath(testInfo: TestInfo, name: string): string {

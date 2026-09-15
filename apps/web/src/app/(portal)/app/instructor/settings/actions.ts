@@ -9,6 +9,7 @@ import { revalidatePath } from 'next/cache';
 import { z } from 'zod';
 import { requirePortal } from '@/lib/auth/session';
 import { fieldErrors } from '@/lib/forms';
+import { expireAllInstructorProfiles, expireInstructorProfile } from '@/lib/public/instructor-profile';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
 
 async function instructorId(): Promise<string | null> {
@@ -54,6 +55,7 @@ export async function saveWorkingWeek(input: unknown): Promise<Result<null>> {
   }
 
   revalidatePath('/app/instructor/settings');
+  expireInstructorProfile(profileId);
   return ok(null);
 }
 
@@ -84,6 +86,7 @@ export async function saveException(input: unknown): Promise<Result<null>> {
   if (error) return err(parsePostgresError(error).code);
 
   revalidatePath('/app/instructor/settings');
+  expireInstructorProfile(profileId);
   return ok(null);
 }
 
@@ -111,6 +114,8 @@ export async function saveBookingRules(input: unknown): Promise<Result<null>> {
   if (error) return err(parsePostgresError(error).code);
 
   revalidatePath('/app/instructor/settings');
+  // Notice and horizon change the free times on every profile at the Business.
+  expireAllInstructorProfiles();
   return ok(null);
 }
 
@@ -130,6 +135,7 @@ export async function saveInstructorRules(input: unknown): Promise<Result<null>>
   if (error) return err('UNKNOWN', 'We could not save those settings. Try again.');
 
   revalidatePath('/app/instructor/settings');
+  expireInstructorProfile(profileId);
   return ok(null);
 }
 
@@ -149,5 +155,6 @@ export async function removeException(id: unknown): Promise<Result<null>> {
   if (error) return err('UNKNOWN', 'We could not remove that. Try again.');
 
   revalidatePath('/app/instructor/settings');
+  expireInstructorProfile(profileId);
   return ok(null);
 }

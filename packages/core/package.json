@@ -14,6 +14,7 @@
     "./phone": "./src/phone.ts",
     "./postcode": "./src/postcode.ts",
     "./places": "./src/places.ts",
+    "./public-profile": "./src/public-profile.ts",
     "./schemas/auth": "./src/schemas/auth.ts",
     "./schemas/onboarding": "./src/schemas/onboarding.ts",
     "./schemas/profile": "./src/schemas/profile.ts",

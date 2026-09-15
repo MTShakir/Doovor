@@ -5,6 +5,8 @@ export interface StaticMapProps {
   /** The postcode at the middle, when there is one. */
   place?: string | null;
   description: string;
+  /** "around you" for the instructor's own area, "around" for a visitor reading about it. */
+  audience?: 'self' | 'public';
 }
 
 /**
@@ -14,7 +16,7 @@ export interface StaticMapProps {
  * fetched, so it needs no account, no network and no consent, and it still answers the only
  * question the step asks: how far out does this reach.
  */
-export function StaticMap({ radiusMiles, place, description }: StaticMapProps) {
+export function StaticMap({ radiusMiles, place, description, audience = 'self' }: StaticMapProps) {
   return (
     <div
       role="img"
@@ -30,7 +32,7 @@ export function StaticMap({ radiusMiles, place, description }: StaticMapProps) {
         <MapPin className="size-6 text-black" aria-hidden />
         {place ? <p className="text-small font-semibold text-ink">{place}</p> : null}
         <p className="text-small text-grey-700">
-          {radiusMiles} {radiusMiles === 1 ? 'mile' : 'miles'} around you
+          {radiusMiles} {radiusMiles === 1 ? 'mile' : 'miles'} around{audience === 'self' ? ' you' : ''}
         </p>
       </div>
     </div>

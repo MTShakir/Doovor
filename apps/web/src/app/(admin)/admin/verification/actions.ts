@@ -6,6 +6,7 @@ import { revalidatePath } from 'next/cache';
 import { z } from 'zod';
 import { requirePortal } from '@/lib/auth/session';
 import { fieldErrors } from '@/lib/forms';
+import { expireAllInstructorProfiles } from '@/lib/public/instructor-profile';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
 
 const decisionSchema = z
@@ -35,5 +36,7 @@ export async function decideVerification(input: unknown): Promise<Result<null>> 
   if (error) return err(parsePostgresError(error).code);
 
   revalidatePath('/admin/verification');
+  // An approval makes a profile, and a refusal takes one away (INS-05).
+  expireAllInstructorProfiles();
   return ok(null);
 }

@@ -6,6 +6,7 @@ import { instructorProfileSchema } from '@repo/core/schemas/profile';
 import { revalidatePath } from 'next/cache';
 import { requirePortal } from '@/lib/auth/session';
 import { fieldErrors } from '@/lib/forms';
+import { expireInstructorProfile } from '@/lib/public/instructor-profile';
 import { avatarsBucket, removeProfileImage } from '@/lib/storage/images';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
 
@@ -54,5 +55,6 @@ export async function saveProfile(input: unknown, photoPath?: string | null): Pr
   }
 
   revalidatePath('/app/instructor/profile');
+  expireInstructorProfile(profileId);
   return ok(null);
 }
