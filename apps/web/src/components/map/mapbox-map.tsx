@@ -89,12 +89,11 @@ export default function MapboxMap({ token, styleUrl, centre, radiusMiles, descri
     instance.fitBounds(asLngLatBounds(boundsForRadius(centre, radiusMiles)), { padding: 24, duration: 300 });
   }, [centre, radiusMiles]);
 
+  // A figure rather than an image: the map carries its own controls and attribution links, which an
+  // image may not hold (axe nested-interactive), and the label still says what it shows.
   return (
-    <div
-      ref={container}
-      role="img"
-      aria-label={description}
-      className="h-56 w-full overflow-hidden rounded-card border border-grey-200 md:h-72"
-    />
+    <figure aria-label={description} className="m-0 h-56 w-full overflow-hidden rounded-card border border-grey-200 md:h-72">
+      <div ref={container} className="size-full" />
+    </figure>
   );
 }
