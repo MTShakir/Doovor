@@ -1,6 +1,6 @@
 import { expect, test } from '@playwright/test';
 import { authFile } from '../support/accounts';
-import { expectAccessible, settled, snap } from '../support/helpers';
+import { expectAccessible, settled, snap, tapThrough } from '../support/helpers';
 
 /**
  * The money dashboard (MNY-01, M3-21): this week, this month and this tax year.
@@ -26,10 +26,7 @@ test.describe('the money dashboard (MNY-01, M3-21)', () => {
     await settled(page);
     await snap(page, testInfo, 'money-dashboard-week');
 
-    await expect(async () => {
-      await periods.getByRole('link', { name: 'Tax year' }).click();
-      await page.waitForURL(/period=tax_year/, { timeout: 5000 });
-    }).toPass({ timeout: 20_000 });
+    await tapThrough(periods.getByRole('link', { name: 'Tax year' }), /period=tax_year/);
     await expect(periods.getByRole('link', { name: 'Tax year' })).toHaveAttribute('aria-current', 'page');
     await expect(dashboard).toContainText(/6 Apr \d{4} to \w{3} 5 Apr \d{4}/);
     await expect(dashboard.getByRole('list').or(dashboard.locator('dl'))).toHaveAttribute('aria-label', /^\d{4} to \d{4} tax year$/);

@@ -48,6 +48,20 @@ export async function tapUntil(control: Locator, appears: Locator): Promise<void
 }
 
 /**
+ * Taps a link or button that leads to another address, until the page is there. A tap before the
+ * page is interactive does nothing (D-043), so it is tapped again. A tap already on its way, as
+ * under a full run's load, is waited for rather than tapped again: once the new page is there,
+ * what was tapped has gone, and a second tap would wait for it until the time ran out.
+ */
+export async function tapThrough(control: Locator, url: RegExp): Promise<void> {
+  const page = control.page();
+  await expect(async () => {
+    if (!url.test(page.url())) await control.click({ timeout: 5000 });
+    await page.waitForURL(url, { timeout: 5000 });
+  }).toPass({ timeout: 30_000 });
+}
+
+/**
  * Types into a field that a component controls, until the value sticks. A value set before
  * the page is interactive is overwritten by the first render that follows it (D-043).
  */
