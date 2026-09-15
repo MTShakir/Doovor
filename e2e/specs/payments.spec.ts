@@ -371,7 +371,9 @@ test.describe('paying for a lesson (PAY-02, M3-05)', () => {
         .filter({ hasText: `${dayLabel(onDay)} at 21:30` })
         .filter({ hasText: 'Tom Walsh' });
       await expect(async () => {
-        await lesson.getByRole('link', { name: /^Set up payment$|^Pay £/ }).click();
+        // A tap that is still on its way, as under a full run's load, is waited for, not tapped again:
+        // the lessons list and its link are gone by then.
+        if (!page.url().includes('/app/learner/pay/')) await lesson.getByRole('link', { name: /^Set up payment$|^Pay £/ }).click();
         await page.waitForURL(/\/app\/learner\/pay\//, { timeout: 5000 });
       }).toPass({ timeout: 20_000 });
       return page.getByRole('region', { name: /at \d\d:\d\d$/ });

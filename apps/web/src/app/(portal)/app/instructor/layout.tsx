@@ -1,7 +1,7 @@
 import { AppShell } from '@repo/ui/app-shell';
 import type { ReactNode } from 'react';
 import { ConnectionBanner } from '@/components/offline/connection-banner';
-import { KeepTeachingDays } from '@/components/offline/keep-teaching-days';
+import { OfflineSync } from '@/components/offline/offline-sync';
 import { PortalGate } from '@/components/portal-gate';
 import { PortalSidebar, PortalTabBar } from '@/components/portal-nav';
 import { OfflineSupport } from '@/components/pwa/offline-support';
@@ -16,7 +16,7 @@ export default function InstructorLayout({ children }: { children: ReactNode }) 
       <ConnectionBanner />
       <PortalGate portal="instructor">{children}</PortalGate>
       <OfflineSupport />
-      <KeepTeachingDays />
+      <OfflineSync />
     </AppShell>
   );
 }

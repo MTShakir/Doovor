@@ -8,6 +8,8 @@ import { PhotoUpload } from '@repo/ui/photo-upload';
 import { PickupPointPicker } from '@repo/ui/pickup-point-picker';
 import { FormAlert } from '@/components/form-alert';
 import { RadiusMap } from '@/components/map/radius-map';
+import { NoSignalBanner } from '@/components/offline/connection-banner';
+import { KeptRecordsNotice } from '@/components/offline/kept-records-notice';
 import { CardFieldsSkeleton } from '@/components/payments/card-form';
 import { InstallCard } from '@/components/pwa/install-prompt';
 import { LessonRecordCard } from '@/components/progress/lesson-record-card';
@@ -109,6 +111,13 @@ const exampleRecords: RecordedLesson[] = [
     ],
   },
 ];
+
+const exampleKeptRecords = [
+  { id: 'kept-1', learnerName: 'Jack Taylor', lessonStartsAt: '2026-09-15T08:00:00+00:00', state: 'waiting', message: null },
+  { id: 'kept-2', learnerName: 'Olivia Brown', lessonStartsAt: '2026-09-15T10:00:00+00:00', state: 'waiting', message: null },
+  { id: 'kept-3', learnerName: 'Noah Wilson', lessonStartsAt: '2026-09-14T13:00:00+00:00', state: 'conflict', message: null },
+  { id: 'kept-4', learnerName: 'Amelia Evans', lessonStartsAt: '2026-09-16T09:00:00+00:00', state: 'refused', message: 'Too close to another lesson.' },
+] as const;
 
 const exampleSkillMap = skillMap([
   { skillCode: 'CTRL', rating: 5, at: new Date('2026-09-12T06:00:00Z'), times: 6 },
@@ -434,6 +443,14 @@ export function DesignShowcase() {
       </Section>
 
       <Section title="Feedback">
+        <Label>No signal (M4-10), and records kept on the phone: waiting, already recorded elsewhere, and turned down (M4-11)</Label>
+        <div className="flex max-w-xl flex-col gap-3">
+          <NoSignalBanner />
+          {/* The lesson times format with the clock, which a page built ahead of time leaves to the visit. */}
+          <Suspense fallback={<SkeletonRow />}>
+            <KeptRecordsNotice records={exampleKeptRecords} onDismiss={() => toast('Dismissed')} />
+          </Suspense>
+        </div>
         <div className="flex flex-wrap gap-3">
           <Button variant="secondary" onClick={() => toast('Lesson booked for Tue 15 Sep, 14:30')}>
             Show toast

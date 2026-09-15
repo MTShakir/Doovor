@@ -2,7 +2,7 @@
 import 'fake-indexeddb/auto';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { TeachingLesson } from '@/lib/lessons/teaching';
-import { forgetKeptDays, keepDays, keptDay, keptLesson, type KeptDaysAnswer } from './kept-days';
+import { forgetKeptDays, keepDays, keptDay, keptLesson, keptOwner, type KeptDaysAnswer } from './kept-days';
 
 const lesson = (id: string, startsAt: string, learnerName = 'Jack Taylor'): TeachingLesson => ({
   id,
@@ -83,7 +83,9 @@ describe('the lessons a phone keeps for no signal (PRG-09, M4-09)', () => {
 
   it('forgets everything, whose and when included, for the next person to sign in', async () => {
     await keepDays(answering(sarah));
+    expect(await keptOwner()).toBe('user-sarah');
     await forgetKeptDays();
     expect(await keptDay('2026-09-15')).toEqual({ lessons: [], owner: null, at: null, covered: false });
+    expect(await keptOwner()).toBeNull();
   });
 });

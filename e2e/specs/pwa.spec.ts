@@ -2,6 +2,7 @@ import { expect, test, type Page } from '@playwright/test';
 import { authFile } from '../support/accounts';
 import { bookLesson, lessonIdAt, removeLesson } from '../support/database';
 import { addDays, expectAccessible, settled, snap } from '../support/helpers';
+import { keptLessons, keptScreens, londonTime, readyWithNoSignal, type KeptLesson } from '../support/offline';
 import { signInThroughForm } from '../support/sign-in';
 
 declare global {
@@ -18,77 +19,6 @@ declare global {
  * Chrome's own (D-104), so the first test checks each thing Chrome looks for: a manifest it can
  * read, a name, a start page that opens, a standalone display, and icons that are the size they say.
  */
-
-/** The screens the service worker has kept, by path. The cache is named in apps/web/src/lib/pwa/offline-pages.ts. */
-async function keptScreens(page: Page): Promise<string[]> {
-  return page.evaluate(async () => {
-    if (!(await caches.has('offline-pages'))) return [];
-    const cache = await caches.open('offline-pages');
-    return (await cache.keys()).map((request) => new URL(request.url).pathname);
-  });
-}
-
-interface KeptLesson {
-  id: string;
-  day: string;
-  startsAt: string;
-  learnerName: string;
-}
-
-/**
- * The lessons kept on the device for no signal, read straight from IndexedDB. The database is named
- * in apps/web/src/lib/offline/kept-days.ts. One that does not exist yet is not made by looking.
- */
-async function keptLessons(page: Page): Promise<KeptLesson[]> {
-  return page.evaluate(
-    () =>
-      new Promise<KeptLesson[]>((resolve) => {
-        const opening = indexedDB.open('kept-teaching');
-        opening.onupgradeneeded = () => {
-          opening.transaction?.abort();
-        };
-        opening.onerror = () => {
-          resolve([]);
-        };
-        opening.onsuccess = () => {
-          const db = opening.result;
-          if (!db.objectStoreNames.contains('lessons')) {
-            db.close();
-            resolve([]);
-            return;
-          }
-          const all = db.transaction('lessons').objectStore('lessons').getAll();
-          all.onsuccess = () => {
-            db.close();
-            resolve(all.result as KeptLesson[]);
-          };
-          all.onerror = () => {
-            db.close();
-            resolve([]);
-          };
-        };
-      }),
-  );
-}
-
-/** "07:30", as a lesson's start reads in London. */
-const londonTime = (instant: string): string =>
-  new Intl.DateTimeFormat('en-GB', { timeZone: 'Europe/London', hour: '2-digit', minute: '2-digit' }).format(new Date(instant));
-
-/**
- * Whether a kept screen can be drawn with no signal: its copy is kept, and so is every build file
- * it names. The pattern is the one in apps/web/src/lib/pwa/offline-pages.ts.
- */
-async function readyWithNoSignal(page: Page, path: string): Promise<boolean> {
-  return page.evaluate(async (screen) => {
-    const copy = await (await caches.open('offline-pages')).match(screen, { ignoreSearch: true });
-    if (copy === undefined) return false;
-    const files = await caches.open('offline-assets');
-    const named = (await copy.text()).match(/\/_next\/static\/[A-Za-z0-9_.~%@+\-[\]/]+/g) ?? [];
-    const kept = await Promise.all(named.map(async (file) => (await files.match(file)) !== undefined));
-    return kept.every(Boolean);
-  }, path);
-}
 
 /** A PNG's width and height, from its header. */
 function pngSize(bytes: Buffer): string {

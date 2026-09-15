@@ -3,10 +3,10 @@
 /**
  * The service worker (NTF-01, PRG-09, PRD 8.1, M2-29, M4-08).
  *
- * Three jobs: keep the screens an instructor needs where there is no signal, answer any other
- * screen with a stand-in or a page saying there is no connection, and receive a push while the app
- * is closed. Everything else, the API and every Server Action included, goes to the network
- * untouched. Sending lesson records saved with no signal arrives in M4-11.
+ * Four jobs: keep the screens an instructor needs where there is no signal, answer any other screen
+ * with a stand-in or a page saying there is no connection, send the lesson records saved with no
+ * signal once it is back, and receive a push while the app is closed. Everything else, the API and
+ * every Server Action included, goes to the network untouched.
  */
 
 import {
@@ -30,6 +30,8 @@ import {
   offlineStandIn,
   todayPath,
 } from '../lib/pwa/offline-pages';
+import { keptOwner } from '../lib/offline/kept-days';
+import { sendKeptRecords, syncTag } from '../lib/offline/send-kept-records';
 
 declare global {
   interface WorkerGlobalScope extends SerwistGlobalConfig {
@@ -150,6 +152,26 @@ self.addEventListener('install', (event: ExtendableEvent) => {
 });
 
 serwist.addEventListeners();
+
+/**
+ * Sends the lesson records saved with no signal, when the browser wakes the worker because the
+ * signal is back (PRG-09, M4-11). Only under the name of whoever the phone last read lessons for,
+ * which sign in clears. A record still waiting makes the try fail, so the browser tries again later.
+ */
+self.addEventListener('sync', (sync: SyncEvent) => {
+  if (sync.tag !== syncTag) return;
+  sync.waitUntil(
+    (async () => {
+      const owner = await keptOwner();
+      if (owner === null) return;
+      const report = await sendKeptRecords(owner, { locks: self.navigator.locks });
+      // On the browser's last try it gives up, and the app sends when it is next looked at.
+      if (report !== null && report.waiting.length > 0 && !sync.lastChance) {
+        throw new Error(`${String(report.waiting.length)} lesson records are still waiting for signal`);
+      }
+    })(),
+  );
+});
 
 /** What the platform sends: the words are already decided (NTF-03, D-072). */
 interface PushPayload {

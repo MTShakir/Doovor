@@ -5,7 +5,7 @@ import { lessonToStart, needsRecord } from '@repo/core/lesson-records';
 import { formatTime } from '@repo/core/time';
 import { Button } from '@repo/ui/button';
 import { StatusPill } from '@repo/ui/status-pill';
-import { Check, MapPin, Navigation, NotebookPen } from 'lucide-react';
+import { Check, CloudUpload, MapPin, Navigation, NotebookPen } from 'lucide-react';
 import Link from 'next/link';
 import type { TeachingLesson } from '@/lib/lessons/teaching';
 
@@ -24,6 +24,8 @@ export interface TodayLessonsProps {
    * data the app fetches from the server, which would never arrive (M4-10).
    */
   plainLinks?: boolean;
+  /** Lessons whose record is saved on the phone and waiting to be sent: as good as recorded (M4-11). */
+  waiting?: ReadonlySet<string>;
 }
 
 /**
@@ -31,11 +33,12 @@ export interface TodayLessonsProps {
  * where to go and whether it is paid, and one big button for the lesson to start. A lesson that
  * has been taught and has no record yet says so, since writing it is the one thing left to do.
  */
-export function TodayLessons({ lessons, now, plainLinks = false }: TodayLessonsProps) {
+export function TodayLessons({ lessons, now, plainLinks = false, waiting = new Set<string>() }: TodayLessonsProps) {
   const moment = new Date(now);
   const Go = plainLinks ? 'a' : Link;
   const dayLessons = lessons.map((lesson) => ({
     ...lesson,
+    recorded: lesson.recorded || waiting.has(lesson.id),
     startsAt: new Date(lesson.startsAt),
     endsAt: new Date(lesson.endsAt),
     status: lesson.facts.status,
@@ -70,7 +73,12 @@ export function TodayLessons({ lessons, now, plainLinks = false }: TodayLessonsP
                   </span>
                   <span className="flex shrink-0 flex-col items-end gap-1">
                     <StatusPill status={state}>{lessonStateLabel(lesson.facts)}</StatusPill>
-                    {lesson.recorded ? (
+                    {waiting.has(lesson.id) ? (
+                      <span className="flex items-center gap-1 text-small text-grey-700">
+                        <CloudUpload className="size-4" aria-hidden />
+                        Waiting to send
+                      </span>
+                    ) : lesson.recorded ? (
                       <span className="flex items-center gap-1 text-small text-grey-700">
                         <Check className="size-4" aria-hidden />
                         Recorded

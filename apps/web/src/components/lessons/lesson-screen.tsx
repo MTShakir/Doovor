@@ -15,6 +15,7 @@ import { useEffect, useMemo, useState, useSyncExternalStore } from 'react';
 import { FormAlert } from '@/components/form-alert';
 import { clearDraft, draftSnapshot, newDraft, parseDraft, saveDraft, subscribeToDrafts, type LessonDraft } from '@/lib/lessons/draft';
 import type { TeachingLesson } from '@/lib/lessons/teaching';
+import { saveRecord } from '@/lib/offline/save-record';
 
 type Step = 'lesson' | 'record';
 
@@ -30,7 +31,8 @@ export interface LessonScreenProps {
  * While it is taught: how long it has been going, who it is with, and the skills to tap as they
  * come up. After: the same skills rated from 1 to 5, a line about the lesson and what to work on
  * next, saved in under a minute. Everything typed is kept on the phone until the record is saved,
- * so a reload or a lost signal loses nothing.
+ * so a reload or a lost signal loses nothing, and a record saved with no signal waits on the phone
+ * to be sent (M4-11).
  */
 export function LessonScreen({ lesson, startOnRecord }: LessonScreenProps) {
   const router = useRouter();
@@ -96,37 +98,54 @@ export function LessonScreen({ lesson, startOnRecord }: LessonScreenProps) {
     setPending(true);
     setError(null);
     const opened = current.formOpenedAt === null ? Date.now() : Date.parse(current.formOpenedAt);
+    const body = {
+      id: current.recordId,
+      bookingId: lesson.id,
+      ratings: current.skills.flatMap((code) => {
+        const rating = current.ratings[code];
+        return rating === undefined ? [] : [{ skillCode: code, rating }];
+      }),
+      summary: current.summary,
+      nextFocus: current.nextFocus,
+      homework: current.homework,
+      secondsTaken: Math.min(86400, Math.max(0, Math.round((Date.now() - opened) / 1000))),
+    };
+
     try {
-      const response = await fetch('/api/v1/lesson-records', {
-        method: 'POST',
-        headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({
-          id: current.recordId,
-          bookingId: lesson.id,
-          ratings: current.skills.map((code) => ({ skillCode: code, rating: current.ratings[code] })),
-          summary: current.summary,
-          nextFocus: current.nextFocus,
-          homework: current.homework,
-          secondsTaken: Math.min(86400, Math.max(0, Math.round((Date.now() - opened) / 1000))),
-        }),
-      });
-      const answer = (await response.json()) as { ok: boolean; code?: string; message?: string };
-      if (answer.ok) {
-        clearDraft(lesson.id);
-        toast('Lesson record saved');
-        router.push('/app/instructor');
-        router.refresh();
-        return;
+      // Kept on the phone first, then sent: with no signal it goes when the signal is back (M4-11).
+      const outcome = await saveRecord(body, lesson);
+      switch (outcome.kind) {
+        case 'saved':
+        case 'kept':
+          clearDraft(lesson.id);
+          toast(outcome.kind === 'saved' ? 'Lesson record saved' : 'Saved on this phone. It sends when you have signal.');
+          backToToday();
+          return;
+        case 'conflict':
+          setError('This lesson already has a record, saved from another phone or tab. There is nothing more to do here.');
+          return;
+        case 'refused':
+          setError(outcome.message ?? 'The record was not saved. Try again.');
+          return;
+        case 'unsent':
+          setError('The record could not be sent. Check you have signal and try again.');
+          return;
       }
-      setError(
-        answer.code === 'ALREADY_RECORDED'
-          ? 'This lesson already has a record, saved from another phone or tab. There is nothing more to do here.'
-          : (answer.message ?? 'The record was not saved. Try again.'),
-      );
-    } catch {
-      setError('The record could not be sent. Check you have signal and try again.');
     } finally {
       setPending(false);
+    }
+  };
+
+  /** With signal, the app's own way back; with none, a whole page the service worker can answer. */
+  const backToToday = () => {
+    if (navigator.onLine) {
+      router.push('/app/instructor');
+      router.refresh();
+    } else {
+      // The app's router would ask the server for Today, which never answers with no signal; a whole
+      // page is what the service worker answers from its copy.
+      // eslint-disable-next-line @next/next/no-location-assign-relative-destination
+      window.location.assign('/app/instructor');
     }
   };
 

@@ -97,6 +97,14 @@ export async function keptDay(day: LocalDate): Promise<KeptDay> {
   };
 }
 
+/**
+ * Whose lessons the phone holds: the person signed in when they were last read, or null once sign
+ * in has cleared them. Records saved on the phone are only sent while this is who saved them.
+ */
+export async function keptOwner(): Promise<string | null> {
+  return (await keptStore().facts.get('owner'))?.value ?? null;
+}
+
 /** One kept lesson, or null for a lesson the phone does not have. */
 export async function keptLesson(id: string): Promise<KeptLesson | null> {
   return (await keptStore().lessons.get(id)) ?? null;
