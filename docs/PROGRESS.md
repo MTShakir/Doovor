@@ -12,13 +12,15 @@ M2 Learners and bookings is approved and merged to `main`, and was pushed to sta
 
 M3 Payments is approved and merged to `main` (ad2cb83), with its 25 migrations applied to staging on 15 September 2026. Acceptance tests 3 to 6 and 12, and the M3-08 authorisation, passed against Stripe test mode. The milestone report is at https://claude.ai/code/artifact/2defdd40-fd63-4827-b54f-4eece5b627f5. The app now lives on `app.doovor.com` with the public site on `doovor.com` (D-084).
 
-M4 Progress and offline is in progress on branch `m4-progress-offline`: M4-01 is done.
+M4 Progress and offline is in progress on branch `m4-progress-offline`: M4-01 to M4-03 are done.
 
 ## M4 progress
 
 | Task | What | PRD | State |
 |---|---|---|---|
 | M4-01 | Skills reference data from Appendix A (codes, names, sub-skills) and rating scale in core | PRG-02 | Done. The 23 areas of the DVSA test report, in its order, with what each covers, and the rating scale from Introduced to Independent, in `packages/core/src/skills.ts`. The same areas are in `public.skills`, seeded by migration: anybody may read them and nobody but a migration writes them. A unit test and a pgTAP test each pin their list to Appendix A |
+| M4-02 | `lesson_records` and `skill_ratings` schema, `save_lesson_record` RPC idempotent on client ID, one record per booking | PRG-01 | Done. A record's id is made on the device, and `save_lesson_record` saves it once: sent again it changes nothing, and another device's record for the same lesson is refused as ALREADY_RECORDED. Only the instructor who taught the lesson writes it, with at least one skill rated 1 to 5 and a line about the lesson; a lesson that has started is marked done by saving its record (D-100). The save is audited and raises `lesson_record.added` for M4-12. pgTAP: 20 assertions, including a replayed save making one record |
+| M4-03 | RLS for records: learner reads own across Businesses, instructor reads own learners, `visibility` respected | PRG-03, 6.2 | Done. The learner reads their records from every Business they learn with, except one kept for the Business; owners and managers read their own Business's; an instructor reads the records they wrote and every record for a learner assigned to them; nobody else reads any, and ratings follow their record. pgTAP: 16 cross-tenant assertions with a learner at two Businesses and a cover lesson |
 
 ## M3 progress
 
@@ -168,7 +170,7 @@ Decisions D-036 to D-050 were logged during this stretch. Two were security fixe
 | Suite | Result |
 |---|---|
 | Unit (Vitest) | 843 passed across 7 packages; `packages/core` and `packages/providers` both above the 90% line coverage gate |
-| Database (pgTAP) | 909 assertions in 67 files, all passing, including against a database an end to end run has left data in, and none of them depends on the date or the day of the week they run on (D-070); SQL lint clean |
+| Database (pgTAP) | 945 assertions in 69 files, all passing, including against a database an end to end run has left data in, and none of them depends on the date or the day of the week they run on (D-070); SQL lint clean |
 | Stripe test mode | 6 of 6 on 14 September (`pnpm test:e2e:stripe`): acceptance-03 to 06, acceptance-12 and the M3-08 authorisation, against the sandbox with the listener and the job runner, in 6.8 minutes from a clean database |
 | End to end (Playwright) | 276 at 390 px and 1440 px on 14 September, none skipped, including acceptance-01 to 06, 09 and 12, the payment journeys for M3-05 to M3-22 and cover lessons (D-097). One run had the saved-card removal step fail once under full load and passed when its file ran again; it is being watched; green in CI on every push since 13 September |
 | Lint, typecheck, copy guard | Clean |

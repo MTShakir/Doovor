@@ -22,6 +22,7 @@ export const domainErrorCodes = [
   'INSUFFICIENT_CREDIT',
   'PDI_NOT_LINKED',
   'PAYMENT_FAILED',
+  'ALREADY_RECORDED',
   'UNKNOWN',
 ] as const;
 
@@ -53,6 +54,7 @@ export const defaultErrorCopy: Record<DomainErrorCode, string> = {
   INSUFFICIENT_CREDIT: 'Not enough lesson credit.',
   PDI_NOT_LINKED: 'Trainee instructors need a supervising school or instructor first.',
   PAYMENT_FAILED: 'The payment did not go through.',
+  ALREADY_RECORDED: 'This lesson already has a lesson record.',
   UNKNOWN: 'Something went wrong. Try again.',
 };
 
