@@ -96,16 +96,27 @@ export async function chooseDate(field: Locator, value: string): Promise<void> {
   }).toPass({ timeout: 15_000 });
 }
 
-/** WCAG 2.2 AA scan. Fails on serious or critical issues (PRD 14.4, M6-06). */
+/**
+ * WCAG 2.2 AA scan. Fails on serious or critical issues (PRD 14.4, M6-06).
+ *
+ * Colours are measured at rest. Waiting for movement to stop is not enough on its own: a toast can
+ * start fading out after the wait and while the scan runs. So the scan runs with reduced motion,
+ * which the app and its toasts honour by changing at once.
+ */
 export async function expectAccessible(page: Page, options: { exclude?: string[] } = {}): Promise<void> {
-  await settled(page);
-  let builder = new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'wcag22aa']);
-  for (const selector of options.exclude ?? []) builder = builder.exclude(selector);
-  const results = await builder.analyze();
-  const blocking = results.violations
-    .filter((v) => v.impact === 'serious' || v.impact === 'critical')
-    .map((v) => `${v.id} (${String(v.impact)}): ${v.help} -> ${v.nodes.map((n) => n.target.join(' ')).join(', ')}`);
-  expect(blocking, 'serious or critical accessibility issues').toEqual([]);
+  await page.emulateMedia({ reducedMotion: 'reduce' });
+  try {
+    await settled(page);
+    let builder = new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'wcag22aa']);
+    for (const selector of options.exclude ?? []) builder = builder.exclude(selector);
+    const results = await builder.analyze();
+    const blocking = results.violations
+      .filter((v) => v.impact === 'serious' || v.impact === 'critical')
+      .map((v) => `${v.id} (${String(v.impact)}): ${v.help} -> ${v.nodes.map((n) => n.target.join(' ')).join(', ')}`);
+    expect(blocking, 'serious or critical accessibility issues').toEqual([]);
+  } finally {
+    await page.emulateMedia({ reducedMotion: null });
+  }
 }
 
 /** A local day moved on or back by whole days: calendar arithmetic, with no zone to cross. */
