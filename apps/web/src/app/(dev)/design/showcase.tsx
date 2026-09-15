@@ -16,6 +16,7 @@ import {
   ProfileHeader,
   WhereLessonsStart,
 } from '@/components/public/instructor-profile';
+import { SchoolHeader, SchoolInstructors } from '@/components/public/school-profile';
 import { NoSignalBanner } from '@/components/offline/connection-banner';
 import { KeptRecordsNotice } from '@/components/offline/kept-records-notice';
 import { CardFieldsSkeleton } from '@/components/payments/card-form';
@@ -636,6 +637,23 @@ export function DesignShowcase() {
             ]}
           />
           <PriceList idPrefix="unpriced-" lessons={[]} packages={[]} />
+        </div>
+        <Label>School profile: its header, and its instructors, one of them not taking new bookings (PUB-01, M5-03)</Label>
+        <div className="grid items-start gap-6 md:grid-cols-2">
+          <div className="flex flex-col gap-6">
+            <SchoolHeader name="Quayside Driving School" cityName="Manchester" instructorCount={2} />
+            <SchoolHeader name="Northern Lights Driving" cityName={null} instructorCount={1} />
+          </div>
+          <SchoolInstructors
+            idPrefix="school-"
+            instructors={[
+              { href: '#emma', name: 'Emma Clarke', qualification: 'adi', transmission: 'automatic', car: 'Toyota Yaris Hybrid', takingBookings: true, hourlyFromPence: 4400 },
+              { href: '#tom', name: 'Tom Walsh', qualification: 'adi', transmission: 'manual', car: 'Ford Fiesta', takingBookings: false, hourlyFromPence: 4200 },
+            ]}
+          />
+        </div>
+        <div className="max-w-xl">
+          <SchoolInstructors idPrefix="empty-school-" instructors={[]} />
         </div>
       </Section>
 

@@ -13,6 +13,11 @@ export function instructorProfilePath(citySlug: string | null, slug: string): st
   return `/instructors/${citySlug ?? 'uk'}/${slug}`;
 }
 
+/** The address of a school's profile, under the city its base is in (PRD 8.3). */
+export function schoolProfilePath(citySlug: string | null, slug: string): string {
+  return `/schools/${citySlug ?? 'uk'}/${slug}`;
+}
+
 /** A trainee has to say so (R-18); both are named as a learner would know them. */
 export function qualificationWords(qualification: Qualification): string {
   return qualification === 'adi' ? 'Approved driving instructor' : 'Trainee driving instructor';

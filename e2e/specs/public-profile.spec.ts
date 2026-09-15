@@ -61,3 +61,36 @@ test.describe('public instructor profile (PUB-01, M5-02)', () => {
     await snap(page, testInfo, 'public-profile-school');
   });
 });
+
+/**
+ * The public school profile (PUB-01, M5-03). Quayside Driving School has three instructors:
+ * Emma Clarke and Tom Walsh are approved; Aisha Rahman is still waiting to be checked.
+ */
+test.describe('public school profile (PUB-01, M5-03)', () => {
+  test('a school lists the instructors a learner can find, each opening their own profile', async ({ page }, testInfo) => {
+    await page.goto('/schools/manchester/quayside-driving-school');
+    await expect(page.getByRole('heading', { level: 1, name: 'Quayside Driving School' })).toBeVisible();
+    await expect(page.getByText(/^Driving school in Manchester, \d+ instructors taking learners$/)).toBeVisible();
+    const instructors = page.getByRole('region', { name: 'Instructors' });
+    await expect(instructors.getByRole('link', { name: /^Emma Clarke/ })).toBeVisible();
+    await expect(instructors.getByRole('link', { name: /^Tom Walsh/ })).toBeVisible();
+    await expect(instructors.getByRole('link', { name: /Aisha Rahman/ })).toHaveCount(0);
+    await expect(page.getByRole('region', { name: 'Prices' })).toBeVisible();
+    await expectAccessible(page);
+    await settled(page);
+    await snap(page, testInfo, 'public-school');
+
+    await instructors.getByRole('link', { name: /^Emma Clarke/ }).click();
+    await expect(page).toHaveURL(/\/instructors\/manchester\/emma-clarke$/);
+    await expect(page.getByRole('heading', { level: 1, name: 'Emma Clarke' })).toBeVisible();
+  });
+
+  test('one address per school, and a Business of one has no school page', async ({ page }) => {
+    await page.goto('/schools/leeds/quayside-driving-school');
+    await expect(page).toHaveURL(/\/schools\/manchester\/quayside-driving-school$/);
+
+    // Sarah Khan runs a Business of one: her page is her instructor profile.
+    await page.goto('/schools/leeds/sarah-khan-driving');
+    await expect(page.getByRole('heading', { name: 'Page not found' })).toBeVisible();
+  });
+});

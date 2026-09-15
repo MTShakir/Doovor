@@ -6,7 +6,7 @@ import { brand } from '@repo/config/brand';
  * here when it arrives (M5, D-109).
  */
 const siteHome = '/';
-const sitePrefixes: readonly string[] = ['/instructors/'];
+const sitePrefixes: readonly string[] = ['/instructors/', '/schools/'];
 
 /** Whether a path is one of the public site's pages. */
 export function isSitePath(pathname: string): boolean {

@@ -2762,6 +2762,7 @@ export type Database = {
         }
         Returns: Json
       }
+      school_profile_page: { Args: { p_slug: string }; Returns: Json }
       set_availability_exception: {
         Args: {
           p_ends_at: string

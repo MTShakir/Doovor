@@ -52,12 +52,14 @@ select is_empty(
 --   postcode cache and the city reference data, which anybody may read already (PRD 8.3, M5-01).
 --   instructor_profile_page, next_open_slots: the public profile. The profile is a fixed list of
 --   fields for an instructor the platform has checked, and the times are ones they publish (PUB-01).
+--   school_profile_page: the public school page, a fixed list of fields for a school in good
+--   standing and the instructors on it a learner could find anyway (PUB-01, M5-03).
 select is_empty(
   $$ select distinct routine_name from information_schema.routine_privileges
       where routine_schema = 'public' and grantee in ('PUBLIC', 'anon')
         and routine_name not in ('covers_postcode', 'invitation_details', 'slot_problem',
                                  'booking_page', 'open_slots', 'place_of_postcode',
-                                 'instructor_profile_page', 'next_open_slots') $$,
+                                 'instructor_profile_page', 'next_open_slots', 'school_profile_page') $$,
   'no public function is executable by anon unless allowlisted'
 );
 
