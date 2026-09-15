@@ -156,6 +156,13 @@ describe('the words (NTF-03)', () => {
     );
   });
 
+  it('tells a learner their lesson record is ready, with the lesson and what the instructor wrote (PRD 10.2 step 4, M4-12)', () => {
+    expect(notificationCopy('lesson_record.added', 'learner', { ...lesson, detail: 'Good junctions, and mirrors checked early' })).toEqual({
+      title: 'Your lesson record is ready',
+      body: 'Wed 16 Sep at 09:00 with Sarah Khan. Good junctions, and mirrors checked early.',
+    });
+  });
+
   it('tells the learner what only the learner needs to hear, and the others the rest (acceptance-04)', () => {
     const facts = { ...lesson, detail: 'Jack Taylor cancelled late, so the £42 they paid is kept as the fee.', learnerDetail: 'You cancelled 24 hours before it started.' };
     expect(notificationCopy('booking.cancelled', 'learner', facts).body).toBe('Wed 16 Sep at 09:00 with Sarah Khan. You cancelled 24 hours before it started.');

@@ -4,6 +4,7 @@ import { maintenanceSweep, recurrenceSweep, requestExpirySweep } from './functio
 import { notificationDispatch } from './functions/notification-dispatch';
 import { creditLowNotices, dailyPaymentSummaries, overdueSweep, paymentReceivedNotices } from './functions/payment-notices';
 import { authorisationSweep, beforeLessonCharges, feeCharge, holdSweep, receiptSend, refundSend } from './functions/payments';
+import { lessonRecordNotices } from './functions/record-notices';
 import { reminderSweep } from './functions/reminders';
 import { outboxSweep } from './functions/outbox-sweep';
 import { systemPingFunction } from './functions/ping';
@@ -29,4 +30,5 @@ export const functions = [
   overdueSweep,
   creditLowNotices,
   dailyPaymentSummaries,
+  lessonRecordNotices,
 ];

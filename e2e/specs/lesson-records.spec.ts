@@ -1,6 +1,6 @@
 import { expect, test, type Page } from '@playwright/test';
 import { authFile } from '../support/accounts';
-import { bookLesson, lessonIdAt, lessonRecordFor } from '../support/database';
+import { bookLesson, lessonEvents, lessonIdAt, lessonRecordFor, notificationChannels } from '../support/database';
 import { addDays, dayLabel, expectAccessible, fillUntil, settled, snap } from '../support/helpers';
 
 /**
@@ -62,7 +62,7 @@ test.describe('a lesson and its record (PRG-01, M4-04, M4-05)', () => {
     await expect(page.getByRole('radiogroup', { name: 'Junctions, from 1 to 5' })).toBeVisible();
   });
 
-  test('a record for a lesson that happened is written and saved in under a minute (PRG-01)', async ({ page }, testInfo) => {
+  test('a record for a lesson that happened is written and saved in under a minute, and the learner is told (PRG-01, NTF-03)', async ({ page, browser }, testInfo) => {
     const mobile = testInfo.project.name === 'mobile';
     const day = addDays(today(), mobile ? -3 : -5);
     await bookLesson('Sarah Khan', learner, day, '07:00');
@@ -112,5 +112,32 @@ test.describe('a lesson and its record (PRG-01, M4-04, M4-05)', () => {
     // Opened again, it says the record is saved rather than offering a second one.
     await page.goto(`/app/instructor/lessons/${lessonId}`);
     await expect(page.getByText('This lesson already has its record.')).toBeVisible();
+
+    // PRD 10.2 step 4: Jack is told, in the inbox and on their phone (NTF-03, M4-12). The job runner
+    // is not part of a local run, so the test hands the job the event the database wrote.
+    const [added] = await lessonEvents(lessonId, 'lesson_record.added');
+    expect(added?.payload).toMatchObject({ booking_id: lessonId });
+    const recordId = String(added?.payload.lesson_record_id);
+    const first = await page.request.post('/dev/events', { data: added });
+    expect(await first.json()).toEqual({ written: 1 });
+    // The same event again, as a job tried twice: nobody is told twice.
+    const second = await page.request.post('/dev/events', { data: added });
+    expect(await second.json()).toEqual({ written: 0 });
+    expect(await notificationChannels(learner, 'lesson_record.added', recordId)).toEqual(['in_app', 'push']);
+
+    const jack = await browser.newContext({ storageState: authFile('learner') });
+    try {
+      const inbox = await jack.newPage();
+      await inbox.goto('/notifications');
+      const told = inbox.getByRole('article').filter({ hasText: 'Your lesson record is ready' }).filter({ hasText: `${dayLabel(day)} at 07:00` });
+      await expect(told).toContainText(`${dayLabel(day)} at 07:00 with Sarah Khan. Good junctions, mirrors checked early.`);
+      await settled(inbox);
+      await snap(inbox, testInfo, 'lesson-record-notice');
+      await told.getByRole('link', { name: 'Open' }).click();
+      await expect(inbox).toHaveURL(/\/app\/learner\/progress$/);
+      await expect(inbox.getByRole('heading', { level: 1, name: 'Progress' })).toBeVisible();
+    } finally {
+      await jack.close();
+    }
   });
 });

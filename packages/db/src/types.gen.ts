@@ -2864,6 +2864,10 @@ export type Database = {
       system_extend_recurrences: { Args: { p_weeks?: number }; Returns: number }
       system_fee_to_charge: { Args: { p_booking_id: string }; Returns: Json }
       system_issue_receipt: { Args: { p_payment_id: string }; Returns: Json }
+      system_lesson_record_notice: {
+        Args: { p_lesson_record_id: string }
+        Returns: Json
+      }
       system_lessons_to_charge: {
         Args: { p_within_hours?: number }
         Returns: Json
