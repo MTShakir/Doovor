@@ -16,6 +16,7 @@ import { instructorProfile } from '@/lib/public/instructor-profile';
 import { getSiteUrl } from '@/lib/site-url';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
 import { ProfileForm } from './profile-form';
+import { SearchListing } from './search-listing';
 import { CoverageEditor } from '../coverage-editor';
 import { CoverageForm } from '../coverage-form';
 
@@ -63,7 +64,7 @@ async function Profile() {
   const { data: profile } = await supabase
     .from('instructor_profiles')
     .select(
-      'display_name, bio, photo_path, languages, years_teaching, transmission, car_make, car_model, dual_controls, specialisms, qualification, badge_number, badge_expiry, verification_status, supervisor_business_id, supervisor_instructor_id, base_postcode, radius_miles, public_slug',
+      'display_name, bio, photo_path, languages, years_teaching, transmission, car_make, car_model, dual_controls, specialisms, qualification, badge_number, badge_expiry, verification_status, supervisor_business_id, supervisor_instructor_id, base_postcode, radius_miles, public_slug, is_listed',
     )
     .eq('id', membership.instructorProfileId)
     .single();
@@ -99,6 +100,7 @@ async function Profile() {
         profileUrl={profileUrl}
         unavailable={published && !published.takingBookings ? 'badge-expired' : 'approval'}
       />
+      {published ? <SearchListing listed={profile.is_listed} badgeExpired={!published.takingBookings} /> : null}
       <Card className="flex flex-col gap-2">
         <div className="flex items-start justify-between gap-3">
           <CardTitle>{profile.qualification === 'pdi' ? 'Trainee instructor' : 'Approved driving instructor'}</CardTitle>

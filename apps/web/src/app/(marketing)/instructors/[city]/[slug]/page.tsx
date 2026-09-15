@@ -36,8 +36,9 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     title,
     description,
     alternates: { canonical: `${getSiteUrl()}${instructorProfilePath(profile.place?.citySlug ?? null, profile.slug)}` },
-    // Hidden from search, still there for anybody with the link (PUB-04).
-    ...(profile.listed ? {} : { robots: { index: false, follow: true } }),
+    // Out of search, hidden by the instructor (PUB-04) or with a badge out of date (INS-03): still there
+    // for anybody with the link, but not for search engines.
+    ...(profile.inSearch ? {} : { robots: { index: false, follow: true } }),
   };
 }
 

@@ -3,6 +3,7 @@
 import { isProfileObjectPath } from '@repo/core/images';
 import { err, ok, type Result } from '@repo/core/result';
 import { instructorProfileSchema } from '@repo/core/schemas/profile';
+import { z } from 'zod';
 import { revalidatePath } from 'next/cache';
 import { requirePortal } from '@/lib/auth/session';
 import { fieldErrors } from '@/lib/forms';
@@ -53,6 +54,28 @@ export async function saveProfile(input: unknown, photoPath?: string | null): Pr
   if (photoPath !== undefined && current?.photo_path && current.photo_path !== photoPath) {
     await removeProfileImage(supabase, avatarsBucket, current.photo_path);
   }
+
+  revalidatePath('/app/instructor/profile');
+  expireInstructorProfile(profileId);
+  return ok(null);
+}
+
+/**
+ * PUB-04: show the profile in search, or hide it there while the booking link keeps working. The
+ * instructor's own choice; an expired badge keeps the profile out of search by itself (D-113).
+ */
+export async function saveListing(listed: unknown): Promise<Result<null>> {
+  const parsed = z.boolean().safeParse(listed);
+  if (!parsed.success) return err('VALIDATION_FAILED');
+
+  const { access } = await requirePortal('instructor');
+  const membership = access.memberships.find((m) => m.instructorProfileId !== null);
+  if (!membership?.instructorProfileId) return err('NOT_ALLOWED');
+  const profileId = membership.instructorProfileId;
+
+  const supabase = await createSupabaseServerClient();
+  const { error } = await supabase.from('instructor_profiles').update({ is_listed: parsed.data }).eq('id', profileId);
+  if (error) return err('UNKNOWN', 'We could not change that. Try again.');
 
   revalidatePath('/app/instructor/profile');
   expireInstructorProfile(profileId);

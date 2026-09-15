@@ -934,3 +934,56 @@ export async function lessonRecordFor(
       : null;
   });
 }
+
+export interface MadeInstructor {
+  slug: string;
+  name: string;
+  remove: () => Promise<void>;
+}
+
+/**
+ * A checked instructor with a Business of their own, made for one test and removed after it
+ * (M5-06). Nothing else knows them, so a test can run their badge out without touching anybody
+ * another test is using. Based in Leeds, with a price, and a badge that runs out on the day given.
+ */
+export async function makeInstructor(name: string, badgeExpiry: string): Promise<MadeInstructor> {
+  const userId = crypto.randomUUID();
+  const slug = `${name.toLowerCase().replace(/[^a-z0-9]+/g, '-')}-${userId.slice(0, 8)}`;
+  await withDatabase(async (sql) => {
+    await sql`select tests.create_user_with_id(${userId}::uuid, ${`${slug}@example.com`}, ${name})`;
+    const [business] = await sql<{ id: string }[]>`
+      insert into public.businesses (type, name, slug, base_postcode)
+      values ('independent', ${`${name} Driving`}, ${`${slug}-driving`}, 'LS6 3QS')
+      returning id`;
+    if (!business) throw new Error('No Business was made');
+    await sql`insert into public.memberships (business_id, user_id, role) values (${business.id}, ${userId}, 'owner')`;
+    await sql`
+      insert into public.instructor_profiles (user_id, business_id, display_name, public_slug, verification_status, verified_at,
+                                              badge_expiry, base_postcode, base_location)
+      select ${userId}, ${business.id}, ${name}, ${slug}, 'approved', now(), ${badgeExpiry}::date, p.postcode, p.location
+        from public.postcodes p
+       where p.postcode = 'LS6 3QS'`;
+    const [type] = await sql<{ id: string }[]>`
+      insert into public.lesson_types (business_id, name) values (${business.id}, 'Standard lesson') returning id`;
+    if (!type) throw new Error('No lesson type was made');
+    await sql`
+      insert into public.lesson_prices (business_id, lesson_type_id, duration_minutes, price_pence)
+      values (${business.id}, ${type.id}, 60, 4000)`;
+  });
+  return {
+    slug,
+    name,
+    remove: () =>
+      withDatabase(async (sql) => {
+        await sql`delete from public.businesses where slug = ${`${slug}-driving`}`;
+        await sql`delete from auth.users where id = ${userId}`;
+      }),
+  };
+}
+
+/** Puts an instructor's choice to be in search back, whatever a failed test left (PUB-04). */
+export async function setListed(instructorName: string, listed: boolean): Promise<void> {
+  await withDatabase(async (sql) => {
+    await sql`update public.instructor_profiles set is_listed = ${listed} where display_name = ${instructorName}`;
+  });
+}

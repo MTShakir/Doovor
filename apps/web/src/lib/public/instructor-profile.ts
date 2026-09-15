@@ -51,6 +51,7 @@ const profileSchema = z.object({
     })
     .nullable(),
   listed: z.boolean(),
+  inSearch: z.boolean(),
   takingBookings: z.boolean(),
   instantBook: z.boolean(),
   business: z.object({

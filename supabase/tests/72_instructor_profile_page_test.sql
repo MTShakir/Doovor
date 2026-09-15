@@ -37,7 +37,7 @@ select tests.authenticate_as_anon();
 -- Private fields absent: the page is exactly this list, so anything new is private by default.
 select is(
   (select array_agg(k order by k) from jsonb_object_keys(public.instructor_profile_page('ian-one')) as k),
-  array['alsoCovers', 'areaCentre', 'bio', 'business', 'car', 'dualControls', 'instantBook', 'instructorId',
+  array['alsoCovers', 'areaCentre', 'bio', 'business', 'car', 'dualControls', 'inSearch', 'instantBook', 'instructorId',
         'languages', 'lessons', 'listed', 'name', 'outcode', 'packages', 'photoPath', 'place', 'qualification',
         'radiusMiles', 'slug', 'specialisms', 'takingBookings', 'transmission', 'yearsTeaching'],
   'the profile is these fields and no others'

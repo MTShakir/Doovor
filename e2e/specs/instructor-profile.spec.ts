@@ -16,7 +16,8 @@ test.describe('instructor profile (INS-01, M1-11)', () => {
     await expect(page.getByLabel('Display name')).toHaveValue('Sarah Khan');
     await expect(page.getByRole('button', { name: 'Urdu' })).toHaveAttribute('aria-pressed', 'true');
     await expect(page.getByRole('button', { name: 'Polish' })).toHaveAttribute('aria-pressed', 'false');
-    await expect(page.getByRole('img', { name: /coverage area/i })).toHaveAttribute('aria-label', /8 miles around LS6 3QS/);
+    // By its label: drawn as a picture without a map key, and as a figure holding the real map with one.
+    await expect(page.getByLabel(/coverage area/i)).toHaveAttribute('aria-label', /8 miles around LS6 3QS/);
     await expectAccessible(page);
     await snap(page, testInfo, 'instructor-profile');
   });

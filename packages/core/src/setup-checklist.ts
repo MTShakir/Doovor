@@ -13,8 +13,8 @@ export interface SetupState {
   paymentsConnected: boolean;
   /** The badge has been approved, so the public profile is live (INS-02, INS-05). */
   verified: boolean;
-  /** The instructor has not hidden themselves from the public site. */
-  listed: boolean;
+  /** The badge is in date, so the booking link takes bookings (INS-03). Hiding from search does not matter (PUB-04). */
+  badgeInDate: boolean;
 }
 
 export type SetupTaskId = 'first-learner' | 'connect-payments' | 'booking-link';
@@ -27,7 +27,7 @@ export interface SetupTask {
 }
 
 export function setupTasks(state: SetupState): SetupTask[] {
-  const linkLive = state.verified && state.listed;
+  const linkLive = state.verified && state.badgeInDate;
   return [
     { id: 'first-learner', done: state.learners > 0 },
     { id: 'connect-payments', done: state.paymentsConnected },

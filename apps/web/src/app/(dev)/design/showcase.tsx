@@ -544,8 +544,8 @@ export function DesignShowcase() {
 
       <Section title="Checklist">
         <div className="grid gap-4 md:grid-cols-2">
-          <SetupChecklist state={{ learners: 0, paymentsConnected: false, verified: false, listed: true }} />
-          <SetupChecklist state={{ learners: 3, paymentsConnected: false, verified: true, listed: true }} />
+          <SetupChecklist state={{ learners: 0, paymentsConnected: false, verified: false, badgeInDate: true }} />
+          <SetupChecklist state={{ learners: 3, paymentsConnected: false, verified: true, badgeInDate: true }} />
         </div>
         <Label>Install offer: the browser&apos;s own prompt, and the steps on an iPhone or iPad (M4-08)</Label>
         <div className="grid items-start gap-4 md:grid-cols-2">

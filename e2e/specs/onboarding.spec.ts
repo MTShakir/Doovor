@@ -177,7 +177,8 @@ test.describe('instructor onboarding (AUTH-04, M1-02)', () => {
     await expect(page).toHaveURL(/\/onboarding\/area$/);
 
     // Eight miles is the default the product sets (COV-01).
-    const area = page.getByRole('img', { name: /coverage area/i });
+    // By its label: drawn as a picture without a map key, and as a figure holding the real map with one.
+    const area = page.getByLabel(/coverage area/i);
     await expect(area).toHaveAttribute('aria-label', /8 miles/);
 
     // A postcode the seed already cached, so the suite never waits on postcodes.io.

@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { setupComplete, setupProgress, setupTasks, type SetupState } from './setup-checklist.ts';
 
-const fresh: SetupState = { learners: 0, paymentsConnected: false, verified: false, listed: true };
+const fresh: SetupState = { learners: 0, paymentsConnected: false, verified: false, badgeInDate: true };
 
 function doneIds(state: SetupState): string[] {
   return setupTasks(state)
@@ -31,11 +31,11 @@ describe('setup checklist (PRD 10.1, M1-10)', () => {
   });
 
   it('does not tick a link the instructor has hidden', () => {
-    expect(doneIds({ ...fresh, verified: true, listed: false })).toEqual([]);
+    expect(doneIds({ ...fresh, verified: true, badgeInDate: false })).toEqual([]);
   });
 
   it('counts how far along the list is', () => {
-    expect(setupProgress({ learners: 2, paymentsConnected: true, verified: false, listed: true })).toEqual({
+    expect(setupProgress({ learners: 2, paymentsConnected: true, verified: false, badgeInDate: true })).toEqual({
       done: 2,
       total: 3,
       percent: 67,
@@ -43,7 +43,7 @@ describe('setup checklist (PRD 10.1, M1-10)', () => {
   });
 
   it('is finished only when all three are', () => {
-    const all: SetupState = { learners: 1, paymentsConnected: true, verified: true, listed: true };
+    const all: SetupState = { learners: 1, paymentsConnected: true, verified: true, badgeInDate: true };
     expect(setupComplete(all)).toBe(true);
     expect(setupProgress(all).percent).toBe(100);
   });
