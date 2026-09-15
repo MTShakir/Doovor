@@ -24,6 +24,7 @@
     "@stripe/stripe-js": "9.16.0",
     "@supabase/ssr": "catalog:",
     "@supabase/supabase-js": "catalog:",
+    "dexie": "4.4.6",
     "esbuild": "^0.28.2",
     "inngest": "^4.20.0",
     "lucide-react": "catalog:",
@@ -44,6 +45,7 @@
     "@types/react-dom": "catalog:",
     "@types/web-push": "^3.6.4",
     "eslint": "catalog:",
+    "fake-indexeddb": "6.2.5",
     "tailwindcss": "catalog:",
     "typescript": "catalog:",
     "vitest": "catalog:"

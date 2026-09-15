@@ -97,6 +97,14 @@ export async function setBookingStatus(
  */
 export async function clearDiary(instructorName: string, date: string): Promise<void> {
   await withDatabase(async (sql) => {
+    // A lesson with a record is kept in the app (D-100); a test clearing its day takes the record too.
+    await sql`
+      delete from public.lesson_records r
+       using public.bookings b, public.instructor_profiles p
+       where r.booking_id = b.id
+         and p.id = b.instructor_id
+         and p.display_name = ${instructorName}
+         and (b.starts_at at time zone 'Europe/London')::date = ${date}::date`;
     await sql`
       delete from public.bookings b
        using public.instructor_profiles p
@@ -194,6 +202,15 @@ export async function removeLesson(
   time: string,
 ): Promise<void> {
   await withDatabase(async (sql) => {
+    await sql`
+      delete from public.lesson_records r
+       using public.bookings b, public.instructor_profiles p, public.users u
+       where r.booking_id = b.id
+         and p.id = b.instructor_id
+         and u.id = b.learner_id
+         and p.display_name = ${instructorName}
+         and lower(u.email) = lower(${learnerEmail})
+         and b.starts_at = (${date}::date + ${time}::time) at time zone 'Europe/London'`;
     await sql`
       delete from public.bookings b
        using public.instructor_profiles p, public.users u
@@ -388,6 +405,7 @@ export async function finishedLessonOwed(instructorName: string, learnerEmail: s
 /** Takes a lesson out by its id, whatever became of it. Local only. */
 export async function removeLessonById(id: string): Promise<void> {
   await withDatabase(async (sql) => {
+    await sql`delete from public.lesson_records where booking_id = ${id}`;
     await sql`delete from public.bookings where id = ${id}`;
   });
 }
@@ -846,5 +864,73 @@ export async function newestPaymentFor(bookingId: string): Promise<{ status: str
        limit 1`;
     const found = rows[0];
     return found ? { status: found.status, amountPence: found.amount_pence, providerRef: found.provider_ref } : null;
+  });
+}
+
+export interface RecordedLessonSeed {
+  date: string;
+  time: string;
+  summary: string;
+  /** Skill codes and their ratings: `{ DUALCW: 4 }`. */
+  ratings: Record<string, number>;
+  nextFocus?: string;
+  homework?: string;
+}
+
+/**
+ * Lessons that happened, each with its record, as an instructor saving them would leave them
+ * (PRG-03, M4-06, M4-07). Written in the order given, so a test can have an older lesson's record
+ * arrive after a newer one's. Marked paid, so they owe nobody anything. Whatever was at those
+ * times is cleared first. Local only.
+ */
+export async function recordLessons(instructorName: string, learnerEmail: string, lessons: RecordedLessonSeed[]): Promise<void> {
+  for (const lesson of lessons) await removeLesson(instructorName, learnerEmail, lesson.date, lesson.time);
+  await withDatabase(async (sql) => {
+    for (const lesson of lessons) {
+      const [booking] = await sql<{ id: string; business_id: string; instructor_id: string; learner_id: string; starts_at: Date }[]>`
+        insert into public.bookings (business_id, instructor_id, learner_id, lesson_type_id, starts_at, ends_at,
+                                     buffer_minutes, status, payment_mode, payment_status, price_pence, source)
+        select p.business_id, p.id, u.id, t.id,
+               (${lesson.date}::date + ${lesson.time}::time) at time zone 'Europe/London',
+               (${lesson.date}::date + ${lesson.time}::time + interval '1 hour') at time zone 'Europe/London',
+               30, 'completed', 'offline', 'paid_cash', 4200, 'instructor'
+          from public.instructor_profiles p
+          join public.lesson_types t on t.business_id = p.business_id and t.name = 'Standard lesson'
+          join public.users u on lower(u.email) = lower(${learnerEmail})
+         where p.display_name = ${instructorName}
+        returning id, business_id, instructor_id, learner_id, starts_at`;
+      if (!booking) throw new Error(`No lesson made for ${instructorName} at ${lesson.time} on ${lesson.date}`);
+      await sql`
+        with record as (
+          insert into public.lesson_records (id, business_id, booking_id, learner_id, instructor_id, lesson_starts_at,
+                                             summary, next_focus, homework)
+          values (gen_random_uuid(), ${booking.business_id}, ${booking.id}, ${booking.learner_id}, ${booking.instructor_id},
+                  ${booking.starts_at}, ${lesson.summary}, ${lesson.nextFocus ?? null}, ${lesson.homework ?? null})
+          returning id
+        )
+        insert into public.skill_ratings (lesson_record_id, skill_code, rating, business_id, learner_id)
+        select record.id, rated.key, rated.value::smallint, ${booking.business_id}, ${booking.learner_id}
+          from record, jsonb_each_text(${sql.json(lesson.ratings)}::jsonb) as rated`;
+    }
+  });
+}
+
+/** A lesson's record as saved, with its ratings and how long it took (PRG-01, M4-05). Null before one is saved. */
+export async function lessonRecordFor(
+  bookingId: string,
+): Promise<{ summary: string; nextFocus: string | null; ratings: string[]; secondsTaken: number | null; lessonStatus: string } | null> {
+  return withDatabase(async (sql) => {
+    const rows = await sql<{ summary: string; next_focus: string | null; ratings: string[]; seconds_taken: number | null; status: string }[]>`
+      select r.summary, r.next_focus, r.seconds_taken, b.status::text as status,
+             coalesce(array_agg(s.skill_code || ':' || s.rating order by s.skill_code) filter (where s.skill_code is not null), '{}') as ratings
+        from public.lesson_records r
+        join public.bookings b on b.id = r.booking_id
+        left join public.skill_ratings s on s.lesson_record_id = r.id
+       where r.booking_id = ${bookingId}
+       group by r.id, b.status`;
+    const found = rows[0];
+    return found
+      ? { summary: found.summary, nextFocus: found.next_focus, ratings: found.ratings, secondsTaken: found.seconds_taken, lessonStatus: found.status }
+      : null;
   });
 }

@@ -8,6 +8,7 @@ import { SkeletonRow } from '@repo/ui/skeleton';
 import { CalendarDays, CarFront, MapPin } from 'lucide-react';
 import Link from 'next/link';
 import { Suspense } from 'react';
+import { InstallPrompt } from '@/components/pwa/install-prompt';
 import { requirePortal } from '@/lib/auth/session';
 import { myLessons } from '@/lib/learner/lessons';
 
@@ -74,6 +75,7 @@ async function Home() {
             />
           </Card>
         )}
+        <InstallPrompt why="Your lessons, payments and progress, one tap away." />
       </div>
     </>
   );

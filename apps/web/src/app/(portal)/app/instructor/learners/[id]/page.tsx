@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
-import { formatDateTime, formatMinutes } from '@repo/core/time';
+import { skillMapSummary } from '@repo/core/skill-map';
+import { formatDateTime, formatMinutes, todayInZone } from '@repo/core/time';
 import type { AccessContext } from '@repo/db';
 import { PageHeader } from '@repo/ui/app-shell';
 import { Button } from '@repo/ui/button';
@@ -7,16 +8,18 @@ import { Card, CardTitle } from '@repo/ui/card';
 import { ListDivider, ListRow } from '@repo/ui/list-row';
 import { SkeletonRow } from '@repo/ui/skeleton';
 import { StatusPill } from '@repo/ui/status-pill';
-import { ChevronLeft, Mail, MessageSquare, Phone } from 'lucide-react';
+import { ChevronLeft, Mail, MessageSquare, Phone, TrendingUp } from 'lucide-react';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { Fragment, Suspense } from 'react';
 import { BalanceHistory, BalanceLines, OwedBackList, OwedLessons } from '@/components/money/balance';
 import { MarkPaidButton } from '@/components/money/mark-paid';
+import { lessonWhen } from '@/components/progress/lesson-record-card';
 import { requirePortal } from '@/lib/auth/session';
 import { learnerCard, type LearnerCard } from '@/lib/learners/card';
 import { learnerHistory, type LearnerHistoryEntry } from '@/lib/learners/history';
 import { learnerNotes } from '@/lib/learners/notes';
+import { learnerSkillMap, lessonRecordPage } from '@/lib/lessons/records';
 import { learnerBalance } from '@/lib/payments/balance';
 import { noShowDisputes } from '@/lib/payments/disputes';
 import { packagesForSale } from '@/lib/payments/packages';
@@ -93,6 +96,7 @@ async function Learner({ params }: LearnerPageProps) {
           />
         ) : null}
         <Lessons card={card} />
+        <Progress card={card} />
         <Money card={card} access={access} />
         <Pickups card={card} />
         <Notes learnerId={card.learnerId} notes={notes} viewerId={session.userId} />
@@ -162,6 +166,38 @@ function Lessons({ card }: { card: LearnerCard }) {
         title="Last lesson"
         trailing={card.lastLessonAt === null ? 'None yet' : formatDateTime(new Date(card.lastLessonAt))}
       />
+    </Card>
+  );
+}
+
+/**
+ * PRG-03, M4-07: where the learner is with the skill map, in a line, and what their last lesson's
+ * record said, with the way to every record and the whole map.
+ */
+async function Progress({ card }: { card: LearnerCard }) {
+  const [latest, progress] = await Promise.all([lessonRecordPage(card.learnerId, undefined, 1), learnerSkillMap(card.learnerId)]);
+  const last = latest.records[0];
+
+  return (
+    <Card className="flex flex-col gap-3" role="region" aria-labelledby="progress-title">
+      <div className="flex flex-col gap-1">
+        <CardTitle id="progress-title">Progress</CardTitle>
+        <p className="text-body text-ink">{skillMapSummary(progress)}</p>
+      </div>
+      {last === undefined ? (
+        <p className="text-small text-grey-700">No lesson records yet.</p>
+      ) : (
+        <div className="flex flex-col gap-0.5">
+          <span className="text-small text-grey-700">Last record, {lessonWhen(last.lessonStartsAt, todayInZone().slice(0, 4))}</span>
+          <p className="line-clamp-2 text-body text-ink">{last.summary}</p>
+        </div>
+      )}
+      <Button asChild variant="secondary" width="responsive">
+        <Link href={`/app/instructor/learners/${card.learnerId}/progress`}>
+          <TrendingUp className="size-5" aria-hidden />
+          See progress
+        </Link>
+      </Button>
     </Card>
   );
 }

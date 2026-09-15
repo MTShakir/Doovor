@@ -8,8 +8,14 @@ import { PhotoUpload } from '@repo/ui/photo-upload';
 import { PickupPointPicker } from '@repo/ui/pickup-point-picker';
 import { FormAlert } from '@/components/form-alert';
 import { RadiusMap } from '@/components/map/radius-map';
+import { NoSignalBanner } from '@/components/offline/connection-banner';
+import { KeptRecordsNotice } from '@/components/offline/kept-records-notice';
 import { CardFieldsSkeleton } from '@/components/payments/card-form';
+import { InstallCard } from '@/components/pwa/install-prompt';
+import { LessonRecordCard } from '@/components/progress/lesson-record-card';
+import { SkillMap } from '@/components/progress/skill-map';
 import { SetupChecklist } from '@/components/setup-checklist';
+import type { RecordedLesson } from '@/lib/lessons/records';
 import { Button } from '@repo/ui/button';
 import { Card, CardDescription, CardTitle } from '@repo/ui/card';
 import { Checkbox } from '@repo/ui/checkbox';
@@ -24,6 +30,9 @@ import { MonthCalendar } from '@repo/ui/month-calendar';
 import { OtpInput } from '@repo/ui/otp-input';
 import { PostcodeSearch } from '@repo/ui/postcode-search';
 import { ProgressBar, ProgressRing } from '@repo/ui/progress';
+import { skillMap } from '@repo/core/skill-map';
+import type { SkillRating } from '@repo/core/skills';
+import { RatingScale } from '@repo/ui/rating-scale';
 import { RatingStars } from '@repo/ui/rating-stars';
 import { Select } from '@repo/ui/select';
 import { Sheet } from '@repo/ui/sheet';
@@ -38,7 +47,7 @@ import { TimeSlotGrid } from '@repo/ui/time-slot-grid';
 import { toast, toastWithUndo } from '@repo/ui/toast';
 import { CalendarX, Car } from 'lucide-react';
 import Link from 'next/link';
-import { useState, type ReactNode } from 'react';
+import { Suspense, useState, type ReactNode } from 'react';
 
 const sections = [
   'Colour',
@@ -73,6 +82,51 @@ function Label({ children }: { children: ReactNode }) {
 
 const pillStatuses: PillStatus[] = ['confirmed', 'pending', 'completed', 'paid', 'cancelled', 'attention', 'unpaid', 'overdue', 'credit', 'gap-fill', 'test-day'];
 
+const exampleRecords: RecordedLesson[] = [
+  {
+    id: 'example-record-1',
+    lessonStartsAt: '2026-09-12T06:00:00+00:00',
+    instructorName: 'Sarah Khan',
+    schoolName: null,
+    summary: 'Good junctions, and mirrors checked early before every signal.',
+    nextFocus: 'Lane choice on roundabouts',
+    homework: 'Read the Highway Code rules on roundabouts',
+    ratings: [
+      { skillCode: 'MIRRORS', rating: 4 },
+      { skillCode: 'JUNCTIONS', rating: 3 },
+      { skillCode: 'ROUNDABOUT', rating: 2 },
+    ],
+  },
+  {
+    id: 'example-record-2',
+    lessonStartsAt: '2025-12-02T15:30:00+00:00',
+    instructorName: 'Emma Clarke',
+    schoolName: 'Leeds School of Motoring',
+    summary: 'First lesson. Controls and moving off, in a quiet car park.',
+    nextFocus: null,
+    homework: null,
+    ratings: [
+      { skillCode: 'CTRL', rating: 1 },
+      { skillCode: 'MOVEOFF', rating: 1 },
+    ],
+  },
+];
+
+const exampleKeptRecords = [
+  { id: 'kept-1', learnerName: 'Jack Taylor', lessonStartsAt: '2026-09-15T08:00:00+00:00', state: 'waiting', message: null },
+  { id: 'kept-2', learnerName: 'Olivia Brown', lessonStartsAt: '2026-09-15T10:00:00+00:00', state: 'waiting', message: null },
+  { id: 'kept-3', learnerName: 'Noah Wilson', lessonStartsAt: '2026-09-14T13:00:00+00:00', state: 'conflict', message: null },
+  { id: 'kept-4', learnerName: 'Amelia Evans', lessonStartsAt: '2026-09-16T09:00:00+00:00', state: 'refused', message: 'Too close to another lesson.' },
+] as const;
+
+const exampleSkillMap = skillMap([
+  { skillCode: 'CTRL', rating: 5, at: new Date('2026-09-12T06:00:00Z'), times: 6 },
+  { skillCode: 'MOVEOFF', rating: 4, at: new Date('2026-09-12T06:00:00Z'), times: 5 },
+  { skillCode: 'MIRRORS', rating: 4, at: new Date('2026-09-12T06:00:00Z'), times: 4 },
+  { skillCode: 'JUNCTIONS', rating: 3, at: new Date('2026-09-12T06:00:00Z'), times: 3 },
+  { skillCode: 'ROUNDABOUT', rating: 2, at: new Date('2026-09-12T06:00:00Z'), times: 1 },
+]);
+
 const slots = ['09:00', '10:30', '12:00', '13:30', '15:00', '16:30', '18:00'].map((label, index) => ({
   id: label,
   label,
@@ -82,6 +136,7 @@ const slots = ['09:00', '10:30', '12:00', '13:30', '15:00', '16:30', '18:00'].ma
 export function DesignShowcase() {
   const [postcode, setPostcode] = useState('LS6 3HN');
   const [otp, setOtp] = useState('1234');
+  const [skillRating, setSkillRating] = useState<SkillRating | null>(3);
   const [checked, setChecked] = useState(true);
   const [notify, setNotify] = useState(true);
   const [radius, setRadius] = useState(8);
@@ -241,6 +296,11 @@ export function DesignShowcase() {
           <Switch label="Lesson reminders" description="Email and push, 24 hours before." checked={notify} onCheckedChange={setNotify} />
           <Switch label="Instant book" disabled />
         </div>
+        <Label>Skill rating, 1 to 5 (M4-05)</Label>
+        <div className="grid max-w-md gap-4">
+          <RatingScale label="Junctions" value={skillRating} onChange={setSkillRating} />
+          <RatingScale label="Roundabouts" value={null} onChange={() => undefined} />
+        </div>
         <Label>Tabs</Label>
         <Tabs defaultValue="week" className="max-w-md">
           <TabsList className="w-full">
@@ -383,6 +443,14 @@ export function DesignShowcase() {
       </Section>
 
       <Section title="Feedback">
+        <Label>No signal (M4-10), and records kept on the phone: waiting, already recorded elsewhere, and turned down (M4-11)</Label>
+        <div className="flex max-w-xl flex-col gap-3">
+          <NoSignalBanner />
+          {/* The lesson times format with the clock, which a page built ahead of time leaves to the visit. */}
+          <Suspense fallback={<SkeletonRow />}>
+            <KeptRecordsNotice records={exampleKeptRecords} onDismiss={() => toast('Dismissed')} />
+          </Suspense>
+        </div>
         <div className="flex flex-wrap gap-3">
           <Button variant="secondary" onClick={() => toast('Lesson booked for Tue 15 Sep, 14:30')}>
             Show toast
@@ -426,11 +494,31 @@ export function DesignShowcase() {
           <ProgressRing value={100} label="Profile complete" size={72} />
         </div>
         <div className="grid max-w-xl gap-4">
-          {(['Moving off', 'Junctions', 'Roundabouts', 'Manoeuvres', 'Independent driving', 'Dual carriageways'] as const).map(
-            (skill, index) => (
-              <SkillBar key={skill} skill={skill} rating={index} />
-            ),
-          )}
+          {(
+            [
+              ['Moving off', null],
+              ['Junctions', 1],
+              ['Roundabouts', 2],
+              ['Manoeuvres', 3],
+              ['Independent driving', 4],
+              ['Cockpit checks and Show me Tell me', 5],
+            ] as const
+          ).map(([skill, rating]) => (
+            <SkillBar key={skill} skill={skill} rating={rating} />
+          ))}
+        </div>
+        <Label>Lesson record: with next steps and an independent instructor, and a first lesson a year ago at a school (M4-06)</Label>
+        {/* Formatting a lesson's time reads the clock, which a page built ahead of time must leave to the visit. */}
+        <Suspense fallback={<SkeletonRow />}>
+          <div className="grid items-start gap-4 md:grid-cols-2">
+            {exampleRecords.map((record) => (
+              <LessonRecordCard key={record.id} record={record} thisYear="2026" />
+            ))}
+          </div>
+        </Suspense>
+        <Label>Skill map (M4-07)</Label>
+        <div className="max-w-md">
+          <SkillMap progress={exampleSkillMap} />
         </div>
         <NumberStepper
           label="Lesson length"
@@ -447,6 +535,11 @@ export function DesignShowcase() {
         <div className="grid gap-4 md:grid-cols-2">
           <SetupChecklist state={{ learners: 0, paymentsConnected: false, verified: false, listed: true }} />
           <SetupChecklist state={{ learners: 3, paymentsConnected: false, verified: true, listed: true }} />
+        </div>
+        <Label>Install offer: the browser&apos;s own prompt, and the steps on an iPhone or iPad (M4-08)</Label>
+        <div className="grid items-start gap-4 md:grid-cols-2">
+          <InstallCard offer="button" why="It opens in one tap, and Today still opens where there is no signal." onInstall={() => toast('Installing')} onDismiss={() => toast('Not now')} />
+          <InstallCard offer="ios-steps" why="Your lessons, payments and progress, one tap away." onInstall={() => undefined} onDismiss={() => toast('Not now')} />
         </div>
       </Section>
 

@@ -6,6 +6,7 @@ import { notifyAboutBooking } from '@/jobs/notify';
 import { notifyAboutPayment, notifyCreditLow } from '@/jobs/payment-notify';
 import { sendRefund } from '@/jobs/payments';
 import { sendReceipt } from '@/jobs/receipts';
+import { notifyLessonRecordAdded } from '@/jobs/record-notices';
 
 const eventSchema = z.object({
   name: z.string().min(1),
@@ -44,6 +45,10 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     const businessId = typeof payload.business_id === 'string' ? payload.business_id : '';
     const learnerId = typeof payload.learner_id === 'string' ? payload.learner_id : '';
     return NextResponse.json(await notifyCreditLow(businessId, learnerId));
+  }
+  if (name === 'lesson_record.added') {
+    const lessonRecordId = typeof payload.lesson_record_id === 'string' ? payload.lesson_record_id : '';
+    return NextResponse.json(await notifyLessonRecordAdded(lessonRecordId));
   }
   if (name === 'payment.fee_charge') {
     const bookingId = typeof payload.booking_id === 'string' ? payload.booking_id : '';

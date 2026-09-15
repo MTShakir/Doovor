@@ -14,6 +14,12 @@ export const metadata: Metadata = {
   title: { default: brand.name, template: `%s | ${brand.name}` },
   description: brand.tagline,
   applicationName: brand.name,
+  // The manifest itself is app/manifest.ts. Safari on iOS reads these instead (PRD 8.1, M4-08).
+  appleWebApp: { capable: true, title: brand.shortName, statusBarStyle: 'default' },
+  icons: {
+    icon: [{ url: '/icons/192.png', sizes: '192x192', type: 'image/png' }],
+    apple: [{ url: '/icons/apple-touch-180.png', sizes: '180x180', type: 'image/png' }],
+  },
 };
 
 export const viewport: Viewport = {

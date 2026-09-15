@@ -1,7 +1,10 @@
 import { AppShell } from '@repo/ui/app-shell';
 import type { ReactNode } from 'react';
+import { ConnectionBanner } from '@/components/offline/connection-banner';
+import { OfflineSync } from '@/components/offline/offline-sync';
 import { PortalGate } from '@/components/portal-gate';
 import { PortalSidebar, PortalTabBar } from '@/components/portal-nav';
+import { OfflineSupport } from '@/components/pwa/offline-support';
 import { SidebarFooter } from '@/components/sidebar-footer';
 
 // Gated by the session: the shell is instant, the content may block on the gate (D-029).
@@ -10,7 +13,10 @@ export const instant = false;
 export default function InstructorLayout({ children }: { children: ReactNode }) {
   return (
     <AppShell sidebar={<PortalSidebar portal="instructor" footer={<SidebarFooter />} />} tabBar={<PortalTabBar portal="instructor" />}>
+      <ConnectionBanner />
       <PortalGate portal="instructor">{children}</PortalGate>
+      <OfflineSupport />
+      <OfflineSync />
     </AppShell>
   );
 }

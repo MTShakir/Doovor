@@ -1,13 +1,14 @@
 import { setupComplete, type SetupState } from '@repo/core/setup-checklist';
 import { formatDateWithYear } from '@repo/core/time';
 import { PageHeader } from '@repo/ui/app-shell';
-import { EmptyState } from '@repo/ui/empty-state';
 import { SkeletonRow } from '@repo/ui/skeleton';
-import { CalendarX } from 'lucide-react';
 import { connection } from 'next/server';
 import { Suspense } from 'react';
+import { TodayLessonsLive } from '@/components/lessons/today-lessons-live';
+import { InstallPrompt } from '@/components/pwa/install-prompt';
 import { SetupChecklist } from '@/components/setup-checklist';
 import { requirePortal } from '@/lib/auth/session';
+import { teachingProfiles, todaysLessons } from '@/lib/lessons/teaching';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
 
 export default function InstructorHomePage() {
@@ -25,14 +26,22 @@ export default function InstructorHomePage() {
         <Suspense fallback={<SkeletonRow />}>
           <Setup />
         </Suspense>
-        <EmptyState
-          icon={CalendarX}
-          title="No lessons today"
-          description="Your diary arrives shortly. Lessons you book will show up here."
-        />
+        <Suspense fallback={<SkeletonRow />}>
+          <Lessons />
+        </Suspense>
+        <InstallPrompt why="It opens in one tap, and Today still opens where there is no signal." />
       </div>
     </main>
   );
+}
+
+/** Today's lessons, and the one to start next (PRD 7.5, 10.2, M4-04). */
+async function Lessons() {
+  const { access } = await requirePortal('instructor');
+  const now = new Date();
+  const lessons = await todaysLessons(teachingProfiles(access), now);
+  // With no signal, the list draws itself from the phone's copy of the day (M4-10).
+  return <TodayLessonsLive lessons={lessons} now={now.toISOString()} />;
 }
 
 /** Today's date is not something a shell can be prerendered with (Cache Components). */

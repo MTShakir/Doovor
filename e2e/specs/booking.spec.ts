@@ -237,8 +237,11 @@ test.describe('booking a lesson (BOK-01, M2-16)', () => {
 
     // A lesson in the past is asked about, not moved.
     await expect(taught.getByRole('button', { name: 'Move' })).toBeHidden();
+    // Done opens the lesson's record, to be written straight after it (PRD 10.2, M4-05).
     await taught.getByRole('button', { name: 'Done' }).click();
     await expect(page.getByText('Marked as done')).toBeVisible();
+    await expect(page.getByRole('form', { name: 'Lesson record' })).toBeVisible();
+    await page.goto(`/app/instructor/diary?view=day&date=${day}`);
     await expect(taught).toContainText('Completed');
 
     await absent.getByRole('button', { name: 'No show' }).click();

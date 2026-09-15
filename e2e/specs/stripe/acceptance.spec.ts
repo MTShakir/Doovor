@@ -18,7 +18,7 @@ import {
   packagePaymentRef,
   requestLesson,
 } from '../../support/database';
-import { chooseDate, dayLabel, settled, snap, tapUntil } from '../../support/helpers';
+import { chooseDate, dayLabel, settled, snap, tapThrough, tapUntil } from '../../support/helpers';
 import { signInThroughForm } from '../../support/sign-in';
 import { jobRunnerIsUp, payInCardForm, stripeAccountId, stripeGet, stripeSignature } from '../../support/stripe';
 
@@ -93,10 +93,7 @@ test.afterAll(async () => {
 async function payForLesson(page: Page, testInfo: TestInfo, instructor: string, day: string, hour: string, bookingId: string): Promise<void> {
   await page.goto('/app/learner/lessons');
   const lesson = page.getByRole('article').filter({ hasText: `${dayLabel(day)} at ${hour}` }).filter({ hasText: instructor });
-  await expect(async () => {
-    await lesson.getByRole('link', { name: /^Pay £/ }).click();
-    await page.waitForURL(/\/app\/learner\/pay\//, { timeout: 5000 });
-  }).toPass({ timeout: 20_000 });
+  await tapThrough(lesson.getByRole('link', { name: /^Pay £/ }), /\/app\/learner\/pay\//);
 
   const checkout = page.getByRole('region', { name: /at \d\d:\d\d$/ });
   await expect(async () => {
@@ -123,10 +120,7 @@ async function payForLesson(page: Page, testInfo: TestInfo, instructor: string, 
 async function buyPackage(page: Page, name: string, price: string): Promise<void> {
   await page.goto('/app/learner/payments');
   const credit = page.getByRole('region', { name: `Balance with ${school}` });
-  await expect(async () => {
-    await credit.getByRole('link', { name: new RegExp(`^Buy ${name}`) }).click();
-    await page.waitForURL(/\/app\/learner\/payments\/packages\//, { timeout: 5000 });
-  }).toPass({ timeout: 20_000 });
+  await tapThrough(credit.getByRole('link', { name: new RegExp(`^Buy ${name}`) }), /\/app\/learner\/payments\/packages\//);
 
   const purchase = page.getByRole('region', { name });
   await purchase.getByRole('checkbox', { name: /^Start my lessons straight away/ }).click();
@@ -371,10 +365,7 @@ test('a request authorises the card at Stripe, which is taken when it is accepte
   const authorise = async (hour: string, bookingId: string): Promise<string> => {
     await page.goto('/app/learner/lessons');
     const lesson = page.getByRole('article').filter({ hasText: `${dayLabel(day)} at ${hour}` }).filter({ hasText: 'Emma Clarke' });
-    await expect(async () => {
-      await lesson.getByRole('link', { name: /^Authorise £/ }).click();
-      await page.waitForURL(new RegExp(`/app/learner/pay/${bookingId}`), { timeout: 5000 });
-    }).toPass({ timeout: 20_000 });
+    await tapThrough(lesson.getByRole('link', { name: /^Authorise £/ }), new RegExp(`/app/learner/pay/${bookingId}`));
     const checkout = page.getByRole('region', { name: /at \d\d:\d\d$/ });
     await expect(checkout).toContainText('Your card is only charged if they do.');
     await expect(async () => {

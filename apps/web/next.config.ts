@@ -53,6 +53,12 @@ const nextConfig: NextConfig = {
   logging: { serverFunctions: false },
   cacheComponents: true,
   typedRoutes: true,
+  experimental: {
+    // In development React's debug information travels over the dev server's WebSocket, and a page
+    // waits for it before it comes alive, so a screen kept for no signal never would. Sent inside the
+    // page instead, the app in development works offline as the built one does (M4-10, D-106).
+    reactDebugChannel: false,
+  },
   transpilePackages: ['@repo/config', '@repo/core', '@repo/ui'],
   /** The worker is compiled at /serwist/sw.js and served from the root, so its scope is the app. */
   rewrites() {

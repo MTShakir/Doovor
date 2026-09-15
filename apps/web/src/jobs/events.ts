@@ -74,3 +74,11 @@ export const creditLow = eventType('credit.low', {
 export const paymentAuthorised = eventType('payment.authorised', {
   schema: staticSchema<{ payment_id: string; booking_id: string }>(),
 });
+
+/**
+ * A lesson record was saved (PRG-01, NTF-03, M4-12). Whether the learner reads it, and what it
+ * says, is the database's to say; the event carries the ids only.
+ */
+export const lessonRecordAdded = eventType('lesson_record.added', {
+  schema: staticSchema<{ lesson_record_id: string; booking_id: string }>(),
+});

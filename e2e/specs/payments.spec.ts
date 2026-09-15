@@ -29,7 +29,7 @@ import {
   requestLesson,
   setBookingStatus,
 } from '../support/database';
-import { dayLabel, expectAccessible, fillUntil, settled, snap } from '../support/helpers';
+import { dayLabel, expectAccessible, fillUntil, settled, snap, tapThrough } from '../support/helpers';
 import { signInThroughForm } from '../support/sign-in';
 import { fakeSignature } from '../support/webhooks';
 
@@ -73,10 +73,7 @@ test.describe('connecting payments (PAY-01, M3-02)', () => {
 
     // Off to the provider, which sends them back when they have finished. The button does
     // nothing until the page is interactive, so the proof it worked is where it lands (D-043).
-    await expect(async () => {
-      await card.getByRole('button', { name: 'Set up payments' }).click();
-      await page.waitForURL(/connected=1/, { timeout: 5000 });
-    }).toPass({ timeout: 20_000 });
+    await tapThrough(card.getByRole('button', { name: 'Set up payments' }), /connected=1/);
 
     await expect(card.getByText('On', { exact: true })).toBeVisible();
     await expect(card).toContainText('You can take card, Apple Pay and Google Pay.');
@@ -150,10 +147,7 @@ test.describe('paying for a lesson (PAY-02, M3-05)', () => {
     await expect(lesson).toBeVisible();
 
     // An unpaid lesson with a Business that can take cards offers to be paid for.
-    await expect(async () => {
-      await lesson.getByRole('link', { name: /^Pay £/ }).click();
-      await page.waitForURL(/\/app\/learner\/pay\//, { timeout: 5000 });
-    }).toPass({ timeout: 20_000 });
+    await tapThrough(lesson.getByRole('link', { name: /^Pay £/ }), /\/app\/learner\/pay\//);
 
     const checkout = page.getByRole('region', { name: /at \d\d:\d\d$/ });
     await expect(checkout).toContainText('To pay');
@@ -201,10 +195,7 @@ test.describe('paying for a lesson (PAY-02, M3-05)', () => {
         .getByRole('article')
         .filter({ hasText: `${dayLabel(day)} at ${hour}` })
         .filter({ hasText: 'Tom Walsh' });
-      await expect(async () => {
-        await lesson.getByRole('link', { name: /^Pay £/ }).click();
-        await page.waitForURL(/\/app\/learner\/pay\//, { timeout: 5000 });
-      }).toPass({ timeout: 20_000 });
+      await tapThrough(lesson.getByRole('link', { name: /^Pay £/ }), /\/app\/learner\/pay\//);
       return page.getByRole('region', { name: /at \d\d:\d\d$/ });
     };
 
@@ -292,10 +283,7 @@ test.describe('paying for a lesson (PAY-02, M3-05)', () => {
         .getByRole('article')
         .filter({ hasText: `${dayLabel(day)} at ${hour}` })
         .filter({ hasText: 'Tom Walsh' });
-      await expect(async () => {
-        await lesson.getByRole('link', { name: /^Authorise £/ }).click();
-        await page.waitForURL(/\/app\/learner\/pay\//, { timeout: 5000 });
-      }).toPass({ timeout: 20_000 });
+      await tapThrough(lesson.getByRole('link', { name: /^Authorise £/ }), /\/app\/learner\/pay\//);
 
       const checkout = page.getByRole('region', { name: /at \d\d:\d\d$/ });
       await expect(checkout).toContainText('Request');
@@ -370,10 +358,7 @@ test.describe('paying for a lesson (PAY-02, M3-05)', () => {
         // By the day as well: the other width books the same hour on days of its own.
         .filter({ hasText: `${dayLabel(onDay)} at 21:30` })
         .filter({ hasText: 'Tom Walsh' });
-      await expect(async () => {
-        await lesson.getByRole('link', { name: /^Set up payment$|^Pay £/ }).click();
-        await page.waitForURL(/\/app\/learner\/pay\//, { timeout: 5000 });
-      }).toPass({ timeout: 20_000 });
+      await tapThrough(lesson.getByRole('link', { name: /^Set up payment$|^Pay £/ }), /\/app\/learner\/pay\//);
       return page.getByRole('region', { name: /at \d\d:\d\d$/ });
     };
 
@@ -433,10 +418,7 @@ test.describe('paying for a lesson (PAY-02, M3-05)', () => {
       await expect(lesson).toContainText('Tom Walsh');
       await expectAccessible(page);
 
-      await expect(async () => {
-        await lesson.getByRole('link', { name: 'Pay £42' }).click();
-        await page.waitForURL(new RegExp(`/app/learner/pay/${id}`), { timeout: 5000 });
-      }).toPass({ timeout: 20_000 });
+      await tapThrough(lesson.getByRole('link', { name: 'Pay £42' }), new RegExp(`/app/learner/pay/${id}`));
 
       const checkout = page.getByRole('region', { name: /at \d\d:\d\d$/ });
       await expect(checkout).toContainText('To pay');
@@ -469,10 +451,7 @@ test.describe('paying for a lesson (PAY-02, M3-05)', () => {
       .getByRole('article')
       .filter({ hasText: `${dayLabel(day)} at 18:00` })
       .filter({ hasText: 'Tom Walsh' });
-    await expect(async () => {
-      await lesson.getByRole('link', { name: /^Pay £/ }).click();
-      await page.waitForURL(/\/app\/learner\/pay\//, { timeout: 5000 });
-    }).toPass({ timeout: 20_000 });
+    await tapThrough(lesson.getByRole('link', { name: /^Pay £/ }), /\/app\/learner\/pay\//);
 
     const checkout = page.getByRole('region', { name: /at \d\d:\d\d$/ });
     await expect(async () => {
@@ -509,10 +488,7 @@ test.describe('paying for a lesson (PAY-02, M3-05)', () => {
       .getByRole('article')
       .filter({ hasText: `${dayLabel(day)} at 16:00` })
       .filter({ hasText: 'Tom Walsh' });
-    await expect(async () => {
-      await lesson.getByRole('link', { name: /^Pay £/ }).click();
-      await page.waitForURL(/\/app\/learner\/pay\//, { timeout: 5000 });
-    }).toPass({ timeout: 20_000 });
+    await tapThrough(lesson.getByRole('link', { name: /^Pay £/ }), /\/app\/learner\/pay\//);
 
     const checkout = page.getByRole('region', { name: /at \d\d:\d\d$/ });
     await expect(async () => {
@@ -572,10 +548,7 @@ test.describe('lesson credit (PAY-04, M3-13, M3-14)', () => {
     await settled(page);
     await snap(page, testInfo, 'lesson-credit');
 
-    await expect(async () => {
-      await credit.getByRole('link', { name: /^Buy 5 hours/ }).click();
-      await page.waitForURL(/\/app\/learner\/payments\/packages\//, { timeout: 5000 });
-    }).toPass({ timeout: 20_000 });
+    await tapThrough(credit.getByRole('link', { name: /^Buy 5 hours/ }), /\/app\/learner\/payments\/packages\//);
 
     const purchase = page.getByRole('region', { name: '5 hours' });
     await expect(purchase).toContainText('£195');
@@ -709,10 +682,7 @@ const payFromLessons = async (page: Page, instructor: string, day: string, hour:
     .getByRole('article')
     .filter({ hasText: `${dayLabel(day)} at ${hour}` })
     .filter({ hasText: instructor });
-  await expect(async () => {
-    await lesson.getByRole('link', { name: /^Pay £/ }).click();
-    await page.waitForURL(/\/app\/learner\/pay\//, { timeout: 5000 });
-  }).toPass({ timeout: 20_000 });
+  await tapThrough(lesson.getByRole('link', { name: /^Pay £/ }), /\/app\/learner\/pay\//);
 
   const checkout = page.getByRole('region', { name: /at \d\d:\d\d$/ });
   await expect(async () => {
@@ -937,10 +907,7 @@ test.describe('fees for lessons nobody came to (PAY-09, R-09, M3-19)', () => {
     await expectAccessible(page);
     await snap(page, testInfo, 'no-show-fee-owed');
 
-    await expect(async () => {
-      await owed.getByRole('link', { name: 'Pay £42' }).click();
-      await page.waitForURL(/\/app\/learner\/pay\//, { timeout: 5000 });
-    }).toPass({ timeout: 20_000 });
+    await tapThrough(owed.getByRole('link', { name: 'Pay £42' }), /\/app\/learner\/pay\//);
     const checkout = page.getByRole('region', { name: /at \d\d:\d\d$/ });
     await expect(checkout).toContainText('This lesson was marked as a no-show, which costs what cancelling late does. The £42 fee is still to pay.');
     await expectAccessible(page);
@@ -982,10 +949,7 @@ test.describe('fees for lessons nobody came to (PAY-09, R-09, M3-19)', () => {
       .getByRole('article')
       .filter({ hasText: `${dayLabel(later)} at ${laterHour}` })
       .filter({ hasText: 'Emma Clarke' });
-    await expect(async () => {
-      await upcoming.getByRole('link', { name: /^Pay £/ }).click();
-      await page.waitForURL(/\/app\/learner\/pay\//, { timeout: 5000 });
-    }).toPass({ timeout: 20_000 });
+    await tapThrough(upcoming.getByRole('link', { name: /^Pay £/ }), /\/app\/learner\/pay\//);
     const checkout = page.getByRole('region', { name: /at \d\d:\d\d$/ });
     const keep = checkout.getByRole('checkbox', { name: /Save this card for next time/ });
     await expect(checkout).toContainText('can charge it a late cancellation or no-show fee under its cancellation policy');
@@ -1096,10 +1060,7 @@ test.describe('receipts (PAY-08, M3-20)', () => {
       .getByRole('listitem')
       .filter({ hasText: `Lesson on ${dayLabel(day)}` })
       .first();
-    await expect(async () => {
-      await entry.getByRole('link', { name: 'Receipt' }).click();
-      await page.waitForURL(/\/receipts\//, { timeout: 5000 });
-    }).toPass({ timeout: 20_000 });
+    await tapThrough(entry.getByRole('link', { name: 'Receipt' }), /\/receipts\//);
 
     const receipt = page.getByRole('region', { name: /^Receipt \d+$/ });
     await expect(receipt.getByRole('heading', { name: `Receipt ${String(firstReceipt?.number)}` })).toBeVisible();

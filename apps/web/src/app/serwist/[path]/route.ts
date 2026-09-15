@@ -6,9 +6,9 @@ import { createSerwistRoute } from '@serwist/turbopack';
  */
 export const { dynamic, dynamicParams, revalidate, generateStaticParams, GET } = createSerwistRoute({
   swSrc: 'src/app/sw.ts',
-  // Nothing is precached yet. The worker exists for push in this milestone, and four
-  // megabytes of static files pushed at somebody the moment they turn notifications on is
-  // not a trade anybody asked for. What to keep offline is decided in M4 (PRG-09).
+  // Nothing from the build is precached. Five megabytes of every portal's files, sent to
+  // somebody the moment they sign in, is not a trade anybody asked for. The screens kept for no
+  // signal, and the files they are drawn with, are kept as they open instead (M4-08, D-104).
   globPatterns: [],
   // Windows defaults to the WebAssembly build of esbuild, which is slower for no reason here.
   useNativeEsbuild: true,

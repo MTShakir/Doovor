@@ -1274,6 +1274,80 @@ export type Database = {
           },
         ]
       }
+      lesson_records: {
+        Row: {
+          booking_id: string
+          business_id: string
+          created_at: string
+          homework: string | null
+          id: string
+          instructor_id: string
+          learner_id: string
+          lesson_starts_at: string
+          next_focus: string | null
+          seconds_taken: number | null
+          summary: string
+          visibility: Database["public"]["Enums"]["lesson_record_visibility"]
+        }
+        Insert: {
+          booking_id: string
+          business_id: string
+          created_at?: string
+          homework?: string | null
+          id: string
+          instructor_id: string
+          learner_id: string
+          lesson_starts_at: string
+          next_focus?: string | null
+          seconds_taken?: number | null
+          summary: string
+          visibility?: Database["public"]["Enums"]["lesson_record_visibility"]
+        }
+        Update: {
+          booking_id?: string
+          business_id?: string
+          created_at?: string
+          homework?: string | null
+          id?: string
+          instructor_id?: string
+          learner_id?: string
+          lesson_starts_at?: string
+          next_focus?: string | null
+          seconds_taken?: number | null
+          summary?: string
+          visibility?: Database["public"]["Enums"]["lesson_record_visibility"]
+        }
+        Relationships: [
+          {
+            foreignKeyName: "lesson_records_booking_id_fkey"
+            columns: ["booking_id"]
+            isOneToOne: true
+            referencedRelation: "bookings"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "lesson_records_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "businesses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "lesson_records_instructor_id_fkey"
+            columns: ["instructor_id"]
+            isOneToOne: false
+            referencedRelation: "instructor_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "lesson_records_learner_id_fkey"
+            columns: ["learner_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       lesson_types: {
         Row: {
           business_id: string
@@ -2095,6 +2169,80 @@ export type Database = {
           },
         ]
       }
+      skill_ratings: {
+        Row: {
+          business_id: string
+          learner_id: string
+          lesson_record_id: string
+          rating: number
+          skill_code: string
+        }
+        Insert: {
+          business_id: string
+          learner_id: string
+          lesson_record_id: string
+          rating: number
+          skill_code: string
+        }
+        Update: {
+          business_id?: string
+          learner_id?: string
+          lesson_record_id?: string
+          rating?: number
+          skill_code?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "skill_ratings_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "businesses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "skill_ratings_learner_id_fkey"
+            columns: ["learner_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "skill_ratings_lesson_record_id_fkey"
+            columns: ["lesson_record_id"]
+            isOneToOne: false
+            referencedRelation: "lesson_records"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "skill_ratings_skill_code_fkey"
+            columns: ["skill_code"]
+            isOneToOne: false
+            referencedRelation: "skills"
+            referencedColumns: ["code"]
+          },
+        ]
+      }
+      skills: {
+        Row: {
+          code: string
+          name: string
+          position: number
+          sub_skills: string[]
+        }
+        Insert: {
+          code: string
+          name: string
+          position: number
+          sub_skills?: string[]
+        }
+        Update: {
+          code?: string
+          name?: string
+          position?: number
+          sub_skills?: string[]
+        }
+        Relationships: []
+      }
       sms_usage: {
         Row: {
           business_id: string
@@ -2324,6 +2472,31 @@ export type Database = {
           },
         ]
       }
+      skill_progress: {
+        Row: {
+          last_rated_at: string | null
+          learner_id: string | null
+          rating: number | null
+          skill_code: string | null
+          times: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "skill_ratings_learner_id_fkey"
+            columns: ["learner_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "skill_ratings_skill_code_fkey"
+            columns: ["skill_code"]
+            isOneToOne: false
+            referencedRelation: "skills"
+            referencedColumns: ["code"]
+          },
+        ]
+      }
     }
     Functions: {
       accept_invitation: { Args: { p_token: string }; Returns: string }
@@ -2514,6 +2687,18 @@ export type Database = {
         Returns: string
       }
       revoke_my_session: { Args: { p_session_id: string }; Returns: boolean }
+      save_lesson_record: {
+        Args: {
+          p_booking_id: string
+          p_homework?: string
+          p_id: string
+          p_next_focus?: string
+          p_ratings: Json
+          p_seconds_taken?: number
+          p_summary: string
+        }
+        Returns: Json
+      }
       set_availability_exception: {
         Args: {
           p_ends_at: string
@@ -2679,6 +2864,10 @@ export type Database = {
       system_extend_recurrences: { Args: { p_weeks?: number }; Returns: number }
       system_fee_to_charge: { Args: { p_booking_id: string }; Returns: Json }
       system_issue_receipt: { Args: { p_payment_id: string }; Returns: Json }
+      system_lesson_record_notice: {
+        Args: { p_lesson_record_id: string }
+        Returns: Json
+      }
       system_lessons_to_charge: {
         Args: { p_within_hours?: number }
         Returns: Json
@@ -2885,6 +3074,7 @@ export type Database = {
         | "intensive"
         | "test_day"
         | "custom"
+      lesson_record_visibility: "learner" | "business"
       membership_role: "owner" | "manager" | "instructor"
       membership_status: "invited" | "active" | "deactivated"
       no_show_dispute_outcome: "waived" | "kept"
@@ -3110,6 +3300,7 @@ export const Constants = {
         "test_day",
         "custom",
       ],
+      lesson_record_visibility: ["learner", "business"],
       membership_role: ["owner", "manager", "instructor"],
       membership_status: ["invited", "active", "deactivated"],
       no_show_dispute_outcome: ["waived", "kept"],

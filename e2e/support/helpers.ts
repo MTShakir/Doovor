@@ -2,7 +2,7 @@ import path from 'node:path';
 import AxeBuilder from '@axe-core/playwright';
 import { expect, type Locator, type Page, type TestInfo } from '@playwright/test';
 
-const MILESTONE = process.env.E2E_MILESTONE ?? 'm3';
+const MILESTONE = process.env.E2E_MILESTONE ?? 'm4';
 
 /** Where a named screenshot lives: e2e/screenshots/<milestone>/<viewport>/<name>.png */
 export function snapPath(testInfo: TestInfo, name: string): string {
@@ -48,6 +48,20 @@ export async function tapUntil(control: Locator, appears: Locator): Promise<void
 }
 
 /**
+ * Taps a link or button that leads to another address, until the page is there. A tap before the
+ * page is interactive does nothing (D-043), so it is tapped again. A tap already on its way, as
+ * under a full run's load, is waited for rather than tapped again: once the new page is there,
+ * what was tapped has gone, and a second tap would wait for it until the time ran out.
+ */
+export async function tapThrough(control: Locator, url: RegExp): Promise<void> {
+  const page = control.page();
+  await expect(async () => {
+    if (!url.test(page.url())) await control.click({ timeout: 5000 });
+    await page.waitForURL(url, { timeout: 5000 });
+  }).toPass({ timeout: 30_000 });
+}
+
+/**
  * Types into a field that a component controls, until the value sticks. A value set before
  * the page is interactive is overwritten by the first render that follows it (D-043).
  */
@@ -82,16 +96,27 @@ export async function chooseDate(field: Locator, value: string): Promise<void> {
   }).toPass({ timeout: 15_000 });
 }
 
-/** WCAG 2.2 AA scan. Fails on serious or critical issues (PRD 14.4, M6-06). */
+/**
+ * WCAG 2.2 AA scan. Fails on serious or critical issues (PRD 14.4, M6-06).
+ *
+ * Colours are measured at rest. Waiting for movement to stop is not enough on its own: a toast can
+ * start fading out after the wait and while the scan runs. So the scan runs with reduced motion,
+ * which the app and its toasts honour by changing at once.
+ */
 export async function expectAccessible(page: Page, options: { exclude?: string[] } = {}): Promise<void> {
-  await settled(page);
-  let builder = new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'wcag22aa']);
-  for (const selector of options.exclude ?? []) builder = builder.exclude(selector);
-  const results = await builder.analyze();
-  const blocking = results.violations
-    .filter((v) => v.impact === 'serious' || v.impact === 'critical')
-    .map((v) => `${v.id} (${String(v.impact)}): ${v.help} -> ${v.nodes.map((n) => n.target.join(' ')).join(', ')}`);
-  expect(blocking, 'serious or critical accessibility issues').toEqual([]);
+  await page.emulateMedia({ reducedMotion: 'reduce' });
+  try {
+    await settled(page);
+    let builder = new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'wcag22aa']);
+    for (const selector of options.exclude ?? []) builder = builder.exclude(selector);
+    const results = await builder.analyze();
+    const blocking = results.violations
+      .filter((v) => v.impact === 'serious' || v.impact === 'critical')
+      .map((v) => `${v.id} (${String(v.impact)}): ${v.help} -> ${v.nodes.map((n) => n.target.join(' ')).join(', ')}`);
+    expect(blocking, 'serious or critical accessibility issues').toEqual([]);
+  } finally {
+    await page.emulateMedia({ reducedMotion: null });
+  }
 }
 
 /** A local day moved on or back by whole days: calendar arithmetic, with no zone to cross. */
