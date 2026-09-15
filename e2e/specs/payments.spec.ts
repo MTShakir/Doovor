@@ -247,6 +247,9 @@ test.describe('paying for a lesson (PAY-02, M3-05)', () => {
     await expect(row).toHaveCount(0);
     await page.getByRole('button', { name: 'Undo' }).click();
     await expect(row).toHaveCount(1);
+    // On a wide screen the card sits at the foot of the page, just under the toast, which slides
+    // down across it as it leaves: a tap before it has gone can land on the toast instead.
+    await expect(page.getByText('Visa ending 4242 removed')).toBeHidden();
 
     // Left alone, it goes when the five seconds are up, and stays gone.
     await row.getByRole('button', { name: 'Remove Visa ending 4242' }).click();
