@@ -2,6 +2,7 @@
 
 import { formatMinutes, formatTime } from '@repo/core/time';
 import { toast } from '@repo/ui/toast';
+import { useRouter } from 'next/navigation';
 import { useRef, useState, useTransition } from 'react';
 import { completeLesson, markNoShow, moveLesson } from '@/app/(portal)/app/instructor/booking-actions';
 import type { DiaryEntry } from '@/lib/diary/lessons';
@@ -35,6 +36,7 @@ const HOLD_MS = 500;
  * server says no, because a diary that waits half a second to redraw feels broken.
  */
 export function DayLessons({ lessons, gaps, now, showInstructor = false, canAnswer = false, rules }: DayLessonsProps) {
+  const router = useRouter();
   const [, startTransition] = useTransition();
   const [moved, setMoved] = useState<Record<string, Date>>({});
   const [dragging, setDragging] = useState<string | null>(null);
@@ -75,6 +77,19 @@ export function DayLessons({ lessons, gaps, now, showInstructor = false, canAnsw
     });
   };
 
+  // Marking a lesson done opens its record, which is written straight after it (PRD 10.2, M4-05).
+  const done = (lessonId: string) => {
+    startTransition(async () => {
+      const result = await completeLesson({ bookingId: lessonId });
+      if (!result.ok) {
+        toast(result.message);
+        return;
+      }
+      toast('Marked as done');
+      router.push(`/app/instructor/lessons/${lessonId}?record=1`);
+    });
+  };
+
   const hold = (lessonId: string, pointer: string) => {
     // A mouse drags a lesson; a finger holds it. Arming the hold for both means a slow drag
     // opens the sheet halfway through.
@@ -112,7 +127,7 @@ export function DayLessons({ lessons, gaps, now, showInstructor = false, canAnsw
                   onCancel={rules ? () => { setSheet({ id: lesson.id, action: 'cancel' }); } : undefined}
                   started={lesson.startsAt.getTime() <= now.getTime()}
                   canMarkNoShow={now.getTime() >= lesson.startsAt.getTime() + 15 * 60_000}
-                  onComplete={() => { after('done', () => completeLesson({ bookingId: lesson.id })); }}
+                  onComplete={() => { done(lesson.id); }}
                   onNoShow={() => { after('no show', () => markNoShow({ bookingId: lesson.id })); }}
                   onMarkPaid={rules ? () => { setSheet({ id: lesson.id, action: 'paid' }); } : undefined}
                 />

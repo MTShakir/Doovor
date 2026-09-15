@@ -41,7 +41,9 @@
     "./receipts": "./src/receipts.ts",
     "./money-periods": "./src/money-periods.ts",
     "./schemas/receipt-details": "./src/schemas/receipt-details.ts",
-    "./skills": "./src/skills.ts"
+    "./skills": "./src/skills.ts",
+    "./lesson-records": "./src/lesson-records.ts",
+    "./schemas/lesson-record": "./src/schemas/lesson-record.ts"
   },
   "scripts": {
     "lint": "eslint .",

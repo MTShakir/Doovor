@@ -97,6 +97,14 @@ export async function setBookingStatus(
  */
 export async function clearDiary(instructorName: string, date: string): Promise<void> {
   await withDatabase(async (sql) => {
+    // A lesson with a record is kept in the app (D-100); a test clearing its day takes the record too.
+    await sql`
+      delete from public.lesson_records r
+       using public.bookings b, public.instructor_profiles p
+       where r.booking_id = b.id
+         and p.id = b.instructor_id
+         and p.display_name = ${instructorName}
+         and (b.starts_at at time zone 'Europe/London')::date = ${date}::date`;
     await sql`
       delete from public.bookings b
        using public.instructor_profiles p
@@ -194,6 +202,15 @@ export async function removeLesson(
   time: string,
 ): Promise<void> {
   await withDatabase(async (sql) => {
+    await sql`
+      delete from public.lesson_records r
+       using public.bookings b, public.instructor_profiles p, public.users u
+       where r.booking_id = b.id
+         and p.id = b.instructor_id
+         and u.id = b.learner_id
+         and p.display_name = ${instructorName}
+         and lower(u.email) = lower(${learnerEmail})
+         and b.starts_at = (${date}::date + ${time}::time) at time zone 'Europe/London'`;
     await sql`
       delete from public.bookings b
        using public.instructor_profiles p, public.users u
@@ -388,6 +405,7 @@ export async function finishedLessonOwed(instructorName: string, learnerEmail: s
 /** Takes a lesson out by its id, whatever became of it. Local only. */
 export async function removeLessonById(id: string): Promise<void> {
   await withDatabase(async (sql) => {
+    await sql`delete from public.lesson_records where booking_id = ${id}`;
     await sql`delete from public.bookings where id = ${id}`;
   });
 }
@@ -846,5 +864,25 @@ export async function newestPaymentFor(bookingId: string): Promise<{ status: str
        limit 1`;
     const found = rows[0];
     return found ? { status: found.status, amountPence: found.amount_pence, providerRef: found.provider_ref } : null;
+  });
+}
+
+/** A lesson's record as saved, with its ratings and how long it took (PRG-01, M4-05). Null before one is saved. */
+export async function lessonRecordFor(
+  bookingId: string,
+): Promise<{ summary: string; nextFocus: string | null; ratings: string[]; secondsTaken: number | null; lessonStatus: string } | null> {
+  return withDatabase(async (sql) => {
+    const rows = await sql<{ summary: string; next_focus: string | null; ratings: string[]; seconds_taken: number | null; status: string }[]>`
+      select r.summary, r.next_focus, r.seconds_taken, b.status::text as status,
+             coalesce(array_agg(s.skill_code || ':' || s.rating order by s.skill_code) filter (where s.skill_code is not null), '{}') as ratings
+        from public.lesson_records r
+        join public.bookings b on b.id = r.booking_id
+        left join public.skill_ratings s on s.lesson_record_id = r.id
+       where r.booking_id = ${bookingId}
+       group by r.id, b.status`;
+    const found = rows[0];
+    return found
+      ? { summary: found.summary, nextFocus: found.next_focus, ratings: found.ratings, secondsTaken: found.seconds_taken, lessonStatus: found.status }
+      : null;
   });
 }

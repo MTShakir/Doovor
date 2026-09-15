@@ -6,8 +6,10 @@ import { SkeletonRow } from '@repo/ui/skeleton';
 import { CalendarX } from 'lucide-react';
 import { connection } from 'next/server';
 import { Suspense } from 'react';
+import { TodayLessons } from '@/components/lessons/today-lessons';
 import { SetupChecklist } from '@/components/setup-checklist';
 import { requirePortal } from '@/lib/auth/session';
+import { teachingProfiles, todaysLessons } from '@/lib/lessons/teaching';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
 
 export default function InstructorHomePage() {
@@ -25,14 +27,29 @@ export default function InstructorHomePage() {
         <Suspense fallback={<SkeletonRow />}>
           <Setup />
         </Suspense>
-        <EmptyState
-          icon={CalendarX}
-          title="No lessons today"
-          description="Your diary arrives shortly. Lessons you book will show up here."
-        />
+        <Suspense fallback={<SkeletonRow />}>
+          <Lessons />
+        </Suspense>
       </div>
     </main>
   );
+}
+
+/** Today's lessons, and the one to start next (PRD 7.5, 10.2, M4-04). */
+async function Lessons() {
+  const { access } = await requirePortal('instructor');
+  const now = new Date();
+  const lessons = await todaysLessons(teachingProfiles(access), now);
+  if (lessons.length === 0) {
+    return (
+      <EmptyState
+        icon={CalendarX}
+        title="No lessons today"
+        description="Lessons you book for today show up here, with where to pick each learner up."
+      />
+    );
+  }
+  return <TodayLessons lessons={lessons} now={now.toISOString()} />;
 }
 
 /** Today's date is not something a shell can be prerendered with (Cache Components). */

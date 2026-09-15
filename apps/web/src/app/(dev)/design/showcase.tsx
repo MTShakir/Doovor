@@ -24,6 +24,8 @@ import { MonthCalendar } from '@repo/ui/month-calendar';
 import { OtpInput } from '@repo/ui/otp-input';
 import { PostcodeSearch } from '@repo/ui/postcode-search';
 import { ProgressBar, ProgressRing } from '@repo/ui/progress';
+import type { SkillRating } from '@repo/core/skills';
+import { RatingScale } from '@repo/ui/rating-scale';
 import { RatingStars } from '@repo/ui/rating-stars';
 import { Select } from '@repo/ui/select';
 import { Sheet } from '@repo/ui/sheet';
@@ -82,6 +84,7 @@ const slots = ['09:00', '10:30', '12:00', '13:30', '15:00', '16:30', '18:00'].ma
 export function DesignShowcase() {
   const [postcode, setPostcode] = useState('LS6 3HN');
   const [otp, setOtp] = useState('1234');
+  const [skillRating, setSkillRating] = useState<SkillRating | null>(3);
   const [checked, setChecked] = useState(true);
   const [notify, setNotify] = useState(true);
   const [radius, setRadius] = useState(8);
@@ -240,6 +243,11 @@ export function DesignShowcase() {
           <Checkbox label="Disabled option" disabled />
           <Switch label="Lesson reminders" description="Email and push, 24 hours before." checked={notify} onCheckedChange={setNotify} />
           <Switch label="Instant book" disabled />
+        </div>
+        <Label>Skill rating, 1 to 5 (M4-05)</Label>
+        <div className="grid max-w-md gap-4">
+          <RatingScale label="Junctions" value={skillRating} onChange={setSkillRating} />
+          <RatingScale label="Roundabouts" value={null} onChange={() => undefined} />
         </div>
         <Label>Tabs</Label>
         <Tabs defaultValue="week" className="max-w-md">
