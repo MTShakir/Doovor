@@ -516,6 +516,50 @@ export type Database = {
           },
         ]
       }
+      cities: {
+        Row: {
+          name: string
+          slug: string
+        }
+        Insert: {
+          name: string
+          slug: string
+        }
+        Update: {
+          name?: string
+          slug?: string
+        }
+        Relationships: []
+      }
+      city_districts: {
+        Row: {
+          admin_district: string
+          area_name: string | null
+          area_slug: string | null
+          city_slug: string
+        }
+        Insert: {
+          admin_district: string
+          area_name?: string | null
+          area_slug?: string | null
+          city_slug: string
+        }
+        Update: {
+          admin_district?: string
+          area_name?: string | null
+          area_slug?: string | null
+          city_slug?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "city_districts_city_slug_fkey"
+            columns: ["city_slug"]
+            isOneToOne: false
+            referencedRelation: "cities"
+            referencedColumns: ["slug"]
+          },
+        ]
+      }
       coverage_districts: {
         Row: {
           business_id: string
@@ -2667,6 +2711,16 @@ export type Database = {
           p_instructor_id: string
         }
         Returns: string[]
+      }
+      place_of_postcode: {
+        Args: { p_postcode: string }
+        Returns: {
+          area_name: string
+          area_slug: string
+          city_name: string
+          city_slug: string
+          has_hub: boolean
+        }[]
       }
       record_offline_package: {
         Args: { p_learner_id: string; p_method: string; p_package_id: string }

@@ -48,11 +48,13 @@ select is_empty(
 --   signs in, and the answer is about hours the instructor publishes anyway (BOK-02, R-04).
 --   booking_page, open_slots: the booking link itself. An instructor shares it to be booked
 --   from, and it answers only for one who has been verified (BOK-02, INS-02).
+--   place_of_postcode: the public pages find the city and area of a postcode. It reads only the
+--   postcode cache and the city reference data, which anybody may read already (PRD 8.3, M5-01).
 select is_empty(
   $$ select distinct routine_name from information_schema.routine_privileges
       where routine_schema = 'public' and grantee in ('PUBLIC', 'anon')
         and routine_name not in ('covers_postcode', 'invitation_details', 'slot_problem',
-                                 'booking_page', 'open_slots') $$,
+                                 'booking_page', 'open_slots', 'place_of_postcode') $$,
   'no public function is executable by anon unless allowlisted'
 );
 

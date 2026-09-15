@@ -20,6 +20,7 @@ M5 Public profiles, schools and admin is in progress on branch `m5-public-school
 
 | Task | What | PRD | State |
 |---|---|---|---|
+| M5-01 | Cities and areas data for launch regions; city slug from postcode | 8.3 | Done. Leeds, Manchester and London are the launch cities, each a group of local authority districts named as the Office for National Statistics names them: Leeds is one, Manchester is Greater Manchester's ten boroughs, and London is its 32 boroughs and the City of London. Each district of a city with several is an area with a page of its own, such as London's Croydon, except the district the city is named after. `place_of_postcode` finds a postcode's city and area from the postcode cache. A postcode anywhere else is a place of its own, under the name its district is known by, so every instructor has a profile address (D-108). The seeded instructors resolve to Leeds and Manchester. pgTAP: 16 assertions, including a Leeds, a Manchester, a Stockport, a Westminster and a Croydon postcode; the naming rules have 15 unit tests, pinned to the same names as the database's |
 
 ## M4 progress
 
@@ -186,8 +187,8 @@ Decisions D-036 to D-050 were logged during this stretch. Two were security fixe
 
 | Suite | Result |
 |---|---|
-| Unit (Vitest) | 937 passed across 7 packages; `packages/core` and `packages/providers` both above the 90% line coverage gate |
-| Database (pgTAP) | 962 assertions in 71 files, all passing, including against a database an end to end run has left data in, and none of them depends on the date or the day of the week they run on (D-070); SQL lint clean |
+| Unit (Vitest) | 952 passed across 7 packages; `packages/core` and `packages/providers` both above the 90% line coverage gate |
+| Database (pgTAP) | 978 assertions in 72 files, all passing, including against a database an end to end run has left data in, and none of them depends on the date or the day of the week they run on (D-070); SQL lint clean |
 | Stripe test mode | 6 of 6 on 14 September (`pnpm test:e2e:stripe`): acceptance-03 to 06, acceptance-12 and the M3-08 authorisation, against the sandbox with the listener and the job runner, in 6.8 minutes from a clean database |
 | End to end (Playwright) | 303 at 390 px and 1440 px, all passing from a fresh database on 15 September in 9.9 minutes, none skipped. They include acceptance-01 to 06, 08, 09 and 12, the payment journeys for M3-05 to M3-22, cover lessons (D-097), and M4's lesson records, progress and offline work (M4-04 to M4-13). The two full runs before that one failed three tests between them, each on the tests' timing rather than on the app. The notifications test emptied Jack Taylor's and Sarah Khan's inboxes while the lesson record test was reading Jack's; it now uses the school's owner and manager, whose inboxes no other test reads. A payments test tapped again while its page was still opening, then waited for a button that had gone, as one did in M4-11's run; the 17 retried taps that lead to another page now go through `tapThrough` in `e2e/support/helpers.ts`, which waits for a tap already on its way. An accessibility scan caught a toast part way through fading out; scans now run with reduced motion, which the app and its toasts honour by changing at once. M4's last three full runs took 10 to 13 minutes locally, from 8 before M4. Timed with the service worker blocked, the worker accounts for about a fifth of that, and keeping the first page it sees for about a third of the worker's share. It stays on in every test, as it is for everybody using the app |
 | Lint, typecheck, copy guard | Clean |

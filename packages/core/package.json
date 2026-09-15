@@ -13,6 +13,7 @@
     "./time": "./src/time/index.ts",
     "./phone": "./src/phone.ts",
     "./postcode": "./src/postcode.ts",
+    "./places": "./src/places.ts",
     "./schemas/auth": "./src/schemas/auth.ts",
     "./schemas/onboarding": "./src/schemas/onboarding.ts",
     "./schemas/profile": "./src/schemas/profile.ts",
