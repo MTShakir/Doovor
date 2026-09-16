@@ -10,7 +10,8 @@ import { redirectTo } from '@/lib/redirect-to';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
 import { SchoolStep } from '../school-step';
 import { FinishSetup } from './finish-setup';
-import { InviteInstructorsForm } from './invite-instructors-form';
+import { InviteInstructorsForm } from '@/components/school/invite-instructors-form';
+import { inviteInstructor } from '../actions';
 
 export const metadata: Metadata = { title: 'Invite your instructors' };
 
@@ -34,7 +35,7 @@ async function InviteInstructors() {
       title="Invite your instructors"
       lead={`Each one gets a link to join ${session.name}, then sets up their profile in four short steps. Send it from your phone, the way you already talk to them.`}
     >
-      <InviteInstructorsForm />
+      <InviteInstructorsForm invite={inviteInstructor} />
       <Suspense fallback={<SkeletonRow />}>
         <Invited businessId={session.businessId} expected={session.expectedInstructors} />
       </Suspense>

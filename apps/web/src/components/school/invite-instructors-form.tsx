@@ -1,6 +1,7 @@
 'use client';
 
 import { emailShareUrl, invitationText, smsShareUrl, whatsappShareUrl, type InvitationMessage } from '@repo/core/invitations';
+import type { Result } from '@repo/core/result';
 import type { InviteChannel } from '@repo/core/schemas/school';
 import { Button } from '@repo/ui/button';
 import { Field } from '@repo/ui/field';
@@ -12,7 +13,7 @@ import { useRouter } from 'next/navigation';
 import { useState, useTransition } from 'react';
 import { ClientForm, SubmitButton } from '@/components/client-form';
 import { FormAlert } from '@/components/form-alert';
-import { inviteInstructor, type InstructorInvitation } from '../actions';
+import type { InstructorInvitation } from '@/lib/school/invitations';
 
 const channels: { value: InviteChannel; label: string }[] = [
   { value: 'sms', label: 'Text message' },
@@ -25,8 +26,13 @@ function isChannel(value: string): value is InviteChannel {
   return channels.some((channel) => channel.value === value);
 }
 
-/** AUTH-05: the owner makes a link for one instructor and sends it from their own phone (D-118). */
-export function InviteInstructorsForm() {
+export interface InviteInstructorsFormProps {
+  /** The Server Action that makes the link: while setting the school up, or from its Instructors screen. */
+  invite: (input: unknown) => Promise<Result<InstructorInvitation>>;
+}
+
+/** AUTH-05, SCH-02: a link for one instructor, sent from the owner's or a manager's own phone (D-118). */
+export function InviteInstructorsForm({ invite }: InviteInstructorsFormProps) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -43,7 +49,7 @@ export function InviteInstructorsForm() {
     setFormError(null);
     startTransition(async () => {
       // Only the address the chosen way needs: a number typed before switching to email is not sent.
-      const result = await inviteInstructor({
+      const result = await invite({
         channel,
         fullName,
         email: channel === 'email' ? email : '',
@@ -51,7 +57,7 @@ export function InviteInstructorsForm() {
       });
       if (result.ok) {
         setInvitation(result.data);
-        // The list of who has been invited is read by the page.
+        // The list of who has been invited is read by the page around the form.
         router.refresh();
         return;
       }

@@ -1202,3 +1202,72 @@ export async function seededSchoolFigures(schoolName: string): Promise<SeededSch
     return { facts: row.facts, lessonsToday: row.today, lessonsThisWeek: row.week, newLearnersThisMonth: row.learners };
   });
 }
+
+export interface MadeSchoolInstructor {
+  name: string;
+  /** Signs in with the seed's password (supabase/seeds/test_helpers.sql). */
+  email: string;
+  remove: () => Promise<void>;
+}
+
+/**
+ * A checked instructor at a seeded school, made for one test and removed after it (M5-13), so a
+ * test can switch somebody off without touching the instructors every other test books.
+ */
+export async function makeSchoolInstructor(name: string, schoolName = 'Quayside Driving School'): Promise<MadeSchoolInstructor> {
+  const userId = crypto.randomUUID();
+  const slug = `${name.toLowerCase().replace(/[^a-z0-9]+/g, '-')}-${userId.slice(0, 8)}`;
+  const email = `${slug}@example.com`;
+  await withDatabase(async (sql) => {
+    await sql`select tests.create_user_with_id(${userId}::uuid, ${email}, ${name})`;
+    // A verified mobile, as every instructor has before their portal (AUTH-02), tried again if taken.
+    for (let attempt = 0; ; attempt += 1) {
+      const phone = `447700900${String(500 + Math.floor(Math.random() * 500))}`;
+      try {
+        await sql`update auth.users set phone = ${phone}, phone_confirmed_at = now() where id = ${userId}`;
+        break;
+      } catch (error) {
+        if (attempt >= 5 || (error as { code?: string }).code !== '23505') throw error;
+      }
+    }
+    const made = await sql`
+      with school as (select id from public.businesses where name = ${schoolName} and type = 'school'),
+           member as (insert into public.memberships (business_id, user_id, role) select id, ${userId}, 'instructor' from school returning business_id)
+      insert into public.instructor_profiles (user_id, business_id, display_name, public_slug, verification_status, verified_at, onboarding_completed_at)
+      select ${userId}, business_id, ${name}, ${slug}, 'approved', now(), now() from member`;
+    if (made.count !== 1) throw new Error(`No school called ${schoolName} to add ${name} to`);
+  });
+  return {
+    name,
+    email,
+    remove: () =>
+      withDatabase(async (sql) => {
+        await sql`delete from public.instructor_profiles where user_id = ${userId}`;
+        await sql`delete from public.memberships where user_id = ${userId}`;
+        await sql`delete from auth.users where id = ${userId}`;
+      }),
+  };
+}
+
+export interface SchoolMemberState {
+  status: string;
+  setOwnPrices: boolean;
+  /** Their public address, which a member switched off does not have (D-120). */
+  slug: string | null;
+}
+
+/** Where somebody stands at their school, found by their email (SCH-02). */
+export async function schoolMemberState(email: string): Promise<SchoolMemberState | null> {
+  return withDatabase(async (sql) => {
+    const rows = await sql<SchoolMemberState[]>`
+      select m.status::text as status,
+             coalesce(m.permissions -> 'set_own_prices' = 'true'::jsonb, false) as "setOwnPrices",
+             p.public_slug as slug
+        from public.memberships m
+        join public.users u on u.id = m.user_id
+        join public.businesses b on b.id = m.business_id and b.type = 'school'
+        left join public.instructor_profiles p on p.user_id = m.user_id and p.business_id = m.business_id
+       where lower(u.email) = lower(${email})`;
+    return rows[0] ?? null;
+  });
+}

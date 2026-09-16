@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { instructorInviteSchema, schoolDetailsSchema } from './school.ts';
+import { instructorInviteSchema, invitationIdSchema, memberPermissionSchema, memberSwitchSchema, schoolDetailsSchema } from './school.ts';
 
 const details = { name: '  Northern Lights Driving ', postcode: 'm1 1ae', expectedInstructors: ' 6 ' };
 
@@ -57,5 +57,26 @@ describe('inviting an instructor to the school (AUTH-05)', () => {
       email: null,
       phone: '+447700900555',
     });
+  });
+});
+
+describe('managing the team (SCH-02, M5-13)', () => {
+  const membershipId = '6f1c3a52-9d8e-4b7a-8c61-2f0e9b4d7a13';
+
+  it('changes one of the two things a member may be allowed, and nothing else', () => {
+    expect(memberPermissionSchema.parse({ membershipId, permission: 'set_own_prices', allowed: true })).toEqual({
+      membershipId,
+      permission: 'set_own_prices',
+      allowed: true,
+    });
+    expect(memberPermissionSchema.safeParse({ membershipId, permission: 'manage_billing', allowed: true }).success).toBe(false);
+    expect(memberPermissionSchema.safeParse({ membershipId, permission: 'view_revenue', allowed: 'yes' }).success).toBe(false);
+  });
+
+  it('switches a member by the id of their membership, and cancels an invitation by its own', () => {
+    expect(memberSwitchSchema.parse({ membershipId, active: false })).toEqual({ membershipId, active: false });
+    expect(memberSwitchSchema.safeParse({ membershipId: 'not-an-id', active: false }).success).toBe(false);
+    expect(invitationIdSchema.safeParse(membershipId).success).toBe(true);
+    expect(invitationIdSchema.safeParse('').success).toBe(false);
   });
 });

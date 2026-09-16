@@ -33,6 +33,8 @@ import { SkillMap } from '@/components/progress/skill-map';
 import { SetupChecklist } from '@/components/setup-checklist';
 import { InstructorWeeks, OverviewFigures, OverviewSkeleton } from '@/components/school/overview';
 import type { SchoolOverview } from '@/lib/school/overview';
+import { SwitchOffDialog, TeamSections } from '@/components/school/team';
+import type { SchoolTeam } from '@/lib/school/team';
 import type { RecordedLesson } from '@/lib/lessons/records';
 import { Button } from '@repo/ui/button';
 import { Card, CardDescription, CardTitle } from '@repo/ui/card';
@@ -124,6 +126,17 @@ const exampleOverview: SchoolOverview = {
   newLearnersMonth: 9,
 };
 
+const exampleTeam: SchoolTeam = {
+  members: [
+    { membershipId: 'team-1', isYou: false, role: 'instructor', active: true, name: 'Emma Clarke', email: null, phone: null, instructorId: 'team-p1', photoPath: null, setOwnPrices: false, viewRevenue: false, lessonsToCome: 18 },
+    { membershipId: 'team-2', isYou: false, role: 'instructor', active: true, name: 'Tom Walsh', email: null, phone: null, instructorId: 'team-p2', photoPath: null, setOwnPrices: true, viewRevenue: false, lessonsToCome: 1 },
+    { membershipId: 'team-3', isYou: true, role: 'manager', active: true, name: 'Lucy Grant', email: null, phone: null, instructorId: null, photoPath: null, setOwnPrices: false, viewRevenue: false, lessonsToCome: 0 },
+    { membershipId: 'team-4', isYou: false, role: 'manager', active: true, name: 'Omar Hussain', email: null, phone: null, instructorId: null, photoPath: null, setOwnPrices: false, viewRevenue: true, lessonsToCome: 0 },
+    { membershipId: 'team-5', isYou: false, role: 'instructor', active: false, name: 'Ravi Patel', email: null, phone: null, instructorId: 'team-p5', photoPath: null, setOwnPrices: false, viewRevenue: false, lessonsToCome: 3 },
+  ],
+  invitations: [{ invitationId: 'team-i1', fullName: 'Nia Newcomer', email: null, phone: '+447700900555', expiresAt: '2026-09-30T10:00:00Z', expiresOn: 'Wed 30 Sep' }],
+};
+
 const pillStatuses: PillStatus[] = ['confirmed', 'pending', 'completed', 'paid', 'cancelled', 'attention', 'unpaid', 'overdue', 'credit', 'gap-fill', 'test-day'];
 
 const exampleRecords: RecordedLesson[] = [
@@ -192,6 +205,7 @@ export function DesignShowcase() {
   const [sheetOpen, setSheetOpen] = useState(false);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [picked, setPicked] = useState<string | undefined>(undefined);
+  const [switchingOff, setSwitchingOff] = useState<SchoolTeam['members'][number] | null>(null);
   const [document, setDocument] = useState<string | undefined>(undefined);
   const [pickup, setPickup] = useState<string | undefined>(undefined);
 
@@ -885,6 +899,29 @@ export function DesignShowcase() {
         <InstructorWeeks instructors={[]} week={exampleWeek} idPrefix="design-weeks-empty" />
         <Label>Loading</Label>
         <OverviewSkeleton />
+        <Label>Team, as the owner sees it, with an invitation waiting and somebody switched off</Label>
+        <TeamSections
+          members={exampleTeam.members}
+          invitations={exampleTeam.invitations}
+          handlers={{
+            viewerIsOwner: true,
+            busyId: 'team-2',
+            onPermission: () => undefined,
+            onSwitch: (member, active) => { if (!active) setSwitchingOff(member); },
+            onCancelInvitation: () => undefined,
+          }}
+        />
+        <div>
+          <Button variant="secondary" onClick={() => { setSwitchingOff(exampleTeam.members[0] ?? null); }}>
+            Switch off Emma Clarke
+          </Button>
+        </div>
+        <SwitchOffDialog
+          member={switchingOff}
+          pending={false}
+          onConfirm={() => { setSwitchingOff(null); }}
+          onCancel={() => { setSwitchingOff(null); }}
+        />
       </Section>
 
       <Section title="Scheduling">

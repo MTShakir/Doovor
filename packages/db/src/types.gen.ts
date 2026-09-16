@@ -2964,6 +2964,10 @@ export type Database = {
         }
         Returns: string
       }
+      revoke_member_invitation: {
+        Args: { p_invitation_id: string }
+        Returns: undefined
+      }
       revoke_my_session: { Args: { p_session_id: string }; Returns: boolean }
       save_lesson_record: {
         Args: {
@@ -2979,6 +2983,7 @@ export type Database = {
       }
       school_overview: { Args: { p_business_id: string }; Returns: Json }
       school_profile_page: { Args: { p_slug: string }; Returns: Json }
+      school_team: { Args: { p_business_id: string }; Returns: Json }
       set_availability_exception: {
         Args: {
           p_ends_at: string
@@ -3000,6 +3005,18 @@ export type Database = {
       set_learner_status: {
         Args: { p_learner_id: string; p_reason?: string; p_status: string }
         Returns: Database["public"]["Enums"]["learner_status"]
+      }
+      set_member_active: {
+        Args: { p_active: boolean; p_membership_id: string }
+        Returns: undefined
+      }
+      set_member_permission: {
+        Args: {
+          p_allowed: boolean
+          p_membership_id: string
+          p_permission: string
+        }
+        Returns: undefined
       }
       set_onboarding_prices: {
         Args: {

@@ -71,3 +71,25 @@ export const instructorInviteSchema = z
   });
 
 export type InstructorInvite = z.output<typeof instructorInviteSchema>;
+
+/**
+ * What a member may do beyond their role (SCH-02, PRD 6.2): an instructor setting their own
+ * prices rather than teaching at the school's, and a manager seeing the school's revenue.
+ */
+export const memberPermissionKeys = ['set_own_prices', 'view_revenue'] as const;
+export type MemberPermission = (typeof memberPermissionKeys)[number];
+
+export const memberPermissionSchema = z.object({
+  membershipId: z.uuid(),
+  permission: z.enum(memberPermissionKeys),
+  allowed: z.boolean(),
+});
+
+/** Switching somebody at the school off, or back on (SCH-02). */
+export const memberSwitchSchema = z.object({
+  membershipId: z.uuid(),
+  active: z.boolean(),
+});
+
+/** An invitation the school cancels. */
+export const invitationIdSchema = z.uuid();

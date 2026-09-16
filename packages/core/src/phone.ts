@@ -15,8 +15,11 @@ export function normaliseUkMobile(input: string): string | null {
   return /^7\d{9}$/.test(national) ? `+44${national}` : null;
 }
 
-/** "+447700900001" as "07700 900001" for display. */
+/**
+ * "+447700900001" as "07700 900001" for display. Auth keeps numbers without the plus sign
+ * ("447700900001"), so that form is read the same way.
+ */
 export function formatUkMobile(e164: string): string {
-  const match = /^\+44(7\d{3})(\d{6})$/.exec(e164);
+  const match = /^\+?44(7\d{3})(\d{6})$/.exec(e164);
   return match ? `0${match[1] ?? ''} ${match[2] ?? ''}` : e164;
 }

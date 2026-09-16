@@ -17,6 +17,8 @@ describe('normaliseUkMobile (AUTH-02)', () => {
 
   it('formats for display', () => {
     expect(formatUkMobile('+447700900001')).toBe('07700 900001');
+    // As Supabase Auth stores it, with no plus sign.
+    expect(formatUkMobile('447700900001')).toBe('07700 900001');
     expect(formatUkMobile('+12025550100')).toBe('+12025550100');
   });
 });
