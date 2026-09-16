@@ -22,7 +22,7 @@ async function NameStep() {
   const session = await requireOnboarding();
   if (!step) throw new Error('Unknown onboarding step');
   return (
-    <StepShell step={step}>
+    <StepShell step={step} businessType={session.businessType}>
       <NameForm profileId={session.profileId} initialName={session.displayName} initialPhotoPath={session.photoPath} />
     </StepShell>
   );

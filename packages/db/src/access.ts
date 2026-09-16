@@ -8,6 +8,8 @@ export interface AccessMembership {
   instructorProfileId: string | null;
   /** Onboarding progress for that profile (AUTH-04). Null when this membership is not an instructor. */
   onboarding: { step: number; completed: boolean } | null;
+  /** The Business itself is set up (AUTH-05): false only for a school its owner has not finished. */
+  businessOnboarded: boolean;
 }
 
 /** Everything needed to decide which portals a person can use. Read through RLS. */
@@ -40,7 +42,7 @@ export async function getAccessContext(client: DbClient, userId: string): Promis
     client.from('platform_staff').select('role').eq('user_id', userId).maybeSingle(),
     client
       .from('memberships')
-      .select('business_id, role, businesses!inner(name, type, status)')
+      .select('business_id, role, businesses!inner(name, type, status, onboarding_completed_at)')
       .eq('user_id', userId)
       .eq('status', 'active'),
     client.from('learner_profiles').select('user_id, transmission').eq('user_id', userId).maybeSingle(),
@@ -76,6 +78,7 @@ export async function getAccessContext(client: DbClient, userId: string): Promis
               completed: profileByBusiness.get(m.business_id)?.onboarding_completed_at !== null,
             }
           : null,
+        businessOnboarded: m.businesses.onboarding_completed_at !== null,
       })),
   };
 }

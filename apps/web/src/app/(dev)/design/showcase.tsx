@@ -396,6 +396,14 @@ export function DesignShowcase() {
             error="That picture is too large. Choose one under 15MB."
             onChoose={() => undefined}
           />
+          <AvatarPicker
+            name="Quayside Driving School"
+            label="Logo"
+            noun="logo"
+            hint="Shown on your school's page. You can add it later."
+            accept="image/jpeg"
+            onChoose={() => undefined}
+          />
         </div>
         <div className="grid gap-8 md:grid-cols-2">
           <PhotoUpload

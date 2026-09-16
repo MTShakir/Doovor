@@ -493,10 +493,12 @@ export type Database = {
           base_postcode: string | null
           created_at: string
           created_by: string | null
+          expected_instructors: number | null
           founding_offer: boolean
           id: string
           logo_url: string | null
           name: string
+          onboarding_completed_at: string | null
           plan: Database["public"]["Enums"]["plan_key"]
           plan_expires_at: string | null
           settings: Json
@@ -518,10 +520,12 @@ export type Database = {
           base_postcode?: string | null
           created_at?: string
           created_by?: string | null
+          expected_instructors?: number | null
           founding_offer?: boolean
           id?: string
           logo_url?: string | null
           name: string
+          onboarding_completed_at?: string | null
           plan?: Database["public"]["Enums"]["plan_key"]
           plan_expires_at?: string | null
           settings?: Json
@@ -543,10 +547,12 @@ export type Database = {
           base_postcode?: string | null
           created_at?: string
           created_by?: string | null
+          expected_instructors?: number | null
           founding_offer?: boolean
           id?: string
           logo_url?: string | null
           name?: string
+          onboarding_completed_at?: string | null
           plan?: Database["public"]["Enums"]["plan_key"]
           plan_expires_at?: string | null
           settings?: Json
@@ -2701,6 +2707,7 @@ export type Database = {
     }
     Functions: {
       accept_invitation: { Args: { p_token: string }; Returns: string }
+      accept_member_invitation: { Args: { p_token: string }; Returns: string }
       add_learner: {
         Args: {
           p_instructor_id: string
@@ -2801,11 +2808,14 @@ export type Database = {
       invitation_details: {
         Args: { p_token: string }
         Returns: {
+          already_member: boolean
           business_name: string
           email: string
           expired: boolean
           full_name: string
           instructor_name: string
+          kind: string
+          role: Database["public"]["Enums"]["membership_role"]
         }[]
       }
       invite_learner: {
@@ -2815,6 +2825,21 @@ export type Database = {
           p_full_name?: string
           p_instructor_id: string
           p_phone?: string
+        }
+        Returns: {
+          expires_at: string
+          invitation_id: string
+          token: string
+        }[]
+      }
+      invite_member: {
+        Args: {
+          p_business_id: string
+          p_channel: string
+          p_email?: string
+          p_full_name?: string
+          p_phone?: string
+          p_role: Database["public"]["Enums"]["membership_role"]
         }
         Returns: {
           expires_at: string

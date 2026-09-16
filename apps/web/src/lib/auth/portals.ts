@@ -24,6 +24,7 @@ export function canUsePortal(context: AccessContext, portal: Portal): boolean {
  */
 export function landingPath(context: AccessContext): string {
   const [first] = availablePortals(context);
+  if (first === 'school' && needsSchoolOnboarding(context)) return '/onboarding/school';
   if (first === 'instructor' && needsOnboarding(context)) return '/onboarding';
   if (first === 'learner' && needsLearnerOnboarding(context)) return '/onboarding/about-you';
   return first ? portalRoots[first] : '/start';
@@ -50,6 +51,14 @@ export function safeNextPath(next: string | null | undefined, fallback = '/'): s
 export function needsOnboarding(context: AccessContext): boolean {
   const instructor = context.memberships.find((membership) => membership.onboarding !== null);
   return instructor?.onboarding ? !instructor.onboarding.completed : false;
+}
+
+/** A school's owner or manager sets the school up before its portal opens (AUTH-05, M5-11). */
+export function needsSchoolOnboarding(context: AccessContext): boolean {
+  return context.memberships.some(
+    (membership) =>
+      membership.businessType === 'school' && (membership.role === 'owner' || membership.role === 'manager') && !membership.businessOnboarded,
+  );
 }
 
 /** A learner who has not answered the onboarding questions is asked them first (AUTH-06). */

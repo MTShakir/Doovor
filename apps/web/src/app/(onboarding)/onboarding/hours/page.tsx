@@ -41,7 +41,7 @@ async function HoursStep() {
   const endTime = first ? first.end_time.slice(0, 5) : defaultWorkingHours.endTime;
 
   return (
-    <StepShell step={step}>
+    <StepShell step={step} businessType={session.businessType}>
       <HoursForm days={days} startTime={startTime} endTime={endTime} />
       <StepSkip />
     </StepShell>

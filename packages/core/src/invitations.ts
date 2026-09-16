@@ -3,14 +3,16 @@
  *
  * An instructor sends the link however they already talk to that learner: a WhatsApp message,
  * a text, or an email. These build the addresses that hand the message to those apps with the
- * words already written.
+ * words already written. A school invites its instructors the same way (AUTH-05, M5-11).
  */
 
 export interface InvitationMessage {
   /** The full link, including the token. */
   link: string;
-  /** Who is inviting them, for the message itself. */
+  /** Who is inviting them, for the message itself: the instructor, or the school. */
   instructorName: string;
+  /** A learner invited to book, unless this invites an instructor to teach for a school. */
+  kind?: 'learner' | 'member';
   /** The learner's name, when the instructor gave one. */
   learnerName?: string | null;
   /** Where to send it, for the channels that need an address. */
@@ -21,11 +23,14 @@ export interface InvitationMessage {
 /** What the message says. Plain, short, and the same wherever it is sent. */
 export function invitationText(message: InvitationMessage): string {
   const greeting = message.learnerName ? `Hi ${message.learnerName}, ` : 'Hi, ';
+  if (message.kind === 'member') {
+    return `${greeting}you are invited to teach with ${message.instructorName}. Set up your instructor account here: ${message.link}`;
+  }
   return `${greeting}it is ${message.instructorName}. Book your driving lessons with me here: ${message.link}`;
 }
 
 export function invitationSubject(message: InvitationMessage): string {
-  return `Your driving lessons with ${message.instructorName}`;
+  return message.kind === 'member' ? `Teach with ${message.instructorName}` : `Your driving lessons with ${message.instructorName}`;
 }
 
 /** wa.me takes the text as a query; the person picks the contact in WhatsApp. */

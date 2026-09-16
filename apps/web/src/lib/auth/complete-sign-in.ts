@@ -2,8 +2,23 @@ import 'server-only';
 import { getAccessContext } from '@repo/db';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
 import { takePendingBooking } from '@/lib/booking/pending';
-import { takeInvitation } from './invitation-cookie';
+import { forgetInvitation, readInvitation } from './invitation-cookie';
 import { availablePortals, landingPath, safeNextPath } from './portals';
+
+type ServerClient = Awaited<ReturnType<typeof createSupabaseServerClient>>;
+
+interface OpenedInvitation {
+  token: string;
+  kind: 'learner' | 'member';
+  usable: boolean;
+}
+
+/** What the remembered invitation is for, and whether it still works. Null for a link nobody made. */
+async function openInvitation(supabase: ServerClient, token: string): Promise<OpenedInvitation | null> {
+  const { data } = await supabase.rpc('invitation_details', { p_token: token }).maybeSingle();
+  if (!data) return null;
+  return { token, kind: data.kind === 'member' ? 'member' : 'learner', usable: !data.expired };
+}
 
 /**
  * Every sign-in path ends here (password, magic link, Google, phone code). On the first
@@ -19,6 +34,16 @@ export async function completeSignIn(next?: string | null): Promise<string> {
 
   let access = await getAccessContext(supabase, user.id);
 
+  // An invitation opened before the account existed (AUTH-07, D-064). One to teach for a school
+  // is accepted first, so an instructor who came to join a school is not also made a Business of
+  // their own (AUTH-05, D-118). A link that has since stopped working simply does nothing.
+  const token = await readInvitation();
+  const invitation = token === null ? null : await openInvitation(supabase, token);
+  if (invitation?.kind === 'member' && invitation.usable) {
+    await supabase.rpc('accept_member_invitation', { p_token: invitation.token });
+    access = await getAccessContext(supabase, user.id);
+  }
+
   if (availablePortals(access).length === 0) {
     const { data: profile } = await supabase.from('users').select('intended_role, full_name').eq('id', user.id).single();
     const metadata = user.user_metadata as Record<string, unknown>;
@@ -26,7 +51,7 @@ export async function completeSignIn(next?: string | null): Promise<string> {
 
     if (profile?.intended_role === 'learner') {
       await supabase.from('learner_profiles').upsert({ user_id: user.id }, { onConflict: 'user_id', ignoreDuplicates: true });
-    } else if (profile?.intended_role === 'instructor') {
+    } else if (profile?.intended_role === 'instructor' && invitation?.kind !== 'member') {
       await supabase.rpc('create_business', { p_type: 'independent', p_name: profile.full_name || 'My driving business' });
     } else if (profile?.intended_role === 'school' && schoolName) {
       await supabase.rpc('create_business', { p_type: 'school', p_name: schoolName });
@@ -34,13 +59,14 @@ export async function completeSignIn(next?: string | null): Promise<string> {
     access = await getAccessContext(supabase, user.id);
   }
 
-  // An invitation opened before signing up is accepted now, once the account exists
-  // (AUTH-07). A link that has since expired simply does nothing.
-  const invitation = await takeInvitation();
-  if (invitation !== null && access.isLearner) {
-    await supabase.rpc('accept_invitation', { p_token: invitation });
+  if (invitation?.kind === 'learner' && invitation.usable && access.isLearner) {
+    await supabase.rpc('accept_invitation', { p_token: invitation.token });
     access = await getAccessContext(supabase, user.id);
   }
+
+  // Kept only while the person has still to say what they are here as (after Google, for
+  // example), so it is accepted once they have. Otherwise it has done all it can.
+  if (token !== null && availablePortals(access).length > 0) await forgetInvitation();
 
   // A slot chosen on a booking link before there was an account is waiting; they go back to
   // the link with it picked, and press the button themselves (BOK-02, D-069).

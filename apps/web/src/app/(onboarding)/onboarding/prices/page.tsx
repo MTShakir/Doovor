@@ -2,7 +2,7 @@ import type { Metadata } from 'next';
 import { SkeletonRow } from '@repo/ui/skeleton';
 import { Suspense } from 'react';
 import { requireOnboarding } from '@/lib/onboarding/session';
-import { canOpenStep, slugForStep, stepBySlug } from '@/lib/onboarding/steps';
+import { canOpenStep, isStepFor, nextStep, slugForStep, stepBySlug } from '@/lib/onboarding/steps';
 import { redirectTo } from '@/lib/redirect-to';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
 import { StepSkip } from '../step-actions';
@@ -25,6 +25,8 @@ async function PricesStep() {
   const session = await requireOnboarding();
   if (!step) throw new Error('Unknown onboarding step');
   if (!canOpenStep(step.step, session.step)) redirectTo(`/onboarding/${slugForStep(session.step)}`);
+  // A school sets the prices its instructors teach at (SCH-04).
+  if (!isStepFor(step, session.businessType)) redirectTo(`/onboarding/${nextStep(step.step, session.businessType)?.slug ?? 'hours'}`);
 
   const supabase = await createSupabaseServerClient();
   const [{ data: hourly }, { data: block }] = await Promise.all([
@@ -44,7 +46,7 @@ async function PricesStep() {
   ]);
 
   return (
-    <StepShell step={step}>
+    <StepShell step={step} businessType={session.businessType}>
       <PricesForm hourlyPrice={hourly?.price_pence ?? null} packagePrice={block?.price_pence ?? null} />
       <StepSkip />
     </StepShell>

@@ -32,7 +32,7 @@ async function AreaStep() {
   const centre = found?.ok ? { latitude: found.place.latitude, longitude: found.place.longitude } : null;
 
   return (
-    <StepShell step={step}>
+    <StepShell step={step} businessType={session.businessType}>
       <AreaForm postcode={session.basePostcode} radiusMiles={session.radiusMiles} centre={centre} />
       <StepSkip />
     </StepShell>

@@ -1093,3 +1093,68 @@ export async function makeInstructor(
       }),
   };
 }
+
+export interface MembershipRow {
+  business: string;
+  role: string;
+  /** Whether their instructor profile there is set up; null when they have none there. */
+  onboarded: boolean | null;
+}
+
+/** Where somebody is a member, found by their email, and how far their profile there is set up (AUTH-05). */
+export async function membershipsOf(email: string): Promise<MembershipRow[]> {
+  return withDatabase(async (sql) => {
+    const rows = await sql<MembershipRow[]>`
+      select b.name as business, m.role::text as role,
+             case when p.id is null then null else p.onboarding_completed_at is not null end as onboarded
+        from public.memberships m
+        join public.users u on u.id = m.user_id
+        join public.businesses b on b.id = m.business_id
+        left join public.instructor_profiles p on p.user_id = m.user_id and p.business_id = m.business_id
+       where lower(u.email) = lower(${email}) and m.status = 'active'
+       order by b.name`;
+    return [...rows];
+  });
+}
+
+export interface SchoolSetupRow {
+  name: string;
+  postcode: string | null;
+  located: boolean;
+  expectedInstructors: number | null;
+  logoPath: string | null;
+  onboarded: boolean;
+}
+
+/** What setting up a school saved, found by its owner's email (AUTH-05, M5-11). */
+export async function schoolOwnedBy(email: string): Promise<SchoolSetupRow | null> {
+  return withDatabase(async (sql) => {
+    const rows = await sql<SchoolSetupRow[]>`
+      select b.name, b.base_postcode as postcode, b.base_location is not null as located,
+             b.expected_instructors as "expectedInstructors", b.logo_url as "logoPath",
+             b.onboarding_completed_at is not null as onboarded
+        from public.businesses b
+        join public.memberships m on m.business_id = b.id and m.role = 'owner'
+        join public.users u on u.id = m.user_id
+       where lower(u.email) = lower(${email}) and b.type = 'school'`;
+    return rows[0] ?? null;
+  });
+}
+
+/**
+ * A link inviting somebody to teach for a seeded school, stored as the app stores one: only its
+ * hash (D-064). For tests that need a link without setting a school up first.
+ */
+export async function schoolInvitationPath(schoolName: string): Promise<string> {
+  const token = crypto.randomUUID().replaceAll('-', '');
+  await withDatabase(async (sql) => {
+    const made = await sql`
+      insert into public.invitations (business_id, kind, role, channel, token_hash, invited_by)
+      select b.id, 'member', 'instructor', 'link', private.invitation_hash(${token}), m.user_id
+        from public.businesses b
+        join public.memberships m on m.business_id = b.id and m.role = 'owner'
+       where b.name = ${schoolName}`;
+    if (made.count !== 1) throw new Error(`No school called ${schoolName} to invite anybody to`);
+  });
+  return `/invite/${token}`;
+}

@@ -44,6 +44,15 @@ describe('sharing an invitation (AUTH-07, M2-03)', () => {
     expect(decodeURIComponent(url)).toContain('Your driving lessons with Sarah Khan');
   });
 
+  it('invites an instructor to teach for a school in words of its own (AUTH-05)', () => {
+    const invite = { link: 'https://example.test/invite/xyz', instructorName: 'Northern Lights Driving', learnerName: 'Nia', kind: 'member' as const };
+    expect(invitationText(invite)).toBe(
+      'Hi Nia, you are invited to teach with Northern Lights Driving. Set up your instructor account here: https://example.test/invite/xyz',
+    );
+    expect(decodeURIComponent(emailShareUrl({ ...invite, email: 'nia@example.test' }))).toContain('subject=Teach with Northern Lights Driving');
+    expect(decodeURIComponent(smsShareUrl({ ...invite, phone: '+447700900555' }))).toContain('you are invited to teach with');
+  });
+
   it('builds the link one way, so the page and the message agree', () => {
     expect(invitationLink('https://example.test', 'abc-123')).toBe('https://example.test/invite/abc-123');
     expect(invitationLink('https://example.test/', 'a b')).toBe('https://example.test/invite/a%20b');

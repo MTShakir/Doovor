@@ -6,6 +6,7 @@ import {
   landingPath,
   needsLearnerOnboarding,
   needsOnboarding,
+  needsSchoolOnboarding,
   requiresMfa,
   safeNextPath,
 } from './portals';
@@ -22,6 +23,7 @@ function membership(overrides: Partial<AccessMembership>): AccessMembership {
     role: 'owner',
     instructorProfileId: null,
     onboarding: null,
+    businessOnboarded: true,
     ...overrides,
   };
 }
@@ -41,6 +43,17 @@ describe('portal access', () => {
     for (const role of ['owner', 'manager'] as const) {
       expect(landingPath(context({ memberships: [membership({ businessType: 'school', role })] }))).toBe('/app/school');
     }
+  });
+
+  it('sends the owner or manager of a school not yet set up to set it up first (AUTH-05)', () => {
+    for (const role of ['owner', 'manager'] as const) {
+      const ctx = context({ memberships: [membership({ businessType: 'school', role, businessOnboarded: false })] });
+      expect(needsSchoolOnboarding(ctx)).toBe(true);
+      expect(landingPath(ctx)).toBe('/onboarding/school');
+    }
+    // An instructor at that school has their own onboarding, not the school's.
+    const teacher = context({ memberships: [membership({ businessType: 'school', role: 'instructor', instructorProfileId: 'p9', businessOnboarded: false })] });
+    expect(needsSchoolOnboarding(teacher)).toBe(false);
   });
 
   it('gives a school instructor the instructor portal but not the school portal', () => {

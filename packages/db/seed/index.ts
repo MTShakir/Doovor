@@ -83,11 +83,12 @@ async function main(): Promise<void> {
       const businessIds = new Map<string, string>();
       for (const b of businesses) {
         const [row] = await tx<{ id: string }[]>`
-          insert into public.businesses (type, name, slug, base_postcode, base_location, address, plan, plan_expires_at, founding_offer, created_by)
+          insert into public.businesses (type, name, slug, base_postcode, base_location, address, plan, plan_expires_at, founding_offer, created_by,
+                                         onboarding_completed_at)
           values (${b.type}, ${b.name}, ${b.slug}, ${b.postcode},
                   (select location from public.postcodes where postcode = ${b.postcode}),
                   ${tx.json({ line1: b.name, town: b.town, postcode: b.postcode })},
-                  ${b.plan}, now() + interval '12 months', true, ${id(b.owner)})
+                  ${b.plan}, now() + interval '12 months', true, ${id(b.owner)}, now())
           returning id`;
         if (!row) throw new Error(`Business ${b.name} was not created`);
         businessIds.set(b.key, row.id);

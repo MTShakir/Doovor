@@ -1,6 +1,6 @@
 import 'server-only';
 import { qualificationSchema } from '@repo/core/schemas/onboarding';
-import { cacheLife, cacheTag } from 'next/cache';
+import { cacheLife, cacheTag, updateTag } from 'next/cache';
 import { z } from 'zod';
 import { getSupabaseAnonymousClient } from '@/lib/supabase/anonymous';
 import { profileTags } from './instructor-profile';
@@ -41,6 +41,16 @@ const schoolSchema = z.object({
 
 export type SchoolProfilePage = z.infer<typeof schoolSchema>;
 
+/** A school's profile looked up by its address, including one that is not there (yet). */
+function schoolSlugTag(slug: string): string {
+  return `school-slug:${slug}`;
+}
+
+/** After a school changes what its profile shows, such as its name or logo. Server Actions only. */
+export function expireSchoolProfile(slug: string): void {
+  updateTag(schoolSlugTag(slug));
+}
+
 /**
  * A school's public profile by its address (PUB-01, M5-03), the same for every visitor. Kept for
  * hours, and expired with any of its instructors' profiles, since it shows them; nothing found is
@@ -48,7 +58,7 @@ export type SchoolProfilePage = z.infer<typeof schoolSchema>;
  */
 export async function schoolProfile(slug: string): Promise<SchoolProfilePage | null> {
   'use cache';
-  cacheTag(profileTags.all, `school-slug:${slug}`);
+  cacheTag(profileTags.all, schoolSlugTag(slug));
 
   const { data, error } = await getSupabaseAnonymousClient().rpc('school_profile_page', { p_slug: slug });
   if (error) throw new Error(`Could not read the school profile for ${slug}: ${error.message}`);
