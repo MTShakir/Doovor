@@ -5,24 +5,44 @@ import { Button } from '@repo/ui/button';
 import { Sheet } from '@repo/ui/sheet';
 import { StatusPill } from '@repo/ui/status-pill';
 import { toast } from '@repo/ui/toast';
-import { Check } from 'lucide-react';
-import { useState, useTransition } from 'react';
+import { useRef, useState, useTransition } from 'react';
 import { FormAlert } from '@/components/form-alert';
+import { AllocationChoices, type AllocationState } from '@/components/school/allocation-choices';
 import type { LearnerRow } from '@/lib/learners/list';
 import { statusPill } from '@/lib/learners/status-pill';
-import { assignLearner } from './actions';
+import { assignLearner, suggestInstructors } from './actions';
 
 export interface SchoolLearnerRowProps {
   learner: LearnerRow;
+  /** Everybody still teaching at the school, for choosing by hand if suggestions cannot be read. */
   instructors: { id: string; name: string }[];
 }
 
-/** LRN-06: one learner at a school, and the instructor they are with. */
+/** LRN-06, SCH-03: one learner at a school, the instructor they are with, and who else suits them. */
 export function SchoolLearnerRow({ learner, instructors }: SchoolLearnerRowProps) {
   const [open, setOpen] = useState(false);
   const [pending, startTransition] = useTransition();
   const [teacher, setTeacher] = useState(learner.instructorName);
   const [error, setError] = useState<string | null>(null);
+  const [allocation, setAllocation] = useState<AllocationState>({ kind: 'loading' });
+  // Only the newest opening's answer counts, however the answers arrive.
+  const asked = useRef(0);
+
+  const openSheet = () => {
+    setError(null);
+    setAllocation({ kind: 'loading' });
+    setOpen(true);
+    const ask = ++asked.current;
+    void (async () => {
+      const result = await suggestInstructors(learner.learnerId);
+      if (ask !== asked.current) return;
+      setAllocation(
+        result.ok
+          ? { kind: 'ready', suggestions: result.data.suggestions, everybody: result.data.everybody }
+          : { kind: 'failed', everybody: instructors },
+      );
+    })();
+  };
 
   const give = (instructor: { id: string; name: string }) => {
     if (instructor.name === teacher) {
@@ -55,7 +75,7 @@ export function SchoolLearnerRow({ learner, instructors }: SchoolLearnerRowProps
           {teacher === null ? 'Nobody yet' : `With ${teacher}`} · {lessonsTakenLine(learner.lessonsTaken)}
         </span>
       </span>
-      <Button variant="secondary" pending={pending} onClick={() => { setOpen(true); }}>
+      <Button variant="secondary" pending={pending} onClick={openSheet}>
         Assign
       </Button>
 
@@ -63,23 +83,11 @@ export function SchoolLearnerRow({ learner, instructors }: SchoolLearnerRowProps
         open={open}
         onOpenChange={setOpen}
         title={`Who teaches ${learner.fullName}?`}
-        description="The learner keeps their lessons, their notes and their history."
+        description="Suggested by the area they cover, the gearbox they teach and their free time. The learner keeps their lessons, notes and history."
       >
-        <div className="flex flex-col gap-2">
+        <div className="flex flex-col gap-3">
           {error ? <FormAlert>{error}</FormAlert> : null}
-          {instructors.map((instructor) => (
-            <button
-              key={instructor.id}
-              type="button"
-              disabled={pending}
-              aria-current={instructor.name === teacher}
-              onClick={() => { give(instructor); }}
-              className="flex min-h-14 items-center gap-3 rounded-card px-4 py-3 text-left hover:bg-grey-100 focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-black disabled:opacity-60"
-            >
-              <span className="flex-1 text-body font-semibold text-black">{instructor.name}</span>
-              {instructor.name === teacher ? <Check className="size-5 shrink-0 text-black" aria-hidden /> : null}
-            </button>
-          ))}
+          <AllocationChoices state={allocation} current={teacher} disabled={pending} onChoose={give} />
         </div>
       </Sheet>
     </article>

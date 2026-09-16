@@ -2867,6 +2867,10 @@ export type Database = {
         }
         Returns: Json
       }
+      learner_allocation: {
+        Args: { p_business_id: string; p_learner_id: string }
+        Returns: Json
+      }
       learner_balance: {
         Args: { p_business_id: string; p_learner_id: string }
         Returns: Json

@@ -34,6 +34,7 @@ import { SetupChecklist } from '@/components/setup-checklist';
 import { InstructorWeeks, OverviewFigures, OverviewSkeleton } from '@/components/school/overview';
 import type { SchoolOverview } from '@/lib/school/overview';
 import { SwitchOffDialog, TeamSections } from '@/components/school/team';
+import { AllocationChoices } from '@/components/school/allocation-choices';
 import type { SchoolTeam } from '@/lib/school/team';
 import type { RecordedLesson } from '@/lib/lessons/records';
 import { Button } from '@repo/ui/button';
@@ -136,6 +137,37 @@ const exampleTeam: SchoolTeam = {
   ],
   invitations: [{ invitationId: 'team-i1', fullName: 'Nia Newcomer', email: null, phone: '+447700900555', expiresAt: '2026-09-30T10:00:00Z', expiresOn: 'Wed 30 Sep' }],
 };
+
+const exampleEverybody = [
+  { id: 'alloc-1', name: 'Emma Clarke' },
+  { id: 'alloc-2', name: 'Nia Newcomer' },
+  { id: 'alloc-3', name: 'Tom Walsh' },
+  { id: 'alloc-4', name: 'Zara Ahmed' },
+];
+
+const exampleSuggestions = [
+  {
+    instructorId: 'alloc-4',
+    name: 'Zara Ahmed',
+    area: 'covers' as const,
+    freeMinutes: 1500,
+    reasons: ['Covers M13, under 0.1 miles away', '25 free hours in the next 2 weeks', 'Teaches manual and automatic'],
+  },
+  {
+    instructorId: 'alloc-1',
+    name: 'Emma Clarke',
+    area: 'covers' as const,
+    freeMinutes: 420,
+    reasons: ['Covers M13, 1.9 miles away', '7 free hours in the next 2 weeks', 'Teaches automatic'],
+  },
+  {
+    instructorId: 'alloc-2',
+    name: 'Nia Newcomer',
+    area: 'unknown' as const,
+    freeMinutes: 0,
+    reasons: ['Badge not checked yet', 'No base postcode set yet', 'No working hours in the next 2 weeks', 'Teaches automatic'],
+  },
+];
 
 const pillStatuses: PillStatus[] = ['confirmed', 'pending', 'completed', 'paid', 'cancelled', 'attention', 'unpaid', 'overdue', 'credit', 'gap-fill', 'test-day'];
 
@@ -915,6 +947,24 @@ export function DesignShowcase() {
           <Button variant="secondary" onClick={() => { setSwitchingOff(exampleTeam.members[0] ?? null); }}>
             Switch off Emma Clarke
           </Button>
+        </div>
+        <Label>Who teaches a learner: suggested with reasons, then everybody else</Label>
+        <div className="grid gap-8 md:grid-cols-3">
+          <AllocationChoices
+            state={{ kind: 'ready', suggestions: exampleSuggestions, everybody: exampleEverybody }}
+            current="Emma Clarke"
+            disabled={false}
+            onChoose={() => undefined}
+            idPrefix="design-allocation"
+          />
+          <AllocationChoices state={{ kind: 'loading' }} current={null} disabled={false} onChoose={() => undefined} idPrefix="design-allocation-loading" />
+          <AllocationChoices
+            state={{ kind: 'failed', everybody: exampleEverybody }}
+            current={null}
+            disabled={false}
+            onChoose={() => undefined}
+            idPrefix="design-allocation-failed"
+          />
         </div>
         <SwitchOffDialog
           member={switchingOff}

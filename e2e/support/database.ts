@@ -1214,7 +1214,11 @@ export interface MadeSchoolInstructor {
  * A checked instructor at a seeded school, made for one test and removed after it (M5-13), so a
  * test can switch somebody off without touching the instructors every other test books.
  */
-export async function makeSchoolInstructor(name: string, schoolName = 'Quayside Driving School'): Promise<MadeSchoolInstructor> {
+export async function makeSchoolInstructor(
+  name: string,
+  schoolName = 'Quayside Driving School',
+  options: { transmission?: 'manual' | 'automatic' | 'both'; postcode?: string; workingHours?: boolean } = {},
+): Promise<MadeSchoolInstructor> {
   const userId = crypto.randomUUID();
   const slug = `${name.toLowerCase().replace(/[^a-z0-9]+/g, '-')}-${userId.slice(0, 8)}`;
   const email = `${slug}@example.com`;
@@ -1233,9 +1237,20 @@ export async function makeSchoolInstructor(name: string, schoolName = 'Quayside 
     const made = await sql`
       with school as (select id from public.businesses where name = ${schoolName} and type = 'school'),
            member as (insert into public.memberships (business_id, user_id, role) select id, ${userId}, 'instructor' from school returning business_id)
-      insert into public.instructor_profiles (user_id, business_id, display_name, public_slug, verification_status, verified_at, onboarding_completed_at)
-      select ${userId}, business_id, ${name}, ${slug}, 'approved', now(), now() from member`;
+      insert into public.instructor_profiles (user_id, business_id, display_name, public_slug, verification_status, verified_at, onboarding_completed_at,
+                                              transmission, base_postcode, base_location)
+      select ${userId}, business_id, ${name}, ${slug}, 'approved', now(), now(), ${options.transmission ?? 'manual'}::public.transmission,
+             ${options.postcode ?? null}, (select location from public.postcodes where postcode = ${options.postcode ?? null})
+        from member`;
     if (made.count !== 1) throw new Error(`No school called ${schoolName} to add ${name} to`);
+    // Open every day from seven till nine, so their free time outweighs anybody the seed has.
+    if (options.workingHours) {
+      await sql`
+        insert into public.working_hours (instructor_id, business_id, weekday, start_time, end_time)
+        select p.id, p.business_id, day, '07:00', '21:00'
+          from public.instructor_profiles p, generate_series(1, 7) as day
+         where p.user_id = ${userId}`;
+    }
   });
   return {
     name,
@@ -1269,5 +1284,57 @@ export async function schoolMemberState(email: string): Promise<SchoolMemberStat
         left join public.instructor_profiles p on p.user_id = m.user_id and p.business_id = m.business_id
        where lower(u.email) = lower(${email})`;
     return rows[0] ?? null;
+  });
+}
+
+export interface MadeSchoolLearner {
+  name: string;
+  email: string;
+  remove: () => Promise<void>;
+}
+
+/** A learner at a seeded school with nobody teaching them yet, made for one test and removed after it (M5-14). */
+export async function makeSchoolLearner(
+  name: string,
+  options: { postcode: string; transmission: 'manual' | 'automatic' },
+  schoolName = 'Quayside Driving School',
+): Promise<MadeSchoolLearner> {
+  const userId = crypto.randomUUID();
+  const email = `${name.toLowerCase().replace(/[^a-z0-9]+/g, '.')}.${userId.slice(0, 8)}@example.com`;
+  await withDatabase(async (sql) => {
+    await sql`select tests.create_user_with_id(${userId}::uuid, ${email}, ${name})`;
+    await sql`
+      insert into public.learner_profiles (user_id, postcode, location, transmission)
+      select ${userId}, p.postcode, p.location, ${options.transmission}::public.learner_transmission
+        from public.postcodes p
+       where p.postcode = ${options.postcode}`;
+    const made = await sql`
+      insert into public.learner_relationships (business_id, learner_id, source, created_by)
+      select b.id, ${userId}, 'manual', ${userId} from public.businesses b where b.name = ${schoolName} and b.type = 'school'`;
+    if (made.count !== 1) throw new Error(`No school called ${schoolName} to add ${name} to`);
+  });
+  return {
+    name,
+    email,
+    remove: () =>
+      withDatabase(async (sql) => {
+        await sql`delete from public.learner_relationships where learner_id = ${userId}`;
+        await sql`delete from public.learner_profiles where user_id = ${userId}`;
+        await sql`delete from auth.users where id = ${userId}`;
+      }),
+  };
+}
+
+/** Who teaches a learner at a seeded school now, by their name (LRN-06). */
+export async function learnerTeacherAtSchool(email: string, schoolName = 'Quayside Driving School'): Promise<string | null> {
+  return withDatabase(async (sql) => {
+    const rows = await sql<{ display_name: string | null }[]>`
+      select p.display_name
+        from public.learner_relationships r
+        join public.users u on u.id = r.learner_id
+        join public.businesses b on b.id = r.business_id and b.name = ${schoolName}
+        left join public.instructor_profiles p on p.id = r.instructor_id
+       where lower(u.email) = lower(${email})`;
+    return rows[0]?.display_name ?? null;
   });
 }

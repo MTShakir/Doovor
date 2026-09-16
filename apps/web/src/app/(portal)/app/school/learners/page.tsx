@@ -10,7 +10,7 @@ import { Fragment, Suspense } from 'react';
 import { LearnerBrowser } from '@/app/(portal)/app/instructor/learners/learner-browser';
 import { requirePortal } from '@/lib/auth/session';
 import { listLearners } from '@/lib/learners/list';
-import { createSupabaseServerClient } from '@/lib/supabase/server';
+import { schoolTeam } from '@/lib/school/team';
 import { SchoolLearnerRow } from './school-learner-row';
 
 export const metadata: Metadata = { title: 'Learners' };
@@ -42,16 +42,14 @@ async function Learners({ searchParams }: SchoolLearnersProps) {
   const membership = access.memberships.find((one) => one.businessType === 'school');
   if (!membership) return null;
 
-  const supabase = await createSupabaseServerClient();
   const [learners, team] = await Promise.all([
     listLearners({ businessId: membership.businessId, filter, search }),
-    supabase
-      .from('instructor_profiles')
-      .select('id, display_name')
-      .eq('business_id', membership.businessId)
-      .order('display_name'),
+    schoolTeam(membership.businessId),
   ]);
-  const instructors = (team.data ?? []).map((one) => ({ id: one.id, name: one.display_name }));
+  // Everybody still teaching there: nobody is given to somebody switched off (D-120).
+  const instructors = team.members.flatMap((one) =>
+    one.active && one.instructorId !== null ? [{ id: one.instructorId, name: one.name }] : [],
+  );
   const searching = search.trim() !== '' || filter !== 'all';
 
   return (
