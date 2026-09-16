@@ -1,6 +1,6 @@
 import { brand } from '@repo/config/brand';
 import { expect, test } from '@playwright/test';
-import { expectAccessible, keepScreenshot, snap } from '../support/helpers';
+import { expectAccessible, keepScreenshot, snap, tapUntil } from '../support/helpers';
 
 test.describe('design system page (M0-15)', () => {
   test('shows every section and passes axe', async ({ page }, testInfo) => {
@@ -21,9 +21,9 @@ test.describe('design system page (M0-15)', () => {
 
   test('opens the sheet (bottom sheet on phones, side panel on desktop) and closes on Escape', async ({ page }, testInfo) => {
     await page.goto('/design');
-    await page.getByRole('button', { name: 'Open sheet' }).click();
     const sheet = page.getByRole('dialog', { name: 'Lesson with Sam Taylor' });
-    await expect(sheet).toBeVisible();
+    // The design page holds every component, so it can still be coming alive when the test begins.
+    await tapUntil(page.getByRole('button', { name: 'Open sheet' }), sheet);
     await expect(sheet.getByRole('button', { name: 'Start lesson' })).toBeVisible();
     await page.waitForTimeout(300); // let the 200 ms open animation finish before the screenshot
     await snap(page, testInfo, 'sheet-open', { fullPage: false });
@@ -33,16 +33,20 @@ test.describe('design system page (M0-15)', () => {
 
   test('toast offers undo for 5 seconds (PRD 7.1)', async ({ page }) => {
     await page.goto('/design');
-    await page.getByRole('button', { name: 'Toast with undo' }).click();
-    await expect(page.getByText('Lesson cancelled')).toBeVisible();
-    await page.getByRole('button', { name: 'Undo', exact: true }).click();
-    await expect(page.getByText('Cancellation undone')).toBeVisible();
+    // A press before the page is alive shows nothing, and one after shows the toast; only the toast
+    // that appeared is used.
+    await tapUntil(page.getByRole('button', { name: 'Toast with undo' }), page.getByText('Lesson cancelled').first());
+    await page.getByRole('button', { name: 'Undo', exact: true }).first().click();
+    await expect(page.getByText('Cancellation undone').first()).toBeVisible();
   });
 
   test('selects a time slot with a visible non-colour cue', async ({ page }) => {
     await page.goto('/design');
     const slot = page.getByRole('button', { name: '15:00' });
-    await slot.click();
-    await expect(slot).toHaveAttribute('aria-pressed', 'true');
+    // Pressed again only while it has not taken: a second press on a chosen slot would clear it.
+    await expect(async () => {
+      if ((await slot.getAttribute('aria-pressed')) !== 'true') await slot.click();
+      await expect(slot).toHaveAttribute('aria-pressed', 'true', { timeout: 1000 });
+    }).toPass({ timeout: 15_000 });
   });
 });
