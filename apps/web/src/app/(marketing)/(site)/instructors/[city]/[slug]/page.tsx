@@ -47,12 +47,11 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
 export default function InstructorProfileRoute({ params }: Props) {
   return (
-    <main className="mx-auto flex min-h-dvh w-full max-w-5xl flex-col gap-6 px-4 py-8 md:px-6">
-      <p className="text-small font-semibold text-grey-700">{brand.name}</p>
+    <div className="mx-auto flex w-full max-w-5xl flex-col gap-6 px-4 py-8 md:px-6">
       <Suspense fallback={<ProfileSkeleton />}>
         <InstructorProfile params={params} />
       </Suspense>
-    </main>
+    </div>
   );
 }
 

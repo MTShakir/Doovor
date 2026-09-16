@@ -1,3 +1,4 @@
+import { mkdirSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 import AxeBuilder from '@axe-core/playwright';
 import { expect, type Locator, type Page, type TestInfo } from '@playwright/test';
@@ -14,7 +15,27 @@ export function snapPath(testInfo: TestInfo, name: string): string {
  * default; use `fullPage: false` when fixed elements such as sheets are open.
  */
 export async function snap(page: Page, testInfo: TestInfo, name: string, options: { fullPage?: boolean } = {}): Promise<void> {
-  await page.screenshot({ path: snapPath(testInfo, name), fullPage: options.fullPage ?? true });
+  await keepScreenshot(testInfo, name, await page.screenshot({ fullPage: options.fullPage ?? true }));
+}
+
+/**
+ * Writes an image for the milestone report. A program that has just noticed the file, such as a
+ * backup or a virus scan, can hold it for a moment on Windows, so a refused write is tried again a
+ * few times before the test fails.
+ */
+export async function keepScreenshot(testInfo: TestInfo, name: string, bytes: Buffer): Promise<void> {
+  const file = snapPath(testInfo, name);
+  mkdirSync(path.dirname(file), { recursive: true });
+  for (let attempt = 1; ; attempt += 1) {
+    try {
+      writeFileSync(file, bytes);
+      return;
+    } catch (error) {
+      const code = (error as { code?: string }).code ?? '';
+      if (attempt >= 5 || !['UNKNOWN', 'EBUSY', 'EPERM'].includes(code)) throw error;
+      await new Promise((resolve) => setTimeout(resolve, 250 * attempt));
+    }
+  }
 }
 
 /**

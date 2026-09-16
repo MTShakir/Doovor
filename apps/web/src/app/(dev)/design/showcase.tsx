@@ -19,6 +19,10 @@ import {
 import { Breadcrumbs, PlaceLinks } from '@/components/public/place-links';
 import { SchoolHeader, SchoolInstructors } from '@/components/public/school-profile';
 import { BookingLinkCard } from '@/components/share/booking-link-card';
+import { BookingGlimpse, GlimpseAlone, GlimpsePair, MoneyGlimpse, ProgressGlimpse, SchoolGlimpse, TodayGlimpse } from '@/components/site/glimpses';
+import { Band, ClosingCall, FeatureGrid, FoundingOffer, PageHero, PlanCard, PrimaryLink, SecondaryLink, Steps } from '@/components/site/marketing';
+import { SiteFooter, SiteHeader } from '@/components/site/site-chrome';
+import { planSummaries } from '@/lib/site/plan-features';
 import { NoSignalBanner } from '@/components/offline/connection-banner';
 import { KeptRecordsNotice } from '@/components/offline/kept-records-notice';
 import { CardFieldsSkeleton } from '@/components/payments/card-form';
@@ -56,7 +60,7 @@ import { Switch } from '@repo/ui/switch';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@repo/ui/tabs';
 import { TimeSlotGrid } from '@repo/ui/time-slot-grid';
 import { toast, toastWithUndo } from '@repo/ui/toast';
-import { CalendarX, Car } from 'lucide-react';
+import { BadgeCheck, CalendarX, Car, CreditCard, WifiOff } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { Suspense, useState, type ReactNode } from 'react';
@@ -75,6 +79,7 @@ const sections = [
   'Checklist',
   'Coverage',
   'Public profile',
+  'Site',
   'Scheduling',
   'Overlays',
   'Navigation',
@@ -715,6 +720,91 @@ export function DesignShowcase() {
               unoptimized
               className="h-auto w-full rounded-card border border-grey-200"
             />
+          ))}
+        </div>
+      </Section>
+
+      <Section title="Site">
+        <Label>Header and footer of every public page, with the launch cities from the database (PRD 8.3, M5-09). On a phone the pages sit behind Menu.</Label>
+        <div className="flex flex-col overflow-hidden rounded-card border border-grey-200">
+          <SiteHeader appUrl="https://app.example.com" />
+          <SiteFooter
+            appUrl="https://app.example.com"
+            cities={[
+              { slug: 'leeds', name: 'Leeds' },
+              { slug: 'london', name: 'London' },
+              { slug: 'manchester', name: 'Manchester' },
+            ]}
+          />
+        </div>
+        <Label>Page opening, with two glimpses of the app overlapping</Label>
+        <div className="rounded-card border border-grey-200">
+          <PageHero
+            eyebrow="For driving instructors"
+            title="Run your driving lessons from your phone"
+            description="Your diary, learners, payments and lesson records in one simple app."
+            actions={
+              <>
+                <PrimaryLink href="#start">Create your free account</PrimaryLink>
+                <SecondaryLink href="#pricing">See pricing</SecondaryLink>
+              </>
+            }
+            visual={<GlimpsePair back={<TodayGlimpse />} front={<MoneyGlimpse />} />}
+          />
+        </div>
+        <Label>Glimpses of the app: a booking, progress and a school overview, each on its own</Label>
+        <div className="grid items-start gap-6 md:grid-cols-3">
+          <GlimpseAlone>
+            <BookingGlimpse />
+          </GlimpseAlone>
+          <GlimpseAlone>
+            <ProgressGlimpse />
+          </GlimpseAlone>
+          <GlimpseAlone>
+            <SchoolGlimpse />
+          </GlimpseAlone>
+        </div>
+        <Label>A band with features, on grey, and steps in their order</Label>
+        <div className="flex flex-col overflow-hidden rounded-card border border-grey-200">
+          <Band id="design-features" title="Built for how driving lessons really work" tone="grey">
+            <FeatureGrid
+              tone="grey"
+              features={[
+                { icon: CreditCard, title: 'Paid, not chased', description: 'Cards, packages of hours, and cash recorded in two taps.' },
+                { icon: BadgeCheck, title: 'Instructors checked by us', description: 'The blue tick means we have checked the badge.' },
+                { icon: WifiOff, title: 'Works without signal', description: 'Today and lesson records work offline.' },
+              ]}
+            />
+          </Band>
+          <Band id="design-steps" title="Set up in five short steps">
+            <Steps
+              steps={[
+                { title: 'Your name and photo', description: 'How learners will see you.' },
+                { title: 'Your badge', description: 'Your ADI or PDI number.' },
+                { title: 'Where you teach', description: 'Your base postcode.' },
+                { title: 'Your prices', description: 'An hourly price.' },
+                { title: 'Your hours', description: 'The times you teach.' },
+              ]}
+            />
+          </Band>
+        </div>
+        <Label>The founding offer, the one yellow block on the site, and the closing call on black</Label>
+        <div className="flex flex-col gap-6 overflow-hidden rounded-card border border-grey-200 pt-6">
+          <FoundingOffer action={<PrimaryLink href="#start">Claim the offer</PrimaryLink>} />
+          <ClosingCall
+            title="Start in minutes"
+            description="Create an account, and you are ready to book, teach or run your school."
+            action={
+              <PrimaryLink href="#start" onDark>
+                Get started
+              </PrimaryLink>
+            }
+          />
+        </div>
+        <Label>Plans with prices from the configuration: what each has, and what is coming later; the one to choose is outlined</Label>
+        <div className="grid gap-4 lg:grid-cols-3">
+          {planSummaries().map((plan) => (
+            <PlanCard key={plan.key} plan={plan} signUpUrl="#sign-up" highlighted={plan.key === 'pro'} />
           ))}
         </div>
       </Section>

@@ -1,6 +1,6 @@
 import { brand } from '@repo/config/brand';
 import { expect, test } from '@playwright/test';
-import { expectAccessible, snap, snapPath } from '../support/helpers';
+import { expectAccessible, keepScreenshot, snap } from '../support/helpers';
 
 test.describe('design system page (M0-15)', () => {
   test('shows every section and passes axe', async ({ page }, testInfo) => {
@@ -15,7 +15,7 @@ test.describe('design system page (M0-15)', () => {
     // One image per section, small enough to review properly.
     for (const section of await page.locator('main section').all()) {
       const id = await section.getAttribute('id');
-      await section.screenshot({ path: snapPath(testInfo, `design-${id ?? 'section'}`) });
+      await keepScreenshot(testInfo, `design-${id ?? 'section'}`, await section.screenshot());
     }
   });
 

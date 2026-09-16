@@ -1,7 +1,6 @@
-import { writeFileSync } from 'node:fs';
 import { expect, test, type APIRequestContext, type Page, type TestInfo } from '@playwright/test';
 import { cachePostcode, makeInstructor, type MadeInstructor } from '../support/database';
-import { addDays, freshPublicPages, robotsOf, snapPath } from '../support/helpers';
+import { addDays, freshPublicPages, keepScreenshot, robotsOf } from '../support/helpers';
 
 const today = (): string => new Intl.DateTimeFormat('en-CA', { timeZone: 'Europe/London' }).format(new Date());
 
@@ -33,7 +32,7 @@ async function shareImage(page: Page, name: string, testInfo: TestInfo): Promise
   expect(response.headers()['content-type']).toBe('image/png');
   const bytes = await response.body();
   expect(pngSize(bytes)).toEqual({ width: 1200, height: 630 });
-  writeFileSync(snapPath(testInfo, name), bytes);
+  await keepScreenshot(testInfo, name, bytes);
   return `${url.pathname}${url.search}`;
 }
 

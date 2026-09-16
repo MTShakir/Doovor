@@ -35,6 +35,13 @@ describe('which host a request belongs on (D-084)', () => {
     expect(isSitePath('/instructors/manchester/emma-clarke')).toBe(true);
     expect(isSitePath('/schools/manchester/quayside-driving-school')).toBe(true);
     expect(isSitePath('/driving-lessons/london/croydon')).toBe(true);
+    // The site's own pages (M5-09), and nothing that only starts like one.
+    for (const path of ['/learners', '/instructors-software', '/driving-schools-software', '/pricing']) {
+      expect(isSitePath(path)).toBe(true);
+      expect(hostRedirect(app, path, '')).toEqual({ url: `${brand.productionUrl}${path}`, permanent: true });
+      expect(hostRedirect(site, path, '')).toBeNull();
+    }
+    expect(isSitePath('/pricing/extra')).toBe(false);
   });
 
   it('sends the app’s bare root to getting started, which knows where somebody signed in belongs', () => {

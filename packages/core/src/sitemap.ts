@@ -26,8 +26,8 @@ export function sitemapPath(kind: SitemapKind): string {
   return `/sitemaps/${kind}.xml`;
 }
 
-/** The public site's own pages, besides profiles and places. The marketing pages join them in M5-09. */
-export const sitePagePaths: readonly string[] = ['/'];
+/** The public site's own pages, besides profiles and places (PRD 8.3). */
+export const sitePagePaths: readonly string[] = ['/', '/learners', '/instructors-software', '/driving-schools-software', '/pricing'];
 
 export interface SitemapEntries {
   instructors: readonly { slug: string; citySlug: string | null }[];

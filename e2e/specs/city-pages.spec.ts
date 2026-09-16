@@ -45,9 +45,10 @@ test.describe('city, area and automatic pages (PRD 8.3, M5-07)', () => {
     // A profile it lists links back to the city page, as a school page does (PRD 14.6).
     await page.getByRole('region', { name: 'Instructors' }).getByRole('link', { name: /^Emma Clarke/ }).click();
     await expect(page).toHaveURL(/\/instructors\/manchester\/emma-clarke$/);
-    await expect(page.getByRole('link', { name: 'Driving lessons in Manchester' })).toHaveAttribute('href', '/driving-lessons/manchester');
+    const moreIn = page.getByRole('region', { name: 'More in Manchester' });
+    await expect(moreIn.getByRole('link', { name: 'Driving lessons in Manchester' })).toHaveAttribute('href', '/driving-lessons/manchester');
     await page.goto('/schools/manchester/quayside-driving-school');
-    await expect(page.getByRole('link', { name: 'Driving lessons in Manchester' })).toHaveAttribute('href', '/driving-lessons/manchester');
+    await expect(moreIn.getByRole('link', { name: 'Driving lessons in Manchester' })).toHaveAttribute('href', '/driving-lessons/manchester');
   });
 
   test('an area is out of search until three instructors are listed on it, and in once they are', async ({ page }, testInfo) => {

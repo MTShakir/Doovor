@@ -70,6 +70,13 @@ describe('what search and link previews read about a public page (PRD 14.6, M5-0
     expect(shareImageUrl('/', card)).toBe(`${brand.productionUrl}/share.png?v=${shareCardVersion(card)}`);
   });
 
+  it('lets another of the site pages share the image of the site itself', () => {
+    vi.stubEnv('NEXT_PUBLIC_APP_URL', brand.appUrl);
+    const metadata = publicPageMetadata({ title: 'Pricing', description: 'Plans.', path: '/pricing', indexable: true, card, imagePath: '/' });
+    expect(JSON.stringify(metadata.openGraph)).toContain(`"url":"${brand.productionUrl}/share.png?v=${shareCardVersion(card)}"`);
+    expect(metadata.alternates).toEqual({ canonical: `${brand.productionUrl}/pricing` });
+  });
+
   it('previews a link elsewhere, such as a booking link, with the card of the page it belongs to', () => {
     vi.stubEnv('NEXT_PUBLIC_APP_URL', brand.appUrl);
     const preview = sharedLinkMetadata({

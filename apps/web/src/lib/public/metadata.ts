@@ -45,18 +45,26 @@ export interface PublicPage {
   /** Out of search while false: still there for anybody with the link. */
   indexable: boolean;
   card?: ShareCard;
+  /** Where the card is drawn, when it is not beside the page: the site's own pages share one. */
+  imagePath?: string;
   type?: 'website' | 'profile';
   /** The home page is titled with the site's name alone. */
   absoluteTitle?: boolean;
 }
 
-export function publicPageMetadata({ title, description, path, indexable, card, type, absoluteTitle = false }: PublicPage): Metadata {
+export function publicPageMetadata({ title, description, path, indexable, card, imagePath, type, absoluteTitle = false }: PublicPage): Metadata {
   const url = `${getSiteUrl()}${path}`;
   return {
     title: absoluteTitle ? { absolute: title } : title,
     description,
     alternates: { canonical: url },
-    ...sharedLinkMetadata({ title, description, url, ...(card === undefined ? {} : { image: { path, card } }), ...(type === undefined ? {} : { type }) }),
+    ...sharedLinkMetadata({
+      title,
+      description,
+      url,
+      ...(card === undefined ? {} : { image: { path: imagePath ?? path, card } }),
+      ...(type === undefined ? {} : { type }),
+    }),
     ...(indexable ? {} : { robots: { index: false, follow: true } }),
   };
 }

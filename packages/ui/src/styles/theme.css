@@ -21,6 +21,10 @@
 
   /* PRD 7.3 type scale: size / line height, weight */
   --text-*: initial;
+  /* The public site's opening headline on a wide screen, and nowhere else (M5-09, D-116). */
+  --text-hero: 3.5rem;
+  --text-hero--line-height: 3.75rem;
+  --text-hero--font-weight: 700;
   --text-display: 2.25rem;
   --text-display--line-height: 2.5rem;
   --text-display--font-weight: 700;

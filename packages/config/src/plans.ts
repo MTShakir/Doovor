@@ -96,6 +96,16 @@ export const foundingOffer = {
   schoolLimit: 50,
 } as const;
 
+/**
+ * Stripe's standard fee for a UK card, as PRD 9.18 quotes it for the pricing page. It is the
+ * Business's cost, taken by Stripe from each payment, never added to a learner's price (D-078).
+ * Stripe sets it, so this is what we say about it, not what anybody is charged.
+ */
+export const standardCardFee = {
+  basisPoints: 150,
+  fixedPence: 20,
+} as const;
+
 export type BusinessType = 'independent' | 'school';
 
 export function foundingPlanFor(businessType: BusinessType): PlanKey {

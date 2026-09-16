@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { instructorShareCard, placeShareCard, schoolShareCard, shareCardVersion } from './share-card';
+import { instructorShareCard, placeShareCard, schoolShareCard, shareCardVersion, siteShareCard } from './share-card';
 
 const sarah = {
   name: 'Sarah Khan',
@@ -73,6 +73,17 @@ describe('the image a shared page shows (PRD 14.6, M5-08)', () => {
       'Prices and free times',
     ]);
     expect(placeShareCard({ citySlug: 'leeds', cityName: 'Leeds', instructorCount: 0 }).facts).toEqual(['No instructors listed yet']);
+  });
+
+  it('shows the site itself by what it does and who it is for', () => {
+    expect(siteShareCard('Book, pay and track driving lessons in one simple app.')).toEqual({
+      eyebrow: 'Driving lessons, sorted',
+      title: 'Book, pay and track driving lessons in one simple app.',
+      facts: ['For learners', 'For instructors', 'For driving schools'],
+      picture: null,
+      action: 'Get started',
+      paused: false,
+    });
   });
 
   it('gives each card a version that changes with anything it draws, and only then', () => {

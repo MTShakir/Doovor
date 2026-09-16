@@ -101,6 +101,18 @@ export function placeShareCard(facts: PlaceCardFacts): ShareCard {
   };
 }
 
+/** The site itself, for its own pages: what it is for, and who it is for. */
+export function siteShareCard(tagline: string): ShareCard {
+  return {
+    eyebrow: 'Driving lessons, sorted',
+    title: tagline,
+    facts: ['For learners', 'For instructors', 'For driving schools'],
+    picture: null,
+    action: 'Get started',
+    paused: false,
+  };
+}
+
 /**
  * A short tag that changes whenever anything the card draws does (FNV-1a over the card). The
  * image's address carries it, so a preview that kept an old picture fetches the new one, and the
