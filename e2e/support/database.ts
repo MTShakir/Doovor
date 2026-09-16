@@ -1158,3 +1158,47 @@ export async function schoolInvitationPath(schoolName: string): Promise<string> 
   });
   return `/invite/${token}`;
 }
+
+export interface OverviewFacts {
+  lessons: { today: number; this_week: number };
+  revenue_month: { lessons_pence: number; packages_pence: number; refunds_pence: number; total_pence: number };
+  unpaid: { total_pence: number; count: number };
+  utilisation: {
+    open_minutes: number;
+    booked_minutes: number;
+    instructors: { instructor_id: string; name: string; open_minutes: number; booked_minutes: number }[];
+  };
+  new_learners_month: number;
+}
+
+export interface SeededSchoolFigures {
+  /** What the overview's own function works out now. */
+  facts: OverviewFacts;
+  /** The same counts asked another way, by London calendar day, week and month. */
+  lessonsToday: number;
+  lessonsThisWeek: number;
+  newLearnersThisMonth: number;
+}
+
+/** A school's overview figures as the database has them now, found by the school's name (SCH-01, M5-12). */
+export async function seededSchoolFigures(schoolName: string): Promise<SeededSchoolFigures> {
+  return withDatabase(async (sql) => {
+    const [row] = await sql<{ facts: OverviewFacts; today: number; week: number; learners: number }[]>`
+      with school as (select id from public.businesses where name = ${schoolName} and type = 'school')
+      select private.school_overview_facts(s.id, now()) as facts,
+             (select count(*)::int from public.bookings b
+               where b.business_id = s.id
+                 and b.status in ('confirmed', 'in_progress', 'completed', 'no_show')
+                 and (b.starts_at at time zone 'Europe/London')::date = (now() at time zone 'Europe/London')::date) as today,
+             (select count(*)::int from public.bookings b
+               where b.business_id = s.id
+                 and b.status in ('confirmed', 'in_progress', 'completed', 'no_show')
+                 and date_trunc('week', b.starts_at at time zone 'Europe/London') = date_trunc('week', now() at time zone 'Europe/London')) as week,
+             (select count(distinct r.learner_id)::int from public.learner_relationships r
+               where r.business_id = s.id
+                 and date_trunc('month', r.created_at at time zone 'Europe/London') = date_trunc('month', now() at time zone 'Europe/London')) as learners
+        from school s`;
+    if (!row) throw new Error(`No school called ${schoolName}`);
+    return { facts: row.facts, lessonsToday: row.today, lessonsThisWeek: row.week, newLearnersThisMonth: row.learners };
+  });
+}

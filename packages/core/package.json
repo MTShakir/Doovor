@@ -53,7 +53,8 @@
     "./schemas/lesson-record": "./src/schemas/lesson-record.ts",
     "./schemas/kept-days": "./src/schemas/kept-days.ts",
     "./schemas/capture": "./src/schemas/capture.ts",
-    "./schemas/school": "./src/schemas/school.ts"
+    "./schemas/school": "./src/schemas/school.ts",
+    "./utilisation": "./src/utilisation.ts"
   },
   "scripts": {
     "lint": "eslint .",

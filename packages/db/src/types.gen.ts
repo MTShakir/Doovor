@@ -2977,6 +2977,7 @@ export type Database = {
         }
         Returns: Json
       }
+      school_overview: { Args: { p_business_id: string }; Returns: Json }
       school_profile_page: { Args: { p_slug: string }; Returns: Json }
       set_availability_exception: {
         Args: {

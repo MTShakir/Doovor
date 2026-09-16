@@ -31,6 +31,8 @@ import { InstallCard } from '@/components/pwa/install-prompt';
 import { LessonRecordCard } from '@/components/progress/lesson-record-card';
 import { SkillMap } from '@/components/progress/skill-map';
 import { SetupChecklist } from '@/components/setup-checklist';
+import { InstructorWeeks, OverviewFigures, OverviewSkeleton } from '@/components/school/overview';
+import type { SchoolOverview } from '@/lib/school/overview';
 import type { RecordedLesson } from '@/lib/lessons/records';
 import { Button } from '@repo/ui/button';
 import { Card, CardDescription, CardTitle } from '@repo/ui/card';
@@ -81,6 +83,7 @@ const sections = [
   'Coverage',
   'Public profile',
   'Site',
+  'School',
   'Scheduling',
   'Overlays',
   'Navigation',
@@ -98,6 +101,28 @@ function Section({ title, children }: { title: (typeof sections)[number]; childr
 function Label({ children }: { children: ReactNode }) {
   return <p className="text-caption font-semibold text-grey-700">{children}</p>;
 }
+
+const exampleWeek = { key: 'week', from: '2026-10-26', to: '2026-11-01', label: 'This week', range: 'Mon 26 Oct to Sun 1 Nov' } as const;
+const exampleMonth = { key: 'month', from: '2026-10-01', to: '2026-10-31', label: 'October', range: 'Thu 1 Oct to Sat 31 Oct' } as const;
+
+const exampleOverview: SchoolOverview = {
+  week: exampleWeek,
+  month: exampleMonth,
+  lessons: { today: 14, thisWeek: 63 },
+  revenueMonth: { lessonsPence: 812_400, packagesPence: 190_000, refundsPence: 4_200, totalPence: 998_200 },
+  unpaid: { totalPence: 25_200, count: 6 },
+  utilisation: {
+    openMinutes: 9_600,
+    bookedMinutes: 6_240,
+    instructors: [
+      { instructorId: 'example-1', name: 'Aisha Rahman', openMinutes: 2_400, bookedMinutes: 2_280 },
+      { instructorId: 'example-2', name: 'Emma Clarke', openMinutes: 2_400, bookedMinutes: 1_560 },
+      { instructorId: 'example-3', name: 'Tom Walsh', openMinutes: 2_400, bookedMinutes: 2_700 },
+      { instructorId: 'example-4', name: 'Nia Newcomer', openMinutes: 0, bookedMinutes: 0 },
+    ],
+  },
+  newLearnersMonth: 9,
+};
 
 const pillStatuses: PillStatus[] = ['confirmed', 'pending', 'completed', 'paid', 'cancelled', 'attention', 'unpaid', 'overdue', 'credit', 'gap-fill', 'test-day'];
 
@@ -839,6 +864,27 @@ export function DesignShowcase() {
             <PlanCard key={plan.key} plan={plan} signUpUrl="#sign-up" highlighted={plan.key === 'pro'} />
           ))}
         </div>
+      </Section>
+
+      <Section title="School">
+        <Label>Overview, as the owner sees it</Label>
+        <OverviewFigures overview={exampleOverview} today="Wed 28 Oct" />
+        <InstructorWeeks instructors={exampleOverview.utilisation.instructors} week={exampleWeek} idPrefix="design-weeks" />
+        <Label>As a manager not allowed to see revenue, in a school with no instructors yet</Label>
+        <OverviewFigures
+          overview={{
+            ...exampleOverview,
+            revenueMonth: null,
+            lessons: { today: 0, thisWeek: 0 },
+            unpaid: { totalPence: 0, count: 0 },
+            utilisation: { openMinutes: 0, bookedMinutes: 0, instructors: [] },
+            newLearnersMonth: 0,
+          }}
+          today="Wed 28 Oct"
+        />
+        <InstructorWeeks instructors={[]} week={exampleWeek} idPrefix="design-weeks-empty" />
+        <Label>Loading</Label>
+        <OverviewSkeleton />
       </Section>
 
       <Section title="Scheduling">
