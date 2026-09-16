@@ -4,6 +4,7 @@ import { serverEnv } from '@/env/server';
 import { chargeFee } from '@/jobs/fees';
 import { notifyAboutBooking } from '@/jobs/notify';
 import { notifyAboutPayment, notifyCreditLow } from '@/jobs/payment-notify';
+import { isCaptureKind, sendCaptureConfirmation } from '@/jobs/capture';
 import { sendRefund } from '@/jobs/payments';
 import { sendReceipt } from '@/jobs/receipts';
 import { notifyLessonRecordAdded } from '@/jobs/record-notices';
@@ -49,6 +50,11 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
   if (name === 'lesson_record.added') {
     const lessonRecordId = typeof payload.lesson_record_id === 'string' ? payload.lesson_record_id : '';
     return NextResponse.json(await notifyLessonRecordAdded(lessonRecordId));
+  }
+  if (name === 'learner_capture.created') {
+    const id = typeof payload.id === 'string' ? payload.id : '';
+    if (!isCaptureKind(payload.kind)) return NextResponse.json({ error: 'A capture is a waiting list place or a lesson request.' }, { status: 400 });
+    return NextResponse.json(await sendCaptureConfirmation(payload.kind, id));
   }
   if (name === 'payment.fee_charge') {
     const bookingId = typeof payload.booking_id === 'string' ? payload.booking_id : '';

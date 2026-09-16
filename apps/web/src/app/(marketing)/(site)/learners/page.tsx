@@ -2,6 +2,7 @@ import { brand } from '@repo/config/brand';
 import { siteShareCard } from '@repo/core/share-card';
 import { BellRing, CalendarCheck, CalendarX2, ClipboardCheck, CreditCard, Layers } from 'lucide-react';
 import type { Metadata } from 'next';
+import { ComingSoon } from '@/components/capture/coming-soon';
 import { BookingGlimpse, GlimpsePair, ProgressGlimpse } from '@/components/site/glimpses';
 import { Band, ClosingCall, FeatureGrid, PageHero, PrimaryLink, SecondaryLink } from '@/components/site/marketing';
 import { getAppUrl } from '@/lib/app-url';
@@ -65,7 +66,7 @@ export default async function LearnersPage() {
         actions={
           <>
             <PrimaryLink href={`${appUrl}/sign-up?role=learner`}>Create a learner account</PrimaryLink>
-            {cities.length === 0 ? null : <SecondaryLink href="#instructors-near-you">Find instructors</SecondaryLink>}
+            <SecondaryLink href="#find-an-instructor">Find an instructor</SecondaryLink>
           </>
         }
         visual={<GlimpsePair back={<ProgressGlimpse />} front={<BookingGlimpse />} />}
@@ -75,26 +76,30 @@ export default async function LearnersPage() {
         <FeatureGrid features={features} tone="grey" />
       </Band>
 
-      {cities.length === 0 ? null : (
-        <Band
-          id="instructors-near-you"
-          title="Instructors near you"
-          description="Searching for an instructor with space near your postcode is coming soon. Until then, see the instructors we have checked in these cities, with their prices and free times."
-        >
-          <ul className="flex flex-wrap gap-2">
-            {cities.map((city) => (
-              <li key={city.slug}>
-                <a
-                  href={`/driving-lessons/${city.slug}`}
-                  className="inline-flex min-h-12 items-center rounded-full border border-grey-200 px-5 text-body font-semibold text-black hover:border-black"
-                >
-                  Driving lessons in {city.name}
-                </a>
-              </li>
-            ))}
-          </ul>
-        </Band>
-      )}
+      <Band
+        id="find-an-instructor"
+        title="Find an instructor near you"
+        description="Searching for instructors with space near your postcode is coming soon. Check your area, then join its waiting list or tell us the lessons you need."
+      >
+        <ComingSoon />
+        {cities.length === 0 ? null : (
+          <div className="flex flex-col gap-3 border-t border-grey-200 pt-6">
+            <p className="text-body text-grey-700">Or see the instructors we have already checked, with their prices and free times:</p>
+            <ul className="flex flex-wrap gap-2">
+              {cities.map((city) => (
+                <li key={city.slug}>
+                  <a
+                    href={`/driving-lessons/${city.slug}`}
+                    className="inline-flex min-h-12 items-center rounded-full border border-grey-200 px-5 text-body font-semibold text-black hover:border-black"
+                  >
+                    Driving lessons in {city.name}
+                  </a>
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
+      </Band>
 
       <ClosingCall
         title="Has your instructor sent you a link?"

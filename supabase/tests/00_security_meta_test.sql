@@ -56,13 +56,23 @@ select is_empty(
 --   standing and the instructors on it a learner could find anyway (PUB-01, M5-03).
 --   city_page: the city, area and transmission pages, the instructors search may show there, each
 --   a fixed list of fields (PRD 8.3, M5-07).
+--   sitemap_entries: the addresses the sitemaps list, of pages that are public already (PRD 14.6,
+--   M5-08).
+--   coming_soon_area: whether the learner marketplace is open in a postcode's area, its city, and
+--   how many checked instructors cover it, all public already (MKT-10, M5-10).
+--   join_area_waiting_list, post_lesson_request: a learner with no account joins an area's waiting
+--   list or posts a request, only with consent; each answers the area alone, the same for a new
+--   entry as for one already there (MKT-10, M5-10).
+--   learner_capture_by_token, leave_learner_capture: the link in the confirmation email, which
+--   answers only what a token is for, where, and whether it stands, and leaves it (MKT-10, M5-10).
 select is_empty(
   $$ select distinct routine_name from information_schema.routine_privileges
       where routine_schema = 'public' and grantee in ('PUBLIC', 'anon')
         and routine_name not in ('covers_postcode', 'invitation_details', 'slot_problem',
                                  'booking_page', 'open_slots', 'place_of_postcode',
                                  'instructor_profile_page', 'next_open_slots', 'school_profile_page',
-                                 'city_page', 'sitemap_entries') $$,
+                                 'city_page', 'sitemap_entries', 'coming_soon_area', 'join_area_waiting_list',
+                                 'post_lesson_request', 'learner_capture_by_token', 'leave_learner_capture') $$,
   'no public function is executable by anon unless allowlisted'
 );
 

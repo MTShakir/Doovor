@@ -23,6 +23,9 @@ export const domainErrorCodes = [
   'PDI_NOT_LINKED',
   'PAYMENT_FAILED',
   'ALREADY_RECORDED',
+  'CONSENT_REQUIRED',
+  'POSTCODE_NOT_FOUND',
+  'MARKETPLACE_OPEN',
   'UNKNOWN',
 ] as const;
 
@@ -55,6 +58,9 @@ export const defaultErrorCopy: Record<DomainErrorCode, string> = {
   PDI_NOT_LINKED: 'Trainee instructors need a supervising school or instructor first.',
   PAYMENT_FAILED: 'The payment did not go through.',
   ALREADY_RECORDED: 'This lesson already has a lesson record.',
+  CONSENT_REQUIRED: 'Tick the box to say we may keep this and email you about it.',
+  POSTCODE_NOT_FOUND: 'We could not find that postcode. Check it and try again.',
+  MARKETPLACE_OPEN: 'You can already find and book instructors near you.',
   UNKNOWN: 'Something went wrong. Try again.',
 };
 

@@ -682,6 +682,78 @@ export async function lessonEvents(bookingId: string, name: string): Promise<Out
   });
 }
 
+/** A place on an area's waiting list or a lesson request, as the database keeps it (MKT-10, M5-10). */
+export interface CaptureEntry {
+  id: string;
+  token: string;
+  consentWording: string;
+  confirmationSentAt: string | null;
+  removedAt: string | null;
+}
+
+export async function waitingListEntry(email: string): Promise<CaptureEntry | null> {
+  return withDatabase(async (sql) => {
+    const [row] = await sql<{ id: string; token: string; consent_wording: string; confirmation_sent_at: Date | null; left_at: Date | null }[]>`
+      select id, token::text, consent_wording, confirmation_sent_at, left_at
+        from public.area_waiting_list where lower(email) = lower(${email}) order by created_at desc limit 1`;
+    return row
+      ? {
+          id: row.id,
+          token: row.token,
+          consentWording: row.consent_wording,
+          confirmationSentAt: row.confirmation_sent_at?.toISOString() ?? null,
+          removedAt: row.left_at?.toISOString() ?? null,
+        }
+      : null;
+  });
+}
+
+export async function lessonRequestEntry(
+  email: string,
+): Promise<(CaptureEntry & { days: number[]; times: string[]; budgetPence: number | null; startWhen: string }) | null> {
+  return withDatabase(async (sql) => {
+    const [row] = await sql<
+      {
+        id: string;
+        token: string;
+        consent_wording: string;
+        confirmation_sent_at: Date | null;
+        withdrawn_at: Date | null;
+        days: number[];
+        times: string[];
+        budget_pence: number | null;
+        start_when: string;
+      }[]
+    >`
+      select id, token::text, consent_wording, confirmation_sent_at, withdrawn_at, days, times, budget_pence, start_when
+        from public.lesson_requests where lower(email) = lower(${email}) order by created_at desc limit 1`;
+    return row
+      ? {
+          id: row.id,
+          token: row.token,
+          consentWording: row.consent_wording,
+          confirmationSentAt: row.confirmation_sent_at?.toISOString() ?? null,
+          removedAt: row.withdrawn_at?.toISOString() ?? null,
+          days: row.days,
+          times: row.times,
+          budgetPence: row.budget_pence,
+          startWhen: row.start_when,
+        }
+      : null;
+  });
+}
+
+/** The event that asks for a capture's confirmation email, as the job runner would be sent it. */
+export async function captureEvent(id: string): Promise<OutboxEvent | null> {
+  return withDatabase(async (sql) => {
+    const [row] = await sql<{ name: string; payload: Record<string, unknown> }[]>`
+      select name, payload from public.outbox_events
+       where name = 'learner_capture.created' and payload ->> 'id' = ${id}
+       order by created_at desc limit 1`;
+    return row ? { name: row.name, payload: row.payload } : null;
+  });
+}
+
 export interface LessonMoney {
   paymentStatus: string;
   payments: { method: string; status: string; amountPence: number; refundedPence: number }[];

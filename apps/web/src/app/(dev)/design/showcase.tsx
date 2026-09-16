@@ -19,6 +19,7 @@ import {
 import { Breadcrumbs, PlaceLinks } from '@/components/public/place-links';
 import { SchoolHeader, SchoolInstructors } from '@/components/public/school-profile';
 import { BookingLinkCard } from '@/components/share/booking-link-card';
+import { AreaPanel, CaptureDone } from '@/components/capture/coming-soon';
 import { BookingGlimpse, GlimpseAlone, GlimpsePair, MoneyGlimpse, ProgressGlimpse, SchoolGlimpse, TodayGlimpse } from '@/components/site/glimpses';
 import { Band, ClosingCall, FeatureGrid, FoundingOffer, PageHero, PlanCard, PrimaryLink, SecondaryLink, Steps } from '@/components/site/marketing';
 import { SiteFooter, SiteHeader } from '@/components/site/site-chrome';
@@ -800,6 +801,29 @@ export function DesignShowcase() {
               </PrimaryLink>
             }
           />
+        </div>
+        <Label>
+          Coming soon (MKT-10, M5-10): an area not open yet, with the city page near it; and what a learner sees once they have joined the
+          waiting list or posted a lesson request
+        </Label>
+        <div className="grid items-start gap-6 md:grid-cols-2">
+          <Card>
+            <AreaPanel
+              takeFocus={false}
+              area={{ postcode: 'LS6 3QS', postcodeArea: 'LS', open: false, city: { slug: 'leeds', name: 'Leeds', instructorCount: 4 } }}
+              onWaitingList={() => undefined}
+              onLessonRequest={() => undefined}
+              onChangePostcode={() => undefined}
+            />
+          </Card>
+          <div className="flex flex-col gap-6">
+            <Card>
+              <CaptureDone takeFocus={false} kind="waiting_list" area={{ postcode: 'M13 9PL', postcodeArea: 'M', open: false, city: null }} onOther={() => undefined} />
+            </Card>
+            <Card>
+              <CaptureDone takeFocus={false} kind="lesson_request" area={{ postcode: 'M13 9PL', postcodeArea: 'M', open: false, city: null }} onOther={() => undefined} />
+            </Card>
+          </div>
         </div>
         <Label>Plans with prices from the configuration: what each has, and what is coming later; the one to choose is outlined</Label>
         <div className="grid gap-4 lg:grid-cols-3">

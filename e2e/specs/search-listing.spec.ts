@@ -26,6 +26,11 @@ test.describe('in search and out of it (PUB-04, INS-03, M5-06)', () => {
       await expect(page.getByRole('heading', { level: 1, name: expired.name })).toBeVisible();
       // Once on a phone and once beside the prices on a wide screen: the one this width shows.
       await expect(page.getByText('Not taking new bookings').filter({ visible: true })).toBeVisible();
+      // Pointed on to the area's waiting list, while a Business's own is Phase 2 (MKT-10, D-110).
+      await expect(page.getByRole('link', { name: 'Find another instructor near you' }).filter({ visible: true })).toHaveAttribute(
+        'href',
+        '/learners#find-an-instructor',
+      );
       await expect(page.getByRole('link', { name: 'Book a lesson' })).toHaveCount(0);
       await expect(page.getByRole('region', { name: 'Next free times' })).toHaveCount(0);
       // Search engines are told to leave it out.

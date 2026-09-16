@@ -82,3 +82,11 @@ export const paymentAuthorised = eventType('payment.authorised', {
 export const lessonRecordAdded = eventType('lesson_record.added', {
   schema: staticSchema<{ lesson_record_id: string; booking_id: string }>(),
 });
+
+/**
+ * Somebody joined an area's waiting list or posted a lesson request (MKT-10, M5-10), to be confirmed
+ * by email. Which one, and nothing about who.
+ */
+export const learnerCaptureCreated = eventType('learner_capture.created', {
+  schema: staticSchema<{ kind: 'waiting_list' | 'lesson_request'; id: string }>(),
+});

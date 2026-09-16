@@ -9,6 +9,62 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      area_waiting_list: {
+        Row: {
+          confirmation_sent_at: string | null
+          consent_wording: string
+          consented_at: string
+          created_at: string
+          email: string
+          full_name: string
+          id: string
+          left_at: string | null
+          postcode: string
+          postcode_area: string
+          token: string
+          transmission: Database["public"]["Enums"]["transmission"] | null
+          user_id: string | null
+        }
+        Insert: {
+          confirmation_sent_at?: string | null
+          consent_wording: string
+          consented_at?: string
+          created_at?: string
+          email: string
+          full_name: string
+          id?: string
+          left_at?: string | null
+          postcode: string
+          postcode_area: string
+          token?: string
+          transmission?: Database["public"]["Enums"]["transmission"] | null
+          user_id?: string | null
+        }
+        Update: {
+          confirmation_sent_at?: string | null
+          consent_wording?: string
+          consented_at?: string
+          created_at?: string
+          email?: string
+          full_name?: string
+          id?: string
+          left_at?: string | null
+          postcode?: string
+          postcode_area?: string
+          token?: string
+          transmission?: Database["public"]["Enums"]["transmission"] | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "area_waiting_list_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       audit_log: {
         Row: {
           action: string
@@ -1392,6 +1448,83 @@ export type Database = {
           },
         ]
       }
+      lesson_requests: {
+        Row: {
+          budget_pence: number | null
+          confirmation_sent_at: string | null
+          consent_wording: string
+          consented_at: string
+          created_at: string
+          days: number[]
+          email: string
+          experience: string
+          full_name: string
+          id: string
+          phone: string | null
+          postcode: string
+          postcode_area: string
+          start_when: string
+          times: string[]
+          token: string
+          transmission: Database["public"]["Enums"]["transmission"]
+          updated_at: string
+          user_id: string | null
+          withdrawn_at: string | null
+        }
+        Insert: {
+          budget_pence?: number | null
+          confirmation_sent_at?: string | null
+          consent_wording: string
+          consented_at?: string
+          created_at?: string
+          days: number[]
+          email: string
+          experience: string
+          full_name: string
+          id?: string
+          phone?: string | null
+          postcode: string
+          postcode_area: string
+          start_when: string
+          times: string[]
+          token?: string
+          transmission: Database["public"]["Enums"]["transmission"]
+          updated_at?: string
+          user_id?: string | null
+          withdrawn_at?: string | null
+        }
+        Update: {
+          budget_pence?: number | null
+          confirmation_sent_at?: string | null
+          consent_wording?: string
+          consented_at?: string
+          created_at?: string
+          days?: number[]
+          email?: string
+          experience?: string
+          full_name?: string
+          id?: string
+          phone?: string | null
+          postcode?: string
+          postcode_area?: string
+          start_when?: string
+          times?: string[]
+          token?: string
+          transmission?: Database["public"]["Enums"]["transmission"]
+          updated_at?: string
+          user_id?: string | null
+          withdrawn_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "lesson_requests_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       lesson_types: {
         Row: {
           business_id: string
@@ -1435,6 +1568,30 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      marketplace_regions: {
+        Row: {
+          created_at: string
+          marketplace_enabled: boolean
+          postcode_area: string
+          switched_at: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          marketplace_enabled?: boolean
+          postcode_area: string
+          switched_at?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          marketplace_enabled?: boolean
+          postcode_area?: string
+          switched_at?: string | null
+          updated_at?: string
+        }
+        Relationships: []
       }
       memberships: {
         Row: {
@@ -2596,6 +2753,7 @@ export type Database = {
         Args: { p_area?: string; p_city: string; p_transmission?: string }
         Returns: Json
       }
+      coming_soon_area: { Args: { p_postcode: string }; Returns: Json }
       complete_booking: { Args: { p_booking_id: string }; Returns: string }
       covers_postcode: {
         Args: { p_instructor_id: string; p_postcode: string }
@@ -2674,10 +2832,21 @@ export type Database = {
         }
         Returns: string
       }
+      join_area_waiting_list: {
+        Args: {
+          p_consent: string
+          p_email: string
+          p_full_name: string
+          p_postcode: string
+          p_transmission?: Database["public"]["Enums"]["transmission"]
+        }
+        Returns: Json
+      }
       learner_balance: {
         Args: { p_business_id: string; p_learner_id: string }
         Returns: Json
       }
+      learner_capture_by_token: { Args: { p_token: string }; Returns: Json }
       learner_history: {
         Args: { p_learner_id: string }
         Returns: {
@@ -2688,6 +2857,7 @@ export type Database = {
           happened_at: string
         }[]
       }
+      leave_learner_capture: { Args: { p_token: string }; Returns: number }
       list_my_sessions: {
         Args: never
         Returns: {
@@ -2734,6 +2904,22 @@ export type Database = {
           city_slug: string
           has_hub: boolean
         }[]
+      }
+      post_lesson_request: {
+        Args: {
+          p_budget_pence?: number
+          p_consent: string
+          p_days: number[]
+          p_email: string
+          p_experience: string
+          p_full_name: string
+          p_phone?: string
+          p_postcode: string
+          p_start_when: string
+          p_times: string[]
+          p_transmission: Database["public"]["Enums"]["transmission"]
+        }
+        Returns: Json
       }
       record_offline_package: {
         Args: { p_learner_id: string; p_method: string; p_package_id: string }
@@ -2933,6 +3119,10 @@ export type Database = {
       system_extend_recurrences: { Args: { p_weeks?: number }; Returns: number }
       system_fee_to_charge: { Args: { p_booking_id: string }; Returns: Json }
       system_issue_receipt: { Args: { p_payment_id: string }; Returns: Json }
+      system_learner_capture_confirmation: {
+        Args: { p_id: string; p_kind: string }
+        Returns: Json
+      }
       system_lesson_record_notice: {
         Args: { p_lesson_record_id: string }
         Returns: Json
@@ -2940,6 +3130,10 @@ export type Database = {
       system_lessons_to_charge: {
         Args: { p_within_hours?: number }
         Returns: Json
+      }
+      system_mark_learner_capture_confirmed: {
+        Args: { p_id: string; p_kind: string }
+        Returns: undefined
       }
       system_mark_notification_failed: {
         Args: { p_error: string; p_id: string }
