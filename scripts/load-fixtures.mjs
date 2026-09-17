@@ -1,36 +1,11 @@
 // What the load tests need to be about something real (M6-05, NFR-PERF-02): the pages the sitemap
 // lists, the instructors a learner can actually book, the days those instructors work, and a token
 // for each of them. Written to load/fixtures.json, which k6 reads as it starts.
-//
-// Everything here comes from the same API the app uses, with the publishable key or a person's own
-// token. Nothing uses the secret key, and nothing runs anywhere but the local stack: a load test
-// pointed at a hosted project would be an attack on it.
-import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { mkdirSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
+import { appUrl, publishableKey, root, rpc, rest, seedPassword, signIn, supabaseUrl } from './load-supabase.mjs';
 
-const root = path.resolve(import.meta.dirname, '..');
-const envFile = path.join(root, '.env.local');
-if (existsSync(envFile)) process.loadEnvFile(envFile);
-
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL ?? '';
-const publishableKey = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY ?? '';
-const appUrl = process.env.LOAD_APP_URL ?? 'http://localhost:3000';
-
-if (!supabaseUrl || !publishableKey) {
-  console.error('NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY must be set. Run pnpm db:env.');
-  process.exit(1);
-}
-if (!/^https?:\/\/(127\.0\.0\.1|localhost)[:/]/.test(supabaseUrl)) {
-  console.error('The load tests only ever run against the local stack.');
-  process.exit(1);
-}
-
-const seedAccounts = path.join(root, 'e2e', '.auth', 'seed-accounts.json');
-if (!existsSync(seedAccounts)) {
-  console.error(`No ${seedAccounts}. Run pnpm db:seed first.`);
-  process.exit(1);
-}
-const { password } = JSON.parse(readFileSync(seedAccounts, 'utf8'));
+const password = seedPassword();
 
 /** The learners the write scenario books as: one each, so no account meets its own hourly limit (D-137). */
 const learnerEmails = [
@@ -43,33 +18,6 @@ const learnerEmails = [
   'chloe.bennett@example.com',
   'omar.iqbal@example.com',
 ];
-
-async function ask(url, options = {}) {
-  const response = await fetch(url, {
-    ...options,
-    headers: { apikey: publishableKey, 'content-type': 'application/json', ...(options.headers ?? {}) },
-  });
-  const body = await response.text();
-  if (!response.ok) throw new Error(`${options.method ?? 'GET'} ${url} answered ${String(response.status)}: ${body.slice(0, 300)}`);
-  return body === '' ? null : JSON.parse(body);
-}
-
-const rpc = (name, body, token) =>
-  ask(`${supabaseUrl}/rest/v1/rpc/${name}`, {
-    method: 'POST',
-    body: JSON.stringify(body),
-    headers: token ? { authorization: `Bearer ${token}` } : {},
-  });
-
-const rest = (query, token) => ask(`${supabaseUrl}/rest/v1/${query}`, { headers: token ? { authorization: `Bearer ${token}` } : {} });
-
-async function signIn(email) {
-  const session = await ask(`${supabaseUrl}/auth/v1/token?grant_type=password`, {
-    method: 'POST',
-    body: JSON.stringify({ email, password }),
-  });
-  return { token: session.access_token, id: session.user.id };
-}
 
 // The public pages, as the sitemaps list them: whatever the seed put there, never a guess.
 const entries = await rpc('sitemap_entries', {});
@@ -106,7 +54,7 @@ if (instructors.length === 0) throw new Error('No instructor takes bookings. Run
 // Business charges for: create_booking refuses a length with no price.
 const learners = [];
 for (const email of learnerEmails) {
-  const who = await signIn(email);
+  const who = await signIn(email, password);
   const [relationship] = await rest(
     `learner_relationships?select=instructor_id,business_id&status=eq.active&learner_id=eq.${who.id}&limit=1`,
     who.token,
@@ -154,9 +102,7 @@ for (const learner of learners) {
 const bookable = learners.filter((learner) => learner.days.length > 0);
 if (bookable.length === 0) throw new Error('No learner has an instructor with an open day. Run pnpm db:seed.');
 
-const instructorSession = await signIn('sarah.khan@example.com');
-
-const fixtures = { supabaseUrl, publishableKey, appUrl, publicPages, instructors, learners: bookable, days, instructor: { ...instructorSession } };
+const fixtures = { supabaseUrl, publishableKey, appUrl, publicPages, instructors, learners: bookable, days };
 mkdirSync(path.join(root, 'load'), { recursive: true });
 writeFileSync(path.join(root, 'load', 'fixtures.json'), `${JSON.stringify(fixtures, null, 2)}\n`);
 

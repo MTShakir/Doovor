@@ -211,19 +211,19 @@ jobs:
         # Logs need repository admin, so the timings go in annotations as well (M5-24's habit).
         run: |
           set -o pipefail
-          if ! k6 run load/reads.js 2>&1 | tee "$RUNNER_TEMP/reads.log"; then
+          if ! k6 run --quiet load/reads.js 2>&1 | tee "$RUNNER_TEMP/reads.log"; then
             echo "::error title=Load (reads) failed::$(grep -E 'http_req_duration|read_|✗|THRESHOLD' "$RUNNER_TEMP/reads.log" | tail -n 30 | sed 's/%/%25/g' | sed ':a;N;$!ba;s/\n/%0A/g')"
             exit 1
           fi
-          echo "::notice title=Load (reads)::$(grep -E 'http_req_duration|read_|iterations' "$RUNNER_TEMP/reads.log" | sed 's/%/%25/g' | sed ':a;N;$!ba;s/\n/%0A/g')"
+          echo "::notice title=Load (reads)::$(grep -E '^ +(http_req|read_|checks|iterations)' "$RUNNER_TEMP/reads.log" | sed 's/%/%25/g' | sed ':a;N;$!ba;s/\n/%0A/g')"
       - name: Booking
         run: |
           set -o pipefail
-          if ! k6 run load/booking.js 2>&1 | tee "$RUNNER_TEMP/booking.log"; then
+          if ! k6 run --quiet load/booking.js 2>&1 | tee "$RUNNER_TEMP/booking.log"; then
             echo "::error title=Load (booking) failed::$(grep -E 'http_req_duration|write_|bookings_|✗|THRESHOLD' "$RUNNER_TEMP/booking.log" | tail -n 30 | sed 's/%/%25/g' | sed ':a;N;$!ba;s/\n/%0A/g')"
             exit 1
           fi
-          echo "::notice title=Load (booking)::$(grep -E 'http_req_duration|write_|bookings_|iterations' "$RUNNER_TEMP/booking.log" | sed 's/%/%25/g' | sed ':a;N;$!ba;s/\n/%0A/g')"
+          echo "::notice title=Load (booking)::$(grep -E '^ +(http_req|write_|read_|bookings_|checks|iterations)' "$RUNNER_TEMP/booking.log" | sed 's/%/%25/g' | sed ':a;N;$!ba;s/\n/%0A/g')"
       - name: Upload the runs
         if: ${{ !cancelled() }}
         uses: actions/upload-artifact@v4

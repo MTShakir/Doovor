@@ -3,6 +3,11 @@
 // slot. One of them is told the slot is taken, which is the right answer and not a failure: the
 // threshold is on how long a booking takes, not on winning the race.
 //
+// A fixed number of bookings rather than a fixed length of time, because what it books is finite
+// twice over: a diary only has so many free hours in it, and one account may book 120 lessons an
+// hour and no more (D-137). A run that outlasts either one stops measuring bookings and starts
+// measuring refusals, which is what the first one in CI did (D-139).
+//
 // Bookings are made from three weeks out, past the seeded lessons and the days the end to end tests
 // use, and inside the eight weeks a Business takes bookings for. `pnpm load:clean` cancels them
 // afterwards, so the next run has somewhere to book.
@@ -15,30 +20,32 @@ const { supabaseUrl, publishableKey, learners } = fixtures;
 
 const booked = new Counter('bookings_made');
 const taken = new Counter('bookings_slot_taken');
+const limited = new Counter('bookings_rate_limited');
 const noSlots = new Counter('bookings_no_slot_free');
 const bookingTime = new Trend('write_create_booking', true);
 const slotsTime = new Trend('read_open_slots_signed_in', true);
 
+/** Well inside both ceilings, and still enough bookings to say what p95 is. */
+const bookings = 200;
+
 export const options = {
   scenarios: {
     booking: {
-      executor: 'ramping-vus',
-      startVUs: 2,
-      stages: [
-        { duration: '20s', target: 6 },
-        { duration: '40s', target: 12 },
-        { duration: '20s', target: 2 },
-      ],
-      gracefulRampDown: '10s',
+      executor: 'shared-iterations',
+      vus: 12,
+      iterations: bookings,
+      maxDuration: '3m',
     },
   },
   thresholds: {
     // NFR-PERF-02: a booking is written in under 600 ms for 95 of every 100 people.
     'http_req_duration{kind:write}': ['p(95)<600'],
     'http_req_duration{kind:read}': ['p(95)<300'],
-    // A refused booking is still an answer; what must not happen is the server failing to give one.
-    'http_req_failed{kind:write}': ['rate<0.01'],
+    // A booking refused because the slot has gone answers 400, so counting non-2xx answers as
+    // failures would count the race this test exists to create. What must hold is that every answer
+    // is one of the answers we mean, and that most rounds really did book something.
     checks: ['rate>0.99'],
+    bookings_made: [`count>${String(Math.floor(bookings * 0.6))}`],
   },
 };
 
@@ -83,9 +90,14 @@ export default function book() {
   );
   bookingTime.add(answer.timings.duration);
 
-  const slotWasTaken = answer.status === 400 && answer.body.indexOf('SLOT_TAKEN') !== -1;
-  if (slotWasTaken) taken.add(1);
-  else if (answer.status === 200) booked.add(1);
+  const refused = (code) => answer.status >= 400 && answer.body.indexOf(code) !== -1;
+  const slotWasTaken = refused('SLOT_TAKEN');
+  const rateLimited = refused('RATE_LIMITED');
+  if (answer.status === 200) booked.add(1);
+  else if (slotWasTaken) taken.add(1);
+  else if (rateLimited) limited.add(1);
 
-  check(answer, { 'the booking was made, or the slot had gone': (r) => r.status === 200 || slotWasTaken });
+  check(answer, {
+    'the booking was made, or the slot had gone, or the account had booked its fill': (r) => r.status === 200 || slotWasTaken || rateLimited,
+  });
 }
