@@ -217,6 +217,16 @@ from `pnpm test:e2e:stripe`; every other run stays on the fake.
 - A migration is frozen once merged to `main` or applied to a shared database (D-045).
 - Deploy to staging after merging: `pnpm supabase db push --dry-run`, then `pnpm supabase db push`. M6 automates this in CI.
 
+### Dependencies
+- Weekly pull requests from Dependabot (`.github/dependabot.yml`): minor and patch versions in one
+  grouped pull request, a major version on its own. Read the notes, let CI run, then merge; a major
+  version that needs work becomes a task rather than a merge.
+- `pnpm audit --audit-level=high` runs in CI. Raise a version above what its dependent asks for with
+  `overrides` in `pnpm-workspace.yaml`. An advisory with no fixed version goes in `auditConfig.ignoreGhsas`
+  in the same file, with the reason and the date it was read, and comes out when a fix exists (M6-02).
+- Licences: `pnpm licenses list`. Nothing under the GPL or AGPL may be added; `docs/SECURITY.md` lists
+  what is there today.
+
 ### Secrets
 - They live in Vercel (app), the Supabase dashboard (Auth providers, SMTP), and `.env.local` on developer machines. None are in git; CI needs none today.
 - To rotate the Supabase secret key: create a new one, update Vercel, redeploy, then delete the old one.

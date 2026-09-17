@@ -22,6 +22,24 @@ allowBuilds:
   # schemes. It generates nothing (pulled in by inngest through OpenTelemetry).
   protobufjs: false
 
+# Versions raised above what a dependency asks for, to leave an advisory behind (M6-02, D-136).
+# Each is a build or test tool, none of them in what the app serves.
+overrides:
+  # Unbounded memory growth and a crash on untrusted data, under Serwist at build time.
+  browserslist: '>=4.28.7'
+  # Path traversal through a prefix, under Lighthouse CI.
+  tmp: '>=0.2.6'
+  # Missing bounds check when given a buffer, under Lighthouse CI.
+  uuid: '>=11.1.1'
+
+# An advisory with no fixed version, read and accepted (M6-02, D-136). extract-zip reaches us only
+# through Lighthouse CI's browser downloader, which never runs: the Lighthouse job measures with the
+# runner's own Chrome. Reviewed 17 September 2026; drop this once a fixed version exists.
+auditConfig:
+  ignoreGhsas:
+    - GHSA-jmr9-qjv8-65gv
+    - GHSA-7pqw-9j4j-h8q3
+
 # Shared versions. Workspace packages reference these with "catalog:".
 catalog:
   "@types/node": ^24.0.0

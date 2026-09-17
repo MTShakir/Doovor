@@ -40,6 +40,10 @@ jobs:
         run: pnpm typecheck
       - name: Unit tests (core coverage gate 90%)
         run: pnpm test
+      - name: Dependency advisories (high and above)
+        # Anything high or critical fails the build. An advisory with no fixed version is read and
+        # listed in pnpm-workspace.yaml with the reason (M6-02, D-136).
+        run: pnpm audit --audit-level=high
 
   database:
     name: Database tests and lint

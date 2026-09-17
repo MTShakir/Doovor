@@ -88,11 +88,19 @@ scanning: the automated checks named below run on every push (`.github/workflows
 
 ## A06 Vulnerable and outdated components
 
-- Versions are pinned by the lockfile, and the stack is the one CLAUDE.md names.
-- `pnpm audit` on 17 September 2026: 5 high, 1 moderate, 1 low, every one of them in a development or
-  build-time tool (Lighthouse CI's own tree, and a build-time `browserslist` under Serwist). None is in
-  anything the app serves.
-- **Carried to M6-02:** raise those versions with lockfile overrides, and set up the update policy.
+- Versions are pinned by the lockfile, and the stack is the one CLAUDE.md names. pnpm refuses a release
+  younger than a day and one that has lost its provenance (D-025), and only the install scripts listed in
+  `pnpm-workspace.yaml` may run.
+- `pnpm audit --audit-level=high` runs in CI on every push, so a new high or critical advisory fails the
+  build.
+- 17 September 2026: seven advisories, all in development or build-time tools. Five are left behind by
+  raising the version above what the dependency asks for (`browserslist` under Serwist, `tmp` and `uuid`
+  under Lighthouse CI). Two, both `extract-zip`, have no fixed version: they reach us only through
+  Lighthouse CI's browser downloader, which never runs, because the Lighthouse job measures with the
+  runner's own Chrome. Those two are listed in `pnpm-workspace.yaml` with that reason and a note to drop
+  the exception when a fix exists (D-136).
+- Updates arrive as weekly pull requests (`.github/dependabot.yml`): minor and patch versions grouped into
+  one, a major version on its own with its notes. CI decides whether one lands.
 
 ## A07 Identification and authentication failures
 
@@ -141,3 +149,18 @@ scanning: the automated checks named below run on every push (`.github/workflows
   (`isDrawablePhotoUrl`, D-135).
 - Nothing else takes an address from anybody: there are no webhooks out, no URL previews and no imports
   from a link.
+
+## Licences
+
+Every dependency's licence, as `pnpm licenses list` reports them on 17 September 2026: 643 MIT, 145
+Apache-2.0, 41 ISC, 36 BSD, 7 BlueOak-1.0.0, and single packages under CC0, CC-BY-4.0 (the browser
+support data), Unlicense and 0BSD. Nothing is under the GPL or the AGPL. Three worth naming:
+
+- **MPL-2.0:** `axe-core` and `@axe-core/playwright` (accessibility tests), `lightningcss` (the CSS
+  build) and `web-push`. File-level copyleft, and we change none of their files.
+- **`@img/sharp-win32-x64`:** Apache-2.0 with LGPL-3.0-or-later parts, used as a library and not
+  redistributed.
+- **`mapbox-gl` 3.30.0:** its package metadata says BSD, but Mapbox GL JS 2 and later are used under
+  Mapbox's own terms, with an account and per-load pricing. The maps come from the product owner's
+  Mapbox account (RUNBOOK 3.5a), and public pages now use a static image rather than the library
+  (D-132), which is cheaper per view as well as faster.
