@@ -122,8 +122,9 @@ set local role anon;
 select throws_ok($$ select count(*) from public.skill_progress $$, '42501', null, 'nobody signed out sees one at all');
 reset role;
 
+-- Lee's and Lou's only: an end to end run leaves ratings of its own in the table.
 select is(
-  (select count(*)::int from public.skill_progress),
+  (select count(*)::int from public.skill_progress where learner_id in (:'lee', :'lou')),
   4,
   'with nothing hidden, there is one row for each area each learner was rated in, however many times: four in all'
 );

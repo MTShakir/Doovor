@@ -140,12 +140,12 @@ select is_empty(
 );
 select throws_ok(
   format($$ select * from public.learner_history(%L) $$, :'lou'),
-  '42501', 'NOT_ALLOWED',
-  'nor the story of who has taught her (LRN-06)'
+  '42501', 'NOT_FOUND',
+  'nor the story of who has taught her (LRN-06), which is not found for him (D-131)'
 );
 select throws_ok(
   format($$ select public.learner_balance(%L, %L) $$, :'school', :'lou'),
-  '42501', 'NOT_ALLOWED',
+  '42501', 'NOT_FOUND',
   'nor what she has paid or owes (PAY-06)'
 );
 

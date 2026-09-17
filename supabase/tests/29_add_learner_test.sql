@@ -1,6 +1,6 @@
--- Adding a learner by hand (LRN-03, M2-08).
+-- Adding a learner by hand (LRN-03, M2-08), to the account the app has just made for them (D-068, D-131).
 begin;
-select plan(9);
+select plan(12);
 
 select tests.create_fixture();
 
@@ -12,10 +12,15 @@ select tests.create_fixture();
 \set outsider 'd0000000-0000-0000-0000-000000000001'
 \set liz 'c0000000-0000-0000-0000-000000000003'
 \set lee 'c0000000-0000-0000-0000-000000000001'
+\set lou 'c0000000-0000-0000-0000-000000000002'
+\set lara 'c0000000-0000-0000-0000-000000000009'
 \set asha_biz 'aaaa0000-0000-0000-0000-000000000000'
 
--- Liz has an account and belongs to nobody yet, which is the state of a learner whose
--- account the app has just made for them.
+-- Liz and Lara have accounts the app has just made for them: nobody has claimed either, and
+-- neither belongs to anybody yet, which is the state adding somebody by hand leaves them in.
+select tests.create_user_with_id(:'lara', 'learner.9@test.local', 'Lara Nine');
+update auth.users set email_confirmed_at = null where id in (:'liz', :'lara');
+
 select tests.authenticate_as(:'asha_user');
 select public.add_learner(:'asha', :'liz', 'LS1 4DY', 'automatic') as link \gset
 
@@ -60,17 +65,34 @@ select throws_ok(
   'P0001', 'VALIDATION_FAILED', 'and neither is the instructor themselves'
 );
 
+-- Nobody is attached to a Business by their id alone (NFR-SEC-01, PRD 17.2 acceptance test 7).
+select tests.clear_authentication();
+update auth.users set email_confirmed_at = null where id = :'lou';
+select tests.authenticate_as(:'asha_user');
+select throws_ok(
+  $$ select public.add_learner('a1000000-0000-0000-0000-000000000001', 'c0000000-0000-0000-0000-000000000002') $$,
+  '42501', 'NOT_FOUND', 'another Business''s learner is not found, even one who has not claimed their account'
+);
+select throws_ok(
+  $$ select public.add_learner('a1000000-0000-0000-0000-000000000001', 'd0000000-0000-0000-0000-000000000001') $$,
+  '42501', 'NOT_FOUND', 'nor is somebody with an account of their own who learns nowhere yet: they join by accepting a link'
+);
+select throws_ok(
+  format($$ select public.add_learner('a1000000-0000-0000-0000-000000000001', %L) $$, gen_random_uuid()),
+  '42501', 'NOT_FOUND', 'which is the same answer as for an id that belongs to nobody'
+);
+
 -- Only somebody who may act for that instructor.
 select tests.authenticate_as(:'outsider');
 select throws_ok(
-  $$ select public.add_learner('a1000000-0000-0000-0000-000000000001', 'c0000000-0000-0000-0000-000000000002') $$,
-  '42501', null, 'a stranger cannot put a learner on somebody else list'
+  $$ select public.add_learner('a1000000-0000-0000-0000-000000000001', 'c0000000-0000-0000-0000-000000000009') $$,
+  '42501', 'NOT_ALLOWED', 'a stranger cannot put a learner on somebody else list'
 );
 
 -- A manager may add to any instructor in their own Business.
 select tests.authenticate_as(:'manager_user');
 select lives_ok(
-  $$ select public.add_learner('b1000000-0000-0000-0000-000000000001', 'c0000000-0000-0000-0000-000000000003') $$,
+  $$ select public.add_learner('b1000000-0000-0000-0000-000000000001', 'c0000000-0000-0000-0000-000000000009') $$,
   'a manager adds to an instructor at their school'
 );
 
