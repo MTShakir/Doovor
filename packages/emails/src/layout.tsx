@@ -14,6 +14,8 @@ export interface EmailLayoutProps {
   children: ReactNode;
   /** Where to change what they hear about (NTF-04). */
   settingsUrl?: string;
+  /** Why they are getting it, when that is not their account: "you joined the waiting list for LS". */
+  reason?: string;
 }
 
 const colours = brand.colours;
@@ -43,7 +45,7 @@ const footnote = { color: colours['grey-700'], fontSize: '13px', lineHeight: '20
 
 const link = { color: colours.blue, textDecoration: 'underline' };
 
-export function EmailLayout({ preview, children, settingsUrl }: EmailLayoutProps) {
+export function EmailLayout({ preview, children, settingsUrl, reason }: EmailLayoutProps) {
   return (
     <Html lang="en-GB">
       <Head />
@@ -54,7 +56,7 @@ export function EmailLayout({ preview, children, settingsUrl }: EmailLayoutProps
           <Section style={card}>{children}</Section>
           <Hr style={rule} />
           <Text style={footnote}>
-            You are getting this because you have a {brand.name} account.
+            You are getting this because {reason ?? `you have a ${brand.name} account`}.
             {settingsUrl ? (
               <>
                 {' '}

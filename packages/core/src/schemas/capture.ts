@@ -121,6 +121,15 @@ export interface CaptureConfirmationWords {
   title: string;
   body: string;
   action: string;
+  /** Why the email came, for its footer: these people need not have an account (MKT-10). */
+  reason: string;
+}
+
+/** Why somebody who gave their details, with or without an account, is getting an email about it. */
+function captureReason(kind: CaptureKind, postcodeArea: string): string {
+  return kind === 'waiting_list'
+    ? `you joined the waiting list for ${postcodeArea}`
+    : `you sent us a lesson request for ${postcodeArea}`;
 }
 
 /**
@@ -134,11 +143,13 @@ export function captureConfirmationWords(kind: CaptureKind, postcodeArea: string
         title: `You are on the waiting list for ${postcodeArea}`,
         body: `We will email you when you can find and book driving instructors near ${postcodeArea}. ${undo}`,
         action: 'Remove my details',
+        reason: captureReason(kind, postcodeArea),
       }
     : {
         title: `We have your lesson request for ${postcodeArea}`,
         body: `We will email you about it when instructors near ${postcodeArea} can take bookings through the app. ${undo}`,
         action: 'Remove my details',
+        reason: captureReason(kind, postcodeArea),
       };
 }
 
@@ -154,11 +165,13 @@ export function regionOpenedWords(kind: CaptureKind, postcodeArea: string): Capt
         title,
         body: `You asked us to email you when you could find and book driving instructors near ${postcodeArea}, and now you can. We have taken you off the waiting list, so this is the only email about it.`,
         action: 'Find an instructor',
+        reason: captureReason(kind, postcodeArea),
       }
     : {
         title,
         body: `You asked us to email you about your lesson request when instructors near ${postcodeArea} could take bookings through the app, and now they can. We keep your request until you remove it, with the button in the email that confirmed it, or reply to this email and we will remove it for you.`,
         action: 'Find an instructor',
+        reason: captureReason(kind, postcodeArea),
       };
 }
 

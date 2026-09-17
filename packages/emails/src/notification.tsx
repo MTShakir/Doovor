@@ -16,6 +16,8 @@ export interface NotificationEmailProps {
   facts?: NotificationFact[];
   action?: { label: string; url: string };
   settingsUrl?: string;
+  /** Why they are getting it, for somebody who may have no account (MKT-10). */
+  reason?: string;
 }
 
 const { colours } = emailStyles;
@@ -41,9 +43,9 @@ const button = {
  * words come from the catalogue in packages/core: an email that says something different
  * from the app is an email that is wrong.
  */
-export function NotificationEmail({ title, body, greeting, facts, action, settingsUrl }: NotificationEmailProps) {
+export function NotificationEmail({ title, body, greeting, facts, action, settingsUrl, reason }: NotificationEmailProps) {
   return (
-    <EmailLayout preview={body} settingsUrl={settingsUrl}>
+    <EmailLayout preview={body} settingsUrl={settingsUrl} reason={reason}>
       {greeting ? <Text style={paragraph}>{greeting}</Text> : null}
       <Heading style={heading}>{title}</Heading>
       <Text style={paragraph}>{body}</Text>

@@ -44,6 +44,7 @@ export async function tellRegionOpened(area: string): Promise<RegionOpenedResult
       body: words.body,
       greeting: firstName ? `Hello ${firstName}` : undefined,
       action: { label: words.action, url: new URL('/learners#find-an-instructor', getSiteUrl()).toString() },
+      reason: words.reason,
     });
 
     const result = await emailProvider().send({

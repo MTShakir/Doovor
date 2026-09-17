@@ -71,6 +71,7 @@ describe('coming soon: the waiting list and lesson requests (MKT-10, M5-10)', ()
       title: 'You are on the waiting list for LS',
       body: 'We will email you when you can find and book driving instructors near LS. If this was not you, or you change your mind, remove your details with the button below.',
       action: 'Remove my details',
+      reason: 'you joined the waiting list for LS',
     });
     expect(captureConfirmationWords('lesson_request', 'M')).toMatchObject({
       title: 'We have your lesson request for M',
@@ -92,9 +93,16 @@ describe('coming soon: the waiting list and lesson requests (MKT-10, M5-10)', ()
       title: 'Driving instructors near LS are taking bookings',
       body: 'You asked us to email you when you could find and book driving instructors near LS, and now you can. We have taken you off the waiting list, so this is the only email about it.',
       action: 'Find an instructor',
+      reason: 'you joined the waiting list for LS',
     });
     const request = regionOpenedWords('lesson_request', 'M');
     expect(request.title).toBe('Driving instructors near M are taking bookings');
     expect(request.body).toContain('We keep your request until you remove it');
+    expect(request.reason).toBe('you sent us a lesson request for M');
+  });
+
+  it('says why a confirmation came, to somebody who may have no account at all', () => {
+    expect(captureConfirmationWords('waiting_list', 'LS').reason).toBe('you joined the waiting list for LS');
+    expect(captureConfirmationWords('lesson_request', 'SW').reason).toBe('you sent us a lesson request for SW');
   });
 });

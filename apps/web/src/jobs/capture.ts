@@ -43,6 +43,7 @@ export async function sendCaptureConfirmation(kind: CaptureKind, id: string): Pr
     body: words.body,
     greeting: firstName ? `Hello ${firstName}` : undefined,
     action: { label: words.action, url: new URL(`/your-details/${entry.token}`, getAppUrl()).toString() },
+    reason: words.reason,
   });
 
   const result = await emailProvider().send({
