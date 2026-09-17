@@ -29,6 +29,9 @@ module.exports = {
         // person and finds no description in the head (D-132).
         emulatedUserAgent:
           'Mozilla/5.0 (Linux; Android 11; moto g power (2022)) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Mobile Safari/537.36 Chrome-Lighthouse',
+        // Ubuntu 24.04 runners refuse Chrome the user namespaces its sandbox needs. The browser only
+        // ever opens this app on localhost there, as Playwright's does without a sandbox too.
+        ...(process.env.CI ? { chromeFlags: '--headless=new --no-sandbox' } : {}),
         // Outside production the site asks search engines not to crawl it at all (robots.ts, D-047),
         // and a place page with fewer than three instructors asks not to be indexed (M5-07). Both are
         // on purpose and checked in seo.spec.ts; every other SEO audit still counts.

@@ -147,7 +147,14 @@ jobs:
           tail -n 50 "$RUNNER_TEMP/web.log"
           exit 1
       - name: Lighthouse
-        run: pnpm lighthouse
+        # Logs need repository admin, so the scores, or the tail of a failure, go in annotations too.
+        run: |
+          set -o pipefail
+          if ! pnpm lighthouse 2>&1 | tee "$RUNNER_TEMP/lighthouse.log"; then
+            echo "::error title=Lighthouse failed::$(tail -n 40 "$RUNNER_TEMP/lighthouse.log" | sed 's/%/%25/g' | sed ':a;N;$!ba;s/\n/%0A/g')"
+            exit 1
+          fi
+          echo "::notice title=Lighthouse scores::$(grep '^|' "$RUNNER_TEMP/lighthouse.log" | sed 's/%/%25/g' | sed ':a;N;$!ba;s/\n/%0A/g')"
       - name: Upload reports
         if: ${{ !cancelled() }}
         uses: actions/upload-artifact@v4
