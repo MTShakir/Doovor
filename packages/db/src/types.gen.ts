@@ -2952,6 +2952,7 @@ export type Database = {
           has_hub: boolean
         }[]
       }
+      platform_dashboard: { Args: never; Returns: Json }
       post_lesson_request: {
         Args: {
           p_budget_pence?: number

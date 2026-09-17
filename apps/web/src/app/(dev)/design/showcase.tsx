@@ -32,6 +32,8 @@ import { LessonRecordCard } from '@/components/progress/lesson-record-card';
 import { SkillMap } from '@/components/progress/skill-map';
 import { SetupChecklist } from '@/components/setup-checklist';
 import { InstructorWeeks, OverviewFigures, OverviewSkeleton } from '@/components/school/overview';
+import { DashboardFigures, DashboardSkeleton, WaitingOnStaff } from '@/components/admin/dashboard';
+import type { PlatformDashboard } from '@/lib/admin/dashboard';
 import type { SchoolOverview } from '@/lib/school/overview';
 import { SwitchOffDialog, TeamSections } from '@/components/school/team';
 import { AllocationChoices } from '@/components/school/allocation-choices';
@@ -89,6 +91,7 @@ const sections = [
   'Public profile',
   'Site',
   'School',
+  'Admin',
   'Scheduling',
   'Overlays',
   'Navigation',
@@ -127,6 +130,26 @@ const exampleOverview: SchoolOverview = {
     ],
   },
   newLearnersMonth: 9,
+};
+
+const exampleDashboard: PlatformDashboard = {
+  range: 'Tue 18 Aug to Thu 17 Sep',
+  signups: { learners: 212, instructors: 31, schools: 4, undecided: 9, total: 256 },
+  businesses: { active: 118, independent: 104, schools: 14, suspended: 2, teaching: 97 },
+  lessons: { booked: 4_310, completed: 3_880 },
+  money: { gmvPence: 18_420_500, cardPence: 12_960_000, feesPence: 0, payments: 3_402, refundsPence: 84_000 },
+  verification: { waiting: 6, oldestSince: 'Mon 14 Sep' },
+  disputes: { open: 1, oldestSince: 'Wed 16 Sep' },
+};
+
+const quietDashboard: PlatformDashboard = {
+  range: 'Tue 18 Aug to Thu 17 Sep',
+  signups: { learners: 0, instructors: 1, schools: 0, undecided: 0, total: 1 },
+  businesses: { active: 1, independent: 1, schools: 0, suspended: 0, teaching: 0 },
+  lessons: { booked: 0, completed: 0 },
+  money: { gmvPence: 0, cardPence: 0, feesPence: 0, payments: 0, refundsPence: 0 },
+  verification: { waiting: 0, oldestSince: null },
+  disputes: { open: 0, oldestSince: null },
 };
 
 const exampleTeam: SchoolTeam = {
@@ -995,6 +1018,17 @@ export function DesignShowcase() {
           onConfirm={() => { setSwitchingOff(null); }}
           onCancel={() => { setSwitchingOff(null); }}
         />
+      </Section>
+
+      <Section title="Admin">
+        <Label>Dashboard, with badges and a dispute waiting</Label>
+        <WaitingOnStaff dashboard={exampleDashboard} idPrefix="design-waiting" />
+        <DashboardFigures dashboard={exampleDashboard} idPrefix="design-platform-month" />
+        <Label>A platform just starting, with nothing waiting</Label>
+        <WaitingOnStaff dashboard={quietDashboard} idPrefix="design-waiting-quiet" />
+        <DashboardFigures dashboard={quietDashboard} idPrefix="design-platform-month-quiet" />
+        <Label>Loading</Label>
+        <DashboardSkeleton />
       </Section>
 
       <Section title="Scheduling">

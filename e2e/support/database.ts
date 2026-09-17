@@ -1203,6 +1203,46 @@ export async function seededSchoolFigures(schoolName: string): Promise<SeededSch
   });
 }
 
+export interface PlatformFacts {
+  from: string;
+  signups: { learners: number; instructors: number; schools: number; undecided: number };
+  businesses: { active: number; independent: number; schools: number; suspended: number; teaching: number };
+  lessons: { booked: number; completed: number };
+  money: { gmv_pence: number; card_pence: number; fees_pence: number; payments: number; refunds_pence: number };
+  verification: { waiting: number; oldest: string | null };
+  disputes: { open: number; oldest: string | null };
+}
+
+export interface PlatformFigures {
+  /** What the dashboard's own function works out now. */
+  facts: PlatformFacts;
+  /** The same things counted plainly, in the same instant. */
+  activeBusinesses: number;
+  suspendedBusinesses: number;
+  badgesWaiting: number;
+  disputesOpen: number;
+}
+
+/** The admin dashboard's figures as the database has them now (ADM-01, M5-17). */
+export async function platformFigures(): Promise<PlatformFigures> {
+  return withDatabase(async (sql) => {
+    const [row] = await sql<{ facts: PlatformFacts; active: number; suspended: number; badges: number; disputes: number }[]>`
+      select private.platform_dashboard_facts(now()) as facts,
+             (select count(*)::int from public.businesses where status = 'active') as active,
+             (select count(*)::int from public.businesses where status = 'suspended') as suspended,
+             (select count(*)::int from public.instructor_profiles where verification_status = 'pending') as badges,
+             (select count(*)::int from public.no_show_disputes where decided_at is null) as disputes`;
+    if (!row) throw new Error('The dashboard figures could not be read');
+    return {
+      facts: row.facts,
+      activeBusinesses: row.active,
+      suspendedBusinesses: row.suspended,
+      badgesWaiting: row.badges,
+      disputesOpen: row.disputes,
+    };
+  });
+}
+
 export interface MadeSchoolInstructor {
   name: string;
   /** Signs in with the seed's password (supabase/seeds/test_helpers.sql). */
@@ -1342,6 +1382,7 @@ export async function learnerTeacherAtSchool(email: string, schoolName = 'Quaysi
 }
 
 export interface MadeSchool {
+  businessId: string;
   name: string;
   /** Signs in with the seed's password; a manager needs no second step. */
   managerEmail: string;
@@ -1396,6 +1437,7 @@ export async function makeSchool(label: string): Promise<MadeSchool> {
   });
 
   return {
+    businessId,
     name,
     managerEmail,
     instructor,
@@ -1404,6 +1446,53 @@ export async function makeSchool(label: string): Promise<MadeSchool> {
         await sql`delete from public.businesses where id = ${businessId}`;
         await sql`delete from auth.users where id in (${managerId}, ${instructorId})`;
       }),
+  };
+}
+
+export interface MadeTakings {
+  gmvPence: number;
+  cardPence: number;
+  feesPence: number;
+  refundsPence: number;
+  remove: () => Promise<void>;
+}
+
+/**
+ * Money taken just now at a school of a test's own (M5-17): £42 by card with a 50p platform fee,
+ * £380 in cash, and £10 of the card payment given back. The seed takes no money, and nothing else
+ * reads this school, so the platform's takings move without changing what the payment tests count.
+ */
+export async function makeTakings(label: string): Promise<MadeTakings> {
+  const school = await makeSchool(label);
+  const learnerId = crypto.randomUUID();
+  const key = `${label.toLowerCase().replace(/[^a-z0-9]+/g, '-')}-${learnerId.slice(0, 8)}`;
+
+  await withDatabase(async (sql) => {
+    await sql`select tests.create_user_with_id(${learnerId}::uuid, ${`learner.${key}@example.com`}, ${`Lara ${label}`})`;
+    const [card] = await sql<{ id: string }[]>`
+      insert into public.payments (business_id, learner_id, provider, amount_pence, fee_pence, method, status, paid_at)
+      values (${school.businessId}, ${learnerId}, 'stripe', 4200, 50, 'card', 'paid', now())
+      returning id`;
+    if (!card) throw new Error('The card payment was not written');
+    await sql`
+      insert into public.payments (business_id, learner_id, provider, amount_pence, method, status, paid_at)
+      values (${school.businessId}, ${learnerId}, 'offline', 38000, 'cash', 'paid', now())`;
+    await sql`
+      insert into public.refunds (business_id, payment_id, learner_id, kind, amount_pence, reason, status, settled_at)
+      values (${school.businessId}, ${card.id}, ${learnerId}, 'card', 1000, 'Cut short', 'succeeded', now())`;
+  });
+
+  return {
+    gmvPence: 42200,
+    cardPence: 4200,
+    feesPence: 50,
+    refundsPence: 1000,
+    remove: async () => {
+      await school.remove();
+      await withDatabase(async (sql) => {
+        await sql`delete from auth.users where id = ${learnerId}`;
+      });
+    },
   };
 }
 

@@ -10,7 +10,6 @@ const arrivesIn: Record<Portal, Record<string, string>> = {
   instructor: {},
   school: {},
   admin: {
-    '': 'M5',
     businesses: 'M5',
     instructors: 'M5',
     learners: 'M5',
