@@ -1,5 +1,7 @@
 import 'server-only';
 import { todayInZone } from '@repo/core/time';
+import { revalidateTag } from 'next/cache';
+import { profileTags } from '@/lib/public/instructor-profile';
 import { getSupabaseServiceClient } from '@/lib/supabase/service';
 import { sweepBadges, type BadgeStore, type BadgeSweepResult } from './badge-expiry';
 import { badgeExpiring } from './events';
@@ -26,10 +28,11 @@ const store: BadgeStore = {
 
 /**
  * The daily run (INS-03). The date is worked out in London, not UTC, so a job that fires at
- * one in the morning in British Summer Time still means today.
+ * one in the morning in British Summer Time still means today. A badge found out of date changes
+ * what its public profile says, so the kept copies of profiles are read fresh (M5-06).
  */
-export function runBadgeExpirySweep(today: string = todayInZone()): Promise<BadgeSweepResult> {
-  return sweepBadges(
+export async function runBadgeExpirySweep(today: string = todayInZone()): Promise<BadgeSweepResult> {
+  const result = await sweepBadges(
     store,
     (messages) =>
       inngest
@@ -47,4 +50,6 @@ export function runBadgeExpirySweep(today: string = todayInZone()): Promise<Badg
         .then(() => undefined),
     today,
   );
+  if (result.unlisted > 0) revalidateTag(profileTags.all, { expire: 0 });
+  return result;
 }

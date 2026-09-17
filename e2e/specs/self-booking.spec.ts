@@ -74,7 +74,8 @@ test.describe('booking from a shared link (BOK-02, M2-17)', () => {
     await page.getByRole('button', { name: /^Book 11:00 for £42$/ }).click();
 
     await expect(page.getByRole('heading', { name: 'Lesson booked' })).toBeVisible();
-    await expect(page.getByText('with Sarah Khan')).toBeVisible();
+    // The confirmation itself: the page's title names her too.
+    await expect(page.getByText(/ at 11:00 with Sarah Khan\. It is in their diary\.$/)).toBeVisible();
     await snap(page, testInfo, 'booking-link-done');
 
     // acceptance-12: from opening the link to a booked lesson, on a phone, in under a minute.

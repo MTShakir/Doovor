@@ -11,6 +11,7 @@ import { checkoutLesson, type CheckoutLesson } from '@/lib/payments/checkout';
 import { fakeCardOutcome, fakeCardSetupDone, paymentsProvider } from '@/lib/payments/provider';
 import { deliverFakePaymentEvent } from '@/lib/payments/webhook';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
+import { refuseWhileViewing } from '@/lib/auth/view-as';
 
 const checkoutSchema = z.object({
   bookingId: z.uuid(),
@@ -83,6 +84,8 @@ function attemptFor(lesson: Payable): string {
  * not charged: the money is taken only if the instructor accepts.
  */
 export async function startCheckout(input: unknown): Promise<Result<Checkout>> {
+  const refused = await refuseWhileViewing();
+  if (refused) return refused;
   const parsed = checkoutSchema.safeParse(input);
   if (!parsed.success) return err('VALIDATION_FAILED');
 
@@ -156,6 +159,8 @@ export type SavedCardPayment =
   | { status: 'check'; clientSecret: string; accountId: string };
 
 export async function payWithSavedCard(input: unknown): Promise<Result<SavedCardPayment>> {
+  const refused = await refuseWhileViewing();
+  if (refused) return refused;
   const parsed = savedCardSchema.safeParse(input);
   if (!parsed.success) return err('VALIDATION_FAILED');
 
@@ -230,6 +235,8 @@ const setupSchema = z.object({ bookingId: z.uuid() });
  * about on this screen: that is their agreement to it.
  */
 export async function startCardSetup(input: unknown): Promise<Result<{ setupId: string; clientSecret: string; accountId: string }>> {
+  const refused = await refuseWhileViewing();
+  if (refused) return refused;
   const parsed = setupSchema.safeParse(input);
   if (!parsed.success) return err('VALIDATION_FAILED');
 
@@ -271,6 +278,8 @@ const testSetupSchema = z.object({ bookingId: z.uuid(), setupId: z.string().min(
 
 /** Stands in for a card being saved, while the fake provider is in use (M3-09). Not in production. */
 export async function saveTestCard(input: unknown): Promise<Result<null>> {
+  const refused = await refuseWhileViewing();
+  if (refused) return refused;
   if (serverEnv.APP_ENV === 'production' || serverEnv.PAYMENTS_PROVIDER === 'stripe') {
     return err('NOT_ALLOWED');
   }
@@ -299,6 +308,8 @@ const testSchema = z.object({
 export async function payWithTestCard(
   input: unknown,
 ): Promise<Result<{ outcome: 'succeeded' | 'authorised' | 'failed' }>> {
+  const refused = await refuseWhileViewing();
+  if (refused) return refused;
   if (serverEnv.APP_ENV === 'production' || serverEnv.PAYMENTS_PROVIDER === 'stripe') {
     return err('NOT_ALLOWED');
   }

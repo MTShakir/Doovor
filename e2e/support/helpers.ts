@@ -1,8 +1,9 @@
+import { mkdirSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 import AxeBuilder from '@axe-core/playwright';
 import { expect, type Locator, type Page, type TestInfo } from '@playwright/test';
 
-const MILESTONE = process.env.E2E_MILESTONE ?? 'm4';
+const MILESTONE = process.env.E2E_MILESTONE ?? 'm5';
 
 /** Where a named screenshot lives: e2e/screenshots/<milestone>/<viewport>/<name>.png */
 export function snapPath(testInfo: TestInfo, name: string): string {
@@ -14,7 +15,27 @@ export function snapPath(testInfo: TestInfo, name: string): string {
  * default; use `fullPage: false` when fixed elements such as sheets are open.
  */
 export async function snap(page: Page, testInfo: TestInfo, name: string, options: { fullPage?: boolean } = {}): Promise<void> {
-  await page.screenshot({ path: snapPath(testInfo, name), fullPage: options.fullPage ?? true });
+  await keepScreenshot(testInfo, name, await page.screenshot({ fullPage: options.fullPage ?? true }));
+}
+
+/**
+ * Writes an image for the milestone report. A program that has just noticed the file, such as a
+ * backup or a virus scan, can hold it for a moment on Windows, so a refused write is tried again a
+ * few times before the test fails.
+ */
+export async function keepScreenshot(testInfo: TestInfo, name: string, bytes: Buffer): Promise<void> {
+  const file = snapPath(testInfo, name);
+  mkdirSync(path.dirname(file), { recursive: true });
+  for (let attempt = 1; ; attempt += 1) {
+    try {
+      writeFileSync(file, bytes);
+      return;
+    } catch (error) {
+      const code = (error as { code?: string }).code ?? '';
+      if (attempt >= 5 || !['UNKNOWN', 'EBUSY', 'EPERM'].includes(code)) throw error;
+      await new Promise((resolve) => setTimeout(resolve, 250 * attempt));
+    }
+  }
 }
 
 /**
@@ -117,6 +138,21 @@ export async function expectAccessible(page: Page, options: { exclude?: string[]
   } finally {
     await page.emulateMedia({ reducedMotion: null });
   }
+}
+
+/** What a public page tells search engines: "noindex" when it is to be left out, nothing when it is in. */
+export async function robotsOf(page: Page): Promise<string | null> {
+  const tag = page.locator('meta[name="robots"]');
+  return (await tag.count()) === 0 ? null : tag.first().getAttribute('content');
+}
+
+/**
+ * Public pages read fresh (M5-07), after a test changed the database behind the app's back. A
+ * change made through the app expires them itself, and a test of that change leaves this out.
+ */
+export async function freshPublicPages(page: Page): Promise<void> {
+  const answer = await page.request.post('/dev/public-pages');
+  expect(answer.ok()).toBe(true);
 }
 
 /** A local day moved on or back by whole days: calendar arithmetic, with no zone to cross. */

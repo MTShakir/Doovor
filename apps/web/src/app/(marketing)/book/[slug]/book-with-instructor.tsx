@@ -14,6 +14,7 @@ import { CheckCircle2 } from 'lucide-react';
 import Link from 'next/link';
 import { useEffect, useState, useTransition } from 'react';
 import { FormAlert } from '@/components/form-alert';
+import { avatarUrl } from '@/lib/storage/images';
 import type { BookingPage } from '@/lib/booking/public';
 import { bookAsLearner, rememberSlot, slotsOnDay } from './actions';
 
@@ -24,10 +25,14 @@ export interface BookWithInstructorProps {
   chosen: string | null;
   learner: { id: string } | null;
   signedIn: boolean;
+  /** The instructor's public profile, in full, when there is one. */
+  profileUrl: string | null;
+  /** The first day with a free time, to open on when nothing is chosen yet. */
+  firstFreeDay: string | null;
 }
 
 /** BOK-02: choose how long, choose when, book. On a phone, in under a minute. */
-export function BookWithInstructor({ page, slug, chosen, learner, signedIn }: BookWithInstructorProps) {
+export function BookWithInstructor({ page, slug, chosen, learner, signedIn, profileUrl, firstFreeDay }: BookWithInstructorProps) {
   const [pending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
   const [booked, setBooked] = useState<string | null>(null);
@@ -38,7 +43,7 @@ export function BookWithInstructor({ page, slug, chosen, learner, signedIn }: Bo
   const [lessonKey, setLessonKey] = useState(
     first ? `${first.lessonTypeId}:${String(first.durationMinutes)}` : '',
   );
-  const [day, setDay] = useState(chosen === null ? todayInZone() : chosen.slice(0, 10));
+  const [day, setDay] = useState(chosen === null ? (firstFreeDay ?? todayInZone()) : chosen.slice(0, 10));
   const [times, setTimes] = useState<{ asked: string; slots: string[] } | null>(null);
   const [chosenSlot, setChosenSlot] = useState<string | null>(chosen);
 
@@ -123,7 +128,8 @@ export function BookWithInstructor({ page, slug, chosen, learner, signedIn }: Bo
   return (
     <div className="flex flex-col gap-6">
       <div className="flex items-center gap-4">
-        <Avatar name={page.name} size="lg" />
+        {/* A booking link only takes bookings for an instructor the platform has checked (INS-02). */}
+        <Avatar name={page.name} src={avatarUrl(page.photoPath)} verified size="lg" decorative />
         <div className="flex min-w-0 flex-col">
           <h1 className="text-h1 text-black">{page.name}</h1>
           <p className="text-small text-grey-700">
@@ -131,6 +137,11 @@ export function BookWithInstructor({ page, slug, chosen, learner, signedIn }: Bo
             {page.car === null ? '' : ` · ${page.car}`} ·{' '}
             {page.transmission === 'automatic' ? 'Automatic' : page.transmission === 'both' ? 'Manual or automatic' : 'Manual'}
           </p>
+          {profileUrl === null ? null : (
+            <a href={profileUrl} className="text-small font-semibold text-blue underline underline-offset-4">
+              See the full profile
+            </a>
+          )}
         </div>
       </div>
 

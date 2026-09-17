@@ -1,4 +1,4 @@
-import { avatarImage, badgeImage, profileObjectPath } from '@repo/core/images';
+import { avatarImage, badgeImage, businessObjectPath, profileObjectPath } from '@repo/core/images';
 import type { Database } from '@repo/db/types';
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { clientEnv } from '@/env/client';
@@ -34,6 +34,19 @@ export async function uploadProfileImage(
   const path = profileObjectPath(profileId, crypto.randomUUID());
   const { error } = await supabase.storage.from(bucket).upload(path, blob, {
     contentType: contentType[bucket],
+    cacheControl: '31536000',
+  });
+  return error ? null : path;
+}
+
+/**
+ * Uploads a school's prepared logo as its owner or manager (AUTH-05). Storage checks the folder
+ * against who may change the school's profile, whatever the app sends.
+ */
+export async function uploadBusinessLogo(supabase: SupabaseClient<Database>, businessId: string, blob: Blob): Promise<string | null> {
+  const path = businessObjectPath(businessId, crypto.randomUUID());
+  const { error } = await supabase.storage.from(avatarsBucket).upload(path, blob, {
+    contentType: avatarImage.outputType,
     cacheControl: '31536000',
   });
   return error ? null : path;

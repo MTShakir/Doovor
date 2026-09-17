@@ -2,10 +2,18 @@ import { LoadingRegion, Skeleton, SkeletonRow } from '@repo/ui/skeleton';
 import { Suspense, type ReactNode } from 'react';
 import type { Portal } from '@/lib/navigation';
 import { requirePortal } from '@/lib/auth/session';
+import { ViewAsBanner } from './view-as-banner';
 
 async function Gate({ portal, children }: { portal: Portal; children: ReactNode }) {
-  await requirePortal(portal);
-  return children;
+  const { session } = await requirePortal(portal);
+  if (session.viewingAs === null) return children;
+  // Staff viewing as somebody see it on every screen, with the way back (ADM-06, D-129).
+  return (
+    <>
+      <ViewAsBanner name={session.viewingAs.name} endsAt={session.viewingAs.endsAt} />
+      {children}
+    </>
+  );
 }
 
 /**

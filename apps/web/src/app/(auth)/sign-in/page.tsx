@@ -3,6 +3,7 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { Suspense } from 'react';
 import { ForgetKeptScreens } from '@/components/pwa/forget-kept-screens';
+import { featureFlags } from '@/lib/flags';
 import { SignInForm } from './sign-in-form';
 
 export const metadata: Metadata = { title: 'Sign in' };
@@ -14,7 +15,7 @@ export default function SignInPage() {
       <ForgetKeptScreens />
       <h1 className="text-h1 text-black">Sign in</h1>
       <Suspense fallback={<Skeleton className="h-80 w-full" />}>
-        <SignInForm />
+        <SignInWithFlags />
       </Suspense>
       <p className="text-body text-ink">
         New here?{' '}
@@ -24,4 +25,9 @@ export default function SignInPage() {
       </p>
     </div>
   );
+}
+
+/** The form, with the ways to sign in a super admin has left on (ADM-05). */
+async function SignInWithFlags() {
+  return <SignInForm flags={await featureFlags()} />;
 }

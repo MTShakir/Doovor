@@ -60,7 +60,7 @@ test.describe('sign-up (AUTH-01, AUTH-03)', () => {
     await expect(page.getByRole('heading', { level: 1, name: 'What should learners call you?' })).toBeVisible();
   });
 
-  test('a school owner signs up and must turn on two-step verification (AUTH-08)', async ({ page }, testInfo) => {
+  test('a school owner signs up, must turn on two-step verification, then sets the school up (AUTH-08, AUTH-05)', async ({ page }, testInfo) => {
     const email = uniqueEmail(testInfo, 'school');
     await chooseRoleAndCreateAccount(
       page,
@@ -68,14 +68,14 @@ test.describe('sign-up (AUTH-01, AUTH-03)', () => {
       { fullName: 'Sophie Owner', email, schoolName: `Test School ${testInfo.project.name}` },
     );
     await page.goto(await linkFromEmail(email, 'Confirm your email'));
-    await expect(page).toHaveURL(/\/mfa\?next=%2Fapp%2Fschool/);
+    await expect(page).toHaveURL(/\/mfa\?next=%2Fonboarding%2Fschool/);
     await expect(page.getByRole('heading', { name: 'Set up two-step verification' })).toBeVisible();
     await expect(page.getByRole('img', { name: 'QR code for your authenticator app' })).toBeVisible();
     await snap(page, testInfo, 'mfa-setup', { fullPage: false });
     const secret = (await page.locator('.font-mono').innerText()).replace(/\s/g, '');
     await enterCode(page, totp(secret));
-    await expect(page).toHaveURL(/\/app\/school$/);
-    await expect(page.getByRole('heading', { level: 1, name: 'Overview' })).toBeVisible();
+    await expect(page).toHaveURL(/\/onboarding\/school$/);
+    await expect(page.getByRole('heading', { level: 1, name: 'Tell us about your school' })).toBeVisible();
   });
 
   test('on a slow connection, early typing is kept and nothing is sent before the page is ready', async ({ page }, testInfo) => {

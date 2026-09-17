@@ -8,6 +8,23 @@ import { PhotoUpload } from '@repo/ui/photo-upload';
 import { PickupPointPicker } from '@repo/ui/pickup-point-picker';
 import { FormAlert } from '@/components/form-alert';
 import { RadiusMap } from '@/components/map/radius-map';
+import {
+  AboutInstructor,
+  BookAction,
+  NextTimes,
+  NextTimesSkeleton,
+  PriceList,
+  ProfileHeader,
+  WhereLessonsStart,
+} from '@/components/public/instructor-profile';
+import { Breadcrumbs, PlaceLinks } from '@/components/public/place-links';
+import { SchoolHeader, SchoolInstructors } from '@/components/public/school-profile';
+import { BookingLinkCard } from '@/components/share/booking-link-card';
+import { AreaPanel, CaptureDone } from '@/components/capture/coming-soon';
+import { BookingGlimpse, GlimpseAlone, GlimpsePair, MoneyGlimpse, ProgressGlimpse, SchoolGlimpse, TodayGlimpse } from '@/components/site/glimpses';
+import { Band, ClosingCall, FeatureGrid, FoundingOffer, PageHero, PlanCard, PrimaryLink, SecondaryLink, Steps } from '@/components/site/marketing';
+import { SiteFooter, SiteHeader } from '@/components/site/site-chrome';
+import { planSummaries } from '@/lib/site/plan-features';
 import { NoSignalBanner } from '@/components/offline/connection-banner';
 import { KeptRecordsNotice } from '@/components/offline/kept-records-notice';
 import { CardFieldsSkeleton } from '@/components/payments/card-form';
@@ -15,6 +32,25 @@ import { InstallCard } from '@/components/pwa/install-prompt';
 import { LessonRecordCard } from '@/components/progress/lesson-record-card';
 import { SkillMap } from '@/components/progress/skill-map';
 import { SetupChecklist } from '@/components/setup-checklist';
+import { InstructorWeeks, OverviewFigures, OverviewSkeleton } from '@/components/school/overview';
+import { DashboardFigures, DashboardSkeleton, WaitingOnStaff } from '@/components/admin/dashboard';
+import { BusinessDetails, BusinessResults, SuspendBusinessDialog } from '@/components/admin/businesses';
+import type { AdminBusiness } from '@/lib/admin/businesses';
+import { InstructorResults, LearnerResults, PersonDetails, ResetTwoStepDialog, SuspendAccountDialog, ViewAsDialog } from '@/components/admin/people';
+import { ViewAsBanner } from '@/components/view-as-banner';
+import type { AdminPerson } from '@/lib/admin/people';
+import { RegionsTable, SwitchOnRuleCard, SwitchRegionDialog } from '@/components/admin/regions';
+import type { AdminRegion } from '@/lib/admin/regions';
+import { FeatureFlagsForm, MarketplaceFeeForm, PlanLimitsForm, SettingCard, SwitchOnRuleForm } from '@/components/admin/settings';
+import { AuditEntries, AuditFiltersForm, AuditLogSkeleton, AuditPager } from '@/components/admin/audit-log';
+import type { AuditEntry } from '@/lib/admin/audit';
+import type { PlatformDashboard } from '@/lib/admin/dashboard';
+import type { SchoolOverview } from '@/lib/school/overview';
+import { SwitchOffDialog, TeamSections } from '@/components/school/team';
+import { AllocationChoices } from '@/components/school/allocation-choices';
+import { PackagesEditor } from '@/components/catalogue/packages-editor';
+import { PricesForm } from '@/components/catalogue/prices-form';
+import type { SchoolTeam } from '@/lib/school/team';
 import type { RecordedLesson } from '@/lib/lessons/records';
 import { Button } from '@repo/ui/button';
 import { Card, CardDescription, CardTitle } from '@repo/ui/card';
@@ -45,7 +81,8 @@ import { Switch } from '@repo/ui/switch';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@repo/ui/tabs';
 import { TimeSlotGrid } from '@repo/ui/time-slot-grid';
 import { toast, toastWithUndo } from '@repo/ui/toast';
-import { CalendarX, Car } from 'lucide-react';
+import { BadgeCheck, CalendarX, Car, CreditCard, WifiOff } from 'lucide-react';
+import Image from 'next/image';
 import Link from 'next/link';
 import { Suspense, useState, type ReactNode } from 'react';
 
@@ -62,6 +99,10 @@ const sections = [
   'Progress',
   'Checklist',
   'Coverage',
+  'Public profile',
+  'Site',
+  'School',
+  'Admin',
   'Scheduling',
   'Overlays',
   'Navigation',
@@ -79,6 +120,233 @@ function Section({ title, children }: { title: (typeof sections)[number]; childr
 function Label({ children }: { children: ReactNode }) {
   return <p className="text-caption font-semibold text-grey-700">{children}</p>;
 }
+
+const exampleWeek = { key: 'week', from: '2026-10-26', to: '2026-11-01', label: 'This week', range: 'Mon 26 Oct to Sun 1 Nov' } as const;
+const exampleMonth = { key: 'month', from: '2026-10-01', to: '2026-10-31', label: 'October', range: 'Thu 1 Oct to Sat 31 Oct' } as const;
+
+const exampleOverview: SchoolOverview = {
+  week: exampleWeek,
+  month: exampleMonth,
+  lessons: { today: 14, thisWeek: 63 },
+  revenueMonth: { lessonsPence: 812_400, packagesPence: 190_000, refundsPence: 4_200, totalPence: 998_200 },
+  unpaid: { totalPence: 25_200, count: 6 },
+  utilisation: {
+    openMinutes: 9_600,
+    bookedMinutes: 6_240,
+    instructors: [
+      { instructorId: 'example-1', name: 'Aisha Rahman', openMinutes: 2_400, bookedMinutes: 2_280 },
+      { instructorId: 'example-2', name: 'Emma Clarke', openMinutes: 2_400, bookedMinutes: 1_560 },
+      { instructorId: 'example-3', name: 'Tom Walsh', openMinutes: 2_400, bookedMinutes: 2_700 },
+      { instructorId: 'example-4', name: 'Nia Newcomer', openMinutes: 0, bookedMinutes: 0 },
+    ],
+  },
+  newLearnersMonth: 9,
+};
+
+const exampleDashboard: PlatformDashboard = {
+  range: 'Tue 18 Aug to Thu 17 Sep',
+  signups: { learners: 212, instructors: 31, schools: 4, undecided: 9, total: 256 },
+  businesses: { active: 118, independent: 104, schools: 14, suspended: 2, teaching: 97 },
+  lessons: { booked: 4_310, completed: 3_880 },
+  money: { gmvPence: 18_420_500, cardPence: 12_960_000, feesPence: 0, payments: 3_402, refundsPence: 84_000 },
+  verification: { waiting: 6, oldestSince: 'Mon 14 Sep' },
+  disputes: { open: 1, oldestSince: 'Wed 16 Sep' },
+};
+
+const quietDashboard: PlatformDashboard = {
+  range: 'Tue 18 Aug to Thu 17 Sep',
+  signups: { learners: 0, instructors: 1, schools: 0, undecided: 0, total: 1 },
+  businesses: { active: 1, independent: 1, schools: 0, suspended: 0, teaching: 0 },
+  lessons: { booked: 0, completed: 0 },
+  money: { gmvPence: 0, cardPence: 0, feesPence: 0, payments: 0, refundsPence: 0 },
+  verification: { waiting: 0, oldestSince: null },
+  disputes: { open: 0, oldestSince: null },
+};
+
+const exampleBusinessRows = [
+  { businessId: 'biz-1', name: 'Quayside Driving School', type: 'school' as const, status: 'active' as const, postcode: 'M1 2QF', ownerName: 'David Okafor', instructors: 4 },
+  { businessId: 'biz-2', name: 'Sarah Khan', type: 'independent' as const, status: 'active' as const, postcode: 'LS6 3HN', ownerName: 'Sarah Khan', instructors: 1 },
+  { businessId: 'biz-3', name: 'Fast Pass Motoring', type: 'independent' as const, status: 'suspended' as const, postcode: null, ownerName: 'Rob Quick', instructors: 1 },
+];
+
+const exampleBusiness: AdminBusiness = {
+  businessId: 'biz-1',
+  name: 'Quayside Driving School',
+  type: 'school',
+  status: 'active',
+  postcode: 'M1 2QF',
+  joinedOn: 'Mon 2 Mar 2026',
+  takesCards: true,
+  suspension: null,
+  members: [
+    { userId: 'person-1', name: 'David Okafor', contact: 'david.okafor@example.com', role: 'owner', active: true, verification: null },
+    { userId: 'person-2', name: 'Lucy Grant', contact: '07700 900123', role: 'manager', active: true, verification: null },
+    { userId: 'person-3', name: 'Emma Clarke', contact: 'emma.clarke@example.com', role: 'instructor', active: true, verification: 'approved' },
+    { userId: 'person-4', name: 'Aisha Rahman', contact: null, role: 'instructor', active: false, verification: 'pending' },
+  ],
+  learners: 48,
+  lessonsToCome: 112,
+};
+
+const suspendedBusiness: AdminBusiness = {
+  ...exampleBusiness,
+  businessId: 'biz-3',
+  name: 'Fast Pass Motoring',
+  type: 'independent',
+  status: 'suspended',
+  postcode: null,
+  takesCards: false,
+  suspension: { since: 'Tue 15 Sep', reason: 'The badge number belongs to another instructor.', byName: 'Maya Admin' },
+  members: [{ userId: 'person-5', name: 'Rob Quick', contact: 'rob@example.com', role: 'owner', active: true, verification: 'rejected' }],
+  learners: 3,
+  lessonsToCome: 2,
+};
+
+const exampleInstructorRows = [
+  { userId: 'person-3', name: 'Emma Clarke', email: 'emma.clarke@example.com', businessName: 'Quayside Driving School', verification: 'approved' as const, suspended: false },
+  { userId: 'person-4', name: 'Aisha Rahman', email: null, businessName: 'Quayside Driving School', verification: 'pending' as const, suspended: false },
+  { userId: 'person-5', name: 'Rob Quick', email: 'rob@example.com', businessName: 'Fast Pass Motoring', verification: 'rejected' as const, suspended: true },
+];
+
+const exampleLearnerRows = [
+  { userId: 'person-6', name: 'Jack Taylor', email: 'jack.taylor@example.com', businesses: 2, suspended: false },
+  { userId: 'person-7', name: 'Mia Walker', email: null, businesses: 0, suspended: true },
+];
+
+const examplePerson: AdminPerson = {
+  userId: 'person-2',
+  name: 'Lucy Grant',
+  email: 'lucy.grant@example.com',
+  phone: '07700 900123',
+  joinedOn: 'Mon 2 Mar 2026',
+  lastSignedIn: 'Tue 15 Sep, 14:30',
+  twoStep: true,
+  staffRole: null,
+  suspension: null,
+  memberships: [{ businessId: 'biz-1', businessName: 'Quayside Driving School', businessSuspended: false, role: 'manager', active: true }],
+  learnsWith: [],
+};
+
+const suspendedPerson: AdminPerson = {
+  ...examplePerson,
+  userId: 'person-7',
+  name: 'Mia Walker',
+  email: null,
+  lastSignedIn: null,
+  twoStep: false,
+  suspension: { since: 'Wed 16 Sep', reason: 'Chargebacks on three cards in a week.', byName: 'Maya Admin' },
+  memberships: [],
+  learnsWith: [
+    { businessId: 'biz-1', businessName: 'Quayside Driving School' },
+    { businessId: 'biz-3', businessName: 'Fast Pass Motoring' },
+  ],
+};
+
+const exampleAuditFilters = { kind: 'viewing' as const, person: 'lee', business: '', from: '2026-09-01', to: undefined, before: undefined };
+
+const exampleAuditEntries: AuditEntry[] = [
+  {
+    id: 'audit-1',
+    occurredAt: '2026-09-17T13:02:11.418959+00:00',
+    when: 'Thu 17 Sep 2026, 14:02',
+    what: 'Staff started viewing as them',
+    action: 'impersonation.started',
+    who: 'Sam Support (sam.support@example.com)',
+    role: 'support_admin',
+    about: 'Lee Evans (lee.evans@example.com)',
+    business: null,
+    before: null,
+    after: { viewing: 'c0000000-0000-0000-0000-000000000001', reason: 'Says a lesson in six weeks is missing' },
+  },
+  {
+    id: 'audit-2',
+    occurredAt: '2026-09-16T08:30:02.120394+00:00',
+    when: 'Wed 16 Sep 2026, 09:30',
+    what: 'Role or standing at a Business changed',
+    action: 'membership.role_changed',
+    who: 'David Okafor (david.okafor@example.com)',
+    role: 'owner',
+    about: 'Lee Evans (lee.evans@example.com)',
+    business: 'Quayside Driving School',
+    before: { role: 'instructor' },
+    after: { role: 'manager' },
+  },
+  {
+    id: 'audit-3',
+    occurredAt: '2026-09-15T23:00:00.000001+00:00',
+    when: 'Wed 16 Sep 2026, 00:00',
+    what: 'Unpaid hold on a lesson lapsed',
+    action: 'booking.hold_expired',
+    who: 'The platform',
+    role: 'system',
+    about: null,
+    business: 'Quayside Driving School',
+    before: null,
+    after: null,
+  },
+];
+
+const exampleRegions: AdminRegion[] = [
+  { area: 'LS', label: 'LS, Leeds', instructors: 27, freeHours: 212, waiting: 48, requests: 9, open: false, switchedOn: null, meetsRule: true, instructorsShort: 0, hoursShort: 0 },
+  { area: 'M', label: 'M, Manchester', instructors: 41, freeHours: 380, waiting: 0, requests: 3, open: true, switchedOn: 'Tue 15 Sep 2026', meetsRule: true, instructorsShort: 0, hoursShort: 0 },
+  { area: 'SK', label: 'SK, Stockport', instructors: 12, freeHours: 96, waiting: 17, requests: 2, open: false, switchedOn: null, meetsRule: false, instructorsShort: 13, hoursShort: 54 },
+];
+
+const exampleTeam: SchoolTeam = {
+  members: [
+    { membershipId: 'team-1', isYou: false, role: 'instructor', active: true, name: 'Emma Clarke', email: null, phone: null, instructorId: 'team-p1', photoPath: null, setOwnPrices: false, viewRevenue: false, lessonsToCome: 18 },
+    { membershipId: 'team-2', isYou: false, role: 'instructor', active: true, name: 'Tom Walsh', email: null, phone: null, instructorId: 'team-p2', photoPath: null, setOwnPrices: true, viewRevenue: false, lessonsToCome: 1 },
+    { membershipId: 'team-3', isYou: true, role: 'manager', active: true, name: 'Lucy Grant', email: null, phone: null, instructorId: null, photoPath: null, setOwnPrices: false, viewRevenue: false, lessonsToCome: 0 },
+    { membershipId: 'team-4', isYou: false, role: 'manager', active: true, name: 'Omar Hussain', email: null, phone: null, instructorId: null, photoPath: null, setOwnPrices: false, viewRevenue: true, lessonsToCome: 0 },
+    { membershipId: 'team-5', isYou: false, role: 'instructor', active: false, name: 'Ravi Patel', email: null, phone: null, instructorId: 'team-p5', photoPath: null, setOwnPrices: false, viewRevenue: false, lessonsToCome: 3 },
+  ],
+  invitations: [{ invitationId: 'team-i1', fullName: 'Nia Newcomer', email: null, phone: '+447700900555', expiresAt: '2026-09-30T10:00:00Z', expiresOn: 'Wed 30 Sep' }],
+};
+
+const exampleEverybody = [
+  { id: 'alloc-1', name: 'Emma Clarke' },
+  { id: 'alloc-2', name: 'Nia Newcomer' },
+  { id: 'alloc-3', name: 'Tom Walsh' },
+  { id: 'alloc-4', name: 'Zara Ahmed' },
+];
+
+const exampleSuggestions = [
+  {
+    instructorId: 'alloc-4',
+    name: 'Zara Ahmed',
+    area: 'covers' as const,
+    freeMinutes: 1500,
+    reasons: ['Covers M13, under 0.1 miles away', '25 free hours in the next 2 weeks', 'Teaches manual and automatic'],
+  },
+  {
+    instructorId: 'alloc-1',
+    name: 'Emma Clarke',
+    area: 'covers' as const,
+    freeMinutes: 420,
+    reasons: ['Covers M13, 1.9 miles away', '7 free hours in the next 2 weeks', 'Teaches automatic'],
+  },
+  {
+    instructorId: 'alloc-2',
+    name: 'Nia Newcomer',
+    area: 'unknown' as const,
+    freeMinutes: 0,
+    reasons: ['Badge not checked yet', 'No base postcode set yet', 'No working hours in the next 2 weeks', 'Teaches automatic'],
+  },
+];
+
+const examplePriceRows = [
+  { lessonTypeId: 'type-standard', lessonType: 'Standard lesson', durationMinutes: 60, businessPence: 4200, ownPence: null },
+  { lessonTypeId: 'type-standard', lessonType: 'Standard lesson', durationMinutes: 90, businessPence: 6000, ownPence: 6300 },
+  { lessonTypeId: 'type-standard', lessonType: 'Standard lesson', durationMinutes: 120, businessPence: null, ownPence: null },
+];
+
+const examplePackages = [
+  { packageId: 'package-10', name: '10 hours', minutes: 600, pricePence: 38000, expiryDays: 365, onSale: true },
+  { packageId: 'package-5', name: '5 hours', minutes: 300, pricePence: 19500, expiryDays: null, onSale: false },
+];
+
+const savedNothing = () => Promise.resolve({ ok: true as const, data: null });
+const savedPackage = () => Promise.resolve({ ok: true as const, data: { packageId: 'package-10' } });
 
 const pillStatuses: PillStatus[] = ['confirmed', 'pending', 'completed', 'paid', 'cancelled', 'attention', 'unpaid', 'overdue', 'credit', 'gap-fill', 'test-day'];
 
@@ -148,8 +416,14 @@ export function DesignShowcase() {
   const [sheetOpen, setSheetOpen] = useState(false);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [picked, setPicked] = useState<string | undefined>(undefined);
+  const [switchingOff, setSwitchingOff] = useState<SchoolTeam['members'][number] | null>(null);
   const [document, setDocument] = useState<string | undefined>(undefined);
   const [pickup, setPickup] = useState<string | undefined>(undefined);
+  const [suspendingBusiness, setSuspendingBusiness] = useState<AdminBusiness | null>(null);
+  const [suspendingPerson, setSuspendingPerson] = useState<AdminPerson | null>(null);
+  const [resettingPerson, setResettingPerson] = useState<AdminPerson | null>(null);
+  const [viewingPerson, setViewingPerson] = useState<AdminPerson | null>(null);
+  const [switchingRegion, setSwitchingRegion] = useState<{ region: AdminRegion; open: boolean } | null>(null);
 
   return (
     <main className="mx-auto max-w-5xl px-4 pb-24 md:px-8">
@@ -377,6 +651,14 @@ export function DesignShowcase() {
             error="That picture is too large. Choose one under 15MB."
             onChoose={() => undefined}
           />
+          <AvatarPicker
+            name="Quayside Driving School"
+            label="Logo"
+            noun="logo"
+            hint="Shown on your school's page. You can add it later."
+            accept="image/jpeg"
+            onChoose={() => undefined}
+          />
         </div>
         <div className="grid gap-8 md:grid-cols-2">
           <PhotoUpload
@@ -533,8 +815,8 @@ export function DesignShowcase() {
 
       <Section title="Checklist">
         <div className="grid gap-4 md:grid-cols-2">
-          <SetupChecklist state={{ learners: 0, paymentsConnected: false, verified: false, listed: true }} />
-          <SetupChecklist state={{ learners: 3, paymentsConnected: false, verified: true, listed: true }} />
+          <SetupChecklist state={{ learners: 0, paymentsConnected: false, verified: false, badgeInDate: true }} />
+          <SetupChecklist state={{ learners: 3, paymentsConnected: false, verified: true, badgeInDate: true }} />
         </div>
         <Label>Install offer: the browser&apos;s own prompt, and the steps on an iPhone or iPad (M4-08)</Label>
         <div className="grid items-start gap-4 md:grid-cols-2">
@@ -561,6 +843,448 @@ export function DesignShowcase() {
             onAdd={() => toast('The add form arrives with learner management')}
           />
           <PickupPointPicker label="Nothing added yet" options={[]} onChange={() => undefined} />
+        </div>
+      </Section>
+
+      <Section title="Public profile">
+        <Label>Header: an independent instructor with prices, and a trainee at a school with no car or prices yet (PUB-01, M5-02)</Label>
+        <div className="grid items-start gap-6 md:grid-cols-2">
+          <ProfileHeader
+            name="Sarah Khan"
+            qualification="adi"
+            school={null}
+            transmission="manual"
+            car="Volkswagen Polo"
+            dualControls
+            lessons={[{ durationMinutes: 60, pricePence: 4200 }, { durationMinutes: 120, pricePence: 8200 }]}
+          />
+          <ProfileHeader
+            name="Aisha Rahman"
+            qualification="pdi"
+            school={{ name: 'Quayside Driving School', href: '#school' }}
+            transmission="both"
+            car={null}
+            dualControls={false}
+            lessons={[]}
+          />
+        </div>
+        <Label>Booking: open, and a badge out of date (INS-03)</Label>
+        <div className="grid max-w-xl gap-4 md:grid-cols-2">
+          <BookAction bookingUrl="#book" canBook />
+          <BookAction bookingUrl="#book" canBook={false} />
+        </div>
+        <Label>Next free times: three to choose from, and none in the next two weeks</Label>
+        {/* Formatting a time reads the clock, which a page built ahead of time must leave to the visit. */}
+        <Suspense fallback={<SkeletonRow />}>
+          <div className="grid items-start gap-6 md:grid-cols-2">
+            <NextTimes idPrefix="free-" bookingUrl="#book" times={['2026-09-17T12:30:00.000Z', '2026-09-17T13:00:00.000Z', '2026-09-18T08:00:00.000Z']} />
+            <NextTimes idPrefix="full-" bookingUrl="#book" times={[]} />
+            <NextTimesSkeleton idPrefix="loading-" />
+          </div>
+        </Suspense>
+        <Label>About, with everything said and with only languages; where lessons start, with districts added</Label>
+        <div className="grid items-start gap-6 md:grid-cols-2">
+          <AboutInstructor
+            idPrefix="full-"
+            bio="Calm, patient instructor with 9 years of experience. Nervous drivers are very welcome."
+            yearsTeaching={9}
+            languages={['English', 'Urdu']}
+            specialisms={['nervous_drivers', 'motorway']}
+          />
+          <AboutInstructor idPrefix="short-" bio={null} yearsTeaching={0} languages={['English']} specialisms={[]} />
+        </div>
+        <div className="max-w-xl">
+          <WhereLessonsStart radiusMiles={8} outcode="LS6" alsoCovers={['LS17', 'LS18']} areaCentre={null} />
+        </div>
+        <Label>Prices, with packages, and nothing published yet</Label>
+        <div className="grid items-start gap-6 md:grid-cols-2">
+          <PriceList
+            idPrefix="priced-"
+            lessons={[
+              { name: 'Standard lesson', durationMinutes: 60, pricePence: 4200 },
+              { name: 'Standard lesson', durationMinutes: 120, pricePence: 8200 },
+            ]}
+            packages={[
+              { name: '10 hours', minutes: 600, pricePence: 40000, expiryDays: 365 },
+              { name: 'Test ready', minutes: 1200, pricePence: 78000, expiryDays: null },
+            ]}
+          />
+          <PriceList idPrefix="unpriced-" lessons={[]} packages={[]} />
+        </div>
+        <Label>School profile: its header, and its instructors, one of them not taking new bookings (PUB-01, M5-03)</Label>
+        <div className="grid items-start gap-6 md:grid-cols-2">
+          <div className="flex flex-col gap-6">
+            <SchoolHeader name="Quayside Driving School" cityName="Manchester" instructorCount={2} />
+            <SchoolHeader name="Northern Lights Driving" cityName={null} instructorCount={1} />
+          </div>
+          <SchoolInstructors
+            idPrefix="school-"
+            instructors={[
+              { href: '#emma', name: 'Emma Clarke', qualification: 'adi', transmission: 'automatic', car: 'Toyota Yaris Hybrid', takingBookings: true, hourlyFromPence: 4400 },
+              { href: '#tom', name: 'Tom Walsh', qualification: 'adi', transmission: 'manual', car: 'Ford Fiesta', takingBookings: false, hourlyFromPence: 4200 },
+            ]}
+          />
+        </div>
+        <div className="max-w-xl">
+          <SchoolInstructors idPrefix="empty-school-" instructors={[]} />
+        </div>
+        <Label>Booking link: ready to share with its QR code, waiting for approval, and paused while a badge is out of date (PUB-03, M5-05)</Label>
+        <div className="grid items-start gap-6 md:grid-cols-2">
+          <BookingLinkCard
+            instructorName="Sarah Khan"
+            bookingUrl="https://app.example.com/book/sarah-khan"
+            profileUrl="https://example.com/instructors/leeds/sarah-khan"
+          />
+          <div className="flex flex-col gap-6">
+            <BookingLinkCard instructorName="Aisha Rahman" bookingUrl={null} profileUrl={null} />
+            <BookingLinkCard instructorName="Emma Clarke" bookingUrl={null} profileUrl={null} unavailable="badge-expired" />
+          </div>
+        </div>
+        <Label>
+          Place pages: the breadcrumb of an area, with the page itself named but not linked; its city with how many are listed in each area; and the
+          way back to the city. With no places to link, nothing is shown (PRD 8.3, M5-07)
+        </Label>
+        <div className="grid items-start gap-6 md:grid-cols-2">
+          <Breadcrumbs
+            crumbs={[
+              { name: brand.name, href: '#home' },
+              { name: 'Driving lessons in London', href: '#london' },
+              { name: 'Croydon', href: '#croydon' },
+            ]}
+          />
+          <div className="flex flex-col gap-6">
+            <PlaceLinks
+              idPrefix="areas-example-"
+              title="Areas of London"
+              links={[
+                { href: '#camden', name: 'Camden', count: 4 },
+                { href: '#croydon', name: 'Croydon', count: 1 },
+                { href: '#hackney', name: 'Hackney', count: 3 },
+              ]}
+            />
+            <PlaceLinks idPrefix="city-example-" title="More in London" links={[{ href: '#london', name: 'All driving lessons in London' }]} />
+          </div>
+        </div>
+        <Label>
+          Share images, drawn for link previews: an instructor taking bookings, a trainee with a photo whose badge is out of date, a school,
+          and an area (PRD 14.6, M5-08)
+        </Label>
+        <div className="grid gap-4 md:grid-cols-2">
+          {[
+            { sample: 'instructor', alt: 'Share image for an instructor taking bookings' },
+            { sample: 'instructor-paused', alt: 'Share image for a trainee with a photo, not taking new bookings' },
+            { sample: 'school', alt: 'Share image for a driving school' },
+            { sample: 'place', alt: 'Share image for an area page' },
+          ].map(({ sample, alt }) => (
+            <Image
+              key={sample}
+              src={`/dev/share-images/${sample}.png`}
+              alt={alt}
+              width={1200}
+              height={630}
+              unoptimized
+              className="h-auto w-full rounded-card border border-grey-200"
+            />
+          ))}
+        </div>
+      </Section>
+
+      <Section title="Site">
+        <Label>Header and footer of every public page, with the launch cities from the database (PRD 8.3, M5-09). On a phone the pages sit behind Menu.</Label>
+        <div className="flex flex-col overflow-hidden rounded-card border border-grey-200">
+          <SiteHeader appUrl="https://app.example.com" />
+          <SiteFooter
+            appUrl="https://app.example.com"
+            cities={[
+              { slug: 'leeds', name: 'Leeds' },
+              { slug: 'london', name: 'London' },
+              { slug: 'manchester', name: 'Manchester' },
+            ]}
+          />
+        </div>
+        <Label>Page opening, with two glimpses of the app overlapping</Label>
+        <div className="rounded-card border border-grey-200">
+          <PageHero
+            eyebrow="For driving instructors"
+            title="Run your driving lessons from your phone"
+            description="Your diary, learners, payments and lesson records in one simple app."
+            actions={
+              <>
+                <PrimaryLink href="#start">Create your free account</PrimaryLink>
+                <SecondaryLink href="#pricing">See pricing</SecondaryLink>
+              </>
+            }
+            visual={<GlimpsePair back={<TodayGlimpse />} front={<MoneyGlimpse />} />}
+          />
+        </div>
+        <Label>Glimpses of the app: a booking, progress and a school overview, each on its own</Label>
+        <div className="grid items-start gap-6 md:grid-cols-3">
+          <GlimpseAlone>
+            <BookingGlimpse />
+          </GlimpseAlone>
+          <GlimpseAlone>
+            <ProgressGlimpse />
+          </GlimpseAlone>
+          <GlimpseAlone>
+            <SchoolGlimpse />
+          </GlimpseAlone>
+        </div>
+        <Label>A band with features, on grey, and steps in their order</Label>
+        <div className="flex flex-col overflow-hidden rounded-card border border-grey-200">
+          <Band id="design-features" title="Built for how driving lessons really work" tone="grey">
+            <FeatureGrid
+              tone="grey"
+              features={[
+                { icon: CreditCard, title: 'Paid, not chased', description: 'Cards, packages of hours, and cash recorded in two taps.' },
+                { icon: BadgeCheck, title: 'Instructors checked by us', description: 'The blue tick means we have checked the badge.' },
+                { icon: WifiOff, title: 'Works without signal', description: 'Today and lesson records work offline.' },
+              ]}
+            />
+          </Band>
+          <Band id="design-steps" title="Set up in five short steps">
+            <Steps
+              steps={[
+                { title: 'Your name and photo', description: 'How learners will see you.' },
+                { title: 'Your badge', description: 'Your ADI or PDI number.' },
+                { title: 'Where you teach', description: 'Your base postcode.' },
+                { title: 'Your prices', description: 'An hourly price.' },
+                { title: 'Your hours', description: 'The times you teach.' },
+              ]}
+            />
+          </Band>
+        </div>
+        <Label>The founding offer, the one yellow block on the site, and the closing call on black</Label>
+        <div className="flex flex-col gap-6 overflow-hidden rounded-card border border-grey-200 pt-6">
+          <FoundingOffer action={<PrimaryLink href="#start">Claim the offer</PrimaryLink>} />
+          <ClosingCall
+            title="Start in minutes"
+            description="Create an account, and you are ready to book, teach or run your school."
+            action={
+              <PrimaryLink href="#start" onDark>
+                Get started
+              </PrimaryLink>
+            }
+          />
+        </div>
+        <Label>
+          Coming soon (MKT-10, M5-10): an area not open yet, with the city page near it; and what a learner sees once they have joined the
+          waiting list or posted a lesson request
+        </Label>
+        <div className="grid items-start gap-6 md:grid-cols-2">
+          <Card>
+            <AreaPanel
+              takeFocus={false}
+              area={{ postcode: 'LS6 3QS', postcodeArea: 'LS', open: false, city: { slug: 'leeds', name: 'Leeds', instructorCount: 4 } }}
+              onWaitingList={() => undefined}
+              onLessonRequest={() => undefined}
+              onChangePostcode={() => undefined}
+            />
+          </Card>
+          <div className="flex flex-col gap-6">
+            <Card>
+              <CaptureDone takeFocus={false} kind="waiting_list" area={{ postcode: 'M13 9PL', postcodeArea: 'M', open: false, city: null }} onOther={() => undefined} />
+            </Card>
+            <Card>
+              <CaptureDone takeFocus={false} kind="lesson_request" area={{ postcode: 'M13 9PL', postcodeArea: 'M', open: false, city: null }} onOther={() => undefined} />
+            </Card>
+          </div>
+        </div>
+        <Label>Plans with prices from the configuration: what each has, and what is coming later; the one to choose is outlined</Label>
+        <div className="grid gap-4 lg:grid-cols-3">
+          {planSummaries().map((plan) => (
+            <PlanCard key={plan.key} plan={plan} signUpUrl="#sign-up" highlighted={plan.key === 'pro'} />
+          ))}
+        </div>
+      </Section>
+
+      <Section title="School">
+        <Label>Overview, as the owner sees it</Label>
+        <OverviewFigures overview={exampleOverview} today="Wed 28 Oct" />
+        <InstructorWeeks instructors={exampleOverview.utilisation.instructors} week={exampleWeek} idPrefix="design-weeks" />
+        <Label>As a manager not allowed to see revenue, in a school with no instructors yet</Label>
+        <OverviewFigures
+          overview={{
+            ...exampleOverview,
+            revenueMonth: null,
+            lessons: { today: 0, thisWeek: 0 },
+            unpaid: { totalPence: 0, count: 0 },
+            utilisation: { openMinutes: 0, bookedMinutes: 0, instructors: [] },
+            newLearnersMonth: 0,
+          }}
+          today="Wed 28 Oct"
+        />
+        <InstructorWeeks instructors={[]} week={exampleWeek} idPrefix="design-weeks-empty" />
+        <Label>Loading</Label>
+        <OverviewSkeleton />
+        <Label>Team, as the owner sees it, with an invitation waiting and somebody switched off</Label>
+        <TeamSections
+          members={exampleTeam.members}
+          invitations={exampleTeam.invitations}
+          handlers={{
+            viewerIsOwner: true,
+            busyId: 'team-2',
+            onPermission: () => undefined,
+            onSwitch: (member, active) => { if (!active) setSwitchingOff(member); },
+            onCancelInvitation: () => undefined,
+          }}
+        />
+        <div>
+          <Button variant="secondary" onClick={() => { setSwitchingOff(exampleTeam.members[0] ?? null); }}>
+            Switch off Emma Clarke
+          </Button>
+        </div>
+        <Label>Who teaches a learner: suggested with reasons, then everybody else</Label>
+        <div className="grid gap-8 md:grid-cols-3">
+          <AllocationChoices
+            state={{ kind: 'ready', suggestions: exampleSuggestions, everybody: exampleEverybody }}
+            current="Emma Clarke"
+            disabled={false}
+            onChoose={() => undefined}
+            idPrefix="design-allocation"
+          />
+          <AllocationChoices state={{ kind: 'loading' }} current={null} disabled={false} onChoose={() => undefined} idPrefix="design-allocation-loading" />
+          <AllocationChoices
+            state={{ kind: 'failed', everybody: exampleEverybody }}
+            current={null}
+            disabled={false}
+            onChoose={() => undefined}
+            idPrefix="design-allocation-failed"
+          />
+        </div>
+        <Label>Prices a school sets, and an instructor's own over them</Label>
+        <div className="grid gap-8 md:grid-cols-2">
+          <PricesForm rows={examplePriceRows} mode="business" save={savedNothing} />
+          <PricesForm rows={examplePriceRows} mode="own" save={savedNothing} />
+        </div>
+        <Label>Packages, one of them off sale</Label>
+        <PackagesEditor packages={examplePackages} save={savedPackage} />
+        <SwitchOffDialog
+          member={switchingOff}
+          pending={false}
+          onConfirm={() => { setSwitchingOff(null); }}
+          onCancel={() => { setSwitchingOff(null); }}
+        />
+      </Section>
+
+      <Section title="Admin">
+        <Label>Dashboard, with badges and a dispute waiting</Label>
+        <WaitingOnStaff dashboard={exampleDashboard} idPrefix="design-waiting" />
+        <DashboardFigures dashboard={exampleDashboard} idPrefix="design-platform-month" />
+        <Label>A platform just starting, with nothing waiting</Label>
+        <WaitingOnStaff dashboard={quietDashboard} idPrefix="design-waiting-quiet" />
+        <DashboardFigures dashboard={quietDashboard} idPrefix="design-platform-month-quiet" />
+        <Label>Loading</Label>
+        <DashboardSkeleton />
+        <Label>Businesses found, one of them suspended</Label>
+        <BusinessResults rows={exampleBusinessRows} query="motoring" onOpen={() => undefined} />
+        <Label>Nothing found</Label>
+        <BusinessResults rows={[]} query="nobody" onOpen={() => undefined} />
+        <Label>A Business opened, as a super admin sees it, and a suspended one as support staff see it</Label>
+        <div className="grid grid-cols-1 gap-8 md:grid-cols-2">
+          <BusinessDetails business={exampleBusiness} canSuspend />
+          <BusinessDetails business={suspendedBusiness} canSuspend={false} />
+        </div>
+        <div>
+          <Button variant="destructive" onClick={() => { setSuspendingBusiness(suspendedBusiness); }}>
+            Suspend Fast Pass Motoring
+          </Button>
+        </div>
+        <SuspendBusinessDialog
+          business={suspendingBusiness}
+          pending={false}
+          error={undefined}
+          onConfirm={() => { setSuspendingBusiness(null); }}
+          onCancel={() => { setSuspendingBusiness(null); }}
+        />
+        <Label>Instructors and learners found, some suspended</Label>
+        <div className="grid grid-cols-1 gap-8 md:grid-cols-2">
+          <InstructorResults rows={exampleInstructorRows} query="clarke" onOpen={() => undefined} />
+          <LearnerResults rows={exampleLearnerRows} query="walker" onOpen={() => undefined} />
+        </div>
+        <Label>A person opened by a super admin, and a suspended learner as support staff see them</Label>
+        <div className="grid grid-cols-1 gap-8 md:grid-cols-2">
+          <PersonDetails person={examplePerson} viewer={{ canManage: true, userId: 'person-1' }} />
+          <PersonDetails person={suspendedPerson} viewer={{ canManage: false, userId: 'person-1' }} />
+        </div>
+        <div className="flex flex-wrap gap-2">
+          <Button variant="destructive" onClick={() => { setSuspendingPerson(suspendedPerson); }}>
+            Suspend Mia Walker
+          </Button>
+          <Button variant="secondary" onClick={() => { setResettingPerson(examplePerson); }}>
+            Reset two-step
+          </Button>
+          <Button variant="secondary" onClick={() => { setViewingPerson(examplePerson); }}>
+            View as Lucy
+          </Button>
+        </div>
+        <Label>While staff view as somebody, on every screen of their portal</Label>
+        <ViewAsBanner name="Lucy Grant" endsAt="14:30" />
+        <ViewAsDialog
+          person={viewingPerson}
+          pending={false}
+          error={undefined}
+          onConfirm={() => { setViewingPerson(null); }}
+          onCancel={() => { setViewingPerson(null); }}
+        />
+        <SuspendAccountDialog
+          person={suspendingPerson}
+          pending={false}
+          error={undefined}
+          onConfirm={() => { setSuspendingPerson(null); }}
+          onCancel={() => { setSuspendingPerson(null); }}
+        />
+        <ResetTwoStepDialog
+          person={resettingPerson}
+          pending={false}
+          onConfirm={() => { setResettingPerson(null); }}
+          onCancel={() => { setResettingPerson(null); }}
+        />
+        <Label>Regions: one ready to open, one open, one short of the rule, as a super admin sees them</Label>
+        <SwitchOnRuleCard rule={{ instructors: 25, hours: 150 }} />
+        <RegionsTable
+          regions={exampleRegions}
+          rule={{ instructors: 25, hours: 150 }}
+          canSwitch
+          onOpen={(region) => { setSwitchingRegion({ region, open: true }); }}
+          onClose={(region) => { setSwitchingRegion({ region, open: false }); }}
+        />
+        <Label>No areas yet</Label>
+        <RegionsTable regions={[]} rule={{ instructors: 25, hours: 150 }} canSwitch={false} onOpen={() => undefined} onClose={() => undefined} />
+        <SwitchRegionDialog
+          change={switchingRegion}
+          pending={false}
+          onConfirm={() => { setSwitchingRegion(null); }}
+          onCancel={() => { setSwitchingRegion(null); }}
+        />
+        <Label>Audit log: its filters, entries with what changed, pages either side, nothing found, and loading</Label>
+        <AuditFiltersForm filters={exampleAuditFilters} />
+        <AuditEntries entries={exampleAuditEntries} />
+        <AuditPager
+          filters={{ ...exampleAuditFilters, before: { at: '2026-09-18T09:00:00.000000+00:00', id: '0b7e8c1d-2f3a-4b5c-8d6e-7f8091a2b3c4' } }}
+          older={{ at: exampleAuditEntries[2]?.occurredAt ?? '', id: 'audit-3' }}
+        />
+        <AuditEntries entries={[]} />
+        <AuditLogSkeleton />
+        <Label>Platform settings, as a super admin changes them and as support staff see them</Label>
+        <div className="grid grid-cols-1 gap-8 md:grid-cols-2">
+          <SettingCard title="Switch-on rule" description="What a postcode area needs before the learner marketplace can open there." changedOn="Tue 15 Sep 2026">
+            <SwitchOnRuleForm rule={{ instructors: 25, hours: 150 }} save={savedNothing} readOnly={false} />
+          </SettingCard>
+          <SettingCard title="Switch-on rule" description="What a postcode area needs before the learner marketplace can open there." changedOn={null}>
+            <SwitchOnRuleForm rule={{ instructors: 25, hours: 150 }} save={savedNothing} readOnly />
+          </SettingCard>
+          <SettingCard title="Plan limits" description="Text message reminders a Business on each paid plan may send in a month." changedOn="Tue 15 Sep 2026">
+            <PlanLimitsForm limits={{ proSms: 200, schoolSms: 200 }} save={savedNothing} readOnly={false} />
+          </SettingCard>
+          <SettingCard title="Marketplace fee" description="Charged from Phase 3. Nothing is charged now." changedOn="Tue 15 Sep 2026">
+            <MarketplaceFeeForm fee={{ percent: 5, capPence: 200 }} save={savedNothing} readOnly={false} />
+          </SettingCard>
+          <SettingCard title="Features" description="Switched on or off for everybody, at once." changedOn="Tue 15 Sep 2026">
+            <FeatureFlagsForm flags={{ googleSignIn: true, appleSignIn: false, marketplace: false }} save={savedNothing} readOnly={false} />
+          </SettingCard>
+          <SettingCard title="Features" description="Switched on or off for everybody, at once." changedOn="Tue 15 Sep 2026">
+            <FeatureFlagsForm flags={{ googleSignIn: true, appleSignIn: false, marketplace: false }} save={savedNothing} readOnly />
+          </SettingCard>
         </div>
       </Section>
 

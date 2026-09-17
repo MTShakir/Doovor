@@ -4,11 +4,13 @@ const rpc = vi.fn();
 const getSession = vi.fn();
 const revalidatePath = vi.fn();
 const lessonRecordPage = vi.fn();
+const mayReadLearner = vi.fn();
 
 vi.mock('@/lib/supabase/server', () => ({ createSupabaseServerClient: () => Promise.resolve({ rpc }) }));
 vi.mock('@/lib/auth/session', () => ({ getSession: () => getSession() as unknown }));
 vi.mock('next/cache', () => ({ revalidatePath: (...args: unknown[]) => { revalidatePath(...args); } }));
 vi.mock('@/lib/lessons/records', () => ({ lessonRecordPage: (...args: unknown[]) => lessonRecordPage(...args) as unknown }));
+vi.mock('@/lib/learners/card', () => ({ mayReadLearner: (...args: unknown[]) => mayReadLearner(...args) as unknown }));
 
 const { GET, POST } = await import('./route');
 
@@ -163,6 +165,29 @@ describe('reading a learner\'s lesson records a page at a time (PRG-03, M4-06)',
     expect((await read(`learner=${learner}&before=yesterday`)).status).toBe(422);
     expect((await read('')).status).toBe(422);
     expect(lessonRecordPage).not.toHaveBeenCalled();
+  });
+
+  it('asks nobody whether the learner may be seen when their records came back', async () => {
+    await read(`learner=${learner}`);
+    expect(mayReadLearner).not.toHaveBeenCalled();
+  });
+
+  it('sends an empty page for a learner of theirs with no records yet', async () => {
+    lessonRecordPage.mockResolvedValue({ records: [], next: null });
+    mayReadLearner.mockResolvedValue(true);
+    const answer = await read(`learner=${learner}`);
+    expect(answer.status).toBe(200);
+    expect(await answer.json()).toEqual({ ok: true, data: { records: [], next: null } });
+    expect(mayReadLearner).toHaveBeenCalledWith(learner, 'instructor-1');
+  });
+
+  it('answers not found for a learner the reader may not see, as for an id that belongs to nobody (acceptance-07)', async () => {
+    lessonRecordPage.mockResolvedValue({ records: [], next: null });
+    mayReadLearner.mockResolvedValue(false);
+    const answer = await read(`learner=${learner}`);
+    expect(answer.status).toBe(404);
+    expect(await answer.json()).toEqual({ ok: false, code: 'NOT_FOUND', message: 'We could not find that.' });
+    expect(answer.headers.get('cache-control')).toBe('no-store');
   });
 
   it('sends nothing to somebody who is not signed in', async () => {

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { foundingPlanFor, getEntitlements, hasEntitlement, monthlyPricePence, plans } from './plans.ts';
+import { foundingPlanFor, getEntitlements, hasEntitlement, monthlyPricePence, plans, standardCardFee } from './plans.ts';
 
 describe('plans', () => {
   it('stores every price as integer pence', () => {
@@ -15,6 +15,10 @@ describe('plans', () => {
     expect(plans.pro.yearlyPricePence).toBe(12000);
     expect(plans.school.monthlyPricePence).toBe(900);
     expect(plans.school.minimumInstructors).toBe(2);
+  });
+
+  it('quotes the standard UK card fee as PRD 9.18 does: 1.5% plus 20p, in whole numbers', () => {
+    expect(standardCardFee).toEqual({ basisPoints: 150, fixedPence: 20 });
   });
 
   it('gives Pro 200 SMS reminders a month and Free none', () => {

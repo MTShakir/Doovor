@@ -6,6 +6,7 @@ import { z } from 'zod';
 import { requirePortal } from '@/lib/auth/session';
 import { keptCardsWith } from '@/lib/payments/cards';
 import { paymentsProvider } from '@/lib/payments/provider';
+import { refuseWhileViewing } from '@/lib/auth/view-as';
 
 const forgetSchema = z.object({
   businessId: z.uuid(),
@@ -20,6 +21,8 @@ const forgetSchema = z.object({
  * So a learner can only ever remove their own card, whatever the browser sends.
  */
 export async function forgetCard(input: unknown): Promise<Result<null>> {
+  const refused = await refuseWhileViewing();
+  if (refused) return refused;
   const parsed = forgetSchema.safeParse(input);
   if (!parsed.success) return err('VALIDATION_FAILED');
 

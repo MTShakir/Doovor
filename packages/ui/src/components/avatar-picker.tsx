@@ -11,6 +11,8 @@ export interface AvatarPickerProps {
   /** The picture to show: a preview of the chosen file, or the one already saved. */
   src?: string | null;
   label: string;
+  /** What the picture is, for the buttons: "Add a logo", "Change logo". A photo unless said. */
+  noun?: string;
   hint?: string;
   error?: string;
   /** Set while the picture is being prepared or uploaded. */
@@ -29,6 +31,7 @@ export function AvatarPicker({
   name,
   src,
   label,
+  noun = 'photo',
   hint,
   error,
   busy = false,
@@ -86,7 +89,7 @@ export function AvatarPicker({
             pending={busy}
             onClick={() => input.current?.click()}
           >
-            {src ? 'Change photo' : 'Add a photo'}
+            {src ? `Change ${noun}` : `Add a ${noun}`}
           </Button>
           {src && onRemove ? (
             <Button type="button" variant="tertiary" className="px-0" onClick={onRemove}>

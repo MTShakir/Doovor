@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { flagDefaults, isFlagEnabled } from './flags.ts';
+import { flagDefaults, flagsFromSettings, isFlagEnabled } from './flags.ts';
 
 describe('flags', () => {
   it('keeps Sign in with Apple hidden by default', () => {
@@ -13,5 +13,14 @@ describe('flags', () => {
   it('lets an override win over the default', () => {
     expect(isFlagEnabled('appleSignIn', { appleSignIn: true })).toBe(true);
     expect(isFlagEnabled('googleSignIn', { googleSignIn: false })).toBe(false);
+  });
+
+  it('reads the overrides a super admin saved, leaving anything else to its default (ADM-05)', () => {
+    expect(flagsFromSettings({ google_sign_in: false, apple_sign_in: true, marketplace: 'yes', surprise: true })).toEqual({
+      googleSignIn: false,
+      appleSignIn: true,
+    });
+    expect(flagsFromSettings(null)).toEqual({});
+    expect(flagsFromSettings([true])).toEqual({});
   });
 });

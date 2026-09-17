@@ -7,6 +7,7 @@ import { revalidatePath } from 'next/cache';
 import { z } from 'zod';
 import { requirePortal } from '@/lib/auth/session';
 import { fieldErrors } from '@/lib/forms';
+import { expireInstructorProfile } from '@/lib/public/instructor-profile';
 import { getGeoProvider } from '@/lib/geo/provider';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
 
@@ -70,6 +71,7 @@ export async function saveCoverage(input: unknown): Promise<Result<null>> {
   if (error) return err('UNKNOWN', 'We could not save your area. Try again.');
 
   revalidatePath('/app/instructor/profile');
+  expireInstructorProfile(who.profileId);
   return ok(null);
 }
 
@@ -103,6 +105,7 @@ export async function addDistrict(input: unknown): Promise<Result<null>> {
   }
 
   revalidatePath('/app/instructor/profile');
+  expireInstructorProfile(who.profileId);
   return ok(null);
 }
 
@@ -123,5 +126,6 @@ export async function removeDistrict(outcode: unknown): Promise<Result<null>> {
   if (error) return err('UNKNOWN', 'We could not remove that district. Try again.');
 
   revalidatePath('/app/instructor/profile');
+  expireInstructorProfile(who.profileId);
   return ok(null);
 }

@@ -21,10 +21,12 @@ export interface PackageOffer {
   expiryDays: number | null;
   /** Still sold. A package taken off sale can still be looked at, not bought. */
   onSale: boolean;
+  /** The Business is suspended, and sells nothing meanwhile (ADM-02). */
+  suspended: boolean;
 }
 
 const offerColumns =
-  'id, business_id, name, minutes, price_pence, expiry_days, is_active, businesses!packages_business_id_fkey(name, stripe_account_id, stripe_charges_enabled)';
+  'id, business_id, name, minutes, price_pence, expiry_days, is_active, businesses!packages_business_id_fkey(name, status, stripe_account_id, stripe_charges_enabled)';
 
 interface OfferRow {
   id: string;
@@ -34,7 +36,7 @@ interface OfferRow {
   price_pence: number;
   expiry_days: number | null;
   is_active: boolean;
-  businesses: { name: string; stripe_account_id: string | null; stripe_charges_enabled: boolean };
+  businesses: { name: string; status: string; stripe_account_id: string | null; stripe_charges_enabled: boolean };
 }
 
 function offerFrom(row: OfferRow): PackageOffer {
@@ -48,6 +50,7 @@ function offerFrom(row: OfferRow): PackageOffer {
     pricePence: row.price_pence,
     expiryDays: row.expiry_days,
     onSale: row.is_active,
+    suspended: row.businesses.status === 'suspended',
   };
 }
 
@@ -96,17 +99,17 @@ export async function learnerBusinesses(learnerId: string): Promise<LearnerBusin
   const [relationships, packages] = await Promise.all([
     supabase
       .from('learner_relationships')
-      .select('business_id, businesses!learner_relationships_business_id_fkey(name, stripe_account_id, stripe_charges_enabled)')
+      .select('business_id, businesses!learner_relationships_business_id_fkey(name, status, stripe_account_id, stripe_charges_enabled)')
       .eq('learner_id', learnerId),
     supabase.from('packages').select(offerColumns).eq('is_active', true).order('minutes', { ascending: true }),
   ]);
 
-  const offers = (packages.data ?? []).map(offerFrom).filter((offer) => offer.accountId !== null);
+  const offers = (packages.data ?? []).map(offerFrom).filter((offer) => offer.accountId !== null && !offer.suspended);
   return (relationships.data ?? [])
     .map((row) => ({
       businessId: row.business_id,
       businessName: row.businesses.name,
-      takesCards: row.businesses.stripe_charges_enabled && row.businesses.stripe_account_id !== null,
+      takesCards: row.businesses.status !== 'suspended' && row.businesses.stripe_charges_enabled && row.businesses.stripe_account_id !== null,
       packages: offers.filter((offer) => offer.businessId === row.business_id),
     }))
     .sort((a, b) => a.businessName.localeCompare(b.businessName));

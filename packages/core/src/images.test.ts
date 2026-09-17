@@ -5,6 +5,8 @@ import {
   centreCrop,
   fitWithin,
   isAcceptedImageType,
+  businessObjectPath,
+  isBusinessObjectPath,
   isProfileObjectPath,
   profileObjectPath,
 } from './images.ts';
@@ -71,5 +73,16 @@ describe('avatar images (INS-01, M1-03)', () => {
     expect(isProfileObjectPath(`${profile}/../${other}/${token}.webp`, profile)).toBe(false);
     expect(isProfileObjectPath(`${profile}/${token}.svg`, profile)).toBe(false);
     expect(isProfileObjectPath(`${profile}/${token}.webp/x.webp`, profile)).toBe(false);
+  });
+
+  it('keeps a school logo in a folder of the school (AUTH-05)', () => {
+    const school = '11111111-2222-4333-8444-555555555555';
+    const path = businessObjectPath(school, token);
+    expect(path).toBe(`businesses/${school}/${token}.webp`);
+    expect(isBusinessObjectPath(path, school)).toBe(true);
+    expect(isBusinessObjectPath(businessObjectPath(profile, token), school)).toBe(false);
+    expect(isBusinessObjectPath(`businesses/${school}/../${profile}/${token}.webp`, school)).toBe(false);
+    expect(isBusinessObjectPath(profileObjectPath(school, token), school)).toBe(false);
+    expect(isBusinessObjectPath(`businesses/${school}/${token}.png`, school)).toBe(false);
   });
 });

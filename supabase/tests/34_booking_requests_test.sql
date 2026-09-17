@@ -76,8 +76,10 @@ select throws_ok(
   '42501', null, 'and neither can the learner who made it'
 );
 
--- What nobody answered in time.
+-- What nobody answered in time. Requests an end to end run left behind may be overdue already, so
+-- the sweep runs once first, and the count that follows is this request's alone.
 select tests.clear_authentication();
+select public.system_expire_requests();
 update public.bookings set expires_at = now() - interval '1 minute' where id = :'third';
 
 select is(

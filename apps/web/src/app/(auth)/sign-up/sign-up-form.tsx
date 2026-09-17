@@ -1,6 +1,7 @@
 'use client';
 
 import { zodResolver } from '@hookform/resolvers/zod';
+import type { FlagOverrides } from '@repo/config/flags';
 import { signUpSchema, type IntendedRole } from '@repo/core/schemas/auth';
 import { Field } from '@repo/ui/field';
 import { Input } from '@repo/ui/input';
@@ -25,7 +26,7 @@ export interface SignUpPrefill {
   email: string;
 }
 
-export function SignUpForm({ role, prefill }: { role: IntendedRole; prefill?: SignUpPrefill }) {
+export function SignUpForm({ role, prefill, flags }: { role: IntendedRole; prefill?: SignUpPrefill; flags: FlagOverrides }) {
   const [pending, startTransition] = useTransition();
   const [formError, setFormError] = useState<string | null>(null);
   const form = useForm<z.input<typeof signUpSchema>>({
@@ -56,7 +57,7 @@ export function SignUpForm({ role, prefill }: { role: IntendedRole; prefill?: Si
           Change account type
         </Link>
       </div>
-      <OAuthButtons next={`/start?role=${role}`} />
+      <OAuthButtons next={`/start?role=${role}`} flags={flags} />
       <ClientForm onSubmit={onSubmit} pending={pending} className="flex flex-col gap-4">
         {formError ? <FormAlert>{formError}</FormAlert> : null}
         <Field label="Full name" error={errors.fullName?.message}>

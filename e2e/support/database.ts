@@ -682,6 +682,78 @@ export async function lessonEvents(bookingId: string, name: string): Promise<Out
   });
 }
 
+/** A place on an area's waiting list or a lesson request, as the database keeps it (MKT-10, M5-10). */
+export interface CaptureEntry {
+  id: string;
+  token: string;
+  consentWording: string;
+  confirmationSentAt: string | null;
+  removedAt: string | null;
+}
+
+export async function waitingListEntry(email: string): Promise<CaptureEntry | null> {
+  return withDatabase(async (sql) => {
+    const [row] = await sql<{ id: string; token: string; consent_wording: string; confirmation_sent_at: Date | null; left_at: Date | null }[]>`
+      select id, token::text, consent_wording, confirmation_sent_at, left_at
+        from public.area_waiting_list where lower(email) = lower(${email}) order by created_at desc limit 1`;
+    return row
+      ? {
+          id: row.id,
+          token: row.token,
+          consentWording: row.consent_wording,
+          confirmationSentAt: row.confirmation_sent_at?.toISOString() ?? null,
+          removedAt: row.left_at?.toISOString() ?? null,
+        }
+      : null;
+  });
+}
+
+export async function lessonRequestEntry(
+  email: string,
+): Promise<(CaptureEntry & { days: number[]; times: string[]; budgetPence: number | null; startWhen: string }) | null> {
+  return withDatabase(async (sql) => {
+    const [row] = await sql<
+      {
+        id: string;
+        token: string;
+        consent_wording: string;
+        confirmation_sent_at: Date | null;
+        withdrawn_at: Date | null;
+        days: number[];
+        times: string[];
+        budget_pence: number | null;
+        start_when: string;
+      }[]
+    >`
+      select id, token::text, consent_wording, confirmation_sent_at, withdrawn_at, days, times, budget_pence, start_when
+        from public.lesson_requests where lower(email) = lower(${email}) order by created_at desc limit 1`;
+    return row
+      ? {
+          id: row.id,
+          token: row.token,
+          consentWording: row.consent_wording,
+          confirmationSentAt: row.confirmation_sent_at?.toISOString() ?? null,
+          removedAt: row.withdrawn_at?.toISOString() ?? null,
+          days: row.days,
+          times: row.times,
+          budgetPence: row.budget_pence,
+          startWhen: row.start_when,
+        }
+      : null;
+  });
+}
+
+/** The event that asks for a capture's confirmation email, as the job runner would be sent it. */
+export async function captureEvent(id: string): Promise<OutboxEvent | null> {
+  return withDatabase(async (sql) => {
+    const [row] = await sql<{ name: string; payload: Record<string, unknown> }[]>`
+      select name, payload from public.outbox_events
+       where name = 'learner_capture.created' and payload ->> 'id' = ${id}
+       order by created_at desc limit 1`;
+    return row ? { name: row.name, payload: row.payload } : null;
+  });
+}
+
 export interface LessonMoney {
   paymentStatus: string;
   payments: { method: string; status: string; amountPence: number; refundedPence: number }[];
@@ -932,5 +1004,739 @@ export async function lessonRecordFor(
     return found
       ? { summary: found.summary, nextFocus: found.next_focus, ratings: found.ratings, secondsTaken: found.seconds_taken, lessonStatus: found.status }
       : null;
+  });
+}
+
+export interface MadeInstructor {
+  slug: string;
+  name: string;
+  /** Signs in with the seed's password (supabase/seeds/test_helpers.sql). */
+  email: string;
+  remove: () => Promise<void>;
+}
+
+/** A postcode in the cache, as a lookup would have left it, for a base somewhere the seed has none. */
+export interface CachedPostcode {
+  postcode: string;
+  latitude: number;
+  longitude: number;
+  district: string;
+}
+
+export async function cachePostcode(place: CachedPostcode): Promise<void> {
+  const outcode = place.postcode.split(' ')[0] ?? '';
+  await withDatabase(async (sql) => {
+    await sql`
+      insert into public.postcodes (postcode, outcode, area, latitude, longitude, admin_district)
+      values (${place.postcode}, ${outcode}, ${outcode.replace(/[0-9].*$/, '')}, ${place.latitude}, ${place.longitude}, ${place.district})
+      on conflict (postcode) do nothing`;
+  });
+}
+
+/**
+ * A checked instructor with a Business of their own, made for one test and removed after it
+ * (M5-06). Nothing else knows them, so a test can run their badge out without touching anybody
+ * another test is using. Based in Leeds unless told otherwise, with a price, and a badge that runs
+ * out on the day given.
+ */
+export async function makeInstructor(
+  name: string,
+  badgeExpiry: string,
+  options: {
+    postcode?: string;
+    transmission?: 'manual' | 'automatic' | 'both';
+    /** In search, as instructors are by default; out of it for a test that must leave the place pages alone. */
+    listed?: boolean;
+  } = {},
+): Promise<MadeInstructor> {
+  const postcode = options.postcode ?? 'LS6 3QS';
+  const transmission = options.transmission ?? 'manual';
+  const userId = crypto.randomUUID();
+  const slug = `${name.toLowerCase().replace(/[^a-z0-9]+/g, '-')}-${userId.slice(0, 8)}`;
+  const email = `${slug}@example.com`;
+  await withDatabase(async (sql) => {
+    await sql`select tests.create_user_with_id(${userId}::uuid, ${email}, ${name})`;
+    // A mobile they have verified, as every instructor has before their portal (AUTH-02): one of
+    // the numbers set aside for drama, above the seed's, tried again if another test has it.
+    for (let attempt = 0; ; attempt += 1) {
+      const phone = `447700900${String(500 + Math.floor(Math.random() * 500))}`;
+      try {
+        await sql`update auth.users set phone = ${phone}, phone_confirmed_at = now() where id = ${userId}`;
+        break;
+      } catch (error) {
+        if (attempt >= 5 || (error as { code?: string }).code !== '23505') throw error;
+      }
+    }
+    const [business] = await sql<{ id: string }[]>`
+      insert into public.businesses (type, name, slug, base_postcode)
+      values ('independent', ${`${name} Driving`}, ${`${slug}-driving`}, ${postcode})
+      returning id`;
+    if (!business) throw new Error('No Business was made');
+    await sql`insert into public.memberships (business_id, user_id, role) values (${business.id}, ${userId}, 'owner')`;
+    await sql`
+      insert into public.instructor_profiles (user_id, business_id, display_name, public_slug, verification_status, verified_at,
+                                              badge_expiry, base_postcode, base_location, transmission, onboarding_completed_at, is_listed)
+      select ${userId}, ${business.id}, ${name}, ${slug}, 'approved', now(), ${badgeExpiry}::date, p.postcode, p.location,
+             ${transmission}::public.transmission, now(), ${options.listed ?? true}
+        from public.postcodes p
+       where p.postcode = ${postcode}`;
+    const [type] = await sql<{ id: string }[]>`
+      insert into public.lesson_types (business_id, name) values (${business.id}, 'Standard lesson') returning id`;
+    if (!type) throw new Error('No lesson type was made');
+    await sql`
+      insert into public.lesson_prices (business_id, lesson_type_id, duration_minutes, price_pence)
+      values (${business.id}, ${type.id}, 60, 4000)`;
+  });
+  return {
+    slug,
+    name,
+    email,
+    remove: () =>
+      withDatabase(async (sql) => {
+        await sql`delete from public.businesses where slug = ${`${slug}-driving`}`;
+        await sql`delete from auth.users where id = ${userId}`;
+      }),
+  };
+}
+
+export interface MembershipRow {
+  business: string;
+  role: string;
+  /** Whether their instructor profile there is set up; null when they have none there. */
+  onboarded: boolean | null;
+}
+
+/** Where somebody is a member, found by their email, and how far their profile there is set up (AUTH-05). */
+export async function membershipsOf(email: string): Promise<MembershipRow[]> {
+  return withDatabase(async (sql) => {
+    const rows = await sql<MembershipRow[]>`
+      select b.name as business, m.role::text as role,
+             case when p.id is null then null else p.onboarding_completed_at is not null end as onboarded
+        from public.memberships m
+        join public.users u on u.id = m.user_id
+        join public.businesses b on b.id = m.business_id
+        left join public.instructor_profiles p on p.user_id = m.user_id and p.business_id = m.business_id
+       where lower(u.email) = lower(${email}) and m.status = 'active'
+       order by b.name`;
+    return [...rows];
+  });
+}
+
+export interface SchoolSetupRow {
+  name: string;
+  postcode: string | null;
+  located: boolean;
+  expectedInstructors: number | null;
+  logoPath: string | null;
+  onboarded: boolean;
+}
+
+/** What setting up a school saved, found by its owner's email (AUTH-05, M5-11). */
+export async function schoolOwnedBy(email: string): Promise<SchoolSetupRow | null> {
+  return withDatabase(async (sql) => {
+    const rows = await sql<SchoolSetupRow[]>`
+      select b.name, b.base_postcode as postcode, b.base_location is not null as located,
+             b.expected_instructors as "expectedInstructors", b.logo_url as "logoPath",
+             b.onboarding_completed_at is not null as onboarded
+        from public.businesses b
+        join public.memberships m on m.business_id = b.id and m.role = 'owner'
+        join public.users u on u.id = m.user_id
+       where lower(u.email) = lower(${email}) and b.type = 'school'`;
+    return rows[0] ?? null;
+  });
+}
+
+/**
+ * A link inviting somebody to teach for a seeded school, stored as the app stores one: only its
+ * hash (D-064). For tests that need a link without setting a school up first.
+ */
+export async function schoolInvitationPath(schoolName: string): Promise<string> {
+  const token = crypto.randomUUID().replaceAll('-', '');
+  await withDatabase(async (sql) => {
+    const made = await sql`
+      insert into public.invitations (business_id, kind, role, channel, token_hash, invited_by)
+      select b.id, 'member', 'instructor', 'link', private.invitation_hash(${token}), m.user_id
+        from public.businesses b
+        join public.memberships m on m.business_id = b.id and m.role = 'owner'
+       where b.name = ${schoolName}`;
+    if (made.count !== 1) throw new Error(`No school called ${schoolName} to invite anybody to`);
+  });
+  return `/invite/${token}`;
+}
+
+export interface OverviewFacts {
+  lessons: { today: number; this_week: number };
+  revenue_month: { lessons_pence: number; packages_pence: number; refunds_pence: number; total_pence: number };
+  unpaid: { total_pence: number; count: number };
+  utilisation: {
+    open_minutes: number;
+    booked_minutes: number;
+    instructors: { instructor_id: string; name: string; open_minutes: number; booked_minutes: number }[];
+  };
+  new_learners_month: number;
+}
+
+export interface SeededSchoolFigures {
+  /** What the overview's own function works out now. */
+  facts: OverviewFacts;
+  /** The same counts asked another way, by London calendar day, week and month. */
+  lessonsToday: number;
+  lessonsThisWeek: number;
+  newLearnersThisMonth: number;
+}
+
+/** A school's overview figures as the database has them now, found by the school's name (SCH-01, M5-12). */
+export async function seededSchoolFigures(schoolName: string): Promise<SeededSchoolFigures> {
+  return withDatabase(async (sql) => {
+    const [row] = await sql<{ facts: OverviewFacts; today: number; week: number; learners: number }[]>`
+      with school as (select id from public.businesses where name = ${schoolName} and type = 'school')
+      select private.school_overview_facts(s.id, now()) as facts,
+             (select count(*)::int from public.bookings b
+               where b.business_id = s.id
+                 and b.status in ('confirmed', 'in_progress', 'completed', 'no_show')
+                 and (b.starts_at at time zone 'Europe/London')::date = (now() at time zone 'Europe/London')::date) as today,
+             (select count(*)::int from public.bookings b
+               where b.business_id = s.id
+                 and b.status in ('confirmed', 'in_progress', 'completed', 'no_show')
+                 and date_trunc('week', b.starts_at at time zone 'Europe/London') = date_trunc('week', now() at time zone 'Europe/London')) as week,
+             (select count(distinct r.learner_id)::int from public.learner_relationships r
+               where r.business_id = s.id
+                 and date_trunc('month', r.created_at at time zone 'Europe/London') = date_trunc('month', now() at time zone 'Europe/London')) as learners
+        from school s`;
+    if (!row) throw new Error(`No school called ${schoolName}`);
+    return { facts: row.facts, lessonsToday: row.today, lessonsThisWeek: row.week, newLearnersThisMonth: row.learners };
+  });
+}
+
+export interface PlatformFacts {
+  from: string;
+  signups: { learners: number; instructors: number; schools: number; undecided: number };
+  businesses: { active: number; independent: number; schools: number; suspended: number; teaching: number };
+  lessons: { booked: number; completed: number };
+  money: { gmv_pence: number; card_pence: number; fees_pence: number; payments: number; refunds_pence: number };
+  verification: { waiting: number; oldest: string | null };
+  disputes: { open: number; oldest: string | null };
+}
+
+export interface PlatformFigures {
+  /** What the dashboard's own function works out now. */
+  facts: PlatformFacts;
+  /** The same things counted plainly, in the same instant. */
+  activeBusinesses: number;
+  suspendedBusinesses: number;
+  badgesWaiting: number;
+  disputesOpen: number;
+}
+
+/** The admin dashboard's figures as the database has them now (ADM-01, M5-17). */
+export async function platformFigures(): Promise<PlatformFigures> {
+  return withDatabase(async (sql) => {
+    const [row] = await sql<{ facts: PlatformFacts; active: number; suspended: number; badges: number; disputes: number }[]>`
+      select private.platform_dashboard_facts(now()) as facts,
+             (select count(*)::int from public.businesses where status = 'active') as active,
+             (select count(*)::int from public.businesses where status = 'suspended') as suspended,
+             (select count(*)::int from public.instructor_profiles where verification_status = 'pending') as badges,
+             (select count(*)::int from public.no_show_disputes where decided_at is null) as disputes`;
+    if (!row) throw new Error('The dashboard figures could not be read');
+    return {
+      facts: row.facts,
+      activeBusinesses: row.active,
+      suspendedBusinesses: row.suspended,
+      badgesWaiting: row.badges,
+      disputesOpen: row.disputes,
+    };
+  });
+}
+
+export interface MadeSchoolInstructor {
+  name: string;
+  /** Signs in with the seed's password (supabase/seeds/test_helpers.sql). */
+  email: string;
+  remove: () => Promise<void>;
+}
+
+/**
+ * A checked instructor at a seeded school, made for one test and removed after it (M5-13), so a
+ * test can switch somebody off without touching the instructors every other test books.
+ */
+export async function makeSchoolInstructor(
+  name: string,
+  schoolName = 'Quayside Driving School',
+  options: { transmission?: 'manual' | 'automatic' | 'both'; postcode?: string; workingHours?: boolean } = {},
+): Promise<MadeSchoolInstructor> {
+  const userId = crypto.randomUUID();
+  const slug = `${name.toLowerCase().replace(/[^a-z0-9]+/g, '-')}-${userId.slice(0, 8)}`;
+  const email = `${slug}@example.com`;
+  await withDatabase(async (sql) => {
+    await sql`select tests.create_user_with_id(${userId}::uuid, ${email}, ${name})`;
+    // A verified mobile, as every instructor has before their portal (AUTH-02), tried again if taken.
+    for (let attempt = 0; ; attempt += 1) {
+      const phone = `447700900${String(500 + Math.floor(Math.random() * 500))}`;
+      try {
+        await sql`update auth.users set phone = ${phone}, phone_confirmed_at = now() where id = ${userId}`;
+        break;
+      } catch (error) {
+        if (attempt >= 5 || (error as { code?: string }).code !== '23505') throw error;
+      }
+    }
+    const made = await sql`
+      with school as (select id from public.businesses where name = ${schoolName} and type = 'school'),
+           member as (insert into public.memberships (business_id, user_id, role) select id, ${userId}, 'instructor' from school returning business_id)
+      insert into public.instructor_profiles (user_id, business_id, display_name, public_slug, verification_status, verified_at, onboarding_completed_at,
+                                              transmission, base_postcode, base_location, is_listed)
+      select ${userId}, business_id, ${name}, ${slug}, 'approved', now(), now(), ${options.transmission ?? 'manual'}::public.transmission,
+             ${options.postcode ?? null}, (select location from public.postcodes where postcode = ${options.postcode ?? null}),
+             -- Out of search, so the city pages and sitemaps other tests count stay as the seed has them.
+             false
+        from member`;
+    if (made.count !== 1) throw new Error(`No school called ${schoolName} to add ${name} to`);
+    // Open every day from seven till nine, so their free time outweighs anybody the seed has.
+    if (options.workingHours) {
+      await sql`
+        insert into public.working_hours (instructor_id, business_id, weekday, start_time, end_time)
+        select p.id, p.business_id, day, '07:00', '21:00'
+          from public.instructor_profiles p, generate_series(1, 7) as day
+         where p.user_id = ${userId}`;
+    }
+  });
+  return {
+    name,
+    email,
+    remove: () =>
+      withDatabase(async (sql) => {
+        await sql`delete from public.instructor_profiles where user_id = ${userId}`;
+        await sql`delete from public.memberships where user_id = ${userId}`;
+        await sql`delete from auth.users where id = ${userId}`;
+      }),
+  };
+}
+
+export interface SchoolMemberState {
+  status: string;
+  setOwnPrices: boolean;
+  /** Their public address, which a member switched off does not have (D-120). */
+  slug: string | null;
+}
+
+/** Where somebody stands at their school, found by their email (SCH-02). */
+export async function schoolMemberState(email: string): Promise<SchoolMemberState | null> {
+  return withDatabase(async (sql) => {
+    const rows = await sql<SchoolMemberState[]>`
+      select m.status::text as status,
+             coalesce(m.permissions -> 'set_own_prices' = 'true'::jsonb, false) as "setOwnPrices",
+             p.public_slug as slug
+        from public.memberships m
+        join public.users u on u.id = m.user_id
+        join public.businesses b on b.id = m.business_id and b.type = 'school'
+        left join public.instructor_profiles p on p.user_id = m.user_id and p.business_id = m.business_id
+       where lower(u.email) = lower(${email})`;
+    return rows[0] ?? null;
+  });
+}
+
+export interface MadeSchoolLearner {
+  name: string;
+  email: string;
+  remove: () => Promise<void>;
+}
+
+/** A learner at a seeded school with nobody teaching them yet, made for one test and removed after it (M5-14). */
+export async function makeSchoolLearner(
+  name: string,
+  options: { postcode: string; transmission: 'manual' | 'automatic' },
+  schoolName = 'Quayside Driving School',
+): Promise<MadeSchoolLearner> {
+  const userId = crypto.randomUUID();
+  const email = `${name.toLowerCase().replace(/[^a-z0-9]+/g, '.')}.${userId.slice(0, 8)}@example.com`;
+  await withDatabase(async (sql) => {
+    await sql`select tests.create_user_with_id(${userId}::uuid, ${email}, ${name})`;
+    await sql`
+      insert into public.learner_profiles (user_id, postcode, location, transmission)
+      select ${userId}, p.postcode, p.location, ${options.transmission}::public.learner_transmission
+        from public.postcodes p
+       where p.postcode = ${options.postcode}`;
+    const made = await sql`
+      insert into public.learner_relationships (business_id, learner_id, source, created_by)
+      select b.id, ${userId}, 'manual', ${userId} from public.businesses b where b.name = ${schoolName} and b.type = 'school'`;
+    if (made.count !== 1) throw new Error(`No school called ${schoolName} to add ${name} to`);
+  });
+  return {
+    name,
+    email,
+    remove: () =>
+      withDatabase(async (sql) => {
+        await sql`delete from public.learner_relationships where learner_id = ${userId}`;
+        await sql`delete from public.learner_profiles where user_id = ${userId}`;
+        await sql`delete from auth.users where id = ${userId}`;
+      }),
+  };
+}
+
+/** Who teaches a learner at a seeded school now, by their name (LRN-06). */
+export async function learnerTeacherAtSchool(email: string, schoolName = 'Quayside Driving School'): Promise<string | null> {
+  return withDatabase(async (sql) => {
+    const rows = await sql<{ display_name: string | null }[]>`
+      select p.display_name
+        from public.learner_relationships r
+        join public.users u on u.id = r.learner_id
+        join public.businesses b on b.id = r.business_id and b.name = ${schoolName}
+        left join public.instructor_profiles p on p.id = r.instructor_id
+       where lower(u.email) = lower(${email})`;
+    return rows[0]?.display_name ?? null;
+  });
+}
+
+export interface MadeSchool {
+  businessId: string;
+  name: string;
+  /** Signs in with the seed's password; a manager needs no second step. */
+  managerEmail: string;
+  instructor: { name: string; email: string; slug: string };
+  remove: () => Promise<void>;
+}
+
+/**
+ * A school of a test's own (M5-15): a manager, one checked instructor with a booking link, and an
+ * hour's lesson at £40. Nothing else knows it, so a test can change its prices and rules without
+ * touching the seeded school that the payment tests charge at known prices.
+ */
+export async function makeSchool(label: string): Promise<MadeSchool> {
+  const businessId = crypto.randomUUID();
+  const managerId = crypto.randomUUID();
+  const instructorId = crypto.randomUUID();
+  const typeId = crypto.randomUUID();
+  const key = `${label.toLowerCase().replace(/[^a-z0-9]+/g, '-')}-${businessId.slice(0, 8)}`;
+  const name = `${label} School`;
+  const managerEmail = `manager.${key}@example.com`;
+  const instructor = { name: `Ines ${label}`, email: `instructor.${key}@example.com`, slug: `ines-${key}` };
+
+  await withDatabase(async (sql) => {
+    await sql`select tests.create_user_with_id(${managerId}::uuid, ${managerEmail}, ${`Mo ${label}`})`;
+    await sql`select tests.create_user_with_id(${instructorId}::uuid, ${instructor.email}, ${instructor.name})`;
+    for (let attempt = 0; ; attempt += 1) {
+      const phone = `447700900${String(500 + Math.floor(Math.random() * 500))}`;
+      try {
+        await sql`update auth.users set phone = ${phone}, phone_confirmed_at = now() where id = ${instructorId}`;
+        break;
+      } catch (error) {
+        if (attempt >= 5 || (error as { code?: string }).code !== '23505') throw error;
+      }
+    }
+    await sql`
+      insert into public.businesses (id, type, name, slug, base_postcode, onboarding_completed_at)
+      values (${businessId}, 'school', ${name}, ${key}, 'M1 2QF', now())`;
+    await sql`
+      insert into public.memberships (business_id, user_id, role)
+      values (${businessId}, ${managerId}, 'manager'), (${businessId}, ${instructorId}, 'instructor')`;
+    await sql`
+      insert into public.instructor_profiles (user_id, business_id, display_name, public_slug, verification_status, verified_at,
+                                              onboarding_completed_at, base_postcode, base_location, is_listed)
+      -- Out of search, so Manchester's city page and the sitemaps other tests count stay as the seed has them;
+      -- the booking link works all the same (PUB-04).
+      select ${instructorId}, ${businessId}, ${instructor.name}, ${instructor.slug}, 'approved', now(), now(), p.postcode, p.location, false
+        from public.postcodes p where p.postcode = 'M1 2QF'`;
+    await sql`insert into public.lesson_types (id, business_id, name) values (${typeId}, ${businessId}, 'Standard lesson')`;
+    await sql`
+      insert into public.lesson_prices (business_id, lesson_type_id, duration_minutes, price_pence)
+      values (${businessId}, ${typeId}, 60, 4000)`;
+  });
+
+  return {
+    businessId,
+    name,
+    managerEmail,
+    instructor,
+    remove: () =>
+      withDatabase(async (sql) => {
+        await sql`delete from public.businesses where id = ${businessId}`;
+        await sql`delete from auth.users where id in (${managerId}, ${instructorId})`;
+      }),
+  };
+}
+
+export interface MadeTakings {
+  gmvPence: number;
+  cardPence: number;
+  feesPence: number;
+  refundsPence: number;
+  remove: () => Promise<void>;
+}
+
+/**
+ * Money taken just now at a school of a test's own (M5-17): £42 by card with a 50p platform fee,
+ * £380 in cash, and £10 of the card payment given back. The seed takes no money, and nothing else
+ * reads this school, so the platform's takings move without changing what the payment tests count.
+ */
+export async function makeTakings(label: string): Promise<MadeTakings> {
+  const school = await makeSchool(label);
+  const learnerId = crypto.randomUUID();
+  const key = `${label.toLowerCase().replace(/[^a-z0-9]+/g, '-')}-${learnerId.slice(0, 8)}`;
+
+  await withDatabase(async (sql) => {
+    await sql`select tests.create_user_with_id(${learnerId}::uuid, ${`learner.${key}@example.com`}, ${`Lara ${label}`})`;
+    const [card] = await sql<{ id: string }[]>`
+      insert into public.payments (business_id, learner_id, provider, amount_pence, fee_pence, method, status, paid_at)
+      values (${school.businessId}, ${learnerId}, 'stripe', 4200, 50, 'card', 'paid', now())
+      returning id`;
+    if (!card) throw new Error('The card payment was not written');
+    await sql`
+      insert into public.payments (business_id, learner_id, provider, amount_pence, method, status, paid_at)
+      values (${school.businessId}, ${learnerId}, 'offline', 38000, 'cash', 'paid', now())`;
+    await sql`
+      insert into public.refunds (business_id, payment_id, learner_id, kind, amount_pence, reason, status, settled_at)
+      values (${school.businessId}, ${card.id}, ${learnerId}, 'card', 1000, 'Cut short', 'succeeded', now())`;
+  });
+
+  return {
+    gmvPence: 42200,
+    cardPence: 4200,
+    feesPence: 50,
+    refundsPence: 1000,
+    remove: async () => {
+      await school.remove();
+      await withDatabase(async (sql) => {
+        await sql`delete from auth.users where id = ${learnerId}`;
+      });
+    },
+  };
+}
+
+/**
+ * An authenticator app on somebody's account, as enrolling one leaves it (M5-18), for a test that
+ * resets two-step verification and never signs in with it.
+ */
+export async function giveAuthenticator(email: string): Promise<void> {
+  await withDatabase(async (sql) => {
+    const made = await sql`
+      insert into auth.mfa_factors (id, user_id, friendly_name, factor_type, status, created_at, updated_at, secret)
+      select gen_random_uuid(), u.id, 'Phone', 'totp', 'verified', now(), now(), 'JBSWY3DPEHPK3PXP'
+        from auth.users u
+       where lower(u.email) = lower(${email})`;
+    if (made.count !== 1) throw new Error(`Nobody signs in as ${email}`);
+  });
+}
+
+/** How many authenticators somebody's account has (AUTH-08). */
+export async function authenticatorsOf(email: string): Promise<number> {
+  return withDatabase(async (sql) => {
+    const [row] = await sql<{ count: number }[]>`
+      select count(*)::int as count
+        from auth.mfa_factors f
+        join auth.users u on u.id = f.user_id
+       where lower(u.email) = lower(${email})`;
+    return row?.count ?? 0;
+  });
+}
+
+/** 09:00 to 17:00 every day for an instructor made for a test, found by their profile address (M5-19). */
+export async function openEveryDay(slug: string): Promise<void> {
+  await withDatabase(async (sql) => {
+    const made = await sql`
+      insert into public.working_hours (instructor_id, business_id, weekday, start_time, end_time)
+      select p.id, p.business_id, d, '09:00', '17:00'
+        from public.instructor_profiles p
+       cross join generate_series(1, 7) as d
+       where p.public_slug = ${slug}`;
+    if (made.count !== 7) throw new Error(`No instructor at ${slug}`);
+  });
+}
+
+/**
+ * Keeps one platform setting to one test at a time, from before it is read until it is put back.
+ *
+ * A test that changes a setting puts back what it found, and the Regions and Settings specs both
+ * change the switch-on rule. Running at the same moment, one put its rule back just after the
+ * other saved a new one, and the second then found the wrong rule for a reason that had nothing
+ * to do with the app. A session lock makes them take turns, as holdPaymentsBusiness does; the
+ * database lets it go on its own if a run dies. Returns the function that lets it go.
+ */
+async function holdPlatformSetting(key: string): Promise<() => Promise<void>> {
+  const sql = postgres(databaseUrl, { max: 1, idle_timeout: 0, max_lifetime: null });
+  const lock = `e2e:platform-setting:${key}`;
+  await sql`select pg_advisory_lock(hashtext(${lock}))`;
+  return async () => {
+    await sql`select pg_advisory_unlock(hashtext(${lock}))`;
+    await sql.end();
+  };
+}
+
+/**
+ * The switch-on rule, set for one test (ADM-04, PRD 4.2), which has it to itself until the returned
+ * function puts back what was there.
+ */
+export async function setSwitchOnRule(rule: { instructors: number; hours: number }): Promise<() => Promise<void>> {
+  const release = await holdPlatformSetting('marketplace_switch_on');
+  const before = await withDatabase(async (sql) => {
+    const [row] = await sql<{ value: Record<string, unknown> }[]>`select value from public.platform_settings where key = 'marketplace_switch_on'`;
+    await sql`
+      update public.platform_settings
+         set value = ${sql.json({ verified_instructors: rule.instructors, open_hours_14_days: rule.hours })}
+       where key = 'marketplace_switch_on'`;
+    return row?.value;
+  });
+  return async () => {
+    try {
+      await withDatabase(async (sql) => {
+        if (before) await sql`update public.platform_settings set value = ${sql.json(before as Record<string, string | number>)} where key = 'marketplace_switch_on'`;
+      });
+    } finally {
+      await release();
+    }
+  };
+}
+
+/** A place on an area's waiting list, as joining it with consent leaves it (MKT-10). Returns the function that removes it. */
+export async function joinWaitingList(entry: { email: string; fullName: string; postcode: string }): Promise<() => Promise<void>> {
+  await withDatabase(async (sql) => {
+    await sql`
+      insert into public.area_waiting_list (postcode, postcode_area, full_name, email, consent_wording)
+      values (${entry.postcode}, ${entry.postcode.replace(/[0-9].*$/, '')}, ${entry.fullName}, ${entry.email}, 'Keep my details and email me.')`;
+  });
+  return () =>
+    withDatabase(async (sql) => {
+      await sql`delete from public.area_waiting_list where lower(email) = lower(${entry.email})`;
+    });
+}
+
+/** Whether the waiting list place for an address has been told its area opened, and has been left. */
+export async function waitingListTold(email: string): Promise<{ told: boolean; left: boolean } | null> {
+  return withDatabase(async (sql) => {
+    const [row] = await sql<{ told: boolean; left: boolean }[]>`
+      select told_open_at is not null as told, left_at is not null as left
+        from public.area_waiting_list where lower(email) = lower(${email}) order by created_at desc limit 1`;
+    return row ?? null;
+  });
+}
+
+/** An area as the marketplace has it (ADM-04), and the latest event asking for its waiting list to be told. */
+export async function marketplaceRegion(area: string): Promise<{ open: boolean; event: OutboxEvent | null }> {
+  return withDatabase(async (sql) => {
+    const [region] = await sql<{ open: boolean }[]>`select marketplace_enabled as open from public.marketplace_regions where postcode_area = ${area}`;
+    const [event] = await sql<{ name: string; payload: Record<string, unknown> }[]>`
+      select name, payload from public.outbox_events
+       where name = 'marketplace_region.opened' and payload ->> 'area' = ${area}
+       order by created_at desc limit 1`;
+    return { open: region?.open ?? false, event: event ? { name: event.name, payload: event.payload } : null };
+  });
+}
+
+/** An area put back as it was before any test opened it: never switched, and closed. */
+export async function forgetRegion(area: string): Promise<void> {
+  await withDatabase(async (sql) => {
+    await sql`delete from public.marketplace_regions where postcode_area = ${area}`;
+  });
+}
+
+/**
+ * One platform setting as saved (ADM-05), and the function that puts it back as it was, for a test
+ * that changes it through the Settings screen. The test has the setting to itself until then.
+ */
+export async function keepPlatformSetting(key: string): Promise<{ read: () => Promise<Record<string, unknown>>; putBack: () => Promise<void> }> {
+  const read = () =>
+    withDatabase(async (sql) => {
+      const [row] = await sql<{ value: Record<string, unknown> }[]>`select value from public.platform_settings where key = ${key}`;
+      if (!row) throw new Error(`No platform setting called ${key}`);
+      return row.value;
+    });
+  const release = await holdPlatformSetting(key);
+  try {
+    const before = await read();
+    return {
+      read,
+      putBack: async () => {
+        try {
+          await withDatabase(async (sql) => {
+            await sql`update public.platform_settings set value = ${sql.json(before as Record<string, string>)} where key = ${key}`;
+          });
+        } finally {
+          await release();
+        }
+      },
+    };
+  } catch (error) {
+    await release();
+    throw error;
+  }
+}
+
+/**
+ * One of each kind of entry NFR-SEC-06 names, at a school of a test's own, written by the function
+ * the platform writes them with (ADM-07, M5-22): the instructor signs in, exports their data and asks
+ * for their account to go; the manager makes them a manager, connects payouts and issues a refund; a
+ * super admin approves their badge; and support staff view as them. Then the manager signs in
+ * `signIns` times more, for a log longer than a page. The audit log keeps everything, so nothing is
+ * removed; the school's own name and people keep other tests' entries apart.
+ */
+export async function recordAuditTrail(school: MadeSchool, signIns: number): Promise<void> {
+  await withDatabase(async (sql) => {
+    const [ids] = await sql<{ manager: string; instructor: string; profile: string; membership: string; admin: string; support: string }[]>`
+      select (select id from public.users where lower(email) = lower(${school.managerEmail})) as manager,
+             p.user_id as instructor,
+             p.id as profile,
+             m.id as membership,
+             (select id from public.users where email = 'admin@example.com') as admin,
+             (select id from public.users where email = 'support@example.com') as support
+        from public.instructor_profiles p
+        join public.memberships m on m.user_id = p.user_id and m.business_id = p.business_id
+       where p.business_id = ${school.businessId}`;
+    if (!ids) throw new Error(`No instructor at ${school.name}`);
+    const business = school.businessId;
+    const entries: [string, string, string, string | null, object | null, object | null, string, string][] = [
+      ['auth.sign_in', 'session', crypto.randomUUID(), null, null, { aal: 'aal1' }, ids.instructor, 'user'],
+      ['membership.role_changed', 'membership', ids.membership, business, { role: 'instructor' }, { role: 'manager' }, ids.manager, 'manager'],
+      ['instructor.verification_decided', 'instructor_profile', ids.profile, business, { status: 'pending' }, { status: 'approved' }, ids.admin, 'super_admin'],
+      ['refund.issued', 'refund', crypto.randomUUID(), business, null, { amount_pence: 4200 }, ids.manager, 'manager'],
+      ['business.payments_connected', 'business', business, business, null, { charges_enabled: true }, ids.manager, 'manager'],
+      ['account.data_exported', 'user', ids.instructor, null, null, { format: 'json' }, ids.instructor, 'user'],
+      ['account.deletion_requested', 'user', ids.instructor, null, null, null, ids.instructor, 'user'],
+      ['impersonation.started', 'user', ids.instructor, null, null, { reason: 'Cannot see her diary' }, ids.support, 'support_admin'],
+    ];
+    // One at a time, so each has a moment of its own, as they would.
+    for (const [action, entity, entityId, businessId, before, after, actor, role] of entries) {
+      await sql`
+        select private.write_audit(${action}, ${entity}, ${entityId}::uuid, ${businessId}::uuid,
+                                   ${before === null ? null : sql.json(before as Record<string, string>)}::jsonb,
+                                   ${after === null ? null : sql.json(after as Record<string, string>)}::jsonb,
+                                   ${actor}::uuid, ${role})`;
+    }
+    await sql`
+      select private.write_audit('auth.sign_in', 'session', gen_random_uuid(), null, null, '{"aal": "aal1"}'::jsonb, ${ids.manager}::uuid, 'user')
+        from generate_series(1, ${signIns})`;
+  });
+}
+
+/** The audit actions recorded about a person, oldest first, found by their email (NFR-SEC-06). */
+export async function auditActionsAbout(email: string): Promise<string[]> {
+  return withDatabase(async (sql) => {
+    const rows = await sql<{ action: string }[]>`
+      select a.action
+        from public.audit_log a
+        join auth.users u on u.id = a.entity_id
+       where lower(u.email) = lower(${email})
+       order by a.occurred_at, a.id`;
+    return rows.map((row) => row.action);
+  });
+}
+
+/** A lesson's status, found by its instructor, learner, day and start time in London. */
+export async function lessonStatus(instructorName: string, learnerEmail: string, date: string, time: string): Promise<string | null> {
+  return withDatabase(async (sql) => {
+    const [row] = await sql<{ status: string }[]>`
+      select b.status::text as status
+        from public.bookings b
+        join public.instructor_profiles i on i.id = b.instructor_id
+        join auth.users u on u.id = b.learner_id
+       where i.display_name = ${instructorName}
+         and lower(u.email) = lower(${learnerEmail})
+         and b.starts_at = (${date}::date + ${time}::time) at time zone 'Europe/London'`;
+    return row?.status ?? null;
+  });
+}
+
+/** A school's own booking rules as saved, found by its name (SCH-04). */
+export async function schoolRules(schoolName: string): Promise<Record<string, unknown>> {
+  return withDatabase(async (sql) => {
+    const rows = await sql<{ settings: Record<string, unknown> }[]>`select settings from public.businesses where name = ${schoolName}`;
+    return rows[0]?.settings ?? {};
   });
 }

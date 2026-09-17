@@ -32,7 +32,7 @@ async function BadgeStep() {
   const badgePreview = await signedBadgeUrl(supabase, session.badgePath);
 
   return (
-    <StepShell step={step}>
+    <StepShell step={step} businessType={session.businessType}>
       <BadgeForm
         profileId={session.profileId}
         qualification={session.qualification}

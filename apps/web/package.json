@@ -35,6 +35,7 @@
     "react-hook-form": "catalog:",
     "server-only": "^0.0.1",
     "serwist": "9.5.12",
+    "sharp": "0.35.4",
     "web-push": "3.6.7",
     "zod": "catalog:"
   },

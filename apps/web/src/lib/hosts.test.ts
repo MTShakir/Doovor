@@ -1,6 +1,6 @@
 import { brand } from '@repo/config/brand';
 import { describe, expect, it } from 'vitest';
-import { hostRedirect } from './hosts';
+import { hostRedirect, isSitePath } from './hosts';
 
 const site = brand.domain;
 const app = brand.appHost;
@@ -21,6 +21,27 @@ describe('which host a request belongs on (D-084)', () => {
   it('leaves the public site its own pages', () => {
     expect(hostRedirect(site, '/', '')).toBeNull();
     expect(hostRedirect(`${site}:443`, '/', '')).toBeNull();
+    expect(hostRedirect(site, '/instructors/leeds/sarah-khan', '')).toBeNull();
+  });
+
+  it('sends a public page opened on the app to the public site, for good, so search finds it in one place (D-109)', () => {
+    expect(hostRedirect(app, '/instructors/leeds/sarah-khan', '?from=qr')).toEqual({
+      url: `${brand.productionUrl}/instructors/leeds/sarah-khan?from=qr`,
+      permanent: true,
+    });
+    // A path that only starts with the same letters is not one of them.
+    expect(hostRedirect(app, '/instructorsx', '')).toBeNull();
+    expect(isSitePath('/instructors')).toBe(false);
+    expect(isSitePath('/instructors/manchester/emma-clarke')).toBe(true);
+    expect(isSitePath('/schools/manchester/quayside-driving-school')).toBe(true);
+    expect(isSitePath('/driving-lessons/london/croydon')).toBe(true);
+    // The site's own pages (M5-09), and nothing that only starts like one.
+    for (const path of ['/learners', '/instructors-software', '/driving-schools-software', '/pricing']) {
+      expect(isSitePath(path)).toBe(true);
+      expect(hostRedirect(app, path, '')).toEqual({ url: `${brand.productionUrl}${path}`, permanent: true });
+      expect(hostRedirect(site, path, '')).toBeNull();
+    }
+    expect(isSitePath('/pricing/extra')).toBe(false);
   });
 
   it('sends the app’s bare root to getting started, which knows where somebody signed in belongs', () => {

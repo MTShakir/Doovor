@@ -1,7 +1,7 @@
 import 'server-only';
-import { getEntitlements, type PlanKey } from '@repo/config/plans';
 import type { NotificationChannel } from '@repo/core/notifications';
 import { getSupabaseServiceClient } from '@/lib/supabase/service';
+import { readPlanLimits, smsAllowance } from './plan-limits';
 import {
   peopleToRemind,
   planReminders,
@@ -14,10 +14,6 @@ export interface ReminderSweepResult {
   looked: number;
   /** Reminders written. A reminder already written writes nothing (ARCHITECTURE 10). */
   written: number;
-}
-
-function isPlan(value: string): value is PlanKey {
-  return value === 'free' || value === 'pro' || value === 'school';
 }
 
 /**
@@ -43,13 +39,13 @@ export async function sendDueReminders(now: Date = new Date()): Promise<Reminder
     muted.set(row.user_id, [...(muted.get(row.user_id) ?? []), row.channel]);
   }
 
+  const limits = await readPlanLimits();
   const reminders = planReminders({
     notices,
     now,
     muted,
-    // Text messages are a Pro thing (NTF-01). The cap is counted when one is sent.
-    textingAllowed: (notice) =>
-      isPlan(notice.business_plan) && getEntitlements(notice.business_plan).smsRemindersPerMonth > 0,
+    // Text messages are for plans that include some (NTF-01, ADM-05). The cap is counted when one is sent.
+    textingAllowed: (notice) => smsAllowance(notice.business_plan, limits) > 0,
   });
   if (reminders.length === 0) return { looked: notices.length, written: 0 };
 

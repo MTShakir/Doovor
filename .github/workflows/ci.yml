@@ -1,5 +1,6 @@
-# Every push and pull request: lint, types, unit tests, database tests and end-to-end flows
-# at 390 and 1440 px against a production build (M0-31, PRD 14.5).
+# Every push and pull request: lint, types, unit tests, database tests, end-to-end flows at 390
+# and 1440 px against a production build (M0-31, PRD 14.5), and Lighthouse on the public pages
+# (NFR-PERF-04, M5-24).
 name: CI
 
 on:
@@ -107,4 +108,58 @@ jobs:
         with:
           name: screenshots
           path: e2e/screenshots
+          retention-days: 14
+
+  lighthouse:
+    # Public profile and city pages score 90 or more in every category, from a production build
+    # and the seeded database (NFR-PERF-04, M5-24). The scores are in the job's summary.
+    name: Lighthouse (public pages)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: Start local Supabase
+        run: node scripts/supabase.mjs start -x "$SUPABASE_EXCLUDE"
+      - name: Write .env.local for the local stack
+        run: node scripts/local-env.mjs --app-env=test
+      - name: Seed the public pages
+        run: pnpm db:seed
+      - name: Production build
+        run: |
+          set -o pipefail
+          if ! pnpm build 2>&1 | tee "$RUNNER_TEMP/build.log"; then
+            echo "::error title=Production build failed::$(tail -n 25 "$RUNNER_TEMP/build.log" | sed 's/%/%25/g' | sed ':a;N;$!ba;s/\n/%0A/g')"
+            exit 1
+          fi
+      - name: Start the app
+        run: |
+          pnpm --filter @repo/web start > "$RUNNER_TEMP/web.log" 2>&1 &
+          for attempt in $(seq 1 90); do
+            if curl -fsS http://localhost:3000/api/health > /dev/null; then exit 0; fi
+            sleep 2
+          done
+          tail -n 50 "$RUNNER_TEMP/web.log"
+          exit 1
+      - name: Lighthouse
+        # Logs need repository admin, so the scores, or the tail of a failure, go in annotations too.
+        run: |
+          set -o pipefail
+          if ! pnpm lighthouse 2>&1 | tee "$RUNNER_TEMP/lighthouse.log"; then
+            echo "::error title=Lighthouse failed::$(tail -n 40 "$RUNNER_TEMP/lighthouse.log" | sed 's/%/%25/g' | sed ':a;N;$!ba;s/\n/%0A/g')"
+            exit 1
+          fi
+          echo "::notice title=Lighthouse scores::$(grep '^|' "$RUNNER_TEMP/lighthouse.log" | sed 's/%/%25/g' | sed ':a;N;$!ba;s/\n/%0A/g')"
+      - name: Upload reports
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: lighthouse
+          path: .lighthouseci
+          include-hidden-files: true
           retention-days: 14

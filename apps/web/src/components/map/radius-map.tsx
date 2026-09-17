@@ -23,6 +23,7 @@ export interface RadiusMapProps {
   place?: string | null;
 }
 
+/** An instructor's own coverage area, as they set it (COV-01). A public page draws it as a picture instead (`CoverageImage`). */
 export function RadiusMap({ centre, radiusMiles, place }: RadiusMapProps) {
   const settings = mapSettings(clientEnv.NEXT_PUBLIC_MAPBOX_TOKEN);
   const description = place

@@ -8,9 +8,11 @@ import { SkeletonRow } from '@repo/ui/skeleton';
 import { CalendarDays, CarFront, MapPin } from 'lucide-react';
 import Link from 'next/link';
 import { Suspense } from 'react';
+import { ComingSoon } from '@/components/capture/coming-soon';
 import { InstallPrompt } from '@/components/pwa/install-prompt';
 import { requirePortal } from '@/lib/auth/session';
 import { myLessons } from '@/lib/learner/lessons';
+import { createSupabaseServerClient } from '@/lib/supabase/server';
 
 export const metadata: Metadata = { title: 'Home' };
 
@@ -26,7 +28,7 @@ export default function LearnerHomePage() {
 
 /** PRD 8.2: the one thing a learner opens the app for is when their next lesson is. */
 async function Home() {
-  await requirePortal('learner');
+  const { session } = await requirePortal('learner');
   const { upcoming, past } = await myLessons();
   const next = upcoming[0];
 
@@ -75,8 +77,27 @@ async function Home() {
             />
           </Card>
         )}
+        {upcoming.length === 0 && past.length === 0 ? <FindAnInstructor userId={session.userId} email={session.email} /> : null}
         <InstallPrompt why="Your lessons, payments and progress, one tap away." />
       </div>
     </>
+  );
+}
+
+/**
+ * A learner with no lessons yet may have no instructor either: where learners cannot yet find one
+ * in the app, they can join their area's waiting list or post a lesson request (MKT-10, M5-10).
+ */
+async function FindAnInstructor({ userId, email }: { userId: string; email: string | null }) {
+  const supabase = await createSupabaseServerClient();
+  const { data } = await supabase.from('users').select('full_name').eq('id', userId).maybeSingle();
+  return (
+    <Card className="flex flex-col gap-4">
+      <div className="flex flex-col gap-1">
+        <CardTitle>Looking for an instructor?</CardTitle>
+        <CardDescription>Finding instructors near you in the app is coming soon. Check your area to hear when it opens.</CardDescription>
+      </div>
+      <ComingSoon prefill={{ ...(data?.full_name ? { fullName: data.full_name } : {}), ...(email ? { email } : {}) }} />
+    </Card>
   );
 }

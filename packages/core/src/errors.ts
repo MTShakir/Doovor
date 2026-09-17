@@ -23,6 +23,12 @@ export const domainErrorCodes = [
   'PDI_NOT_LINKED',
   'PAYMENT_FAILED',
   'ALREADY_RECORDED',
+  'CONSENT_REQUIRED',
+  'POSTCODE_NOT_FOUND',
+  'MARKETPLACE_OPEN',
+  'INSTRUCTOR_INACTIVE',
+  'BUSINESS_SUSPENDED',
+  'VIEW_AS_ENDED',
   'UNKNOWN',
 ] as const;
 
@@ -55,6 +61,12 @@ export const defaultErrorCopy: Record<DomainErrorCode, string> = {
   PDI_NOT_LINKED: 'Trainee instructors need a supervising school or instructor first.',
   PAYMENT_FAILED: 'The payment did not go through.',
   ALREADY_RECORDED: 'This lesson already has a lesson record.',
+  CONSENT_REQUIRED: 'Tick the box to say we may keep this and email you about it.',
+  POSTCODE_NOT_FOUND: 'We could not find that postcode. Check it and try again.',
+  MARKETPLACE_OPEN: 'You can already find and book instructors near you.',
+  INSTRUCTOR_INACTIVE: 'This instructor is not taking lessons here any more.',
+  BUSINESS_SUSPENDED: 'This Business is not taking bookings or payments at the moment.',
+  VIEW_AS_ENDED: 'Viewing as somebody else has ended.',
   UNKNOWN: 'Something went wrong. Try again.',
 };
 
@@ -71,6 +83,8 @@ const SQLSTATE_TO_CODE: Record<string, DomainErrorCode> = {
   PGRST116: 'NOT_FOUND', // PostgREST: no row for .single()
   PGRST301: 'NOT_AUTHENTICATED', // PostgREST: JWT invalid or expired
   SESSION_ENDED: 'NOT_AUTHENTICATED', // the token's session was signed out (private.check_request, D-041)
+  '25006': 'READ_ONLY_SESSION', // read_only_sql_transaction: staff viewing as somebody change nothing (ADM-06, D-129)
+  VIEW_AS_ENDED: 'VIEW_AS_ENDED', // the viewing a request named has ended or was never this session's (D-129)
 };
 
 export interface ParsedDomainError {

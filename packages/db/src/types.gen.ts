@@ -9,6 +9,86 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      account_suspensions: {
+        Row: {
+          reason: string
+          suspended_at: string
+          suspended_by: string | null
+          user_id: string
+        }
+        Insert: {
+          reason: string
+          suspended_at?: string
+          suspended_by?: string | null
+          user_id: string
+        }
+        Update: {
+          reason?: string
+          suspended_at?: string
+          suspended_by?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      area_waiting_list: {
+        Row: {
+          confirmation_sent_at: string | null
+          consent_wording: string
+          consented_at: string
+          created_at: string
+          email: string
+          full_name: string
+          id: string
+          left_at: string | null
+          postcode: string
+          postcode_area: string
+          token: string
+          told_open_at: string | null
+          transmission: Database["public"]["Enums"]["transmission"] | null
+          user_id: string | null
+        }
+        Insert: {
+          confirmation_sent_at?: string | null
+          consent_wording: string
+          consented_at?: string
+          created_at?: string
+          email: string
+          full_name: string
+          id?: string
+          left_at?: string | null
+          postcode: string
+          postcode_area: string
+          token?: string
+          told_open_at?: string | null
+          transmission?: Database["public"]["Enums"]["transmission"] | null
+          user_id?: string | null
+        }
+        Update: {
+          confirmation_sent_at?: string | null
+          consent_wording?: string
+          consented_at?: string
+          created_at?: string
+          email?: string
+          full_name?: string
+          id?: string
+          left_at?: string | null
+          postcode?: string
+          postcode_area?: string
+          token?: string
+          told_open_at?: string | null
+          transmission?: Database["public"]["Enums"]["transmission"] | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "area_waiting_list_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       audit_log: {
         Row: {
           action: string
@@ -437,10 +517,12 @@ export type Database = {
           base_postcode: string | null
           created_at: string
           created_by: string | null
+          expected_instructors: number | null
           founding_offer: boolean
           id: string
           logo_url: string | null
           name: string
+          onboarding_completed_at: string | null
           plan: Database["public"]["Enums"]["plan_key"]
           plan_expires_at: string | null
           settings: Json
@@ -451,6 +533,9 @@ export type Database = {
           stripe_connected_at: string | null
           stripe_details_submitted: boolean
           stripe_payouts_enabled: boolean
+          suspended_at: string | null
+          suspended_by: string | null
+          suspension_reason: string | null
           timezone: string
           type: Database["public"]["Enums"]["business_type"]
           updated_at: string
@@ -462,10 +547,12 @@ export type Database = {
           base_postcode?: string | null
           created_at?: string
           created_by?: string | null
+          expected_instructors?: number | null
           founding_offer?: boolean
           id?: string
           logo_url?: string | null
           name: string
+          onboarding_completed_at?: string | null
           plan?: Database["public"]["Enums"]["plan_key"]
           plan_expires_at?: string | null
           settings?: Json
@@ -476,6 +563,9 @@ export type Database = {
           stripe_connected_at?: string | null
           stripe_details_submitted?: boolean
           stripe_payouts_enabled?: boolean
+          suspended_at?: string | null
+          suspended_by?: string | null
+          suspension_reason?: string | null
           timezone?: string
           type: Database["public"]["Enums"]["business_type"]
           updated_at?: string
@@ -487,10 +577,12 @@ export type Database = {
           base_postcode?: string | null
           created_at?: string
           created_by?: string | null
+          expected_instructors?: number | null
           founding_offer?: boolean
           id?: string
           logo_url?: string | null
           name?: string
+          onboarding_completed_at?: string | null
           plan?: Database["public"]["Enums"]["plan_key"]
           plan_expires_at?: string | null
           settings?: Json
@@ -501,6 +593,9 @@ export type Database = {
           stripe_connected_at?: string | null
           stripe_details_submitted?: boolean
           stripe_payouts_enabled?: boolean
+          suspended_at?: string | null
+          suspended_by?: string | null
+          suspension_reason?: string | null
           timezone?: string
           type?: Database["public"]["Enums"]["business_type"]
           updated_at?: string
@@ -513,6 +608,50 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "users"
             referencedColumns: ["id"]
+          },
+        ]
+      }
+      cities: {
+        Row: {
+          name: string
+          slug: string
+        }
+        Insert: {
+          name: string
+          slug: string
+        }
+        Update: {
+          name?: string
+          slug?: string
+        }
+        Relationships: []
+      }
+      city_districts: {
+        Row: {
+          admin_district: string
+          area_name: string | null
+          area_slug: string | null
+          city_slug: string
+        }
+        Insert: {
+          admin_district: string
+          area_name?: string | null
+          area_slug?: string | null
+          city_slug: string
+        }
+        Update: {
+          admin_district?: string
+          area_name?: string | null
+          area_slug?: string | null
+          city_slug?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "city_districts_city_slug_fkey"
+            columns: ["city_slug"]
+            isOneToOne: false
+            referencedRelation: "cities"
+            referencedColumns: ["slug"]
           },
         ]
       }
@@ -795,6 +934,39 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      impersonation_sessions: {
+        Row: {
+          ended_at: string | null
+          expires_at: string
+          id: string
+          reason: string
+          staff_session_id: string
+          staff_user_id: string
+          started_at: string
+          target_user_id: string
+        }
+        Insert: {
+          ended_at?: string | null
+          expires_at?: string
+          id?: string
+          reason: string
+          staff_session_id: string
+          staff_user_id: string
+          started_at?: string
+          target_user_id: string
+        }
+        Update: {
+          ended_at?: string | null
+          expires_at?: string
+          id?: string
+          reason?: string
+          staff_session_id?: string
+          staff_user_id?: string
+          started_at?: string
+          target_user_id?: string
+        }
+        Relationships: []
       }
       instructor_profiles: {
         Row: {
@@ -1348,6 +1520,86 @@ export type Database = {
           },
         ]
       }
+      lesson_requests: {
+        Row: {
+          budget_pence: number | null
+          confirmation_sent_at: string | null
+          consent_wording: string
+          consented_at: string
+          created_at: string
+          days: number[]
+          email: string
+          experience: string
+          full_name: string
+          id: string
+          phone: string | null
+          postcode: string
+          postcode_area: string
+          start_when: string
+          times: string[]
+          token: string
+          told_open_at: string | null
+          transmission: Database["public"]["Enums"]["transmission"]
+          updated_at: string
+          user_id: string | null
+          withdrawn_at: string | null
+        }
+        Insert: {
+          budget_pence?: number | null
+          confirmation_sent_at?: string | null
+          consent_wording: string
+          consented_at?: string
+          created_at?: string
+          days: number[]
+          email: string
+          experience: string
+          full_name: string
+          id?: string
+          phone?: string | null
+          postcode: string
+          postcode_area: string
+          start_when: string
+          times: string[]
+          token?: string
+          told_open_at?: string | null
+          transmission: Database["public"]["Enums"]["transmission"]
+          updated_at?: string
+          user_id?: string | null
+          withdrawn_at?: string | null
+        }
+        Update: {
+          budget_pence?: number | null
+          confirmation_sent_at?: string | null
+          consent_wording?: string
+          consented_at?: string
+          created_at?: string
+          days?: number[]
+          email?: string
+          experience?: string
+          full_name?: string
+          id?: string
+          phone?: string | null
+          postcode?: string
+          postcode_area?: string
+          start_when?: string
+          times?: string[]
+          token?: string
+          told_open_at?: string | null
+          transmission?: Database["public"]["Enums"]["transmission"]
+          updated_at?: string
+          user_id?: string | null
+          withdrawn_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "lesson_requests_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       lesson_types: {
         Row: {
           business_id: string
@@ -1391,6 +1643,30 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      marketplace_regions: {
+        Row: {
+          created_at: string
+          marketplace_enabled: boolean
+          postcode_area: string
+          switched_at: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          marketplace_enabled?: boolean
+          postcode_area: string
+          switched_at?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          marketplace_enabled?: boolean
+          postcode_area?: string
+          switched_at?: string | null
+          updated_at?: string
+        }
+        Relationships: []
       }
       memberships: {
         Row: {
@@ -2500,6 +2776,7 @@ export type Database = {
     }
     Functions: {
       accept_invitation: { Args: { p_token: string }; Returns: string }
+      accept_member_invitation: { Args: { p_token: string }; Returns: string }
       add_learner: {
         Args: {
           p_instructor_id: string
@@ -2510,6 +2787,91 @@ export type Database = {
           p_usual_minutes?: number
         }
         Returns: string
+      }
+      admin_audit_log: {
+        Args: {
+          p_actions?: string[]
+          p_before_at?: string
+          p_before_id?: string
+          p_business?: string
+          p_from?: string
+          p_limit?: number
+          p_person?: string
+          p_to?: string
+        }
+        Returns: {
+          about_email: string
+          about_name: string
+          action: string
+          actor_email: string
+          actor_name: string
+          actor_role: string
+          after: Json
+          before: Json
+          business_name: string
+          entity: string
+          id: string
+          occurred_at: string
+        }[]
+      }
+      admin_business: { Args: { p_business_id: string }; Returns: Json }
+      admin_businesses: {
+        Args: { p_limit?: number; p_query?: string }
+        Returns: {
+          base_postcode: string
+          business_id: string
+          created_at: string
+          instructors: number
+          name: string
+          owner_email: string
+          owner_name: string
+          status: Database["public"]["Enums"]["business_status"]
+          type: Database["public"]["Enums"]["business_type"]
+        }[]
+      }
+      admin_instructors: {
+        Args: { p_limit?: number; p_query?: string }
+        Returns: {
+          account_name: string
+          business_id: string
+          business_name: string
+          display_name: string
+          email: string
+          instructor_id: string
+          suspended: boolean
+          user_id: string
+          verification_status: Database["public"]["Enums"]["verification_status"]
+        }[]
+      }
+      admin_learners: {
+        Args: { p_limit?: number; p_query?: string }
+        Returns: {
+          businesses: number
+          email: string
+          name: string
+          suspended: boolean
+          user_id: string
+        }[]
+      }
+      admin_person: { Args: { p_user_id: string }; Returns: Json }
+      admin_platform_settings: { Args: never; Returns: Json }
+      admin_regions: { Args: never; Returns: Json }
+      admin_reset_two_step: { Args: { p_user_id: string }; Returns: undefined }
+      admin_set_account_suspended: {
+        Args: { p_reason?: string; p_suspended: boolean; p_user_id: string }
+        Returns: undefined
+      }
+      admin_set_business_suspended: {
+        Args: { p_business_id: string; p_reason?: string; p_suspended: boolean }
+        Returns: undefined
+      }
+      admin_set_marketplace_region: {
+        Args: { p_area: string; p_open: boolean }
+        Returns: undefined
+      }
+      admin_set_platform_setting: {
+        Args: { p_key: string; p_value: Json }
+        Returns: undefined
       }
       assign_learner: {
         Args: { p_instructor_id: string; p_learner_id: string }
@@ -2533,6 +2895,14 @@ export type Database = {
         }[]
       }
       booking_page: { Args: { p_slug: string }; Returns: Json }
+      business_billing: {
+        Args: { p_business_id: string }
+        Returns: {
+          founding_offer: boolean
+          plan: Database["public"]["Enums"]["plan_key"]
+          plan_expires_at: string
+        }[]
+      }
       cache_postcode: {
         Args: {
           p_country?: string
@@ -2548,6 +2918,11 @@ export type Database = {
         Args: { p_booking_id: string; p_reason?: string }
         Returns: Json
       }
+      city_page: {
+        Args: { p_area?: string; p_city: string; p_transmission?: string }
+        Returns: Json
+      }
+      coming_soon_area: { Args: { p_postcode: string }; Returns: Json }
       complete_booking: { Args: { p_booking_id: string }; Returns: string }
       covers_postcode: {
         Args: { p_instructor_id: string; p_postcode: string }
@@ -2587,18 +2962,25 @@ export type Database = {
         Args: { p_booking_id: string; p_reason: string }
         Returns: string
       }
+      end_impersonation: { Args: { p_session_id: string }; Returns: undefined }
+      feature_flags: { Args: never; Returns: Json }
       hold_booking_for_payment: {
         Args: { p_booking_id: string }
         Returns: Json
       }
+      impersonation_context: { Args: never; Returns: Json }
+      instructor_profile_page: { Args: { p_slug: string }; Returns: Json }
       invitation_details: {
         Args: { p_token: string }
         Returns: {
+          already_member: boolean
           business_name: string
           email: string
           expired: boolean
           full_name: string
           instructor_name: string
+          kind: string
+          role: Database["public"]["Enums"]["membership_role"]
         }[]
       }
       invite_learner: {
@@ -2608,6 +2990,21 @@ export type Database = {
           p_full_name?: string
           p_instructor_id: string
           p_phone?: string
+        }
+        Returns: {
+          expires_at: string
+          invitation_id: string
+          token: string
+        }[]
+      }
+      invite_member: {
+        Args: {
+          p_business_id: string
+          p_channel: string
+          p_email?: string
+          p_full_name?: string
+          p_phone?: string
+          p_role: Database["public"]["Enums"]["membership_role"]
         }
         Returns: {
           expires_at: string
@@ -2625,10 +3022,25 @@ export type Database = {
         }
         Returns: string
       }
+      join_area_waiting_list: {
+        Args: {
+          p_consent: string
+          p_email: string
+          p_full_name: string
+          p_postcode: string
+          p_transmission?: Database["public"]["Enums"]["transmission"]
+        }
+        Returns: Json
+      }
+      learner_allocation: {
+        Args: { p_business_id: string; p_learner_id: string }
+        Returns: Json
+      }
       learner_balance: {
         Args: { p_business_id: string; p_learner_id: string }
         Returns: Json
       }
+      learner_capture_by_token: { Args: { p_token: string }; Returns: Json }
       learner_history: {
         Args: { p_learner_id: string }
         Returns: {
@@ -2639,6 +3051,7 @@ export type Database = {
           happened_at: string
         }[]
       }
+      leave_learner_capture: { Args: { p_token: string }; Returns: number }
       list_my_sessions: {
         Args: never
         Returns: {
@@ -2659,6 +3072,14 @@ export type Database = {
         Args: { p_business_id: string; p_from: string; p_to: string }
         Returns: Json
       }
+      next_open_slots: {
+        Args: {
+          p_duration_minutes: number
+          p_instructor_id: string
+          p_limit?: number
+        }
+        Returns: string[]
+      }
       open_slots: {
         Args: {
           p_date: string
@@ -2667,6 +3088,43 @@ export type Database = {
           p_instructor_id: string
         }
         Returns: string[]
+      }
+      payments_account: {
+        Args: { p_business_id: string }
+        Returns: {
+          account_id: string
+          charges_enabled: boolean
+          connected_at: string
+          details_submitted: boolean
+          payouts_enabled: boolean
+        }[]
+      }
+      place_of_postcode: {
+        Args: { p_postcode: string }
+        Returns: {
+          area_name: string
+          area_slug: string
+          city_name: string
+          city_slug: string
+          has_hub: boolean
+        }[]
+      }
+      platform_dashboard: { Args: never; Returns: Json }
+      post_lesson_request: {
+        Args: {
+          p_budget_pence?: number
+          p_consent: string
+          p_days: number[]
+          p_email: string
+          p_experience: string
+          p_full_name: string
+          p_phone?: string
+          p_postcode: string
+          p_start_when: string
+          p_times: string[]
+          p_transmission: Database["public"]["Enums"]["transmission"]
+        }
+        Returns: Json
       }
       record_offline_package: {
         Args: { p_learner_id: string; p_method: string; p_package_id: string }
@@ -2686,6 +3144,10 @@ export type Database = {
         }
         Returns: string
       }
+      revoke_member_invitation: {
+        Args: { p_invitation_id: string }
+        Returns: undefined
+      }
       revoke_my_session: { Args: { p_session_id: string }; Returns: boolean }
       save_lesson_record: {
         Args: {
@@ -2699,6 +3161,9 @@ export type Database = {
         }
         Returns: Json
       }
+      school_overview: { Args: { p_business_id: string }; Returns: Json }
+      school_profile_page: { Args: { p_slug: string }; Returns: Json }
+      school_team: { Args: { p_business_id: string }; Returns: Json }
       set_availability_exception: {
         Args: {
           p_ends_at: string
@@ -2720,6 +3185,26 @@ export type Database = {
       set_learner_status: {
         Args: { p_learner_id: string; p_reason?: string; p_status: string }
         Returns: Database["public"]["Enums"]["learner_status"]
+      }
+      set_lesson_prices: {
+        Args: {
+          p_business_id: string
+          p_instructor_id?: string
+          p_prices: Json
+        }
+        Returns: undefined
+      }
+      set_member_active: {
+        Args: { p_active: boolean; p_membership_id: string }
+        Returns: undefined
+      }
+      set_member_permission: {
+        Args: {
+          p_allowed: boolean
+          p_membership_id: string
+          p_permission: string
+        }
+        Returns: undefined
       }
       set_onboarding_prices: {
         Args: {
@@ -2768,12 +3253,17 @@ export type Database = {
         Returns: number
       }
       settle_offline_refund: { Args: { p_refund_id: string }; Returns: Json }
+      sitemap_entries: { Args: never; Returns: Json }
       slot_problem: {
         Args: {
           p_duration_minutes: number
           p_instructor_id: string
           p_starts_at: string
         }
+        Returns: string
+      }
+      start_impersonation: {
+        Args: { p_reason: string; p_user_id: string }
         Returns: string
       }
       stop_recurrence: { Args: { p_recurrence_id: string }; Returns: undefined }
@@ -2864,6 +3354,10 @@ export type Database = {
       system_extend_recurrences: { Args: { p_weeks?: number }; Returns: number }
       system_fee_to_charge: { Args: { p_booking_id: string }; Returns: Json }
       system_issue_receipt: { Args: { p_payment_id: string }; Returns: Json }
+      system_learner_capture_confirmation: {
+        Args: { p_id: string; p_kind: string }
+        Returns: Json
+      }
       system_lesson_record_notice: {
         Args: { p_lesson_record_id: string }
         Returns: Json
@@ -2871,6 +3365,10 @@ export type Database = {
       system_lessons_to_charge: {
         Args: { p_within_hours?: number }
         Returns: Json
+      }
+      system_mark_learner_capture_confirmed: {
+        Args: { p_id: string; p_kind: string }
+        Returns: undefined
       }
       system_mark_notification_failed: {
         Args: { p_error: string; p_id: string }
@@ -2889,6 +3387,10 @@ export type Database = {
         Args: { p_receipt_id: string }
         Returns: boolean
       }
+      system_mark_told_region_open: {
+        Args: { p_area: string; p_email: string }
+        Returns: undefined
+      }
       system_notification_mutes: {
         Args: {
           p_category: Database["public"]["Enums"]["notification_category"]
@@ -2902,6 +3404,7 @@ export type Database = {
       system_notify: { Args: { p_rows: Json }; Returns: number }
       system_overdue_lessons: { Args: never; Returns: Json }
       system_payment_notice: { Args: { p_payment_id: string }; Returns: Json }
+      system_plan_limits: { Args: never; Returns: Json }
       system_process_stripe_event: {
         Args: {
           p_account_id: string
@@ -2985,6 +3488,10 @@ export type Database = {
         Returns: Json
       }
       system_refund_to_send: { Args: { p_refund_id: string }; Returns: Json }
+      system_region_opened_recipients: {
+        Args: { p_area: string }
+        Returns: Json
+      }
       system_release_sms: {
         Args: { p_business_id: string }
         Returns: undefined

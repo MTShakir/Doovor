@@ -48,11 +48,34 @@ select is_empty(
 --   signs in, and the answer is about hours the instructor publishes anyway (BOK-02, R-04).
 --   booking_page, open_slots: the booking link itself. An instructor shares it to be booked
 --   from, and it answers only for one who has been verified (BOK-02, INS-02).
+--   place_of_postcode: the public pages find the city and area of a postcode. It reads only the
+--   postcode cache and the city reference data, which anybody may read already (PRD 8.3, M5-01).
+--   instructor_profile_page, next_open_slots: the public profile. The profile is a fixed list of
+--   fields for an instructor the platform has checked, and the times are ones they publish (PUB-01).
+--   school_profile_page: the public school page, a fixed list of fields for a school in good
+--   standing and the instructors on it a learner could find anyway (PUB-01, M5-03).
+--   city_page: the city, area and transmission pages, the instructors search may show there, each
+--   a fixed list of fields (PRD 8.3, M5-07).
+--   sitemap_entries: the addresses the sitemaps list, of pages that are public already (PRD 14.6,
+--   M5-08).
+--   coming_soon_area: whether the learner marketplace is open in a postcode's area, its city, and
+--   how many checked instructors cover it, all public already (MKT-10, M5-10).
+--   join_area_waiting_list, post_lesson_request: a learner with no account joins an area's waiting
+--   list or posts a request, only with consent; each answers the area alone, the same for a new
+--   entry as for one already there (MKT-10, M5-10).
+--   learner_capture_by_token, leave_learner_capture: the link in the confirmation email, which
+--   answers only what a token is for, where, and whether it stands, and leaves it (MKT-10, M5-10).
+--   feature_flags: which features are switched on for everybody, which the sign-in page shows
+--   before anybody signs in; yes or no for each, and nothing else (ADM-05, M5-20).
 select is_empty(
   $$ select distinct routine_name from information_schema.routine_privileges
       where routine_schema = 'public' and grantee in ('PUBLIC', 'anon')
         and routine_name not in ('covers_postcode', 'invitation_details', 'slot_problem',
-                                 'booking_page', 'open_slots') $$,
+                                 'booking_page', 'open_slots', 'place_of_postcode',
+                                 'instructor_profile_page', 'next_open_slots', 'school_profile_page',
+                                 'city_page', 'sitemap_entries', 'coming_soon_area', 'join_area_waiting_list',
+                                 'post_lesson_request', 'learner_capture_by_token', 'leave_learner_capture',
+                                 'feature_flags') $$,
   'no public function is executable by anon unless allowlisted'
 );
 

@@ -2,6 +2,7 @@ import { defaultErrorCopy, parsePostgresError, type DomainErrorCode } from '@rep
 import { lessonRecordPageSchema, lessonRecordSchema } from '@repo/core/schemas/lesson-record';
 import { revalidatePath } from 'next/cache';
 import { getSession } from '@/lib/auth/session';
+import { mayReadLearner } from '@/lib/learners/card';
 import { lessonRecordPage } from '@/lib/lessons/records';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
 
@@ -80,7 +81,7 @@ export async function POST(request: Request): Promise<Response> {
 /**
  * A page of one learner's lesson records, the latest lesson first (PRG-03, M4-06):
  * `?learner=<id>` for the first page, and `&before=<next>` from a page for the one after it.
- * Whoever asks gets only the records they may read, so a learner they may not see has none.
+ * Whoever asks gets only the records they may read, and a learner they may not see is not found.
  */
 export async function GET(request: Request): Promise<Response> {
   const session = await getSession();
@@ -95,6 +96,11 @@ export async function GET(request: Request): Promise<Response> {
 
   try {
     const page = await lessonRecordPage(parsed.data.learner, parsed.data.before);
+    // No records can mean none yet, or a learner this person may not see, who is not found, exactly
+    // as an id that belongs to nobody is (NFR-SEC-01, acceptance test 7, D-131).
+    if (page.records.length === 0 && !(await mayReadLearner(parsed.data.learner, session.userId))) {
+      return refuse('NOT_FOUND', 404);
+    }
     return Response.json({ ok: true, data: page }, { headers: noStore });
   } catch {
     return refuse('UNKNOWN', 500);

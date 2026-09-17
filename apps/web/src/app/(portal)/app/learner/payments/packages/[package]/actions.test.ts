@@ -28,6 +28,9 @@ vi.mock('@/lib/payments/webhook', () => ({
 vi.mock('@/env/server', () => ({ serverEnv: env }));
 vi.mock('next/cache', () => ({ revalidatePath: vi.fn() }));
 
+const refuseWhileViewing = vi.fn<() => Promise<unknown>>(() => Promise.resolve(null));
+vi.mock('@/lib/auth/view-as', () => ({ refuseWhileViewing: () => refuseWhileViewing() }));
+
 const { payPackageWithSavedCard, payPackageWithTestCard, startPackageCheckout } = await import('./actions');
 
 const packageId = '3b0f6a52-1c8e-4d7a-9c61-2f0e9b4d7a13';
@@ -43,6 +46,7 @@ const offer = {
   pricePence: 38000,
   expiryDays: 365,
   onSale: true,
+  suspended: false,
 };
 
 const metadata = {
@@ -123,7 +127,7 @@ describe('starting to pay for a package (PAY-04, M3-13)', () => {
     expect(provider.createCheckoutIntent).not.toHaveBeenCalled();
   });
 
-  it('sells nothing the learner cannot see, has been taken off sale, or cannot be paid by card', async () => {
+  it('sells nothing the learner cannot see, has been taken off sale, cannot be paid by card, or is sold by a suspended Business', async () => {
     packageOffer.mockResolvedValueOnce(null);
     expect(await startPackageCheckout({ packageId, attemptId, startNow: true })).toMatchObject({ ok: false, code: 'NOT_FOUND' });
 
@@ -135,6 +139,14 @@ describe('starting to pay for a package (PAY-04, M3-13)', () => {
 
     packageOffer.mockResolvedValueOnce({ ...offer, accountId: null });
     expect(await startPackageCheckout({ packageId, attemptId, startNow: true })).toMatchObject({ ok: false, code: 'NOT_ALLOWED' });
+
+    // A Business platform staff have suspended sells nothing meanwhile (ADM-02).
+    packageOffer.mockResolvedValueOnce({ ...offer, suspended: true });
+    expect(await startPackageCheckout({ packageId, attemptId, startNow: true })).toMatchObject({
+      ok: false,
+      code: 'BUSINESS_SUSPENDED',
+      message: 'Quayside Driving School is not selling packages at the moment.',
+    });
 
     expect(provider.createCheckoutIntent).not.toHaveBeenCalled();
   });

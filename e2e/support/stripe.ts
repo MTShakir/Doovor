@@ -1,7 +1,6 @@
 import { createHmac } from 'node:crypto';
-import { existsSync } from 'node:fs';
-import path from 'node:path';
 import { expect, type Locator, type Page } from '@playwright/test';
+import { setting } from './settings';
 
 /**
  * What a test needs to work against Stripe test mode (RUNBOOK 3.7a, M3-23): the connected account
@@ -9,20 +8,6 @@ import { expect, type Locator, type Page } from '@playwright/test';
  * and a signature Stripe would put on an event. Read from the repository's .env.local, as the app
  * reads it. Nothing here is used by the runs on the fake.
  */
-
-const envFile = path.resolve(import.meta.dirname, '..', '..', '.env.local');
-let loaded = false;
-
-function setting(key: string): string {
-  if (!loaded) {
-    // Existing variables win, as they do for the app.
-    if (existsSync(envFile)) process.loadEnvFile(envFile);
-    loaded = true;
-  }
-  const value = process.env[key]?.trim();
-  if (!value) throw new Error(`${key} is not set in .env.local. See RUNBOOK 3.7a.`);
-  return value;
-}
 
 /** The test-mode account `pnpm stripe:test-account` made for the seeded school. */
 export function stripeAccountId(): string {

@@ -83,7 +83,7 @@ Do these once, in order. Items marked **You** need the product owner's accounts.
 ### 3.2a Web push (VAPID)
 
 1. **You:** generate a key pair: `npx web-push generate-vapid-keys`. It needs no account anywhere; the pair only identifies this application to push services.
-2. **You:** in Vercel set `NEXT_PUBLIC_VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY` and `VAPID_SUBJECT` (`mailto:` and an address a push service can reach you at). Staging and production get their own pair.
+2. **You:** in Vercel set `NEXT_PUBLIC_VAPID_PUBLIC_KEY` as Config and `VAPID_PRIVATE_KEY` as Secret, for Production and Preview (done for staging on 15 September 2026). `VAPID_SUBJECT` may stay unset: it defaults to the support address in brand.ts. Staging and production get their own pair.
 3. Changing the public key invalidates every subscription: browsers have to turn push on again. Generate once and keep it.
 4. Locally, `pnpm db:env` leaves these blank and the settings screen says push is not set up here. A pair for local work is generated the same way.
 
@@ -122,6 +122,12 @@ Do these once, in order. Items marked **You** need the product owner's accounts.
 4. **You:** Deployment Protection: keep Standard Protection, so previews need a Vercel login.
 5. **You:** Domains: add `app.doovor.com` for the app, and `doovor.com` (with `www` redirecting to it) for the public site, then create the DNS records Vercel shows: usually a CNAME for `app` and an A record for the bare domain. Both point at this project for now. The app sends an app address opened on `doovor.com` to `app.doovor.com`, and `doovor.com` keeps only its own pages (D-084); when the marketing site is built somewhere else, move `doovor.com` there and nothing in the app changes.
 6. Check: the preview URL loads, `/api/health` returns `ok`, and a seeded account signs in (M0-32 done-when).
+
+### 3.5a Map (Mapbox)
+
+1. **You:** in Mapbox, Tokens, create a public token with the default public scopes, restricted to `https://app.doovor.com` and `http://localhost:3000` (done 15 September 2026, "Doovor app"). A restricted token only works on those addresses, so a copy that leaks draws nobody else's maps on this account.
+2. **You:** in Vercel, add `NEXT_PUBLIC_MAPBOX_TOKEN` as Config, Production only: preview deployments are not on a restricted address, so they keep the drawn circle (D-058). Locally, the same line goes in `.env.local`.
+3. A value starting with `NEXT_PUBLIC_` is built into the app, so a change needs a new deployment, not just a restart.
 
 ### 3.6 GitHub
 
@@ -195,6 +201,14 @@ from `pnpm test:e2e:stripe`; every other run stays on the fake.
    what failed.
 6. Afterwards set `PAYMENTS_PROVIDER=fake` again and stop the listener and the runner, so every
    other run stays offline.
+
+### 3.8 Job runner (Inngest)
+
+1. **You:** sign in to Inngest. From Inngest, Settings, Integrations, Vercel, add the integration to the `Doovor` team for the `doovor` project (done 15 September 2026). It adds `INNGEST_EVENT_KEY` and `INNGEST_SIGNING_KEY` to the project itself and registers the app's functions on each deployment. Nobody types either key.
+2. In the integration's settings for `doovor`, set Custom Production Domain to `app.doovor.com`. Without it, Inngest registers through the deployment's own `vercel.app` address, which Deployment Protection (section 3.5 step 4) turns away, and the sync fails with "We could not reach your URL".
+3. To register at once rather than on the next deployment: Inngest, Apps, Sync new app, `https://app.doovor.com/api/inngest`. The app appears as `platform-web` with its functions, and the scheduled ones start within a minute.
+4. Preview deployments do not register while Deployment Protection is on. They need no jobs today; if they ever do, add Vercel's Protection Bypass for Automation secret in the same settings.
+5. `/api/inngest` answers a plain request with 401 Unauthorized once the signing key is set: it only talks to Inngest.
 
 ## 4. Routine operations
 

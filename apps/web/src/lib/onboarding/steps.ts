@@ -1,6 +1,9 @@
+import type { BusinessType } from '@repo/db';
+
 /**
  * The five onboarding screens (AUTH-04). Everything except the name can be skipped, and the
- * step someone is on is stored on their profile so a reload resumes where they left off.
+ * step someone is on is stored on their profile so a reload resumes where they left off. An
+ * instructor who joins a school has four: the school sets the prices (AUTH-05, SCH-04, D-118).
  */
 export const onboardingSteps = [
   { step: 1, slug: 'name', title: 'What should learners call you?', skippable: false },
@@ -28,9 +31,25 @@ export function slugForStep(step: number): OnboardingSlug {
   return stepByNumber(step).slug;
 }
 
+/** The screens an instructor goes through: all five on their own, four at a school. */
+export function stepsFor(businessType: BusinessType): readonly OnboardingStep[] {
+  return businessType === 'school' ? onboardingSteps.filter((entry) => entry.slug !== 'prices') : onboardingSteps;
+}
+
+/** Whether a screen is one of theirs at all. */
+export function isStepFor(step: OnboardingStep, businessType: BusinessType): boolean {
+  return stepsFor(businessType).includes(step);
+}
+
 /** The step after this one, or null when this was the last. */
-export function nextStep(step: number): OnboardingStep | null {
-  return onboardingSteps.find((entry) => entry.step === step + 1) ?? null;
+export function nextStep(step: number, businessType: BusinessType = 'independent'): OnboardingStep | null {
+  return stepsFor(businessType).find((entry) => entry.step > step) ?? null;
+}
+
+/** Where a screen sits in their own list, for the progress bar: "Where do you work" is 4 of 4 at a school. */
+export function stepPosition(step: OnboardingStep, businessType: BusinessType): { current: number; total: number } {
+  const steps = stepsFor(businessType);
+  return { current: steps.indexOf(step) + 1, total: steps.length };
 }
 
 /**

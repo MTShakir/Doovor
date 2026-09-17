@@ -6,12 +6,13 @@ import {
   landingPath,
   needsLearnerOnboarding,
   needsOnboarding,
+  needsSchoolOnboarding,
   requiresMfa,
   safeNextPath,
 } from './portals';
 
 function context(overrides: Partial<AccessContext> = {}): AccessContext {
-  return { userId: 'u1', staffRole: null, isLearner: false, learnerOnboarded: true, memberships: [], ...overrides };
+  return { userId: 'u1', staffRole: null, isLearner: false, learnerOnboarded: true, memberships: [], suspendedBusinesses: [], ...overrides };
 }
 
 function membership(overrides: Partial<AccessMembership>): AccessMembership {
@@ -22,6 +23,7 @@ function membership(overrides: Partial<AccessMembership>): AccessMembership {
     role: 'owner',
     instructorProfileId: null,
     onboarding: null,
+    businessOnboarded: true,
     ...overrides,
   };
 }
@@ -29,6 +31,14 @@ function membership(overrides: Partial<AccessMembership>): AccessMembership {
 describe('portal access', () => {
   it('sends people with no role to the role choice screen (AUTH-03)', () => {
     expect(landingPath(context())).toBe('/start');
+  });
+
+  it('tells somebody whose only Business is suspended, rather than asking them to choose a role (ADM-02)', () => {
+    const ctx = context({ suspendedBusinesses: ['Asha Driving'] });
+    expect(availablePortals(ctx)).toEqual([]);
+    expect(landingPath(ctx)).toBe('/suspended');
+    // A learner too still has their own portal.
+    expect(landingPath(context({ suspendedBusinesses: ['Asha Driving'], isLearner: true }))).toBe('/app/learner');
   });
 
   it('lands an independent instructor on Today', () => {
@@ -41,6 +51,17 @@ describe('portal access', () => {
     for (const role of ['owner', 'manager'] as const) {
       expect(landingPath(context({ memberships: [membership({ businessType: 'school', role })] }))).toBe('/app/school');
     }
+  });
+
+  it('sends the owner or manager of a school not yet set up to set it up first (AUTH-05)', () => {
+    for (const role of ['owner', 'manager'] as const) {
+      const ctx = context({ memberships: [membership({ businessType: 'school', role, businessOnboarded: false })] });
+      expect(needsSchoolOnboarding(ctx)).toBe(true);
+      expect(landingPath(ctx)).toBe('/onboarding/school');
+    }
+    // An instructor at that school has their own onboarding, not the school's.
+    const teacher = context({ memberships: [membership({ businessType: 'school', role: 'instructor', instructorProfileId: 'p9', businessOnboarded: false })] });
+    expect(needsSchoolOnboarding(teacher)).toBe(false);
   });
 
   it('gives a school instructor the instructor portal but not the school portal', () => {

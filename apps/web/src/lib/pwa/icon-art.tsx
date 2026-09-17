@@ -2,7 +2,7 @@ import { brand } from '@repo/config/brand';
 import type { AppIcon } from './icons';
 
 /** A heavy capital D in a 100 by 100 box: a stem, and a bowl with its counter cut out. */
-const mark = 'M22 12 H48 A38 38 0 0 1 48 88 H22 Z M40 30 H48 A20 20 0 0 1 48 70 H40 Z';
+export const brandMark = 'M22 12 H48 A38 38 0 0 1 48 88 H22 Z M40 30 H48 A20 20 0 0 1 48 70 H40 Z';
 
 /**
  * An app icon as the image renderer draws it (PRD 8.1, M4-08): the mark in white on black, the
@@ -23,7 +23,7 @@ export function AppIconArt({ icon }: { icon: AppIcon }) {
       }}
     >
       <svg width={markSize} height={markSize} viewBox="0 0 100 100">
-        <path d={mark} fill={brand.colours.white} fillRule="evenodd" />
+        <path d={brandMark} fill={brand.colours.white} fillRule="evenodd" />
       </svg>
     </div>
   );

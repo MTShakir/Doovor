@@ -30,6 +30,9 @@ vi.mock('@/lib/payments/webhook', () => ({
 vi.mock('@/env/server', () => ({ serverEnv: env }));
 vi.mock('next/cache', () => ({ revalidatePath: vi.fn() }));
 
+const refuseWhileViewing = vi.fn<() => Promise<unknown>>(() => Promise.resolve(null));
+vi.mock('@/lib/auth/view-as', () => ({ refuseWhileViewing: () => refuseWhileViewing() }));
+
 const { payWithSavedCard, saveTestCard, startCardSetup, startCheckout } = await import('./actions');
 
 const bookingId = '6f1c3a52-9d8e-4b7a-8c61-2f0e9b4d7a13';
@@ -92,6 +95,15 @@ beforeEach(() => {
     data: { ...succeeded, status: 'requires_payment_method', clientSecret: 'pi_1_secret_abc' },
   });
   deliverFakePaymentEvent.mockResolvedValue(true);
+});
+
+describe('paying while platform staff view as the learner (ADM-06, M5-21)', () => {
+  it('charges no card and asks the provider for nothing, since the database could only refuse afterwards', async () => {
+    refuseWhileViewing.mockResolvedValueOnce({ ok: false, code: 'READ_ONLY_SESSION', message: 'You are viewing as someone else. Changes are turned off.' });
+    expect(await payWithSavedCard({ bookingId, paymentMethodId: 'pm_1' })).toMatchObject({ ok: false, code: 'READ_ONLY_SESSION' });
+    expect(provider.chargeSavedMethod).not.toHaveBeenCalled();
+    expect(checkoutLesson).not.toHaveBeenCalled();
+  });
 });
 
 describe('paying with a kept card (PAY-02, M3-07)', () => {

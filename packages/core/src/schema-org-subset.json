@@ -1,0 +1,192 @@
+{
+  "source": "https://schema.org/version/latest/schemaorg-current-https.jsonld",
+  "licence": "Creative Commons Attribution-ShareAlike License (version 3.0), schema.org",
+  "fetched": "2026-09-15",
+  "note": "A slice of the vocabulary: the types the public pages use, their parents, and which of those types each property the pages write belongs to (domainIncludes).",
+  "types": {
+    "Person": {
+      "parents": [
+        "Thing"
+      ]
+    },
+    "Service": {
+      "parents": [
+        "Intangible"
+      ]
+    },
+    "Offer": {
+      "parents": [
+        "Intangible"
+      ]
+    },
+    "BreadcrumbList": {
+      "parents": [
+        "ItemList"
+      ]
+    },
+    "ListItem": {
+      "parents": [
+        "Intangible"
+      ]
+    },
+    "LocalBusiness": {
+      "parents": [
+        "Organization",
+        "Place"
+      ]
+    },
+    "EducationalOrganization": {
+      "parents": [
+        "CivicStructure",
+        "Organization"
+      ]
+    },
+    "PostalAddress": {
+      "parents": [
+        "ContactPoint"
+      ]
+    },
+    "City": {
+      "parents": [
+        "AdministrativeArea"
+      ]
+    },
+    "ItemList": {
+      "parents": [
+        "Intangible"
+      ]
+    },
+    "Thing": {
+      "parents": []
+    },
+    "Intangible": {
+      "parents": [
+        "Thing"
+      ]
+    },
+    "Organization": {
+      "parents": [
+        "Thing"
+      ]
+    },
+    "Place": {
+      "parents": [
+        "Thing"
+      ]
+    },
+    "CivicStructure": {
+      "parents": [
+        "Place"
+      ]
+    },
+    "ContactPoint": {
+      "parents": [
+        "StructuredValue"
+      ]
+    },
+    "StructuredValue": {
+      "parents": [
+        "Intangible"
+      ]
+    },
+    "AdministrativeArea": {
+      "parents": [
+        "Place"
+      ]
+    }
+  },
+  "properties": {
+    "address": [
+      "Organization",
+      "Person",
+      "Place"
+    ],
+    "addressCountry": [
+      "PostalAddress"
+    ],
+    "addressLocality": [
+      "PostalAddress"
+    ],
+    "areaServed": [
+      "ContactPoint",
+      "Offer",
+      "Organization",
+      "Service"
+    ],
+    "availability": [
+      "Offer"
+    ],
+    "description": [
+      "Thing"
+    ],
+    "employee": [
+      "Organization"
+    ],
+    "hasOfferCatalog": [
+      "Organization",
+      "Person",
+      "Service"
+    ],
+    "image": [
+      "Thing"
+    ],
+    "item": [
+      "ListItem"
+    ],
+    "itemListElement": [
+      "ItemList"
+    ],
+    "itemOffered": [
+      "Offer"
+    ],
+    "jobTitle": [
+      "Person"
+    ],
+    "knowsLanguage": [
+      "Organization",
+      "Person"
+    ],
+    "logo": [
+      "Organization",
+      "Place",
+      "Service"
+    ],
+    "makesOffer": [
+      "Organization",
+      "Person"
+    ],
+    "name": [
+      "Thing"
+    ],
+    "numberOfItems": [
+      "ItemList"
+    ],
+    "offers": [
+      "Service"
+    ],
+    "position": [
+      "ListItem"
+    ],
+    "price": [
+      "Offer"
+    ],
+    "priceCurrency": [
+      "Offer"
+    ],
+    "priceRange": [
+      "LocalBusiness"
+    ],
+    "provider": [
+      "Service"
+    ],
+    "serviceType": [
+      "Service"
+    ],
+    "url": [
+      "Thing"
+    ],
+    "worksFor": [
+      "Person"
+    ]
+  }
+}

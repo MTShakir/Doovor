@@ -49,6 +49,17 @@ describe('the notification email (NTF-03, M2-28)', () => {
     expect(email.html).toContain('Your badge is running out');
     expect(email.html).not.toContain('Choose what you hear about');
     expect(email.text).not.toContain('undefined');
+    expect(email.text).toContain('You are getting this because you have a');
+  });
+
+  it('says why it came to somebody who gave their details without an account (MKT-10)', async () => {
+    const email = await renderNotificationEmail({
+      title: 'You are on the waiting list for LS',
+      body: 'We will email you when you can book.',
+      reason: 'you joined the waiting list for LS',
+    });
+    expect(email.text).toContain('You are getting this because you joined the waiting list for LS.');
+    expect(email.text).not.toContain('account');
   });
 
   it('writes every notification in the catalogue without a dash anybody has to guess at', async () => {

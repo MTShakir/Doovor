@@ -10,6 +10,7 @@ import { packageOffer, type PackageOffer } from '@/lib/payments/packages';
 import { fakeCardOutcome, paymentsProvider } from '@/lib/payments/provider';
 import { deliverFakePaymentEvent } from '@/lib/payments/webhook';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
+import { refuseWhileViewing } from '@/lib/auth/view-as';
 
 /**
  * Buying a package of lessons by card (PAY-04, PAY-12, R-11, M3-13).
@@ -43,6 +44,7 @@ type Buyable = PackageOffer & { accountId: string };
 async function buyable(packageId: string): Promise<Result<Buyable>> {
   const offer = await packageOffer(packageId);
   if (!offer) return err('NOT_FOUND');
+  if (offer.suspended) return err('BUSINESS_SUSPENDED', `${offer.businessName} is not selling packages at the moment.`);
   if (!offer.onSale) return err('VALIDATION_FAILED', `${offer.businessName} no longer sells this package.`);
   if (offer.accountId === null) return err('NOT_ALLOWED', `${offer.businessName} cannot take card payments yet.`);
   return ok({ ...offer, accountId: offer.accountId });
@@ -75,6 +77,8 @@ function refreshCredit(packageId: string): void {
 
 /** Starts paying for a package with a card typed in now. */
 export async function startPackageCheckout(input: unknown): Promise<Result<PackageCheckout>> {
+  const refused = await refuseWhileViewing();
+  if (refused) return refused;
   const parsed = purchaseSchema.safeParse(input);
   if (!parsed.success) return err('VALIDATION_FAILED');
   if (!parsed.data.startNow) return err('VALIDATION_FAILED', startNowMessage);
@@ -133,6 +137,8 @@ export type SavedCardPurchase =
   | { status: 'check'; clientSecret: string; accountId: string };
 
 export async function payPackageWithSavedCard(input: unknown): Promise<Result<SavedCardPurchase>> {
+  const refused = await refuseWhileViewing();
+  if (refused) return refused;
   const parsed = savedCardSchema.safeParse(input);
   if (!parsed.success) return err('VALIDATION_FAILED');
   if (!parsed.data.startNow) return err('VALIDATION_FAILED', startNowMessage);
@@ -201,6 +207,8 @@ const testSchema = z.object({
  * handler. Not in production.
  */
 export async function payPackageWithTestCard(input: unknown): Promise<Result<{ outcome: 'succeeded' | 'failed' }>> {
+  const refused = await refuseWhileViewing();
+  if (refused) return refused;
   if (serverEnv.APP_ENV === 'production' || serverEnv.PAYMENTS_PROVIDER === 'stripe') {
     return err('NOT_ALLOWED');
   }

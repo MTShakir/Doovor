@@ -9,6 +9,8 @@ import { landingPath } from '@/lib/auth/portals';
 export interface OnboardingSession {
   profileId: string;
   businessId: string;
+  /** A school sets its instructors' prices, so they have no prices step (D-118). */
+  businessType: 'independent' | 'school';
   step: number;
   completed: boolean;
   /** What they are called today: the name step starts from this. */
@@ -49,6 +51,7 @@ export async function requireOnboarding(): Promise<OnboardingSession> {
   return {
     profileId: membership.instructorProfileId,
     businessId: membership.businessId,
+    businessType: membership.businessType,
     step: membership.onboarding.step,
     completed: membership.onboarding.completed,
     displayName: profile?.display_name ?? '',

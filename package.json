@@ -26,6 +26,7 @@
     "db:test": "node scripts/availability-vectors.mjs && node scripts/supabase.mjs test db",
     "db:lint": "node scripts/supabase.mjs db lint --schema public,private --level warning --fail-on warning",
     "test:e2e": "pnpm --filter @repo/e2e test:e2e",
+    "lighthouse": "lhci collect && node scripts/lighthouse-scores.mjs && lhci upload && lhci assert",
     "test:e2e:stripe": "pnpm --filter @repo/e2e test:e2e:stripe",
     "db:seed": "pnpm --filter @repo/db seed",
     "db:env": "node scripts/local-env.mjs",
@@ -34,6 +35,7 @@
     "stripe:test-account": "pnpm --filter @repo/providers stripe:test-account"
   },
   "devDependencies": {
+    "@lhci/cli": "0.15.1",
     "prettier": "^3.9.0",
     "supabase": "^2.117.0",
     "turbo": "^2.10.0",

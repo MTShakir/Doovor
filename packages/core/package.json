@@ -6,6 +6,10 @@
   "exports": {
     ".": "./src/index.ts",
     "./money": "./src/money.ts",
+    "./counts": "./src/counts.ts",
+    "./audit": "./src/audit.ts",
+    "./regions": "./src/regions.ts",
+    "./platform-settings": "./src/platform-settings.ts",
     "./errors": "./src/errors.ts",
     "./images": "./src/images.ts",
     "./result": "./src/result.ts",
@@ -13,6 +17,12 @@
     "./time": "./src/time/index.ts",
     "./phone": "./src/phone.ts",
     "./postcode": "./src/postcode.ts",
+    "./places": "./src/places.ts",
+    "./public-profile": "./src/public-profile.ts",
+    "./structured-data": "./src/structured-data.ts",
+    "./share": "./src/share.ts",
+    "./share-card": "./src/share-card.ts",
+    "./sitemap": "./src/sitemap.ts",
     "./schemas/auth": "./src/schemas/auth.ts",
     "./schemas/onboarding": "./src/schemas/onboarding.ts",
     "./schemas/profile": "./src/schemas/profile.ts",
@@ -45,7 +55,13 @@
     "./lesson-records": "./src/lesson-records.ts",
     "./skill-map": "./src/skill-map.ts",
     "./schemas/lesson-record": "./src/schemas/lesson-record.ts",
-    "./schemas/kept-days": "./src/schemas/kept-days.ts"
+    "./schemas/kept-days": "./src/schemas/kept-days.ts",
+    "./schemas/capture": "./src/schemas/capture.ts",
+    "./schemas/school": "./src/schemas/school.ts",
+    "./schemas/admin": "./src/schemas/admin.ts",
+    "./utilisation": "./src/utilisation.ts",
+    "./allocation": "./src/allocation.ts",
+    "./catalogue": "./src/catalogue.ts"
   },
   "scripts": {
     "lint": "eslint .",
@@ -55,12 +71,14 @@
   "dependencies": {
     "@date-fns/tz": "^1.5.0",
     "date-fns": "^4.4.0",
+    "uqr": "0.1.3",
     "zod": "catalog:"
   },
   "devDependencies": {
     "@repo/config": "workspace:*",
     "@vitest/coverage-v8": "catalog:",
     "eslint": "catalog:",
+    "jsqr": "1.4.0",
     "typescript": "catalog:",
     "vitest": "catalog:"
   }

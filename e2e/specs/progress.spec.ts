@@ -194,14 +194,15 @@ test.describe('progress: lesson records and the skill map (PRG-03, M4-06, M4-07)
       await page.getByRole('main').getByRole('link', { name: 'Jack Taylor' }).click();
       await expect(page.getByRole('heading', { level: 1, name: 'Jack Taylor' })).toBeVisible();
 
-      // An instructor at the school, who does not teach Jack, has no progress of Jack's to look at.
+      // An instructor at the school, who does not teach Jack, finds neither his progress nor him (D-131).
       const stranger = await browser.newContext({ storageState: authFile('schoolInstructor') });
       try {
         const theirs = await stranger.newPage();
         await theirs.goto(`/app/instructor/learners/${jack}/progress`);
         await expect(theirs.getByRole('heading', { name: 'Page not found' })).toBeVisible();
         const answer = await theirs.request.get(`/api/v1/lesson-records?learner=${jack}`);
-        expect(await answer.json()).toEqual({ ok: true, data: { records: [], next: null } });
+        expect(answer.status()).toBe(404);
+        expect(await answer.json()).toEqual({ ok: false, code: 'NOT_FOUND', message: 'We could not find that.' });
       } finally {
         await stranger.close();
       }

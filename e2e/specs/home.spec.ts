@@ -8,7 +8,7 @@ test('home placeholder renders with brand tokens and security headers', async ({
   expect(response?.headers()['x-frame-options']).toBe('DENY');
   expect(response?.headers()['x-request-id']).toBeTruthy();
   await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
-  await expect(page).toHaveTitle(brand.name);
+  await expect(page).toHaveTitle(`${brand.name}: book, pay and track driving lessons`);
   // Colours come from brand.ts through CSS variables (D-005).
   const yellow = await page.evaluate(() => getComputedStyle(document.documentElement).getPropertyValue('--brand-yellow').trim());
   expect(yellow).toBe(brand.colours.yellow);

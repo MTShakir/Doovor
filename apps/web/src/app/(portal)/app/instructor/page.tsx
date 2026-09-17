@@ -1,5 +1,6 @@
 import { setupComplete, type SetupState } from '@repo/core/setup-checklist';
 import { formatDateWithYear } from '@repo/core/time';
+import { todayInZone } from '@repo/core/time';
 import { PageHeader } from '@repo/ui/app-shell';
 import { SkeletonRow } from '@repo/ui/skeleton';
 import { connection } from 'next/server';
@@ -60,7 +61,7 @@ async function Setup() {
   const [{ data: profile }, { data: business }, { count: learners }] = await Promise.all([
     supabase
       .from('instructor_profiles')
-      .select('verification_status, is_listed')
+      .select('verification_status, badge_expiry')
       .eq('id', membership.instructorProfileId)
       .maybeSingle(),
     supabase
@@ -79,7 +80,7 @@ async function Setup() {
     learners: learners ?? 0,
     paymentsConnected: business?.stripe_charges_enabled ?? false,
     verified: profile?.verification_status === 'approved',
-    listed: profile?.is_listed ?? true,
+    badgeInDate: !profile?.badge_expiry || profile.badge_expiry >= todayInZone(),
   };
 
   return setupComplete(state) ? null : <SetupChecklist state={state} />;

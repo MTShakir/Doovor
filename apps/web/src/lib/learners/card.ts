@@ -74,3 +74,17 @@ export async function learnerCard(learnerId: string): Promise<LearnerCard | null
     pickups: pickupsSchema.parse(data.pickup_points),
   };
 }
+
+/**
+ * Whether the person asking may see this learner at all (NFR-SEC-01): themselves, a learner of a
+ * Business they own or manage, or one they teach. The policies on the learner's links decide, as
+ * they do for the card. A learner somebody may not see is not found, just as an id that belongs to
+ * nobody is (D-131).
+ */
+export async function mayReadLearner(learnerId: string, readerId: string): Promise<boolean> {
+  if (learnerId === readerId) return true;
+  const supabase = await createSupabaseServerClient();
+  const { data, error } = await supabase.from('learner_relationships').select('id').eq('learner_id', learnerId).limit(1);
+  if (error) throw error;
+  return data.length > 0;
+}

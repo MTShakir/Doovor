@@ -20,13 +20,17 @@ export function canUsePortal(context: AccessContext, portal: Portal): boolean {
 
 /**
  * Where to send someone after sign-in. People with no role yet choose one (AUTH-03), and an
- * instructor who has not finished onboarding goes there rather than through their diary.
+ * instructor who has not finished onboarding goes there rather than through their diary. Somebody
+ * whose only portal was a Business now suspended is told so, rather than asked to choose a role
+ * (ADM-02).
  */
 export function landingPath(context: AccessContext): string {
   const [first] = availablePortals(context);
+  if (first === 'school' && needsSchoolOnboarding(context)) return '/onboarding/school';
   if (first === 'instructor' && needsOnboarding(context)) return '/onboarding';
   if (first === 'learner' && needsLearnerOnboarding(context)) return '/onboarding/about-you';
-  return first ? portalRoots[first] : '/start';
+  if (first) return portalRoots[first];
+  return context.suspendedBusinesses.length > 0 ? '/suspended' : '/start';
 }
 
 /**
@@ -50,6 +54,14 @@ export function safeNextPath(next: string | null | undefined, fallback = '/'): s
 export function needsOnboarding(context: AccessContext): boolean {
   const instructor = context.memberships.find((membership) => membership.onboarding !== null);
   return instructor?.onboarding ? !instructor.onboarding.completed : false;
+}
+
+/** A school's owner or manager sets the school up before its portal opens (AUTH-05, M5-11). */
+export function needsSchoolOnboarding(context: AccessContext): boolean {
+  return context.memberships.some(
+    (membership) =>
+      membership.businessType === 'school' && (membership.role === 'owner' || membership.role === 'manager') && !membership.businessOnboarded,
+  );
 }
 
 /** A learner who has not answered the onboarding questions is asked them first (AUTH-06). */

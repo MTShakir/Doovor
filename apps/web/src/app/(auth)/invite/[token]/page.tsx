@@ -1,13 +1,15 @@
-import type { Metadata } from 'next';
+import type { Metadata, Route } from 'next';
 import { Button } from '@repo/ui/button';
 import { Skeleton } from '@repo/ui/skeleton';
 import Link from 'next/link';
 import { Suspense } from 'react';
 import { FormAlert } from '@/components/form-alert';
+import { landingPath } from '@/lib/auth/portals';
 import { getAccess } from '@/lib/auth/session';
 import { redirectTo } from '@/lib/redirect-to';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
 import { AcceptButton } from './accept-button';
+import { JoinButton } from './join-button';
 
 export const metadata: Metadata = { title: 'Your invitation' };
 
@@ -19,7 +21,26 @@ export default function InvitePage({ params }: { params: Promise<{ token: string
   );
 }
 
-/** AUTH-07: what an invitation link opens, signed in or not. */
+/** The name and email an invitation already knows, so nothing is retyped on a phone. */
+function signUpLink(role: 'learner' | 'instructor', details: { full_name: string | null; email: string | null }): { href: string; prefilled: boolean } {
+  const query = new URLSearchParams({ role });
+  if (details.full_name) query.set('name', details.full_name);
+  if (details.email) query.set('email', details.email);
+  return { href: `/sign-up?${query.toString()}`, prefilled: query.has('name') || query.has('email') };
+}
+
+function SignInInstead() {
+  return (
+    <p className="text-body text-ink">
+      Already have an account?{' '}
+      <Link href="/sign-in" className="font-semibold text-blue underline underline-offset-4">
+        Sign in
+      </Link>
+    </p>
+  );
+}
+
+/** AUTH-07 and AUTH-05: what an invitation link opens, signed in or not. */
 async function Invitation({ params }: { params: Promise<{ token: string }> }) {
   const { token } = await params;
   const supabase = await createSupabaseServerClient();
@@ -30,7 +51,7 @@ async function Invitation({ params }: { params: Promise<{ token: string }> }) {
       <div className="flex flex-col gap-4">
         <h1 className="text-h1 text-black">This link does not work</h1>
         <p className="text-body text-grey-700">
-          Ask your instructor to send you a new one. Links stop working once they have been used.
+          Ask whoever sent it to send you a new one. Links stop working once they have been used.
         </p>
         <Button asChild width="responsive">
           <Link href="/">Go to the home page</Link>
@@ -50,6 +71,10 @@ async function Invitation({ params }: { params: Promise<{ token: string }> }) {
     );
   }
 
+  if (data.kind === 'member') {
+    return <SchoolInvitation token={token} details={data} />;
+  }
+
   const access = await getAccess();
   if (access?.access.isLearner) {
     return (
@@ -67,9 +92,7 @@ async function Invitation({ params }: { params: Promise<{ token: string }> }) {
 
   // Signed out. The proxy has kept the token for after the account exists, so this only has
   // to pre-fill what the invitation already knows.
-  const query = new URLSearchParams({ role: 'learner' });
-  if (data.full_name) query.set('name', data.full_name);
-  if (data.email) query.set('email', data.email);
+  const signUp = signUpLink('learner', data);
 
   return (
     <div className="flex flex-col gap-4">
@@ -77,18 +100,80 @@ async function Invitation({ params }: { params: Promise<{ token: string }> }) {
       <p className="text-body text-grey-700">
         Create your account and you will land linked to {who}, ready to book your first lesson.
       </p>
-      {query.has('name') || query.has('email') ? (
-        <FormAlert tone="success">Your details are already filled in. It takes a minute.</FormAlert>
-      ) : null}
+      {signUp.prefilled ? <FormAlert tone="success">Your details are already filled in. It takes a minute.</FormAlert> : null}
       <Button asChild width="responsive" size="lg">
-        <Link href={`/sign-up?${query.toString()}`}>Create my account</Link>
+        <Link href={signUp.href as Route}>Create my account</Link>
       </Button>
-      <p className="text-body text-ink">
-        Already have an account?{' '}
-        <Link href="/sign-in" className="font-semibold text-blue underline underline-offset-4">
-          Sign in
-        </Link>
+      <SignInInstead />
+    </div>
+  );
+}
+
+/** AUTH-05: an instructor invited to teach for a school. */
+async function SchoolInvitation({
+  token,
+  details,
+}: {
+  token: string;
+  details: { business_name: string; full_name: string | null; email: string | null; already_member: boolean };
+}) {
+  const school = details.business_name;
+  const heading = `${school} would like you to teach with them`;
+  const access = await getAccess();
+
+  if (access && details.already_member) {
+    // Usually the owner, checking the link they are about to send.
+    return (
+      <div className="flex flex-col gap-4">
+        <h1 className="text-h1 text-black">You are already part of {school}</h1>
+        <p className="text-body text-grey-700">
+          This link is for the instructor you are inviting. Send it to them: it works once, for whoever opens it first.
+        </p>
+        <Button asChild width="responsive">
+          <Link href={landingPath(access.access) as Route}>Go to my account</Link>
+        </Button>
+      </div>
+    );
+  }
+
+  if (access) {
+    const teaching = access.access.memberships.find((membership) => membership.instructorProfileId !== null);
+    if (teaching) {
+      return (
+        <div className="flex flex-col gap-4">
+          <h1 className="text-h1 text-black">This account already teaches</h1>
+          <p className="text-body text-grey-700">
+            An account teaches for one driving business, and this one teaches for {teaching.businessName}. To join {school},
+            sign out and create a new account with a different email.
+          </p>
+          <Button asChild width="responsive">
+            <Link href={landingPath(access.access) as Route}>Go to my account</Link>
+          </Button>
+        </div>
+      );
+    }
+    return (
+      <div className="flex flex-col gap-4">
+        <h1 className="text-h1 text-black">{heading}</h1>
+        <p className="text-body text-grey-700">Join and set up your instructor profile in four short steps.</p>
+        <JoinButton token={token} school={school} />
+      </div>
+    );
+  }
+
+  // Signed out: the proxy has kept the token, and the account joins the school once it exists.
+  const signUp = signUpLink('instructor', details);
+  return (
+    <div className="flex flex-col gap-4">
+      <h1 className="text-h1 text-black">{heading}</h1>
+      <p className="text-body text-grey-700">
+        Create your account to join {school}, then set up your instructor profile in four short steps.
       </p>
+      {signUp.prefilled ? <FormAlert tone="success">Your details are already filled in. It takes a minute.</FormAlert> : null}
+      <Button asChild width="responsive" size="lg">
+        <Link href={signUp.href as Route}>Create my account</Link>
+      </Button>
+      <SignInInstead />
     </div>
   );
 }

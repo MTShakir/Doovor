@@ -91,3 +91,16 @@ export function isProfileObjectPath(path: string, profileId: string): boolean {
   const parts = path.split('/');
   return parts.length === 2 && parts[0] === profileId && objectFileName.test(parts[1] ?? '');
 }
+
+/**
+ * A school's logo sits in the avatars bucket in a folder of the school's own, which storage
+ * lets only those who may change the school's profile write (AUTH-05, M5-11).
+ */
+export function businessObjectPath(businessId: string, token: string): string {
+  return `businesses/${businessId}/${token}.webp`;
+}
+
+export function isBusinessObjectPath(path: string, businessId: string): boolean {
+  const parts = path.split('/');
+  return parts.length === 3 && parts[0] === 'businesses' && parts[1] === businessId && objectFileName.test(parts[2] ?? '');
+}

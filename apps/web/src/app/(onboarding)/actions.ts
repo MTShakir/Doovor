@@ -18,10 +18,11 @@ import { redirectTo } from '@/lib/redirect-to';
 import { avatarsBucket, badgesBucket, removeProfileImage } from '@/lib/storage/images';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
 
-/** Moves to the next step, or finishes onboarding after the last one (AUTH-04). */
-async function advance(profileId: string, from: number): Promise<never> {
+/** Moves to the next of their steps, or finishes onboarding after the last one (AUTH-04). */
+async function advance(session: { profileId: string; step: number; businessType: 'independent' | 'school' }): Promise<never> {
+  const { profileId, step: from, businessType } = session;
   const supabase = await createSupabaseServerClient();
-  const next = nextStep(from);
+  const next = nextStep(from, businessType);
   const patch: { onboarding_step?: number; onboarding_completed_at?: string } = next
     ? { onboarding_step: next.step }
     : { onboarding_completed_at: new Date().toISOString() };
@@ -54,7 +55,7 @@ export async function saveName(input: unknown): Promise<Result<null>> {
   }
 
   // Saving succeeded, so this redirects and never resolves.
-  return advance(session.profileId, session.step);
+  return advance(session);
 }
 
 /** AUTH-04 step 2, INS-02: the badge goes to staff for review, never straight to a tick. */
@@ -88,7 +89,7 @@ export async function saveBadge(input: unknown): Promise<Result<null>> {
   }
 
   // Saving succeeded, so this redirects and never resolves.
-  return advance(session.profileId, session.step);
+  return advance(session);
 }
 
 /**
@@ -129,7 +130,7 @@ export async function saveArea(input: unknown): Promise<Result<null>> {
   if (error) return err('UNKNOWN', 'We could not save your area. Try again.');
 
   // Saving succeeded, so this redirects and never resolves.
-  return advance(session.profileId, session.step);
+  return advance(session);
 }
 
 /** AUTH-04 step 4, R-05, PAY-04: one hourly price, and ten hours if they sell them that way. */
@@ -150,7 +151,7 @@ export async function savePrices(input: unknown): Promise<Result<null>> {
   }
 
   // Saving succeeded, so this redirects and never resolves.
-  return advance(session.profileId, session.step);
+  return advance(session);
 }
 
 /** AUTH-04 step 5, DIA-01: the week they work. Local wall clock, never instants. */
@@ -172,11 +173,11 @@ export async function saveHours(input: unknown): Promise<Result<null>> {
   }
 
   // Saving succeeded, so this redirects and never resolves.
-  return advance(session.profileId, session.step);
+  return advance(session);
 }
 
 /** Continue without filling this step in. Every step but the name can be skipped (AUTH-04). */
 export async function continueFromStep(): Promise<never> {
   const session = await requireOnboarding();
-  return advance(session.profileId, session.step);
+  return advance(session);
 }

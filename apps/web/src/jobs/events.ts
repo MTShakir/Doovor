@@ -82,3 +82,16 @@ export const paymentAuthorised = eventType('payment.authorised', {
 export const lessonRecordAdded = eventType('lesson_record.added', {
   schema: staticSchema<{ lesson_record_id: string; booking_id: string }>(),
 });
+
+/**
+ * Somebody joined an area's waiting list or posted a lesson request (MKT-10, M5-10), to be confirmed
+ * by email. Which one, and nothing about who.
+ */
+export const learnerCaptureCreated = eventType('learner_capture.created', {
+  schema: staticSchema<{ kind: 'waiting_list' | 'lesson_request'; id: string }>(),
+});
+
+/** A super admin opened the learner marketplace in a postcode area (ADM-04, M5-19): the people waiting there are told. */
+export const marketplaceRegionOpened = eventType('marketplace_region.opened', {
+  schema: staticSchema<{ area: string }>(),
+});

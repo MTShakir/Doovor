@@ -1,6 +1,6 @@
--- Badge reminders go out once, and an expired badge comes out of search (INS-03, M1-13).
+-- Badge reminders go out once, and an expired badge comes out of search (INS-03, M1-13, M5-06).
 begin;
-select plan(11);
+select plan(15);
 
 select tests.create_fixture();
 
@@ -76,15 +76,40 @@ select is(
   'so that instructor has had two of the three'
 );
 
--- Expiry
+-- Expiry: noticed once for each badge, and out of search by the rule rather than by switching the
+-- instructor's own listing off (M5-06, D-113).
+update public.instructor_profiles set verification_status = 'approved' where id = :'ivy';
 select ok(
   public.system_unlist_expired_badges(:'today'::date) >= 1,
-  'an expired badge comes out of search'
+  'an expired badge is noticed'
+);
+select is(
+  (select count(*)::int from public.badge_reminders where instructor_id = :'ivy' and days_before = 0),
+  1,
+  'and recorded against the badge that ran out'
+);
+select is(
+  public.system_unlist_expired_badges(:'today'::date),
+  0,
+  'once: the next run finds nothing new to tell anybody'
 );
 select is(
   (select is_listed from public.instructor_profiles where id = :'ivy'),
+  true,
+  'the instructor''s own choice to be listed is left alone'
+);
+select is(
+  (select private.instructor_in_search(p.verification_status, p.badge_expiry, p.is_listed, b.status)
+     from public.instructor_profiles p join public.businesses b on b.id = p.business_id where p.id = :'ivy'),
   false,
-  'the profile is hidden until the badge is renewed (INS-03)'
+  'but search leaves the profile out while the badge is out of date (INS-03)'
+);
+update public.instructor_profiles set badge_expiry = current_date + 365 where id = :'ivy';
+select is(
+  (select private.instructor_in_search(p.verification_status, p.badge_expiry, p.is_listed, b.status)
+     from public.instructor_profiles p join public.businesses b on b.id = p.business_id where p.id = :'ivy'),
+  true,
+  'and a renewed badge brings it back, with nothing to switch on again'
 );
 
 select * from finish();

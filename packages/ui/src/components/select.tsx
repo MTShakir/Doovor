@@ -1,3 +1,7 @@
+'use client';
+
+// A client component, so a Field in a server-rendered form labels the select itself rather than
+// the wrapper it is drawn in (the Field gives its child an id, D-130).
 import { ChevronDown } from 'lucide-react';
 import type { ComponentProps } from 'react';
 import { cn } from '../lib/cn';
