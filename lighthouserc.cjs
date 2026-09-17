@@ -4,12 +4,14 @@
  * the app already running on port 3000 (see the Lighthouse job in .github/workflows/ci.yml).
  *
  * Each page is measured three times as Lighthouse measures by default: a mid-range phone on a slow 4G
- * connection. The middle run of each must score 90 or more for performance, accessibility, best
- * practices and SEO (D-132).
+ * connection. The median of each page's three scores must be 90 or more for performance, accessibility,
+ * best practices and SEO (D-132).
  */
 const origin = process.env.LIGHTHOUSE_ORIGIN ?? 'http://localhost:3000';
 
-const atLeast90 = ['error', { minScore: 0.9, aggregationMethod: 'median-run' }];
+// The median of each category's three scores. Lighthouse CI's 'median-run' instead picks one run by its
+// paint timings and judges every category on that run alone, which passed a page whose median was 79.
+const atLeast90 = ['error', { minScore: 0.9, aggregationMethod: 'median' }];
 
 module.exports = {
   ci: {

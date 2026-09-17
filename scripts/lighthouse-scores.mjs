@@ -38,6 +38,31 @@ for (const [page, reports] of [...runs.entries()].sort()) {
   lines.push(`| \`${page}\` | ${scores.join(' | ')} | ${lcp.toFixed(1)} s | ${String(reports.length)} |`);
 }
 
+// Each run, for when a page's runs disagree: what moved, and how fast the machine measured itself.
+lines.push(
+  '',
+  '| Page | Run | Performance | FCP | LCP | TBT | CLS | Speed index | Server response | CPU benchmark |',
+  '|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|',
+);
+for (const [page, reports] of [...runs.entries()].sort()) {
+  reports.forEach((report, index) => {
+    const shown = (id) => report.audits[id].displayValue;
+    const cells = [
+      `\`${page}\``,
+      String(index + 1),
+      String(Math.round(report.categories.performance.score * 100)),
+      shown('first-contentful-paint'),
+      shown('largest-contentful-paint'),
+      shown('total-blocking-time'),
+      shown('cumulative-layout-shift'),
+      shown('speed-index'),
+      `${String(Math.round(report.audits['server-response-time'].numericValue))} ms`,
+      String(Math.round(report.environment.benchmarkIndex)),
+    ];
+    lines.push(`| ${cells.join(' | ')} |`);
+  });
+}
+
 const table = `${lines.join('\n')}\n`;
 process.stdout.write(table);
 if (process.env.GITHUB_STEP_SUMMARY) {
