@@ -4,7 +4,7 @@ import { hostRedirect } from '@/lib/hosts';
 import { refreshSession, withSessionCookies } from '@/lib/supabase/proxy';
 
 /** Areas that need a signed-in person. Roles and TOTP are checked in each layout. */
-const PROTECTED_PREFIXES = ['/app', '/admin', '/account', '/mfa', '/verify-phone', '/onboarding'];
+const PROTECTED_PREFIXES = ['/app', '/admin', '/account', '/mfa', '/verify-phone', '/onboarding', '/suspended'];
 
 function isProtected(pathname: string): boolean {
   return PROTECTED_PREFIXES.some((prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`));

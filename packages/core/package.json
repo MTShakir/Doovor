@@ -55,6 +55,7 @@
     "./schemas/kept-days": "./src/schemas/kept-days.ts",
     "./schemas/capture": "./src/schemas/capture.ts",
     "./schemas/school": "./src/schemas/school.ts",
+    "./schemas/admin": "./src/schemas/admin.ts",
     "./utilisation": "./src/utilisation.ts",
     "./allocation": "./src/allocation.ts",
     "./catalogue": "./src/catalogue.ts"

@@ -509,6 +509,9 @@ export type Database = {
           stripe_connected_at: string | null
           stripe_details_submitted: boolean
           stripe_payouts_enabled: boolean
+          suspended_at: string | null
+          suspended_by: string | null
+          suspension_reason: string | null
           timezone: string
           type: Database["public"]["Enums"]["business_type"]
           updated_at: string
@@ -536,6 +539,9 @@ export type Database = {
           stripe_connected_at?: string | null
           stripe_details_submitted?: boolean
           stripe_payouts_enabled?: boolean
+          suspended_at?: string | null
+          suspended_by?: string | null
+          suspension_reason?: string | null
           timezone?: string
           type: Database["public"]["Enums"]["business_type"]
           updated_at?: string
@@ -563,6 +569,9 @@ export type Database = {
           stripe_connected_at?: string | null
           stripe_details_submitted?: boolean
           stripe_payouts_enabled?: boolean
+          suspended_at?: string | null
+          suspended_by?: string | null
+          suspension_reason?: string | null
           timezone?: string
           type?: Database["public"]["Enums"]["business_type"]
           updated_at?: string
@@ -2718,6 +2727,25 @@ export type Database = {
           p_usual_minutes?: number
         }
         Returns: string
+      }
+      admin_business: { Args: { p_business_id: string }; Returns: Json }
+      admin_businesses: {
+        Args: { p_limit?: number; p_query?: string }
+        Returns: {
+          base_postcode: string
+          business_id: string
+          created_at: string
+          instructors: number
+          name: string
+          owner_email: string
+          owner_name: string
+          status: Database["public"]["Enums"]["business_status"]
+          type: Database["public"]["Enums"]["business_type"]
+        }[]
+      }
+      admin_set_business_suspended: {
+        Args: { p_business_id: string; p_reason?: string; p_suspended: boolean }
+        Returns: undefined
       }
       assign_learner: {
         Args: { p_instructor_id: string; p_learner_id: string }

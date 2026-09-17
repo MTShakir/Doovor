@@ -19,7 +19,10 @@ export interface AccessContext {
   isLearner: boolean;
   /** A learner who has answered the onboarding questions (AUTH-06). False for everyone else. */
   learnerOnboarded: boolean;
+  /** Memberships of Businesses in good standing. */
   memberships: AccessMembership[];
+  /** The names of Businesses this person works for that platform staff have suspended (ADM-02). */
+  suspendedBusinesses: string[];
 }
 
 export class AccessContextError extends Error {
@@ -57,6 +60,7 @@ export async function getAccessContext(client: DbClient, userId: string): Promis
   if (failed) throw new AccessContextError(failed.message);
 
   const profileByBusiness = new Map((instructors.data ?? []).map((p) => [p.business_id, p]));
+  const suspended = (memberships.data ?? []).filter((m) => m.businesses.status === 'suspended');
 
   return {
     userId,
@@ -80,5 +84,6 @@ export async function getAccessContext(client: DbClient, userId: string): Promis
           : null,
         businessOnboarded: m.businesses.onboarding_completed_at !== null,
       })),
+    suspendedBusinesses: suspended.map((m) => m.businesses.name),
   };
 }

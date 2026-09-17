@@ -54,7 +54,7 @@ async function Purchase({ params }: { params: Promise<{ package: string }> }) {
   const offer = await packageOffer(packageId);
   if (!offer) notFound();
 
-  const buyable = offer.onSale && offer.accountId !== null;
+  const buyable = !offer.suspended && offer.onSale && offer.accountId !== null;
   // The same balance the Payments screen and the instructor's learner card show (M3-16).
   const [credit, kept] = await Promise.all([
     learnerBalance(offer.businessId, session.userId),
@@ -98,7 +98,12 @@ async function Purchase({ params }: { params: Promise<{ package: string }> }) {
         </p>
       ) : null}
 
-      {!offer.onSale ? (
+      {offer.suspended ? (
+        <div className="flex flex-col gap-3">
+          <p className="text-body text-ink">{offer.businessName} is not selling packages at the moment.</p>
+          <PaymentsButton />
+        </div>
+      ) : !offer.onSale ? (
         <div className="flex flex-col gap-3">
           <p className="text-body text-ink">{offer.businessName} no longer sells this package.</p>
           <PaymentsButton />

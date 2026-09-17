@@ -20,14 +20,17 @@ export function canUsePortal(context: AccessContext, portal: Portal): boolean {
 
 /**
  * Where to send someone after sign-in. People with no role yet choose one (AUTH-03), and an
- * instructor who has not finished onboarding goes there rather than through their diary.
+ * instructor who has not finished onboarding goes there rather than through their diary. Somebody
+ * whose only portal was a Business now suspended is told so, rather than asked to choose a role
+ * (ADM-02).
  */
 export function landingPath(context: AccessContext): string {
   const [first] = availablePortals(context);
   if (first === 'school' && needsSchoolOnboarding(context)) return '/onboarding/school';
   if (first === 'instructor' && needsOnboarding(context)) return '/onboarding';
   if (first === 'learner' && needsLearnerOnboarding(context)) return '/onboarding/about-you';
-  return first ? portalRoots[first] : '/start';
+  if (first) return portalRoots[first];
+  return context.suspendedBusinesses.length > 0 ? '/suspended' : '/start';
 }
 
 /**

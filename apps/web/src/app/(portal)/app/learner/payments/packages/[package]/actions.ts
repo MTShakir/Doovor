@@ -43,6 +43,7 @@ type Buyable = PackageOffer & { accountId: string };
 async function buyable(packageId: string): Promise<Result<Buyable>> {
   const offer = await packageOffer(packageId);
   if (!offer) return err('NOT_FOUND');
+  if (offer.suspended) return err('BUSINESS_SUSPENDED', `${offer.businessName} is not selling packages at the moment.`);
   if (!offer.onSale) return err('VALIDATION_FAILED', `${offer.businessName} no longer sells this package.`);
   if (offer.accountId === null) return err('NOT_ALLOWED', `${offer.businessName} cannot take card payments yet.`);
   return ok({ ...offer, accountId: offer.accountId });

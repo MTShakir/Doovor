@@ -27,6 +27,7 @@ export const domainErrorCodes = [
   'POSTCODE_NOT_FOUND',
   'MARKETPLACE_OPEN',
   'INSTRUCTOR_INACTIVE',
+  'BUSINESS_SUSPENDED',
   'UNKNOWN',
 ] as const;
 
@@ -63,6 +64,7 @@ export const defaultErrorCopy: Record<DomainErrorCode, string> = {
   POSTCODE_NOT_FOUND: 'We could not find that postcode. Check it and try again.',
   MARKETPLACE_OPEN: 'You can already find and book instructors near you.',
   INSTRUCTOR_INACTIVE: 'This instructor is not taking lessons here any more.',
+  BUSINESS_SUSPENDED: 'This Business is not taking bookings or payments at the moment.',
   UNKNOWN: 'Something went wrong. Try again.',
 };
 

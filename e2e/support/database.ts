@@ -1042,7 +1042,12 @@ export async function cachePostcode(place: CachedPostcode): Promise<void> {
 export async function makeInstructor(
   name: string,
   badgeExpiry: string,
-  options: { postcode?: string; transmission?: 'manual' | 'automatic' | 'both' } = {},
+  options: {
+    postcode?: string;
+    transmission?: 'manual' | 'automatic' | 'both';
+    /** In search, as instructors are by default; out of it for a test that must leave the place pages alone. */
+    listed?: boolean;
+  } = {},
 ): Promise<MadeInstructor> {
   const postcode = options.postcode ?? 'LS6 3QS';
   const transmission = options.transmission ?? 'manual';
@@ -1070,9 +1075,9 @@ export async function makeInstructor(
     await sql`insert into public.memberships (business_id, user_id, role) values (${business.id}, ${userId}, 'owner')`;
     await sql`
       insert into public.instructor_profiles (user_id, business_id, display_name, public_slug, verification_status, verified_at,
-                                              badge_expiry, base_postcode, base_location, transmission, onboarding_completed_at)
+                                              badge_expiry, base_postcode, base_location, transmission, onboarding_completed_at, is_listed)
       select ${userId}, ${business.id}, ${name}, ${slug}, 'approved', now(), ${badgeExpiry}::date, p.postcode, p.location,
-             ${transmission}::public.transmission, now()
+             ${transmission}::public.transmission, now(), ${options.listed ?? true}
         from public.postcodes p
        where p.postcode = ${postcode}`;
     const [type] = await sql<{ id: string }[]>`

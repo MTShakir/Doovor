@@ -18,7 +18,7 @@ vi.mock('@/lib/booking/pending', () => ({ takePendingBooking: () => takePendingB
 
 const { completeSignIn } = await import('./complete-sign-in');
 
-const nobody: AccessContext = { userId: 'user-1', staffRole: null, isLearner: false, learnerOnboarded: false, memberships: [] };
+const nobody: AccessContext = { userId: 'user-1', staffRole: null, isLearner: false, learnerOnboarded: false, memberships: [], suspendedBusinesses: [] };
 const schoolInstructor: AccessMembership = {
   businessId: 'school-1',
   businessName: 'Northern Lights Driving',

@@ -12,7 +12,7 @@ import {
 } from './portals';
 
 function context(overrides: Partial<AccessContext> = {}): AccessContext {
-  return { userId: 'u1', staffRole: null, isLearner: false, learnerOnboarded: true, memberships: [], ...overrides };
+  return { userId: 'u1', staffRole: null, isLearner: false, learnerOnboarded: true, memberships: [], suspendedBusinesses: [], ...overrides };
 }
 
 function membership(overrides: Partial<AccessMembership>): AccessMembership {
@@ -31,6 +31,14 @@ function membership(overrides: Partial<AccessMembership>): AccessMembership {
 describe('portal access', () => {
   it('sends people with no role to the role choice screen (AUTH-03)', () => {
     expect(landingPath(context())).toBe('/start');
+  });
+
+  it('tells somebody whose only Business is suspended, rather than asking them to choose a role (ADM-02)', () => {
+    const ctx = context({ suspendedBusinesses: ['Asha Driving'] });
+    expect(availablePortals(ctx)).toEqual([]);
+    expect(landingPath(ctx)).toBe('/suspended');
+    // A learner too still has their own portal.
+    expect(landingPath(context({ suspendedBusinesses: ['Asha Driving'], isLearner: true }))).toBe('/app/learner');
   });
 
   it('lands an independent instructor on Today', () => {

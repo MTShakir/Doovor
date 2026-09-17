@@ -33,6 +33,8 @@ import { SkillMap } from '@/components/progress/skill-map';
 import { SetupChecklist } from '@/components/setup-checklist';
 import { InstructorWeeks, OverviewFigures, OverviewSkeleton } from '@/components/school/overview';
 import { DashboardFigures, DashboardSkeleton, WaitingOnStaff } from '@/components/admin/dashboard';
+import { BusinessDetails, BusinessResults, SuspendBusinessDialog } from '@/components/admin/businesses';
+import type { AdminBusiness } from '@/lib/admin/businesses';
 import type { PlatformDashboard } from '@/lib/admin/dashboard';
 import type { SchoolOverview } from '@/lib/school/overview';
 import { SwitchOffDialog, TeamSections } from '@/components/school/team';
@@ -150,6 +152,45 @@ const quietDashboard: PlatformDashboard = {
   money: { gmvPence: 0, cardPence: 0, feesPence: 0, payments: 0, refundsPence: 0 },
   verification: { waiting: 0, oldestSince: null },
   disputes: { open: 0, oldestSince: null },
+};
+
+const exampleBusinessRows = [
+  { businessId: 'biz-1', name: 'Quayside Driving School', type: 'school' as const, status: 'active' as const, postcode: 'M1 2QF', ownerName: 'David Okafor', instructors: 4 },
+  { businessId: 'biz-2', name: 'Sarah Khan', type: 'independent' as const, status: 'active' as const, postcode: 'LS6 3HN', ownerName: 'Sarah Khan', instructors: 1 },
+  { businessId: 'biz-3', name: 'Fast Pass Motoring', type: 'independent' as const, status: 'suspended' as const, postcode: null, ownerName: 'Rob Quick', instructors: 1 },
+];
+
+const exampleBusiness: AdminBusiness = {
+  businessId: 'biz-1',
+  name: 'Quayside Driving School',
+  type: 'school',
+  status: 'active',
+  postcode: 'M1 2QF',
+  joinedOn: 'Mon 2 Mar 2026',
+  takesCards: true,
+  suspension: null,
+  members: [
+    { userId: 'person-1', name: 'David Okafor', contact: 'david.okafor@example.com', role: 'owner', active: true, verification: null },
+    { userId: 'person-2', name: 'Lucy Grant', contact: '07700 900123', role: 'manager', active: true, verification: null },
+    { userId: 'person-3', name: 'Emma Clarke', contact: 'emma.clarke@example.com', role: 'instructor', active: true, verification: 'approved' },
+    { userId: 'person-4', name: 'Aisha Rahman', contact: null, role: 'instructor', active: false, verification: 'pending' },
+  ],
+  learners: 48,
+  lessonsToCome: 112,
+};
+
+const suspendedBusiness: AdminBusiness = {
+  ...exampleBusiness,
+  businessId: 'biz-3',
+  name: 'Fast Pass Motoring',
+  type: 'independent',
+  status: 'suspended',
+  postcode: null,
+  takesCards: false,
+  suspension: { since: 'Tue 15 Sep', reason: 'The badge number belongs to another instructor.', byName: 'Maya Admin' },
+  members: [{ userId: 'person-5', name: 'Rob Quick', contact: 'rob@example.com', role: 'owner', active: true, verification: 'rejected' }],
+  learners: 3,
+  lessonsToCome: 2,
 };
 
 const exampleTeam: SchoolTeam = {
@@ -279,6 +320,7 @@ export function DesignShowcase() {
   const [switchingOff, setSwitchingOff] = useState<SchoolTeam['members'][number] | null>(null);
   const [document, setDocument] = useState<string | undefined>(undefined);
   const [pickup, setPickup] = useState<string | undefined>(undefined);
+  const [suspendingBusiness, setSuspendingBusiness] = useState<AdminBusiness | null>(null);
 
   return (
     <main className="mx-auto max-w-5xl px-4 pb-24 md:px-8">
@@ -1029,6 +1071,27 @@ export function DesignShowcase() {
         <DashboardFigures dashboard={quietDashboard} idPrefix="design-platform-month-quiet" />
         <Label>Loading</Label>
         <DashboardSkeleton />
+        <Label>Businesses found, one of them suspended</Label>
+        <BusinessResults rows={exampleBusinessRows} query="motoring" onOpen={() => undefined} />
+        <Label>Nothing found</Label>
+        <BusinessResults rows={[]} query="nobody" onOpen={() => undefined} />
+        <Label>A Business opened, as a super admin sees it, and a suspended one as support staff see it</Label>
+        <div className="grid gap-8 md:grid-cols-2">
+          <BusinessDetails business={exampleBusiness} canSuspend />
+          <BusinessDetails business={suspendedBusiness} canSuspend={false} />
+        </div>
+        <div>
+          <Button variant="destructive" onClick={() => { setSuspendingBusiness(suspendedBusiness); }}>
+            Suspend Fast Pass Motoring
+          </Button>
+        </div>
+        <SuspendBusinessDialog
+          business={suspendingBusiness}
+          pending={false}
+          error={undefined}
+          onConfirm={() => { setSuspendingBusiness(null); }}
+          onCancel={() => { setSuspendingBusiness(null); }}
+        />
       </Section>
 
       <Section title="Scheduling">
