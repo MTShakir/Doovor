@@ -5,6 +5,7 @@ import { chargeFee } from '@/jobs/fees';
 import { notifyAboutBooking } from '@/jobs/notify';
 import { notifyAboutPayment, notifyCreditLow } from '@/jobs/payment-notify';
 import { isCaptureKind, sendCaptureConfirmation } from '@/jobs/capture';
+import { tellRegionOpened } from '@/jobs/regions';
 import { sendRefund } from '@/jobs/payments';
 import { sendReceipt } from '@/jobs/receipts';
 import { notifyLessonRecordAdded } from '@/jobs/record-notices';
@@ -55,6 +56,10 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     const id = typeof payload.id === 'string' ? payload.id : '';
     if (!isCaptureKind(payload.kind)) return NextResponse.json({ error: 'A capture is a waiting list place or a lesson request.' }, { status: 400 });
     return NextResponse.json(await sendCaptureConfirmation(payload.kind, id));
+  }
+  if (name === 'marketplace_region.opened') {
+    const area = typeof payload.area === 'string' ? payload.area : '';
+    return NextResponse.json(await tellRegionOpened(area));
   }
   if (name === 'payment.fee_charge') {
     const bookingId = typeof payload.booking_id === 'string' ? payload.booking_id : '';

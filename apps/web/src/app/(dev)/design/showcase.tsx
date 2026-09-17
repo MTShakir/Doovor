@@ -37,6 +37,8 @@ import { BusinessDetails, BusinessResults, SuspendBusinessDialog } from '@/compo
 import type { AdminBusiness } from '@/lib/admin/businesses';
 import { InstructorResults, LearnerResults, PersonDetails, ResetTwoStepDialog, SuspendAccountDialog } from '@/components/admin/people';
 import type { AdminPerson } from '@/lib/admin/people';
+import { RegionsTable, SwitchOnRuleCard, SwitchRegionDialog } from '@/components/admin/regions';
+import type { AdminRegion } from '@/lib/admin/regions';
 import type { PlatformDashboard } from '@/lib/admin/dashboard';
 import type { SchoolOverview } from '@/lib/school/overview';
 import { SwitchOffDialog, TeamSections } from '@/components/school/team';
@@ -235,6 +237,12 @@ const suspendedPerson: AdminPerson = {
   ],
 };
 
+const exampleRegions: AdminRegion[] = [
+  { area: 'LS', label: 'LS, Leeds', instructors: 27, freeHours: 212, waiting: 48, requests: 9, open: false, switchedOn: null, meetsRule: true, instructorsShort: 0, hoursShort: 0 },
+  { area: 'M', label: 'M, Manchester', instructors: 41, freeHours: 380, waiting: 0, requests: 3, open: true, switchedOn: 'Tue 15 Sep 2026', meetsRule: true, instructorsShort: 0, hoursShort: 0 },
+  { area: 'SK', label: 'SK, Stockport', instructors: 12, freeHours: 96, waiting: 17, requests: 2, open: false, switchedOn: null, meetsRule: false, instructorsShort: 13, hoursShort: 54 },
+];
+
 const exampleTeam: SchoolTeam = {
   members: [
     { membershipId: 'team-1', isYou: false, role: 'instructor', active: true, name: 'Emma Clarke', email: null, phone: null, instructorId: 'team-p1', photoPath: null, setOwnPrices: false, viewRevenue: false, lessonsToCome: 18 },
@@ -365,6 +373,7 @@ export function DesignShowcase() {
   const [suspendingBusiness, setSuspendingBusiness] = useState<AdminBusiness | null>(null);
   const [suspendingPerson, setSuspendingPerson] = useState<AdminPerson | null>(null);
   const [resettingPerson, setResettingPerson] = useState<AdminPerson | null>(null);
+  const [switchingRegion, setSwitchingRegion] = useState<{ region: AdminRegion; open: boolean } | null>(null);
 
   return (
     <main className="mx-auto max-w-5xl px-4 pb-24 md:px-8">
@@ -1166,6 +1175,23 @@ export function DesignShowcase() {
           pending={false}
           onConfirm={() => { setResettingPerson(null); }}
           onCancel={() => { setResettingPerson(null); }}
+        />
+        <Label>Regions: one ready to open, one open, one short of the rule, as a super admin sees them</Label>
+        <SwitchOnRuleCard rule={{ instructors: 25, hours: 150 }} />
+        <RegionsTable
+          regions={exampleRegions}
+          rule={{ instructors: 25, hours: 150 }}
+          canSwitch
+          onOpen={(region) => { setSwitchingRegion({ region, open: true }); }}
+          onClose={(region) => { setSwitchingRegion({ region, open: false }); }}
+        />
+        <Label>No areas yet</Label>
+        <RegionsTable regions={[]} rule={{ instructors: 25, hours: 150 }} canSwitch={false} onOpen={() => undefined} onClose={() => undefined} />
+        <SwitchRegionDialog
+          change={switchingRegion}
+          pending={false}
+          onConfirm={() => { setSwitchingRegion(null); }}
+          onCancel={() => { setSwitchingRegion(null); }}
         />
       </Section>
 

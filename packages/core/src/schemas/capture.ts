@@ -142,6 +142,26 @@ export function captureConfirmationWords(kind: CaptureKind, postcodeArea: string
       };
 }
 
+/**
+ * The one email somebody waiting in an area gets when the marketplace opens there, as their consent
+ * promised (D-117, D-127). A place on the waiting list has done its job and is left; a lesson request
+ * stays until its sender removes it.
+ */
+export function regionOpenedWords(kind: CaptureKind, postcodeArea: string): CaptureConfirmationWords {
+  const title = `Driving instructors near ${postcodeArea} are taking bookings`;
+  return kind === 'waiting_list'
+    ? {
+        title,
+        body: `You asked us to email you when you could find and book driving instructors near ${postcodeArea}, and now you can. We have taken you off the waiting list, so this is the only email about it.`,
+        action: 'Find an instructor',
+      }
+    : {
+        title,
+        body: `You asked us to email you about your lesson request when instructors near ${postcodeArea} could take bookings through the app, and now they can. We keep your request until you remove it, with the button in the email that confirmed it, or reply to this email and we will remove it for you.`,
+        action: 'Find an instructor',
+      };
+}
+
 /** The words agreed to when posting a lesson request. */
 export function lessonRequestConsent(postcode: string): string {
   return `Keep my lesson request and email me about it when instructors near ${areaFor(postcode)} can take bookings through the app. I can withdraw it at any time.`;

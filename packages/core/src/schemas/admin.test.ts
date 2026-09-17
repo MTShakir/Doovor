@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { adminSearchSchema, businessIdSchema, suspendAccountSchema, suspendBusinessSchema, userIdSchema } from './admin';
+import { adminSearchSchema, businessIdSchema, postcodeAreaSchema, suspendAccountSchema, suspendBusinessSchema, userIdSchema } from './admin';
 
 const businessId = '6f1c3a52-9d8e-4b7a-8c61-2f0e9b4d7a13';
 
@@ -31,5 +31,12 @@ describe('what admin screens accept (ADM-02, M5-18)', () => {
     expect(suspendAccountSchema.safeParse({ userId: businessId, reason: '' }).success).toBe(false);
     expect(userIdSchema.safeParse({ userId: businessId }).success).toBe(true);
     expect(userIdSchema.safeParse({ userId: 'lee' }).success).toBe(false);
+  });
+
+  it('takes a postcode area as its letters, in capitals', () => {
+    expect(postcodeAreaSchema.parse({ area: ' ls ' })).toEqual({ area: 'LS' });
+    expect(postcodeAreaSchema.parse({ area: 'm' })).toEqual({ area: 'M' });
+    expect(postcodeAreaSchema.safeParse({ area: 'LS6' }).success).toBe(false);
+    expect(postcodeAreaSchema.safeParse({ area: 'LSX' }).success).toBe(false);
   });
 });

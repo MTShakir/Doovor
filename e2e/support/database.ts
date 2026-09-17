@@ -1528,6 +1528,80 @@ export async function authenticatorsOf(email: string): Promise<number> {
   });
 }
 
+/** 09:00 to 17:00 every day for an instructor made for a test, found by their profile address (M5-19). */
+export async function openEveryDay(slug: string): Promise<void> {
+  await withDatabase(async (sql) => {
+    const made = await sql`
+      insert into public.working_hours (instructor_id, business_id, weekday, start_time, end_time)
+      select p.id, p.business_id, d, '09:00', '17:00'
+        from public.instructor_profiles p
+       cross join generate_series(1, 7) as d
+       where p.public_slug = ${slug}`;
+    if (made.count !== 7) throw new Error(`No instructor at ${slug}`);
+  });
+}
+
+/**
+ * The switch-on rule, set for one test (ADM-04, PRD 4.2). Returns the function that puts back what
+ * was there; nothing else in the tests depends on the rule.
+ */
+export async function setSwitchOnRule(rule: { instructors: number; hours: number }): Promise<() => Promise<void>> {
+  const before = await withDatabase(async (sql) => {
+    const [row] = await sql<{ value: Record<string, unknown> }[]>`select value from public.platform_settings where key = 'marketplace_switch_on'`;
+    await sql`
+      update public.platform_settings
+         set value = ${sql.json({ verified_instructors: rule.instructors, open_hours_14_days: rule.hours })}
+       where key = 'marketplace_switch_on'`;
+    return row?.value;
+  });
+  return () =>
+    withDatabase(async (sql) => {
+      if (before) await sql`update public.platform_settings set value = ${sql.json(before as Record<string, string | number>)} where key = 'marketplace_switch_on'`;
+    });
+}
+
+/** A place on an area's waiting list, as joining it with consent leaves it (MKT-10). Returns the function that removes it. */
+export async function joinWaitingList(entry: { email: string; fullName: string; postcode: string }): Promise<() => Promise<void>> {
+  await withDatabase(async (sql) => {
+    await sql`
+      insert into public.area_waiting_list (postcode, postcode_area, full_name, email, consent_wording)
+      values (${entry.postcode}, ${entry.postcode.replace(/[0-9].*$/, '')}, ${entry.fullName}, ${entry.email}, 'Keep my details and email me.')`;
+  });
+  return () =>
+    withDatabase(async (sql) => {
+      await sql`delete from public.area_waiting_list where lower(email) = lower(${entry.email})`;
+    });
+}
+
+/** Whether the waiting list place for an address has been told its area opened, and has been left. */
+export async function waitingListTold(email: string): Promise<{ told: boolean; left: boolean } | null> {
+  return withDatabase(async (sql) => {
+    const [row] = await sql<{ told: boolean; left: boolean }[]>`
+      select told_open_at is not null as told, left_at is not null as left
+        from public.area_waiting_list where lower(email) = lower(${email}) order by created_at desc limit 1`;
+    return row ?? null;
+  });
+}
+
+/** An area as the marketplace has it (ADM-04), and the latest event asking for its waiting list to be told. */
+export async function marketplaceRegion(area: string): Promise<{ open: boolean; event: OutboxEvent | null }> {
+  return withDatabase(async (sql) => {
+    const [region] = await sql<{ open: boolean }[]>`select marketplace_enabled as open from public.marketplace_regions where postcode_area = ${area}`;
+    const [event] = await sql<{ name: string; payload: Record<string, unknown> }[]>`
+      select name, payload from public.outbox_events
+       where name = 'marketplace_region.opened' and payload ->> 'area' = ${area}
+       order by created_at desc limit 1`;
+    return { open: region?.open ?? false, event: event ? { name: event.name, payload: event.payload } : null };
+  });
+}
+
+/** An area put back as it was before any test opened it: never switched, and closed. */
+export async function forgetRegion(area: string): Promise<void> {
+  await withDatabase(async (sql) => {
+    await sql`delete from public.marketplace_regions where postcode_area = ${area}`;
+  });
+}
+
 /** A school's own booking rules as saved, found by its name (SCH-04). */
 export async function schoolRules(schoolName: string): Promise<Record<string, unknown>> {
   return withDatabase(async (sql) => {

@@ -17,3 +17,12 @@ export const suspendBusinessSchema = z.object({ businessId: z.uuid(), reason: su
 export const userIdSchema = z.object({ userId: z.uuid() });
 
 export const suspendAccountSchema = z.object({ userId: z.uuid(), reason: suspensionReasonSchema });
+
+/** A postcode area as typed: "ls" is "LS" (ADM-04). */
+export const postcodeAreaSchema = z.object({
+  area: z
+    .string()
+    .trim()
+    .toUpperCase()
+    .regex(/^[A-Z]{1,2}$/, { error: 'A postcode area is one or two letters, like M or LS' }),
+});

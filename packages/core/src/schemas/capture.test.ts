@@ -1,5 +1,12 @@
 import { describe, expect, it } from 'vitest';
-import { captureConfirmationWords, lessonRequestConsent, lessonRequestSchema, waitingListConsent, waitingListSchema } from './capture';
+import {
+  captureConfirmationWords,
+  lessonRequestConsent,
+  lessonRequestSchema,
+  regionOpenedWords,
+  waitingListConsent,
+  waitingListSchema,
+} from './capture';
 
 const request = {
   postcode: 'ls6 3qs',
@@ -78,5 +85,16 @@ describe('coming soon: the waiting list and lesson requests (MKT-10, M5-10)', ()
     expect(lessonRequestConsent('SW1A 1AA')).toBe(
       'Keep my lesson request and email me about it when instructors near SW can take bookings through the app. I can withdraw it at any time.',
     );
+  });
+
+  it('tells somebody waiting that their area has opened, once, in the words their consent promised (D-117, M5-19)', () => {
+    expect(regionOpenedWords('waiting_list', 'LS')).toEqual({
+      title: 'Driving instructors near LS are taking bookings',
+      body: 'You asked us to email you when you could find and book driving instructors near LS, and now you can. We have taken you off the waiting list, so this is the only email about it.',
+      action: 'Find an instructor',
+    });
+    const request = regionOpenedWords('lesson_request', 'M');
+    expect(request.title).toBe('Driving instructors near M are taking bookings');
+    expect(request.body).toContain('We keep your request until you remove it');
   });
 });

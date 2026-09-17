@@ -43,6 +43,7 @@ export type Database = {
           postcode: string
           postcode_area: string
           token: string
+          told_open_at: string | null
           transmission: Database["public"]["Enums"]["transmission"] | null
           user_id: string | null
         }
@@ -58,6 +59,7 @@ export type Database = {
           postcode: string
           postcode_area: string
           token?: string
+          told_open_at?: string | null
           transmission?: Database["public"]["Enums"]["transmission"] | null
           user_id?: string | null
         }
@@ -73,6 +75,7 @@ export type Database = {
           postcode?: string
           postcode_area?: string
           token?: string
+          told_open_at?: string | null
           transmission?: Database["public"]["Enums"]["transmission"] | null
           user_id?: string | null
         }
@@ -1502,6 +1505,7 @@ export type Database = {
           start_when: string
           times: string[]
           token: string
+          told_open_at: string | null
           transmission: Database["public"]["Enums"]["transmission"]
           updated_at: string
           user_id: string | null
@@ -1524,6 +1528,7 @@ export type Database = {
           start_when: string
           times: string[]
           token?: string
+          told_open_at?: string | null
           transmission: Database["public"]["Enums"]["transmission"]
           updated_at?: string
           user_id?: string | null
@@ -1546,6 +1551,7 @@ export type Database = {
           start_when?: string
           times?: string[]
           token?: string
+          told_open_at?: string | null
           transmission?: Database["public"]["Enums"]["transmission"]
           updated_at?: string
           user_id?: string | null
@@ -2789,6 +2795,7 @@ export type Database = {
         }[]
       }
       admin_person: { Args: { p_user_id: string }; Returns: Json }
+      admin_regions: { Args: never; Returns: Json }
       admin_reset_two_step: { Args: { p_user_id: string }; Returns: undefined }
       admin_set_account_suspended: {
         Args: { p_reason?: string; p_suspended: boolean; p_user_id: string }
@@ -2796,6 +2803,10 @@ export type Database = {
       }
       admin_set_business_suspended: {
         Args: { p_business_id: string; p_reason?: string; p_suspended: boolean }
+        Returns: undefined
+      }
+      admin_set_marketplace_region: {
+        Args: { p_area: string; p_open: boolean }
         Returns: undefined
       }
       assign_learner: {
@@ -3305,6 +3316,10 @@ export type Database = {
         Args: { p_receipt_id: string }
         Returns: boolean
       }
+      system_mark_told_region_open: {
+        Args: { p_area: string; p_email: string }
+        Returns: undefined
+      }
       system_notification_mutes: {
         Args: {
           p_category: Database["public"]["Enums"]["notification_category"]
@@ -3401,6 +3416,10 @@ export type Database = {
         Returns: Json
       }
       system_refund_to_send: { Args: { p_refund_id: string }; Returns: Json }
+      system_region_opened_recipients: {
+        Args: { p_area: string }
+        Returns: Json
+      }
       system_release_sms: {
         Args: { p_business_id: string }
         Returns: undefined

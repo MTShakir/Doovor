@@ -1,5 +1,6 @@
 import { badgeExpirySweep } from './functions/badge-expiry';
 import { learnerCaptureConfirmations } from './functions/capture';
+import { regionOpenedNotices } from './functions/regions';
 import { bookingNotices } from './functions/booking-notices';
 import { maintenanceSweep, recurrenceSweep, requestExpirySweep } from './functions/maintenance';
 import { notificationDispatch } from './functions/notification-dispatch';
@@ -33,4 +34,5 @@ export const functions = [
   dailyPaymentSummaries,
   lessonRecordNotices,
   learnerCaptureConfirmations,
+  regionOpenedNotices,
 ];

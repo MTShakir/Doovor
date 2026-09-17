@@ -90,3 +90,8 @@ export const lessonRecordAdded = eventType('lesson_record.added', {
 export const learnerCaptureCreated = eventType('learner_capture.created', {
   schema: staticSchema<{ kind: 'waiting_list' | 'lesson_request'; id: string }>(),
 });
+
+/** A super admin opened the learner marketplace in a postcode area (ADM-04, M5-19): the people waiting there are told. */
+export const marketplaceRegionOpened = eventType('marketplace_region.opened', {
+  schema: staticSchema<{ area: string }>(),
+});
