@@ -54,9 +54,10 @@ export async function placeMetadata(params: PlaceParams): Promise<Metadata> {
   });
 }
 
+/** At least a screen tall, so the footer is not in view to be pushed away when the place arrives (D-132). */
 export function PlaceSkeleton() {
   return (
-    <div className="flex flex-col gap-6" aria-hidden>
+    <div className="flex min-h-dvh flex-col gap-6" aria-hidden>
       <Skeleton className="h-4 w-1/3" />
       <Skeleton className="h-10 w-2/3" />
       <Skeleton className="h-64 w-full" />

@@ -42,7 +42,8 @@ export default function SchoolProfileRoute({ params }: Props) {
     <div className="mx-auto flex w-full max-w-5xl flex-col gap-6 px-4 py-8 md:px-6">
       <Suspense
         fallback={
-          <div className="flex flex-col gap-6" aria-hidden>
+          // At least a screen tall, so the footer is not in view to be pushed away when the school arrives (D-132).
+          <div className="flex min-h-dvh flex-col gap-6" aria-hidden>
             <Skeleton className="h-24 w-full" />
             <Skeleton className="h-64 w-full" />
           </div>

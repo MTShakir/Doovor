@@ -10,6 +10,7 @@ import {
   AboutInstructor,
   BookAction,
   NextTimes,
+  NextTimesSkeleton,
   PriceList,
   ProfileHeader,
   WhereLessonsStart,
@@ -107,7 +108,7 @@ async function InstructorProfile({ params }: Pick<Props, 'params'>) {
           <BookAction bookingUrl={bookingUrl} canBook={canBook} />
         </div>
         {canBook ? (
-          <Suspense fallback={<Skeleton className="h-28 w-full" />}>
+          <Suspense fallback={<NextTimesSkeleton />}>
             <FreeTimes profile={profile} bookingUrl={bookingUrl} />
           </Suspense>
         ) : null}
@@ -152,9 +153,13 @@ async function FreeTimes({ profile, bookingUrl }: { profile: InstructorProfilePa
   return <NextTimes bookingUrl={bookingUrl} times={times} />;
 }
 
+/**
+ * At least a screen tall: the page is drawn before its profile arrives, and a short skeleton left the
+ * site's footer in view, to be pushed away when the profile landed (a layout shift of 0.34, D-132).
+ */
 function ProfileSkeleton() {
   return (
-    <div className="flex flex-col gap-6" aria-hidden>
+    <div className="flex min-h-dvh flex-col gap-6" aria-hidden>
       <div className="flex items-center gap-4">
         <Skeleton className="size-24 rounded-full" />
         <div className="flex flex-1 flex-col gap-2">

@@ -12,6 +12,7 @@ import {
   AboutInstructor,
   BookAction,
   NextTimes,
+  NextTimesSkeleton,
   PriceList,
   ProfileHeader,
   WhereLessonsStart,
@@ -878,6 +879,7 @@ export function DesignShowcase() {
           <div className="grid items-start gap-6 md:grid-cols-2">
             <NextTimes idPrefix="free-" bookingUrl="#book" times={['2026-09-17T12:30:00.000Z', '2026-09-17T13:00:00.000Z', '2026-09-18T08:00:00.000Z']} />
             <NextTimes idPrefix="full-" bookingUrl="#book" times={[]} />
+            <NextTimesSkeleton idPrefix="loading-" />
           </div>
         </Suspense>
         <Label>About, with everything said and with only languages; where lessons start, with districts added</Label>

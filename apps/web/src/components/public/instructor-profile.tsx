@@ -5,6 +5,7 @@ import type { Qualification } from '@repo/core/schemas/onboarding';
 import { formatDateTime, formatMinutes } from '@repo/core/time';
 import { Avatar } from '@repo/ui/avatar';
 import { buttonVariants } from '@repo/ui/button';
+import { Skeleton } from '@repo/ui/skeleton';
 import { CalendarClock, Car, Clock, Languages, MapPin } from 'lucide-react';
 import type { ReactNode } from 'react';
 import { CoverageImage } from '@/components/map/coverage-image';
@@ -159,6 +160,25 @@ export function NextTimes({ bookingUrl, times, idPrefix = '' }: NextTimesProps) 
       <a href={bookingUrl} className="text-small font-semibold text-blue underline underline-offset-4">
         See every time
       </a>
+    </ProfileSection>
+  );
+}
+
+/**
+ * While the free times are read: the same heading, three times and the link, the size they will be,
+ * so nothing under them moves when they arrive (NFR-PERF-04, D-132).
+ */
+export function NextTimesSkeleton({ idPrefix = '' }: Prefixed) {
+  return (
+    <ProfileSection id={`${idPrefix}times-heading`} title="Next free times">
+      <ul className="flex flex-wrap gap-2" aria-hidden>
+        {[0, 1, 2].map((index) => (
+          <li key={index}>
+            <Skeleton className="h-12 w-36 rounded-full" />
+          </li>
+        ))}
+      </ul>
+      <Skeleton className="h-5 w-28" />
     </ProfileSection>
   );
 }
