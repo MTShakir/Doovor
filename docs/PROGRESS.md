@@ -14,7 +14,7 @@ M3 Payments is approved and merged to `main` (ad2cb83), with its 25 migrations a
 
 M4 Progress and offline is approved and merged to `main` (89262cf), with its 4 migrations applied to staging on 15 September 2026. Acceptance test 8 passes with the network off at both widths. The milestone report is at https://claude.ai/code/artifact/0a2ee4ec-a088-4063-a1d3-0c8b96f43aa9
 
-M5 Public profiles, schools and admin is complete on branch `m5-public-schools-admin` and waiting for approval to merge: all 24 tasks, acceptance tests 7, 10 and 11 green, and in CI the public profile and city pages score 96 to 98 on Lighthouse for performance and 100 for accessibility, best practices and SEO. Its 21 migrations are applied locally, not on staging. The milestone report is at https://claude.ai/artifact/GBCBjsJWqcHDfQzEuyky6E
+M5 Public profiles, schools and admin is approved and merged into `main` (48531e9): all 24 tasks, acceptance tests 7, 10 and 11 green, and in CI the public profile and city pages score 96 to 98 on Lighthouse for performance and 100 for accessibility, best practices and SEO. Its 21 migrations are applied to staging, where the request check that ends a signed-out session is still in place and the security advisor shows no errors. The milestone report is at https://claude.ai/artifact/GBCBjsJWqcHDfQzEuyky6E. The product owner answered its questions on 17 September 2026: the admin Bookings and Payments screens stay as they are until Phase 2; inviting managers waits; one account teaches for one Business, and somebody who already teaches elsewhere signs up with a different email; instructors override the school's prices only; and a Largest Contentful Paint of 2.1 to 2.7 seconds in Lighthouse's simulation is accepted (D-118, D-122, D-132, D-133)
 
 ## M5 progress
 
@@ -221,11 +221,11 @@ Decisions D-036 to D-050 were logged during this stretch. Two were security fixe
 
 ## In progress
 
-- M5 Public profiles, schools and admin: done, waiting for approval to merge into `main` and to push its 21 migrations to staging.
+- M6 Hardening and beta, on branch `m6-hardening-beta`. M5 was approved on 2026-09-17, merged into `main` and pushed to staging.
 
 ## Next
 
-- M6: hardening and beta (M6-01 onwards), starting after M5 is approved.
+- M6: hardening and beta (M6-01 to M6-15). Safe, observable, accessible and ready for 20 beta instructors: an OWASP review, dependency and licence audit, rate limits, the content security policy enforced, load tests, accessibility, legal page shells, cookie consent, analytics, Sentry, data export, account deletion, the runbook, backups and a restore drill, then the beta readiness report.
 
 ## Blockers
 
