@@ -1,6 +1,6 @@
 -- An invitation is a link, and only its hash is kept (AUTH-07, M2-03).
 begin;
-select plan(12);
+select plan(13);
 
 select tests.create_fixture();
 
@@ -87,6 +87,15 @@ select throws_ok(
   '42501',
   'NOT_FOUND',
   'and a token nobody issued cannot be accepted'
+);
+
+-- Thirty an hour is a busy day of inviting; the thirty first waits (NFR-SEC-03, M6-03).
+select tests.clear_authentication();
+select public.system_rate_limit_hit('invite', :'asha_user', 3600, 30) from generate_series(1, 28);
+select tests.authenticate_as(:'asha_user');
+select throws_ok(
+  $$ select public.invite_learner('a1000000-0000-0000-0000-000000000001', 'link') $$,
+  '53400', 'RATE_LIMITED', 'and an instructor cannot send more than thirty invitations an hour'
 );
 
 select * from finish();

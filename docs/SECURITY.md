@@ -69,8 +69,10 @@ scanning: the automated checks named below run on every push (`.github/workflows
 - A payment delivered three times is one payment and one credit entry (acceptance-06); a lesson record
   saved twice is one record (M4-02).
 - The audit log is append-only, enforced by a trigger, and staff read it through a function.
-- Rate limits sit in the database, where the API cannot be used to step around them (D-117); M6-03 confirms
-  them on the auth, booking and invitation paths.
+- Rate limits sit in the database, where the API cannot be used to step around them (D-117): 120 bookings,
+  30 invitations and 300 learners added by hand an hour for one account, and the waiting list counted per
+  caller and for everybody (D-137). Supabase Auth counts sign-ins, codes, emails and texts itself, and a
+  test holds the hosted numbers to 30 sign-ins, 30 verifications, 30 emails and 10 texts an hour.
 
 ## A05 Security misconfiguration
 
