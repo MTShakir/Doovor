@@ -41,6 +41,8 @@ import type { AdminPerson } from '@/lib/admin/people';
 import { RegionsTable, SwitchOnRuleCard, SwitchRegionDialog } from '@/components/admin/regions';
 import type { AdminRegion } from '@/lib/admin/regions';
 import { FeatureFlagsForm, MarketplaceFeeForm, PlanLimitsForm, SettingCard, SwitchOnRuleForm } from '@/components/admin/settings';
+import { AuditEntries, AuditFiltersForm, AuditLogSkeleton, AuditPager } from '@/components/admin/audit-log';
+import type { AuditEntry } from '@/lib/admin/audit';
 import type { PlatformDashboard } from '@/lib/admin/dashboard';
 import type { SchoolOverview } from '@/lib/school/overview';
 import { SwitchOffDialog, TeamSections } from '@/components/school/team';
@@ -238,6 +240,50 @@ const suspendedPerson: AdminPerson = {
     { businessId: 'biz-3', businessName: 'Fast Pass Motoring' },
   ],
 };
+
+const exampleAuditFilters = { kind: 'viewing' as const, person: 'lee', business: '', from: '2026-09-01', to: undefined, before: undefined };
+
+const exampleAuditEntries: AuditEntry[] = [
+  {
+    id: 'audit-1',
+    occurredAt: '2026-09-17T13:02:11.418959+00:00',
+    when: 'Thu 17 Sep 2026, 14:02',
+    what: 'Staff started viewing as them',
+    action: 'impersonation.started',
+    who: 'Sam Support (sam.support@example.com)',
+    role: 'support_admin',
+    about: 'Lee Evans (lee.evans@example.com)',
+    business: null,
+    before: null,
+    after: { viewing: 'c0000000-0000-0000-0000-000000000001', reason: 'Says a lesson in six weeks is missing' },
+  },
+  {
+    id: 'audit-2',
+    occurredAt: '2026-09-16T08:30:02.120394+00:00',
+    when: 'Wed 16 Sep 2026, 09:30',
+    what: 'Role or standing at a Business changed',
+    action: 'membership.role_changed',
+    who: 'David Okafor (david.okafor@example.com)',
+    role: 'owner',
+    about: 'Lee Evans (lee.evans@example.com)',
+    business: 'Quayside Driving School',
+    before: { role: 'instructor' },
+    after: { role: 'manager' },
+  },
+  {
+    id: 'audit-3',
+    occurredAt: '2026-09-15T23:00:00.000001+00:00',
+    when: 'Wed 16 Sep 2026, 00:00',
+    what: 'Unpaid hold on a lesson lapsed',
+    action: 'booking.hold_expired',
+    who: 'The platform',
+    role: 'system',
+    about: null,
+    business: 'Quayside Driving School',
+    before: null,
+    after: null,
+  },
+];
 
 const exampleRegions: AdminRegion[] = [
   { area: 'LS', label: 'LS, Leeds', instructors: 27, freeHours: 212, waiting: 48, requests: 9, open: false, switchedOn: null, meetsRule: true, instructorsShort: 0, hoursShort: 0 },
@@ -1208,6 +1254,15 @@ export function DesignShowcase() {
           onConfirm={() => { setSwitchingRegion(null); }}
           onCancel={() => { setSwitchingRegion(null); }}
         />
+        <Label>Audit log: its filters, entries with what changed, pages either side, nothing found, and loading</Label>
+        <AuditFiltersForm filters={exampleAuditFilters} />
+        <AuditEntries entries={exampleAuditEntries} />
+        <AuditPager
+          filters={{ ...exampleAuditFilters, before: { at: '2026-09-18T09:00:00.000000+00:00', id: '0b7e8c1d-2f3a-4b5c-8d6e-7f8091a2b3c4' } }}
+          older={{ at: exampleAuditEntries[2]?.occurredAt ?? '', id: 'audit-3' }}
+        />
+        <AuditEntries entries={[]} />
+        <AuditLogSkeleton />
         <Label>Platform settings, as a super admin changes them and as support staff see them</Label>
         <div className="grid grid-cols-1 gap-8 md:grid-cols-2">
           <SettingCard title="Switch-on rule" description="What a postcode area needs before the learner marketplace can open there." changedOn="Tue 15 Sep 2026">

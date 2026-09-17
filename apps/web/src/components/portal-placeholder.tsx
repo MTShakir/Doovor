@@ -12,7 +12,6 @@ const arrivesIn: Record<Portal, Record<string, string>> = {
   admin: {
     bookings: 'M5',
     payments: 'M5',
-    'audit-log': 'M5',
   },
 };
 

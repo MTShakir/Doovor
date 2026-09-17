@@ -2788,6 +2788,32 @@ export type Database = {
         }
         Returns: string
       }
+      admin_audit_log: {
+        Args: {
+          p_actions?: string[]
+          p_before_at?: string
+          p_before_id?: string
+          p_business?: string
+          p_from?: string
+          p_limit?: number
+          p_person?: string
+          p_to?: string
+        }
+        Returns: {
+          about_email: string
+          about_name: string
+          action: string
+          actor_email: string
+          actor_name: string
+          actor_role: string
+          after: Json
+          before: Json
+          business_name: string
+          entity: string
+          id: string
+          occurred_at: string
+        }[]
+      }
       admin_business: { Args: { p_business_id: string }; Returns: Json }
       admin_businesses: {
         Args: { p_limit?: number; p_query?: string }

@@ -1659,6 +1659,52 @@ export async function keepPlatformSetting(key: string): Promise<{ read: () => Pr
   }
 }
 
+/**
+ * One of each kind of entry NFR-SEC-06 names, at a school of a test's own, written by the function
+ * the platform writes them with (ADM-07, M5-22): the instructor signs in, exports their data and asks
+ * for their account to go; the manager makes them a manager, connects payouts and issues a refund; a
+ * super admin approves their badge; and support staff view as them. Then the manager signs in
+ * `signIns` times more, for a log longer than a page. The audit log keeps everything, so nothing is
+ * removed; the school's own name and people keep other tests' entries apart.
+ */
+export async function recordAuditTrail(school: MadeSchool, signIns: number): Promise<void> {
+  await withDatabase(async (sql) => {
+    const [ids] = await sql<{ manager: string; instructor: string; profile: string; membership: string; admin: string; support: string }[]>`
+      select (select id from public.users where lower(email) = lower(${school.managerEmail})) as manager,
+             p.user_id as instructor,
+             p.id as profile,
+             m.id as membership,
+             (select id from public.users where email = 'admin@example.com') as admin,
+             (select id from public.users where email = 'support@example.com') as support
+        from public.instructor_profiles p
+        join public.memberships m on m.user_id = p.user_id and m.business_id = p.business_id
+       where p.business_id = ${school.businessId}`;
+    if (!ids) throw new Error(`No instructor at ${school.name}`);
+    const business = school.businessId;
+    const entries: [string, string, string, string | null, object | null, object | null, string, string][] = [
+      ['auth.sign_in', 'session', crypto.randomUUID(), null, null, { aal: 'aal1' }, ids.instructor, 'user'],
+      ['membership.role_changed', 'membership', ids.membership, business, { role: 'instructor' }, { role: 'manager' }, ids.manager, 'manager'],
+      ['instructor.verification_decided', 'instructor_profile', ids.profile, business, { status: 'pending' }, { status: 'approved' }, ids.admin, 'super_admin'],
+      ['refund.issued', 'refund', crypto.randomUUID(), business, null, { amount_pence: 4200 }, ids.manager, 'manager'],
+      ['business.payments_connected', 'business', business, business, null, { charges_enabled: true }, ids.manager, 'manager'],
+      ['account.data_exported', 'user', ids.instructor, null, null, { format: 'json' }, ids.instructor, 'user'],
+      ['account.deletion_requested', 'user', ids.instructor, null, null, null, ids.instructor, 'user'],
+      ['impersonation.started', 'user', ids.instructor, null, null, { reason: 'Cannot see her diary' }, ids.support, 'support_admin'],
+    ];
+    // One at a time, so each has a moment of its own, as they would.
+    for (const [action, entity, entityId, businessId, before, after, actor, role] of entries) {
+      await sql`
+        select private.write_audit(${action}, ${entity}, ${entityId}::uuid, ${businessId}::uuid,
+                                   ${before === null ? null : sql.json(before as Record<string, string>)}::jsonb,
+                                   ${after === null ? null : sql.json(after as Record<string, string>)}::jsonb,
+                                   ${actor}::uuid, ${role})`;
+    }
+    await sql`
+      select private.write_audit('auth.sign_in', 'session', gen_random_uuid(), null, null, '{"aal": "aal1"}'::jsonb, ${ids.manager}::uuid, 'user')
+        from generate_series(1, ${signIns})`;
+  });
+}
+
 /** The audit actions recorded about a person, oldest first, found by their email (NFR-SEC-06). */
 export async function auditActionsAbout(email: string): Promise<string[]> {
   return withDatabase(async (sql) => {
