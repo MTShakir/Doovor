@@ -227,6 +227,21 @@ from `pnpm test:e2e:stripe`; every other run stays on the fake.
 - Licences: `pnpm licenses list`. Nothing under the GPL or AGPL may be added; `docs/SECURITY.md` lists
   what is there today.
 
+### Load tests (M6-05)
+- `pnpm load` runs both, against the local stack and a build of the app on port 3000. It builds
+  `load/fixtures.json` first, from the seeded database, runs the reads and then the booking scenario,
+  and cancels afterwards what the booking run booked.
+- The thresholds are the requirement, so k6 fails the run if it is missed: p95 under 300 ms for the
+  reads, under 600 ms for a booking (NFR-PERF-02). A whole page has its own, looser threshold,
+  because the requirement for a page is NFR-PERF-01 and Lighthouse holds that one.
+- It runs in CI on every push, against a fresh stack and a production build, and the timings are in
+  the job's annotations. `pnpm load` needs k6 on the machine (`winget install k6` or
+  `brew install k6`); CI installs it itself.
+- If a run leaves bookings behind, `pnpm load:clean` cancels them. It only ever touches what a load
+  run booked: the learners in `load/fixtures.json`, from three weeks out.
+- The fixtures file holds the tokens of seeded local accounts, so it is ignored by git. It never
+  points anywhere but the local stack, and the scripts refuse to run if it does.
+
 ### Secrets
 - They live in Vercel (app), the Supabase dashboard (Auth providers, SMTP), and `.env.local` on developer machines. None are in git; CI needs none today.
 - To rotate the Supabase secret key: create a new one, update Vercel, redeploy, then delete the old one.
