@@ -91,7 +91,16 @@ function memberSummary(member: AdminMember): string {
 }
 
 /** ADM-02: what staff see of one Business: its standing, its figures and everybody who works there. */
-export function BusinessDetails({ business, canSuspend }: { business: AdminBusiness; canSuspend: boolean }) {
+export function BusinessDetails({
+  business,
+  canSuspend,
+  onOpenMember,
+}: {
+  business: AdminBusiness;
+  canSuspend: boolean;
+  /** Opens a person's own panel, where staff look after their account. */
+  onOpenMember?: (member: AdminMember) => void;
+}) {
   const { suspension } = business;
   return (
     <div className="flex flex-col gap-5">
@@ -120,7 +129,13 @@ export function BusinessDetails({ business, canSuspend }: { business: AdminBusin
           {business.members.map((member, index) => (
             <li key={member.userId}>
               {index > 0 ? <ListDivider className="ml-0" /> : null}
-              <ListRow className="px-0" title={member.name} subtitle={memberSummary(member)} />
+              {onOpenMember ? (
+                <ListRow asChild chevron className="px-0" title={member.name} subtitle={memberSummary(member)}>
+                  <button type="button" onClick={() => { onOpenMember(member); }} />
+                </ListRow>
+              ) : (
+                <ListRow className="px-0" title={member.name} subtitle={memberSummary(member)} />
+              )}
             </li>
           ))}
         </ul>
@@ -141,6 +156,7 @@ export function BusinessSheet({
   onClose,
   onSuspend,
   onReactivate,
+  onOpenMember,
 }: {
   business: AdminBusiness | null;
   canSuspend: boolean;
@@ -148,6 +164,7 @@ export function BusinessSheet({
   onClose: () => void;
   onSuspend: (business: AdminBusiness) => void;
   onReactivate: (business: AdminBusiness) => void;
+  onOpenMember: (member: AdminMember) => void;
 }) {
   const [shown, setShown] = useState<AdminBusiness | null>(business);
   // Keep the last Business while the panel closes, so it does not empty as it slides away.
@@ -172,7 +189,7 @@ export function BusinessSheet({
       description={typeWords[shown.type]}
       {...(footer ? { footer } : {})}
     >
-      <BusinessDetails business={shown} canSuspend={canSuspend} />
+      <BusinessDetails business={shown} canSuspend={canSuspend} onOpenMember={onOpenMember} />
     </Sheet>
   );
 }

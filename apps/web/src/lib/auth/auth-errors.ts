@@ -1,3 +1,4 @@
+import { brand } from '@repo/config/brand';
 import type { DomainErrorCode } from '@repo/core/errors';
 
 /** Supabase Auth error codes to plain British English that says what to do next. */
@@ -21,6 +22,9 @@ export function authErrorCopy(code: string | undefined): { code: DomainErrorCode
       return { code: 'UNKNOWN', message: 'We could not send a text. Check the number and try again.' };
     case 'same_password':
       return { code: 'VALIDATION_FAILED', message: 'Choose a password you have not used before.' };
+    // Platform staff suspended the account (ADM-02, D-126).
+    case 'user_banned':
+      return { code: 'NOT_ALLOWED', message: `This account is suspended. Email ${brand.supportEmail} to talk to us about it.` };
     default:
       return { code: 'UNKNOWN', message: 'Something went wrong. Try again.' };
   }

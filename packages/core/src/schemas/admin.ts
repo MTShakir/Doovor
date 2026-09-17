@@ -13,3 +13,7 @@ export const suspensionReasonSchema = z
 export const businessIdSchema = z.object({ businessId: z.uuid() });
 
 export const suspendBusinessSchema = z.object({ businessId: z.uuid(), reason: suspensionReasonSchema });
+
+export const userIdSchema = z.object({ userId: z.uuid() });
+
+export const suspendAccountSchema = z.object({ userId: z.uuid(), reason: suspensionReasonSchema });

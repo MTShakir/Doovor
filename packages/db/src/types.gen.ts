@@ -9,6 +9,27 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      account_suspensions: {
+        Row: {
+          reason: string
+          suspended_at: string
+          suspended_by: string | null
+          user_id: string
+        }
+        Insert: {
+          reason: string
+          suspended_at?: string
+          suspended_by?: string | null
+          user_id: string
+        }
+        Update: {
+          reason?: string
+          suspended_at?: string
+          suspended_by?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       area_waiting_list: {
         Row: {
           confirmation_sent_at: string | null
@@ -2742,6 +2763,36 @@ export type Database = {
           status: Database["public"]["Enums"]["business_status"]
           type: Database["public"]["Enums"]["business_type"]
         }[]
+      }
+      admin_instructors: {
+        Args: { p_limit?: number; p_query?: string }
+        Returns: {
+          account_name: string
+          business_id: string
+          business_name: string
+          display_name: string
+          email: string
+          instructor_id: string
+          suspended: boolean
+          user_id: string
+          verification_status: Database["public"]["Enums"]["verification_status"]
+        }[]
+      }
+      admin_learners: {
+        Args: { p_limit?: number; p_query?: string }
+        Returns: {
+          businesses: number
+          email: string
+          name: string
+          suspended: boolean
+          user_id: string
+        }[]
+      }
+      admin_person: { Args: { p_user_id: string }; Returns: Json }
+      admin_reset_two_step: { Args: { p_user_id: string }; Returns: undefined }
+      admin_set_account_suspended: {
+        Args: { p_reason?: string; p_suspended: boolean; p_user_id: string }
+        Returns: undefined
       }
       admin_set_business_suspended: {
         Args: { p_business_id: string; p_reason?: string; p_suspended: boolean }

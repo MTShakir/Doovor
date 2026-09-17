@@ -5,11 +5,21 @@ import { useRouter } from 'next/navigation';
 import { useState, useTransition } from 'react';
 import { BusinessResults, BusinessSheet, SuspendBusinessDialog } from '@/components/admin/businesses';
 import type { AdminBusiness, AdminBusinessRow } from '@/lib/admin/businesses';
+import { usePersonPanel } from '../use-person-panel';
 import { openBusiness, reactivateBusiness, suspendBusiness } from './actions';
 
-/** ADM-02: the Businesses found, the one opened, and suspending or reactivating it. */
-export function BusinessesScreen({ rows, query, canSuspend }: { rows: AdminBusinessRow[]; query: string; canSuspend: boolean }) {
+/** ADM-02: the Businesses found, the one opened, suspending or reactivating it, and the people in it. */
+export function BusinessesScreen({
+  rows,
+  query,
+  viewer,
+}: {
+  rows: AdminBusinessRow[];
+  query: string;
+  viewer: { canManage: boolean; userId: string };
+}) {
   const router = useRouter();
+  const person = usePersonPanel(viewer);
   const [pending, startTransition] = useTransition();
   const [opened, setOpened] = useState<AdminBusiness | null>(null);
   const [suspending, setSuspending] = useState<AdminBusiness | null>(null);
@@ -59,7 +69,7 @@ export function BusinessesScreen({ rows, query, canSuspend }: { rows: AdminBusin
       <BusinessResults rows={rows} query={query} onOpen={open} />
       <BusinessSheet
         business={opened}
-        canSuspend={canSuspend}
+        canSuspend={viewer.canManage}
         pending={pending}
         onClose={() => { setOpened(null); }}
         onSuspend={(business) => {
@@ -69,7 +79,13 @@ export function BusinessesScreen({ rows, query, canSuspend }: { rows: AdminBusin
           setSuspending(business);
         }}
         onReactivate={reactivate}
+        onOpenMember={(member) => {
+          // From the Business to the person: one panel at a time.
+          setOpened(null);
+          person.open(member.userId);
+        }}
       />
+      {person.panel}
       <SuspendBusinessDialog
         business={suspending}
         pending={pending}

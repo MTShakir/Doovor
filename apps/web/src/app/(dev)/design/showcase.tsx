@@ -35,6 +35,8 @@ import { InstructorWeeks, OverviewFigures, OverviewSkeleton } from '@/components
 import { DashboardFigures, DashboardSkeleton, WaitingOnStaff } from '@/components/admin/dashboard';
 import { BusinessDetails, BusinessResults, SuspendBusinessDialog } from '@/components/admin/businesses';
 import type { AdminBusiness } from '@/lib/admin/businesses';
+import { InstructorResults, LearnerResults, PersonDetails, ResetTwoStepDialog, SuspendAccountDialog } from '@/components/admin/people';
+import type { AdminPerson } from '@/lib/admin/people';
 import type { PlatformDashboard } from '@/lib/admin/dashboard';
 import type { SchoolOverview } from '@/lib/school/overview';
 import { SwitchOffDialog, TeamSections } from '@/components/school/team';
@@ -193,6 +195,46 @@ const suspendedBusiness: AdminBusiness = {
   lessonsToCome: 2,
 };
 
+const exampleInstructorRows = [
+  { userId: 'person-3', name: 'Emma Clarke', email: 'emma.clarke@example.com', businessName: 'Quayside Driving School', verification: 'approved' as const, suspended: false },
+  { userId: 'person-4', name: 'Aisha Rahman', email: null, businessName: 'Quayside Driving School', verification: 'pending' as const, suspended: false },
+  { userId: 'person-5', name: 'Rob Quick', email: 'rob@example.com', businessName: 'Fast Pass Motoring', verification: 'rejected' as const, suspended: true },
+];
+
+const exampleLearnerRows = [
+  { userId: 'person-6', name: 'Jack Taylor', email: 'jack.taylor@example.com', businesses: 2, suspended: false },
+  { userId: 'person-7', name: 'Mia Walker', email: null, businesses: 0, suspended: true },
+];
+
+const examplePerson: AdminPerson = {
+  userId: 'person-2',
+  name: 'Lucy Grant',
+  email: 'lucy.grant@example.com',
+  phone: '07700 900123',
+  joinedOn: 'Mon 2 Mar 2026',
+  lastSignedIn: 'Tue 15 Sep, 14:30',
+  twoStep: true,
+  staffRole: null,
+  suspension: null,
+  memberships: [{ businessId: 'biz-1', businessName: 'Quayside Driving School', businessSuspended: false, role: 'manager', active: true }],
+  learnsWith: [],
+};
+
+const suspendedPerson: AdminPerson = {
+  ...examplePerson,
+  userId: 'person-7',
+  name: 'Mia Walker',
+  email: null,
+  lastSignedIn: null,
+  twoStep: false,
+  suspension: { since: 'Wed 16 Sep', reason: 'Chargebacks on three cards in a week.', byName: 'Maya Admin' },
+  memberships: [],
+  learnsWith: [
+    { businessId: 'biz-1', businessName: 'Quayside Driving School' },
+    { businessId: 'biz-3', businessName: 'Fast Pass Motoring' },
+  ],
+};
+
 const exampleTeam: SchoolTeam = {
   members: [
     { membershipId: 'team-1', isYou: false, role: 'instructor', active: true, name: 'Emma Clarke', email: null, phone: null, instructorId: 'team-p1', photoPath: null, setOwnPrices: false, viewRevenue: false, lessonsToCome: 18 },
@@ -321,6 +363,8 @@ export function DesignShowcase() {
   const [document, setDocument] = useState<string | undefined>(undefined);
   const [pickup, setPickup] = useState<string | undefined>(undefined);
   const [suspendingBusiness, setSuspendingBusiness] = useState<AdminBusiness | null>(null);
+  const [suspendingPerson, setSuspendingPerson] = useState<AdminPerson | null>(null);
+  const [resettingPerson, setResettingPerson] = useState<AdminPerson | null>(null);
 
   return (
     <main className="mx-auto max-w-5xl px-4 pb-24 md:px-8">
@@ -1076,7 +1120,7 @@ export function DesignShowcase() {
         <Label>Nothing found</Label>
         <BusinessResults rows={[]} query="nobody" onOpen={() => undefined} />
         <Label>A Business opened, as a super admin sees it, and a suspended one as support staff see it</Label>
-        <div className="grid gap-8 md:grid-cols-2">
+        <div className="grid grid-cols-1 gap-8 md:grid-cols-2">
           <BusinessDetails business={exampleBusiness} canSuspend />
           <BusinessDetails business={suspendedBusiness} canSuspend={false} />
         </div>
@@ -1091,6 +1135,37 @@ export function DesignShowcase() {
           error={undefined}
           onConfirm={() => { setSuspendingBusiness(null); }}
           onCancel={() => { setSuspendingBusiness(null); }}
+        />
+        <Label>Instructors and learners found, some suspended</Label>
+        <div className="grid grid-cols-1 gap-8 md:grid-cols-2">
+          <InstructorResults rows={exampleInstructorRows} query="clarke" onOpen={() => undefined} />
+          <LearnerResults rows={exampleLearnerRows} query="walker" onOpen={() => undefined} />
+        </div>
+        <Label>A person opened by a super admin, and a suspended learner as support staff see them</Label>
+        <div className="grid grid-cols-1 gap-8 md:grid-cols-2">
+          <PersonDetails person={examplePerson} viewer={{ canManage: true, userId: 'person-1' }} />
+          <PersonDetails person={suspendedPerson} viewer={{ canManage: false, userId: 'person-1' }} />
+        </div>
+        <div className="flex flex-wrap gap-2">
+          <Button variant="destructive" onClick={() => { setSuspendingPerson(suspendedPerson); }}>
+            Suspend Mia Walker
+          </Button>
+          <Button variant="secondary" onClick={() => { setResettingPerson(examplePerson); }}>
+            Reset two-step
+          </Button>
+        </div>
+        <SuspendAccountDialog
+          person={suspendingPerson}
+          pending={false}
+          error={undefined}
+          onConfirm={() => { setSuspendingPerson(null); }}
+          onCancel={() => { setSuspendingPerson(null); }}
+        />
+        <ResetTwoStepDialog
+          person={resettingPerson}
+          pending={false}
+          onConfirm={() => { setResettingPerson(null); }}
+          onCancel={() => { setResettingPerson(null); }}
         />
       </Section>
 

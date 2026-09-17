@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { adminSearchSchema, businessIdSchema, suspendBusinessSchema } from './admin';
+import { adminSearchSchema, businessIdSchema, suspendAccountSchema, suspendBusinessSchema, userIdSchema } from './admin';
 
 const businessId = '6f1c3a52-9d8e-4b7a-8c61-2f0e9b4d7a13';
 
@@ -24,5 +24,12 @@ describe('what admin screens accept (ADM-02, M5-18)', () => {
   it('names a Business by its id', () => {
     expect(businessIdSchema.safeParse({ businessId }).success).toBe(true);
     expect(businessIdSchema.safeParse({ businessId: 'asha-driving' }).success).toBe(false);
+  });
+
+  it('suspends an account only with a reason, and names a person by their id', () => {
+    expect(suspendAccountSchema.parse({ userId: businessId, reason: ' Abusive messages ' })).toEqual({ userId: businessId, reason: 'Abusive messages' });
+    expect(suspendAccountSchema.safeParse({ userId: businessId, reason: '' }).success).toBe(false);
+    expect(userIdSchema.safeParse({ userId: businessId }).success).toBe(true);
+    expect(userIdSchema.safeParse({ userId: 'lee' }).success).toBe(false);
   });
 });

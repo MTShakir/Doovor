@@ -30,7 +30,7 @@ test.describe('Businesses for platform staff (ADM-02, M5-18)', { tag: '@desktop-
       const panel = staff.getByRole('dialog', { name: business });
       await expect(panel).toContainText('In good standing');
       await expect(panel.getByText(`Owner, verified · ${instructor.email}`)).toBeVisible();
-      await panel.getByRole('button', { name: 'Suspend' }).click();
+      await panel.getByRole('button', { name: 'Suspend', exact: true }).click();
 
       // Asked first, and asked why.
       const question = staff.getByRole('dialog', { name: `Suspend ${business}?` });
@@ -93,7 +93,7 @@ test.describe('Businesses for platform staff (ADM-02, M5-18)', { tag: '@desktop-
     await expect(panel).toContainText('David Okafor');
     await expect(panel).toContainText('Lucy Grant');
     await expect(panel.getByText('Only a super admin can suspend or reactivate a Business.')).toBeVisible();
-    await expect(panel.getByRole('button', { name: 'Suspend' })).toHaveCount(0);
+    await expect(panel.getByRole('button', { name: 'Suspend', exact: true })).toHaveCount(0);
     await expectAccessible(page);
     await snap(page, testInfo, 'admin-business-support', { fullPage: false });
     await context.close();

@@ -1501,6 +1501,33 @@ export async function makeTakings(label: string): Promise<MadeTakings> {
   };
 }
 
+/**
+ * An authenticator app on somebody's account, as enrolling one leaves it (M5-18), for a test that
+ * resets two-step verification and never signs in with it.
+ */
+export async function giveAuthenticator(email: string): Promise<void> {
+  await withDatabase(async (sql) => {
+    const made = await sql`
+      insert into auth.mfa_factors (id, user_id, friendly_name, factor_type, status, created_at, updated_at, secret)
+      select gen_random_uuid(), u.id, 'Phone', 'totp', 'verified', now(), now(), 'JBSWY3DPEHPK3PXP'
+        from auth.users u
+       where lower(u.email) = lower(${email})`;
+    if (made.count !== 1) throw new Error(`Nobody signs in as ${email}`);
+  });
+}
+
+/** How many authenticators somebody's account has (AUTH-08). */
+export async function authenticatorsOf(email: string): Promise<number> {
+  return withDatabase(async (sql) => {
+    const [row] = await sql<{ count: number }[]>`
+      select count(*)::int as count
+        from auth.mfa_factors f
+        join auth.users u on u.id = f.user_id
+       where lower(u.email) = lower(${email})`;
+    return row?.count ?? 0;
+  });
+}
+
 /** A school's own booking rules as saved, found by its name (SCH-04). */
 export async function schoolRules(schoolName: string): Promise<Record<string, unknown>> {
   return withDatabase(async (sql) => {
