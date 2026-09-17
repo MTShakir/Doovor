@@ -1,5 +1,6 @@
 import { createHmac } from 'node:crypto';
 import { expect, type Locator, type Page } from '@playwright/test';
+import { expectNothingRefused, watchForRefusals } from './csp';
 import { setting } from './settings';
 
 /**
@@ -40,6 +41,11 @@ async function stoppedMoving(locator: Locator, samples = 3): Promise<void> {
  * fields are Stripe's, inside its own frame, so they are found by the names Stripe gives them.
  */
 export async function payInCardForm(page: Page, button: string | RegExp, card = visaThatWorks): Promise<void> {
+  // This run is the only one that asks the payment provider for anything, so it is the only one
+  // that can prove the policy admits it (M6-04, D-138). A refused script or frame already fails the
+  // fill below; the watcher catches what a refusal would otherwise only whisper, like a request to
+  // an origin the provider added.
+  const refusals = watchForRefusals(page);
   const form = page.getByRole('form', { name: 'Card details' });
   const fields = form.frameLocator('iframe[title="Secure payment input frame"]');
   await fields.locator('input[name="number"]').fill(card);
@@ -56,6 +62,7 @@ export async function payInCardForm(page: Page, button: string | RegExp, card = 
   await pay.scrollIntoViewIfNeeded();
   await stoppedMoving(pay);
   await pay.click();
+  expectNothingRefused(refusals, 'the card form');
 }
 
 /** Reads Stripe's own record, as the platform, on the connected account when one is given. */

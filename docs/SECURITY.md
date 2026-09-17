@@ -78,13 +78,27 @@ scanning: the automated checks named below run on every push (`.github/workflows
 
 - Security headers on every response: HSTS, `X-Content-Type-Options`, `X-Frame-Options: DENY`, a strict
   referrer policy, a narrow permissions policy, and a content security policy.
+- The content security policy is enforced, not reported (M6-04, D-138). It is built in
+  `apps/web/src/lib/security-headers.ts`, which names every origin: the Supabase project this build
+  points at and its socket, Mapbox, Stripe with Link, and the analytics and error hosts once they are
+  set. Nothing may frame us, plug in a plugin, rewrite where our own links point, or post our forms
+  away. A page may see where the car is and photograph a licence; nothing may listen.
+- Scripts and styles still allow `'unsafe-inline'`: Next puts an inline bootstrap into every page and
+  the brand's stylesheet is written into the head. A nonce would mean rendering every page for every
+  request, which is what the public pages must not do (NFR-PERF-04). `'unsafe-eval'` is allowed only
+  while a person is developing, never in a build.
+- `e2e/specs/security-headers.spec.ts` opens every public page and every portal screen, for all four
+  roles at both widths, and fails on anything the browser refuses. Removing `blob:` from `worker-src`
+  makes it fail on the instructor's coverage map, which is how we know it can.
+- Stripe's origins cannot be proved that way, because the local and test environments stand a fake
+  card machine in for the real one. They are held to Stripe's published set in
+  `apps/web/src/lib/security-headers.test.ts`, and the Stripe test-mode run (RUNBOOK 3.7a) watches for
+  a refusal while it types into the real card form.
 - Outside production nothing is indexed, and private areas are never indexed (D-047).
 - The Supabase advisor on staging shows no errors; its warnings are the expected `security definer`
   pattern (D-051) and the leaked password switch above.
 - Server action arguments are never logged, since they include passwords and codes (D-036).
 - Browser source maps are not published (Next's default), and the app sends no `X-Powered-By`.
-- **Carried to M6-04:** the content security policy is report-only until every third-party origin is
-  confirmed; M6-04 enforces it and proves no violations in the end to end runs.
 - **Accepted:** the `/design` page answers on staging. It is a gallery of components with no data of
   anybody's, and it is not indexed. It is not there in production.
 

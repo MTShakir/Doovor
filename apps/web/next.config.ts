@@ -2,6 +2,7 @@ import { withSerwist } from '@serwist/turbopack';
 import { existsSync } from 'node:fs';
 import path from 'node:path';
 import type { NextConfig } from 'next';
+import { securityHeaders } from './src/lib/security-headers.ts';
 
 // One .env.local at the repository root serves the app, scripts and the Supabase CLI.
 // Next has already loaded env files from apps/web by the time this runs, so load the root
@@ -9,35 +10,15 @@ import type { NextConfig } from 'next';
 const rootEnvFile = path.resolve(import.meta.dirname, '../../.env.local');
 if (existsSync(rootEnvFile)) process.loadEnvFile(rootEnvFile);
 
-const isProduction = process.env.NODE_ENV === 'production';
-
-/**
- * Report-only CSP until M6 verifies every third-party origin (ARCHITECTURE.md 6.6).
- * Inline styles are allowed because the brand stylesheet is injected from brand.ts.
- */
-const contentSecurityPolicy = [
-  "default-src 'self'",
-  // Stripe.js draws the card fields in frames of its own (D-099).
-  "script-src 'self' 'unsafe-inline' https://js.stripe.com" + (isProduction ? '' : " 'unsafe-eval'"),
-  "style-src 'self' 'unsafe-inline'",
-  "img-src 'self' data: blob: https:",
-  "font-src 'self'",
-  "connect-src 'self' https: wss: http://127.0.0.1:54321 ws://127.0.0.1:54321",
-  "frame-src 'self' https://js.stripe.com https://hooks.stripe.com",
-  "frame-ancestors 'none'",
-  "base-uri 'self'",
-  "form-action 'self'",
-].join('; ');
-
-const securityHeaders = [
-  { key: 'Strict-Transport-Security', value: 'max-age=63072000; includeSubDomains; preload' },
-  { key: 'X-Content-Type-Options', value: 'nosniff' },
-  { key: 'X-Frame-Options', value: 'DENY' },
-  { key: 'Referrer-Policy', value: 'strict-origin-when-cross-origin' },
-  // Stripe's frame asks the browser for Apple Pay and Google Pay, so it may use the Payment Request API.
-  { key: 'Permissions-Policy', value: 'camera=(self), geolocation=(self), microphone=(), payment=(self "https://js.stripe.com")' },
-  { key: 'Content-Security-Policy-Report-Only', value: contentSecurityPolicy },
-];
+// The policy and the headers are built in their own module, tested there, and take the environment
+// as an argument because the root .env.local above is loaded after this file's imports have run
+// (M6-04, D-138).
+const headers = securityHeaders({
+  NEXT_PUBLIC_SUPABASE_URL: process.env.NEXT_PUBLIC_SUPABASE_URL,
+  NEXT_PUBLIC_POSTHOG_HOST: process.env.NEXT_PUBLIC_POSTHOG_HOST,
+  NEXT_PUBLIC_SENTRY_DSN: process.env.NEXT_PUBLIC_SENTRY_DSN,
+  production: process.env.NODE_ENV === 'production',
+});
 
 /** Outside production nothing is indexed; in production, private areas never are (D-047). */
 const indexable = process.env.APP_ENV === 'production';
@@ -72,8 +53,8 @@ const nextConfig: NextConfig = {
   headers() {
     return Promise.resolve(
       indexable
-        ? [{ source: '/(.*)', headers: securityHeaders }, ...privateAreas.map((source) => ({ source, headers: noindex }))]
-        : [{ source: '/(.*)', headers: [...securityHeaders, ...noindex] }],
+        ? [{ source: '/(.*)', headers }, ...privateAreas.map((source) => ({ source, headers: noindex }))]
+        : [{ source: '/(.*)', headers: [...headers, ...noindex] }],
     );
   },
 };
