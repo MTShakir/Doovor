@@ -7,7 +7,7 @@ import { Avatar } from '@repo/ui/avatar';
 import { buttonVariants } from '@repo/ui/button';
 import { CalendarClock, Car, Clock, Languages, MapPin } from 'lucide-react';
 import type { ReactNode } from 'react';
-import { RadiusMap } from '@/components/map/radius-map';
+import { CoverageImage } from '@/components/map/coverage-image';
 
 /**
  * The pieces of an instructor's public profile (PUB-01, M5-02). They take plain values rather
@@ -174,11 +174,11 @@ export interface WhereLessonsStartProps extends Prefixed {
 export function WhereLessonsStart({ radiusMiles, outcode, alsoCovers, areaCentre, idPrefix = '' }: WhereLessonsStartProps) {
   return (
     <ProfileSection id={`${idPrefix}area-heading`} title="Where lessons start">
-      <RadiusMap
+      <CoverageImage
         centre={areaCentre === null ? null : { latitude: areaCentre.latitude, longitude: areaCentre.longitude }}
         radiusMiles={radiusMiles}
         place={outcode}
-        audience="public"
+        description={`Where lessons start: within ${String(radiusMiles)} ${radiusMiles === 1 ? 'mile' : 'miles'} of ${outcode ?? "the instructor's base"}`}
       />
       <p className="flex items-start gap-2 text-body text-ink">
         <MapPin className="mt-0.5 size-5 shrink-0 text-grey-700" aria-hidden />

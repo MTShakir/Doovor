@@ -46,3 +46,6 @@ ops/staging/supabase/templates/
 
 # Supabase CLI state for the hosted project
 ops/staging/supabase/.temp/
+
+# Lighthouse CI reports (M5-24)
+.lighthouseci/

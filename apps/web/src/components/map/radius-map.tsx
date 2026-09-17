@@ -21,22 +21,17 @@ export interface RadiusMapProps {
   centre: Point | null;
   radiusMiles: number;
   place?: string | null;
-  /** Whose area it is: the instructor's own (the default), or one a visitor is reading about (PUB-01). */
-  audience?: 'self' | 'public';
 }
 
-export function RadiusMap({ centre, radiusMiles, place, audience = 'self' }: RadiusMapProps) {
+/** An instructor's own coverage area, as they set it (COV-01). A public page draws it as a picture instead (`CoverageImage`). */
+export function RadiusMap({ centre, radiusMiles, place }: RadiusMapProps) {
   const settings = mapSettings(clientEnv.NEXT_PUBLIC_MAPBOX_TOKEN);
-  const miles = `${String(radiusMiles)} ${radiusMiles === 1 ? 'mile' : 'miles'}`;
-  const description =
-    audience === 'public'
-      ? `Where lessons start: within ${miles} of ${place ?? "the instructor's base"}`
-      : place
-        ? `Your coverage area: ${String(radiusMiles)} miles around ${place}`
-        : `Your coverage area: ${String(radiusMiles)} miles around your base`;
+  const description = place
+    ? `Your coverage area: ${String(radiusMiles)} miles around ${place}`
+    : `Your coverage area: ${String(radiusMiles)} miles around your base`;
 
   if (settings.kind === 'static' || centre === null) {
-    return <StaticMap radiusMiles={radiusMiles} place={place} description={description} audience={audience} />;
+    return <StaticMap radiusMiles={radiusMiles} place={place} description={description} />;
   }
   return (
     <MapboxMap

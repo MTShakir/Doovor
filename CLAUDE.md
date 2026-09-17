@@ -62,6 +62,7 @@ Run from the repo root.
 | `pnpm typecheck` | TypeScript across the monorepo |
 | `pnpm test` | Vitest unit and integration tests |
 | `pnpm test:e2e` | Playwright at 390 px and 1440 px |
+| `pnpm lighthouse` | Lighthouse on the public profile and city pages, against a production build already running on port 3000; each must score 90 or more (NFR-PERF-04) |
 | `pnpm check` | lint + typecheck + test. Must be green before every commit |
 
 ## Working loop
