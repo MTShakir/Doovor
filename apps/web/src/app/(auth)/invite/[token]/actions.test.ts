@@ -41,7 +41,7 @@ describe('joining a school from its link (AUTH-05, M5-11)', () => {
     expect(await acceptMemberInvitation('tok_abc-123')).toEqual({
       ok: false,
       code: 'NOT_ALLOWED',
-      message: 'This account already teaches for another driving business, so it cannot join a school as well.',
+      message: 'This account already teaches for another driving business. To join the school, sign out and create an account with a different email.',
     });
 
     rpc.mockResolvedValueOnce({ data: null, error: { code: 'P0001', message: 'VALIDATION_FAILED', details: '{"field": "token", "reason": "expired"}' } });

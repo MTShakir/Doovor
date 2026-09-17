@@ -46,7 +46,10 @@ export async function acceptMemberInvitation(token: unknown): Promise<Result<nul
   if (error) {
     const { code, context } = parsePostgresError(error);
     if (code === 'VALIDATION_FAILED' && context.reason === 'teaches_elsewhere') {
-      return err('NOT_ALLOWED', 'This account already teaches for another driving business, so it cannot join a school as well.');
+      return err(
+        'NOT_ALLOWED',
+        'This account already teaches for another driving business. To join the school, sign out and create an account with a different email.',
+      );
     }
     if (code === 'VALIDATION_FAILED') return err('NOT_FOUND', 'This link has already been used or has expired.');
     return err(code);
