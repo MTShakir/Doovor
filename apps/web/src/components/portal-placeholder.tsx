@@ -8,7 +8,7 @@ import { labelFor, sectionsFor, type Portal } from '@/lib/navigation';
 const arrivesIn: Record<Portal, Record<string, string>> = {
   learner: { '': 'M2', payments: 'M3' },
   instructor: {},
-  school: { settings: 'M5' },
+  school: {},
   admin: {
     '': 'M5',
     businesses: 'M5',

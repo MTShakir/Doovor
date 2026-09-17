@@ -3010,6 +3010,14 @@ export type Database = {
         Args: { p_learner_id: string; p_reason?: string; p_status: string }
         Returns: Database["public"]["Enums"]["learner_status"]
       }
+      set_lesson_prices: {
+        Args: {
+          p_business_id: string
+          p_instructor_id?: string
+          p_prices: Json
+        }
+        Returns: undefined
+      }
       set_member_active: {
         Args: { p_active: boolean; p_membership_id: string }
         Returns: undefined

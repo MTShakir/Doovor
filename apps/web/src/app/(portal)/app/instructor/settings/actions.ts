@@ -8,6 +8,7 @@ import { localToUtc } from '@repo/core/time';
 import { revalidatePath } from 'next/cache';
 import { z } from 'zod';
 import { requirePortal } from '@/lib/auth/session';
+import { savePackage, savePrices } from '@/lib/catalogue/save';
 import { fieldErrors } from '@/lib/forms';
 import { expireAllInstructorProfiles, expireInstructorProfile } from '@/lib/public/instructor-profile';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
@@ -157,4 +158,34 @@ export async function removeException(id: unknown): Promise<Result<null>> {
   revalidatePath('/app/instructor/settings');
   expireInstructorProfile(profileId);
   return ok(null);
+}
+
+/** The Business this instructor teaches for, and their profile there. */
+async function teaching(): Promise<{ businessId: string; businessType: 'independent' | 'school'; profileId: string } | null> {
+  const { access } = await requirePortal('instructor');
+  const membership = access.memberships.find((m) => m.instructorProfileId !== null);
+  return membership?.instructorProfileId
+    ? { businessId: membership.businessId, businessType: membership.businessType, profileId: membership.instructorProfileId }
+    : null;
+}
+
+/** R-05: the prices of a Business of one, which its instructor sets. */
+export async function saveBusinessPrices(input: unknown): Promise<Result<null>> {
+  const mine = await teaching();
+  if (mine?.businessType !== 'independent') return err('NOT_ALLOWED');
+  return savePrices(mine.businessId, null, input);
+}
+
+/** PAY-04: a package of hours a Business of one sells. */
+export async function saveBusinessPackage(input: unknown): Promise<Result<{ packageId: string }>> {
+  const mine = await teaching();
+  if (mine?.businessType !== 'independent') return err('NOT_ALLOWED');
+  return savePackage(mine.businessId, input);
+}
+
+/** SCH-04: an instructor's own prices at a school that allows them. The database checks it does. */
+export async function saveOwnPrices(input: unknown): Promise<Result<null>> {
+  const mine = await teaching();
+  if (mine?.businessType !== 'school') return err('NOT_ALLOWED');
+  return savePrices(mine.businessId, mine.profileId, input);
 }

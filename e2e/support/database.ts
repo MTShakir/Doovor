@@ -1238,9 +1238,11 @@ export async function makeSchoolInstructor(
       with school as (select id from public.businesses where name = ${schoolName} and type = 'school'),
            member as (insert into public.memberships (business_id, user_id, role) select id, ${userId}, 'instructor' from school returning business_id)
       insert into public.instructor_profiles (user_id, business_id, display_name, public_slug, verification_status, verified_at, onboarding_completed_at,
-                                              transmission, base_postcode, base_location)
+                                              transmission, base_postcode, base_location, is_listed)
       select ${userId}, business_id, ${name}, ${slug}, 'approved', now(), now(), ${options.transmission ?? 'manual'}::public.transmission,
-             ${options.postcode ?? null}, (select location from public.postcodes where postcode = ${options.postcode ?? null})
+             ${options.postcode ?? null}, (select location from public.postcodes where postcode = ${options.postcode ?? null}),
+             -- Out of search, so the city pages and sitemaps other tests count stay as the seed has them.
+             false
         from member`;
     if (made.count !== 1) throw new Error(`No school called ${schoolName} to add ${name} to`);
     // Open every day from seven till nine, so their free time outweighs anybody the seed has.
@@ -1336,5 +1338,79 @@ export async function learnerTeacherAtSchool(email: string, schoolName = 'Quaysi
         left join public.instructor_profiles p on p.id = r.instructor_id
        where lower(u.email) = lower(${email})`;
     return rows[0]?.display_name ?? null;
+  });
+}
+
+export interface MadeSchool {
+  name: string;
+  /** Signs in with the seed's password; a manager needs no second step. */
+  managerEmail: string;
+  instructor: { name: string; email: string; slug: string };
+  remove: () => Promise<void>;
+}
+
+/**
+ * A school of a test's own (M5-15): a manager, one checked instructor with a booking link, and an
+ * hour's lesson at £40. Nothing else knows it, so a test can change its prices and rules without
+ * touching the seeded school that the payment tests charge at known prices.
+ */
+export async function makeSchool(label: string): Promise<MadeSchool> {
+  const businessId = crypto.randomUUID();
+  const managerId = crypto.randomUUID();
+  const instructorId = crypto.randomUUID();
+  const typeId = crypto.randomUUID();
+  const key = `${label.toLowerCase().replace(/[^a-z0-9]+/g, '-')}-${businessId.slice(0, 8)}`;
+  const name = `${label} School`;
+  const managerEmail = `manager.${key}@example.com`;
+  const instructor = { name: `Ines ${label}`, email: `instructor.${key}@example.com`, slug: `ines-${key}` };
+
+  await withDatabase(async (sql) => {
+    await sql`select tests.create_user_with_id(${managerId}::uuid, ${managerEmail}, ${`Mo ${label}`})`;
+    await sql`select tests.create_user_with_id(${instructorId}::uuid, ${instructor.email}, ${instructor.name})`;
+    for (let attempt = 0; ; attempt += 1) {
+      const phone = `447700900${String(500 + Math.floor(Math.random() * 500))}`;
+      try {
+        await sql`update auth.users set phone = ${phone}, phone_confirmed_at = now() where id = ${instructorId}`;
+        break;
+      } catch (error) {
+        if (attempt >= 5 || (error as { code?: string }).code !== '23505') throw error;
+      }
+    }
+    await sql`
+      insert into public.businesses (id, type, name, slug, base_postcode, onboarding_completed_at)
+      values (${businessId}, 'school', ${name}, ${key}, 'M1 2QF', now())`;
+    await sql`
+      insert into public.memberships (business_id, user_id, role)
+      values (${businessId}, ${managerId}, 'manager'), (${businessId}, ${instructorId}, 'instructor')`;
+    await sql`
+      insert into public.instructor_profiles (user_id, business_id, display_name, public_slug, verification_status, verified_at,
+                                              onboarding_completed_at, base_postcode, base_location, is_listed)
+      -- Out of search, so Manchester's city page and the sitemaps other tests count stay as the seed has them;
+      -- the booking link works all the same (PUB-04).
+      select ${instructorId}, ${businessId}, ${instructor.name}, ${instructor.slug}, 'approved', now(), now(), p.postcode, p.location, false
+        from public.postcodes p where p.postcode = 'M1 2QF'`;
+    await sql`insert into public.lesson_types (id, business_id, name) values (${typeId}, ${businessId}, 'Standard lesson')`;
+    await sql`
+      insert into public.lesson_prices (business_id, lesson_type_id, duration_minutes, price_pence)
+      values (${businessId}, ${typeId}, 60, 4000)`;
+  });
+
+  return {
+    name,
+    managerEmail,
+    instructor,
+    remove: () =>
+      withDatabase(async (sql) => {
+        await sql`delete from public.businesses where id = ${businessId}`;
+        await sql`delete from auth.users where id in (${managerId}, ${instructorId})`;
+      }),
+  };
+}
+
+/** A school's own booking rules as saved, found by its name (SCH-04). */
+export async function schoolRules(schoolName: string): Promise<Record<string, unknown>> {
+  return withDatabase(async (sql) => {
+    const rows = await sql<{ settings: Record<string, unknown> }[]>`select settings from public.businesses where name = ${schoolName}`;
+    return rows[0]?.settings ?? {};
   });
 }

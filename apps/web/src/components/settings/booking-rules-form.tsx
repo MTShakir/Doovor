@@ -2,6 +2,7 @@
 
 import { lateFeePercents, type BookingRules } from '@repo/core/booking-rules';
 import { reminderChoiceOf, reminderChoices } from '@repo/core/reminders';
+import type { Result } from '@repo/core/result';
 import { Field } from '@repo/ui/field';
 import { Input } from '@repo/ui/input';
 import { Select } from '@repo/ui/select';
@@ -10,15 +11,26 @@ import { toast } from '@repo/ui/toast';
 import { useState, useTransition } from 'react';
 import { ClientForm, SubmitButton } from '@/components/client-form';
 import { FormAlert } from '@/components/form-alert';
-import { saveBookingRules, saveInstructorRules } from './actions';
 
 const fees = lateFeePercents.map((percent) => ({
   value: String(percent),
   label: percent === 0 ? 'Nothing' : `${String(percent)} per cent of the lesson`,
 }));
 
-/** PRD 11.1: what a learner may book, and when (DIA-05, DIA-06, BOK-06). */
-export function BookingRulesForm({ rules, canSetBusinessRules }: { rules: BookingRules; canSetBusinessRules: boolean }) {
+type SaveRules = (input: unknown) => Promise<Result<null>>;
+
+export interface BookingRulesFormProps {
+  rules: BookingRules;
+  /** The gap between lessons and instant booking, which an instructor owns for their own diary. */
+  saveInstructorRules?: SaveRules;
+  /** Notice, horizon, cancellation, requests and reminders, which a Business owns (SCH-04). */
+  saveBusinessRules?: SaveRules;
+  /** Said in place of the Business's rules for somebody who cannot change them. */
+  businessRulesNote?: string;
+}
+
+/** PRD 11.1: what a learner may book, and when (DIA-05, DIA-06, BOK-06, SCH-04). */
+export function BookingRulesForm({ rules, saveInstructorRules, saveBusinessRules, businessRulesNote }: BookingRulesFormProps) {
   const [pending, startTransition] = useTransition();
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [formError, setFormError] = useState<string | null>(null);
@@ -40,17 +52,19 @@ export function BookingRulesForm({ rules, canSetBusinessRules }: { rules: Bookin
     setErrors({});
     setFormError(null);
     startTransition(async () => {
-      const mine = await saveInstructorRules({
-        bufferMinutes: values.bufferMinutes,
-        instantBook: values.instantBook,
-      });
-      if (!mine.ok) {
-        setErrors(mine.fields ?? {});
-        if (!mine.fields) setFormError(mine.message);
-        return;
+      if (saveInstructorRules) {
+        const mine = await saveInstructorRules({
+          bufferMinutes: values.bufferMinutes,
+          instantBook: values.instantBook,
+        });
+        if (!mine.ok) {
+          setErrors(mine.fields ?? {});
+          if (!mine.fields) setFormError(mine.message);
+          return;
+        }
       }
-      if (canSetBusinessRules) {
-        const business = await saveBookingRules({
+      if (saveBusinessRules) {
+        const business = await saveBusinessRules({
           noticeHours: values.noticeHours,
           horizonWeeks: values.horizonWeeks,
           cancellationWindowHours: values.cancellationWindowHours,
@@ -71,21 +85,25 @@ export function BookingRulesForm({ rules, canSetBusinessRules }: { rules: Bookin
   return (
     <ClientForm onSubmit={onSubmit} pending={pending} className="flex flex-col gap-4">
       {formError ? <FormAlert>{formError}</FormAlert> : null}
-      <Switch
-        label="Confirm bookings straight away"
-        description="Off means a learner asks, and you answer."
-        checked={values.instantBook}
-        onCheckedChange={(instantBook) => { change({ instantBook }); }}
-      />
+      {saveInstructorRules ? (
+        <Switch
+          label="Confirm bookings straight away"
+          description="Off means a learner asks, and you answer."
+          checked={values.instantBook}
+          onCheckedChange={(instantBook) => { change({ instantBook }); }}
+        />
+      ) : null}
       <div className="grid gap-3 md:grid-cols-2">
-        <Field label="Gap between lessons" hint="Minutes, up to 60. Your travel time." error={errors.bufferMinutes}>
-          <Input
-            inputMode="numeric"
-            value={values.bufferMinutes}
-            onChange={(event) => { change({ bufferMinutes: event.target.value }); }}
-          />
-        </Field>
-        {canSetBusinessRules ? (
+        {saveInstructorRules ? (
+          <Field label="Gap between lessons" hint="Minutes, up to 60. Your travel time." error={errors.bufferMinutes}>
+            <Input
+              inputMode="numeric"
+              value={values.bufferMinutes}
+              onChange={(event) => { change({ bufferMinutes: event.target.value }); }}
+            />
+          </Field>
+        ) : null}
+        {saveBusinessRules ? (
           <>
             <Field label="Least notice" hint="Hours, up to 72." error={errors.noticeHours}>
               <Input
@@ -136,9 +154,7 @@ export function BookingRulesForm({ rules, canSetBusinessRules }: { rules: Bookin
           </>
         ) : null}
       </div>
-      {canSetBusinessRules ? null : (
-        <p className="text-small text-grey-700">Your school sets the notice, the horizon and the cancellation rules.</p>
-      )}
+      {saveBusinessRules || !businessRulesNote ? null : <p className="text-small text-grey-700">{businessRulesNote}</p>}
       <SubmitButton variant="secondary" width="responsive" pending={pending}>
         Save booking rules
       </SubmitButton>

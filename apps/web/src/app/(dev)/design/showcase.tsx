@@ -35,6 +35,8 @@ import { InstructorWeeks, OverviewFigures, OverviewSkeleton } from '@/components
 import type { SchoolOverview } from '@/lib/school/overview';
 import { SwitchOffDialog, TeamSections } from '@/components/school/team';
 import { AllocationChoices } from '@/components/school/allocation-choices';
+import { PackagesEditor } from '@/components/catalogue/packages-editor';
+import { PricesForm } from '@/components/catalogue/prices-form';
 import type { SchoolTeam } from '@/lib/school/team';
 import type { RecordedLesson } from '@/lib/lessons/records';
 import { Button } from '@repo/ui/button';
@@ -168,6 +170,20 @@ const exampleSuggestions = [
     reasons: ['Badge not checked yet', 'No base postcode set yet', 'No working hours in the next 2 weeks', 'Teaches automatic'],
   },
 ];
+
+const examplePriceRows = [
+  { lessonTypeId: 'type-standard', lessonType: 'Standard lesson', durationMinutes: 60, businessPence: 4200, ownPence: null },
+  { lessonTypeId: 'type-standard', lessonType: 'Standard lesson', durationMinutes: 90, businessPence: 6000, ownPence: 6300 },
+  { lessonTypeId: 'type-standard', lessonType: 'Standard lesson', durationMinutes: 120, businessPence: null, ownPence: null },
+];
+
+const examplePackages = [
+  { packageId: 'package-10', name: '10 hours', minutes: 600, pricePence: 38000, expiryDays: 365, onSale: true },
+  { packageId: 'package-5', name: '5 hours', minutes: 300, pricePence: 19500, expiryDays: null, onSale: false },
+];
+
+const savedNothing = () => Promise.resolve({ ok: true as const, data: null });
+const savedPackage = () => Promise.resolve({ ok: true as const, data: { packageId: 'package-10' } });
 
 const pillStatuses: PillStatus[] = ['confirmed', 'pending', 'completed', 'paid', 'cancelled', 'attention', 'unpaid', 'overdue', 'credit', 'gap-fill', 'test-day'];
 
@@ -966,6 +982,13 @@ export function DesignShowcase() {
             idPrefix="design-allocation-failed"
           />
         </div>
+        <Label>Prices a school sets, and an instructor's own over them</Label>
+        <div className="grid gap-8 md:grid-cols-2">
+          <PricesForm rows={examplePriceRows} mode="business" save={savedNothing} />
+          <PricesForm rows={examplePriceRows} mode="own" save={savedNothing} />
+        </div>
+        <Label>Packages, one of them off sale</Label>
+        <PackagesEditor packages={examplePackages} save={savedPackage} />
         <SwitchOffDialog
           member={switchingOff}
           pending={false}

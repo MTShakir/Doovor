@@ -55,7 +55,8 @@
     "./schemas/capture": "./src/schemas/capture.ts",
     "./schemas/school": "./src/schemas/school.ts",
     "./utilisation": "./src/utilisation.ts",
-    "./allocation": "./src/allocation.ts"
+    "./allocation": "./src/allocation.ts",
+    "./catalogue": "./src/catalogue.ts"
   },
   "scripts": {
     "lint": "eslint .",
