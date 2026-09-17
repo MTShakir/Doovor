@@ -23,9 +23,11 @@ export interface HostRedirect {
 /**
  * Where a request belongs, when it has arrived on the wrong one of the two hosts (D-084).
  *
- * The bare domain is the public site: an app address opened there moves to the app for good,
- * path and query kept, so an old link still lands, and a public page opened on the app moves to
- * the site the same way. The app's own root has nothing to show anybody, so it goes to getting
+ * The bare domain is the public site: an app address opened there moves to the app, path and query
+ * kept, so an old link still lands, and a public page opened on the app moves to the site for good.
+ * The move to the app is temporary on purpose: the list of public pages grows, and a browser or a
+ * cache that remembered a permanent move would keep sending a page that has since become public to
+ * the app (D-134). Nothing on the app is indexed, so the move loses no ranking either way. The app's own root has nothing to show anybody, so it goes to getting
  * started, which sends somebody already signed in to their portal. Any other host, a preview
  * deployment or this machine, serves both and is left alone.
  */
@@ -33,7 +35,7 @@ export function hostRedirect(host: string | null, pathname: string, search: stri
   const name = (host ?? '').trim().toLowerCase().replace(/:\d+$/, '');
 
   if (name === brand.domain || name === `www.${brand.domain}`) {
-    return isSitePath(pathname) ? null : { url: `${brand.appUrl}${pathname}${search}`, permanent: true };
+    return isSitePath(pathname) ? null : { url: `${brand.appUrl}${pathname}${search}`, permanent: false };
   }
 
   if (name === brand.appHost && pathname === siteHome) {

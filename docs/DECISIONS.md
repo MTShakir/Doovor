@@ -679,3 +679,8 @@ Every decision made without the product owner, newest last. Format: date, decisi
 - **Options:** Take them out of the menu until they are specified; build lists of every booking and payment on the platform, with filters, now.
 - **Reason:** Screens nobody has specified are likely to be the wrong screens. Taking them out of the menu would drop what the PRD lists. Honest placeholders cost nothing, and one decision changes them.
 - **Owner's answer, 17 September 2026:** leave both screens as they are, saying they are not built and pointing staff to viewing as the person. They are looked at again in Phase 2.
+
+## D-134 | 2026-09-17 | The move from the public site to the app is temporary
+- **Decision:** An app address opened on `doovor.com` still moves to `app.doovor.com`, path and query kept, but as a temporary move rather than a permanent one (D-084 amended). A public page opened on the app still moves to the public site for good, since that is where search should find it (D-109).
+- **Options:** Keep both moves permanent; keep the move permanent and rely on each release to change what caches hold.
+- **Reason:** The list of public pages grows: M5 added instructor profiles, school pages and place pages, and Phase 2 adds guides and FAQs. A browser or a cache that remembered a permanent move would keep sending a page that has since become public to the app, where the app sends it back, and the two would bounce. It looked like that on staging while the new deployment caught up. Nothing on the app is indexed, so a temporary move costs no ranking; a public page's own move stays permanent, which is the one search engines read.
