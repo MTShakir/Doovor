@@ -21,6 +21,10 @@ async function walk(page: Page, paths: string[]): Promise<void> {
  * page. Every screen worth loading is opened here and watched. The payment provider's origins
  * cannot be proved this way, because this environment stands a fake card machine in for the real
  * one: those are held to what Stripe publishes, in apps/web/src/lib/security-headers.test.ts.
+ *
+ * These tests mean the most against a build, which is what CI runs them against: a development
+ * build allows a script to run from a string, and a build does not, so a library that asks for that
+ * is only refused in the one that matters (D-140).
  */
 test.describe('the content security policy holds (NFR-SEC-03, M6-04)', () => {
   test('the headers say what they should', async ({ page }) => {

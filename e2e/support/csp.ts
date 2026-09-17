@@ -16,7 +16,10 @@ export function watchForRefusals(page: Page): string[] {
   });
   void page.addInitScript(() => {
     document.addEventListener('securitypolicyviolation', (violation) => {
-      console.error(`Content Security Policy: ${violation.violatedDirective} refused ${violation.blockedURI}`);
+      // Where it came from and what it was: without these, "refused eval" names no culprit.
+      const where = violation.sourceFile ? ` from ${violation.sourceFile}:${String(violation.lineNumber)}` : '';
+      const what = violation.sample ? ` (${violation.sample})` : '';
+      console.error(`Content Security Policy: ${violation.violatedDirective} refused ${violation.blockedURI}${where}${what}`);
     });
   });
   return refusals;
