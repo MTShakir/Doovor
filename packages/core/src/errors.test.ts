@@ -64,4 +64,9 @@ describe('result helpers', () => {
       fields: { email: 'Enter an email' },
     });
   });
+
+  it('says a change was refused while staff view as somebody, and when the viewing has ended (ADM-06, M5-21)', () => {
+    expect(parsePostgresError({ code: '25006', message: 'cannot execute UPDATE in a read-only transaction' }).code).toBe('READ_ONLY_SESSION');
+    expect(parsePostgresError({ code: 'VIEW_AS_ENDED', message: 'Viewing as somebody else has ended.' }).code).toBe('VIEW_AS_ENDED');
+  });
 });

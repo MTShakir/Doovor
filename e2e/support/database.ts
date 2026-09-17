@@ -1623,6 +1623,34 @@ export async function keepPlatformSetting(key: string): Promise<{ read: () => Pr
   };
 }
 
+/** The audit actions recorded about a person, oldest first, found by their email (NFR-SEC-06). */
+export async function auditActionsAbout(email: string): Promise<string[]> {
+  return withDatabase(async (sql) => {
+    const rows = await sql<{ action: string }[]>`
+      select a.action
+        from public.audit_log a
+        join auth.users u on u.id = a.entity_id
+       where lower(u.email) = lower(${email})
+       order by a.occurred_at, a.id`;
+    return rows.map((row) => row.action);
+  });
+}
+
+/** A lesson's status, found by its instructor, learner, day and start time in London. */
+export async function lessonStatus(instructorName: string, learnerEmail: string, date: string, time: string): Promise<string | null> {
+  return withDatabase(async (sql) => {
+    const [row] = await sql<{ status: string }[]>`
+      select b.status::text as status
+        from public.bookings b
+        join public.instructor_profiles i on i.id = b.instructor_id
+        join auth.users u on u.id = b.learner_id
+       where i.display_name = ${instructorName}
+         and lower(u.email) = lower(${learnerEmail})
+         and b.starts_at = (${date}::date + ${time}::time) at time zone 'Europe/London'`;
+    return row?.status ?? null;
+  });
+}
+
 /** A school's own booking rules as saved, found by its name (SCH-04). */
 export async function schoolRules(schoolName: string): Promise<Record<string, unknown>> {
   return withDatabase(async (sql) => {

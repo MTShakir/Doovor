@@ -10,6 +10,7 @@ import {
   signUpSchema,
   ukMobileSchema,
 } from '@repo/core/schemas/auth';
+import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
 
 import { z } from 'zod';
@@ -17,6 +18,7 @@ import { getAppUrl } from '@/lib/app-url';
 import { authErrorCopy } from '@/lib/auth/auth-errors';
 import { completeSignIn } from '@/lib/auth/complete-sign-in';
 import { safeNextPath } from '@/lib/auth/portals';
+import { VIEW_AS_COOKIE } from '@/lib/auth/view-as';
 import { fieldErrors } from '@/lib/forms';
 import { redirectTo } from '@/lib/redirect-to';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
@@ -154,7 +156,8 @@ export async function updatePassword(input: unknown): Promise<Result<null>> {
 }
 
 export async function signOut(scope: 'local' | 'global' = 'local'): Promise<void> {
-  const supabase = await createSupabaseServerClient();
+  const supabase = await createSupabaseServerClient({ asStaff: true });
   await supabase.auth.signOut({ scope: z.enum(['local', 'global']).parse(scope) });
+  (await cookies()).delete(VIEW_AS_COOKIE);
   redirect('/sign-in');
 }

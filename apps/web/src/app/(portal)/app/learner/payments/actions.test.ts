@@ -8,6 +8,9 @@ vi.mock('@/lib/payments/cards', () => ({ keptCardsWith: (id: string) => keptCard
 vi.mock('@/lib/payments/provider', () => ({ paymentsProvider: () => ({ forgetSavedCard }) }));
 vi.mock('next/cache', () => ({ revalidatePath: vi.fn() }));
 
+const refuseWhileViewing = vi.fn<() => Promise<unknown>>(() => Promise.resolve(null));
+vi.mock('@/lib/auth/view-as', () => ({ refuseWhileViewing: () => refuseWhileViewing() }));
+
 const { forgetCard } = await import('./actions');
 
 const businessId = '0b6f5e1a-3c2d-4e8f-9a7b-1c2d3e4f5a6b';

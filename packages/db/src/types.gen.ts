@@ -935,6 +935,39 @@ export type Database = {
           },
         ]
       }
+      impersonation_sessions: {
+        Row: {
+          ended_at: string | null
+          expires_at: string
+          id: string
+          reason: string
+          staff_session_id: string
+          staff_user_id: string
+          started_at: string
+          target_user_id: string
+        }
+        Insert: {
+          ended_at?: string | null
+          expires_at?: string
+          id?: string
+          reason: string
+          staff_session_id: string
+          staff_user_id: string
+          started_at?: string
+          target_user_id: string
+        }
+        Update: {
+          ended_at?: string | null
+          expires_at?: string
+          id?: string
+          reason?: string
+          staff_session_id?: string
+          staff_user_id?: string
+          started_at?: string
+          target_user_id?: string
+        }
+        Relationships: []
+      }
       instructor_profiles: {
         Row: {
           badge_expiry: string | null
@@ -2903,11 +2936,13 @@ export type Database = {
         Args: { p_booking_id: string; p_reason: string }
         Returns: string
       }
+      end_impersonation: { Args: { p_session_id: string }; Returns: undefined }
       feature_flags: { Args: never; Returns: Json }
       hold_booking_for_payment: {
         Args: { p_booking_id: string }
         Returns: Json
       }
+      impersonation_context: { Args: never; Returns: Json }
       instructor_profile_page: { Args: { p_slug: string }; Returns: Json }
       invitation_details: {
         Args: { p_token: string }
@@ -3199,6 +3234,10 @@ export type Database = {
           p_instructor_id: string
           p_starts_at: string
         }
+        Returns: string
+      }
+      start_impersonation: {
+        Args: { p_reason: string; p_user_id: string }
         Returns: string
       }
       stop_recurrence: { Args: { p_recurrence_id: string }; Returns: undefined }

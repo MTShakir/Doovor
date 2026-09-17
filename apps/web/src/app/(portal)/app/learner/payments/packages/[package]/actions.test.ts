@@ -28,6 +28,9 @@ vi.mock('@/lib/payments/webhook', () => ({
 vi.mock('@/env/server', () => ({ serverEnv: env }));
 vi.mock('next/cache', () => ({ revalidatePath: vi.fn() }));
 
+const refuseWhileViewing = vi.fn<() => Promise<unknown>>(() => Promise.resolve(null));
+vi.mock('@/lib/auth/view-as', () => ({ refuseWhileViewing: () => refuseWhileViewing() }));
+
 const { payPackageWithSavedCard, payPackageWithTestCard, startPackageCheckout } = await import('./actions');
 
 const packageId = '3b0f6a52-1c8e-4d7a-9c61-2f0e9b4d7a13';

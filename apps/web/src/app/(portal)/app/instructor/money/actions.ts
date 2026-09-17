@@ -10,6 +10,7 @@ import { requireAccess } from '@/lib/auth/session';
 import { connectUrls, moneyScreens, type MoneyScreen } from '@/lib/payments/connect';
 import { paymentsProvider } from '@/lib/payments/provider';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
+import { refuseWhileViewing } from '@/lib/auth/view-as';
 
 /** Where the person is, so the provider sends them back there and nowhere else. */
 const screenSchema = z.object({
@@ -39,6 +40,8 @@ async function ownedBusiness(): Promise<{ id: string; name: string; accountId: s
  * webhook says the same thing a moment later, and neither depends on the other.
  */
 export async function connectPayments(input: unknown): Promise<Result<{ url: string }>> {
+  const refused = await refuseWhileViewing();
+  if (refused) return refused;
   const screen = screenSchema.safeParse(input);
   if (!screen.success) return err('VALIDATION_FAILED');
 
@@ -75,6 +78,8 @@ export async function connectPayments(input: unknown): Promise<Result<{ url: str
 
 /** PAY-01: ask the provider again, for somebody who finished on another device. */
 export async function refreshPaymentsState(): Promise<Result<{ chargesEnabled: boolean }>> {
+  const refused = await refuseWhileViewing();
+  if (refused) return refused;
   const business = await ownedBusiness();
   if (!business?.accountId) return err('NOT_FOUND');
 

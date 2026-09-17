@@ -35,7 +35,8 @@ import { InstructorWeeks, OverviewFigures, OverviewSkeleton } from '@/components
 import { DashboardFigures, DashboardSkeleton, WaitingOnStaff } from '@/components/admin/dashboard';
 import { BusinessDetails, BusinessResults, SuspendBusinessDialog } from '@/components/admin/businesses';
 import type { AdminBusiness } from '@/lib/admin/businesses';
-import { InstructorResults, LearnerResults, PersonDetails, ResetTwoStepDialog, SuspendAccountDialog } from '@/components/admin/people';
+import { InstructorResults, LearnerResults, PersonDetails, ResetTwoStepDialog, SuspendAccountDialog, ViewAsDialog } from '@/components/admin/people';
+import { ViewAsBanner } from '@/components/view-as-banner';
 import type { AdminPerson } from '@/lib/admin/people';
 import { RegionsTable, SwitchOnRuleCard, SwitchRegionDialog } from '@/components/admin/regions';
 import type { AdminRegion } from '@/lib/admin/regions';
@@ -374,6 +375,7 @@ export function DesignShowcase() {
   const [suspendingBusiness, setSuspendingBusiness] = useState<AdminBusiness | null>(null);
   const [suspendingPerson, setSuspendingPerson] = useState<AdminPerson | null>(null);
   const [resettingPerson, setResettingPerson] = useState<AdminPerson | null>(null);
+  const [viewingPerson, setViewingPerson] = useState<AdminPerson | null>(null);
   const [switchingRegion, setSwitchingRegion] = useState<{ region: AdminRegion; open: boolean } | null>(null);
 
   return (
@@ -1163,7 +1165,19 @@ export function DesignShowcase() {
           <Button variant="secondary" onClick={() => { setResettingPerson(examplePerson); }}>
             Reset two-step
           </Button>
+          <Button variant="secondary" onClick={() => { setViewingPerson(examplePerson); }}>
+            View as Lucy
+          </Button>
         </div>
+        <Label>While staff view as somebody, on every screen of their portal</Label>
+        <ViewAsBanner name="Lucy Grant" endsAt="14:30" />
+        <ViewAsDialog
+          person={viewingPerson}
+          pending={false}
+          error={undefined}
+          onConfirm={() => { setViewingPerson(null); }}
+          onCancel={() => { setViewingPerson(null); }}
+        />
         <SuspendAccountDialog
           person={suspendingPerson}
           pending={false}

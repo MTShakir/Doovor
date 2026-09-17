@@ -10,7 +10,7 @@ import { Textarea } from '@repo/ui/input';
 import { ListDivider, ListRow } from '@repo/ui/list-row';
 import { Sheet } from '@repo/ui/sheet';
 import { StatusPill } from '@repo/ui/status-pill';
-import { SearchX } from 'lucide-react';
+import { Eye, SearchX } from 'lucide-react';
 import { useState, type ReactNode } from 'react';
 import type { AdminInstructorRow, AdminLearnerRow, AdminPerson, BadgeState } from '@/lib/admin/people';
 
@@ -193,6 +193,7 @@ export function PersonSheet({
   onSuspend,
   onReactivate,
   onResetTwoStep,
+  onViewAs,
 }: {
   person: AdminPerson | null;
   viewer: { canManage: boolean; userId: string };
@@ -201,6 +202,8 @@ export function PersonSheet({
   onSuspend: (person: AdminPerson) => void;
   onReactivate: (person: AdminPerson) => void;
   onResetTwoStep: (person: AdminPerson) => void;
+  /** Any member of staff may view as somebody who is not staff themselves (ADM-06). */
+  onViewAs: (person: AdminPerson) => void;
 }) {
   const [shown, setShown] = useState<AdminPerson | null>(person);
   // Keep the last person while the panel closes, so it does not empty as it slides away.
@@ -222,11 +225,19 @@ export function PersonSheet({
       Suspend account
     </Button>
   );
+  const viewAs =
+    shown.staffRole === null && shown.userId !== viewer.userId ? (
+      <Button variant="secondary" width="full" onClick={() => { onViewAs(shown); }}>
+        <Eye className="size-5" aria-hidden />
+        View as {shown.name}
+      </Button>
+    ) : null;
   const footer =
-    allowed && (reset !== null || standing !== null) ? (
+    viewAs !== null || (allowed && (reset !== null || standing !== null)) ? (
       <div className="flex flex-col gap-2">
-        {reset}
-        {standing}
+        {viewAs}
+        {allowed ? reset : null}
+        {allowed ? standing : null}
       </div>
     ) : null;
 
@@ -325,6 +336,52 @@ export function ResetTwoStepDialog({
         Check that the request really comes from them first, from the email or mobile on the account. Resetting it for
         somebody else is how an account is taken over.
       </p>
+    </Dialog>
+  );
+}
+
+/** ADM-06: viewing as somebody asks why, and says it changes nothing and is recorded. */
+export function ViewAsDialog({
+  person,
+  pending,
+  error,
+  onConfirm,
+  onCancel,
+}: {
+  person: AdminPerson | null;
+  pending: boolean;
+  error: string | undefined;
+  onConfirm: (reason: string) => void;
+  onCancel: () => void;
+}) {
+  const [shown, setShown] = useState<AdminPerson | null>(person);
+  const [reason, setReason] = useState('');
+  // Keep the words while the dialog closes, and start with no reason for each person.
+  if (person !== null && person !== shown) {
+    setShown(person);
+    if (person.userId !== shown?.userId) setReason('');
+  }
+
+  return (
+    <Dialog
+      open={person !== null}
+      onOpenChange={(open) => { if (!open) onCancel(); }}
+      title={`View as ${shown?.name ?? ''}?`}
+      description="You see their screens as they do, and nothing you do there changes anything. It ends when you stop, or by itself after 30 minutes."
+      footer={
+        <>
+          <Button variant="secondary" onClick={onCancel}>
+            Keep it
+          </Button>
+          <Button pending={pending} onClick={() => { onConfirm(reason); }}>
+            View as them
+          </Button>
+        </>
+      }
+    >
+      <Field label="Why?" hint="Kept in the audit log, with who looked and when." error={error}>
+        <Textarea rows={3} value={reason} onChange={(event) => { setReason(event.target.value); }} />
+      </Field>
     </Dialog>
   );
 }

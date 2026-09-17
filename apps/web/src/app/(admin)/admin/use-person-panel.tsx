@@ -3,9 +3,10 @@
 import { toast } from '@repo/ui/toast';
 import { useRouter } from 'next/navigation';
 import { useState, useTransition, type ReactNode } from 'react';
-import { PersonSheet, ResetTwoStepDialog, SuspendAccountDialog } from '@/components/admin/people';
+import { PersonSheet, ResetTwoStepDialog, SuspendAccountDialog, ViewAsDialog } from '@/components/admin/people';
 import type { AdminPerson } from '@/lib/admin/people';
 import { openPerson, reactivateAccount, resetTwoStep, suspendAccount } from './person-actions';
+import { startViewingAs } from './view-as-actions';
 
 /**
  * ADM-02: a person's panel, and suspending, reactivating or resetting two-step verification from
@@ -18,6 +19,8 @@ export function usePersonPanel(viewer: { canManage: boolean; userId: string }): 
   const [opened, setOpened] = useState<AdminPerson | null>(null);
   const [suspending, setSuspending] = useState<AdminPerson | null>(null);
   const [resetting, setResetting] = useState<AdminPerson | null>(null);
+  const [viewing, setViewing] = useState<AdminPerson | null>(null);
+  const [viewError, setViewError] = useState<string | undefined>(undefined);
   const [reasonError, setReasonError] = useState<string | undefined>(undefined);
 
   /** Reads the person again after a change, into their panel, and the list behind it. */
@@ -70,6 +73,20 @@ export function usePersonPanel(viewer: { canManage: boolean; userId: string }): 
     });
   };
 
+  const viewAs = (reason: string) => {
+    if (!viewing) return;
+    const person = viewing;
+    startTransition(async () => {
+      const result = await startViewingAs({ userId: person.userId, reason });
+      if (!result.ok) {
+        setViewError(result.fields?.reason ?? result.message);
+        return;
+      }
+      // A fresh page, so every request from here, the browser's own too, views as them.
+      window.location.assign(result.data.path);
+    });
+  };
+
   const panel = (
     <>
       <PersonSheet
@@ -88,6 +105,11 @@ export function usePersonPanel(viewer: { canManage: boolean; userId: string }): 
           setOpened(null);
           setResetting(person);
         }}
+        onViewAs={(person) => {
+          setOpened(null);
+          setViewError(undefined);
+          setViewing(person);
+        }}
       />
       <SuspendAccountDialog
         person={suspending}
@@ -100,6 +122,16 @@ export function usePersonPanel(viewer: { canManage: boolean; userId: string }): 
         }}
       />
       <ResetTwoStepDialog person={resetting} pending={pending} onConfirm={reset} onCancel={() => { setResetting(null); }} />
+      <ViewAsDialog
+        person={viewing}
+        pending={pending}
+        error={viewError}
+        onConfirm={viewAs}
+        onCancel={() => {
+          setViewing(null);
+          setViewError(undefined);
+        }}
+      />
     </>
   );
 

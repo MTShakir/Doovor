@@ -32,12 +32,17 @@ function loadedBuildFiles(): string[] {
  * one arrives as data rather than as a page, so for those this asks the worker for a copy too,
  * with the files the page was drawn with.
  */
+/** Staff viewing as somebody keep none of their screens on this device (ADM-06, D-129). */
+function viewingAsSomebody(): boolean {
+  return document.cookie.split('; ').some((part) => part.startsWith('view_as='));
+}
+
 export function OfflineSupport() {
   const pathname = usePathname();
   const firstPath = useRef(pathname);
 
   useEffect(() => {
-    if (!('serviceWorker' in navigator)) return;
+    if (!('serviceWorker' in navigator) || viewingAsSomebody()) return;
     // Once the page has loaded, so fetching the worker never competes with the page itself.
     const register = () => {
       navigator.serviceWorker.register('/sw.js', { scope: '/' }).catch(() => undefined);
@@ -53,7 +58,7 @@ export function OfflineSupport() {
   }, []);
 
   useEffect(() => {
-    if (!('serviceWorker' in navigator) || !navigator.onLine || !isKeptOffline(pathname)) return;
+    if (!('serviceWorker' in navigator) || !navigator.onLine || !isKeptOffline(pathname) || viewingAsSomebody()) return;
     // Today also keeps the screen its lessons open on with no signal, which nobody visits with signal.
     const alongside = pathname === todayPath ? [keptLessonPath] : [];
     // A page the worker already served has been kept on the way through.
