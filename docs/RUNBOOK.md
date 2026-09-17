@@ -120,7 +120,7 @@ Do these once, in order. Items marked **You** need the product owner's accounts.
 
    Payments, email and SMS providers keep their fake and log defaults until their milestones. Supabase Auth sends auth emails and texts itself.
 4. **You:** Deployment Protection: keep Standard Protection, so previews need a Vercel login.
-5. **You:** Domains: add `app.doovor.com` for the app, and `doovor.com` (with `www` redirecting to it) for the public site, then create the DNS records Vercel shows: usually a CNAME for `app` and an A record for the bare domain. Both point at this project for now. The app sends an app address opened on `doovor.com` to `app.doovor.com`, and `doovor.com` keeps only its own pages (D-084); when the marketing site is built somewhere else, move `doovor.com` there and nothing in the app changes.
+5. **You:** Domains: add `app.doovor.com` for the app, and `doovor.com` (with `www` redirecting to it) for the public site, then create the DNS records Vercel shows: usually a CNAME for `app` and an A record for the bare domain. Both point at this project for now. `doovor.com` must serve the project, with no redirect of its own: a redirect from `doovor.com` to `app.doovor.com` sends every public page to the app, which sends it back to the public site, and the two loop (found on staging when M5 arrived). Only `www.doovor.com` redirects, to `doovor.com`. The app sends an app address opened on `doovor.com` to `app.doovor.com`, and `doovor.com` keeps only its own pages (D-084); when the marketing site is built somewhere else, move `doovor.com` there and nothing in the app changes.
 6. Check: the preview URL loads, `/api/health` returns `ok`, and a seeded account signs in (M0-32 done-when).
 
 ### 3.5a Map (Mapbox)
