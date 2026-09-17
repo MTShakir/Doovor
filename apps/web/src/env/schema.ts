@@ -94,6 +94,9 @@ export const serverEnvSchema = z.preprocess(
         'STRIPE_WEBHOOK_SECRET',
         'STRIPE_CONNECT_WEBHOOK_SECRET',
       ], 'PAYMENTS_PROVIDER is stripe');
+      // Anywhere hosted, the job runner talks to the app over the internet: without its signing key
+      // the jobs endpoint would answer anybody who found it (NFR-SEC-03, M6-01, D-135).
+      require(env.APP_ENV === 'preview' || env.APP_ENV === 'production', ['INNGEST_SIGNING_KEY'], 'APP_ENV is hosted');
       if (env.APP_ENV === 'production') {
         for (const [key, fake] of [
           ['EMAIL_PROVIDER', 'log'],
@@ -108,11 +111,7 @@ export const serverEnvSchema = z.preprocess(
             });
           }
         }
-        require(true, [
-          'INNGEST_EVENT_KEY',
-          'INNGEST_SIGNING_KEY',
-          'FIELD_ENCRYPTION_KEYS',
-        ], 'APP_ENV is production');
+        require(true, ['INNGEST_EVENT_KEY', 'FIELD_ENCRYPTION_KEYS'], 'APP_ENV is production');
       }
     }),
 );

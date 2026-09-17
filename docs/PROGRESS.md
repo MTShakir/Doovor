@@ -16,6 +16,12 @@ M4 Progress and offline is approved and merged to `main` (89262cf), with its 4 m
 
 M5 Public profiles, schools and admin is approved and merged into `main` (48531e9): all 24 tasks, acceptance tests 7, 10 and 11 green, and in CI the public profile and city pages score 96 to 98 on Lighthouse for performance and 100 for accessibility, best practices and SEO. Its 21 migrations are applied to staging, where the request check that ends a signed-out session is still in place and the security advisor shows no errors. The milestone report is at https://claude.ai/artifact/GBCBjsJWqcHDfQzEuyky6E. The product owner answered its questions on 17 September 2026: the admin Bookings and Payments screens stay as they are until Phase 2; inviting managers waits; one account teaches for one Business, and somebody who already teaches elsewhere signs up with a different email; instructors override the school's prices only; and a Largest Contentful Paint of 2.1 to 2.7 seconds in Lighthouse's simulation is accepted (D-118, D-122, D-132, D-133)
 
+## M6 progress
+
+| Task | What | PRD | State |
+|---|---|---|---|
+| M6-01 | OWASP Top 10 review with findings fixed | NFR-SEC-03 | Done. `docs/SECURITY.md` goes through the ten, each with what was checked, what proves it, and what was found; the tests and checks it names all run in CI. Three findings, all fixed (D-135): the levers under `/dev` refused only in production, so they answered on staging with nobody signed in, and now answer on a developer's machine and in the test runs only; the job runner's signing key was required in production only, and is now required wherever the app is hosted; and the share image drawer fetched whatever photo address it was given, and now fetches only a stored picture of ours, never following a redirect. Two things are known and accepted, with their controls written down: the session cookie is readable by the page's own scripts, which is how `@supabase/ssr` works, and signing up with a mobile that belongs to another account says so. Three are carried to the tasks that own them: the content security policy is enforced in M6-04, the dependency advisories are M6-02, and Sentry is M6-10. Unit tests: who may reach the `/dev` levers, which photos the drawer will fetch, and the signing key required on a hosted environment |
+
 ## M5 progress
 
 | Task | What | PRD | State |

@@ -1,16 +1,17 @@
 import { NextResponse, type NextRequest } from 'next/server';
 import { getAppUrl } from '@/lib/app-url';
 import { fakeOnboarding } from '@/lib/payments/provider';
+import { devRoutesOpen } from '@/lib/dev-routes';
 
 /**
  * Stands in for the provider's onboarding pages while the fake provider is in use (M3-02).
  *
  * Local runs and the end to end suite walk the whole connect flow this way: the account is
  * marked as finished and the browser goes back where the provider would have sent it. It is
- * not reachable in production, and it can only ever touch the in-memory fake.
+ * there on a developer's machine and in the test runs only, and it can only ever touch the in-memory fake.
  */
 export function GET(request: NextRequest): NextResponse {
-  if (process.env.APP_ENV === 'production') {
+  if (!devRoutesOpen()) {
     return new NextResponse('Not found', { status: 404 });
   }
 

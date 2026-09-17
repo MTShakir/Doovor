@@ -61,6 +61,16 @@ describe('serverEnvSchema', () => {
     });
     expect(result.success).toBe(true);
   });
+
+  it('wants the job runner signing key wherever the app is hosted (M6-01, D-135)', () => {
+    const hosted = serverEnvSchema.safeParse({ APP_ENV: 'preview', SUPABASE_SECRET_KEY: 'secret' });
+    expect(hosted.success).toBe(false);
+    expect(hosted.error?.issues.map((issue) => issue.path.join('.'))).toContain('INNGEST_SIGNING_KEY');
+    const withKey = serverEnvSchema.safeParse({ APP_ENV: 'preview', SUPABASE_SECRET_KEY: 'secret', INNGEST_SIGNING_KEY: 'signkey-test' });
+    expect(withKey.success).toBe(true);
+    // A developer machine and the test runs have no runner to talk to.
+    expect(serverEnvSchema.safeParse({ APP_ENV: 'local', SUPABASE_SECRET_KEY: 'secret' }).success).toBe(true);
+  });
 });
 
 describe('clientEnvSchema', () => {

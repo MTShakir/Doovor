@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { serverEnv } from '@/env/server';
 import { settleAuthorisations } from '@/jobs/authorisations';
+import { devRoutesOpen } from '@/lib/dev-routes';
 
 /**
  * Runs the sweep that takes or releases authorised cards, in this process, while the fake
@@ -12,7 +13,7 @@ import { settleAuthorisations } from '@/jobs/authorisations';
  * and never with Stripe.
  */
 export async function POST(): Promise<NextResponse> {
-  if (serverEnv.APP_ENV === 'production' || serverEnv.PAYMENTS_PROVIDER === 'stripe') {
+  if (!devRoutesOpen() || serverEnv.PAYMENTS_PROVIDER === 'stripe') {
     return new NextResponse('Not found', { status: 404 });
   }
   return NextResponse.json(await settleAuthorisations());

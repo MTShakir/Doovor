@@ -9,6 +9,7 @@ import { tellRegionOpened } from '@/jobs/regions';
 import { sendRefund } from '@/jobs/payments';
 import { sendReceipt } from '@/jobs/receipts';
 import { notifyLessonRecordAdded } from '@/jobs/record-notices';
+import { devRoutesOpen } from '@/lib/dev-routes';
 
 const eventSchema = z.object({
   name: z.string().min(1),
@@ -26,7 +27,7 @@ const eventSchema = z.object({
  * with Stripe.
  */
 export async function POST(request: NextRequest): Promise<NextResponse> {
-  if (serverEnv.APP_ENV === 'production' || serverEnv.PAYMENTS_PROVIDER === 'stripe') {
+  if (!devRoutesOpen() || serverEnv.PAYMENTS_PROVIDER === 'stripe') {
     return new NextResponse('Not found', { status: 404 });
   }
 

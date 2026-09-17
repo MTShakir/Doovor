@@ -6,6 +6,7 @@ import { SHARE_IMAGE_SIZE, type ShareCard } from '@repo/core/share-card';
 import { ImageResponse } from 'next/og';
 import sharp from 'sharp';
 import { brandMark } from '@/lib/pwa/icon-art';
+import { isDrawablePhotoUrl } from '@/lib/storage/images';
 
 /**
  * Draws a shared page's image (PRD 14.6, M5-08) from its card: the words come from
@@ -33,9 +34,10 @@ const PICTURE_SIZE = 280;
 
 /** A photo as the renderer can draw it, or null to draw initials instead. */
 export async function drawablePhoto(url: string | null): Promise<string | null> {
-  if (url === null) return null;
+  if (url === null || !isDrawablePhotoUrl(url)) return null;
   try {
-    const response = await fetch(url, { signal: AbortSignal.timeout(3000) });
+    // Never anywhere but our own storage, and never wherever a redirect points (D-135).
+    const response = await fetch(url, { signal: AbortSignal.timeout(3000), redirect: 'error' });
     if (!response.ok) return null;
     const png = await sharp(Buffer.from(await response.arrayBuffer()))
       .resize(PICTURE_SIZE * 2, PICTURE_SIZE * 2, { fit: 'cover' })
