@@ -1542,10 +1542,30 @@ export async function openEveryDay(slug: string): Promise<void> {
 }
 
 /**
- * The switch-on rule, set for one test (ADM-04, PRD 4.2). Returns the function that puts back what
- * was there; nothing else in the tests depends on the rule.
+ * Keeps one platform setting to one test at a time, from before it is read until it is put back.
+ *
+ * A test that changes a setting puts back what it found, and the Regions and Settings specs both
+ * change the switch-on rule. Running at the same moment, one put its rule back just after the
+ * other saved a new one, and the second then found the wrong rule for a reason that had nothing
+ * to do with the app. A session lock makes them take turns, as holdPaymentsBusiness does; the
+ * database lets it go on its own if a run dies. Returns the function that lets it go.
+ */
+async function holdPlatformSetting(key: string): Promise<() => Promise<void>> {
+  const sql = postgres(databaseUrl, { max: 1, idle_timeout: 0, max_lifetime: null });
+  const lock = `e2e:platform-setting:${key}`;
+  await sql`select pg_advisory_lock(hashtext(${lock}))`;
+  return async () => {
+    await sql`select pg_advisory_unlock(hashtext(${lock}))`;
+    await sql.end();
+  };
+}
+
+/**
+ * The switch-on rule, set for one test (ADM-04, PRD 4.2), which has it to itself until the returned
+ * function puts back what was there.
  */
 export async function setSwitchOnRule(rule: { instructors: number; hours: number }): Promise<() => Promise<void>> {
+  const release = await holdPlatformSetting('marketplace_switch_on');
   const before = await withDatabase(async (sql) => {
     const [row] = await sql<{ value: Record<string, unknown> }[]>`select value from public.platform_settings where key = 'marketplace_switch_on'`;
     await sql`
@@ -1554,10 +1574,15 @@ export async function setSwitchOnRule(rule: { instructors: number; hours: number
        where key = 'marketplace_switch_on'`;
     return row?.value;
   });
-  return () =>
-    withDatabase(async (sql) => {
-      if (before) await sql`update public.platform_settings set value = ${sql.json(before as Record<string, string | number>)} where key = 'marketplace_switch_on'`;
-    });
+  return async () => {
+    try {
+      await withDatabase(async (sql) => {
+        if (before) await sql`update public.platform_settings set value = ${sql.json(before as Record<string, string | number>)} where key = 'marketplace_switch_on'`;
+      });
+    } finally {
+      await release();
+    }
+  };
 }
 
 /** A place on an area's waiting list, as joining it with consent leaves it (MKT-10). Returns the function that removes it. */
@@ -1604,7 +1629,7 @@ export async function forgetRegion(area: string): Promise<void> {
 
 /**
  * One platform setting as saved (ADM-05), and the function that puts it back as it was, for a test
- * that changes it through the Settings screen.
+ * that changes it through the Settings screen. The test has the setting to itself until then.
  */
 export async function keepPlatformSetting(key: string): Promise<{ read: () => Promise<Record<string, unknown>>; putBack: () => Promise<void> }> {
   const read = () =>
@@ -1613,14 +1638,25 @@ export async function keepPlatformSetting(key: string): Promise<{ read: () => Pr
       if (!row) throw new Error(`No platform setting called ${key}`);
       return row.value;
     });
-  const before = await read();
-  return {
-    read,
-    putBack: () =>
-      withDatabase(async (sql) => {
-        await sql`update public.platform_settings set value = ${sql.json(before as Record<string, string>)} where key = ${key}`;
-      }),
-  };
+  const release = await holdPlatformSetting(key);
+  try {
+    const before = await read();
+    return {
+      read,
+      putBack: async () => {
+        try {
+          await withDatabase(async (sql) => {
+            await sql`update public.platform_settings set value = ${sql.json(before as Record<string, string>)} where key = ${key}`;
+          });
+        } finally {
+          await release();
+        }
+      },
+    };
+  } catch (error) {
+    await release();
+    throw error;
+  }
 }
 
 /** The audit actions recorded about a person, oldest first, found by their email (NFR-SEC-06). */

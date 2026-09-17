@@ -142,8 +142,10 @@ select is(
   1,
   'the audit log says who opened it, and what it looked like then (NFR-SEC-06)'
 );
+-- Counting only this test's own: the regions end to end test opens ZE for real, and its event stays.
 select is(
-  (select count(*)::int from public.outbox_events where name = 'marketplace_region.opened' and payload ->> 'area' = 'ZE'),
+  (select count(*)::int from public.outbox_events
+    where name = 'marketplace_region.opened' and payload ->> 'area' = 'ZE' and created_at = now()),
   1,
   'and the people waiting are to be told'
 );
