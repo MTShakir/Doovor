@@ -65,6 +65,8 @@ select is_empty(
 --   entry as for one already there (MKT-10, M5-10).
 --   learner_capture_by_token, leave_learner_capture: the link in the confirmation email, which
 --   answers only what a token is for, where, and whether it stands, and leaves it (MKT-10, M5-10).
+--   feature_flags: which features are switched on for everybody, which the sign-in page shows
+--   before anybody signs in; yes or no for each, and nothing else (ADM-05, M5-20).
 select is_empty(
   $$ select distinct routine_name from information_schema.routine_privileges
       where routine_schema = 'public' and grantee in ('PUBLIC', 'anon')
@@ -72,7 +74,8 @@ select is_empty(
                                  'booking_page', 'open_slots', 'place_of_postcode',
                                  'instructor_profile_page', 'next_open_slots', 'school_profile_page',
                                  'city_page', 'sitemap_entries', 'coming_soon_area', 'join_area_waiting_list',
-                                 'post_lesson_request', 'learner_capture_by_token', 'leave_learner_capture') $$,
+                                 'post_lesson_request', 'learner_capture_by_token', 'leave_learner_capture',
+                                 'feature_flags') $$,
   'no public function is executable by anon unless allowlisted'
 );
 

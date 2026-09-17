@@ -1602,6 +1602,27 @@ export async function forgetRegion(area: string): Promise<void> {
   });
 }
 
+/**
+ * One platform setting as saved (ADM-05), and the function that puts it back as it was, for a test
+ * that changes it through the Settings screen.
+ */
+export async function keepPlatformSetting(key: string): Promise<{ read: () => Promise<Record<string, unknown>>; putBack: () => Promise<void> }> {
+  const read = () =>
+    withDatabase(async (sql) => {
+      const [row] = await sql<{ value: Record<string, unknown> }[]>`select value from public.platform_settings where key = ${key}`;
+      if (!row) throw new Error(`No platform setting called ${key}`);
+      return row.value;
+    });
+  const before = await read();
+  return {
+    read,
+    putBack: () =>
+      withDatabase(async (sql) => {
+        await sql`update public.platform_settings set value = ${sql.json(before as Record<string, string>)} where key = ${key}`;
+      }),
+  };
+}
+
 /** A school's own booking rules as saved, found by its name (SCH-04). */
 export async function schoolRules(schoolName: string): Promise<Record<string, unknown>> {
   return withDatabase(async (sql) => {

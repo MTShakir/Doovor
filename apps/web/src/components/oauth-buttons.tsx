@@ -1,6 +1,6 @@
 'use client';
 
-import { isFlagEnabled } from '@repo/config/flags';
+import { isFlagEnabled, type FlagOverrides } from '@repo/config/flags';
 import { Button } from '@repo/ui/button';
 import { useState } from 'react';
 import { clientEnv } from '@/env/client';
@@ -24,11 +24,12 @@ function GoogleMark() {
 
 /**
  * Google (and later Apple) sign-in (AUTH-01). Shown only when the provider is configured
- * for this environment; Apple stays hidden until its keys exist.
+ * for this environment and a super admin has not switched it off (ADM-05); Apple stays hidden
+ * until its keys exist.
  */
-export function OAuthButtons({ next }: { next: string }) {
+export function OAuthButtons({ next, flags }: { next: string; flags: FlagOverrides }) {
   const [pending, setPending] = useState(false);
-  const google = clientEnv.NEXT_PUBLIC_AUTH_GOOGLE_ENABLED && isFlagEnabled('googleSignIn');
+  const google = clientEnv.NEXT_PUBLIC_AUTH_GOOGLE_ENABLED && isFlagEnabled('googleSignIn', flags);
   if (!google) return null;
 
   return (

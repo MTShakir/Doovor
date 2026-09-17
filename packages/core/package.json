@@ -8,6 +8,7 @@
     "./money": "./src/money.ts",
     "./counts": "./src/counts.ts",
     "./regions": "./src/regions.ts",
+    "./platform-settings": "./src/platform-settings.ts",
     "./errors": "./src/errors.ts",
     "./images": "./src/images.ts",
     "./result": "./src/result.ts",

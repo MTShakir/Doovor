@@ -27,10 +27,23 @@ export interface BookingRulesFormProps {
   saveBusinessRules?: SaveRules;
   /** Said in place of the Business's rules for somebody who cannot change them. */
   businessRulesNote?: string;
+  /** Every rule a Business starts with, gap between lessons included, saved as one (ADM-05). */
+  savePlatformRules?: SaveRules;
+  /** Shows the rules without letting them be changed, for staff who may only look. */
+  readOnly?: boolean;
 }
 
 /** PRD 11.1: what a learner may book, and when (DIA-05, DIA-06, BOK-06, SCH-04). */
-export function BookingRulesForm({ rules, saveInstructorRules, saveBusinessRules, businessRulesNote }: BookingRulesFormProps) {
+export function BookingRulesForm({
+  rules,
+  saveInstructorRules,
+  saveBusinessRules,
+  businessRulesNote,
+  savePlatformRules,
+  readOnly = false,
+}: BookingRulesFormProps) {
+  const showBuffer = saveInstructorRules !== undefined || savePlatformRules !== undefined;
+  const showBusiness = saveBusinessRules !== undefined || savePlatformRules !== undefined;
   const [pending, startTransition] = useTransition();
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [formError, setFormError] = useState<string | null>(null);
@@ -60,6 +73,22 @@ export function BookingRulesForm({ rules, saveInstructorRules, saveBusinessRules
         if (!mine.ok) {
           setErrors(mine.fields ?? {});
           if (!mine.fields) setFormError(mine.message);
+          return;
+        }
+      }
+      if (savePlatformRules) {
+        const platform = await savePlatformRules({
+          bufferMinutes: values.bufferMinutes,
+          noticeHours: values.noticeHours,
+          horizonWeeks: values.horizonWeeks,
+          cancellationWindowHours: values.cancellationWindowHours,
+          lateFeePercent: values.lateFeePercent,
+          requestExpiryHours: values.requestExpiryHours,
+          reminderHoursBefore: values.reminderHoursBefore,
+        });
+        if (!platform.ok) {
+          setErrors(platform.fields ?? {});
+          if (!platform.fields) setFormError(platform.message);
           return;
         }
       }
@@ -93,9 +122,13 @@ export function BookingRulesForm({ rules, saveInstructorRules, saveBusinessRules
           onCheckedChange={(instantBook) => { change({ instantBook }); }}
         />
       ) : null}
-      <div className="grid gap-3 md:grid-cols-2">
-        {saveInstructorRules ? (
-          <Field label="Gap between lessons" hint="Minutes, up to 60. Your travel time." error={errors.bufferMinutes}>
+      <fieldset disabled={readOnly} className="grid min-w-0 gap-3 md:grid-cols-2">
+        {showBuffer ? (
+          <Field
+            label="Gap between lessons"
+            hint={savePlatformRules ? 'Minutes, up to 60. Time to travel between lessons.' : 'Minutes, up to 60. Your travel time.'}
+            error={errors.bufferMinutes}
+          >
             <Input
               inputMode="numeric"
               value={values.bufferMinutes}
@@ -103,7 +136,7 @@ export function BookingRulesForm({ rules, saveInstructorRules, saveBusinessRules
             />
           </Field>
         ) : null}
-        {saveBusinessRules ? (
+        {showBusiness ? (
           <>
             <Field label="Least notice" hint="Hours, up to 72." error={errors.noticeHours}>
               <Input
@@ -153,11 +186,13 @@ export function BookingRulesForm({ rules, saveInstructorRules, saveBusinessRules
             </Field>
           </>
         ) : null}
-      </div>
-      {saveBusinessRules || !businessRulesNote ? null : <p className="text-small text-grey-700">{businessRulesNote}</p>}
-      <SubmitButton variant="secondary" width="responsive" pending={pending}>
-        Save booking rules
-      </SubmitButton>
+      </fieldset>
+      {showBusiness || !businessRulesNote ? null : <p className="text-small text-grey-700">{businessRulesNote}</p>}
+      {readOnly ? null : (
+        <SubmitButton variant="secondary" width="responsive" pending={pending}>
+          Save booking rules
+        </SubmitButton>
+      )}
     </ClientForm>
   );
 }

@@ -1,11 +1,11 @@
 import 'server-only';
-import { getEntitlements, type PlanKey } from '@repo/config/plans';
 import { renderNotificationEmail } from '@repo/emails';
 import { getAppUrl } from '@/lib/app-url';
 import { emailProvider } from '@/lib/email/provider';
 import { pushConfigured, sendPush } from '@/lib/notifications/push';
 import { smsProvider } from '@/lib/sms/provider';
 import { getSupabaseServiceClient } from '@/lib/supabase/service';
+import { readPlanLimits, smsAllowance } from './plan-limits';
 import {
   emailPropsFor,
   smsBodyFor,
@@ -14,10 +14,6 @@ import {
   wantsSms,
   type ClaimedNotification,
 } from './notification-emails';
-
-function isPlan(value: string | null): value is PlanKey {
-  return value === 'free' || value === 'pro' || value === 'school';
-}
 
 export interface SendResult {
   sent: number;
@@ -39,6 +35,7 @@ export async function sendPendingNotifications(limit = 25): Promise<SendResult> 
 
   const provider = emailProvider();
   const texter = smsProvider();
+  const limits = await readPlanLimits();
   const appUrl = getAppUrl();
   const sent: string[] = [];
   let failed = 0;
@@ -104,7 +101,7 @@ export async function sendPendingNotifications(limit = 25): Promise<SendResult> 
     // before the send and given back if it fails, so the cap is never quietly passed.
     const number = smsNumberFor(one);
     if (wantsSms(one) && one.businessId !== null && number !== null) {
-      const allowance = isPlan(one.businessPlan) ? getEntitlements(one.businessPlan).smsRemindersPerMonth : 0;
+      const allowance = smsAllowance(one.businessPlan, limits);
       const claimed = await supabase.rpc('system_claim_sms', {
         p_business_id: one.businessId,
         p_allowance: allowance,

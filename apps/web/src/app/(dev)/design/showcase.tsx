@@ -39,6 +39,7 @@ import { InstructorResults, LearnerResults, PersonDetails, ResetTwoStepDialog, S
 import type { AdminPerson } from '@/lib/admin/people';
 import { RegionsTable, SwitchOnRuleCard, SwitchRegionDialog } from '@/components/admin/regions';
 import type { AdminRegion } from '@/lib/admin/regions';
+import { FeatureFlagsForm, MarketplaceFeeForm, PlanLimitsForm, SettingCard, SwitchOnRuleForm } from '@/components/admin/settings';
 import type { PlatformDashboard } from '@/lib/admin/dashboard';
 import type { SchoolOverview } from '@/lib/school/overview';
 import { SwitchOffDialog, TeamSections } from '@/components/school/team';
@@ -1193,6 +1194,27 @@ export function DesignShowcase() {
           onConfirm={() => { setSwitchingRegion(null); }}
           onCancel={() => { setSwitchingRegion(null); }}
         />
+        <Label>Platform settings, as a super admin changes them and as support staff see them</Label>
+        <div className="grid grid-cols-1 gap-8 md:grid-cols-2">
+          <SettingCard title="Switch-on rule" description="What a postcode area needs before the learner marketplace can open there." changedOn="Tue 15 Sep 2026">
+            <SwitchOnRuleForm rule={{ instructors: 25, hours: 150 }} save={savedNothing} readOnly={false} />
+          </SettingCard>
+          <SettingCard title="Switch-on rule" description="What a postcode area needs before the learner marketplace can open there." changedOn={null}>
+            <SwitchOnRuleForm rule={{ instructors: 25, hours: 150 }} save={savedNothing} readOnly />
+          </SettingCard>
+          <SettingCard title="Plan limits" description="Text message reminders a Business on each paid plan may send in a month." changedOn="Tue 15 Sep 2026">
+            <PlanLimitsForm limits={{ proSms: 200, schoolSms: 200 }} save={savedNothing} readOnly={false} />
+          </SettingCard>
+          <SettingCard title="Marketplace fee" description="Charged from Phase 3. Nothing is charged now." changedOn="Tue 15 Sep 2026">
+            <MarketplaceFeeForm fee={{ percent: 5, capPence: 200 }} save={savedNothing} readOnly={false} />
+          </SettingCard>
+          <SettingCard title="Features" description="Switched on or off for everybody, at once." changedOn="Tue 15 Sep 2026">
+            <FeatureFlagsForm flags={{ googleSignIn: true, appleSignIn: false, marketplace: false }} save={savedNothing} readOnly={false} />
+          </SettingCard>
+          <SettingCard title="Features" description="Switched on or off for everybody, at once." changedOn="Tue 15 Sep 2026">
+            <FeatureFlagsForm flags={{ googleSignIn: true, appleSignIn: false, marketplace: false }} save={savedNothing} readOnly />
+          </SettingCard>
+        </div>
       </Section>
 
       <Section title="Scheduling">

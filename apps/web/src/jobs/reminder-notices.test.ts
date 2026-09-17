@@ -81,6 +81,13 @@ describe('reminders before a lesson (NTF-02)', () => {
     expect(first?.hoursBefore).toBe(3);
   });
 
+  it('follows the platform default a super admin set, for a Business with no reminder times of its own (ADM-05)', () => {
+    const platform = { ...notice, reminder_settings: {}, platform_reminder_settings: { reminder_hours_before: [5] } };
+    expect(planReminders({ notices: [platform], now: before(24), textingAllowed: pro })).toEqual([]);
+    const [first] = planReminders({ notices: [platform], now: before(5), textingAllowed: pro });
+    expect(first?.hoursBefore).toBe(5);
+  });
+
   it('texts on a plan that includes it, and not on one that does not (NTF-01)', () => {
     const [onPro] = planReminders({ notices: [notice], now: before(24), textingAllowed: pro });
     expect(onPro?.planned[0]?.channels).toContain('sms');

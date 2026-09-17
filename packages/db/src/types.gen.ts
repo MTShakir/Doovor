@@ -2795,6 +2795,7 @@ export type Database = {
         }[]
       }
       admin_person: { Args: { p_user_id: string }; Returns: Json }
+      admin_platform_settings: { Args: never; Returns: Json }
       admin_regions: { Args: never; Returns: Json }
       admin_reset_two_step: { Args: { p_user_id: string }; Returns: undefined }
       admin_set_account_suspended: {
@@ -2807,6 +2808,10 @@ export type Database = {
       }
       admin_set_marketplace_region: {
         Args: { p_area: string; p_open: boolean }
+        Returns: undefined
+      }
+      admin_set_platform_setting: {
+        Args: { p_key: string; p_value: Json }
         Returns: undefined
       }
       assign_learner: {
@@ -2898,6 +2903,7 @@ export type Database = {
         Args: { p_booking_id: string; p_reason: string }
         Returns: string
       }
+      feature_flags: { Args: never; Returns: Json }
       hold_booking_for_payment: {
         Args: { p_booking_id: string }
         Returns: Json
@@ -3333,6 +3339,7 @@ export type Database = {
       system_notify: { Args: { p_rows: Json }; Returns: number }
       system_overdue_lessons: { Args: never; Returns: Json }
       system_payment_notice: { Args: { p_payment_id: string }; Returns: Json }
+      system_plan_limits: { Args: never; Returns: Json }
       system_process_stripe_event: {
         Args: {
           p_account_id: string

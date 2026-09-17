@@ -20,6 +20,8 @@ export interface ReminderNotice {
   business_plan: string;
   /** The Business settings, which may say how long before to remind (NTF-02). */
   reminder_settings: unknown;
+  /** The platform's default booking rules, for a Business that has not set its own reminder times (ADM-05). */
+  platform_reminder_settings?: unknown;
   version: number;
   starts_at: string;
   created_at: string;
@@ -56,7 +58,7 @@ export function planReminders(input: ReminderPlanInput): PlannedReminder[] {
 
   for (const notice of input.notices) {
     const startsAt = new Date(notice.starts_at);
-    const hours = resolveReminderHours(notice.reminder_settings);
+    const hours = resolveReminderHours(notice.reminder_settings, notice.platform_reminder_settings);
     const due = dueReminders({
       startsAt,
       createdAt: new Date(notice.created_at),

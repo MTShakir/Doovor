@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import { Suspense } from 'react';
 import { SignUpForm } from './sign-up-form';
+import { featureFlags } from '@/lib/flags';
 
 export const metadata: Metadata = { title: 'Create an account' };
 
@@ -43,5 +44,5 @@ async function RoleForm({ searchParams }: { searchParams: SignUpParams }) {
   // An invitation already knows the learner's name and email, so they do not retype them
   // on a phone (AUTH-07).
   const prefill = { fullName: clean(params.name), email: clean(params.email) };
-  return <SignUpForm key={role} role={role} prefill={prefill} />;
+  return <SignUpForm key={role} role={role} prefill={prefill} flags={await featureFlags()} />;
 }

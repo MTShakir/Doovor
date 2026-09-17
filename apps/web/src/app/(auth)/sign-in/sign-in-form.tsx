@@ -1,6 +1,7 @@
 'use client';
 
 import { zodResolver } from '@hookform/resolvers/zod';
+import type { FlagOverrides } from '@repo/config/flags';
 import { magicLinkSchema, otpCodeSchema, signInSchema, ukMobileSchema } from '@repo/core/schemas/auth';
 import { Button } from '@repo/ui/button';
 import { Field } from '@repo/ui/field';
@@ -19,7 +20,7 @@ import { sendMagicLink, sendSignInCode, signInWithPassword, verifySignInCode } f
 
 type Mode = 'password' | 'link' | 'phone';
 
-export function SignInForm() {
+export function SignInForm({ flags }: { flags: FlagOverrides }) {
   const params = useSearchParams();
   const next = params.get('next');
   const linkError = params.get('error') === 'link';
@@ -28,7 +29,7 @@ export function SignInForm() {
   return (
     <div className="flex flex-col gap-5">
       {linkError ? <FormAlert>That link has expired or was already used. Sign in again.</FormAlert> : null}
-      <OAuthButtons next={next ?? '/'} />
+      <OAuthButtons next={next ?? '/'} flags={flags} />
       {mode === 'password' ? <PasswordForm next={next} /> : null}
       {mode === 'link' ? <MagicLinkForm /> : null}
       {mode === 'phone' ? <PhoneForm next={next} /> : null}
