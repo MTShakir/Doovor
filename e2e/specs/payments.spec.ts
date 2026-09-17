@@ -105,15 +105,34 @@ test.describe('connecting payments (PAY-01, M3-02)', () => {
     await context.close();
   });
 
-  test('somebody who does not own the business is told so @desktop-only', async ({ browser }) => {
+  test('acceptance-11: a school manager cannot see payouts or billing', async ({ browser }, testInfo) => {
     const context = await browser.newContext({ storageState: authFile('schoolManager') });
     const page = await context.newPage();
     await page.goto('/app/school/money');
+    await expect(page.getByRole('heading', { level: 1, name: 'Money' })).toBeVisible();
 
-    const card = page.getByRole('region', { name: 'Card payments' });
-    await expect(card).toContainText('Only the owner of the business can set payments up.');
-    await expect(card.getByRole('button', { name: /Set up payments|Finish setting up/ })).toBeHidden();
+    // What is owed, to chase; not what the school took, which the owner has not let them see (PRD 6.2).
+    const moneyIn = page.getByRole('region', { name: 'Money in' });
+    await expect(moneyIn.getByText('Unpaid', { exact: true })).toBeVisible();
+    await expect(moneyIn.getByText('The owner decides whether you see what the school takes.')).toBeVisible();
+    await expect(moneyIn.getByText('Paid', { exact: true })).toHaveCount(0);
+    await expect(moneyIn.getByText('Credit sold', { exact: true })).toHaveCount(0);
+
+    // Nothing about the payments account, its payouts or how to set it up (M5-16).
+    await expect(page.getByRole('region', { name: 'Card payments' })).toHaveCount(0);
+    await expect(page.getByText(/payout/i)).toHaveCount(0);
+    await expect(page.getByRole('button', { name: /Set up payments|Finish setting up/ })).toHaveCount(0);
+    await expectAccessible(page);
+    await snap(page, testInfo, 'acceptance-11');
     await context.close();
+
+    // The owner, on the same screen, has the account.
+    const ownerContext = await browser.newContext({ storageState: authFile('schoolOwner') });
+    const ownerPage = await ownerContext.newPage();
+    await ownerPage.goto('/app/school/money');
+    await expect(ownerPage.getByRole('region', { name: 'Card payments' })).toBeVisible();
+    await expect(ownerPage.getByRole('region', { name: 'Money in' }).getByText('Paid', { exact: true })).toBeVisible();
+    await ownerContext.close();
   });
 });
 

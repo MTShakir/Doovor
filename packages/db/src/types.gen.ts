@@ -2741,6 +2741,14 @@ export type Database = {
         }[]
       }
       booking_page: { Args: { p_slug: string }; Returns: Json }
+      business_billing: {
+        Args: { p_business_id: string }
+        Returns: {
+          founding_offer: boolean
+          plan: Database["public"]["Enums"]["plan_key"]
+          plan_expires_at: string
+        }[]
+      }
       cache_postcode: {
         Args: {
           p_country?: string
@@ -2923,6 +2931,16 @@ export type Database = {
           p_instructor_id: string
         }
         Returns: string[]
+      }
+      payments_account: {
+        Args: { p_business_id: string }
+        Returns: {
+          account_id: string
+          charges_enabled: boolean
+          connected_at: string
+          details_submitted: boolean
+          payouts_enabled: boolean
+        }[]
       }
       place_of_postcode: {
         Args: { p_postcode: string }

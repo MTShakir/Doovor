@@ -42,9 +42,9 @@ select is(
 );
 
 select is(
-  (select stripe_connected_at is not null from public.businesses where id = :'school'),
+  (select connected_at is not null from public.payments_account(:'school')),
   true,
-  'with when it happened'
+  'with when it happened, which only the owner reads (M5-16)'
 );
 
 -- ---------------------------------------------------------------------------------------

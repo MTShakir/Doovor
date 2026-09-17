@@ -11,7 +11,7 @@ import { BadgePoundSterling, CreditCard } from 'lucide-react';
 import Link from 'next/link';
 import { connection } from 'next/server';
 import { Suspense } from 'react';
-import { paymentsState, requirementInWords } from '@/lib/payments/connect';
+import { paymentsState, requirementInWords, type PaymentsAccount } from '@/lib/payments/connect';
 import { moneySummary } from '@/lib/payments/money-summary';
 import { receiptDetails } from '@/lib/payments/receipts';
 import { ConnectPayments } from '@/app/(portal)/app/instructor/money/connect-payments';
@@ -90,11 +90,13 @@ async function MoneyDashboard({ businessId, screen, period }: { businessId: stri
         ))}
       </nav>
       <dl className="grid gap-3 sm:grid-cols-2" aria-label={summary.period.label}>
-        <Figure
-          label="Paid"
-          amount={formatPence(summary.paid.totalPence)}
-          detail={`Card ${formatPence(summary.paid.cardPence)}, cash ${formatPence(summary.paid.cashPence)}, bank ${formatPence(summary.paid.bankPence)}`}
-        />
+        {summary.paid ? (
+          <Figure
+            label="Paid"
+            amount={formatPence(summary.paid.totalPence)}
+            detail={`Card ${formatPence(summary.paid.cardPence)}, cash ${formatPence(summary.paid.cashPence)}, bank ${formatPence(summary.paid.bankPence)}`}
+          />
+        ) : null}
         <Figure label="Unpaid" amount={formatPence(summary.unpaid.totalPence)} detail={`${lessons(summary.unpaid.count)} not paid for`} />
         {summary.creditSold ? (
           <Figure
@@ -103,12 +105,17 @@ async function MoneyDashboard({ businessId, screen, period }: { businessId: stri
             detail={summary.creditSold.minutes === 0 ? 'No packages' : `${formatMinutes(summary.creditSold.minutes)} of lessons`}
           />
         ) : null}
-        <Figure
-          label="Refunds"
-          amount={formatPence(summary.refunds.totalPence)}
-          detail={summary.refunds.count === 1 ? '1 refund' : `${String(summary.refunds.count)} refunds`}
-        />
+        {summary.refunds ? (
+          <Figure
+            label="Refunds"
+            amount={formatPence(summary.refunds.totalPence)}
+            detail={summary.refunds.count === 1 ? '1 refund' : `${String(summary.refunds.count)} refunds`}
+          />
+        ) : null}
       </dl>
+      {summary.paid ? null : (
+        <p className="text-small text-grey-700">The owner decides whether you see what the school takes.</p>
+      )}
     </Card>
   );
 }
@@ -138,17 +145,39 @@ async function Payments({
   }
 
   const ready = state.chargesEnabled;
-  const started = state.accountId !== null;
+  const { account } = state;
 
   return (
     <>
     <MoneyDashboard businessId={state.businessId} screen={screen} period={period} />
+    {/* The account and its payouts are the owner's: nobody else sees them (PRD 6.2, acceptance test 11). */}
+    {account ? <CardPayments account={account} businessName={state.businessName} ready={ready} screen={screen} /> : null}
+    {ready ? <HowLearnersPay mode={state.paymentMode} canManage={state.canManage} /> : null}
+    <Receipts businessId={state.businessId} canManage={state.canManage} />
+    </>
+  );
+}
+
+/** PAY-01: the owner's payments account, and whether its payouts are set up. */
+function CardPayments({
+  account,
+  businessName,
+  ready,
+  screen,
+}: {
+  account: PaymentsAccount;
+  businessName: string;
+  ready: boolean;
+  screen: 'instructor' | 'school';
+}) {
+  const started = account.accountId !== null;
+  return (
     <Card className="flex flex-col gap-3" role="region" aria-labelledby="payments-title">
       <div className="flex items-start justify-between gap-3">
         <div className="flex flex-col gap-1">
           <CardTitle id="payments-title">Card payments</CardTitle>
           <CardDescription>
-            Learners pay {state.businessName} directly. The money is yours, and we never hold it.
+            Learners pay {businessName} directly. The money is yours, and we never hold it.
           </CardDescription>
         </div>
         <StatusPill status={ready ? 'confirmed' : started ? 'attention' : 'pending'}>
@@ -160,7 +189,7 @@ async function Payments({
         <p className="flex items-center gap-2 text-body text-ink">
           <CreditCard className="size-5 shrink-0 text-grey-700" aria-hidden />
           You can take card, Apple Pay and Google Pay.
-          {state.payoutsEnabled ? '' : ' Payouts are still being set up.'}
+          {account.payoutsEnabled ? '' : ' Payouts are still being set up.'}
         </p>
       ) : (
         <p className="text-body text-grey-700">
@@ -170,32 +199,25 @@ async function Payments({
         </p>
       )}
 
-      {state.requirements.length > 0 ? (
+      {account.requirements.length > 0 ? (
         <div className="flex flex-col gap-1">
           <h3 className="text-small font-semibold text-black">Still needed</h3>
           <ul className="flex list-disc flex-col gap-1 pl-5 text-small text-grey-700">
-            {state.requirements.slice(0, 6).map((requirement) => (
+            {account.requirements.slice(0, 6).map((requirement) => (
               <li key={requirement}>{requirementInWords(requirement)}</li>
             ))}
           </ul>
         </div>
       ) : null}
 
-      {state.stale ? (
+      {account.stale ? (
         <p className="text-small text-grey-700">
           We could not reach the payments service just now, so this may be out of date.
         </p>
       ) : null}
 
-      {state.canManage ? (
-        <ConnectPayments started={started} ready={ready} screen={screen} />
-      ) : (
-        <p className="text-small text-grey-700">Only the owner of the business can set payments up.</p>
-      )}
+      <ConnectPayments started={started} ready={ready} screen={screen} />
     </Card>
-    {ready ? <HowLearnersPay mode={state.paymentMode} canManage={state.canManage} /> : null}
-    <Receipts businessId={state.businessId} canManage={state.canManage} />
-    </>
   );
 }
 
