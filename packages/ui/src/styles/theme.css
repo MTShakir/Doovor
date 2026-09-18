@@ -104,6 +104,15 @@
        applies when the word would otherwise overflow, so ordinary text is unchanged. */
     overflow-wrap: break-word;
   }
+  /* The cookie question is in every page as it is built, and painted only while there is no answer
+     (M6-08, D-152). Hidden by default, so a page whose script never runs never shows it: without a
+     script nothing can be counted either, so there is nothing to ask about. */
+  [data-cookie-banner] {
+    display: none;
+  }
+  :root[data-cookie-answer='unanswered'] [data-cookie-banner] {
+    display: block;
+  }
   :focus-visible {
     outline: 2px solid var(--color-black);
     outline-offset: 2px;

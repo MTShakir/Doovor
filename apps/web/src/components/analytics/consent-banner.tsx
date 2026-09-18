@@ -1,27 +1,21 @@
-'use client';
-
 import { Button } from '@repo/ui/button';
 import Link from 'next/link';
-import { useSyncExternalStore } from 'react';
-import { consentServerSnapshot, consentSnapshot, subscribeConsent, writeConsent, type CookieChoice } from '@/lib/analytics/consent';
+import { AnswerCookies } from './answer-cookies';
 
 /**
- * The one question we ask before counting anything (NFR-PRV-02, M6-08).
+ * The one question we ask before counting anything (NFR-PRV-02, M6-08, D-152).
  *
- * It appears only when there is no answer yet, and only once the page is in the browser, so no page
- * has to be rendered for each request to know whether to show it. It sits over the page rather than
- * pushing it down, so it cannot move what somebody is reading.
+ * It is in the page as the page is built, and hidden by the stylesheet unless the script in the
+ * head has said there is no answer yet. That way it is either in the first frame or never painted:
+ * deciding in React instead made this paragraph the largest thing painted, three seconds in, on
+ * every public page.
+ *
+ * It sits over the page rather than pushing it down, so it cannot move what somebody is reading.
  */
 export function ConsentBanner() {
-  const choice = useSyncExternalStore(subscribeConsent, consentSnapshot, consentServerSnapshot);
-  if (choice !== null) return null;
-
-  const answer = (next: CookieChoice) => () => {
-    writeConsent(next);
-  };
-
   return (
     <div
+      data-cookie-banner
       role="dialog"
       aria-label="Cookies"
       className="fixed inset-x-0 bottom-0 z-40 border-t border-grey-200 bg-white p-4 pb-[calc(1rem+env(safe-area-inset-bottom))] shadow-card md:p-6"
@@ -36,12 +30,18 @@ export function ConsentBanner() {
           .
         </p>
         <div className="flex shrink-0 flex-col gap-2 sm:flex-row">
-          <Button onClick={answer('accepted')}>Yes, count me</Button>
-          <Button variant="secondary" onClick={answer('declined')}>
-            No thanks
-          </Button>
+          <AnswerCookies />
         </div>
       </div>
     </div>
+  );
+}
+
+/** Shown while the page has no script: the question needs one to be answered at all. */
+export function ConsentButtonsFallback() {
+  return (
+    <Button disabled width="responsive">
+      Yes, count me
+    </Button>
   );
 }

@@ -1,5 +1,5 @@
 /**
- * Whether the person has agreed to being counted (NFR-PRV-02, M6-08, D-144).
+ * Whether the person has agreed to being counted (NFR-PRV-02, M6-08, D-144, D-152).
  *
  * The answer lives on their own device, not in a cookie the server reads: a page that has to be
  * rendered for each request to know the answer is a page that cannot be kept ready, and the public
@@ -7,6 +7,10 @@
  *
  * It is read the way React reads anything outside itself, through `useSyncExternalStore`, so a
  * screen that shows the question and a screen that does the counting always see the same answer.
+ *
+ * Whether the question is on screen is decided before the first paint instead, by an attribute on
+ * the page that a tiny script sets from the same answer. Waiting for React to decide made the
+ * question itself the largest thing painted, three seconds in (D-152).
  */
 export type CookieChoice = 'accepted' | 'declined';
 
@@ -56,12 +60,21 @@ export function subscribeConsent(listen: () => void): () => void {
   };
 }
 
+/** The attribute the stylesheet reads: set while there is no answer, absent once there is one. */
+export const unansweredAttribute = 'data-cookie-answer';
+
+function showQuestion(show: boolean): void {
+  if (show) document.documentElement.setAttribute(unansweredAttribute, 'unanswered');
+  else document.documentElement.removeAttribute(unansweredAttribute);
+}
+
 export function writeConsent(choice: CookieChoice): void {
   try {
     window.localStorage.setItem(consentKey, choice);
   } catch {
     // Nothing to do: the answer holds for this page, and the question returns next time.
   }
+  showQuestion(false);
   window.dispatchEvent(new Event(changed));
 }
 
@@ -72,5 +85,6 @@ export function forgetConsent(): void {
   } catch {
     // As above.
   }
+  showQuestion(true);
   window.dispatchEvent(new Event(changed));
 }

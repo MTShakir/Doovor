@@ -155,7 +155,9 @@ jobs:
         run: |
           set -o pipefail
           if ! pnpm lighthouse 2>&1 | tee "$RUNNER_TEMP/lighthouse.log"; then
-            echo "::error title=Lighthouse failed::$(tail -n 40 "$RUNNER_TEMP/lighthouse.log" | sed 's/%/%25/g' | sed ':a;N;$!ba;s/\n/%0A/g')"
+            # The scores as well as the failure: without them a failure says which threshold was
+            # missed but never by which page or which metric.
+            echo "::error title=Lighthouse failed::$({ grep '^|' "$RUNNER_TEMP/lighthouse.log"; tail -n 40 "$RUNNER_TEMP/lighthouse.log"; } | sed 's/%/%25/g' | sed ':a;N;$!ba;s/\n/%0A/g')"
             exit 1
           fi
           echo "::notice title=Lighthouse scores::$(grep '^|' "$RUNNER_TEMP/lighthouse.log" | sed 's/%/%25/g' | sed ':a;N;$!ba;s/\n/%0A/g')"
