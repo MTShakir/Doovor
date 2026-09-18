@@ -253,5 +253,5 @@ Decisions D-036 to D-050 were logged during this stretch. Two were security fixe
 
 | Blocker | Blocks | Needs |
 |---|---|---|
-| Google OAuth client secret | The Google button, which stays hidden until it is set | Product owner |
+| Google sign in, last two steps | The Google button: the client and Supabase are done (18 September); the consent screen needs publishing and `NEXT_PUBLIC_AUTH_GOOGLE_ENABLED=true` in Vercel. RUNBOOK 3.4 | Product owner |
 | Leaked password protection | A Pro plan feature, so it waits for the upgrade in D-154. RUNBOOK 3.1 step 4 | Product owner |

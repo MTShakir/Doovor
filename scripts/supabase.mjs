@@ -48,9 +48,16 @@ if (workdirIndex !== -1) {
 // stored as the literal "env(NAME)" or as an empty password. Refuse before that happens.
 const argv = process.argv.slice(2);
 if (argv.includes('config') && argv.includes('push')) {
-  // Only the secrets the hosted config actually uses. Add the Google names here when Google is
-  // switched on in ops/staging/supabase/config.toml.
-  const needed = ['RESEND_API_KEY', 'TWILIO_ACCOUNT_SID', 'TWILIO_AUTH_TOKEN', 'TWILIO_MESSAGING_SERVICE_SID'];
+  // Only the secrets the hosted config actually uses: add a name here whenever
+  // ops/staging/supabase/config.toml starts reading another one.
+  const needed = [
+    'RESEND_API_KEY',
+    'TWILIO_ACCOUNT_SID',
+    'TWILIO_AUTH_TOKEN',
+    'TWILIO_MESSAGING_SERVICE_SID',
+    'SUPABASE_AUTH_EXTERNAL_GOOGLE_CLIENT_ID',
+    'SUPABASE_AUTH_EXTERNAL_GOOGLE_SECRET',
+  ];
   const missing = needed.filter((name) => {
     const value = process.env[name];
     return !value || value === 'not-configured';

@@ -48,7 +48,7 @@ milestone.
 | Backups | The project is on the free plan, which keeps no backup that can be restored (checked 18 September): there is nothing to go back to. The product owner's decision: stay free until the first real user, then upgrade this project to Pro, clear the demo data and run the restore drill (D-154) | Product owner |
 | Legal | Five pages written as drafts, with twelve gaps marked for a solicitor. Not in force until one has been through them | Product owner and a solicitor |
 | Payments in live mode | Stripe is proved in test mode. Live mode needs the platform questionnaire answered and a hosted webhook | Product owner |
-| Google sign in | The client secret is not set, so the button is off | Product owner |
+| Google sign in | The client is made and Supabase has it (18 September). The button stays off until the consent screen is published and the Vercel switch is set | Product owner |
 | Leaked password check | Supabase can refuse a password known to be breached. The switch is off, and Supabase offers it only on the Pro plan | Product owner |
 | Deploy, rollback, restore | Each is written down step by step; none has been rehearsed on the real project | Product owner |
 

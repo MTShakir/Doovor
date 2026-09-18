@@ -91,10 +91,14 @@ auth_token = "env(TWILIO_AUTH_TOKEN)"
 enroll_enabled = true
 verify_enabled = true
 
-# Google stays off until its client secret is in .env.local. skip_nonce_check is a local-only
+# Google sign-in (AUTH-01), through the "Doovor web (Supabase sign-in)" client in the Doovor
+# Google Cloud project, made on 18 September 2026 (RUNBOOK 3.4). skip_nonce_check is a local-only
 # convenience; hosted sign-in keeps the check.
 [auth.external.google]
-enabled = false
+enabled = true
+client_id = "env(SUPABASE_AUTH_EXTERNAL_GOOGLE_CLIENT_ID)"
+secret = "env(SUPABASE_AUTH_EXTERNAL_GOOGLE_SECRET)"
+skip_nonce_check = false
 
 [auth.external.apple]
 enabled = false

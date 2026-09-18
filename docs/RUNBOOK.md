@@ -98,12 +98,16 @@ Done on 18 September 2026 on a new, upgraded account: messaging service `Doovor`
 
 ### 3.4 Google sign-in
 
-1. **You:** in Google Cloud, for OAuth client `647142621690-...`:
+Made on 18 September 2026 under the Doovor Google account, in the Google Cloud project `doovor`: the web client "Doovor web (Supabase sign-in)", whose ID starts `580489274647-`. The client from M0 (`647142621690-...`, under another account) is no longer used anywhere.
+
+1. **You:** the client, in Google Auth Platform > Clients:
    - Authorised redirect URI: `https://yvxuarrrvgnfcjfyqfyi.supabase.co/auth/v1/callback`.
    - Authorised JavaScript origin: `https://app.doovor.com`, where the sign-in button is (D-084).
-2. **You:** copy the client secret into the Supabase Google provider.
-3. Set `NEXT_PUBLIC_AUTH_GOOGLE_ENABLED=true` in Vercel. The button stays hidden until then.
-4. Locally (optional): add `http://127.0.0.1:54321/auth/v1/callback` as a redirect URI, put the client ID and secret in `.env.local` (`SUPABASE_AUTH_EXTERNAL_GOOGLE_CLIENT_ID`, `SUPABASE_AUTH_EXTERNAL_GOOGLE_SECRET`), set `NEXT_PUBLIC_AUTH_GOOGLE_ENABLED=true`, then run `pnpm db:stop` and `pnpm db:start`.
+   - The consent screen (Branding): app name Doovor, home page `https://doovor.com`, and the privacy and terms pages there.
+2. **You:** put the client ID and secret in `.env.local` (`SUPABASE_AUTH_EXTERNAL_GOOGLE_CLIENT_ID`, `SUPABASE_AUTH_EXTERNAL_GOOGLE_SECRET`). The staging config declares Google on and reads both from there (3.1 step 6), so a push keeps it on. Google shows a secret once, when it is made: a lost one means adding a new secret to the client and deleting the old.
+3. **You:** Google Auth Platform > Audience: a new consent screen is in Testing, where only listed test users can sign in. Publish it before anybody else is meant to: with only the basic scopes (email and profile) it needs no review by Google.
+4. Set `NEXT_PUBLIC_AUTH_GOOGLE_ENABLED=true` in Vercel and redeploy, since a `NEXT_PUBLIC_` value is built into the app. The button stays hidden until then.
+5. Locally (optional): add `http://127.0.0.1:54321/auth/v1/callback` as a redirect URI, set `NEXT_PUBLIC_AUTH_GOOGLE_ENABLED=true`, then run `pnpm db:stop` and `pnpm db:start`.
 
 ### 3.5 Vercel (team `Doovor`)
 
