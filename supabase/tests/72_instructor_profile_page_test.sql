@@ -16,7 +16,7 @@ values ('M1 1AE', 'M1', 'M', 53.47941, -2.24531, 'Manchester')
 on conflict (postcode) do update set admin_district = excluded.admin_district;
 
 update public.instructor_profiles
-   set public_slug = 'ian-one', verification_status = 'approved', badge_expiry = current_date + 200,
+   set public_slug = 'ian-one', verification_status = 'approved', badge_expiry = private.today() + 200,
        bio = 'Calm lessons for nervous drivers.', car_make = 'Toyota', car_model = 'Yaris',
        base_postcode = 'M1 1AE',
        base_location = extensions.st_setsrid(extensions.st_makepoint(-2.24531, 53.47941), 4326)::extensions.geography,
@@ -46,7 +46,7 @@ select ok(
   (select public.instructor_profile_page('ian-one')::text not like '%M1 1AE%'
       and public.instructor_profile_page('ian-one')::text not like '%234567%'
       and public.instructor_profile_page('ian-one')::text not like '%test.local%'
-      and public.instructor_profile_page('ian-one')::text not like '%' || to_char(current_date + 200, 'YYYY-MM-DD') || '%'),
+      and public.instructor_profile_page('ian-one')::text not like '%' || to_char(private.today() + 200, 'YYYY-MM-DD') || '%'),
   'no home postcode, badge number, badge date or email anywhere in it'
 );
 select is(
@@ -108,7 +108,7 @@ select is(
 );
 
 -- A badge out of date: the profile stays, saying so, and offers no times.
-update public.instructor_profiles set badge_expiry = current_date - 1 where id = :'ian';
+update public.instructor_profiles set badge_expiry = private.today() - 1 where id = :'ian';
 select tests.authenticate_as_anon();
 select is(
   (select (public.instructor_profile_page('ian-one') ->> 'takingBookings')::boolean),
@@ -119,7 +119,7 @@ select is((select count(*)::int from public.next_open_slots(:'ian', 60)), 0, 'an
 
 -- A suspended Business: nothing public at all.
 select tests.clear_authentication();
-update public.instructor_profiles set badge_expiry = current_date + 200 where id = :'ian';
+update public.instructor_profiles set badge_expiry = private.today() + 200 where id = :'ian';
 update public.businesses set status = 'suspended' where id = :'school';
 select tests.authenticate_as_anon();
 select is(public.instructor_profile_page('ian-one'), null, 'the profile of a suspended Business''s instructor is gone');

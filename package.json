@@ -24,6 +24,7 @@
     "db:types": "node scripts/supabase.mjs gen types typescript --local --schema public > packages/db/src/types.gen.ts",
     "db:vectors": "node scripts/availability-vectors.mjs",
     "db:test": "node scripts/availability-vectors.mjs && node scripts/supabase.mjs test db",
+    "db:test:another-day": "node scripts/pgtap-another-day.mjs",
     "db:lint": "node scripts/supabase.mjs db lint --schema public,private --level warning --fail-on warning",
     "test:e2e": "pnpm --filter @repo/e2e test:e2e",
     "lighthouse": "node scripts/lighthouse-warm.mjs && lhci collect && node scripts/lighthouse-scores.mjs && lhci upload && lhci assert",

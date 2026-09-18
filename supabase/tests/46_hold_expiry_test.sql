@@ -27,8 +27,8 @@ select :'ian', :'school', d, '06:00', '22:00' from generate_series(1, 7) as d;
 insert into public.lesson_prices (business_id, lesson_type_id, duration_minutes, price_pence)
 values (:'school', :'lesson_type', 60, 4200);
 
-select (date_trunc('day', now()) + interval '3 days 10 hours') as slot_a \gset
-select (date_trunc('day', now()) + interval '4 days 10 hours') as slot_b \gset
+select (((private.today() + 3)::timestamp + time '10:00') at time zone 'Europe/London') as slot_a \gset
+select (((private.today() + 4)::timestamp + time '10:00') at time zone 'Europe/London') as slot_b \gset
 
 -- ---------------------------------------------------------------------------------------
 -- A lesson that has to be paid for starts out held (PAY-03).

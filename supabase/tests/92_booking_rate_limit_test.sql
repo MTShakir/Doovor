@@ -26,7 +26,7 @@ returns uuid language sql as $$
     'a1000000-0000-0000-0000-000000000001',
     'c0000000-0000-0000-0000-000000000001',
     'a2000000-0000-0000-0000-000000000001',
-    date_trunc('day', now() + interval '7 days') + make_interval(hours => p_hour),
+    ((private.today() + 7)::timestamp + make_interval(hours => p_hour)) at time zone 'Europe/London',
     60
   );
 $$;
@@ -45,7 +45,7 @@ select throws_ok(
 );
 select is(
   (select count(*)::int from public.bookings b
-    where b.learner_id = :'lee' and b.starts_at = date_trunc('day', now() + interval '7 days') + interval '11 hours'),
+    where b.learner_id = :'lee' and b.starts_at = ((private.today() + 7)::timestamp + time '11:00') at time zone 'Europe/London'),
   0,
   'and nothing is booked by a refused attempt'
 );
@@ -54,7 +54,7 @@ select is(
 select tests.authenticate_as('b0000000-0000-0000-0000-000000000003');
 select lives_ok(
   $$ select public.create_booking('b1000000-0000-0000-0000-000000000001', 'c0000000-0000-0000-0000-000000000001',
-       'b2000000-0000-0000-0000-000000000001', date_trunc('day', now() + interval '8 days') + interval '13 hours', 60) $$,
+       'b2000000-0000-0000-0000-000000000001', ((private.today() + 8)::timestamp + time '13:00') at time zone 'Europe/London', 60) $$,
   'another instructor books as usual'
 );
 

@@ -14,12 +14,12 @@ select tests.create_fixture();
 select tests.authenticate_as(:'other_learner');
 select lives_ok(
   format($$ insert into public.learner_private (user_id, date_of_birth)
-            values (%L, (current_date - interval '16 years')::date) $$, :'other_learner'),
+            values (%L, (private.today() - interval '16 years')::date) $$, :'other_learner'),
   'someone who turned sixteen today can start'
 );
 
 select throws_ok(
-  format($$ update public.learner_private set date_of_birth = (current_date - interval '16 years' + interval '1 day')::date
+  format($$ update public.learner_private set date_of_birth = (private.today() - interval '16 years' + interval '1 day')::date
              where user_id = %L $$, :'other_learner'),
   'P0001',
   'VALIDATION_FAILED',
@@ -29,7 +29,7 @@ select throws_ok(
 -- Whoever writes it, the rule holds.
 select tests.clear_authentication();
 select throws_ok(
-  format($$ update public.learner_private set date_of_birth = (current_date - interval '15 years')::date
+  format($$ update public.learner_private set date_of_birth = (private.today() - interval '15 years')::date
              where user_id = %L $$, :'learner'),
   'P0001',
   'VALIDATION_FAILED',

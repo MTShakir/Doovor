@@ -63,6 +63,10 @@ jobs:
         run: pnpm db:lint
       - name: pgTAP (RLS, constraints, RPCs)
         run: pnpm db:test
+      # The same suite with the database on a different date from the UK's, so a test that mixes
+      # the two fails on every run, not only in the hour after midnight (D-156).
+      - name: pgTAP on another day
+        run: pnpm db:test:another-day
       - name: Generated types match the migrations
         run: |
           pnpm db:types

@@ -21,7 +21,7 @@ values ('M1 1AE', 'M1', 'M', 53.47941, -2.24531, 'Manchester'),
 on conflict (postcode) do update set admin_district = excluded.admin_district;
 update public.businesses set base_postcode = 'M1 1AE' where id = :'school';
 update public.instructor_profiles
-   set public_slug = 'ian-prices', verification_status = 'approved', badge_expiry = current_date + 200, base_postcode = 'SK1 1EB'
+   set public_slug = 'ian-prices', verification_status = 'approved', badge_expiry = private.today() + 200, base_postcode = 'SK1 1EB'
  where id = :'ian';
 insert into public.lesson_types (id, business_id, name, is_active)
 values ('b2000000-0000-0000-0000-000000000002', :'school', 'Motorway lesson', false);

@@ -22,15 +22,15 @@ on conflict (postcode) do update set admin_district = excluded.admin_district;
 -- Asha teaches in Leeds, manual. Ian's base is in Stockport, automatic. Ivy's is central Manchester,
 -- manual, and she has hidden her profile from search.
 update public.instructor_profiles
-   set public_slug = 'asha-one', verification_status = 'approved', badge_expiry = current_date + 200,
+   set public_slug = 'asha-one', verification_status = 'approved', badge_expiry = private.today() + 200,
        base_postcode = 'LS1 4AP', transmission = 'manual'
  where id = :'asha';
 update public.instructor_profiles
-   set public_slug = 'ian-one', verification_status = 'approved', badge_expiry = current_date + 200,
+   set public_slug = 'ian-one', verification_status = 'approved', badge_expiry = private.today() + 200,
        base_postcode = 'SK1 1EB', transmission = 'automatic', badge_number = '234567'
  where id = :'ian';
 update public.instructor_profiles
-   set public_slug = 'ivy-two', verification_status = 'approved', badge_expiry = current_date + 200,
+   set public_slug = 'ivy-two', verification_status = 'approved', badge_expiry = private.today() + 200,
        base_postcode = 'M1 1AE', transmission = 'manual', is_listed = false
  where id = :'ivy';
 
@@ -76,7 +76,7 @@ select isnt(public.city_page('london'), null, 'a launch city with nobody in it y
 -- Ivy shows herself in search again, and Ian's badge runs out.
 select tests.clear_authentication();
 update public.instructor_profiles set is_listed = true where id = :'ivy';
-update public.instructor_profiles set badge_expiry = current_date - 1 where id = :'ian';
+update public.instructor_profiles set badge_expiry = private.today() - 1 where id = :'ian';
 select tests.authenticate_as_anon();
 select is(pg_temp.slugs(public.city_page('manchester')), array['ivy-two'], 'an expired badge leaves the city page, and a profile shown again joins it (acceptance test 10)');
 select is(pg_temp.slugs(public.city_page('manchester', null, 'automatic')), '{}'::text[], 'and the automatic page, since Ivy teaches manual');

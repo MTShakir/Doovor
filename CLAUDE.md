@@ -57,6 +57,7 @@ Run from the repo root.
 | `pnpm db:types` | Regenerate `packages/db/src/types.gen.ts` from the local database |
 | `pnpm db:env` | Write `.env.local` from `.env.example` and the running local stack's keys (first-time setup) |
 | `pnpm db:test` | Run pgTAP tests (RLS, constraints, RPCs) |
+| `pnpm db:test:another-day` | pgTAP again with the database on a different date from the UK's; CI runs it too (D-156) |
 | `pnpm db:lint` | Lint SQL functions in `public` and `private`; fails on warnings |
 | `pnpm lint` | ESLint across the monorepo, plus copy guards (brand name, dashes) |
 | `pnpm typecheck` | TypeScript across the monorepo |
