@@ -60,7 +60,10 @@ export const serverEnvSchema = z.preprocess(
       TWILIO_MESSAGING_SERVICE_SID: optionalString,
 
       PAYMENTS_PROVIDER: z.enum(['fake', 'stripe']).default('fake'),
+      // Public, and read here only to be checked: the card form needs it (D-153).
+      NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY: optionalString,
       STRIPE_SECRET_KEY: optionalString,
+      // Platform events, which only Stripe Billing raises: ADM-10, Phase 2 (D-022). Nothing asks for it yet.
       STRIPE_WEBHOOK_SECRET: optionalString,
       STRIPE_CONNECT_WEBHOOK_SECRET: optionalString,
 
@@ -90,10 +93,24 @@ export const serverEnvSchema = z.preprocess(
         'TWILIO_MESSAGING_SERVICE_SID',
       ], 'SMS_PROVIDER is twilio');
       require(env.PAYMENTS_PROVIDER === 'stripe', [
+        'NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY',
         'STRIPE_SECRET_KEY',
-        'STRIPE_WEBHOOK_SECRET',
         'STRIPE_CONNECT_WEBHOOK_SECRET',
       ], 'PAYMENTS_PROVIDER is stripe');
+      // A live key takes real money, so it belongs in production and nowhere else, and production
+      // takes nothing else. Checked whichever provider is on: an unused live key is one setting
+      // away from a used one (D-153).
+      const live = env.APP_ENV === 'production';
+      for (const key of ['NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY', 'STRIPE_SECRET_KEY'] as const) {
+        const value = env[key];
+        if (value !== undefined && /^(sk|rk|pk)_live_/.test(value) !== live) {
+          ctx.addIssue({
+            code: 'custom',
+            path: [key],
+            message: live ? `${key} must be a live mode key in production` : `${key} must be a test mode key outside production`,
+          });
+        }
+      }
       // Anywhere hosted, the job runner talks to the app over the internet: without its signing key
       // the jobs endpoint would answer anybody who found it (NFR-SEC-03, M6-01, D-135).
       require(env.APP_ENV === 'preview' || env.APP_ENV === 'production', ['INNGEST_SIGNING_KEY'], 'APP_ENV is hosted');

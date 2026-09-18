@@ -28,7 +28,7 @@ progress against the DVSA syllabus, and take their data or close their account.
 
 | | |
 |---|---|
-| Unit tests | 1,217 across the packages (core 525, web 503, providers 108, db 31, ui 23, config 20, emails 7), core at 90% line coverage |
+| Unit tests | 1,220 across the packages (core 525, web 506, providers 108, db 31, ui 23, config 20, emails 7), core at 90% line coverage |
 | Database tests | 1,466 pgTAP assertions across 96 files: every RLS policy, constraint and RPC, including the failure paths |
 | End to end | 471 tests at 390 px and 1440 px against a production build, with an accessibility scan on every screen |
 | The twelve acceptance tests | All present and passing in CI, each named `acceptance-01` to `acceptance-12`, with a roll call that fails the build if one is renamed, deleted or skipped |

@@ -172,9 +172,25 @@ Sandbox `Doovor sandbox`, account `acct_1UFF4RDP3EG8YZIf`. Settings > Connect:
    `charge.dispute.created`, with "Listen to events on connected accounts" ticked, and its secret goes in
    `STRIPE_CONNECT_WEBHOOK_SECRET`. `charge.refunded` is not needed: newer API versions leave the refunds
    out of it, and the refund events carry them.
-   `STRIPE_WEBHOOK_SECRET` is for platform events (Stripe Billing, M5) and stays empty until then.
+   `STRIPE_WEBHOOK_SECRET` is for platform events, which only Stripe Billing raises. Subscriptions
+   arrive with ADM-10 in Phase 2 (D-022), so it stays empty and the app does not ask for it (D-153).
 8. **You:** live mode needs the Connect platform onboarding questionnaire finished (Platform profile >
    View onboarding): company identity, the business model and the loss liability elections.
+9. **You, when going live:** four values in Vercel, scoped to **Production only** and set in the same
+   deployment that sets `APP_ENV=production`. All of them come from the main Doovor account in live
+   mode, not from the sandbox:
+
+   | Name | Value |
+   |---|---|
+   | `PAYMENTS_PROVIDER` | `stripe` |
+   | `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY` | the live publishable key, `pk_live_...` |
+   | `STRIPE_SECRET_KEY` | the live secret key, `sk_live_...` (mark as Sensitive) |
+   | `STRIPE_CONNECT_WEBHOOK_SECRET` | the signing secret of the live endpoint in step 7 (mark as Sensitive) |
+
+   The app refuses to start with a live key anywhere but production, and with a test key in
+   production (D-153), so a live key set for Preview, or before `APP_ENV` changes, stops the build
+   with the key's name rather than taking real money for demo data. Supabase needs nothing from
+   Stripe: only the app talks to it.
 
 ### 3.7a The Stripe test-mode run (M3-23)
 
@@ -244,7 +260,7 @@ Run through this before every production deploy. Anything unticked stops the dep
    say it locally.
 6. **Secrets are set for Production in Vercel**: the ones `.env.example` lists, with
    `INNGEST_SIGNING_KEY` and `FIELD_ENCRYPTION_KEYS` present, which the app refuses to start
-   without.
+   without, and the four Stripe values in section 3.7 step 9.
 7. **A backup exists from today**, and you know which point to go back to (see backups below).
 8. **Watching is on**: the Sentry DSN is set, the uptime check is green, and an alert reaches a
    phone.
