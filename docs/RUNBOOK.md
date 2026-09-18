@@ -227,6 +227,94 @@ from `pnpm test:e2e:stripe`; every other run stays on the fake.
 - Licences: `pnpm licenses list`. Nothing under the GPL or AGPL may be added; `docs/SECURITY.md` lists
   what is there today.
 
+### Going to production (M6-15)
+
+Run through this before every production deploy. Anything unticked stops the deploy.
+
+1. **CI is green on the commit being deployed**: lint and types, unit tests, database tests, the end
+   to end suite at both widths, Lighthouse on the public pages, and the load tests. Check the run,
+   not the badge.
+2. **The twelve acceptance tests ran**: they are part of the end to end suite, and
+   `e2e/specs/acceptance-roll-call.spec.ts` fails if one has been renamed, deleted or skipped.
+3. **No open P1**: see below. A P1 open means no deploy except the fix.
+4. **Migrations are forward only and already on staging**: they were pushed to staging, the app
+   there works, and nothing in `supabase/migrations` has been edited since. A merged migration is
+   frozen; fix it with another.
+5. **Generated types match the migrations**: CI checks this; `pnpm db:types` and a clean `git diff`
+   say it locally.
+6. **Secrets are set for Production in Vercel**: the ones `.env.example` lists, with
+   `INNGEST_SIGNING_KEY` and `FIELD_ENCRYPTION_KEYS` present, which the app refuses to start
+   without.
+7. **A backup exists from today**, and you know which point to go back to (see backups below).
+8. **Watching is on**: the Sentry DSN is set, the uptime check is green, and an alert reaches a
+   phone.
+9. **Deploy**, then within five minutes: open the public home page, a city page, a profile and a
+   booking link; sign in as an instructor; open the diary; take a test payment in Stripe test mode
+   if payments changed.
+10. **If something is wrong**, roll back first and diagnose afterwards: Vercel keeps the previous
+    deployment and promoting it is one click. A migration does not roll back with it, which is why
+    migrations are forward only.
+
+### P1 bugs (M6-15)
+
+- **A P1 is** anything that loses money, loses data, lets somebody see another Business's data,
+  stops a learner booking or paying, stops an instructor seeing their day, or takes the public site
+  down. Nothing else is a P1, however annoying.
+- **Where they live**: GitHub issues on `MTShakir/Doovor`, labelled `P1`, one per bug, with what
+  happened, who it happened to, and how to see it again.
+- **What happens**: a P1 stops other work. Write the failing test first, fix it, ship it, then write
+  what went wrong and what stops it happening again in `docs/DECISIONS.md`.
+- **Right now**: none open.
+
+### Backups and going back (M6-14)
+
+- **What exists depends on the plan.** Every Supabase project has daily backups. Point in time
+  recovery, which is what lets you go back to a minute rather than a day, is a paid add on (D-032).
+  Check the dashboard under Database, Backups, and write down which of the two this project has.
+- **Product owner, before beta:**
+  1. Note what the project actually has: daily backups only, or point in time recovery and the
+     window it covers.
+  2. Do a restore drill into a throwaway project: restore yesterday's backup, point a local checkout
+     at it with that project's URL and keys, and check a learner's lessons, payments and receipts
+     are all there. Write down how long the restore took.
+  3. Delete the drill project, and record the date and the time it took in `docs/PROGRESS.md`.
+- **Going back for real**: restore from the dashboard, then redeploy the app unchanged. Everything
+  written after that point is gone, so tell the people affected which window was lost. A restore is
+  a last resort: one bad migration is better fixed forward.
+
+### A learner says they were charged twice (M6-13)
+
+1. **Find the payments.** Admin, Learners, open them, and read their payments. Two rows for one
+   lesson is a double charge; one row and two card statements is the bank showing an authorisation
+   and a capture, which is not.
+2. **Check what the provider says.** Stripe dashboard, search the learner's email, and compare the
+   charges with `public.payments`. `provider_ref` on each row is the Stripe id.
+3. **If the product took two payments**, refund the later one from the app rather than from Stripe,
+   so the ledger, the receipt and the audit trail agree: Admin, the learner, the payment, Refund.
+   A refund made in Stripe alone leaves our record wrong.
+4. **If Stripe shows two charges and the app one**, the webhook missed one. The app records a
+   payment once per provider event (acceptance-06), so look in `public.provider_events` for the
+   event id: if it is absent, replay it from Stripe, which is safe because a repeat is ignored.
+5. **Tell them what happened and when the money returns**: a card refund is with them in five to
+   ten working days, and the app emails the receipt.
+6. **Write it down.** If the cause was ours, it is a P1 until fixed.
+
+### Rotating a key (M6-13)
+
+Every one of these is: create the new, set it in Vercel, redeploy, check, then delete the old.
+
+- **Supabase secret key**: create a new one, update Vercel, redeploy, delete the old.
+- **Stripe**: roll the secret key in the Stripe dashboard, update `STRIPE_SECRET_KEY`, redeploy, then
+  take one test payment. The webhook secrets are separate: rolling an endpoint's secret means
+  updating `STRIPE_WEBHOOK_SECRET` or `STRIPE_CONNECT_WEBHOOK_SECRET` in the same deploy, or
+  deliveries are refused.
+- **Resend and Twilio**: create a new key, update Vercel, redeploy, send one message to yourself.
+- **Web push (VAPID)**: a new pair invalidates every subscription. Only rotate if the private key
+  has leaked, and tell people they will have to turn notifications on again.
+- **Field encryption (`FIELD_ENCRYPTION_KEYS`)**: add the new key at the front of the ring, keeping
+  the old one, so anything already encrypted can still be read. Remove the old key only once
+  nothing uses it (D-010).
+
 ### Watching for errors and outages (M6-10)
 - Errors are reported by `@sentry/nextjs`, started in `apps/web/src/lib/errors/sentry.ts`, from the
   browser, the server and the jobs. With no `NEXT_PUBLIC_SENTRY_DSN` it does nothing at all, which
