@@ -7,7 +7,7 @@ import { Sheet } from '@repo/ui/sheet';
 import { toast } from '@repo/ui/toast';
 import { useState, useTransition } from 'react';
 import { FormAlert } from '@/components/form-alert';
-import { requestDeletion, revokeDevice } from './actions';
+import { cancelDeletion, requestDeletion, revokeDevice } from './actions';
 
 /** The visible label is "Sign out"; screen readers also hear which device, as a list has several. */
 export function RevokeDeviceButton({ sessionId, device }: { sessionId: string; device: string }) {
@@ -79,5 +79,32 @@ export function DeleteAccount() {
         </div>
       </Sheet>
     </>
+  );
+}
+
+/** While a deletion waits, it can be called off (AUTH-09, M6-12). */
+export function KeepMyAccount() {
+  const [error, setError] = useState<string | null>(null);
+  const [pending, startTransition] = useTransition();
+
+  return (
+    <div className="flex flex-col gap-2">
+      <Button
+        variant="secondary"
+        width="responsive"
+        pending={pending}
+        onClick={() => {
+          setError(null);
+          startTransition(async () => {
+            const result = await cancelDeletion();
+            if (result.ok) toast('Your account is staying.');
+            else setError(result.message);
+          });
+        }}
+      >
+        Keep my account after all
+      </Button>
+      {error === null ? null : <FormAlert>{error}</FormAlert>}
+    </div>
   );
 }

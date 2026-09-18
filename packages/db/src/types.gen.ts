@@ -2914,6 +2914,7 @@ export type Database = {
         }
         Returns: undefined
       }
+      cancel_account_deletion: { Args: never; Returns: boolean }
       cancel_booking: {
         Args: { p_booking_id: string; p_reason?: string }
         Returns: Json
@@ -3349,11 +3350,24 @@ export type Database = {
         Returns: Json
       }
       system_drop_push_target: { Args: { p_id: string }; Returns: number }
+      system_due_deletions: {
+        Args: { p_now?: string }
+        Returns: {
+          request_id: string
+          requested_at: string
+          user_id: string
+        }[]
+      }
       system_due_reminders: { Args: { p_within_hours?: number }; Returns: Json }
+      system_erase_account: { Args: { p_user_id: string }; Returns: undefined }
       system_expire_payment_holds: { Args: never; Returns: Json }
       system_expire_requests: { Args: never; Returns: number }
       system_extend_recurrences: { Args: { p_weeks?: number }; Returns: number }
       system_fee_to_charge: { Args: { p_booking_id: string }; Returns: Json }
+      system_finish_deletion: {
+        Args: { p_request_id: string }
+        Returns: undefined
+      }
       system_issue_receipt: { Args: { p_payment_id: string }; Returns: Json }
       system_learner_capture_confirmation: {
         Args: { p_id: string; p_kind: string }

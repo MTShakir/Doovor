@@ -1,6 +1,6 @@
 import { cron } from 'inngest';
 import { inngest } from '../client';
-import { clearExpiredInvitations, clearOldRateLimits, expireBookingRequests, extendRecurrences } from '../maintenance';
+import { clearExpiredInvitations, clearOldRateLimits, eraseDueAccounts, expireBookingRequests, extendRecurrences } from '../maintenance';
 
 /**
  * Housekeeping, once a day (NFR-SEC-03, AUTH-07): old rate limit windows, and invitations
@@ -27,4 +27,14 @@ export const requestExpirySweep = inngest.createFunction(
 export const recurrenceSweep = inngest.createFunction(
   { id: 'recurrence-sweep', name: 'Extend weekly slots', triggers: [cron('TZ=Europe/London 15 4 * * *')] },
   () => extendRecurrences(),
+);
+
+/**
+ * An account asked to be deleted goes seven days later (NFR-PRV-03, AUTH-09). In the small hours,
+ * because it cancels lessons still to come and nobody should watch that happen to their diary in
+ * the middle of a working day.
+ */
+export const deletionSweep = inngest.createFunction(
+  { id: 'deletion-sweep', name: 'Delete accounts that asked', triggers: [cron('TZ=Europe/London 45 3 * * *')] },
+  () => eraseDueAccounts(),
 );

@@ -3,7 +3,7 @@
 -- Three ways a learner could reach them, and none of them work: the table itself, any view
 -- built on it, and any function that runs as its owner and could hand the text out.
 begin;
-select plan(12);
+select plan(14);
 
 select tests.create_fixture();
 
@@ -34,9 +34,25 @@ select is(
      join pg_namespace n on n.oid = p.pronamespace
     where n.nspname in ('public', 'private')
       and p.prosecdef
-      and p.prosrc like '%learner_notes%'),
+      and p.prosrc like '%learner_notes%'
+      -- The one exception: erasing an account takes the notes with it, and takes nothing out
+      -- (NFR-PRV-03, D-149). The two tests below hold it to that.
+      and p.proname <> 'system_erase_account'),
   0,
   'no function running as its owner reads the notes table'
+);
+select is(
+  (select array_length(regexp_split_to_array(p.prosrc, 'learner_notes'), 1) - 1
+     from pg_proc p join pg_namespace n on n.oid = p.pronamespace
+    where n.nspname = 'public' and p.proname = 'system_erase_account'),
+  1,
+  'erasing an account mentions the notes table once'
+);
+select ok(
+  (select p.prosrc like '%delete from public.learner_notes where learner_id = p_user_id;%'
+     from pg_proc p join pg_namespace n on n.oid = p.pronamespace
+    where n.nspname = 'public' and p.proname = 'system_erase_account'),
+  'and that once is a delete, never a read'
 );
 
 -- ---------------------------------------------------------------------------------------

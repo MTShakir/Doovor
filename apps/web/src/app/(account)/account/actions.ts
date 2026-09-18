@@ -39,3 +39,12 @@ export async function requestDeletion(input: unknown): Promise<Result<null>> {
   revalidatePath('/account');
   return ok(null);
 }
+
+/** Calling it off, while the seven days last (AUTH-09, M6-12, D-149). */
+export async function cancelDeletion(): Promise<Result<null>> {
+  const supabase = await createSupabaseServerClient();
+  const { error } = await supabase.rpc('cancel_account_deletion');
+  if (error) return err('UNKNOWN');
+  revalidatePath('/account');
+  return ok(null);
+}
