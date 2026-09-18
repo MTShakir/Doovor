@@ -18,6 +18,7 @@ const headers = securityHeaders({
   NEXT_PUBLIC_POSTHOG_HOST: process.env.NEXT_PUBLIC_POSTHOG_HOST,
   NEXT_PUBLIC_SENTRY_DSN: process.env.NEXT_PUBLIC_SENTRY_DSN,
   production: process.env.NODE_ENV === 'production',
+  hosted: process.env.APP_ENV === 'preview' || process.env.APP_ENV === 'production',
 });
 
 /** Outside production nothing is indexed; in production, private areas never are (D-047). */

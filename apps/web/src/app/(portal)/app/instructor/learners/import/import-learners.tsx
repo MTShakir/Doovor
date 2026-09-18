@@ -22,6 +22,7 @@ import { Select } from '@repo/ui/select';
 import { CheckCircle2, Upload } from 'lucide-react';
 import Link from 'next/link';
 import { useState, useTransition } from 'react';
+import { track } from '@/lib/analytics/track';
 import { FormAlert } from '@/components/form-alert';
 import { importLearners } from '../actions';
 
@@ -109,6 +110,7 @@ export function ImportLearners() {
       }
 
       problems.sort((a, b) => a.line - b.line);
+      if (imported > 0) track('learner_added', { method: 'import', count: imported });
       setDone({ imported, problems });
       setFile(null);
     });

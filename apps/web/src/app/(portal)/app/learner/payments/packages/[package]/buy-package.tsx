@@ -10,6 +10,7 @@ import { toast } from '@repo/ui/toast';
 import { CreditCard, ShieldCheck } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useState, useTransition } from 'react';
+import { track } from '@/lib/analytics/track';
 import { FormAlert } from '@/components/form-alert';
 import { CardForm, checkWithBank } from '@/components/payments/card-form';
 import type { KeptCardOption } from '../../../pay/[booking]/pay-lesson';
@@ -54,6 +55,8 @@ export function BuyPackage({ packageId, attemptId, name, minutes, pricePence, bu
   const intentId = checkout === null ? null : (checkout.clientSecret.split('_secret')[0] ?? null);
 
   const bought = (confirming: boolean) => {
+    track('package_purchased', { hours: Math.round((minutes / 60) * 10) / 10 });
+    track('payment_succeeded', { method: chosen === '' ? 'card' : 'saved_card' });
     toast(confirming ? 'Payment taken. Your credit shows in a few seconds.' : `${formatMinutes(minutes)} of credit added`);
     router.push('/app/learner/payments');
   };

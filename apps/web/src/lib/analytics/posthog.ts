@@ -29,6 +29,10 @@ async function load(): Promise<PostHog | null> {
     disable_session_recording: true,
     autocapture: false,
     persistence: 'localStorage',
+    // We count; we do not ask it what to switch on. Without this it asks on every page load for
+    // feature flags nothing reads, and holds what it is counting until the answer comes back.
+    advanced_disable_flags: true,
+    advanced_disable_feature_flags: true,
   });
   return posthog;
 }

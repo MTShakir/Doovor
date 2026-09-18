@@ -55,13 +55,31 @@ test.describe('the cookie question (NFR-PRV-02, M6-08)', () => {
   });
 
   test('saying yes starts the counting, and it can be stopped again', async ({ page }) => {
-    const sent = watchForCounting(page);
-    await page.goto('/');
+    // What the page counts, said as it counts it: the counting service's own batching is its
+    // business, and this is about the answer being acted on (M6-09).
+    await page.addInitScript(() => {
+      const said: unknown[] = [];
+      (window as unknown as { counted: unknown[] }).counted = said;
+      window.addEventListener('counted', (event) => {
+        said.push(event);
+      });
+    });
+    await page.goto('/instructors/leeds/sarah-khan');
+    await expect(page.getByRole('heading', { level: 1, name: 'Sarah Khan' })).toBeVisible();
+    // Nothing yet: the profile has been read, and nobody has said it may be counted.
+    expect(await page.evaluate(() => (window as unknown as { counted: unknown[] }).counted.length)).toBe(0);
+
     await page.getByRole('dialog', { name: 'Cookies' }).getByRole('button', { name: 'Yes, count me' }).click();
     await expect(page.getByRole('dialog', { name: 'Cookies' })).toBeHidden();
 
-    // Only now does anything leave the browser.
-    await expect.poll(() => sent.length, { message: 'something was sent once the answer was yes' }).toBeGreaterThan(0);
+    // From here on it counts. The next page read is counted, where the last one was not.
+    await page.goto('/schools/leeds/quayside-driving-school');
+    await expect(page.getByRole('heading', { level: 1 }).first()).toBeVisible();
+    await expect
+      .poll(() => page.evaluate(() => (window as unknown as { counted: unknown[] }).counted.length), {
+        message: 'the page counted something once the answer was yes',
+      })
+      .toBeGreaterThan(0);
 
     // And the cookies page says where things stand, and can change it.
     await page.goto('/cookies');

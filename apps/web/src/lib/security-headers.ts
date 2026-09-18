@@ -17,8 +17,14 @@ export interface HeaderEnvironment {
   NEXT_PUBLIC_SUPABASE_URL?: string | undefined;
   NEXT_PUBLIC_POSTHOG_HOST?: string | undefined;
   NEXT_PUBLIC_SENTRY_DSN?: string | undefined;
-  /** A production build forbids eval and asks the browser to upgrade anything left on http. */
+  /** A build forbids a script from a string; a person developing needs one. */
   production?: boolean | undefined;
+  /**
+   * Somewhere with a certificate, which is preview and production. Only there does the browser get
+   * told to upgrade anything left on http: a build running on a laptop is served over http, and
+   * upgrading its own requests would leave them refused (D-146).
+   */
+  hosted?: boolean | undefined;
 }
 
 export interface ResponseHeader {
@@ -91,7 +97,7 @@ export function contentSecurityPolicy(env: HeaderEnvironment): string {
     "frame-ancestors 'none'",
     "base-uri 'self'",
     "form-action 'self'",
-    ...(env.production ? ['upgrade-insecure-requests'] : []),
+    ...(env.hosted ? ['upgrade-insecure-requests'] : []),
   ].join('; ');
 }
 

@@ -13,6 +13,7 @@ import { TimeSlotGrid } from '@repo/ui/time-slot-grid';
 import { CheckCircle2 } from 'lucide-react';
 import Link from 'next/link';
 import { useEffect, useState, useTransition } from 'react';
+import { track } from '@/lib/analytics/track';
 import { FormAlert } from '@/components/form-alert';
 import { avatarUrl } from '@/lib/storage/images';
 import type { BookingPage } from '@/lib/booking/public';
@@ -91,6 +92,7 @@ export function BookWithInstructor({ page, slug, chosen, learner, signedIn, prof
         setTimes(null);
         return;
       }
+      track('booking_created', { source: 'self', recurring: false });
       setBooked(slot);
       setPayNow(result.data.payNow ? result.data.bookingId : null);
     });

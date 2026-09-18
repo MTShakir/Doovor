@@ -9,6 +9,7 @@
     "./money": "./src/money.ts",
     "./counts": "./src/counts.ts",
     "./audit": "./src/audit.ts",
+    "./analytics": "./src/analytics.ts",
     "./regions": "./src/regions.ts",
     "./platform-settings": "./src/platform-settings.ts",
     "./errors": "./src/errors.ts",

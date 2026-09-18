@@ -9,6 +9,7 @@ import { toast } from '@repo/ui/toast';
 import { CreditCard, ShieldCheck } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState, useTransition } from 'react';
+import { track } from '@/lib/analytics/track';
 import { FormAlert } from '@/components/form-alert';
 import { CardForm, checkWithBank } from '@/components/payments/card-form';
 import { payWithSavedCard, payWithTestCard, startCheckout } from './actions';
@@ -98,6 +99,7 @@ export function PayLesson({ bookingId, pricePence, businessName, savedCards, req
         setConfirming(true);
         return;
       }
+      track('payment_succeeded', { method: 'saved_card' });
       toast(done);
       router.refresh();
     });
@@ -128,6 +130,7 @@ export function PayLesson({ bookingId, pricePence, businessName, savedCards, req
         setError('The card was refused. Try another one.');
         return;
       }
+      track('payment_succeeded', { method: 'card' });
       toast(done);
       router.refresh();
     });

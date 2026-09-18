@@ -2,6 +2,7 @@
 
 import { Button } from '@repo/ui/button';
 import { useState, useTransition } from 'react';
+import { track } from '@/lib/analytics/track';
 import { FormAlert } from '@/components/form-alert';
 import { acceptInvitation } from './actions';
 
@@ -21,7 +22,8 @@ export function AcceptButton({ token, name }: { token: string; name: string }) {
           setError(null);
           startTransition(async () => {
             const result = await acceptInvitation(token);
-            if (!result.ok) setError(result.message);
+            if (result.ok) track('invite_accepted', { as: 'learner' });
+            else setError(result.message);
           });
         }}
       >

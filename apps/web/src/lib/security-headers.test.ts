@@ -6,6 +6,7 @@ const hosted: HeaderEnvironment = {
   NEXT_PUBLIC_POSTHOG_HOST: 'https://eu.i.posthog.com',
   NEXT_PUBLIC_SENTRY_DSN: 'https://key@o123.ingest.de.sentry.io/456',
   production: true,
+  hosted: true,
 };
 
 /** The policy as the browser reads it: a directive, and the sources it allows. */
@@ -33,8 +34,13 @@ describe('the content security policy (NFR-SEC-03, M6-04)', () => {
   it('lets a script run from a string only while a person is developing', () => {
     expect(directives({ ...hosted, production: false })['script-src']).toContain("'unsafe-eval'");
     expect(directives(hosted)['script-src']).not.toContain("'unsafe-eval'");
+  });
+
+  it('asks the browser to upgrade http only where there is a certificate', () => {
     expect(directives(hosted)).toHaveProperty('upgrade-insecure-requests');
-    expect(directives({ ...hosted, production: false })).not.toHaveProperty('upgrade-insecure-requests');
+    // A build on a laptop is served over http, and upgrading its own requests would leave them
+    // refused by this very policy (D-146).
+    expect(directives({ ...hosted, hosted: false })).not.toHaveProperty('upgrade-insecure-requests');
   });
 
   /**
