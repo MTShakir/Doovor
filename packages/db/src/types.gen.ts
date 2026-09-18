@@ -2963,6 +2963,7 @@ export type Database = {
         Returns: string
       }
       end_impersonation: { Args: { p_session_id: string }; Returns: undefined }
+      export_my_data: { Args: never; Returns: Json }
       feature_flags: { Args: never; Returns: Json }
       hold_booking_for_payment: {
         Args: { p_booking_id: string }
