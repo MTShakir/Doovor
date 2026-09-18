@@ -7,7 +7,7 @@ their working week on this.
 ## The short answer
 
 The product is ready for a beta **once four things the product owner holds are done**: the Sentry
-DSN and the uptime check (M6-10), the backup and restore drill (M6-14), a solicitor through the
+DSN and the uptime check (M6-10), production on the Supabase Pro plan, which is what keeps backups, and a restore drill (M6-14), a solicitor through the
 legal pages (M6-07), and Stripe in live mode (RUNBOOK 3.7). Everything else is built, tested and
 green in CI.
 
@@ -45,19 +45,20 @@ milestone.
 | | What is missing | Who |
 |---|---|---|
 | Monitoring | Errors are wired but silent: no DSN, no uptime check, nowhere for an alert to go. Nothing is watching production yet | Product owner |
-| Backups | The project keeps daily backups; nobody has restored one. Point in time recovery may need a paid plan | Product owner |
+| Backups | The project is on the free plan, which keeps no backup that can be restored (checked 18 September): there is nothing to go back to. Production needs the Pro plan, then a restore drill | Product owner |
 | Legal | Five pages written as drafts, with twelve gaps marked for a solicitor. Not in force until one has been through them | Product owner and a solicitor |
 | Payments in live mode | Stripe is proved in test mode. Live mode needs the platform questionnaire answered and a hosted webhook | Product owner |
 | Google sign in | The client secret is not set, so the button is off | Product owner |
 | Text messages | Twilio is on a trial account, which only messages verified numbers | Product owner |
-| Leaked password check | Supabase can refuse a password known to be breached. The switch is off | Product owner |
+| Leaked password check | Supabase can refuse a password known to be breached. The switch is off, and Supabase offers it only on the Pro plan | Product owner |
 | Deploy, rollback, restore | Each is written down step by step; none has been rehearsed on the real project | Product owner |
 
 ## Risks worth naming
 
 - **Nothing is watching.** Until the DSN and the uptime check are set, the first anybody knows of a
   broken production is an instructor saying so. This is the single biggest gap.
-- **A restore has never been done.** A backup nobody has restored is a hope, not a plan.
+- **There is no backup.** The free plan keeps none that can be restored, and a backup nobody has
+  restored is a hope, not a plan: Pro first, then the drill.
 - **The legal pages are drafts.** They say so on every page, but they are what a beta instructor
   will read.
 - **Twenty instructors is not twenty thousand.** The load tests run against one machine's database

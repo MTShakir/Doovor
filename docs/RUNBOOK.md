@@ -42,7 +42,7 @@ Do these once, in order. Items marked **You** need the product owner's accounts.
    pnpm supabase db push
    ```
 3. Check the session sign-out guard is active (D-041): in the SQL editor, `select rolconfig from pg_roles where rolname = 'authenticator';` must include `pgrst.db_pre_request=private.check_request`.
-4. **You:** turn on leaked password protection: Authentication > Sign In / Providers > Password > "Prevent use of leaked passwords". Supabase checks a new password against HaveIBeenPwned without ever sending it. The CLI has no config key for it, so it cannot live in `ops/staging/supabase/config.toml` with the rest (M1 security advisor).
+4. **You:** turn on leaked password protection: Authentication > Sign In / Providers > Password > "Prevent use of leaked passwords". Supabase checks a new password against HaveIBeenPwned without ever sending it. The CLI has no config key for it, so it cannot live in `ops/staging/supabase/config.toml` with the rest (M1 security advisor). Supabase offers it on the Pro plan and above: the free staging project has it off (checked 18 September 2026), so it is switched on for production.
 5. **You:** put the provider secrets in `.env.local` (never in git or chat), plus a Supabase access token for the command line:
    ```
    SUPABASE_ACCESS_TOKEN=          # Supabase dashboard > Account > Access Tokens
@@ -284,12 +284,14 @@ Run through this before every production deploy. Anything unticked stops the dep
 
 ### Backups and going back (M6-14)
 
-- **What exists depends on the plan.** Every Supabase project has daily backups. Point in time
-  recovery, which is what lets you go back to a minute rather than a day, is a paid add on (D-032).
-  Check the dashboard under Database, Backups, and write down which of the two this project has.
+- **What exists depends on the plan.** The free plan keeps no backup that can be restored: on 18
+  September 2026 the project, on the free plan, listed no backups and no point in time recovery
+  (Management API, `database/backups`). Pro keeps a daily backup for seven days. Point in time
+  recovery, which is what lets you go back to a minute rather than a day, is a paid add on above
+  that (D-032). Data that matters needs Pro at the least.
 - **Product owner, before beta:**
-  1. Note what the project actually has: daily backups only, or point in time recovery and the
-     window it covers.
+  1. Put production on the Pro plan, then note what it has: daily backups only, or point in time
+     recovery and the window it covers.
   2. Do a restore drill into a throwaway project: restore yesterday's backup, point a local checkout
      at it with that project's URL and keys, and check a learner's lessons, payments and receipts
      are all there. Write down how long the restore took.
