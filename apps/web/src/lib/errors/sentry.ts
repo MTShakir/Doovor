@@ -1,15 +1,17 @@
-import * as Sentry from '@sentry/nextjs';
 import { beforeSend } from './reporting';
 
 /**
  * What to tell the error service, wherever the code is running (M6-10, D-150).
  *
- * Without a DSN it does nothing at all: no requests, nothing stored, nothing to configure on a
- * developer's machine. With one it sends errors and a tenth of traces, never a session recording,
- * and never anything the scrubber next door has taken out.
+ * The library is fetched only when there is a DSN to send to. Imported at the top of this module it
+ * would be in the bundle of every page whether or not anybody was watching, which is what a static
+ * import of Zod cost the profile page seven Lighthouse points for (D-140).
+ *
+ * Without a DSN, then: nothing fetched, no requests, nothing stored.
  */
-export function watchForErrors(dsn: string | undefined, environment: string): void {
+export async function watchForErrors(dsn: string | undefined, environment: string): Promise<void> {
   if (!dsn) return;
+  const Sentry = await import('@sentry/nextjs');
   Sentry.init({
     dsn,
     environment,

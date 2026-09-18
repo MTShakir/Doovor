@@ -13,16 +13,24 @@ const origin = process.env.LIGHTHOUSE_ORIGIN ?? 'http://localhost:3000';
 // paint timings and judges every category on that run alone, which passed a page whose median was 79.
 const atLeast90 = ['error', { minScore: 0.9, aggregationMethod: 'median' }];
 
+/**
+ * The pages measured. Exported as well, so the warm up before a run asks for exactly these: the
+ * very first request to a just started server pays for rendering the page, which no visitor after
+ * the first ever does, and that cost landed on run one and dragged the median with it (D-151).
+ */
+const pages = [
+  `${origin}/instructors/leeds/sarah-khan`,
+  `${origin}/schools/manchester/quayside-driving-school`,
+  `${origin}/driving-lessons/manchester`,
+  `${origin}/driving-lessons/manchester/salford`,
+  `${origin}/driving-lessons/manchester/automatic`,
+];
+
 module.exports = {
+  pages,
   ci: {
     collect: {
-      url: [
-        `${origin}/instructors/leeds/sarah-khan`,
-        `${origin}/schools/manchester/quayside-driving-school`,
-        `${origin}/driving-lessons/manchester`,
-        `${origin}/driving-lessons/manchester/salford`,
-        `${origin}/driving-lessons/manchester/automatic`,
-      ],
+      url: pages,
       numberOfRuns: 3,
       settings: {
         // The phone Lighthouse emulates, saying it is Lighthouse as PageSpeed Insights does. Next.js
