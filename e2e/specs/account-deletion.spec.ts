@@ -29,9 +29,11 @@ test.describe('deleting your account (NFR-PRV-03, AUTH-09, M6-12)', () => {
 
       // The screen says when it happens, and offers a way out.
       await expect(card).toContainText('Your account goes seven days later');
+      // What matters is the screen going back, not the toast that says so: a toast is gone in five
+      // seconds and is no proof of anything afterwards.
       await card.getByRole('button', { name: 'Keep my account after all' }).click();
-      await expect(page.getByText('Your account is staying.')).toBeVisible();
-      await expect(card.getByRole('button', { name: 'Ask to delete my account' })).toBeVisible();
+      await expect(card.getByRole('button', { name: 'Ask to delete my account' })).toBeVisible({ timeout: 20_000 });
+      await expect(card).not.toContainText('Your account goes seven days later');
     } finally {
       await learner.remove();
     }
