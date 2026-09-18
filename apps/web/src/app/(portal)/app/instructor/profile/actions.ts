@@ -3,7 +3,7 @@
 import { isProfileObjectPath } from '@repo/core/images';
 import { err, ok, type Result } from '@repo/core/result';
 import { instructorProfileSchema } from '@repo/core/schemas/profile';
-import { z } from 'zod';
+import { z } from '@repo/core/zod';
 import { revalidatePath } from 'next/cache';
 import { requirePortal } from '@/lib/auth/session';
 import { fieldErrors } from '@/lib/forms';

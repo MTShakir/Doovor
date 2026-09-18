@@ -3,7 +3,7 @@
 import { parsePostgresError } from '@repo/core/errors';
 import { err, ok, type Result } from '@repo/core/result';
 import { revalidatePath } from 'next/cache';
-import { z } from 'zod';
+import { z } from '@repo/core/zod';
 import { requirePortal } from '@/lib/auth/session';
 import { openSlots } from '@/lib/booking/public';
 import { createSupabaseServerClient } from '@/lib/supabase/server';

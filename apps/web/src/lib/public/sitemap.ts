@@ -1,7 +1,7 @@
 import 'server-only';
 import type { SitemapEntries } from '@repo/core/sitemap';
 import { cacheLife, cacheTag } from 'next/cache';
-import { z } from 'zod';
+import { z } from '@repo/core/zod';
 import { getSupabaseAnonymousClient } from '@/lib/supabase/anonymous';
 import { profileTags } from './instructor-profile';
 

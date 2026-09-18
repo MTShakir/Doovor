@@ -5,7 +5,7 @@ import { err, ok, type Result } from '@repo/core/result';
 import { areaCheckSchema, lessonRequestConsent, lessonRequestSchema, waitingListConsent, waitingListSchema } from '@repo/core/schemas/capture';
 import type { Database } from '@repo/db/types';
 import type { SupabaseClient } from '@supabase/supabase-js';
-import { z } from 'zod';
+import { z } from '@repo/core/zod';
 import { fieldErrors } from '@/lib/forms';
 import { getGeoProvider } from '@/lib/geo/provider';
 import { cityPage } from '@/lib/public/city-page';

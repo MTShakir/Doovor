@@ -5,7 +5,7 @@ import { err, ok, type Result } from '@repo/core/result';
 import { getAccessContext } from '@repo/db';
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
-import { z } from 'zod';
+import { z } from '@repo/core/zod';
 import { landingPath } from '@/lib/auth/portals';
 import { requirePortal } from '@/lib/auth/session';
 import { VIEW_AS_COOKIE, viewAsCookieOptions, viewingId } from '@/lib/auth/view-as';

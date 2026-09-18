@@ -3,7 +3,7 @@
  * (DIA-01, DIA-02, M1-17).
  */
 
-import { z } from 'zod';
+import { z } from '../zod';
 import { isValidLocalDate, isValidLocalTime, localTimeToMinutes } from '../time/calendar.ts';
 
 const localTime = z.string().trim().refine(isValidLocalTime, { error: 'Enter a time like 09:00' });

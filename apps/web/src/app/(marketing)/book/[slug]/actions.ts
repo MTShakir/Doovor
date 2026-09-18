@@ -4,7 +4,7 @@ import { parsePostgresError } from '@repo/core/errors';
 import { err, ok, type Result } from '@repo/core/result';
 import { isValidLocalDate } from '@repo/core/time';
 import { cookies } from 'next/headers';
-import { z } from 'zod';
+import { z } from '@repo/core/zod';
 import { getAccess } from '@/lib/auth/session';
 import { openSlots } from '@/lib/booking/public';
 import { redirectTo } from '@/lib/redirect-to';

@@ -5,7 +5,7 @@ import { newPasswordSchema } from '@repo/core/schemas/auth';
 import { Field } from '@repo/ui/field';
 import { useState, useTransition } from 'react';
 import { useForm } from 'react-hook-form';
-import type { z } from 'zod';
+import type { z } from '@repo/core/zod';
 import { ClientForm, SubmitButton } from '@/components/client-form';
 import { FormAlert } from '@/components/form-alert';
 import { PasswordInput } from '@/components/password-input';

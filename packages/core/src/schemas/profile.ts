@@ -5,7 +5,7 @@
  * fields are not here: they are set by a submission that a person reviews (INS-02, M1-04).
  */
 
-import { z } from 'zod';
+import { z } from '../zod';
 import { fullNameSchema } from './auth.ts';
 
 /** The list the database accepts, with the words a person would use (PRD 9.2). */

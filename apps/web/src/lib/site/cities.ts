@@ -1,6 +1,6 @@
 import 'server-only';
 import { cacheLife, cacheTag } from 'next/cache';
-import { z } from 'zod';
+import { z } from '@repo/core/zod';
 import { getSupabaseAnonymousClient } from '@/lib/supabase/anonymous';
 
 const citiesSchema = z.array(z.object({ slug: z.string(), name: z.string() }));

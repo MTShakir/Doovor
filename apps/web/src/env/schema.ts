@@ -3,7 +3,7 @@
  * local fakes, so a missing vendor key never blocks work that does not need it yet, but
  * production refuses fakes and fails at boot if a real provider's secret is missing.
  */
-import { z } from 'zod';
+import { z } from '@repo/core/zod';
 
 const flag = z
   .enum(['true', 'false'])

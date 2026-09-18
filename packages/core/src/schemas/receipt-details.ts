@@ -3,7 +3,7 @@
  * (PAY-08, M3-20). Shared by the form and the Server Action.
  */
 
-import { z } from 'zod';
+import { z } from '../zod';
 import { normalisePostcode } from '../postcode.ts';
 
 /**

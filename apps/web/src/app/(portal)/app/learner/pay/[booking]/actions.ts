@@ -3,7 +3,7 @@
 import { parsePostgresError } from '@repo/core/errors';
 import { err, ok, type Result } from '@repo/core/result';
 import { revalidatePath } from 'next/cache';
-import { z } from 'zod';
+import { z } from '@repo/core/zod';
 import { serverEnv } from '@/env/server';
 import { requirePortal } from '@/lib/auth/session';
 import { keptCardsWith } from '@/lib/payments/cards';

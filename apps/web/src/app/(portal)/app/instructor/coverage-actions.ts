@@ -4,7 +4,7 @@ import { normaliseOutcode } from '@repo/core/postcode';
 import { err, ok, type Result } from '@repo/core/result';
 import { onboardingAreaSchema } from '@repo/core/schemas/onboarding';
 import { revalidatePath } from 'next/cache';
-import { z } from 'zod';
+import { z } from '@repo/core/zod';
 import { requirePortal } from '@/lib/auth/session';
 import { fieldErrors } from '@/lib/forms';
 import { expireInstructorProfile } from '@/lib/public/instructor-profile';

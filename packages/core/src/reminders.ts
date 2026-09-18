@@ -7,7 +7,7 @@
  * reminded about at its new time and not its old one.
  */
 
-import { z } from 'zod';
+import { z } from './zod';
 
 const HOUR = 3_600_000;
 

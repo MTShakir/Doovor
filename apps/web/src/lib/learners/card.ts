@@ -2,7 +2,7 @@ import 'server-only';
 import type { LearnerStatus } from '@repo/core/learners';
 import { normaliseUkMobile } from '@repo/core/phone';
 import type { LearnerTransmission } from '@repo/core/schemas/learner';
-import { z } from 'zod';
+import { z } from '@repo/core/zod';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
 
 /** Pickup points arrive as JSON from the view, so they are read the way any input is. */

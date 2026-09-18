@@ -1,7 +1,7 @@
 import { Skeleton } from '@repo/ui/skeleton';
 import type { Metadata } from 'next';
 import { Suspense } from 'react';
-import { z } from 'zod';
+import { z } from '@repo/core/zod';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
 import { RemoveDetails } from './remove-details';
 

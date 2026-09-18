@@ -1,7 +1,7 @@
 import 'server-only';
 import { formatUkMobile } from '@repo/core/phone';
 import { formatDate, formatDateTime, formatDateWithYear } from '@repo/core/time';
-import { z } from 'zod';
+import { z } from '@repo/core/zod';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
 import type { MemberRole } from './businesses';
 

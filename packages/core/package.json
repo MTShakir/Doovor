@@ -5,6 +5,7 @@
   "type": "module",
   "exports": {
     ".": "./src/index.ts",
+    "./zod": "./src/zod.ts",
     "./money": "./src/money.ts",
     "./counts": "./src/counts.ts",
     "./audit": "./src/audit.ts",

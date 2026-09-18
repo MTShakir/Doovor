@@ -6,7 +6,7 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { Suspense } from 'react';
-import { z } from 'zod';
+import { z } from '@repo/core/zod';
 import { LessonScreen } from '@/components/lessons/lesson-screen';
 import { requirePortal } from '@/lib/auth/session';
 import { lessonHasEnded, lessonTaughtBy, teachingProfiles } from '@/lib/lessons/teaching';

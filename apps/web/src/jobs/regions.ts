@@ -1,7 +1,7 @@
 import 'server-only';
 import { regionOpenedWords } from '@repo/core/schemas/capture';
 import { renderNotificationEmail } from '@repo/emails';
-import { z } from 'zod';
+import { z } from '@repo/core/zod';
 import { emailProvider } from '@/lib/email/provider';
 import { getSiteUrl } from '@/lib/site-url';
 import { getSupabaseServiceClient } from '@/lib/supabase/service';

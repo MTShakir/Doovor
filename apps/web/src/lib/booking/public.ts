@@ -1,5 +1,5 @@
 import 'server-only';
-import { z } from 'zod';
+import { z } from '@repo/core/zod';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
 
 const lessonSchema = z.object({

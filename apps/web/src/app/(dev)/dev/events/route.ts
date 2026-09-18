@@ -1,5 +1,5 @@
 import { NextResponse, type NextRequest } from 'next/server';
-import { z } from 'zod';
+import { z } from '@repo/core/zod';
 import { serverEnv } from '@/env/server';
 import { chargeFee } from '@/jobs/fees';
 import { notifyAboutBooking } from '@/jobs/notify';

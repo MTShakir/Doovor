@@ -3,7 +3,7 @@
  * that saves it and, later, the outbox that sends it when there is signal again.
  */
 
-import { z } from 'zod';
+import { z } from '../zod';
 import { isSkillCode, type SkillCode } from '../skills.ts';
 
 export const skillRatingSchema = z.object({

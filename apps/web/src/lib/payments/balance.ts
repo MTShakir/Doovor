@@ -1,7 +1,7 @@
 import 'server-only';
 import { summariseBalance, type BalanceSummary, type HistoryEntry, type PaymentMode } from '@repo/core/balance';
 import type { BookingStatus, PaymentStatus } from '@repo/core/diary';
-import { z } from 'zod';
+import { z } from '@repo/core/zod';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
 
 /**

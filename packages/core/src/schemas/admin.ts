@@ -1,4 +1,4 @@
-import { z } from 'zod';
+import { z } from '../zod';
 import { auditCategoryKeys } from '../audit.ts';
 
 /** What platform staff type to find a Business or a person (ADM-02). */

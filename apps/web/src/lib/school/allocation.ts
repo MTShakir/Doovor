@@ -1,6 +1,6 @@
 import 'server-only';
 import { suggestInstructors, type Suggestion } from '@repo/core/allocation';
-import { z } from 'zod';
+import { z } from '@repo/core/zod';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
 
 const minutes = z.number().int();

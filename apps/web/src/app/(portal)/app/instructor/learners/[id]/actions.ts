@@ -5,7 +5,7 @@ import { err, ok, type Result } from '@repo/core/result';
 import { learnerStatuses } from '@repo/core/learners';
 import { learnerNoteSchema } from '@repo/core/schemas/note';
 import { revalidatePath } from 'next/cache';
-import { z } from 'zod';
+import { z } from '@repo/core/zod';
 import { requirePortal } from '@/lib/auth/session';
 import { fieldErrors } from '@/lib/forms';
 import { createSupabaseServerClient } from '@/lib/supabase/server';

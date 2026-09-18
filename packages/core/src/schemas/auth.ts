@@ -1,5 +1,5 @@
 /** Shared by the sign-in forms (React Hook Form) and their Server Actions. */
-import { z } from 'zod';
+import { z } from '../zod';
 import { normaliseUkMobile } from '../phone.ts';
 
 export const emailSchema = z.string().trim().toLowerCase().pipe(z.email({ error: 'Enter an email address like name@example.com' }));

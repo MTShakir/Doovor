@@ -3,7 +3,7 @@
  * the platform settings keep it in. The database checks the same bounds again (D-128).
  */
 
-import { z } from 'zod';
+import { z } from './zod';
 import { businessBookingRulesSchema, bookingRuleRanges } from './booking-rules.ts';
 import { parsePoundsToPence } from './money.ts';
 

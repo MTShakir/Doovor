@@ -12,7 +12,7 @@ import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { connection } from 'next/server';
 import { Suspense } from 'react';
-import { z } from 'zod';
+import { z } from '@repo/core/zod';
 import { serverEnv } from '@/env/server';
 import { requirePortal } from '@/lib/auth/session';
 import { learnerBalance } from '@/lib/payments/balance';

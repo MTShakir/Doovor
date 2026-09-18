@@ -1,7 +1,7 @@
 import 'server-only';
 import { moneyPeriod, periodInstants, type MoneyPeriod, type MoneyPeriodKey } from '@repo/core/money-periods';
 import { todayInZone } from '@repo/core/time';
-import { z } from 'zod';
+import { z } from '@repo/core/zod';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
 
 const pence = z.number().int();

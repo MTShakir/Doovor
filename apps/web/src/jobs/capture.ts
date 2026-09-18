@@ -1,7 +1,7 @@
 import 'server-only';
 import { captureConfirmationWords, type CaptureKind } from '@repo/core/schemas/capture';
 import { renderNotificationEmail } from '@repo/emails';
-import { z } from 'zod';
+import { z } from '@repo/core/zod';
 import { getAppUrl } from '@/lib/app-url';
 import { emailProvider } from '@/lib/email/provider';
 import { getSupabaseServiceClient } from '@/lib/supabase/service';

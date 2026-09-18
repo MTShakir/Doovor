@@ -3,7 +3,7 @@
 import { err, ok, type Result } from '@repo/core/result';
 import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
-import { z } from 'zod';
+import { z } from '@repo/core/zod';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
 
 const sessionIdSchema = z.uuid();
