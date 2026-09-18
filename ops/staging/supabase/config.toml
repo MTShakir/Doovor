@@ -67,9 +67,25 @@ pass = "env(RESEND_API_KEY)"
 admin_email = "env(BRAND_SENDER_EMAIL)"
 sender_name = "env(BRAND_SENDER_NAME)"
 
-# Text message settings are deliberately not declared here, so whatever is set in the Supabase
-# dashboard stays as it is. Declare them once Twilio is off its trial and TWILIO_* are in
-# .env.local, so this file describes them too.
+# Text codes through Twilio (D-033): they verify an instructor's mobile (AUTH-02) and sign in
+# somebody whose mobile is verified. Nobody signs up with a phone number alone, which also keeps
+# a public code endpoint from sending texts at our expense. No test numbers here: those are local.
+[auth.sms]
+enable_signup = false
+# Read backwards on purpose. For a hosted project the CLI sends this value as `sms_autoconfirm`,
+# the opposite of its name: `true` switched "Enable phone confirmations" off on 18 September
+# 2026, and a changed mobile then counted as verified without a code. `false` keeps the code.
+# The local file says `true` for the same result, because the CLI reads it the other way round
+# for the local stack. `scripts/supabase.mjs` checks the hosted switch after every push (D-155).
+enable_confirmations = false
+template = "Your code is {{ .Code }}"
+max_frequency = "60s"
+
+[auth.sms.twilio]
+enabled = true
+account_sid = "env(TWILIO_ACCOUNT_SID)"
+message_service_sid = "env(TWILIO_MESSAGING_SERVICE_SID)"
+auth_token = "env(TWILIO_AUTH_TOKEN)"
 
 [auth.mfa.totp]
 enroll_enabled = true

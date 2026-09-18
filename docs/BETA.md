@@ -45,11 +45,10 @@ milestone.
 | | What is missing | Who |
 |---|---|---|
 | Monitoring | Errors are wired but silent: no DSN, no uptime check, nowhere for an alert to go. Nothing is watching production yet | Product owner |
-| Backups | The project is on the free plan, which keeps no backup that can be restored (checked 18 September): there is nothing to go back to. Production needs the Pro plan, then a restore drill | Product owner |
+| Backups | The project is on the free plan, which keeps no backup that can be restored (checked 18 September): there is nothing to go back to. The product owner's decision: stay free until the first real user, then upgrade this project to Pro, clear the demo data and run the restore drill (D-154) | Product owner |
 | Legal | Five pages written as drafts, with twelve gaps marked for a solicitor. Not in force until one has been through them | Product owner and a solicitor |
 | Payments in live mode | Stripe is proved in test mode. Live mode needs the platform questionnaire answered and a hosted webhook | Product owner |
 | Google sign in | The client secret is not set, so the button is off | Product owner |
-| Text messages | Twilio is on a trial account, which only messages verified numbers | Product owner |
 | Leaked password check | Supabase can refuse a password known to be breached. The switch is off, and Supabase offers it only on the Pro plan | Product owner |
 | Deploy, rollback, restore | Each is written down step by step; none has been rehearsed on the real project | Product owner |
 

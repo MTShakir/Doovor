@@ -10,7 +10,7 @@ How to run, deploy and look after the platform. Brand values (name, domain, send
 | CI | Production build in GitHub Actions | Local Supabase in the runner | `test` | Every push: lint, types, unit, pgTAP, Playwright (M0-31) |
 | Preview | Vercel deployment per branch and pull request | Staging Supabase | `preview` | Private (Vercel Authentication). Password sign-in works; email and Google sign-in finish on the staging domain (D-046) |
 | Staging | Vercel production deployment of `main`, on the brand domain until launch | Staging Supabase (free plan, D-032) | `preview` | Not indexed (D-047). Demo data only |
-| Production | From M6 | Supabase Pro in London with point-in-time recovery | `production` | Fake providers refused at boot; indexing allowed for public pages |
+| Production | When the first real user arrives | The staging project, upgraded to Pro and emptied of demo data first (D-154) | `production` | Fake providers refused at boot; indexing allowed for public pages |
 
 ## 2. Local setup (first time)
 
@@ -89,9 +89,11 @@ Do these once, in order. Items marked **You** need the product owner's accounts.
 
 ### 3.3 Twilio (text codes)
 
+Done on 18 September 2026 on a new, upgraded account: messaging service `Doovor` with the sender `Doovor`, texts to the United Kingdom only, and a £20 balance with auto recharge off.
+
 1. **You:** create a Messaging Service with the alphanumeric sender `Doovor` (UK senders need no registration; people cannot reply).
-2. **You:** Messaging > Geo permissions: allow the United Kingdom only. Set a low monthly spend limit. Public code endpoints attract SMS pumping fraud, and this caps the damage.
-3. **You:** enter the Account SID, Auth Token and Messaging Service SID in the Supabase phone provider.
+2. **You:** Messaging > Geo permissions: allow the United Kingdom only. Twilio has no hard monthly limit, so leave auto recharge off and keep a small balance: the balance is the cap. Public code endpoints attract SMS pumping fraud, and this caps the damage.
+3. **You:** put the Account SID, Auth Token and Messaging Service SID in `.env.local` (`TWILIO_ACCOUNT_SID`, `TWILIO_AUTH_TOKEN`, `TWILIO_MESSAGING_SERVICE_SID`), then push the staging config (3.1 step 6), which sends them to the Supabase phone settings. The push then reads back "Enable phone confirmations" and fails if it is off, because the CLI inverts that one setting for hosted projects (D-155).
 4. **You:** for the app's own reminders (M2-30), put the same three values in Vercel as `TWILIO_ACCOUNT_SID`, `TWILIO_AUTH_TOKEN` and `TWILIO_MESSAGING_SERVICE_SID`, and set `SMS_PROVIDER=twilio`. Without them the app writes a line to the log and texts nobody, which is what every local and test run does. Reminders are the only thing that texts, and only on a plan that includes it: 200 a month on Pro, counted in `sms_usage`.
 
 ### 3.4 Google sign-in
@@ -261,7 +263,9 @@ Run through this before every production deploy. Anything unticked stops the dep
 6. **Secrets are set for Production in Vercel**: the ones `.env.example` lists, with
    `INNGEST_SIGNING_KEY` and `FIELD_ENCRYPTION_KEYS` present, which the app refuses to start
    without, and the four Stripe values in section 3.7 step 9.
-7. **A backup exists from today**, and you know which point to go back to (see backups below).
+7. **A backup exists from today**, and you know which point to go back to (see backups below). For
+   the first production deploy that means the project is on Pro, the demo data has gone, and the
+   leaked password check is on (D-154).
 8. **Watching is on**: the Sentry DSN is set, the uptime check is green, and an alert reaches a
    phone.
 9. **Deploy**, then within five minutes: open the public home page, a city page, a profile and a

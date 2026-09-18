@@ -48,9 +48,9 @@ if (workdirIndex !== -1) {
 // stored as the literal "env(NAME)" or as an empty password. Refuse before that happens.
 const argv = process.argv.slice(2);
 if (argv.includes('config') && argv.includes('push')) {
-  // Only the secrets the hosted config actually uses. Add the Twilio and Google names here
-  // when those providers are switched on in ops/staging/supabase/config.toml.
-  const needed = ['RESEND_API_KEY'];
+  // Only the secrets the hosted config actually uses. Add the Google names here when Google is
+  // switched on in ops/staging/supabase/config.toml.
+  const needed = ['RESEND_API_KEY', 'TWILIO_ACCOUNT_SID', 'TWILIO_AUTH_TOKEN', 'TWILIO_MESSAGING_SERVICE_SID'];
   const missing = needed.filter((name) => {
     const value = process.env[name];
     return !value || value === 'not-configured';
@@ -72,4 +72,25 @@ if (argv.includes('config') && argv.includes('push')) {
 // Run the CLI's own launcher with Node directly: no shell, so paths with spaces work on Windows.
 const launcher = path.join(root, 'node_modules', 'supabase', 'dist', 'supabase.js');
 const result = spawnSync(process.execPath, [launcher, ...process.argv.slice(2)], { stdio: 'inherit', cwd: root });
+
+// After a hosted push, read back the one setting the CLI is known to invert: a changed mobile must
+// still need a code (AUTH-02, D-155). A push that switched that off fails loudly instead of quietly.
+const refIndex = argv.indexOf('--project-ref');
+if (result.status === 0 && argv.includes('config') && argv.includes('push') && refIndex !== -1) {
+  const ref = argv[refIndex + 1];
+  const token = process.env.SUPABASE_ACCESS_TOKEN;
+  if (!token) {
+    process.stderr.write('Pushed, but not checked: no SUPABASE_ACCESS_TOKEN in .env.local. Check "Enable phone confirmations" is on in the dashboard.\n');
+  } else {
+    const response = await fetch(`https://api.supabase.com/v1/projects/${ref}/config/auth`, { headers: { Authorization: `Bearer ${token}` } });
+    const auth = response.ok ? await response.json() : null;
+    if (auth?.sms_autoconfirm !== false) {
+      process.stderr.write(
+        `Pushed, but phone confirmations are not on in ${ref} (sms_autoconfirm is ${String(auth?.sms_autoconfirm)}): a changed mobile would count as verified without a code. See D-155.\n`,
+      );
+      process.exit(1);
+    }
+    process.stdout.write('Checked: phone confirmations are on.\n');
+  }
+}
 process.exit(result.status ?? 1);
