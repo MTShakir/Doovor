@@ -25,6 +25,11 @@ export const publicPages = [
   '/sign-up',
   '/start',
   '/forgot-password',
+  '/privacy',
+  '/cookies',
+  '/terms',
+  '/business-terms',
+  '/accessibility',
 ];
 
 export const portals: [RoleKey, string[]][] = [

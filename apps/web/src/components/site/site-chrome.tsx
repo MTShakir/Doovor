@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { Suspense } from 'react';
 import { brandMark } from '@/lib/pwa/icon-art';
 import { SiteNav, SiteNavList } from './site-nav';
-import { siteNav } from './site-nav-links';
+import { legalNav, siteNav } from './site-nav-links';
 
 /**
  * What every page of the public site shares (PRD 8.3, M5-09): the way round the site at the top,
@@ -107,7 +107,7 @@ function FooterLinks({ title, links }: { title: string; links: readonly FooterLi
 export function SiteFooter({ appUrl, cities }: { appUrl: string; cities: readonly { slug: string; name: string }[] }) {
   return (
     <footer className="border-t border-grey-200 bg-grey-100">
-      <div className="mx-auto grid grid-cols-[minmax(0,1fr)] w-full max-w-6xl gap-8 px-4 py-12 sm:grid-cols-2 md:grid-cols-4 md:px-6">
+      <div className="mx-auto grid w-full max-w-6xl grid-cols-[minmax(0,1fr)] gap-8 px-4 py-12 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 md:px-6">
         <div className="flex flex-col gap-3">
           <Link href="/" className="flex items-center gap-2 text-h3 text-black">
             <BrandMark />
@@ -125,6 +125,7 @@ export function SiteFooter({ appUrl, cities }: { appUrl: string; cities: readonl
             { href: `mailto:${brand.supportEmail}`, label: 'Contact support' },
           ]}
         />
+        <FooterLinks title="Legal" links={legalNav} />
       </div>
       <p className="mx-auto w-full max-w-6xl px-4 pb-8 text-caption text-grey-700 md:px-6">
         {brand.name} is run by {brand.legalEntity}.
