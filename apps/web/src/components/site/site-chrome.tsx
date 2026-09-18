@@ -33,10 +33,11 @@ export function SiteHeader({ appUrl }: { appUrl: string }) {
       >
         Skip to content
       </a>
-      <div className="mx-auto flex h-16 w-full max-w-6xl items-center gap-6 px-4 md:px-6">
-        <Link href="/" className="flex shrink-0 items-center gap-2 text-h3 text-black">
+      {/* Wraps rather than pushing the page sideways when the text is set larger (M6-06). */}
+      <div className="mx-auto flex min-h-16 w-full max-w-6xl flex-wrap items-center gap-x-6 gap-y-2 px-4 py-2 md:px-6">
+        <Link href="/" className="flex min-w-0 items-center gap-2 text-h3 text-black">
           <BrandMark />
-          {brand.name}
+          <span className="truncate">{brand.name}</span>
         </Link>
         <Suspense fallback={<SiteNavList current={null} />}>
           <SiteNav />
@@ -106,7 +107,7 @@ function FooterLinks({ title, links }: { title: string; links: readonly FooterLi
 export function SiteFooter({ appUrl, cities }: { appUrl: string; cities: readonly { slug: string; name: string }[] }) {
   return (
     <footer className="border-t border-grey-200 bg-grey-100">
-      <div className="mx-auto grid w-full max-w-6xl gap-8 px-4 py-12 sm:grid-cols-2 md:grid-cols-4 md:px-6">
+      <div className="mx-auto grid grid-cols-[minmax(0,1fr)] w-full max-w-6xl gap-8 px-4 py-12 sm:grid-cols-2 md:grid-cols-4 md:px-6">
         <div className="flex flex-col gap-3">
           <Link href="/" className="flex items-center gap-2 text-h3 text-black">
             <BrandMark />

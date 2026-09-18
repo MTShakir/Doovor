@@ -14,7 +14,9 @@ export function Switch({ label, description, className, id, ...props }: SwitchPr
   const controlId = id ?? generatedId;
   return (
     <div className={cn('flex min-h-12 items-center justify-between gap-4 py-2', className)}>
-      <label htmlFor={controlId} className="flex flex-col gap-0.5">
+      {/* The words give way, not the switch: a label too long for its line wraps inside itself
+          rather than pushing the switch off the screen (M6-06). */}
+      <label htmlFor={controlId} className="flex min-w-0 flex-col gap-0.5">
         <span className="text-body text-ink">{label}</span>
         {description ? <span className="text-small text-grey-700">{description}</span> : null}
       </label>

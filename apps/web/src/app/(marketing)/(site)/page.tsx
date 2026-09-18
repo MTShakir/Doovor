@@ -96,7 +96,7 @@ export default async function HomePage() {
       />
 
       <Band id="audiences" title="One app for everybody in a driving lesson" tone="grey">
-        <ul className="grid gap-4 md:grid-cols-3">
+        <ul className="grid grid-cols-[minmax(0,1fr)] gap-4 md:grid-cols-3">
           {audiences.map(({ href, icon: Icon, title, description, link }) => (
             <li key={href}>
               <Link href={href} className="group flex h-full flex-col gap-3 rounded-card border border-grey-200 bg-white p-6 hover:border-black">

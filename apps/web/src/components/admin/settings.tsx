@@ -77,7 +77,7 @@ function SettingForm({
   return (
     <ClientForm onSubmit={form.submit} pending={form.pending} className="flex flex-col gap-4">
       {form.formError ? <FormAlert>{form.formError}</FormAlert> : null}
-      <fieldset disabled={readOnly} className="grid min-w-0 gap-3 md:grid-cols-2">
+      <fieldset disabled={readOnly} className="grid grid-cols-[minmax(0,1fr)] min-w-0 gap-3 md:grid-cols-2">
         {children}
       </fieldset>
       {readOnly ? null : (

@@ -7,7 +7,9 @@ import { cn } from '../lib/cn';
  * black text, red appears as text and outline on white only.
  */
 export const statusPillVariants = cva(
-  'inline-flex h-6 items-center gap-1 rounded-full px-2.5 text-caption font-semibold whitespace-nowrap',
+  // A pill grows taller rather than wider: at 200% text "Paid (bank)" is wider than the row it
+  // sits in, and a pill that will not wrap pushes the whole screen sideways (M6-06).
+  'inline-flex min-h-6 items-center gap-1 rounded-full px-2.5 py-0.5 text-caption font-semibold',
   {
     variants: {
       status: {

@@ -91,7 +91,7 @@ export function Exceptions({ rows, today }: { rows: ExceptionRow[]; today: strin
 
       <ClientForm onSubmit={onSubmit} pending={pending} className="flex flex-col gap-3">
         {formError ? <FormAlert>{formError}</FormAlert> : null}
-        <div className="grid gap-3 md:grid-cols-2">
+        <div className="grid grid-cols-[minmax(0,1fr)] gap-3 md:grid-cols-2">
           <Field label="What is it?">
             <Select
               options={kinds}

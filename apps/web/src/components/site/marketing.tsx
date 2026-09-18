@@ -24,7 +24,7 @@ export function PageHero({
   visual?: ReactNode;
 }) {
   return (
-    <section className="mx-auto grid w-full max-w-6xl items-center gap-12 px-4 pt-10 pb-14 md:grid-cols-[minmax(0,1.1fr)_minmax(0,1fr)] md:px-6 md:pt-20 md:pb-24">
+    <section className="mx-auto grid w-full max-w-6xl grid-cols-[minmax(0,1fr)] items-center gap-12 px-4 pt-10 pb-14 md:grid-cols-[minmax(0,1.1fr)_minmax(0,1fr)] md:px-6 md:pt-20 md:pb-24">
       <div className="flex flex-col gap-5">
         {eyebrow ? <p className="text-small font-semibold text-grey-700">{eyebrow}</p> : null}
         <h1 className="text-display text-balance text-black md:text-hero">{title}</h1>
@@ -73,7 +73,7 @@ export interface Feature {
 
 export function FeatureGrid({ features, tone = 'white' }: { features: readonly Feature[]; tone?: 'white' | 'grey' }) {
   return (
-    <ul className="grid gap-x-8 gap-y-10 sm:grid-cols-2 lg:grid-cols-3">
+    <ul className="grid grid-cols-[minmax(0,1fr)] gap-x-8 gap-y-10 sm:grid-cols-2 lg:grid-cols-3">
       {features.map(({ icon: Icon, title, description }) => (
         <li key={title} className="flex flex-col gap-3">
           <span className={cn('flex size-12 items-center justify-center rounded-full text-black', tone === 'grey' ? 'bg-white' : 'bg-grey-100')} aria-hidden>
@@ -90,7 +90,7 @@ export function FeatureGrid({ features, tone = 'white' }: { features: readonly F
 /** Steps that happen in this order, and only then numbered. */
 export function Steps({ steps }: { steps: readonly { title: string; description: string }[] }) {
   return (
-    <ol className="grid gap-6 md:grid-cols-5">
+    <ol className="grid grid-cols-[minmax(0,1fr)] gap-6 md:grid-cols-5">
       {steps.map((step, index) => (
         <li key={step.title} className="flex flex-col gap-2 border-t-2 border-black pt-4">
           <span className="text-small font-semibold text-grey-700 tabular-nums">Step {index + 1}</span>

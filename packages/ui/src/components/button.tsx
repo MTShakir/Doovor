@@ -6,7 +6,9 @@ import { cn } from '../lib/cn';
 
 export const buttonVariants = cva(
   [
-    'inline-flex items-center justify-center gap-2 font-semibold whitespace-nowrap select-none',
+    // A label may wrap. At 200% text on a phone a long one has nowhere else to go, and a
+    // button that will not wrap pushes the whole page sideways instead (WCAG 1.4.4, M6-06).
+    'inline-flex items-center justify-center gap-2 text-center font-semibold text-balance select-none',
     'transition-colors duration-200 ease-out disabled:pointer-events-none aria-busy:pointer-events-none',
     'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-black',
   ],
@@ -21,10 +23,10 @@ export const buttonVariants = cva(
         destructive: 'rounded-full bg-red text-white hover:brightness-90 disabled:bg-grey-200 disabled:text-grey-400',
       },
       size: {
-        /** 48 px: the minimum touch target (PRD 7.1). */
-        md: 'h-12 px-6 text-body',
+        /** 48 px: the minimum touch target (PRD 7.1). A wrapped label makes it taller, not smaller. */
+        md: 'min-h-12 px-6 py-2 text-body',
         /** 56 px: bottom-of-screen primary actions. */
-        lg: 'h-14 px-8 text-body',
+        lg: 'min-h-14 px-8 py-2 text-body',
         /** Square 48 px icon button. Needs an aria-label. */
         icon: 'size-12 shrink-0',
       },

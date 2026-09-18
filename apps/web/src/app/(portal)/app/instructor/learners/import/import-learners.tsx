@@ -184,7 +184,7 @@ export function ImportLearners() {
                 {file.hasHeader ? ', with a header at the top' : ''}.
               </CardDescription>
             </div>
-            <div className="grid gap-4 md:grid-cols-2">
+            <div className="grid grid-cols-[minmax(0,1fr)] gap-4 md:grid-cols-2">
               {importFields.map((field) => (
                 <Field key={field} label={labels[field]}>
                   <Select

@@ -14,7 +14,8 @@ export default async function SiteLayout({ children }: { children: ReactNode }) 
   return (
     <div className="flex min-h-dvh flex-col bg-white">
       <SiteHeader appUrl={appUrl} />
-      <main id="content" className="flex flex-1 flex-col">
+      {/* Focusable so "Skip to content" moves the keyboard as well as the page (M6-06). */}
+      <main id="content" tabIndex={-1} className="flex flex-1 flex-col">
         {children}
       </main>
       <SiteFooter appUrl={appUrl} cities={cities} />

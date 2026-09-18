@@ -57,7 +57,7 @@ export function ReceiptDetailsForm({ initial }: { initial: ReceiptDetailsValues 
       <Field label="Address line 2 (optional)" error={errors.line2?.message}>
         <Input autoComplete="address-line2" {...form.register('line2')} />
       </Field>
-      <div className="grid gap-4 md:grid-cols-2">
+      <div className="grid grid-cols-[minmax(0,1fr)] gap-4 md:grid-cols-2">
         <Field label="Town or city" error={errors.town?.message}>
           <Input autoComplete="address-level2" {...form.register('town')} />
         </Field>

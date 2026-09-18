@@ -89,7 +89,7 @@ async function MoneyDashboard({ businessId, screen, period }: { businessId: stri
           </Link>
         ))}
       </nav>
-      <dl className="grid gap-3 sm:grid-cols-2" aria-label={summary.period.label}>
+      <dl className="grid grid-cols-[minmax(0,1fr)] gap-3 sm:grid-cols-2" aria-label={summary.period.label}>
         {summary.paid ? (
           <Figure
             label="Paid"

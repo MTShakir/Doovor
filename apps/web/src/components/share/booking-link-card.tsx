@@ -70,7 +70,7 @@ export function BookingLinkCard({ instructorName, bookingUrl, profileUrl, unavai
       <Field label="Link">
         <Input readOnly value={bookingUrl} onFocus={(event) => { event.target.select(); }} />
       </Field>
-      <div className="flex flex-wrap gap-2">
+      <div className="flex flex-wrap gap-2 [&>*]:min-w-0">
         <Button variant="secondary" onClick={() => { copy(bookingUrl, 'Link copied'); }}>
           <Copy className="size-5" aria-hidden />
           Copy link

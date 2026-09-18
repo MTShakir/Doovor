@@ -99,6 +99,10 @@
     font-size: var(--text-body);
     line-height: var(--text-body--line-height);
     -webkit-font-smoothing: antialiased;
+    /* A word too long for its box breaks rather than leaving it, which is what a name, a place or
+       a heading does when somebody sets their text to twice the size (WCAG 1.4.4, M6-06). It only
+       applies when the word would otherwise overflow, so ordinary text is unchanged. */
+    overflow-wrap: break-word;
   }
   :focus-visible {
     outline: 2px solid var(--color-black);

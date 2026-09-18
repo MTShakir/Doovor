@@ -26,7 +26,7 @@ export function WeekView({ from, lessons, dayOf, today, showInstructor = false }
   });
 
   return (
-    <ol className="grid gap-3 md:grid-cols-7 md:gap-2">
+    <ol className="grid grid-cols-[minmax(0,1fr)] gap-3 md:grid-cols-7 md:gap-2">
       {columns.map((column) => {
         const taught = teachingMinutes(column.lessons);
         return (

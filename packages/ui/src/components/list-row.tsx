@@ -30,7 +30,7 @@ export function ListRow({
   ...props
 }: ListRowProps) {
   const classes = cn(
-    'flex min-h-14 w-full items-center gap-3 px-4 py-2 text-left',
+    'flex min-h-14 w-full flex-wrap items-center gap-3 px-4 py-2 text-left',
     asChild &&
       'transition-colors duration-200 hover:bg-grey-100 focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-black',
     className,

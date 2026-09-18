@@ -122,7 +122,7 @@ export function BookingRulesForm({
           onCheckedChange={(instantBook) => { change({ instantBook }); }}
         />
       ) : null}
-      <fieldset disabled={readOnly} className="grid min-w-0 gap-3 md:grid-cols-2">
+      <fieldset disabled={readOnly} className="grid grid-cols-[minmax(0,1fr)] min-w-0 gap-3 md:grid-cols-2">
         {showBuffer ? (
           <Field
             label="Gap between lessons"

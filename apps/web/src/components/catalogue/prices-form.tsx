@@ -72,7 +72,7 @@ export function PricesForm({ rows, mode, save }: PricesFormProps) {
       {types.map(([typeId, typeName]) => (
         <fieldset key={typeId} className="flex flex-col gap-3">
           <legend className="mb-2 text-body font-semibold text-black">{typeName}</legend>
-          <div className="grid gap-3 sm:grid-cols-3">
+          <div className="grid grid-cols-[minmax(0,1fr)] gap-3 sm:grid-cols-3">
             {rows
               .filter((row) => row.lessonTypeId === typeId)
               .map((row) => {

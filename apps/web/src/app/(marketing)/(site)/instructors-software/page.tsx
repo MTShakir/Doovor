@@ -107,7 +107,7 @@ export default function InstructorsSoftwarePage() {
 
       {free && pro ? (
         <Band id="instructor-plans" title="Start free, add Pro when you want it">
-          <div className="grid gap-4 md:grid-cols-2">
+          <div className="grid grid-cols-[minmax(0,1fr)] gap-4 md:grid-cols-2">
             <PlanCard plan={free} signUpUrl={signUp} />
             <PlanCard plan={pro} signUpUrl={signUp} highlighted />
           </div>

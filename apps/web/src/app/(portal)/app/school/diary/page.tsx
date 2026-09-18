@@ -80,7 +80,7 @@ async function SchoolDay({ searchParams }: SchoolDiaryParams) {
         {shown.length === 0 ? (
           <EmptyState icon={Users} title="Nobody matches" description="Change the filters to see your instructors." />
         ) : (
-        <ol className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+        <ol className="grid grid-cols-[minmax(0,1fr)] gap-4 md:grid-cols-2 xl:grid-cols-3">
           {shown.map((member) => {
             const theirs = byInstructor.get(member.id) ?? [];
             return (

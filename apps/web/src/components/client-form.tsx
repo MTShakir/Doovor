@@ -41,20 +41,32 @@ export function ClientForm({
 }
 
 /**
+ * Each variant's own colours, kept while the only reason the button is disabled is that the page
+ * is not interactive yet. Without them it is greyed out for that moment, and a greyed out
+ * secondary button is grey-400 on grey-100, which is 2.8 to 1 (M6-06).
+ */
+const unfaded = {
+  primary: 'disabled:bg-black disabled:text-white',
+  secondary: 'disabled:bg-grey-100 disabled:text-black',
+  tertiary: 'disabled:text-black',
+  destructive: 'disabled:bg-red disabled:text-white',
+};
+
+/**
  * The primary action of a ClientForm. Disabled until hydrated, so pressing it (or Enter in a
  * field) before the page is ready does nothing instead of posting the raw form. It keeps its
  * normal look meanwhile, so the page does not flash.
  */
 export function SubmitButton({ className, disabled, variant, ...props }: Omit<ButtonProps, 'type' | 'asChild'>) {
   const hydrated = useHydrated();
-  const primary = variant === undefined || variant === 'primary';
+  const waiting = !hydrated && disabled !== true;
   return (
     <Button
       {...props}
       variant={variant}
       type="submit"
       disabled={disabled === true || !hydrated}
-      className={cn(!hydrated && disabled !== true && primary && 'disabled:bg-black disabled:text-white', className)}
+      className={cn(waiting && unfaded[variant ?? 'primary'], className)}
     />
   );
 }
