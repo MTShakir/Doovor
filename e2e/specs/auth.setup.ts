@@ -1,5 +1,5 @@
 import { expect, test as setup } from '@playwright/test';
-import { authFile, roles, type RoleKey } from '../support/accounts';
+import { authFile, cookieAnswer, roles, type RoleKey } from '../support/accounts';
 import { signInThroughForm } from '../support/sign-in';
 
 /**
@@ -11,6 +11,8 @@ for (const role of Object.keys(roles) as RoleKey[]) {
     await signInThroughForm(page, roles[role].email);
     await expect(page).toHaveURL(new RegExp(`${roles[role].landing}$`));
     await expect(page.getByRole('heading', { level: 1, name: roles[role].heading })).toBeVisible();
+    // Saved with the cookie question already answered, as every other project starts (M6-08).
+    await page.evaluate(({ name, value }) => { window.localStorage.setItem(name, value); }, cookieAnswer);
     await page.context().storageState({ path: authFile(role) });
   });
 }

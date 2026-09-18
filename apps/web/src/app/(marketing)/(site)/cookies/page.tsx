@@ -1,5 +1,6 @@
 import { brand } from '@repo/config/brand';
 import type { Metadata } from 'next';
+import { CookieChoice } from '@/components/analytics/cookie-choice';
 import { ForTheSolicitor, LegalPage, LegalSection, LegalTable, LegalText } from '@/components/site/legal';
 import { publicPageMetadata } from '@/lib/public/metadata';
 
@@ -20,12 +21,13 @@ export default function CookiesPage() {
       summary="What we keep on your device, what each thing is for, and what waits until you say yes."
       updated="18 September 2026"
     >
-      <LegalSection title="The short version">
+      <LegalSection title="Your answer">
         <LegalText>
           The things that make signing in work are set whatever you choose, because without them the app cannot know
           who you are. Nothing that counts how the product is used is set until you agree to it, and you can change
-          your mind at any time.
+          your mind here at any time.
         </LegalText>
+        <CookieChoice />
       </LegalSection>
 
       <LegalSection title="Set whatever you choose">
@@ -47,8 +49,8 @@ export default function CookiesPage() {
           ]}
         />
         <LegalText>
-          You can change your answer at the bottom of any page. Saying no removes what was set and stops anything
-          further being sent.
+          You can change your answer at the top of this page. Saying no stops anything further being sent and forgets
+          what was kept on this device.
         </LegalText>
       </LegalSection>
 

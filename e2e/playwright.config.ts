@@ -1,4 +1,5 @@
 import { defineConfig } from '@playwright/test';
+import { answeredCookies } from './support/accounts';
 
 const isCI = Boolean(process.env.CI);
 const baseURL = process.env.E2E_BASE_URL ?? 'http://localhost:3000';
@@ -32,6 +33,9 @@ export default defineConfig({
     timezoneId: 'Europe/London',
     trace: 'retain-on-failure',
     screenshot: 'only-on-failure',
+    // Already answered, the way most visitors arrive. The spec about the question itself opens a
+    // browser of its own that has not (M6-08).
+    storageState: answeredCookies,
   },
   projects: [
     {

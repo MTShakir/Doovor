@@ -4,6 +4,8 @@ import { Toaster } from '@repo/ui/toast';
 import type { Metadata, Viewport } from 'next';
 import { Inter } from 'next/font/google';
 import type { ReactNode } from 'react';
+import { Analytics } from '@/components/analytics/analytics';
+import { ConsentBanner } from '@/components/analytics/consent-banner';
 import { getAppUrl } from '@/lib/app-url';
 import './globals.css';
 
@@ -38,6 +40,8 @@ export default function RootLayout({ children }: { children: ReactNode }) {
       <body>
         {children}
         <Toaster />
+        <ConsentBanner />
+        <Analytics />
       </body>
     </html>
   );

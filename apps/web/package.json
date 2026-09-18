@@ -30,6 +30,7 @@
     "lucide-react": "catalog:",
     "mapbox-gl": "^3.30.0",
     "next": "catalog:",
+    "posthog-js": "^1.433.7",
     "react": "catalog:",
     "react-dom": "catalog:",
     "react-hook-form": "catalog:",

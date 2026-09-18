@@ -33,3 +33,12 @@ export type RoleKey = keyof typeof roles;
 export function authFile(role: RoleKey): string {
   return path.join(AUTH_DIR, `${role}.json`);
 }
+
+/**
+ * A browser that has already answered the cookie question, the way most visitors arrive (M6-08).
+ * Every project starts from this, so only the spec about the question itself sees it asked. The
+ * answer saved is no, so nothing is counted from a test run either.
+ */
+export const answeredCookies = path.join(AUTH_DIR, 'cookies-answered.json');
+
+export const cookieAnswer = { name: 'cookie-consent', value: 'declined' };

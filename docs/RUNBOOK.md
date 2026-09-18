@@ -243,6 +243,11 @@ from `pnpm test:e2e:stripe`; every other run stays on the fake.
   points anywhere but the local stack, and the scripts refuse to run if it does.
 
 ### Secrets
+- `pnpm db:env --force` refreshes the local stack's keys and keeps everything else already in
+  `.env.local`, copying the old file aside first (D-145). It used to rewrite the whole file, which
+  threw away every key pasted in by hand; if that has happened, the public values can be recovered
+  from `apps/web/.next`, where a build bakes them in, and the secret ones cannot.
+
 - They live in Vercel (app), the Supabase dashboard (Auth providers, SMTP), and `.env.local` on developer machines. None are in git; CI needs none today.
 - To rotate the Supabase secret key: create a new one, update Vercel, redeploy, then delete the old one.
 

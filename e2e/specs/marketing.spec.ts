@@ -1,4 +1,5 @@
 import { brand } from '@repo/config/brand';
+import { sitePagePaths } from '@repo/core/sitemap';
 import { foundingOffer, plans } from '@repo/config/plans';
 import { expect, test, type Page, type TestInfo } from '@playwright/test';
 import { expectAccessible, settled, snap } from '../support/helpers';
@@ -90,7 +91,7 @@ test.describe('the public site (PRD 8.3, 9.18, M5-09)', () => {
 
     const sitemap = await request.get('/sitemaps/pages.xml');
     const listed = [...(await sitemap.text()).matchAll(/<loc>([^<]+)<\/loc>/g)].map((match) => new URL(match[1] ?? '').pathname);
-    expect(listed).toEqual(['/', '/learners', '/instructors-software', '/driving-schools-software', '/pricing']);
+    expect(listed).toEqual([...sitePagePaths]);
 
     // A shared link to any of them previews with the site's own image.
     await page.goto('/pricing');
