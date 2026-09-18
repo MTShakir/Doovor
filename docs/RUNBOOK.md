@@ -227,6 +227,29 @@ from `pnpm test:e2e:stripe`; every other run stays on the fake.
 - Licences: `pnpm licenses list`. Nothing under the GPL or AGPL may be added; `docs/SECURITY.md` lists
   what is there today.
 
+### Watching for errors and outages (M6-10)
+- Errors are reported by `@sentry/nextjs`, started in `apps/web/src/lib/errors/sentry.ts`, from the
+  browser, the server and the jobs. With no `NEXT_PUBLIC_SENTRY_DSN` it does nothing at all, which
+  is how a developer's machine and the test runs stay quiet.
+- Every report passes through `apps/web/src/lib/errors/reporting.ts` first, which drops the query
+  string, the cookies and the body, removes any header whose name says it is a secret, keeps only
+  the account id of the person it happened to, and never records a session (D-150).
+- **To switch it on (product owner):**
+  1. Create a Sentry project in the EU region. Copy the DSN into `NEXT_PUBLIC_SENTRY_DSN` in Vercel,
+     for Preview and Production.
+  2. Confirm the wiring on a laptop first: put the DSN in `.env.local` for one run, build, open
+     `/dev/error`, which throws on purpose, and look for it in Sentry within a minute. Then take it
+     back out of `.env.local`. `/dev` routes answer only on a developer's machine and in the test
+     runs (M6-01), so there is nothing to press on staging; there, the proof is the first real
+     error arriving after the deploy.
+  3. Set an alert rule: any new issue in Production to email, and more than 10 of the same issue in
+     5 minutes to the phone.
+  4. Uptime: a check every minute on `https://app.doovor.com/api/health` (Sentry Crons, Better Stack
+     or UptimeRobot all do this), alerting after two failures so one slow response is not an alarm.
+  5. For readable stack traces, set `SENTRY_AUTH_TOKEN`, flip `'@sentry/cli'` to `true` in
+     `pnpm-workspace.yaml` and wrap `next.config.ts` with `withSentryConfig`. Not done here, because
+     it changes the build for everybody and buys nothing until step 1 is done.
+
 ### Load tests (M6-05)
 - `pnpm load` runs both, against the local stack and a build of the app on port 3000. It builds
   `load/fixtures.json` first, from the seeded database, runs the reads and then the booking scenario,

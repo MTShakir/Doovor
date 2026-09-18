@@ -12,6 +12,9 @@ trustPolicyIgnoreAfter: 43200
 
 # Dependencies allowed to run install scripts. Anything new must be reviewed and added here.
 allowBuilds:
+  # Reviewed, not needed: its script downloads the Sentry command line tool, which only a
+  # build that uploads source maps uses. We do not, so nothing needs it (M6-10, D-150).
+  '@sentry/cli': false
   # Reviewed, not needed: its script checks the native binding and, if it is missing,
   # installs a WebAssembly fallback. pnpm installs the binding as an optional dependency.
   '@swc/core': false

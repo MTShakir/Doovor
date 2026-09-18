@@ -19,6 +19,7 @@
     "@repo/emails": "workspace:*",
     "@repo/providers": "workspace:*",
     "@repo/ui": "workspace:*",
+    "@sentry/nextjs": "^10.75.0",
     "@serwist/turbopack": "9.5.12",
     "@stripe/react-stripe-js": "6.10.0",
     "@stripe/stripe-js": "9.16.0",
