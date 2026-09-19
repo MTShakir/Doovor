@@ -41,7 +41,7 @@
     "@lhci/cli": "0.15.1",
     "prettier": "^3.9.0",
     "supabase": "^2.117.0",
-    "turbo": "^2.10.0",
+    "turbo": "^2.10.13",
     "typescript": "~6.0.3"
   }
 }
