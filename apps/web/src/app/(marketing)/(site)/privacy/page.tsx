@@ -18,7 +18,7 @@ export default function PrivacyPage() {
     <LegalPage
       title="Privacy notice"
       summary={`What ${brand.name} holds about you, why we hold it, where it is kept and what you can ask us to do with it.`}
-      updated="18 September 2026"
+      updated="19 September 2026"
     >
       <LegalSection title="Who is responsible">
         <LegalText>
@@ -71,8 +71,10 @@ export default function PrivacyPage() {
 
       <LegalSection title="Where it is kept">
         <LegalText>
-          Everything is held in the United Kingdom or the European Union. The database, the files and the accounts are
-          in London. The app itself runs in London. Errors and usage go to services in the European Union.
+          The database, the files and the accounts are held in London, and the app itself runs in London. Errors and
+          usage go to services in the European Union. Some of the companies below work outside the United Kingdom:
+          Twilio sends text messages from the United States, and Stripe, Resend, Mapbox and Inngest may process what
+          they handle there. If you sign in with Google, Google handles that sign in.
         </LegalText>
         <LegalTable
           caption="The companies that hold something on our behalf."
@@ -81,10 +83,10 @@ export default function PrivacyPage() {
             ['Vercel', 'Runs the app itself. London.'],
             ['Stripe', 'Card payments and payouts. Stripe holds the card details; we never see them.'],
             ['Resend', 'Sends email.'],
-            ['Twilio', 'Sends text messages, including sign in codes.'],
+            ['Twilio', 'Sends text messages, including sign in codes. United States.'],
             ['Mapbox', 'Draws the maps of the area an instructor covers.'],
             ['PostHog', 'Counts how the product is used, once you have agreed. European Union.'],
-            ['Sentry', 'Records errors so we can fix them. European Union.'],
+            ['Sentry', 'Records errors so we can fix them. Reports reach it through our own server, so it never sees your address. European Union.'],
             ['Inngest', 'Runs the jobs behind reminders and receipts.'],
           ]}
         />
