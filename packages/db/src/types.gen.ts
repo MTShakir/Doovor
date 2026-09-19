@@ -2445,6 +2445,75 @@ export type Database = {
           },
         ]
       }
+      skill_assessments: {
+        Row: {
+          assessed_at: string
+          assessed_by: string | null
+          business_id: string
+          id: string
+          instructor_id: string | null
+          learner_id: string
+          rating: number
+          skill_code: string
+        }
+        Insert: {
+          assessed_at?: string
+          assessed_by?: string | null
+          business_id: string
+          id?: string
+          instructor_id?: string | null
+          learner_id: string
+          rating: number
+          skill_code: string
+        }
+        Update: {
+          assessed_at?: string
+          assessed_by?: string | null
+          business_id?: string
+          id?: string
+          instructor_id?: string | null
+          learner_id?: string
+          rating?: number
+          skill_code?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "skill_assessments_assessed_by_fkey"
+            columns: ["assessed_by"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "skill_assessments_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "businesses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "skill_assessments_instructor_id_fkey"
+            columns: ["instructor_id"]
+            isOneToOne: false
+            referencedRelation: "instructor_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "skill_assessments_learner_id_fkey"
+            columns: ["learner_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "skill_assessments_skill_code_fkey"
+            columns: ["skill_code"]
+            isOneToOne: false
+            referencedRelation: "skills"
+            referencedColumns: ["code"]
+          },
+        ]
+      }
       skill_ratings: {
         Row: {
           business_id: string
@@ -2756,22 +2825,7 @@ export type Database = {
           skill_code: string | null
           times: number | null
         }
-        Relationships: [
-          {
-            foreignKeyName: "skill_ratings_learner_id_fkey"
-            columns: ["learner_id"]
-            isOneToOne: false
-            referencedRelation: "users"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "skill_ratings_skill_code_fkey"
-            columns: ["skill_code"]
-            isOneToOne: false
-            referencedRelation: "skills"
-            referencedColumns: ["code"]
-          },
-        ]
+        Relationships: []
       }
     }
     Functions: {
@@ -3128,6 +3182,10 @@ export type Database = {
           p_transmission: Database["public"]["Enums"]["transmission"]
         }
         Returns: Json
+      }
+      rate_skill: {
+        Args: { p_learner_id: string; p_rating: number; p_skill_code: string }
+        Returns: string
       }
       record_offline_package: {
         Args: { p_learner_id: string; p_method: string; p_package_id: string }

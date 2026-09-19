@@ -32,6 +32,7 @@ import { CardFieldsSkeleton } from '@/components/payments/card-form';
 import { InstallHelpCard } from '@/components/pwa/install-help';
 import { InstallCard } from '@/components/pwa/install-prompt';
 import { LessonRecordCard } from '@/components/progress/lesson-record-card';
+import { EditableSkillMap } from '@/components/progress/editable-skill-map';
 import { SkillMap } from '@/components/progress/skill-map';
 import { SetupChecklist } from '@/components/setup-checklist';
 import { InstructorWeeks, OverviewFigures, OverviewSkeleton } from '@/components/school/overview';
@@ -806,6 +807,10 @@ export function DesignShowcase() {
         <Label>Skill map (M4-07)</Label>
         <div className="max-w-md">
           <SkillMap progress={exampleSkillMap} />
+        </div>
+        <Label>Skill map as the instructor sees it: tap an area to set it by hand (PRG-02, D-169)</Label>
+        <div className="max-w-md">
+          <EditableSkillMap learnerId="design-learner" learnerName="Olivia Brown" progress={exampleSkillMap} save={savedNothing} />
         </div>
         <NumberStepper
           label="Lesson length"

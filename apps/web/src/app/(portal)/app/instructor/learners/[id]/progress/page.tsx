@@ -8,10 +8,11 @@ import { notFound } from 'next/navigation';
 import { Suspense } from 'react';
 import { ProgressLayout } from '@/components/progress/progress-layout';
 import { RecordTimeline } from '@/components/progress/record-timeline';
-import { SkillMap } from '@/components/progress/skill-map';
+import { EditableSkillMap } from '@/components/progress/editable-skill-map';
 import { requirePortal } from '@/lib/auth/session';
 import { learnerCard } from '@/lib/learners/card';
 import { learnerSkillMap, lessonRecordPage } from '@/lib/lessons/records';
+import { rateSkill } from './actions';
 
 export const metadata: Metadata = { title: 'Progress' };
 
@@ -71,7 +72,7 @@ async function LearnerProgress({ params }: LearnerProgressPageProps) {
               }}
             />
           }
-          skills={<SkillMap progress={progress} />}
+          skills={<EditableSkillMap learnerId={card.learnerId} learnerName={card.fullName} progress={progress} save={rateSkill} />}
         />
       </div>
     </>

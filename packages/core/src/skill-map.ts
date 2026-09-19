@@ -25,7 +25,7 @@ export interface SkillProgress {
   area: SkillArea;
   /** The latest rating, or null for an area not worked on yet. */
   rating: SkillRating | null;
-  /** How many lessons rated it. */
+  /** How many times it has been rated: in lessons' records, or set by hand on the map (D-169). */
   times: number;
   lastRatedAt: Date | null;
 }
