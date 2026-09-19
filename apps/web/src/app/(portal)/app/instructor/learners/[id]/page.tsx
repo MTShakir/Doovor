@@ -11,6 +11,7 @@ import { ChevronLeft, Mail, MessageSquare, Phone, TrendingUp } from 'lucide-reac
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { Suspense } from 'react';
+import { PickupPoints } from '@/components/learners/pickup-points';
 import { BalanceHistory, BalanceLines, OwedBackList, OwedLessons } from '@/components/money/balance';
 import { MarkPaidButton } from '@/components/money/mark-paid';
 import { lessonWhen } from '@/components/progress/lesson-record-card';
@@ -24,10 +25,10 @@ import { learnerBalance } from '@/lib/payments/balance';
 import { noShowDisputes } from '@/lib/payments/disputes';
 import { packagesForSale } from '@/lib/payments/packages';
 import { BookLesson } from '../../book-lesson';
+import { addLearnerPickup, removeLearnerPickup, updateLearnerPickup } from './actions';
 import { HandBack } from './hand-back';
 import { NoShowDisputes } from './no-show-disputes';
 import { Notes } from './notes';
-import { PickupPoints } from './pickups';
 import { RefundPayment } from './refund-payment';
 import { SellPackage } from './sell-package';
 import { StatusControl } from './status-control';
@@ -103,7 +104,12 @@ async function Learner({ params }: LearnerPageProps) {
         <Lessons card={card} />
         <Progress card={card} />
         <Money card={card} access={access} />
-        <PickupPoints learnerId={card.learnerId} learnerName={card.fullName} pickups={pickups} />
+        <PickupPoints
+          learnerId={card.learnerId}
+          learnerName={card.fullName}
+          pickups={pickups}
+          actions={{ add: addLearnerPickup, update: updateLearnerPickup, remove: removeLearnerPickup }}
+        />
         <Notes learnerId={card.learnerId} notes={notes} viewerId={session.userId} />
         <History entries={history} />
       </div>

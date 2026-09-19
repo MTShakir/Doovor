@@ -47,19 +47,195 @@ function Section({ title, children }: { title: string; children: ReactNode }) {
 }
 
 type Action = 'move' | 'cancel' | 'paid';
+type Channel = 'email' | 'sms';
+
+/** What the sheet has to show: on its way, not to be had without signal, or the lesson itself. */
+export type LessonDetailsState =
+  | { kind: 'loading' }
+  | { kind: 'failed' }
+  | { kind: 'ready'; details: LessonDetails; ahead: boolean };
 
 /**
- * One lesson, opened from its card on Today or in the diary (DIA-04, LRN-02, D-166): when and
- * where, the learner's number with a call, a text and a WhatsApp, and the things an instructor
- * does to a lesson that is in, handed to the sheets that already do them.
+ * What a lesson's sheet says (DIA-04, LRN-02, D-166): when and where, the learner's number with a
+ * call, a text and a WhatsApp, a reminder by hand, and the things an instructor does to a lesson
+ * that is in. It shows what it is given and says what was tapped; the sheet does the rest.
+ */
+export function LessonDetailsBody({
+  state,
+  sending,
+  onRemind,
+  onAction,
+}: {
+  state: LessonDetailsState;
+  /** The reminder on its way, if one is. */
+  sending: Channel | null;
+  onRemind: (channel: Channel) => void;
+  onAction: (action: Action) => void;
+}) {
+  if (state.kind === 'failed') {
+    return <p className="text-body text-ink">Open this lesson again once you have signal to see everything about it.</p>;
+  }
+  if (state.kind === 'loading') {
+    return (
+      <div className="flex flex-col gap-3" aria-busy>
+        <Skeleton className="h-6 w-32" />
+        <Skeleton className="h-12 w-full" />
+        <Skeleton className="h-12 w-full" />
+      </div>
+    );
+  }
+
+  const { details, ahead } = state;
+  const lessonFacts = { status: details.status, paymentStatus: details.paymentStatus, kind: details.kind, source: details.source };
+  const off = details.status === 'cancelled' || details.status === 'declined' || details.status === 'expired';
+  const asked = details.status === 'requested';
+  const done = details.status === 'completed' || details.status === 'no_show';
+  const payable = !asked && !off && details.pricePence > 0 && ['unpaid', 'pending', 'failed'].includes(details.paymentStatus);
+  const route = details.pickup ? directionsTo(details.pickup) : null;
+  const phone = details.learner.phone;
+  const remindable = details.status === 'confirmed' && ahead;
+  const changeable = ahead && !asked && !off && !done;
+
+  return (
+    <div className="flex flex-col gap-6">
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <StatusPill status={lessonState(lessonFacts)}>{lessonStateLabel(lessonFacts)}</StatusPill>
+        <span className="text-body font-semibold text-black tabular-nums">{formatPence(details.pricePence)}</span>
+      </div>
+
+      <Section title="Pickup">
+        {details.pickup ? (
+          <div className="flex flex-col gap-2">
+            <p className="flex items-start gap-2 text-body text-ink">
+              <MapPin className="mt-0.5 size-5 shrink-0" aria-hidden />
+              <span>
+                {details.pickup.label}
+                {details.pickup.address || details.pickup.postcode ? (
+                  <span className="block text-small text-grey-700">
+                    {[details.pickup.address, details.pickup.postcode].filter(Boolean).join(', ')}
+                  </span>
+                ) : null}
+              </span>
+            </p>
+            {route ? (
+              <Button asChild variant="secondary" className="self-start">
+                <a href={route} target="_blank" rel="noreferrer">
+                  <Navigation className="size-5" aria-hidden />
+                  Navigate
+                </a>
+              </Button>
+            ) : null}
+          </div>
+        ) : (
+          <p className="text-small text-grey-700">No pickup point on this lesson.</p>
+        )}
+      </Section>
+
+      <Section title={`Get in touch with ${details.learner.name}`}>
+        {phone ? (
+          <div className="flex flex-wrap gap-2">
+            <Button asChild variant="secondary">
+              <a href={`tel:${phone}`}>
+                <Phone className="size-5" aria-hidden />
+                Call
+              </a>
+            </Button>
+            <Button asChild variant="secondary">
+              <a href={`sms:${phone}`}>
+                <MessageSquare className="size-5" aria-hidden />
+                Text
+              </a>
+            </Button>
+            <Button asChild variant="secondary">
+              <a href={whatsAppTo(phone)} target="_blank" rel="noreferrer">
+                <MessageCircle className="size-5" aria-hidden />
+                WhatsApp
+              </a>
+            </Button>
+          </div>
+        ) : (
+          <p className="text-small text-grey-700">No phone number for {details.learner.name} yet.</p>
+        )}
+      </Section>
+
+      {remindable ? (
+        <Section title="Send a reminder">
+          <div className="flex flex-wrap gap-2">
+            <Button
+              variant="secondary"
+              pending={sending === 'email'}
+              disabled={details.learner.email === null}
+              onClick={() => { onRemind('email'); }}
+            >
+              <Mail className="size-5" aria-hidden />
+              By email
+            </Button>
+            <Button
+              variant="secondary"
+              pending={sending === 'sms'}
+              disabled={!details.textReminders}
+              onClick={() => { onRemind('sms'); }}
+            >
+              <MessageSquare className="size-5" aria-hidden />
+              By SMS
+            </Button>
+          </div>
+          {details.learner.email === null ? (
+            <p className="text-small text-grey-700">No email address for {details.learner.name}.</p>
+          ) : null}
+          {details.textReminders ? null : (
+            <p className="text-small text-grey-700">
+              {phone === null ? `No phone number for ${details.learner.name}, so no text.` : 'Text reminders come with Pro.'}
+            </p>
+          )}
+        </Section>
+      ) : null}
+
+      {payable || changeable ? (
+        <Section title="This lesson">
+          <div className="flex flex-wrap gap-2">
+            {payable ? (
+              <Button variant="secondary" onClick={() => { onAction('paid'); }}>
+                <Banknote className="size-5" aria-hidden />
+                Mark paid
+              </Button>
+            ) : null}
+            {changeable ? (
+              <>
+                <Button variant="secondary" onClick={() => { onAction('move'); }}>
+                  <CalendarClock className="size-5" aria-hidden />
+                  Move
+                </Button>
+                <Button variant="tertiary" onClick={() => { onAction('cancel'); }}>
+                  <X className="size-5" aria-hidden />
+                  Cancel
+                </Button>
+              </>
+            ) : null}
+          </div>
+        </Section>
+      ) : null}
+
+      <Link
+        href={`/app/instructor/learners/${details.learner.id}` as Route}
+        className="flex h-12 w-fit items-center gap-2 rounded-full text-body font-semibold text-black underline-offset-4 hover:underline"
+      >
+        <UserRound className="size-5" aria-hidden />
+        Open {details.learner.name}&apos;s card
+      </Link>
+    </div>
+  );
+}
+
+/**
+ * One lesson, opened from its card on Today or in the diary (DIA-04, LRN-02, D-166). Reads the
+ * lesson when it opens, sends a reminder when asked, and hands Mark paid, Move and Cancel to the
+ * sheets that already do them.
  */
 export function LessonDetailsSheet({ lesson, onClose }: { lesson: LessonAtAGlance; onClose: () => void }) {
-  const [details, setDetails] = useState<LessonDetails | null>(null);
-  // Whether it is still to come, decided when it opened rather than again on every redraw.
-  const [ahead, setAhead] = useState(false);
-  const [failed, setFailed] = useState(false);
+  const [state, setState] = useState<LessonDetailsState>({ kind: 'loading' });
   const [action, setAction] = useState<Action | null>(null);
-  const [sending, setSending] = useState<'email' | 'sms' | null>(null);
+  const [sending, setSending] = useState<Channel | null>(null);
   const [, startTransition] = useTransition();
 
   useEffect(() => {
@@ -67,19 +243,22 @@ export function LessonDetailsSheet({ lesson, onClose }: { lesson: LessonAtAGlanc
     void lessonDetailsFor({ bookingId: lesson.id })
       .then((result) => {
         if (!current) return;
-        if (result.ok) {
-          setDetails(result.data);
-          setAhead(new Date(result.data.startsAt).getTime() > Date.now());
-        } else setFailed(true);
+        // Whether it is still to come, decided when it opened rather than again on every redraw.
+        setState(
+          result.ok
+            ? { kind: 'ready', details: result.data, ahead: new Date(result.data.startsAt).getTime() > Date.now() }
+            : { kind: 'failed' },
+        );
       })
       // No signal: the card said what it knows, and the rest waits for a connection.
-      .catch(() => { if (current) setFailed(true); });
+      .catch(() => { if (current) setState({ kind: 'failed' }); });
     return () => {
       current = false;
     };
   }, [lesson.id]);
 
-  if (details && action) {
+  if (state.kind === 'ready' && action) {
+    const { details } = state;
     return (
       <LessonSheets
         lesson={{
@@ -97,21 +276,8 @@ export function LessonDetailsSheet({ lesson, onClose }: { lesson: LessonAtAGlanc
     );
   }
 
-  const startsAt = new Date(lesson.startsAt);
-  const facts = details ? { status: details.status, paymentStatus: details.paymentStatus, kind: details.kind, source: details.source } : null;
-  const state = facts ? lessonState(facts) : null;
-  const off = details?.status === 'cancelled' || details?.status === 'declined' || details?.status === 'expired';
-  const asked = details?.status === 'requested';
-  const done = details?.status === 'completed' || details?.status === 'no_show';
-  const payable =
-    details !== null && !asked && !off && details.pricePence > 0 && ['unpaid', 'pending', 'failed'].includes(details.paymentStatus);
-  const route = details?.pickup ? directionsTo(details.pickup) : null;
-  const phone = details?.learner.phone ?? null;
-  const remindable = details?.status === 'confirmed' && ahead;
-  const changeable = ahead && !asked && !off && !done;
-
   // Sent the way the automatic reminders go, so what the learner switched off stays off (D-166).
-  const remind = (channel: 'email' | 'sms') => {
+  const remind = (channel: Channel) => {
     setSending(channel);
     startTransition(async () => {
       const result = await sendReminder({ bookingId: lesson.id, channel });
@@ -124,6 +290,7 @@ export function LessonDetailsSheet({ lesson, onClose }: { lesson: LessonAtAGlanc
     });
   };
 
+  const startsAt = new Date(lesson.startsAt);
   return (
     <Sheet
       open
@@ -131,143 +298,7 @@ export function LessonDetailsSheet({ lesson, onClose }: { lesson: LessonAtAGlanc
       title={lesson.learnerName}
       description={`${formatDate(startsAt)}, ${formatTime(startsAt)} to ${formatTime(new Date(lesson.endsAt))}. ${lesson.lessonType}.`}
     >
-      {failed ? (
-        <p className="text-body text-ink">Open this lesson again once you have signal to see everything about it.</p>
-      ) : details === null || facts === null || state === null ? (
-        <div className="flex flex-col gap-3" aria-busy>
-          <Skeleton className="h-6 w-32" />
-          <Skeleton className="h-12 w-full" />
-          <Skeleton className="h-12 w-full" />
-        </div>
-      ) : (
-        <div className="flex flex-col gap-6">
-          <div className="flex flex-wrap items-center justify-between gap-2">
-            <StatusPill status={state}>{lessonStateLabel(facts)}</StatusPill>
-            <span className="text-body font-semibold text-black tabular-nums">{formatPence(details.pricePence)}</span>
-          </div>
-
-          <Section title="Pickup">
-            {details.pickup ? (
-              <div className="flex flex-col gap-2">
-                <p className="flex items-start gap-2 text-body text-ink">
-                  <MapPin className="mt-0.5 size-5 shrink-0" aria-hidden />
-                  <span>
-                    {details.pickup.label}
-                    {details.pickup.address || details.pickup.postcode ? (
-                      <span className="block text-small text-grey-700">
-                        {[details.pickup.address, details.pickup.postcode].filter(Boolean).join(', ')}
-                      </span>
-                    ) : null}
-                  </span>
-                </p>
-                {route ? (
-                  <Button asChild variant="secondary" className="self-start">
-                    <a href={route} target="_blank" rel="noreferrer">
-                      <Navigation className="size-5" aria-hidden />
-                      Navigate
-                    </a>
-                  </Button>
-                ) : null}
-              </div>
-            ) : (
-              <p className="text-small text-grey-700">No pickup point on this lesson.</p>
-            )}
-          </Section>
-
-          <Section title={`Get in touch with ${details.learner.name}`}>
-            {phone ? (
-              <div className="flex flex-wrap gap-2">
-                <Button asChild variant="secondary">
-                  <a href={`tel:${phone}`}>
-                    <Phone className="size-5" aria-hidden />
-                    Call
-                  </a>
-                </Button>
-                <Button asChild variant="secondary">
-                  <a href={`sms:${phone}`}>
-                    <MessageSquare className="size-5" aria-hidden />
-                    Text
-                  </a>
-                </Button>
-                <Button asChild variant="secondary">
-                  <a href={whatsAppTo(phone)} target="_blank" rel="noreferrer">
-                    <MessageCircle className="size-5" aria-hidden />
-                    WhatsApp
-                  </a>
-                </Button>
-              </div>
-            ) : (
-              <p className="text-small text-grey-700">No phone number for {details.learner.name} yet.</p>
-            )}
-          </Section>
-
-          {remindable ? (
-            <Section title="Send a reminder">
-              <div className="flex flex-wrap gap-2">
-                <Button
-                  variant="secondary"
-                  pending={sending === 'email'}
-                  disabled={details.learner.email === null}
-                  onClick={() => { remind('email'); }}
-                >
-                  <Mail className="size-5" aria-hidden />
-                  By email
-                </Button>
-                <Button
-                  variant="secondary"
-                  pending={sending === 'sms'}
-                  disabled={!details.textReminders}
-                  onClick={() => { remind('sms'); }}
-                >
-                  <MessageSquare className="size-5" aria-hidden />
-                  By SMS
-                </Button>
-              </div>
-              {details.learner.email === null ? (
-                <p className="text-small text-grey-700">No email address for {details.learner.name}.</p>
-              ) : null}
-              {details.textReminders ? null : (
-                <p className="text-small text-grey-700">
-                  {phone === null ? `No phone number for ${details.learner.name}, so no text.` : 'Text reminders come with Pro.'}
-                </p>
-              )}
-            </Section>
-          ) : null}
-
-          {payable || changeable ? (
-            <Section title="This lesson">
-              <div className="flex flex-wrap gap-2">
-                {payable ? (
-                  <Button variant="secondary" onClick={() => { setAction('paid'); }}>
-                    <Banknote className="size-5" aria-hidden />
-                    Mark paid
-                  </Button>
-                ) : null}
-                {changeable ? (
-                  <>
-                    <Button variant="secondary" onClick={() => { setAction('move'); }}>
-                      <CalendarClock className="size-5" aria-hidden />
-                      Move
-                    </Button>
-                    <Button variant="tertiary" onClick={() => { setAction('cancel'); }}>
-                      <X className="size-5" aria-hidden />
-                      Cancel
-                    </Button>
-                  </>
-                ) : null}
-              </div>
-            </Section>
-          ) : null}
-
-          <Link
-            href={`/app/instructor/learners/${details.learner.id}` as Route}
-            className="flex h-12 w-fit items-center gap-2 rounded-full text-body font-semibold text-black underline-offset-4 hover:underline"
-          >
-            <UserRound className="size-5" aria-hidden />
-            Open {details.learner.name}&apos;s card
-          </Link>
-        </div>
-      )}
+      <LessonDetailsBody state={state} sending={sending} onRemind={remind} onAction={setAction} />
     </Sheet>
   );
 }

@@ -34,6 +34,12 @@ import { InstallCard } from '@/components/pwa/install-prompt';
 import { LessonRecordCard } from '@/components/progress/lesson-record-card';
 import { EditableSkillMap } from '@/components/progress/editable-skill-map';
 import { SkillMap } from '@/components/progress/skill-map';
+import { PickupPoints } from '@/components/learners/pickup-points';
+import { LessonDetailsBody } from '@/components/lessons/lesson-details';
+import { UpcomingLessons } from '@/components/lessons/upcoming-lessons';
+import type { LessonDetails } from '@/lib/lessons/details';
+import type { TeachingLesson } from '@/lib/lessons/teaching';
+import type { LearnerPickupPoint } from '@/lib/pickup/list';
 import { SetupChecklist } from '@/components/setup-checklist';
 import { InstructorWeeks, OverviewFigures, OverviewSkeleton } from '@/components/school/overview';
 import { DashboardFigures, DashboardSkeleton, WaitingOnStaff } from '@/components/admin/dashboard';
@@ -350,6 +356,73 @@ const examplePackages = [
 
 const savedNothing = () => Promise.resolve({ ok: true as const, data: null });
 const savedPackage = () => Promise.resolve({ ok: true as const, data: { packageId: 'package-10' } });
+const savedPickups = { add: savedNothing, update: savedNothing, remove: savedNothing };
+
+/** A learner's pickup points on their card: the school's, where lessons start, and the learner's own (D-168). */
+const examplePickups: LearnerPickupPoint[] = [
+  { id: 'pickup-1', kind: 'home', label: 'Home', address: '12 Hyde Park Road, Leeds', postcode: 'LS6 1AB', isDefault: true, ours: true },
+  { id: 'pickup-2', kind: 'work', label: 'Work', address: '1 Wellington Place, Leeds', postcode: 'LS1 4AP', isDefault: false, ours: false },
+];
+
+/** A lesson as its sheet shows it (D-166), with a number from the range kept for drama. */
+const exampleLesson: LessonDetails = {
+  id: 'lesson-1',
+  startsAt: '2026-09-22T13:30:00Z',
+  endsAt: '2026-09-22T15:00:00Z',
+  status: 'confirmed',
+  paymentStatus: 'unpaid',
+  kind: 'standard',
+  source: 'instructor',
+  lessonType: 'Standard lesson',
+  pricePence: 6300,
+  learner: { id: 'learner-1', name: 'Olivia Brown', phone: '+447700900123', email: 'olivia@example.com' },
+  pickup: { label: 'Home', address: '12 Hyde Park Road, Leeds', postcode: 'LS6 1AB' },
+  rules: { cancellationWindowHours: 24, lateFeePercent: 100 },
+  textReminders: true,
+};
+const exampleLessonUnreachable: LessonDetails = {
+  ...exampleLesson,
+  id: 'lesson-2',
+  paymentStatus: 'paid_cash',
+  learner: { id: 'learner-2', name: 'Noah Wilson', phone: null, email: null },
+  pickup: null,
+  textReminders: false,
+};
+const exampleLessonDone: LessonDetails = { ...exampleLesson, id: 'lesson-3', status: 'completed', paymentStatus: 'paid_card' };
+
+/** The lessons after today, under Today's (D-167). */
+const exampleUpcoming: TeachingLesson[] = [
+  {
+    id: 'upcoming-1',
+    startsAt: '2026-09-21T08:00:00Z',
+    endsAt: '2026-09-21T09:30:00Z',
+    learnerName: 'Olivia Brown',
+    lessonType: 'Standard lesson',
+    pickup: { label: 'Home', address: '12 Hyde Park Road, Leeds', postcode: 'LS6 1AB' },
+    facts: { status: 'confirmed', paymentStatus: 'unpaid', kind: 'standard', source: 'instructor' },
+    recorded: false,
+  },
+  {
+    id: 'upcoming-2',
+    startsAt: '2026-09-21T13:00:00Z',
+    endsAt: '2026-09-21T14:00:00Z',
+    learnerName: 'Noah Wilson',
+    lessonType: 'Standard lesson',
+    pickup: null,
+    facts: { status: 'confirmed', paymentStatus: 'paid_credit', kind: 'standard', source: 'self' },
+    recorded: false,
+  },
+  {
+    id: 'upcoming-3',
+    startsAt: '2026-09-23T09:00:00Z',
+    endsAt: '2026-09-23T11:00:00Z',
+    learnerName: 'Amelia Evans',
+    lessonType: 'Mock test',
+    pickup: { label: 'College', address: 'Leeds City College', postcode: 'LS2 7EA' },
+    facts: { status: 'confirmed', paymentStatus: 'paid_card', kind: 'mock_test', source: 'instructor' },
+    recorded: false,
+  },
+];
 
 const pillStatuses: PillStatus[] = ['confirmed', 'pending', 'completed', 'paid', 'cancelled', 'attention', 'unpaid', 'overdue', 'credit', 'gap-fill', 'test-day'];
 
@@ -865,6 +938,11 @@ export function DesignShowcase() {
           />
           <PickupPointPicker label="Nothing added yet" options={[]} onChange={() => undefined} />
         </div>
+        <Label>A learner&apos;s pickup points on their card: the school&apos;s, where lessons start, and one the learner added; and none yet (COV-04, D-168)</Label>
+        <div className="grid items-start gap-4 md:grid-cols-2">
+          <PickupPoints learnerId="design-learner" learnerName="Olivia Brown" pickups={examplePickups} actions={savedPickups} />
+          <PickupPoints learnerId="design-learner-2" learnerName="Noah Wilson" pickups={[]} actions={savedPickups} />
+        </div>
       </Section>
 
       <Section title="Public profile">
@@ -1336,6 +1414,39 @@ export function DesignShowcase() {
             marked={new Set(['2026-09-15', '2026-09-17', '2026-09-22'])}
           />
         </Card>
+        <Label>
+          A lesson opened from its card (DIA-04, D-166): on its way, with no signal, one to come with the learner&apos;s
+          number on Pro, one paid in cash with no number or email, and one that has happened
+        </Label>
+        <div className="grid items-start gap-4 md:grid-cols-2">
+          {(
+            [
+              ['On its way', { kind: 'loading' }],
+              ['No signal', { kind: 'failed' }],
+              ['Olivia Brown', { kind: 'ready', details: exampleLesson, ahead: true }],
+              ['Noah Wilson', { kind: 'ready', details: exampleLessonUnreachable, ahead: true }],
+              ['Olivia Brown, last week', { kind: 'ready', details: exampleLessonDone, ahead: false }],
+            ] as const
+          ).map(([title, state]) => (
+            <Card key={title} className="flex flex-col gap-4">
+              <CardTitle>{title}</CardTitle>
+              <LessonDetailsBody
+                state={state}
+                sending={null}
+                onRemind={(channel) => toast(`Reminder by ${channel === 'email' ? 'email' : 'text'}`)}
+                onAction={(action) => toast(`Opens ${action}`)}
+              />
+            </Card>
+          ))}
+        </div>
+        <Label>The lessons after today, under Today&apos;s, five at a time (DIA-04, D-167); and nothing booked yet</Label>
+        {/* Formatting a lesson's time reads the clock, which a page built ahead of time must leave to the visit. */}
+        <Suspense fallback={<SkeletonRow />}>
+          <div className="grid items-start gap-4 md:grid-cols-2">
+            <UpcomingLessons lessons={exampleUpcoming} more shown={5} />
+            <UpcomingLessons lessons={[]} more={false} shown={5} />
+          </div>
+        </Suspense>
       </Section>
 
       <Section title="Overlays">

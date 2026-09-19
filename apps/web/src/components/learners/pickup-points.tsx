@@ -1,5 +1,6 @@
 'use client';
 
+import type { Result } from '@repo/core/result';
 import { pickupKinds, type PickupKind } from '@repo/core/schemas/pickup';
 import { Button } from '@repo/ui/button';
 import { Card, CardTitle } from '@repo/ui/card';
@@ -12,17 +13,23 @@ import { Sheet } from '@repo/ui/sheet';
 import { StatusPill } from '@repo/ui/status-pill';
 import { toast } from '@repo/ui/toast';
 import { Plus } from 'lucide-react';
-import { Fragment, useState, useTransition } from 'react';
+import { Fragment, useId, useState, useTransition } from 'react';
 import { FormAlert } from '@/components/form-alert';
 import type { LearnerPickupPoint } from '@/lib/pickup/list';
-import { addLearnerPickup, removeLearnerPickup, updateLearnerPickup } from './actions';
 
-interface Draft {
+export interface PickupDraft {
   kind: PickupKind;
   label: string;
   address: string;
   postcode: string;
   isDefault: boolean;
+}
+
+/** What the card saves with: the learner's page hands in its actions, the design page stand-ins. */
+export interface PickupActions {
+  add: (input: { learnerId: string; pickup: PickupDraft }) => Promise<Result<null>>;
+  update: (input: { learnerId: string; pickupId: string; pickup: PickupDraft }) => Promise<Result<null>>;
+  remove: (input: { learnerId: string; pickupId: string }) => Promise<Result<null>>;
 }
 
 /** The postcode first, so it is what a narrow row still shows when the address runs out of room. */
@@ -38,12 +45,15 @@ export function PickupPoints({
   learnerId,
   learnerName,
   pickups,
+  actions,
 }: {
   learnerId: string;
   learnerName: string;
   pickups: LearnerPickupPoint[];
+  actions: PickupActions;
 }) {
-  const [editing, setEditing] = useState<{ id: string | null; draft: Draft } | null>(null);
+  const titleId = useId();
+  const [editing, setEditing] = useState<{ id: string | null; draft: PickupDraft } | null>(null);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [formError, setFormError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
@@ -60,7 +70,7 @@ export function PickupPoints({
     });
   };
 
-  const change = (next: Partial<Draft>) => {
+  const change = (next: Partial<PickupDraft>) => {
     setEditing((current) => (current ? { ...current, draft: { ...current.draft, ...next } } : current));
   };
 
@@ -77,8 +87,8 @@ export function PickupPoints({
     setFormError(null);
     startTransition(async () => {
       const result = id
-        ? await updateLearnerPickup({ learnerId, pickupId: id, pickup: draft })
-        : await addLearnerPickup({ learnerId, pickup: draft });
+        ? await actions.update({ learnerId, pickupId: id, pickup: draft })
+        : await actions.add({ learnerId, pickup: draft });
       if (!result.ok) {
         failed(result);
         return;
@@ -92,7 +102,7 @@ export function PickupPoints({
     if (!editing?.id) return;
     const pickupId = editing.id;
     startTransition(async () => {
-      const result = await removeLearnerPickup({ learnerId, pickupId });
+      const result = await actions.remove({ learnerId, pickupId });
       if (!result.ok) {
         failed(result);
         return;
@@ -103,9 +113,9 @@ export function PickupPoints({
   };
 
   return (
-    <Card padding="none" role="region" aria-labelledby="pickups-title">
+    <Card padding="none" role="region" aria-labelledby={titleId}>
       <div className="flex flex-wrap items-center justify-between gap-2 px-4 pt-4 pb-2">
-        <CardTitle id="pickups-title">Pickup points</CardTitle>
+        <CardTitle id={titleId}>Pickup points</CardTitle>
         <Button variant="secondary" onClick={() => { open(null); }}>
           <Plus className="size-5" aria-hidden />
           Add one
