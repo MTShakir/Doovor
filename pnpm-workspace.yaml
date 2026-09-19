@@ -48,7 +48,7 @@ auditConfig:
 
 # Shared versions. Workspace packages reference these with "catalog:".
 catalog:
-  "@types/node": ^24.0.0
+  "@types/node": ^26.6.1
   "@types/react": ^19.2.0
   "@types/react-dom": ^19.2.0
   eslint: ^10.10.0
