@@ -33,7 +33,9 @@ export const viewport: Viewport = {
 
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (
-    <html lang="en-GB" className={inter.variable}>
+    // The script in the head marks this element before React arrives (D-152), so React is told to
+    // expect an attribute it did not draw. That covers this element's own attributes, nothing inside.
+    <html lang="en-GB" className={inter.variable} suppressHydrationWarning>
       <head>
         <BrandStyle />
         {/* Before the first paint: says whether the cookie question has been answered, so the
