@@ -29,6 +29,7 @@ import { planSummaries } from '@/lib/site/plan-features';
 import { NoSignalBanner } from '@/components/offline/connection-banner';
 import { KeptRecordsNotice } from '@/components/offline/kept-records-notice';
 import { CardFieldsSkeleton } from '@/components/payments/card-form';
+import { InstallHelpCard } from '@/components/pwa/install-help';
 import { InstallCard } from '@/components/pwa/install-prompt';
 import { LessonRecordCard } from '@/components/progress/lesson-record-card';
 import { SkillMap } from '@/components/progress/skill-map';
@@ -401,6 +402,9 @@ const slots = ['09:00', '10:30', '12:00', '13:30', '15:00', '16:30', '18:00'].ma
   label,
   disabled: index === 2,
 }));
+
+/** Where the app is, as the Install the app page names it to somebody in another browser on an iPhone. */
+const appHost = new URL(brand.appUrl).host;
 
 export function DesignShowcase() {
   const [postcode, setPostcode] = useState('LS6 3HN');
@@ -823,6 +827,17 @@ export function DesignShowcase() {
         <div className="grid items-start gap-4 md:grid-cols-2">
           <InstallCard offer="button" why="It opens in one tap, and Today still opens where there is no signal." onInstall={() => toast('Installing')} onDismiss={() => toast('Not now')} />
           <InstallCard offer="ios-steps" why="Your lessons, payments and progress, one tap away." onInstall={() => undefined} onDismiss={() => toast('Not now')} />
+        </div>
+        <Label>
+          Install the app, from the menu after not now (D-160): the browser&apos;s own prompt, Safari on an iPhone, another browser
+          on an iPhone, any other browser, and once installed
+        </Label>
+        <div className="grid items-start gap-4 md:grid-cols-2">
+          <InstallHelpCard help="button" host={appHost} onInstall={() => toast('Installing')} />
+          <InstallHelpCard help="ios-safari" host={appHost} onInstall={() => undefined} />
+          <InstallHelpCard help="ios-other-browser" host={appHost} onInstall={() => undefined} />
+          <InstallHelpCard help="browser-menu" host={appHost} onInstall={() => undefined} />
+          <InstallHelpCard help="installed" host={appHost} onInstall={() => undefined} />
         </div>
       </Section>
 

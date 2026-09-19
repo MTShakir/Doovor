@@ -1,4 +1,4 @@
-import { MoreMenu } from '@/components/more-menu';
+import { installAppLink, MoreMenu } from '@/components/more-menu';
 import { notificationsMenuLink } from '@/lib/notifications/inbox';
 
 export default async function InstructorMorePage() {
@@ -10,6 +10,7 @@ export default async function InstructorMorePage() {
         { href: '/app/instructor/settings', title: 'Settings', subtitle: 'Booking rules and working hours' },
         await notificationsMenuLink(),
         { href: '/account', title: 'Account and security', subtitle: 'Password, devices, two-step verification' },
+        installAppLink,
       ]}
     />
   );

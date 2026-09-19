@@ -49,7 +49,18 @@ export const portals: [RoleKey, string[]][] = [
       '/notifications/settings',
     ],
   ],
-  ['learner', ['/app/learner', '/app/learner/lessons', '/app/learner/payments', '/app/learner/progress', '/app/learner/account', '/notifications']],
+  [
+    'learner',
+    [
+      '/app/learner',
+      '/app/learner/lessons',
+      '/app/learner/payments',
+      '/app/learner/progress',
+      '/app/learner/account',
+      '/notifications',
+      '/account/install',
+    ],
+  ],
   ['schoolOwner', ['/app/school', '/app/school/diary', '/app/school/instructors', '/app/school/learners', '/app/school/money', '/app/school/settings', '/app/school/more']],
   ['admin', ['/admin', '/admin/businesses', '/admin/instructors', '/admin/learners', '/admin/regions', '/admin/settings', '/admin/verification', '/admin/audit-log']],
 ];
