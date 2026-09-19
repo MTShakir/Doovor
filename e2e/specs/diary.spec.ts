@@ -45,9 +45,12 @@ test.describe('instructor diary (DIA-03, DIA-04, M1-19)', () => {
     await diary.getByRole('link', { name: 'Previous' }).click();
     await expect(page).toHaveURL(new RegExp(`date=${tuesday}`));
 
-    // The day these tests start from is never today, so going back to today always leaves it.
-    await diary.getByRole('link', { name: 'Today' }).click();
+    // The day these tests start from is never today, so going back to today always leaves it. It
+    // says where it goes, rather than looking like a label for the day on screen, and once there it
+    // has nowhere to go, so it is not offered.
+    await diary.getByRole('link', { name: 'Back to today' }).click();
     await expect(page).not.toHaveURL(new RegExp(`date=${tuesday}`));
+    await expect(diary.getByRole('link', { name: 'Back to today' })).toHaveCount(0);
   });
 
   test('says so plainly when a day is empty', async ({ page }) => {

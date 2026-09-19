@@ -57,6 +57,16 @@ export function windowFor(view: ChosenView, date: LocalDate): DiaryWindow {
   return { from, to, startsAt, endsAt };
 }
 
+/**
+ * Whether a view of this date shows today, so the way back to today is offered only when it would
+ * go somewhere (DIA-03).
+ */
+export function containsToday(view: DiaryView, date: LocalDate, today: LocalDate): boolean {
+  if (view === 'day') return date === today;
+  if (view === 'week') return startOfWeek(date) === startOfWeek(today);
+  return startOfMonth(date) === startOfMonth(today);
+}
+
 /** The date the arrows move to. */
 export function step(view: ChosenView, date: LocalDate, direction: 1 | -1): LocalDate {
   // Without a choice, the arrows move a week, which is what the wider screen is showing.

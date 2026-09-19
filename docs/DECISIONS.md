@@ -839,3 +839,4 @@ Every decision made without the product owner, newest last. Format: date, decisi
 - **Decision:** On a phone the admin portal still asks for a larger screen (PRD 8.2), and now also offers the person's other portals: Open your school, Open your diary, Open your lessons, in the order they would land in.
 - **Options:** Land staff on another portal when they are on a phone; leave it.
 - **Reason:** Staff land on admin first, so the product owner's own account, a school's owner made super admin, would have met a dead end on the phone at every sign in. Choosing a portal by screen size on the server means guessing the screen; offering the way on is exact.
+

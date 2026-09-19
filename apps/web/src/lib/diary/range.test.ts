@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { dateFrom, endOfMonth, isDiaryView, startOfMonth, startOfWeek, step, windowFor } from './range';
+import { containsToday, dateFrom, endOfMonth, isDiaryView, startOfMonth, startOfWeek, step, windowFor } from './range';
 
 describe('diary windows (DIA-03, M1-19)', () => {
   it('starts a week on Monday', () => {
@@ -62,5 +62,22 @@ describe('no view chosen (DIA-03, M1-20)', () => {
   it('moves a week at a time, which is what the wider screen is showing', () => {
     expect(step('responsive', '2026-09-15', 1)).toBe('2026-09-22');
     expect(step('responsive', '2026-09-15', -1)).toBe('2026-09-08');
+  });
+});
+
+describe('whether the diary is showing today (DIA-03)', () => {
+  const today = '2026-09-19'; // A Saturday.
+
+  it('knows a day, a week and a month that include today', () => {
+    expect(containsToday('day', '2026-09-19', today)).toBe(true);
+    expect(containsToday('week', '2026-09-14', today)).toBe(true);
+    expect(containsToday('month', '2026-09-01', today)).toBe(true);
+  });
+
+  it('knows one that does not, however close', () => {
+    expect(containsToday('day', '2026-09-20', today)).toBe(false);
+    // Monday 21 September starts the next week.
+    expect(containsToday('week', '2026-09-21', today)).toBe(false);
+    expect(containsToday('month', '2026-10-01', today)).toBe(false);
   });
 });
