@@ -16,19 +16,30 @@ function items(portal: Portal, surface: 'mobile' | 'desktop', pathname: string |
   }));
 }
 
-function sidebar(portal: Portal, pathname: string | null, footer?: ReactNode) {
+interface SidebarParts {
+  footer?: ReactNode;
+  /** Beside the name at the top of the menu: the notification bell (D-159). */
+  headerAction?: ReactNode;
+}
+
+function sidebar(portal: Portal, pathname: string | null, { footer, headerAction }: SidebarParts) {
   return (
     <Sidebar
       items={items(portal, 'desktop', pathname)}
       linkComponent={NavLink}
-      header={<span className="text-h3 text-black">{brand.name}</span>}
+      header={
+        <div className="-my-3 -mr-3 flex items-center justify-between gap-2">
+          <span className="text-h3 text-black">{brand.name}</span>
+          {headerAction}
+        </div>
+      }
       footer={footer}
     />
   );
 }
 
-function ActiveSidebar({ portal, footer }: { portal: Portal; footer?: ReactNode }) {
-  return sidebar(portal, usePathname(), footer);
+function ActiveSidebar({ portal, ...parts }: { portal: Portal } & SidebarParts) {
+  return sidebar(portal, usePathname(), parts);
 }
 
 function ActiveTabBar({ portal }: { portal: Portal }) {
@@ -39,10 +50,10 @@ function ActiveTabBar({ portal }: { portal: Portal }) {
  * The navigation renders in the static shell without a current item, then the current item
  * streams in: with Cache Components, reading the URL must sit inside Suspense (D-029).
  */
-export function PortalSidebar({ portal, footer }: { portal: Portal; footer?: ReactNode }) {
+export function PortalSidebar({ portal, ...parts }: { portal: Portal } & SidebarParts) {
   return (
-    <Suspense fallback={sidebar(portal, null, footer)}>
-      <ActiveSidebar portal={portal} footer={footer} />
+    <Suspense fallback={sidebar(portal, null, parts)}>
+      <ActiveSidebar portal={portal} {...parts} />
     </Suspense>
   );
 }

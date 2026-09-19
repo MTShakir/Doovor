@@ -39,7 +39,28 @@ test.describe('notifications (NTF-01, NTF-04, M2-27)', () => {
 
     const context = await browser.newContext({ storageState: authFile(role) });
     const page = await context.newPage();
-    await page.goto('/notifications');
+
+    // The bell says how many are waiting, from every screen: top right on a phone, at the top of the
+    // menu on a larger screen (D-159). By pattern, not by number, for the same reason as below.
+    await page.goto(roles[role].landing);
+    const bell = page.getByRole('link', { name: /^Notifications, \d+ unread$/ });
+    await expect(bell).toBeVisible();
+    const counted = (await bell.getAttribute('aria-label')) ?? '';
+    expect(counted, 'the bell says how many').toMatch(/^Notifications, \d+ unread$/);
+    const box = await bell.boundingBox();
+    const width = page.viewportSize()?.width ?? 0;
+    expect(box, 'the bell is drawn').not.toBeNull();
+    if (box !== null) {
+      expect(box.y, 'at the top of the screen').toBeLessThan(80);
+      if (testInfo.project.name === 'mobile') {
+        expect(box.x + box.width, 'at the right hand edge').toBeGreaterThan(width - 24);
+      } else {
+        await expect(page.getByRole('complementary').getByRole('link', { name: /^Notifications, \d+ unread$/ })).toBeVisible();
+      }
+    }
+    await snap(page, testInfo, 'notification-bell', { fullPage: false });
+    await bell.click();
+    await expect(page).toHaveURL(/\/notifications$/);
 
     await expect(page.getByRole('heading', { level: 1, name: 'Notifications' })).toBeVisible();
     // By title, not by count: the job runner writes real ones whenever it is running.
@@ -52,6 +73,14 @@ test.describe('notifications (NTF-01, NTF-04, M2-27)', () => {
     await page.getByRole('button', { name: /^Mark all as read/ }).click();
     await expect(page.getByText('All marked as read')).toBeVisible();
     await expect(page.getByRole('button', { name: /^Mark all as read/ })).toBeHidden();
+
+    // Once they are read the count has gone from the screen it was counted on, even going back to
+    // it the browser's own way, which puts a screen back as it was left rather than asking again.
+    await page.goBack();
+    await expect(page).toHaveURL(new RegExp(`${roles[role].landing}$`));
+    await expect(page.getByRole('heading', { level: 1, name: roles[role].heading })).toBeVisible();
+    await expect(page.getByRole('link', { name: /^Notifications(, \d+ unread)?$/ })).toBeVisible();
+    await expect(page.getByRole('link', { name: counted, exact: true })).toBeHidden();
     await context.close();
   });
 

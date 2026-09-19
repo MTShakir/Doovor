@@ -101,7 +101,7 @@ Ask the product owner only for things only they can provide: keys, account acces
 - Tenant tables carry `business_id`. Policies use helpers in the `private` schema: `private.auth_is_member(business_id)`, `private.auth_has_role(business_id, role)`, `private.auth_business_ids()`. Wrap `auth.uid()` as `(select auth.uid())` in policies.
 - Booking, credit, payment, membership, verification and refund writes go only through `SECURITY DEFINER` RPCs with `set search_path = ''`. They derive the actor from `auth.uid()`, check permissions explicitly, run in one transaction and write audit rows. The `authenticated` role has no direct write grant on those tables.
 - Views are `security_invoker = true`. Private notes live in their own table with no learner policy.
-- The secret (service role) key is used only by the Stripe webhook handler, Inngest jobs and seed scripts, and only to call `system_*` RPCs. Server Actions always use the user's session client.
+- The secret (service role) key is used only by the Stripe webhook handler, Inngest jobs and seed scripts, and only to call `system_*` RPCs. Two narrow exceptions, each logged: creating an account for a learner added by hand (D-068), and the nightly job removing stored pictures a `system_*` RPC has listed (D-158). Server Actions always use the user's session client.
 - IDs are UUIDs. Timestamps are `timestamptz` in UTC. Money columns are `integer` pence named `*_pence`.
 
 ### TypeScript and code

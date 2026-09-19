@@ -4,6 +4,7 @@ import { brand, type ColourToken } from '@repo/config/brand';
 import { formatPence } from '@repo/core/money';
 import { Avatar } from '@repo/ui/avatar';
 import { AvatarPicker } from '@repo/ui/avatar-picker';
+import { NotificationBell } from '@repo/ui/notification-bell';
 import { PhotoUpload } from '@repo/ui/photo-upload';
 import { PickupPointPicker } from '@repo/ui/pickup-point-picker';
 import { FormAlert } from '@/components/form-alert';
@@ -28,6 +29,7 @@ import { planSummaries } from '@/lib/site/plan-features';
 import { NoSignalBanner } from '@/components/offline/connection-banner';
 import { KeptRecordsNotice } from '@/components/offline/kept-records-notice';
 import { CardFieldsSkeleton } from '@/components/payments/card-form';
+import { InstallHelpCard } from '@/components/pwa/install-help';
 import { InstallCard } from '@/components/pwa/install-prompt';
 import { LessonRecordCard } from '@/components/progress/lesson-record-card';
 import { SkillMap } from '@/components/progress/skill-map';
@@ -400,6 +402,9 @@ const slots = ['09:00', '10:30', '12:00', '13:30', '15:00', '16:30', '18:00'].ma
   label,
   disabled: index === 2,
 }));
+
+/** Where the app is, as the Install the app page names it to somebody in another browser on an iPhone. */
+const appHost = new URL(brand.appUrl).host;
 
 export function DesignShowcase() {
   const [postcode, setPostcode] = useState('LS6 3HN');
@@ -822,6 +827,17 @@ export function DesignShowcase() {
         <div className="grid items-start gap-4 md:grid-cols-2">
           <InstallCard offer="button" why="It opens in one tap, and Today still opens where there is no signal." onInstall={() => toast('Installing')} onDismiss={() => toast('Not now')} />
           <InstallCard offer="ios-steps" why="Your lessons, payments and progress, one tap away." onInstall={() => undefined} onDismiss={() => toast('Not now')} />
+        </div>
+        <Label>
+          Install the app, from the menu after not now (D-160): the browser&apos;s own prompt, Safari on an iPhone, another browser
+          on an iPhone, any other browser, and once installed
+        </Label>
+        <div className="grid items-start gap-4 md:grid-cols-2">
+          <InstallHelpCard help="button" host={appHost} onInstall={() => toast('Installing')} />
+          <InstallHelpCard help="ios-safari" host={appHost} onInstall={() => undefined} />
+          <InstallHelpCard help="ios-other-browser" host={appHost} onInstall={() => undefined} />
+          <InstallHelpCard help="browser-menu" host={appHost} onInstall={() => undefined} />
+          <InstallHelpCard help="installed" host={appHost} onInstall={() => undefined} />
         </div>
       </Section>
 
@@ -1388,6 +1404,23 @@ export function DesignShowcase() {
 
       <Section title="Navigation">
         <p className="text-body text-grey-700">Portal shells with bottom tabs on phones and a sidebar on desktop (PRD 8.2).</p>
+        <p className="text-body text-grey-700">
+          The notification bell, top right on a phone and beside the name at the top of the menu on a larger screen
+          (NTF-01, D-159): before the count is known, with nothing waiting, with three, and with more than nine.
+        </p>
+        <div className="flex flex-wrap items-center gap-6">
+          <NotificationBell href="/notifications" unread={null} />
+          <NotificationBell href="/notifications" unread={0} />
+          <NotificationBell href="/notifications" unread={3} />
+          <NotificationBell href="/notifications" unread={12} />
+        </div>
+        <div className="max-w-sm overflow-hidden rounded-2xl border border-grey-200">
+          <div className="flex min-h-14 items-center justify-between gap-2 border-b border-grey-200 bg-white pr-2 pl-4">
+            <span className="text-h3 text-black">{brand.name}</span>
+            <NotificationBell href="/notifications" unread={3} />
+          </div>
+          <p className="px-4 py-6 text-small text-grey-700">The top bar as it looks on a phone, above the screen&apos;s own title.</p>
+        </div>
         <div className="flex flex-wrap gap-3">
           <Button asChild variant="secondary">
             <Link href="/app/learner">Learner</Link>

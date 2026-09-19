@@ -1,5 +1,6 @@
 import 'server-only';
 import type { NotificationCategory, NotificationChannel } from '@repo/core/notifications';
+import { cache } from 'react';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
 
 export interface InboxItem {
@@ -35,15 +36,18 @@ export async function myNotifications(limit = 50): Promise<InboxItem[]> {
   }));
 }
 
-/** How many are waiting, for the menu. */
-export async function unreadCount(): Promise<number> {
+/**
+ * How many are waiting, for the bell and the menu. Asked once per request however many places
+ * show it: the phone's top bar and the sidebar are both in every portal page (D-159).
+ */
+export const unreadCount = cache(async (): Promise<number> => {
   const supabase = await createSupabaseServerClient();
   const { count, error } = await supabase
     .from('notifications')
     .select('id', { count: 'exact', head: true })
     .is('read_at', null);
   return error ? 0 : (count ?? 0);
-}
+});
 
 /** The channels this person has switched off, by category (NTF-04). */
 export async function myNotificationPreferences(): Promise<Map<NotificationCategory, NotificationChannel[]>> {

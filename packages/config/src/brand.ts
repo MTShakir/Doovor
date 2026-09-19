@@ -17,6 +17,14 @@ export const brand = {
   shortName: name,
   tagline: 'Book, pay and track driving lessons in one simple app.',
   legalEntity: 'Maxterz LTD',
+  /** From Companies House: what the company's website and emails must say about it (see companyDisclosure). */
+  company: {
+    number: '16822859',
+    registeredIn: 'England and Wales',
+    registeredOffice: '128 City Road, London, United Kingdom, EC1V 2NX',
+  },
+  /** The company's entry in the ICO's register of data controllers, printed in the privacy notice. */
+  icoRegistration: 'ZC165156',
   domain,
   appHost,
   /** The public site: the landing page now, pricing and the blog later. */
@@ -51,3 +59,12 @@ export const brand = {
 
 export type Brand = typeof brand;
 export type ColourToken = keyof Brand['colours'];
+
+/**
+ * What a company's website and business emails must say about it: its registered name, number,
+ * registered office and where it is registered (The Company, Limited Liability Partnership and
+ * Business (Names and Trading Disclosures) Regulations 2015).
+ */
+export function companyDisclosure(): string {
+  return `${brand.legalEntity}, registered in ${brand.company.registeredIn}, company number ${brand.company.number}. Registered office: ${brand.company.registeredOffice}.`;
+}

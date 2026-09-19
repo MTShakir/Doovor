@@ -26,6 +26,37 @@ export async function clearExpiredInvitations(): Promise<{ cleared: number }> {
   return { cleared: data };
 }
 
+/**
+ * Pictures nothing points to any more, a day on: a badge once it has been checked, a photo or a
+ * logo once it has been replaced, and a deleted person's (NFR-PRV-03, D-158).
+ *
+ * The database says which; storage is told to remove them, a bucket at a time. This is the one
+ * place the secret key reaches storage, and it only ever removes what the database has listed.
+ */
+export async function removeUnreferencedFiles(): Promise<{ removed: number }> {
+  const service = getSupabaseServiceClient();
+  const { data, error } = await service.rpc('system_unreferenced_files');
+  if (error) throw new Error(`Could not list the pictures nothing uses: ${error.message}`);
+
+  const byBucket = new Map<string, string[]>();
+  for (const file of data) byBucket.set(file.bucket, [...(byBucket.get(file.bucket) ?? []), file.name]);
+
+  let removed = 0;
+  for (const [bucket, names] of byBucket) {
+    const { data: gone, error: problem } = await service.storage.from(bucket).remove(names);
+    if (problem) throw new Error(`Could not remove pictures from ${bucket}: ${problem.message}`);
+    removed += gone.length;
+  }
+  return { removed };
+}
+
+/** The audit trail keeps two years, as the privacy notice says (NFR-SEC-06, D-158). */
+export async function pruneAuditTrail(): Promise<{ pruned: number }> {
+  const { data, error } = await getSupabaseServiceClient().rpc('system_prune_audit_log');
+  if (error) throw new Error(`Could not prune the audit trail: ${error.message}`);
+  return { pruned: data };
+}
+
 /** Open ended weekly slots are kept booked a month ahead (BOK-05, M2-20). */
 export async function extendRecurrences(): Promise<{ booked: number }> {
   const { data, error } = await getSupabaseServiceClient().rpc('system_extend_recurrences', { p_weeks: 4 });

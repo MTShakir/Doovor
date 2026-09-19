@@ -2,6 +2,7 @@ import { formatDate } from '@repo/core/time';
 import { PageHeader } from '@repo/ui/app-shell';
 import type { Metadata } from 'next';
 import { Suspense } from 'react';
+import { InstallPrompt } from '@/components/pwa/install-prompt';
 import { InstructorWeeks, OverviewFigures, OverviewSkeleton } from '@/components/school/overview';
 import { requirePortal } from '@/lib/auth/session';
 import { schoolOverview } from '@/lib/school/overview';
@@ -17,6 +18,7 @@ export default function SchoolOverviewPage() {
         <Suspense fallback={<OverviewSkeleton />}>
           <Overview />
         </Suspense>
+        <InstallPrompt why="The school's diary, instructors and learners, one tap away." />
       </div>
     </main>
   );

@@ -34,7 +34,7 @@ See the receipt https://example.com/app/receipts/payment-1
 
 You are getting this because you have a Doovor account.
 
-Maxterz LTD"
+Maxterz LTD, registered in England and Wales, company number 16822859. Registered office: 128 City Road, London, United Kingdom, EC1V 2NX."
 `;
 
 exports[`the receipt email (PAY-08, M3-20) > for a Business registered for VAT: its VAT number, and the VAT in the price 1`] = `
@@ -77,5 +77,5 @@ See the receipt https://example.com/app/receipts/payment-1
 
 You are getting this because you have a Doovor account.
 
-Maxterz LTD"
+Maxterz LTD, registered in England and Wales, company number 16822859. Registered office: 128 City Road, London, United Kingdom, EC1V 2NX."
 `;

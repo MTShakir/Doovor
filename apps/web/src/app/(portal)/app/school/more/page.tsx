@@ -1,4 +1,4 @@
-import { MoreMenu } from '@/components/more-menu';
+import { installAppLink, MoreMenu } from '@/components/more-menu';
 import { notificationsMenuLink } from '@/lib/notifications/inbox';
 
 export default async function SchoolMorePage() {
@@ -10,6 +10,7 @@ export default async function SchoolMorePage() {
         { href: '/app/school/settings', title: 'Settings', subtitle: 'Prices, packages and booking rules' },
         await notificationsMenuLink(),
         { href: '/account', title: 'Account and security', subtitle: 'Password, devices, two-step verification' },
+        installAppLink,
       ]}
     />
   );

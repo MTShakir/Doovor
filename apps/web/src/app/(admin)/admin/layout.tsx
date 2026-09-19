@@ -2,6 +2,7 @@ import { AppShell } from '@repo/ui/app-shell';
 import { EmptyState } from '@repo/ui/empty-state';
 import { Monitor } from 'lucide-react';
 import type { ReactNode } from 'react';
+import { PortalNotificationBell } from '@/components/notification-bell';
 import { PortalGate } from '@/components/portal-gate';
 import { PortalSidebar } from '@/components/portal-nav';
 import { ForgetKeptScreens } from '@/components/pwa/forget-kept-screens';
@@ -13,7 +14,7 @@ export const instant = false;
 
 export default function AdminLayout({ children }: { children: ReactNode }) {
   return (
-    <AppShell sidebar={<PortalSidebar portal="admin" footer={<SidebarFooter />} />}>
+    <AppShell sidebar={<PortalSidebar portal="admin" footer={<SidebarFooter />} headerAction={<PortalNotificationBell />} />}>
       {/* Back from viewing as somebody, anything their screens left on this device goes (ADM-06, D-129). */}
       <ForgetKeptScreens />
       <div className="md:hidden">

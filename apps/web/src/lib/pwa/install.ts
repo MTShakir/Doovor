@@ -32,7 +32,26 @@ export function installOffer(state: InstallState): InstallOffer {
  * to the home screen from their own menus on every version, so they are left out.
  */
 export function isIosSafari(userAgent: string, maxTouchPoints: number): boolean {
-  const apple = /iPhone|iPad|iPod/.test(userAgent) || (userAgent.includes('Macintosh') && maxTouchPoints > 1);
   const otherBrowser = /CriOS|FxiOS|EdgiOS|OPiOS|GSA\//.test(userAgent);
-  return apple && userAgent.includes('Safari/') && !otherBrowser;
+  return isIos(userAgent, maxTouchPoints) && userAgent.includes('Safari/') && !otherBrowser;
+}
+
+/** An iPhone, iPad or iPod, in any browser. An iPad asking for the desktop site says it is a Mac with a touch screen. */
+export function isIos(userAgent: string, maxTouchPoints: number): boolean {
+  return /iPhone|iPad|iPod/.test(userAgent) || (userAgent.includes('Macintosh') && maxTouchPoints > 1);
+}
+
+/**
+ * What the Install the app page shows (PRD 8.1, D-160). Unlike the card, it answers after somebody
+ * has said not now, since they went looking for it: the browser's own prompt where there is one,
+ * Safari's steps on an iPhone or iPad, the way to Safari from any other browser there, and
+ * otherwise the browser's menu, which is where installing lives before a browser offers it.
+ */
+export type InstallHelp = 'installed' | 'button' | 'ios-safari' | 'ios-other-browser' | 'browser-menu';
+
+export function installHelp(state: Omit<InstallState, 'dismissed'> & { ios: boolean }): InstallHelp {
+  if (state.installed) return 'installed';
+  if (state.canPrompt) return 'button';
+  if (state.iosSafari) return 'ios-safari';
+  return state.ios ? 'ios-other-browser' : 'browser-menu';
 }

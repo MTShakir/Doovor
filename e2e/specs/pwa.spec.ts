@@ -38,6 +38,31 @@ interface Manifest {
   icons: { src: string; sizes: string; type: string; purpose: string }[];
 }
 
+/** Hands the page an install prompt, the way Chrome does once it decides an app is worth offering. */
+const handOverPrompt = (page: Page, outcome: 'accepted' | 'dismissed') =>
+  page.evaluate((choice) => {
+    const event = new Event('beforeinstallprompt', { cancelable: true });
+    Object.assign(event, {
+      prompt: () => {
+        window.__installPrompted = (window.__installPrompted ?? 0) + 1;
+        return Promise.resolve();
+      },
+      userChoice: Promise.resolve({ outcome: choice }),
+    });
+    // The page takes the prompt for its own button by stopping the browser showing it.
+    return !window.dispatchEvent(event);
+  }, outcome);
+
+/** Safari on an iPhone, which has no install prompt to hand over. */
+const iphoneSafari = {
+  userAgent:
+    'Mozilla/5.0 (iPhone; CPU iPhone OS 18_5 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.5 Mobile/15E148 Safari/604.1',
+  viewport: { width: 390, height: 844 },
+  deviceScaleFactor: 2,
+  isMobile: true,
+  hasTouch: true,
+};
+
 test.describe('installing the app (PRD 8.1, M4-08)', () => {
   test('has everything a browser looks for before it offers to install an app', async ({ page, request }) => {
     await page.goto('/sign-in');
@@ -74,21 +99,6 @@ test.describe('installing the app (PRD 8.1, M4-08)', () => {
   test.describe('the offer on Today', () => {
     test.use({ storageState: authFile('instructor') });
 
-    /** Hands the page an install prompt, the way Chrome does once it decides an app is worth offering. */
-    const handOverPrompt = (page: Page, outcome: 'accepted' | 'dismissed') =>
-      page.evaluate((choice) => {
-        const event = new Event('beforeinstallprompt', { cancelable: true });
-        Object.assign(event, {
-          prompt: () => {
-            window.__installPrompted = (window.__installPrompted ?? 0) + 1;
-            return Promise.resolve();
-          },
-          userChoice: Promise.resolve({ outcome: choice }),
-        });
-        // The page takes the prompt for its own button by stopping the browser showing it.
-        return !window.dispatchEvent(event);
-      }, outcome);
-
     test('offers the browser\'s own install prompt, and stays away once somebody says not now', async ({ page }, testInfo) => {
       await page.goto('/app/instructor');
       await expect(page.getByRole('heading', { level: 1, name: 'Today' })).toBeVisible();
@@ -119,15 +129,7 @@ test.describe('installing the app (PRD 8.1, M4-08)', () => {
   });
 
   test('on an iPhone, gives the two steps in words, since Safari has no prompt to show', { tag: '@phone-only' }, async ({ browser }, testInfo) => {
-    const context = await browser.newContext({
-      storageState: authFile('learner'),
-      userAgent:
-        'Mozilla/5.0 (iPhone; CPU iPhone OS 18_5 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.5 Mobile/15E148 Safari/604.1',
-      viewport: { width: 390, height: 844 },
-      deviceScaleFactor: 2,
-      isMobile: true,
-      hasTouch: true,
-    });
+    const context = await browser.newContext({ ...iphoneSafari, storageState: authFile('learner') });
     try {
       const page = await context.newPage();
       await page.goto('/app/learner');
@@ -147,6 +149,114 @@ test.describe('installing the app (PRD 8.1, M4-08)', () => {
     } finally {
       await context.close();
     }
+  });
+
+  test('the school Overview offers it too', async ({ browser }, testInfo) => {
+    const context = await browser.newContext({ storageState: authFile('schoolManager') });
+    try {
+      const page = await context.newPage();
+      await page.goto('/app/school');
+      await expect(page.getByRole('heading', { level: 1, name: 'Overview' })).toBeVisible();
+      await expect.poll(() => handOverPrompt(page, 'accepted')).toBe(true);
+      const offer = page.getByRole('region', { name: /on your home screen$/ });
+      await expect(offer).toContainText("The school's diary, instructors and learners, one tap away.");
+      await settled(page);
+      await snap(page, testInfo, 'install-offer-school');
+      await offer.getByRole('button', { name: 'Install' }).click();
+      await expect.poll(() => page.evaluate(() => window.__installPrompted)).toBe(1);
+    } finally {
+      await context.close();
+    }
+  });
+
+  test.describe('from the menu, which keeps it after not now (D-160)', () => {
+    test('says not now to the card on Today, and installs from More', { tag: '@phone-only' }, async ({ browser }, testInfo) => {
+      const context = await browser.newContext({ storageState: authFile('instructor') });
+      try {
+        const page = await context.newPage();
+        await page.goto('/app/instructor');
+        await expect(page.getByRole('heading', { level: 1, name: 'Today' })).toBeVisible();
+        await expect.poll(() => handOverPrompt(page, 'accepted')).toBe(true);
+        const offer = page.getByRole('region', { name: /on your home screen$/ });
+        await offer.getByRole('button', { name: 'Not now' }).click();
+        await expect(offer).toBeHidden();
+
+        // The card has gone, the way to install has not, and the browser's prompt is still there.
+        await page.getByRole('navigation', { name: 'Main' }).getByRole('link', { name: 'More' }).click();
+        await expect(page.getByRole('heading', { level: 1, name: 'More' })).toBeVisible();
+        await page.getByRole('link', { name: 'Install the app' }).click();
+        await expect(page).toHaveURL(/\/account\/install$/);
+        await expect(page.getByRole('heading', { level: 1, name: 'Install the app' })).toBeVisible();
+        const install = page.getByRole('region', { name: 'Install it from here' });
+        await expect(install).toBeVisible();
+        await expectAccessible(page);
+        await settled(page);
+        await snap(page, testInfo, 'install-page');
+
+        await install.getByRole('button', { name: 'Install' }).click();
+        await expect.poll(() => page.evaluate(() => window.__installPrompted)).toBe(1);
+        await expect(page.getByRole('status').filter({ hasText: 'You have the app' })).toBeVisible();
+
+        // Installed, the menu has nothing more to offer.
+        await page.goBack();
+        await expect(page.getByRole('heading', { level: 1, name: 'More' })).toBeVisible();
+        await expect(page.getByRole('link', { name: 'Account and security' })).toBeVisible();
+        await expect(page.getByRole('link', { name: 'Install the app' })).toHaveCount(0);
+      } finally {
+        await context.close();
+      }
+    });
+
+    test('the learner\'s Account has it, with the browser\'s menu until there is a prompt', { tag: '@desktop-only' }, async ({ browser }, testInfo) => {
+      const context = await browser.newContext({ storageState: authFile('learner') });
+      try {
+        const page = await context.newPage();
+        await page.goto('/app/learner/account');
+        await page.getByRole('link', { name: 'Install the app' }).click();
+        await expect(page).toHaveURL(/\/account\/install$/);
+
+        // No prompt from the browser yet, so its own menu is the way.
+        const menu = page.getByRole('region', { name: "From your browser's menu" });
+        await expect(menu).toContainText('Install app, or Add to Home screen');
+        await expectAccessible(page);
+        await settled(page);
+        await snap(page, testInfo, 'install-page-menu');
+
+        // Once the browser hands one over, the page offers it; told no, it points to the menu again.
+        await expect.poll(() => handOverPrompt(page, 'dismissed')).toBe(true);
+        await page.getByRole('region', { name: 'Install it from here' }).getByRole('button', { name: 'Install' }).click();
+        await expect.poll(() => page.evaluate(() => window.__installPrompted)).toBe(1);
+        await expect(menu).toBeVisible();
+      } finally {
+        await context.close();
+      }
+    });
+
+    test('on an iPhone, gives Safari\'s steps, and is left out inside the app', { tag: '@phone-only' }, async ({ browser }, testInfo) => {
+      const context = await browser.newContext({ ...iphoneSafari, storageState: authFile('learner') });
+      try {
+        const page = await context.newPage();
+        await page.goto('/app/learner/account');
+        await page.getByRole('link', { name: 'Install the app' }).click();
+        const steps = page.getByRole('region', { name: 'Three taps in Safari' });
+        await expect(steps).toContainText('Add to Home Screen');
+        await expect(steps).toContainText('only once it is on the home screen');
+        await expect(page.getByRole('button', { name: 'Install' })).toHaveCount(0);
+        await expectAccessible(page);
+        await settled(page);
+        await snap(page, testInfo, 'install-page-iphone');
+
+        // Opened from the home screen, Safari says so on the navigator.
+        await context.addInitScript(() => {
+          Object.defineProperty(navigator, 'standalone', { value: true });
+        });
+        await page.goto('/app/learner/account');
+        await expect(page.getByRole('link', { name: 'Account and security' })).toBeVisible();
+        await expect(page.getByRole('link', { name: 'Install the app' })).toHaveCount(0);
+      } finally {
+        await context.close();
+      }
+    });
   });
 });
 

@@ -11,11 +11,16 @@ export function snapPath(testInfo: TestInfo, name: string): string {
 }
 
 /**
- * Screenshot saved per milestone and viewport for the milestone report. Full page by
- * default; use `fullPage: false` when fixed elements such as sheets are open.
+ * Screenshot saved per milestone and viewport for the milestone report. Full page by default, and
+ * only the screen while a sheet or dialog is open, whatever the test remembers to ask for. A sheet
+ * is fixed to the screen over a dimmed page, so the rest of the page adds nothing. And a full-page
+ * capture resizes the viewport for a moment, which a bottom sheet with a field in focus takes for
+ * a phone's keyboard, and moves itself for: once, in CI, it stayed moved, with its button off the
+ * screen. The cookie question is a dialog too, but not a modal one, and it has no open state.
  */
 export async function snap(page: Page, testInfo: TestInfo, name: string, options: { fullPage?: boolean } = {}): Promise<void> {
-  await keepScreenshot(testInfo, name, await page.screenshot({ fullPage: options.fullPage ?? true }));
+  const sheetOpen = (await page.locator('[role="dialog"][data-state="open"]').count()) > 0;
+  await keepScreenshot(testInfo, name, await page.screenshot({ fullPage: options.fullPage ?? !sheetOpen }));
 }
 
 /**
