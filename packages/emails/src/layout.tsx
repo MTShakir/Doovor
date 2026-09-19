@@ -1,5 +1,5 @@
 import { Body, Container, Head, Hr, Html, Link, Preview, Section, Text } from '@react-email/components';
-import { brand } from '@repo/config/brand';
+import { brand, companyDisclosure } from '@repo/config/brand';
 import type { ReactNode } from 'react';
 
 /**
@@ -67,7 +67,7 @@ export function EmailLayout({ preview, children, settingsUrl, reason }: EmailLay
               </>
             ) : null}
           </Text>
-          <Text style={footnote}>{brand.legalEntity}</Text>
+          <Text style={footnote}>{companyDisclosure()}</Text>
         </Container>
       </Body>
     </Html>

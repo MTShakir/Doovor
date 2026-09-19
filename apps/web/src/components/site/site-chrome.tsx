@@ -1,4 +1,4 @@
-import { brand } from '@repo/config/brand';
+import { brand, companyDisclosure } from '@repo/config/brand';
 import { Button } from '@repo/ui/button';
 import { Menu } from 'lucide-react';
 import Link from 'next/link';
@@ -128,7 +128,7 @@ export function SiteFooter({ appUrl, cities }: { appUrl: string; cities: readonl
         <FooterLinks title="Legal" links={legalNav} />
       </div>
       <p className="mx-auto w-full max-w-6xl px-4 pb-8 text-caption text-grey-700 md:px-6">
-        {brand.name} is run by {brand.legalEntity}.
+        {brand.name} is run by {companyDisclosure()}
       </p>
     </footer>
   );

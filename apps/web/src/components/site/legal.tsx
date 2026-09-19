@@ -1,4 +1,4 @@
-import { brand } from '@repo/config/brand';
+import { brand, companyDisclosure } from '@repo/config/brand';
 import { AlertTriangle } from 'lucide-react';
 import type { ReactNode } from 'react';
 
@@ -53,7 +53,7 @@ export function LegalPage({
           <a href={`mailto:${brand.supportEmail}`} className="font-semibold text-blue underline underline-offset-4">
             {brand.supportEmail}
           </a>
-          . {brand.name} is run by {brand.legalEntity}.
+          . {brand.name} is run by {companyDisclosure()}
         </p>
       </footer>
     </article>

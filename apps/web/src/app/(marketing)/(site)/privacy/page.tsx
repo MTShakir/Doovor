@@ -1,4 +1,4 @@
-import { brand } from '@repo/config/brand';
+import { brand, companyDisclosure } from '@repo/config/brand';
 import type { Metadata } from 'next';
 import { ForTheSolicitor, LegalList, LegalPage, LegalSection, LegalTable, LegalText } from '@/components/site/legal';
 import { publicPageMetadata } from '@/lib/public/metadata';
@@ -22,9 +22,9 @@ export default function PrivacyPage() {
     >
       <LegalSection title="Who is responsible">
         <LegalText>
-          {brand.name} is run by {brand.legalEntity}, which is registered with the Information Commissioner&apos;s
-          Office under reference {brand.icoRegistration}. Two different things happen on it, and who is responsible
-          differs between them.
+          {brand.name} is run by {companyDisclosure()} It is registered with the Information Commissioner&apos;s Office
+          under reference {brand.icoRegistration}, and questions about your data go to {brand.supportEmail}. Two
+          different things happen on {brand.name}, and who is responsible differs between them.
         </LegalText>
         <LegalList
           items={[
@@ -34,8 +34,8 @@ export default function PrivacyPage() {
         />
         <ForTheSolicitor>
           <p>
-            Please confirm the controller and processor split above, give the company number and registered office to
-            print here, and say whether a representative or data protection officer must be named.
+            Please confirm the controller and processor split above, and say whether a representative or data
+            protection officer must be named.
           </p>
         </ForTheSolicitor>
       </LegalSection>
