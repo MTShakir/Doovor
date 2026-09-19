@@ -830,3 +830,8 @@ Every decision made without the product owner, newest last. Format: date, decisi
 - **Options:** Pro now, about $25 a month, as D-154 had it; the free plan with nothing in place of backups.
 - **Reason:** The product owner wants to test the market with a small beta before paying. Checked what the free plan lacks for about 20 people. No backups at all, and no leaked password check: both covered as above. Pausing after a week without activity: it does not happen while the job runner reaches the database every five minutes. 500 MB of database, 1 GB of files and 5 GB of traffic a month: 20 people use a fraction. One day of logs and no support: Sentry already watches the app. The backups are ours, encrypted with a passphrase kept off the machine, and a drill restored one into an empty stack with every table matching. The minimum stays a length, not a mix of characters (NCSC). A password chosen under the old rule still signs in; new passwords and changed ones need ten.
 
+## D-162 | 2026-09-19 | Lighthouse takes the median of five runs
+- **Decision:** CI runs Lighthouse five times a page, not three, and still fails a page whose median is under 90 (NFR-PERF-04).
+- **Options:** Three runs, re-running CI when the profile page lands on the line; lowering the bar; a faster profile page.
+- **Reason:** On the same code the profile page's runs go from the mid seventies to 96 (a cold first run is usually the low one), so a median of three sat on the line: 90 on 19 September before the bell, 90 after it, and 88 on `main` the same afternoon, with nothing on the page changed. Locally it scores 95, with the cookie question as its largest paint, as D-152 intends. Five is what Lighthouse advises. The bar does not move, and a page that is really slower still fails.
+
