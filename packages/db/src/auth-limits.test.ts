@@ -1,5 +1,6 @@
 import { readFileSync } from 'node:fs';
 import path from 'node:path';
+import { passwordMinLength } from '@repo/core/schemas/auth';
 import { describe, expect, it } from 'vitest';
 
 const root = path.join(import.meta.dirname, '..', '..', '..');
@@ -44,5 +45,17 @@ describe('what Auth allows an hour on the hosted project', () => {
   it('leaves the local stack room for the end to end runs, which sign in hundreds of times', () => {
     const local = section('supabase/config.toml', 'auth.rate_limit');
     expect(local.sign_in_sign_ups).toBeGreaterThan(hosted.sign_in_sign_ups ?? 0);
+  });
+});
+
+/**
+ * The shortest password, which Supabase Auth checks as well as the app's own forms (D-161). If the
+ * two differ, the one that is longer turns people away with a message the other never showed.
+ */
+describe('the shortest password anybody can choose', () => {
+  it('is the same in the app, on the hosted project and on the local stack', () => {
+    expect(passwordMinLength).toBe(10);
+    expect(section('ops/staging/supabase/config.toml', 'auth').minimum_password_length).toBe(passwordMinLength);
+    expect(section('supabase/config.toml', 'auth').minimum_password_length).toBe(passwordMinLength);
   });
 });

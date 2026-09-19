@@ -129,7 +129,7 @@ test.describe('sign-up (AUTH-01, AUTH-03)', () => {
     await page.getByRole('button', { name: 'Create account' }).click();
     await expect(page.getByText('Enter your name')).toBeVisible();
     await expect(page.getByText('Enter an email address like name@example.com')).toBeVisible();
-    await expect(page.getByText('Use at least 8 characters')).toBeVisible();
+    await expect(page.getByText('Use at least 10 characters')).toBeVisible();
   });
 });
 

@@ -71,8 +71,9 @@ export default function PrivacyPage() {
 
       <LegalSection title="Where it is kept">
         <LegalText>
-          The database, the files and the accounts are held in London, and the app itself runs in London. Errors and
-          usage go to services in the European Union. Some of the companies below work outside the United Kingdom:
+          The database, the files and the accounts are held in London, and the app itself runs in London. We keep
+          encrypted backups of the database ourselves, in the United Kingdom. Errors and usage go to services in the
+          European Union. Some of the companies below work outside the United Kingdom:
           Twilio sends text messages from the United States, and Stripe, Resend, Mapbox and Inngest may process what
           they handle there. If you sign in with Google, Google handles that sign in.
         </LegalText>
@@ -104,6 +105,7 @@ export default function PrivacyPage() {
             'Your account and what is in it: while your account is open.',
             'Financial records: six years, because HMRC requires it. When an account is deleted these are kept but the person behind them is removed.',
             'The audit trail: two years.',
+            'Backups of the database: five weeks, encrypted, then deleted, so a deleted account has left every backup five weeks later.',
             'Pictures of a badge or a licence: removed once the check is done.',
           ]}
         />

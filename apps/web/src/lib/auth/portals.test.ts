@@ -7,6 +7,7 @@ import {
   needsLearnerOnboarding,
   needsOnboarding,
   needsSchoolOnboarding,
+  portalsBesidesAdmin,
   requiresMfa,
   safeNextPath,
 } from './portals';
@@ -153,5 +154,24 @@ describe('onboarding (AUTH-04)', () => {
       memberships: [membership({ instructorProfileId: 'p1', onboarding: { step: 5, completed: true } })],
     });
     expect(landingPath(both)).toBe('/app/instructor');
+  });
+});
+
+describe('the way on from the admin portal on a phone (PRD 8.2)', () => {
+  it('offers the other portals of somebody who is staff and more, in landing order', () => {
+    const ctx = context({
+      staffRole: 'super_admin',
+      isLearner: true,
+      memberships: [membership({ businessType: 'school', role: 'owner' }), membership({ businessId: 'b2', instructorProfileId: 'p1' })],
+    });
+    expect(portalsBesidesAdmin(ctx)).toEqual([
+      { href: '/app/school', label: 'Open your school' },
+      { href: '/app/instructor', label: 'Open your diary' },
+      { href: '/app/learner', label: 'Open your lessons' },
+    ]);
+  });
+
+  it('offers nothing to somebody who is staff and nothing else', () => {
+    expect(portalsBesidesAdmin(context({ staffRole: 'support_admin' }))).toEqual([]);
   });
 });

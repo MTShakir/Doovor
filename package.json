@@ -33,6 +33,8 @@
     "test:e2e:stripe": "pnpm --filter @repo/e2e test:e2e:stripe",
     "db:seed": "pnpm --filter @repo/db seed",
     "db:env": "node scripts/local-env.mjs",
+    "db:backup": "node scripts/db-backup.mjs",
+    "db:backup:open": "node scripts/db-backup.mjs open",
     "dev:jobs": "pnpm dlx inngest-cli@1.44.0 dev --no-discovery -u http://localhost:3000/api/inngest",
     "stripe:listen": "node scripts/stripe-listen.mjs",
     "stripe:test-account": "pnpm --filter @repo/providers stripe:test-account"

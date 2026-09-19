@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { formatUkMobile, normaliseUkMobile } from '../phone.ts';
-import { phoneCodeSchema, roleChoiceSchema, signInSchema, signUpSchema, ukMobileSchema } from './auth.ts';
+import { newPasswordSchema, phoneCodeSchema, roleChoiceSchema, signInSchema, signUpSchema, ukMobileSchema } from './auth.ts';
 
 describe('normaliseUkMobile (AUTH-02)', () => {
   it('accepts the common written forms', () => {
@@ -36,9 +36,17 @@ describe('auth schemas', () => {
       expect(messages).toEqual({
         fullName: 'Enter your name',
         email: 'Enter an email address like name@example.com',
-        password: 'Use at least 8 characters',
+        password: 'Use at least 10 characters',
       });
     }
+  });
+
+  it('asks for ten characters or more, and still signs in a password chosen when eight was enough (D-161)', () => {
+    const person = { fullName: 'Ben', email: 'ben@example.com', role: 'learner' as const };
+    expect(signUpSchema.safeParse({ ...person, password: '123456789' }).success).toBe(false);
+    expect(signUpSchema.safeParse({ ...person, password: '1234567890' }).success).toBe(true);
+    expect(newPasswordSchema.safeParse({ password: '123456789' }).success).toBe(false);
+    expect(signInSchema.safeParse({ email: 'ben@example.com', password: '12345678' }).success).toBe(true);
   });
 
   it('asks schools for their name', () => {

@@ -31,7 +31,11 @@ module.exports = {
   ci: {
     collect: {
       url: pages,
-      numberOfRuns: 3,
+      // Five, as Lighthouse advises, not three. On CI the profile page's runs swing from the mid
+      // seventies to 96 on the same code (a cold first run is usually the low one), so a median of
+      // three sat on the line: 90 before the bell (bac7735), 90 after it, and 88 on main on 19
+      // September. The bar stays 90; five runs measure it rather than the runner (NFR-PERF-04).
+      numberOfRuns: 5,
       settings: {
         // The phone Lighthouse emulates, saying it is Lighthouse as PageSpeed Insights does. Next.js
         // gives search engines, link previews and Lighthouse titles and descriptions in the head, and
