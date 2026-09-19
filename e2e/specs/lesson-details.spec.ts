@@ -88,4 +88,22 @@ test.describe('a lesson opened from its card (DIA-04, D-166)', () => {
     await snap(page, testInfo, 'lesson-details-today');
     await removeLesson('Sarah Khan', learner, today, hour);
   });
+
+  test('lists the lessons after today under Today, five at a time, each opening (D-167)', async ({ page }, testInfo) => {
+    await page.goto('/app/instructor');
+    await expect(page.getByRole('heading', { level: 2, name: 'Upcoming lessons' })).toBeVisible();
+    const upcoming = page.getByRole('list', { name: 'Upcoming lessons' });
+    // The seed books Sarah a fortnight ahead, so there are always more than ten.
+    await expect(upcoming.getByRole('listitem')).toHaveCount(5);
+    await page.getByRole('link', { name: 'Show more' }).click();
+    await expect(page).toHaveURL(/upcoming=10$/);
+    await expect(upcoming.getByRole('listitem')).toHaveCount(10);
+    await expectAccessible(page);
+    await snap(page, testInfo, 'upcoming-lessons');
+
+    const first = upcoming.getByRole('button').first();
+    const learnerName = ((await first.getAttribute('aria-label')) ?? '').replace(/^Open \d{2}:\d{2} with /, '');
+    await tapUntil(first, page.getByRole('dialog', { name: learnerName }));
+  });
 });
+
