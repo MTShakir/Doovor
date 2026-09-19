@@ -22,7 +22,8 @@ export default function PrivacyPage() {
     >
       <LegalSection title="Who is responsible">
         <LegalText>
-          {brand.name} is run by {brand.legalEntity}. Two different things happen on it, and who is responsible
+          {brand.name} is run by {brand.legalEntity}, which is registered with the Information Commissioner&apos;s
+          Office under reference {brand.icoRegistration}. Two different things happen on it, and who is responsible
           differs between them.
         </LegalText>
         <LegalList
@@ -33,9 +34,8 @@ export default function PrivacyPage() {
         />
         <ForTheSolicitor>
           <p>
-            Please confirm the controller and processor split above, give the registered company details and ICO
-            registration number to print here, and say whether a representative or data protection officer must be
-            named.
+            Please confirm the controller and processor split above, give the company number and registered office to
+            print here, and say whether a representative or data protection officer must be named.
           </p>
         </ForTheSolicitor>
       </LegalSection>

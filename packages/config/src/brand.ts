@@ -17,6 +17,8 @@ export const brand = {
   shortName: name,
   tagline: 'Book, pay and track driving lessons in one simple app.',
   legalEntity: 'Maxterz LTD',
+  /** The company's entry in the ICO's register of data controllers, printed in the privacy notice. */
+  icoRegistration: 'ZC165156',
   domain,
   appHost,
   /** The public site: the landing page now, pricing and the blog later. */
