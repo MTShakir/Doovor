@@ -36,6 +36,9 @@ import { EditableSkillMap } from '@/components/progress/editable-skill-map';
 import { SkillMap } from '@/components/progress/skill-map';
 import { PickupPoints } from '@/components/learners/pickup-points';
 import { LessonDetailsBody } from '@/components/lessons/lesson-details';
+import { LessonsCalendar } from '@/components/lessons/lessons-calendar';
+import { MyLessonRow } from '@/app/(portal)/app/learner/lessons/my-lesson';
+import type { MyLesson } from '@/lib/learner/lessons';
 import { UpcomingLessons } from '@/components/lessons/upcoming-lessons';
 import type { LessonDetails } from '@/lib/lessons/details';
 import type { TeachingLesson } from '@/lib/lessons/teaching';
@@ -389,6 +392,31 @@ const exampleLessonUnreachable: LessonDetails = {
   textReminders: false,
 };
 const exampleLessonDone: LessonDetails = { ...exampleLesson, id: 'lesson-3', status: 'completed', paymentStatus: 'paid_card' };
+
+/** A learner's lessons to come, for their month calendar (D-170): two in one week, one the next month. */
+const exampleMyLesson: MyLesson = {
+  id: 'my-lesson-1',
+  startsAt: '2026-09-22T13:30:00Z',
+  endsAt: '2026-09-22T15:00:00Z',
+  status: 'confirmed',
+  paymentStatus: 'unpaid',
+  instructorId: 'instructor-1',
+  instructorName: 'Sarah Khan',
+  lessonType: 'Standard lesson',
+  pricePence: 6300,
+  pickup: 'Home',
+  durationMinutes: 90,
+  canPayNow: true,
+  paymentMode: 'after_lesson',
+  disputeUntil: null,
+  dispute: null,
+};
+const exampleMyLessons: MyLesson[] = [
+  exampleMyLesson,
+  { ...exampleMyLesson, id: 'my-lesson-2', startsAt: '2026-09-24T07:00:00Z', endsAt: '2026-09-24T08:00:00Z', durationMinutes: 60, pricePence: 4200, paymentStatus: 'paid_credit', canPayNow: false },
+  { ...exampleMyLesson, id: 'my-lesson-3', startsAt: '2026-10-06T08:00:00Z', endsAt: '2026-10-06T10:00:00Z', lessonType: 'Mock test', durationMinutes: 120, pricePence: 8400 },
+];
+const exampleLearnerRules = { cancellationWindowHours: 48, lateFeePercent: 100 };
 
 /** The lessons after today, under Today's (D-167). */
 const exampleUpcoming: TeachingLesson[] = [
@@ -1446,6 +1474,18 @@ export function DesignShowcase() {
             <UpcomingLessons lessons={exampleUpcoming} more shown={5} />
             <UpcomingLessons lessons={[]} more={false} shown={5} />
           </div>
+        </Suspense>
+        <Label>A learner&apos;s lessons to come on a month calendar, opened on the next one (PRD 8.2, D-170); and with none booked</Label>
+        <Suspense fallback={<SkeletonRow />}>
+          <LessonsCalendar
+            today="2026-09-19"
+            lessons={exampleMyLessons.map((lesson) => ({
+              id: lesson.id,
+              startsAt: lesson.startsAt,
+              row: <MyLessonRow lesson={lesson} rules={exampleLearnerRules} now="2026-09-19T09:00:00Z" canChange />,
+            }))}
+          />
+          <LessonsCalendar today="2026-09-19" lessons={[]} />
         </Suspense>
       </Section>
 
