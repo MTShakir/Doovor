@@ -39,14 +39,22 @@ async function Lessons() {
   const { upcoming, past } = await myLessons();
   const now = new Date();
   const rules = await rulesFor(upcoming[0] ?? past[0]);
-  const toCome = (lesson: MyLesson) => <MyLessonRow lesson={lesson} rules={rules} now={now.toISOString()} canChange />;
+  // Keyed, since the calendar is handed these in a list of its own.
+  const toCome = (lesson: MyLesson) => (
+    <MyLessonRow key={lesson.id} lesson={lesson} rules={rules} now={now.toISOString()} canChange />
+  );
 
   return (
     <>
       <Tabs defaultValue="list" className="flex flex-col gap-4">
+        {/* Less padding than a tab usually has, so both still fit side by side at twice the text size. */}
         <TabsList aria-label="Lessons to come" className="w-full md:w-96">
-          <TabsTrigger value="list">Coming up</TabsTrigger>
-          <TabsTrigger value="calendar">Calendar</TabsTrigger>
+          <TabsTrigger value="list" className="px-2">
+            Coming up
+          </TabsTrigger>
+          <TabsTrigger value="calendar" className="px-2">
+            Calendar
+          </TabsTrigger>
         </TabsList>
         <TabsContent value="list" className="pt-0">
           {upcoming.length === 0 ? (
