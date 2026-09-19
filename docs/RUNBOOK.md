@@ -348,14 +348,24 @@ Every one of these is: create the new, set it in Vercel, redeploy, check, then d
 - Every report passes through `apps/web/src/lib/errors/reporting.ts` first, which drops the query
   string, the cookies and the body, removes any header whose name says it is a secret, keeps only
   the account id of the person it happened to, and never records a session (D-150).
-- **Switched on 19 September 2026:** project `doovor-web` in the `doovor` organisation, which stores
+- **Set up on 19 September 2026:** project `doovor-web` in the `doovor` organisation, which stores
   data in the EU. The DSN is in Vercel for Production and Preview as a Config value, since it ships in
-  every page anyway. The project stores no IP addresses and accepts browser reports only from
-  `app.doovor.com`, `doovor.com` and `localhost:3000`. Two alerts email the team: "New, returning or
-  escalating issues", and "Same issue more than 10 times in 5 minutes", at most once every 30
-  minutes per issue. Both were proved end to end from a laptop: `/dev/error` and a thrown browser
-  error each arrived within seconds, without cookies, query strings, bodies, IP addresses or a user.
-  Sentry still adds an approximate town, worked out from the sender's IP before it drops it.
+  every page anyway. The code that uses it arrives with M6, so `app.doovor.com` reports once M6 is
+  merged and deployed; preview builds of the branch report now. The project stores no IP addresses
+  and accepts browser reports only from `app.doovor.com`, `doovor.com` and `localhost:3000`. Two
+  alerts email the team: "New, returning or escalating issues", and "Same issue more than 10 times
+  in 5 minutes", at most once every 30 minutes per issue. Proved end to end from a production build
+  on a laptop: `/dev/error` and thrown browser errors each arrived within seconds, without cookies,
+  query strings, bodies, IP addresses or a user.
+- **Browser reports go through our own server** (`/api/reports`, D-157). Sent straight from a
+  browser, Sentry worked out the visitor's town from their address before dropping it. The route
+  passes on reports for our own project only, with none of the visitor's headers, so Sentry sees
+  Vercel instead. The security policy no longer lets a browser talk to Sentry at all. When Sentry
+  turns a report away, the route logs Sentry's status and short reason, never the report.
+- **Uptime (19 September 2026):** Sentry checks `https://app.doovor.com/api/health` every minute,
+  calls it down after two failures in a row and up after one success, and the two alerts above
+  cover it. Uptime check data may be stored outside the EU; it holds only our endpoint's status and
+  timings, and the product owner accepted that.
 - **How it was switched on, for the next project:**
   1. Create a Sentry project in the EU region. Copy the DSN into `NEXT_PUBLIC_SENTRY_DSN` in Vercel,
      for Preview and Production.

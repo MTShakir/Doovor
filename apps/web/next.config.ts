@@ -16,7 +16,6 @@ if (existsSync(rootEnvFile)) process.loadEnvFile(rootEnvFile);
 const headers = securityHeaders({
   NEXT_PUBLIC_SUPABASE_URL: process.env.NEXT_PUBLIC_SUPABASE_URL,
   NEXT_PUBLIC_POSTHOG_HOST: process.env.NEXT_PUBLIC_POSTHOG_HOST,
-  NEXT_PUBLIC_SENTRY_DSN: process.env.NEXT_PUBLIC_SENTRY_DSN,
   production: process.env.NODE_ENV === 'production',
   hosted: process.env.APP_ENV === 'preview' || process.env.APP_ENV === 'production',
 });

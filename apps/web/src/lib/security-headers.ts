@@ -16,7 +16,6 @@
 export interface HeaderEnvironment {
   NEXT_PUBLIC_SUPABASE_URL?: string | undefined;
   NEXT_PUBLIC_POSTHOG_HOST?: string | undefined;
-  NEXT_PUBLIC_SENTRY_DSN?: string | undefined;
   /** A build forbids a script from a string; a person developing needs one. */
   production?: boolean | undefined;
   /**
@@ -77,7 +76,8 @@ export function contentSecurityPolicy(env: HeaderEnvironment): string {
   // Live rows and presence arrive over a socket on the same host (D-054).
   const supabaseSocket = supabase.map((origin) => origin.replace(/^http/, 'ws'));
   const posthog = originOf(env.NEXT_PUBLIC_POSTHOG_HOST);
-  const sentry = originOf(env.NEXT_PUBLIC_SENTRY_DSN);
+  // No origin for the error service: the browser reports to our own server, which passes the
+  // report on, so Sentry never sees where a visitor is (D-157).
 
   return [
     "default-src 'self'",
@@ -88,7 +88,7 @@ export function contentSecurityPolicy(env: HeaderEnvironment): string {
     "style-src 'self' 'unsafe-inline'",
     ['img-src', "'self'", 'data:', 'blob:', ...supabase, ...mapbox.images, ...stripe.images, ...link.images].join(' '),
     "font-src 'self'",
-    ['connect-src', "'self'", ...supabase, ...supabaseSocket, ...mapbox.connect, ...stripe.connect, ...link.connect, ...posthog, ...sentry].join(' '),
+    ['connect-src', "'self'", ...supabase, ...supabaseSocket, ...mapbox.connect, ...stripe.connect, ...link.connect, ...posthog].join(' '),
     // The map library builds its tile workers itself; ours is served from our own origin.
     "worker-src 'self' blob:",
     ['frame-src', "'self'", ...stripe.frames, ...link.frames].join(' '),

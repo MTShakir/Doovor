@@ -4,7 +4,6 @@ import { contentSecurityPolicy, securityHeaders, type HeaderEnvironment } from '
 const hosted: HeaderEnvironment = {
   NEXT_PUBLIC_SUPABASE_URL: 'https://abcdefgh.supabase.co',
   NEXT_PUBLIC_POSTHOG_HOST: 'https://eu.i.posthog.com',
-  NEXT_PUBLIC_SENTRY_DSN: 'https://key@o123.ingest.de.sentry.io/456',
   production: true,
   hosted: true,
 };
@@ -72,12 +71,20 @@ describe('the content security policy (NFR-SEC-03, M6-04)', () => {
     expect((policy['script-src'] ?? []).filter((source) => source.includes('mapbox'))).toEqual([]);
   });
 
-  it('admits the database, its socket, and the hosts that count and catch things', () => {
+  it('admits the database, its socket, and the host that counts things', () => {
     const policy = directives(hosted);
     expect(policy['connect-src']).toEqual(expect.arrayContaining(['https://abcdefgh.supabase.co', 'wss://abcdefgh.supabase.co']));
     expect(policy['img-src']).toContain('https://abcdefgh.supabase.co');
-    expect(policy['connect-src']).toEqual(expect.arrayContaining(['https://eu.i.posthog.com', 'https://o123.ingest.de.sentry.io']));
+    expect(policy['connect-src']).toContain('https://eu.i.posthog.com');
     expect(policy['script-src']).toContain('https://eu.i.posthog.com');
+  });
+
+  it('never lets the browser talk to the error service: reports go through our own server (D-157)', () => {
+    // Even handed the DSN, which is how an origin for it would creep back in.
+    const withDsn = { ...hosted, NEXT_PUBLIC_SENTRY_DSN: 'https://key@o123.ingest.de.sentry.io/456' } as HeaderEnvironment;
+    for (const sources of Object.values(directives(withDsn))) {
+      expect(sources.filter((source) => source.includes('sentry'))).toEqual([]);
+    }
   });
 
   it('leaves out what is not set, rather than naming a broken origin', () => {

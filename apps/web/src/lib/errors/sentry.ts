@@ -9,12 +9,19 @@ import { beforeSend } from './reporting';
  *
  * Without a DSN, then: nothing fetched, no requests, nothing stored.
  */
-export async function watchForErrors(dsn: string | undefined, environment: string): Promise<void> {
+/**
+ * Where the browser sends its reports: our own server, which passes them on (`app/api/reports`).
+ * Sentry then never sees a visitor's address, and so never works out their town (D-157).
+ */
+export const reportsPath = '/api/reports';
+
+export async function watchForErrors(dsn: string | undefined, environment: string, options: { tunnel?: string } = {}): Promise<void> {
   if (!dsn) return;
   const Sentry = await import('@sentry/nextjs');
   Sentry.init({
     dsn,
     environment,
+    ...(options.tunnel ? { tunnel: options.tunnel } : {}),
     // Errors always; a tenth of traces, which is enough to see where time goes without paying for
     // every request.
     tracesSampleRate: 0.1,
