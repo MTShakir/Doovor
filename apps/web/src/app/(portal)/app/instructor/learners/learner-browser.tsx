@@ -22,6 +22,8 @@ export interface LearnerBrowserProps {
   path?: string;
   /** A school has no way of adding somebody yet: their instructors do that. */
   canAdd?: boolean;
+  /** Opened with the add sheet showing, from "Add a new learner" when booking (D-165). */
+  startAdding?: boolean;
   children: ReactNode;
 }
 /** Long enough that a name is typed, not spelled out, into the address bar. */
@@ -34,6 +36,7 @@ export function LearnerBrowser({
   total,
   path = '/app/instructor/learners',
   canAdd = true,
+  startAdding = false,
   children,
 }: LearnerBrowserProps) {
   const router = useRouter();
@@ -42,7 +45,7 @@ export function LearnerBrowser({
   // would otherwise build the second address from the state before the first.
   const [term, setTerm] = useState(search);
   const [chosen, setChosen] = useState(filter);
-  const [adding, setAdding] = useState(false);
+  const [adding, setAdding] = useState(canAdd && startAdding);
   // Two ways in, both on one screen: a link they accept, or their details typed in (LRN-03).
   const [way, setWay] = useState<'link' | 'details'>('link');
   const typing = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -109,7 +112,11 @@ export function LearnerBrowser({
       {canAdd ? (
       <Sheet
         open={adding}
-        onOpenChange={setAdding}
+        onOpenChange={(open) => {
+          setAdding(open);
+          // Closed, it is the plain list again, so a refresh does not open it a second time.
+          if (!open && startAdding) show({});
+        }}
         title="Add a learner"
         description="Send them a link, or put in what you already know about them."
       >

@@ -1,12 +1,15 @@
 import type { Metadata } from 'next';
 import { resolveBookingRules } from '@repo/core/booking-rules';
+import { todayInZone } from '@repo/core/time';
 import { PageHeader } from '@repo/ui/app-shell';
 import { Card } from '@repo/ui/card';
 import { EmptyState } from '@repo/ui/empty-state';
 import { ListDivider } from '@repo/ui/list-row';
 import { SkeletonRow } from '@repo/ui/skeleton';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@repo/ui/tabs';
 import { CalendarX } from 'lucide-react';
 import { Fragment, Suspense } from 'react';
+import { LessonsCalendar } from '@/components/lessons/lessons-calendar';
 import { requirePortal } from '@/lib/auth/session';
 import { myLessons, type MyLesson } from '@/lib/learner/lessons';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
@@ -27,38 +30,59 @@ export default function LessonsPage() {
   );
 }
 
-/** PRD 8.2: the learner's own lessons, and the two things they may do to one. */
+/**
+ * PRD 8.2: the learner's own lessons, and the two things they may do to one. What is to come shows
+ * as a list or on a month calendar (D-170); what has happened is under both.
+ */
 async function Lessons() {
   await requirePortal('learner');
   const { upcoming, past } = await myLessons();
   const now = new Date();
   const rules = await rulesFor(upcoming[0] ?? past[0]);
+  // Keyed, since the calendar is handed these in a list of its own.
+  const toCome = (lesson: MyLesson) => (
+    <MyLessonRow key={lesson.id} lesson={lesson} rules={rules} now={now.toISOString()} canChange />
+  );
 
   return (
     <>
-      <section className="flex flex-col gap-2" aria-labelledby="upcoming-lessons">
-        <h2 id="upcoming-lessons" className="text-h3 text-black">
-          Coming up
-        </h2>
-        {upcoming.length === 0 ? (
-          <Card padding="none">
-            <EmptyState
-              icon={CalendarX}
-              title="No lessons booked"
-              description="When your instructor books one, or you do, it appears here."
-            />
-          </Card>
-        ) : (
-          <Card padding="none">
-            {upcoming.map((lesson, index) => (
-              <Fragment key={lesson.id}>
-                {index === 0 ? null : <ListDivider />}
-                <MyLessonRow lesson={lesson} rules={rules} now={now.toISOString()} canChange />
-              </Fragment>
-            ))}
-          </Card>
-        )}
-      </section>
+      <Tabs defaultValue="list" className="flex flex-col gap-4">
+        {/* Less padding than a tab usually has, so both still fit side by side at twice the text size. */}
+        <TabsList aria-label="Lessons to come" className="w-full md:w-96">
+          <TabsTrigger value="list" className="px-2">
+            Coming up
+          </TabsTrigger>
+          <TabsTrigger value="calendar" className="px-2">
+            Calendar
+          </TabsTrigger>
+        </TabsList>
+        <TabsContent value="list" className="pt-0">
+          {upcoming.length === 0 ? (
+            <Card padding="none">
+              <EmptyState
+                icon={CalendarX}
+                title="No lessons booked"
+                description="When your instructor books one, or you do, it appears here."
+              />
+            </Card>
+          ) : (
+            <Card padding="none">
+              {upcoming.map((lesson, index) => (
+                <Fragment key={lesson.id}>
+                  {index === 0 ? null : <ListDivider />}
+                  {toCome(lesson)}
+                </Fragment>
+              ))}
+            </Card>
+          )}
+        </TabsContent>
+        <TabsContent value="calendar" className="pt-0">
+          <LessonsCalendar
+            today={todayInZone(now)}
+            lessons={upcoming.map((lesson) => ({ id: lesson.id, startsAt: lesson.startsAt, row: toCome(lesson) }))}
+          />
+        </TabsContent>
+      </Tabs>
 
       {past.length === 0 ? null : (
         <section className="flex flex-col gap-2" aria-labelledby="past-lessons">

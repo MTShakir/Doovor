@@ -1,6 +1,6 @@
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { NavLink } from '@/components/nav-link';
-import type { ChosenView, DiaryView } from '@/lib/diary/range';
+import { containsToday, type ChosenView, type DiaryView } from '@/lib/diary/range';
 
 const chosen = 'bg-black text-white';
 const notChosen = 'text-black hover:bg-grey-200';
@@ -15,6 +15,19 @@ const views: { value: DiaryView; label: string; whenResponsive: string }[] = [
   { value: 'week', label: 'Week', whenResponsive: `${notChosen} md:bg-black md:text-white md:hover:bg-black` },
   { value: 'month', label: 'Month', whenResponsive: notChosen },
 ];
+
+/**
+ * Where "Back to today" shows: only where the screen is not already showing today. It once said
+ * "Today" whatever day was on screen, and read as a label for the day shown rather than a way back
+ * to it. Nothing chosen is a day on a phone and a week on a desktop, which can differ.
+ */
+function backToTodayClasses(view: ChosenView, date: string, today: string): string | null {
+  if (view !== 'responsive') return containsToday(view, date, today) ? null : 'flex';
+  const onPhone = !containsToday('day', date, today);
+  const onDesktop = !containsToday('week', date, today);
+  if (!onPhone && !onDesktop) return null;
+  return `${onPhone ? 'flex' : 'hidden'} ${onDesktop ? 'md:flex' : 'md:hidden'}`;
+}
 
 /** Nothing chosen stays nothing chosen, so the arrows keep whichever view the screen shows. */
 function href(view: ChosenView, date: string): string {
@@ -35,6 +48,7 @@ export function DiaryNav({ view, date, previous, next, today }: {
   next: string;
   today: string;
 }) {
+  const backToToday = backToTodayClasses(view, date, today);
   const arrow =
     'flex size-12 shrink-0 items-center justify-center rounded-full bg-grey-100 text-black hover:bg-grey-200 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-black';
 
@@ -48,12 +62,14 @@ export function DiaryNav({ view, date, previous, next, today }: {
         <NavLink href={href(view, next)} aria-label="Next" className={arrow}>
           <ChevronRight className="size-5" aria-hidden />
         </NavLink>
-        <NavLink
-          href={href(view, today)}
-          className="flex h-12 items-center rounded-full px-4 text-body font-semibold text-black underline-offset-4 hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-black"
-        >
-          Today
-        </NavLink>
+        {backToToday ? (
+          <NavLink
+            href={href(view, today)}
+            className={`${backToToday} h-12 items-center rounded-full px-4 text-body font-semibold text-black underline-offset-4 hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-black`}
+          >
+            Back to today
+          </NavLink>
+        ) : null}
       </div>
       <ul className="inline-flex min-h-12 flex-wrap items-center gap-1 rounded-full bg-grey-100 p-1">
         {views.map((option) => (

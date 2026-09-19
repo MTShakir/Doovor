@@ -9,6 +9,7 @@ import { tellRegionOpened } from '@/jobs/regions';
 import { sendRefund } from '@/jobs/payments';
 import { sendReceipt } from '@/jobs/receipts';
 import { notifyLessonRecordAdded } from '@/jobs/record-notices';
+import { remindByHand } from '@/jobs/reminders';
 import { devRoutesOpen } from '@/lib/dev-routes';
 
 const eventSchema = z.object({
@@ -65,6 +66,9 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
   if (name === 'payment.fee_charge') {
     const bookingId = typeof payload.booking_id === 'string' ? payload.booking_id : '';
     return NextResponse.json(await chargeFee(bookingId));
+  }
+  if (name === 'booking.reminder_requested') {
+    return NextResponse.json(await remindByHand(payload));
   }
   if (name.startsWith('booking.') || name === 'payment.charge_failed') {
     return NextResponse.json(await notifyAboutBooking({ name, payload }));

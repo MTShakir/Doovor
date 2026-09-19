@@ -7,11 +7,11 @@ import { Button } from '@repo/ui/button';
 import { Card, CardTitle } from '@repo/ui/card';
 import { ListDivider, ListRow } from '@repo/ui/list-row';
 import { SkeletonRow } from '@repo/ui/skeleton';
-import { StatusPill } from '@repo/ui/status-pill';
 import { ChevronLeft, Mail, MessageSquare, Phone, TrendingUp } from 'lucide-react';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
-import { Fragment, Suspense } from 'react';
+import { Suspense } from 'react';
+import { PickupPoints } from '@/components/learners/pickup-points';
 import { BalanceHistory, BalanceLines, OwedBackList, OwedLessons } from '@/components/money/balance';
 import { MarkPaidButton } from '@/components/money/mark-paid';
 import { lessonWhen } from '@/components/progress/lesson-record-card';
@@ -19,11 +19,13 @@ import { requirePortal } from '@/lib/auth/session';
 import { learnerCard, type LearnerCard } from '@/lib/learners/card';
 import { learnerHistory, type LearnerHistoryEntry } from '@/lib/learners/history';
 import { learnerNotes } from '@/lib/learners/notes';
+import { learnerPickupPoints } from '@/lib/pickup/list';
 import { learnerSkillMap, lessonRecordPage } from '@/lib/lessons/records';
 import { learnerBalance } from '@/lib/payments/balance';
 import { noShowDisputes } from '@/lib/payments/disputes';
 import { packagesForSale } from '@/lib/payments/packages';
 import { BookLesson } from '../../book-lesson';
+import { addLearnerPickup, removeLearnerPickup, updateLearnerPickup } from './actions';
 import { HandBack } from './hand-back';
 import { NoShowDisputes } from './no-show-disputes';
 import { Notes } from './notes';
@@ -57,7 +59,11 @@ async function Learner({ params }: LearnerPageProps) {
   // not there, and not there and not allowed look the same from here.
   if (!card) notFound();
 
-  const [notes, history] = await Promise.all([learnerNotes(card.learnerId), learnerHistory(card.learnerId)]);
+  const [notes, history, pickups] = await Promise.all([
+    learnerNotes(card.learnerId),
+    learnerHistory(card.learnerId),
+    learnerPickupPoints(card.learnerId, card.businessId),
+  ]);
   const mine = access.memberships.some((one) => one.instructorProfileId === card.instructorId);
   const gearbox = card.transmission === null ? null : card.transmission === 'manual' ? 'Manual' : 'Automatic';
 
@@ -98,7 +104,12 @@ async function Learner({ params }: LearnerPageProps) {
         <Lessons card={card} />
         <Progress card={card} />
         <Money card={card} access={access} />
-        <Pickups card={card} />
+        <PickupPoints
+          learnerId={card.learnerId}
+          learnerName={card.fullName}
+          pickups={pickups}
+          actions={{ add: addLearnerPickup, update: updateLearnerPickup, remove: removeLearnerPickup }}
+        />
         <Notes learnerId={card.learnerId} notes={notes} viewerId={session.userId} />
         <History entries={history} />
       </div>
@@ -298,28 +309,3 @@ function History({ entries }: { entries: LearnerHistoryEntry[] }) {
 }
 
 /** COV-04: where to pick them up, the default first. */
-function Pickups({ card }: { card: LearnerCard }) {
-  return (
-    <Card padding="none" role="region" aria-labelledby="pickups-title">
-      <div className="px-4 pt-4">
-        <CardTitle id="pickups-title">Pickup points</CardTitle>
-      </div>
-      {card.pickups.length === 0 ? (
-        <p className="px-4 py-4 text-small text-grey-700">
-          None saved yet. They can add one, or you can when you book a lesson.
-        </p>
-      ) : (
-        card.pickups.map((pickup, index) => (
-          <Fragment key={pickup.id}>
-            {index === 0 ? null : <ListDivider />}
-            <ListRow
-              title={pickup.label}
-              subtitle={[pickup.postcode, pickup.address].filter((part) => part !== null && part !== '').join(' · ')}
-              trailing={pickup.is_default ? <StatusPill status="credit">Default</StatusPill> : undefined}
-            />
-          </Fragment>
-        ))
-      )}
-    </Card>
-  );
-}

@@ -22,10 +22,12 @@ export interface DayViewProps {
   showInstructor?: boolean;
   /** The moment the page was rendered (BOK-10, R-09). */
   now?: Date;
+  /** A lesson opens its sheet when tapped: the instructor's own diary (D-166). */
+  openable?: boolean;
 }
 
 /** The day, top to bottom: what is on, and the gaps between (DIA-03, M1-19). */
-export function DayView({ lessons, opens, closes, showInstructor = false, canAnswer = false, rules, now }: DayViewProps) {
+export function DayView({ lessons, opens, closes, showInstructor = false, canAnswer = false, rules, now, openable = false }: DayViewProps) {
   if (lessons.length === 0) {
     return (
       <EmptyState
@@ -51,6 +53,7 @@ export function DayView({ lessons, opens, closes, showInstructor = false, canAns
         showInstructor={showInstructor}
         canAnswer={canAnswer}
         rules={rules}
+        openable={openable}
       />
     </div>
   );

@@ -6,13 +6,19 @@ import { SkeletonRow } from '@repo/ui/skeleton';
 import { connection } from 'next/server';
 import { Suspense } from 'react';
 import { TodayLessonsLive } from '@/components/lessons/today-lessons-live';
+import { UpcomingLessons } from '@/components/lessons/upcoming-lessons';
 import { InstallPrompt } from '@/components/pwa/install-prompt';
 import { SetupChecklist } from '@/components/setup-checklist';
 import { requirePortal } from '@/lib/auth/session';
-import { teachingProfiles, todaysLessons } from '@/lib/lessons/teaching';
+import { teachingProfiles, todaysLessons, upcomingLessons } from '@/lib/lessons/teaching';
+import { upcomingCount } from '@/lib/lessons/upcoming';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
 
-export default function InstructorHomePage() {
+interface TodayProps {
+  searchParams: Promise<{ upcoming?: string }>;
+}
+
+export default function InstructorHomePage({ searchParams }: TodayProps) {
   return (
     <main className="flex flex-col gap-4 pb-8">
       <PageHeader
@@ -30,6 +36,14 @@ export default function InstructorHomePage() {
         <Suspense fallback={<SkeletonRow />}>
           <Lessons />
         </Suspense>
+        <section aria-labelledby="upcoming-title" className="flex flex-col gap-2">
+          <h2 id="upcoming-title" className="text-h3 text-black">
+            Upcoming lessons
+          </h2>
+          <Suspense fallback={<SkeletonRow />}>
+            <Upcoming searchParams={searchParams} />
+          </Suspense>
+        </section>
         <InstallPrompt why="It opens in one tap, and Today still opens where there is no signal." />
       </div>
     </main>
@@ -43,6 +57,14 @@ async function Lessons() {
   const lessons = await todaysLessons(teachingProfiles(access), now);
   // With no signal, the list draws itself from the phone's copy of the day (M4-10).
   return <TodayLessonsLive lessons={lessons} now={now.toISOString()} />;
+}
+
+/** The next lessons after today, five at a time (DIA-04, D-167). */
+async function Upcoming({ searchParams }: TodayProps) {
+  const shown = upcomingCount((await searchParams).upcoming);
+  const { access } = await requirePortal('instructor');
+  const { lessons, more } = await upcomingLessons(teachingProfiles(access), shown);
+  return <UpcomingLessons lessons={lessons} more={more} shown={shown} />;
 }
 
 /** Today's date is not something a shell can be prerendered with (Cache Components). */

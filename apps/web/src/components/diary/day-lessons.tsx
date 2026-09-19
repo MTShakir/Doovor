@@ -23,6 +23,8 @@ export interface DayLessonsProps {
   showInstructor?: boolean;
   canAnswer?: boolean;
   rules?: { cancellationWindowHours: number; lateFeePercent: number };
+  /** A lesson opens its sheet when tapped (D-166). */
+  openable?: boolean;
 }
 
 /** How long to hold a lesson on a phone before it offers to move (PRD 7.1, BOK-08). */
@@ -35,7 +37,7 @@ const HOLD_MS = 500;
  * A dragged lesson moves on screen before the server has agreed, and moves back if the
  * server says no, because a diary that waits half a second to redraw feels broken.
  */
-export function DayLessons({ lessons, gaps, now, showInstructor = false, canAnswer = false, rules }: DayLessonsProps) {
+export function DayLessons({ lessons, gaps, now, showInstructor = false, canAnswer = false, rules, openable = false }: DayLessonsProps) {
   const router = useRouter();
   const [, startTransition] = useTransition();
   const [moved, setMoved] = useState<Record<string, Date>>({});
@@ -43,6 +45,8 @@ export function DayLessons({ lessons, gaps, now, showInstructor = false, canAnsw
   const [over, setOver] = useState<number | null>(null);
   const [sheet, setSheet] = useState<{ id: string; action: 'move' | 'cancel' | 'paid' } | null>(null);
   const holding = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // The lesson a hold has just opened Move for, so letting go does not open it as well.
+  const held = useRef<string | null>(null);
 
   const shown = lessons.map((lesson) => {
     const to = moved[lesson.id];
@@ -94,7 +98,11 @@ export function DayLessons({ lessons, gaps, now, showInstructor = false, canAnsw
     // A mouse drags a lesson; a finger holds it. Arming the hold for both means a slow drag
     // opens the sheet halfway through.
     if (pointer === 'mouse') return;
-    holding.current = setTimeout(() => { setSheet({ id: lessonId, action: 'move' }); }, HOLD_MS);
+    held.current = null;
+    holding.current = setTimeout(() => {
+      held.current = lessonId;
+      setSheet({ id: lessonId, action: 'move' });
+    }, HOLD_MS);
   };
   const letGo = () => {
     if (holding.current) clearTimeout(holding.current);
@@ -130,6 +138,12 @@ export function DayLessons({ lessons, gaps, now, showInstructor = false, canAnsw
                   onComplete={() => { done(lesson.id); }}
                   onNoShow={() => { after('no show', () => markNoShow({ bookingId: lesson.id })); }}
                   onMarkPaid={rules ? () => { setSheet({ id: lesson.id, action: 'paid' }); } : undefined}
+                  openable={openable}
+                  shouldOpen={() => {
+                    const justHeld = held.current === lesson.id;
+                    held.current = null;
+                    return !justHeld;
+                  }}
                 />
               </div>
               {gap ? (

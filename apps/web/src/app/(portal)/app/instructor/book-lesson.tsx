@@ -11,11 +11,19 @@ import { Skeleton } from '@repo/ui/skeleton';
 import { TimeSlotGrid } from '@repo/ui/time-slot-grid';
 import { toast } from '@repo/ui/toast';
 import { CalendarPlus } from 'lucide-react';
+import { useRouter } from 'next/navigation';
 import { useEffect, useState, useTransition } from 'react';
 import { track } from '@/lib/analytics/track';
 import { FormAlert } from '@/components/form-alert';
 import type { LessonOption } from '@/lib/booking/day';
 import { bookableLessons, bookLesson, bookWeekly, slotsForDay } from './booking-actions';
+
+/**
+ * The last choice under "Who is it for?": somebody not in the list yet is added first, on the
+ * Learners screen with its add sheet already open (LRN-01, D-165).
+ */
+const addLearner = 'add-new-learner';
+const addLearnerPath = '/app/instructor/learners?add=1';
 
 /** How often it happens. Most learners have the same slot every week (BOK-05). */
 const repeats = [
@@ -48,6 +56,7 @@ export interface BookLessonProps {
  * allowed to teach outside them and a learner is not (R-04).
  */
 export function BookLesson({ learners, learnerId, date, label = 'Book a lesson', variant = 'primary' }: BookLessonProps) {
+  const router = useRouter();
   const [open, setOpen] = useState(false);
   const [pending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
@@ -106,6 +115,10 @@ export function BookLesson({ learners, learnerId, date, label = 'Book a lesson',
 
   /** Picking a learner picks the length they usually book, which is usually the right one. */
   const changeLearner = (id: string) => {
+    if (id === addLearner) {
+      router.push(addLearnerPath);
+      return;
+    }
     setLearner(id);
     const usual = learners.find((one) => one.id === id)?.usualDurationMinutes;
     const match = lessons.find((one) => one.durationMinutes === usual);
@@ -203,7 +216,10 @@ export function BookLesson({ learners, learnerId, date, label = 'Book a lesson',
             <Select
               value={learner}
               onChange={(event) => { changeLearner(event.target.value); }}
-              options={learners.map((one) => ({ value: one.id, label: one.name }))}
+              options={[
+                ...learners.map((one) => ({ value: one.id, label: one.name })),
+                { value: addLearner, label: 'Add a new learner' },
+              ]}
             />
           </Field>
 

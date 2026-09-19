@@ -92,6 +92,7 @@ export async function setBookingStatus(
  * | Thursday  | booking-requests      |
  * | Friday    | acceptance            |
  * | Saturday  | offline-payments      |
+ * | Sunday    | lesson-details        |
  *
  * Within a weekday, each width takes its own week, because both widths run at once.
  */
@@ -1819,5 +1820,20 @@ export async function giveThemAHistory(userId: string, schoolName = 'Quayside Dr
     await sql`
       insert into public.push_subscriptions (user_id, endpoint, p256dh, auth)
       values (${userId}, ${`https://push.example.test/${userId}`}, 'a-public-key-long-enough', 'an-auth-secret-too')`;
+  });
+}
+
+/**
+ * Takes away the pickup points a Business added for a learner, so a test that adds one starts from
+ * the learner's own (COV-04, D-168). The learner's own stay. Local only, like everything here.
+ */
+export async function clearBusinessPickups(learnerEmail: string): Promise<void> {
+  await withDatabase(async (sql) => {
+    await sql`
+      delete from public.pickup_points p
+       using public.users u
+       where u.id = p.learner_id
+         and lower(u.email) = lower(${learnerEmail})
+         and p.business_id is not null`;
   });
 }

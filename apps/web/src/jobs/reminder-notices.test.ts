@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { peopleToRemind, planReminders, reminderRows, type ReminderNotice } from './reminder-notices';
+import { peopleToRemind, planReminderByHand, planReminders, reminderRows, type ReminderNotice } from './reminder-notices';
 
 /** 09:00 London, in British Summer Time. */
 const lesson = new Date('2026-09-16T08:00:00Z');
@@ -126,5 +126,40 @@ describe('reminders before a lesson (NTF-02)', () => {
       entity_id: 'booking-1',
     });
     expect(peopleToRemind([notice, notice])).toEqual(['learner-1']);
+  });
+});
+
+describe('a reminder sent by hand (NTF-02, D-166)', () => {
+  const asked = before(30);
+  const byHand = (overrides: Partial<Parameters<typeof planReminderByHand>[0]> = {}) =>
+    planReminderByHand({ notice, channel: 'email', now: asked, requestedAt: asked.toISOString(), textingAllowed: pro, ...overrides });
+
+  it("reminds the learner the way the instructor chose, and in the app, in the reminder's words", () => {
+    const [row] = byHand()?.planned ?? [];
+    expect(row).toMatchObject({ userId: 'learner-1', title: 'Lesson tomorrow', channels: ['in_app', 'email'] });
+    expect(row?.body).toBe('Wed 16 Sep at 09:00 with Sarah Khan.');
+  });
+
+  it('texts only on a plan that includes texts, and only to somebody with a number', () => {
+    expect(byHand({ channel: 'sms' })?.planned[0]?.channels).toEqual(['in_app', 'sms']);
+    expect(byHand({ channel: 'sms', textingAllowed: () => false })?.planned[0]?.channels).toEqual(['in_app']);
+    expect(byHand({ channel: 'sms', notice: { ...notice, learner_phone: null } })?.planned[0]?.channels).toEqual(['in_app']);
+  });
+
+  it('keeps to what the learner has switched off', () => {
+    const muted = new Map([['learner-1', ['email' as const]]]);
+    expect(byHand({ muted })?.planned[0]?.channels).toEqual(['in_app']);
+  });
+
+  it('is a reminder of its own each time, never mistaken for the automatic ones', () => {
+    const first = byHand()?.planned[0]?.dedupeKey;
+    const again = byHand({ requestedAt: before(29).toISOString() })?.planned[0]?.dedupeKey;
+    expect(first).not.toBe(again);
+    expect(first).toContain(':hand-');
+  });
+
+  it('says how soon the lesson is when it is asked for', () => {
+    expect(byHand({ now: before(3) })?.planned[0]?.title).toBe('Lesson in 3 hours');
+    expect(byHand({ now: before(80) })?.planned[0]?.title).toBe('Lesson in 3 days');
   });
 });

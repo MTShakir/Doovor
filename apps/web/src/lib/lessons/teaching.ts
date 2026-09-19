@@ -87,6 +87,34 @@ export async function lessonsFromToday(profileIds: string[], days: number, now =
   return (data as unknown as Row[]).map(teachingLesson);
 }
 
+/**
+ * The lessons after today, in the order they come, for Today's "Upcoming lessons" (DIA-04, D-167):
+ * lessons that are on, so neither a request waiting for an answer nor one called off. One more
+ * than asked for is read, so the screen knows whether to offer more.
+ */
+export async function upcomingLessons(
+  profileIds: string[],
+  count: number,
+  now = new Date(),
+): Promise<{ lessons: TeachingLesson[]; more: boolean }> {
+  if (profileIds.length === 0) return { lessons: [], more: false };
+  const tomorrow = localToUtc(addDaysToLocalDate(todayInZone(now), 1), '00:00');
+  if (tomorrow === null) return { lessons: [], more: false };
+
+  const supabase = await createSupabaseServerClient();
+  const { data, error } = await supabase
+    .from('bookings')
+    .select(columns)
+    .in('instructor_id', profileIds)
+    .gte('starts_at', tomorrow.toISOString())
+    .eq('status', 'confirmed')
+    .order('starts_at')
+    .limit(count + 1);
+  if (error) throw error;
+  const lessons = (data as unknown as Row[]).map(teachingLesson);
+  return { lessons: lessons.slice(0, count), more: lessons.length > count };
+}
+
 /** One lesson the profiles given teach, or null for one they do not. */
 export async function lessonTaughtBy(bookingId: string, profileIds: string[]): Promise<TeachingLesson | null> {
   if (profileIds.length === 0) return null;

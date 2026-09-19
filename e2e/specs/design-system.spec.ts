@@ -4,6 +4,9 @@ import { expectAccessible, keepScreenshot, snap, tapUntil } from '../support/hel
 
 test.describe('design system page (M0-15)', () => {
   test('shows every section and passes axe', async ({ page }, testInfo) => {
+    // Every component in every state, scanned, and an image of each section: under a full run's
+    // load that takes longer than a minute.
+    test.slow();
     await page.goto('/design');
     await expect(page.getByRole('heading', { level: 1, name: 'Design system' })).toBeVisible();
     for (const section of ['Colour', 'Buttons', 'Inputs', 'Chips and pills', 'Scheduling', 'Overlays']) {

@@ -2,6 +2,7 @@ import { byDay, isOff, lessonState, teachingMinutes } from '@repo/core/diary';
 import { addDaysToLocalDate, formatTime, parseLocalDate, type LocalDate } from '@repo/core/time';
 import { StatusPill } from '@repo/ui/status-pill';
 import type { DiaryEntry } from '@/lib/diary/lessons';
+import { OpenLesson } from '@/components/lessons/lesson-details';
 import { NavLink } from '@/components/nav-link';
 import { hoursTaught } from './day-view';
 
@@ -15,10 +16,12 @@ export interface WeekViewProps {
   dayOf: (instant: Date) => LocalDate;
   today: LocalDate;
   showInstructor?: boolean;
+  /** A lesson opens its sheet when tapped: the instructor's own diary (D-166). */
+  openable?: boolean;
 }
 
 /** The week, seven columns across (DIA-03, M1-20). Stacks into days on a narrow screen. */
-export function WeekView({ from, lessons, dayOf, today, showInstructor = false }: WeekViewProps) {
+export function WeekView({ from, lessons, dayOf, today, showInstructor = false, openable = false }: WeekViewProps) {
   const days = byDay(lessons, dayOf);
   const columns = Array.from({ length: 7 }, (_, index) => {
     const date = addDaysToLocalDate(from, index);
@@ -46,26 +49,46 @@ export function WeekView({ from, lessons, dayOf, today, showInstructor = false }
             <ul className="flex flex-col gap-2">
               {column.lessons.map((lesson) => {
                 const state = lessonState(lesson.facts);
+                const says = (
+                  <>
+                    <span className="text-small font-semibold text-ink tabular-nums">
+                      {formatTime(lesson.startsAt)}
+                    </span>
+                    <span
+                      className={`truncate text-small ${
+                        isOff(lesson.facts.status) ? 'text-grey-700 line-through' : 'text-black'
+                      }`}
+                    >
+                      {lesson.learnerName}
+                    </span>
+                    {showInstructor ? (
+                      <span className="truncate text-caption text-grey-700">{lesson.instructorName}</span>
+                    ) : null}
+                    <StatusPill status={state} className="self-start" />
+                  </>
+                );
                 return (
                   <li key={lesson.id}>
                     <article
-                      className="flex flex-col gap-1 rounded-card border border-grey-200 bg-white p-2"
+                      className={`rounded-card border border-grey-200 bg-white ${openable ? '' : 'flex flex-col gap-1 p-2'}`}
                       aria-label={`${formatTime(lesson.startsAt)} ${lesson.learnerName}`}
                     >
-                      <span className="text-small font-semibold text-ink tabular-nums">
-                        {formatTime(lesson.startsAt)}
-                      </span>
-                      <span
-                        className={`truncate text-small ${
-                          isOff(lesson.facts.status) ? 'text-grey-700 line-through' : 'text-black'
-                        }`}
-                      >
-                        {lesson.learnerName}
-                      </span>
-                      {showInstructor ? (
-                        <span className="truncate text-caption text-grey-700">{lesson.instructorName}</span>
-                      ) : null}
-                      <StatusPill status={state} className="self-start" />
+                      {openable ? (
+                        <OpenLesson
+                          lesson={{
+                            id: lesson.id,
+                            startsAt: lesson.startsAt.toISOString(),
+                            endsAt: lesson.endsAt.toISOString(),
+                            learnerName: lesson.learnerName,
+                            lessonType: lesson.lessonType,
+                          }}
+                          className="flex flex-col gap-1 p-2 hover:bg-grey-100"
+                        >
+                          {says}
+                        </OpenLesson>
+                      ) : (
+                        says
+                      )}
                     </article>
                   </li>
                 );

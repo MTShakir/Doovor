@@ -110,10 +110,11 @@ test.describe('the learner list (LRN-01, M2-04)', () => {
     await expect(lessons.getByText('Usual lesson')).toBeVisible();
     await expect(lessons.getByText('1 hour', { exact: true })).toBeVisible();
 
-    // COV-04: where to collect them, the usual one first.
+    // COV-04, D-168: where to collect them, the one lessons start from first, and his own marked as his.
     const pickups = page.getByRole('region', { name: 'Pickup points' });
     await expect(pickups.getByText('Home')).toBeVisible();
-    await expect(pickups.getByText('Default')).toBeVisible();
+    await expect(pickups.getByText('Lessons start here')).toBeVisible();
+    await expect(pickups.getByText(/added by Jack Taylor$/)).toBeVisible();
 
     await expectAccessible(page);
     await snap(page, testInfo, 'learner-card');

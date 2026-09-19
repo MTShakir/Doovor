@@ -129,3 +129,31 @@ export function monthlyPricePence(plan: PlanKey, instructorCount: number): numbe
   if (!p.perInstructor) return p.monthlyPricePence;
   return p.monthlyPricePence * Math.max(p.minimumInstructors, Math.max(0, Math.floor(instructorCount)));
 }
+
+/** The text message limits a super admin may set per plan, as the platform settings keep them (ADM-05). */
+export type PlanLimits = Partial<Record<PlanKey, { smsRemindersPerMonth: number }>>;
+
+function isPlan(value: string | null): value is PlanKey {
+  return value === 'free' || value === 'pro' || value === 'school';
+}
+
+/** The limits as the platform settings keep them (ADM-05), leaving out anything that is not a whole number. */
+export function planLimitsFrom(value: unknown): PlanLimits {
+  const limits: PlanLimits = {};
+  if (typeof value !== 'object' || value === null) return limits;
+  for (const plan of ['free', 'pro', 'school'] as const) {
+    const stored = (value as Record<string, unknown>)[plan];
+    const sms = typeof stored === 'object' && stored !== null ? (stored as Record<string, unknown>).sms_reminders_per_month : undefined;
+    if (typeof sms === 'number' && Number.isSafeInteger(sms) && sms >= 0) limits[plan] = { smsRemindersPerMonth: sms };
+  }
+  return limits;
+}
+
+/**
+ * Text message reminders a Business may send a month (NTF-01): what the platform settings say for
+ * its plan, or the plan's own allowance where they say nothing. Nothing for a plan that is not one.
+ */
+export function smsAllowance(plan: string | null, limits: PlanLimits): number {
+  if (!isPlan(plan)) return 0;
+  return limits[plan]?.smsRemindersPerMonth ?? getEntitlements(plan).smsRemindersPerMonth;
+}

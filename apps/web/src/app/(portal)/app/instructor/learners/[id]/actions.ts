@@ -8,6 +8,7 @@ import { revalidatePath } from 'next/cache';
 import { z } from '@repo/core/zod';
 import { requirePortal } from '@/lib/auth/session';
 import { fieldErrors } from '@/lib/forms';
+import { removePickupPoint, savePickupPoint, updatePickupPoint } from '@/lib/pickup/save';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
 
 /**
@@ -76,6 +77,66 @@ export async function deleteLearnerNote(input: unknown): Promise<Result<null>> {
   const supabase = await createSupabaseServerClient();
   const { error } = await supabase.from('learner_notes').delete().eq('id', parsed.data.id);
   if (error) return err(parsePostgresError(error).code);
+
+  revalidatePath(`/app/instructor/learners/${parsed.data.learnerId}`);
+  return ok(null);
+}
+
+const learnerPickupSchema = z.object({ learnerId: z.uuid(), pickup: z.unknown() });
+
+/**
+ * A pickup point added from the learner's card (COV-04, D-168). It belongs to the Business the
+ * learner is with, which is not the caller's to name, and the address is checked as a learner's own
+ * would be.
+ */
+export async function addLearnerPickup(input: unknown): Promise<Result<null>> {
+  const parsed = learnerPickupSchema.safeParse(input);
+  if (!parsed.success) return err('VALIDATION_FAILED');
+
+  await requirePortal('instructor');
+  const supabase = await createSupabaseServerClient();
+  const { data: relationship } = await supabase
+    .from('learner_relationships')
+    .select('business_id')
+    .eq('learner_id', parsed.data.learnerId)
+    .maybeSingle();
+  if (!relationship) return err('NOT_FOUND', 'That learner is not one of yours.');
+
+  const saved = await savePickupPoint(parsed.data.pickup, {
+    learnerId: parsed.data.learnerId,
+    businessId: relationship.business_id,
+  });
+  if (!saved.ok) return saved;
+
+  revalidatePath(`/app/instructor/learners/${parsed.data.learnerId}`);
+  return ok(null);
+}
+
+const pickupChangeSchema = learnerPickupSchema.extend({ pickupId: z.uuid() });
+
+/** Corrects one the Business added (COV-04, D-168); the learner's own are theirs. */
+export async function updateLearnerPickup(input: unknown): Promise<Result<null>> {
+  const parsed = pickupChangeSchema.safeParse(input);
+  if (!parsed.success) return err('VALIDATION_FAILED');
+
+  await requirePortal('instructor');
+  const updated = await updatePickupPoint(parsed.data.pickupId, parsed.data.pickup);
+  if (!updated.ok) return updated;
+
+  revalidatePath(`/app/instructor/learners/${parsed.data.learnerId}`);
+  return ok(null);
+}
+
+const pickupRemovalSchema = z.object({ learnerId: z.uuid(), pickupId: z.uuid() });
+
+/** Removes one the Business added (COV-04, D-168). Lessons that started there keep no pickup. */
+export async function removeLearnerPickup(input: unknown): Promise<Result<null>> {
+  const parsed = pickupRemovalSchema.safeParse(input);
+  if (!parsed.success) return err('VALIDATION_FAILED');
+
+  await requirePortal('instructor');
+  const removed = await removePickupPoint(parsed.data.pickupId);
+  if (!removed.ok) return removed;
 
   revalidatePath(`/app/instructor/learners/${parsed.data.learnerId}`);
   return ok(null);

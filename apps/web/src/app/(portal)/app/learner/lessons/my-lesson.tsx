@@ -3,21 +3,17 @@
 import { cancellationOutcome, cancellationWarning, type PaidWith } from '@repo/core/cancellation';
 import { lessonState, lessonStateLabel } from '@repo/core/diary';
 import { formatPence } from '@repo/core/money';
-import { formatDate, formatMinutes, formatTime, todayInZone, utcToLocal } from '@repo/core/time';
+import { formatDate, formatMinutes, formatTime } from '@repo/core/time';
 import { Button } from '@repo/ui/button';
-import { Field } from '@repo/ui/field';
-import { Input } from '@repo/ui/input';
 import { Sheet } from '@repo/ui/sheet';
-import { Skeleton } from '@repo/ui/skeleton';
 import { StatusPill } from '@repo/ui/status-pill';
-import { TimeSlotGrid } from '@repo/ui/time-slot-grid';
 import { toast } from '@repo/ui/toast';
 import { MapPin } from 'lucide-react';
 import Link from 'next/link';
-import { useEffect, useState, useTransition } from 'react';
+import { useState, useTransition } from 'react';
 import { FormAlert } from '@/components/form-alert';
 import type { MyLesson } from '@/lib/learner/lessons';
-import { cancelMyLesson, moveMyLesson, myInstructorSlots } from './actions';
+import { cancelMyLesson } from './actions';
 import { NoShowDispute } from './no-show-dispute';
 
 export interface MyLessonRowProps {
@@ -51,10 +47,6 @@ export function MyLessonRow({ lesson, rules, now, canChange }: MyLessonRowProps)
   const [sheet, setSheet] = useState<'move' | 'cancel' | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  const [day, setDay] = useState(utcToLocal(new Date(lesson.startsAt)).date);
-  const [times, setTimes] = useState<{ asked: string; slots: string[] } | null>(null);
-  const [slot, setSlot] = useState<string | null>(null);
-
   const state = lessonState({
     status: lesson.status as never,
     paymentStatus: lesson.paymentStatus as never,
@@ -74,27 +66,6 @@ export function MyLessonRow({ lesson, rules, now, canChange }: MyLessonRowProps)
     status: lesson.status as never,
   });
 
-  useEffect(() => {
-    if (sheet !== 'move' || times?.asked === day) return;
-    let current = true;
-    void myInstructorSlots({
-      instructorId: lesson.instructorId,
-      date: day,
-      durationMinutes: lesson.durationMinutes,
-      bookingId: lesson.id,
-    }).then((result) => {
-      if (!current) return;
-      if (!result.ok) {
-        setError(result.message);
-        return;
-      }
-      setTimes({ asked: day, slots: result.data });
-    });
-    return () => {
-      current = false;
-    };
-  }, [sheet, day, lesson.id, lesson.instructorId, lesson.durationMinutes, times?.asked]);
-
   const cancel = () => {
     setError(null);
     startTransition(async () => {
@@ -105,22 +76,6 @@ export function MyLessonRow({ lesson, rules, now, canChange }: MyLessonRowProps)
       }
       setSheet(null);
       toast('Lesson cancelled');
-    });
-  };
-
-  const move = () => {
-    if (slot === null) return;
-    setError(null);
-    startTransition(async () => {
-      const result = await moveMyLesson({ bookingId: lesson.id, startsAt: slot });
-      if (!result.ok) {
-        setError(result.message);
-        setTimes(null);
-        return;
-      }
-      setSheet(null);
-      setSlot(null);
-      toast(`Moved to ${formatDate(new Date(slot))} at ${formatTime(new Date(slot))}`);
     });
   };
 
@@ -204,38 +159,21 @@ export function MyLessonRow({ lesson, rules, now, canChange }: MyLessonRowProps)
         </div>
       </Sheet>
 
+      {/* Only the instructor moves a lesson; the learner asks them (BOK-08 as amended, D-164). */}
       <Sheet
         open={sheet === 'move'}
         onOpenChange={() => { setSheet(null); }}
-        title="Move this lesson"
-        description={`${lesson.instructorName}'s free times. The lesson keeps its length and price.`}
+        title="Only your instructor can move it"
+        description={`${formatDate(new Date(lesson.startsAt))} at ${formatTime(new Date(lesson.startsAt))} with ${lesson.instructorName}.`}
         footer={
-          <Button width="full" size="lg" pending={pending} disabled={slot === null} onClick={move}>
-            {slot === null ? 'Choose a time' : `Move to ${formatTime(new Date(slot))}`}
+          <Button width="full" size="lg" onClick={() => { setSheet(null); }}>
+            Got it
           </Button>
         }
       >
-        <div className="flex flex-col gap-4">
-          {error ? <FormAlert>{error}</FormAlert> : null}
-          <Field label="Which day?">
-            {/* The browser owns what is in the box; this only listens (D-043). */}
-            <Input type="date" defaultValue={day} min={todayInZone()} onChange={(event) => { setDay(event.target.value); }} />
-          </Field>
-          {times?.asked !== day ? (
-            <Skeleton className="h-28 w-full" />
-          ) : times.slots.length === 0 ? (
-            <p className="text-small text-grey-700">
-              Nothing free on {formatDate(new Date(`${day}T12:00:00Z`))}. Try another day.
-            </p>
-          ) : (
-            <TimeSlotGrid
-              label={`Times on ${formatDate(new Date(`${day}T12:00:00Z`))}`}
-              value={slot}
-              onChange={setSlot}
-              slots={times.slots.map((one) => ({ id: one, label: formatTime(new Date(one)) }))}
-            />
-          )}
-        </div>
+        <p className="text-body text-ink">
+          Contact {lesson.instructorName} directly to ask for another time. When they move it, you are told the new time.
+        </p>
       </Sheet>
     </article>
   );

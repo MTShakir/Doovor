@@ -37,7 +37,7 @@ test.describe('viewing as somebody, read only (ADM-06, M5-21)', { tag: '@desktop
       await expect(banner).toBeVisible();
       await page.goto('/app/learner/lessons');
       await expect(banner).toBeVisible();
-      const lesson = page.getByRole('region', { name: 'Coming up' }).getByRole('article').filter({ hasText: `${dayLabel(day)} at 06:30` });
+      const lesson = page.getByRole('tabpanel', { name: 'Coming up' }).getByRole('article').filter({ hasText: `${dayLabel(day)} at 06:30` });
       await expect(lesson).toBeVisible();
       await expectAccessible(page);
       await snap(page, testInfo, 'admin-view-as', { fullPage: false });

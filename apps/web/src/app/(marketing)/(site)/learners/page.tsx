@@ -45,7 +45,7 @@ const features = [
   {
     icon: CalendarX2,
     title: 'Plans change',
-    description: 'Move or cancel a lesson in the app. Your instructor’s cancellation policy is shown before you book.',
+    description: 'Cancel a lesson in the app, or ask your instructor to move it. Their cancellation policy is shown before you book.',
   },
   {
     icon: Layers,
