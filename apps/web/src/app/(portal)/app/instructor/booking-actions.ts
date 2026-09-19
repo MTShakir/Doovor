@@ -9,6 +9,7 @@ import { requirePortal } from '@/lib/auth/session';
 import { fieldErrors } from '@/lib/forms';
 import { bookingDay, lessonOptions, type BookingDay, type LessonOption } from '@/lib/booking/day';
 import { lessonDetails, type LessonDetails } from '@/lib/lessons/details';
+import { defaultPickupFor } from '@/lib/pickup/list';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
 
 /** Where the caller teaches. Every booking screen in this portal is about one instructor. */
@@ -76,7 +77,8 @@ export async function bookLesson(input: unknown): Promise<Result<{ bookingId: st
     p_lesson_type_id: parsed.data.lessonTypeId,
     p_starts_at: parsed.data.startsAt,
     p_duration_minutes: parsed.data.durationMinutes,
-    p_pickup_point_id: parsed.data.pickupPointId ?? undefined,
+    // Where the learner's lessons start, unless another place was chosen (D-168).
+    p_pickup_point_id: parsed.data.pickupPointId ?? (await defaultPickupFor(parsed.data.learnerId)) ?? undefined,
   });
   if (error) return err(parsePostgresError(error).code);
 
@@ -138,7 +140,8 @@ export async function bookWeekly(input: unknown): Promise<Result<WeeklyOutcome>>
     p_duration_minutes: parsed.data.durationMinutes,
     p_weeks: parsed.data.weeks,
     p_open_ended: parsed.data.openEnded,
-    p_pickup_point_id: parsed.data.pickupPointId ?? undefined,
+    // Where the learner's lessons start, unless another place was chosen (D-168).
+    p_pickup_point_id: parsed.data.pickupPointId ?? (await defaultPickupFor(parsed.data.learnerId)) ?? undefined,
   });
   if (error) return err(parsePostgresError(error).code);
 

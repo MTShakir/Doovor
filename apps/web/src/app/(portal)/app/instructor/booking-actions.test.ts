@@ -5,15 +5,21 @@ const revalidatePath = vi.fn();
 
 vi.mock('@/lib/supabase/server', () => ({ createSupabaseServerClient: () => Promise.resolve({ rpc }) }));
 vi.mock('@/lib/auth/session', () => ({
-  requirePortal: () => Promise.resolve({ session: { userId: 'instructor-1' }, access: { memberships: [] } }),
+  requirePortal: () =>
+    Promise.resolve({
+      session: { userId: 'instructor-1' },
+      access: { memberships: [{ instructorProfileId: 'profile-1', businessId: 'business-1' }] },
+    }),
 }));
 vi.mock('@/lib/booking/day', () => ({ bookingDay: vi.fn(), lessonOptions: vi.fn() }));
 vi.mock('@/lib/forms', () => ({ fieldErrors: vi.fn() }));
 const lessonDetails = vi.fn<(bookingId: string) => Promise<unknown>>();
+const defaultPickupFor = vi.fn<(learnerId: string) => Promise<string | null>>();
+vi.mock('@/lib/pickup/list', () => ({ defaultPickupFor: (learnerId: string) => defaultPickupFor(learnerId) }));
 vi.mock('@/lib/lessons/details', () => ({ lessonDetails: (bookingId: string) => lessonDetails(bookingId) }));
 vi.mock('next/cache', () => ({ revalidatePath: (...args: unknown[]) => { revalidatePath(...args); } }));
 
-const { lessonDetailsFor, recordOfflinePayment, sendReminder, undoOfflinePayment } = await import('./booking-actions');
+const { bookLesson, lessonDetailsFor, recordOfflinePayment, sendReminder, undoOfflinePayment } = await import('./booking-actions');
 
 const bookingId = '6f1c3a52-9d8e-4b7a-8c61-2f0e9b4d7a13';
 const paymentId = '2b7e1d44-3c9a-4f0e-9a1b-5d6c7e8f9a0b';
@@ -103,5 +109,31 @@ describe('sending a reminder by hand (NTF-02, D-166)', () => {
   it('says so when one already went this way within the hour', async () => {
     rpc.mockResolvedValue({ data: null, error: { code: '53400', message: 'RATE_LIMITED' } });
     expect(await sendReminder({ bookingId, channel: 'email' })).toMatchObject({ ok: false, code: 'RATE_LIMITED' });
+  });
+});
+
+describe('where a lesson the instructor books starts (COV-04, D-168)', () => {
+  const learnerId = '4e1f8a2b-6c3d-4e5f-8a9b-0c1d2e3f4a5b';
+  const lesson = { learnerId, lessonTypeId: '5f2a9b3c-7d4e-4f6a-9b0c-1d2e3f4a5b6c', startsAt: '2026-10-01T09:00:00Z', durationMinutes: 60 };
+  const theirs = '6a3b0c4d-8e5f-4a7b-8c1d-2e3f4a5b6c7d';
+  const chosen = '7b4c1d5e-9f6a-4b8c-9d2e-3f4a5b6c7d8e';
+
+  it("starts where the learner's lessons start, unless another is chosen", async () => {
+    rpc.mockResolvedValue({ data: bookingId, error: null });
+    defaultPickupFor.mockResolvedValue(theirs);
+
+    await bookLesson(lesson);
+    expect(defaultPickupFor).toHaveBeenCalledWith(learnerId);
+    expect(rpc).toHaveBeenLastCalledWith('create_booking', expect.objectContaining({ p_pickup_point_id: theirs }));
+
+    await bookLesson({ ...lesson, pickupPointId: chosen });
+    expect(rpc).toHaveBeenLastCalledWith('create_booking', expect.objectContaining({ p_pickup_point_id: chosen }));
+  });
+
+  it('books with none when the learner has none yet', async () => {
+    rpc.mockResolvedValue({ data: bookingId, error: null });
+    defaultPickupFor.mockResolvedValue(null);
+    await bookLesson(lesson);
+    expect(rpc).toHaveBeenLastCalledWith('create_booking', expect.objectContaining({ p_pickup_point_id: undefined }));
   });
 });
