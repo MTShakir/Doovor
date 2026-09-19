@@ -58,7 +58,7 @@ export default function PricingPage() {
       <FoundingOffer />
 
       <Band id="plans" title="Plans">
-        <div className="grid gap-4 lg:grid-cols-3">
+        <div className="grid grid-cols-[minmax(0,1fr)] gap-4 lg:grid-cols-3">
           {summaries.map((plan) => (
             <PlanCard key={plan.key} plan={plan} signUpUrl={`${appUrl}/sign-up?role=${plan.signUpRole}`} highlighted={plan.key === 'pro'} />
           ))}
@@ -75,7 +75,7 @@ export default function PricingPage() {
       </Band>
 
       <Band id="questions" title="Questions">
-        <dl className="grid gap-8 md:grid-cols-2">
+        <dl className="grid grid-cols-[minmax(0,1fr)] gap-8 md:grid-cols-2">
           {questions.map(({ question, answer }) => (
             <div key={question} className="flex flex-col gap-2">
               <dt className="text-h3 text-black">{question}</dt>

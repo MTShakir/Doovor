@@ -15,7 +15,7 @@ insert into public.platform_staff (user_id, role) values (:'staff', 'support_adm
 
 -- Something waiting to be decided.
 select tests.authenticate_as(:'asha_user');
-select public.submit_verification(:'asha', 'adi', '416234', (current_date + 400)::date, true, null) as submitted \gset
+select public.submit_verification(:'asha', 'adi', '416234', (private.today() + 400)::date, true, null) as submitted \gset
 
 -- Who may not decide
 select throws_ok(

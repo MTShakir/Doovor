@@ -1,7 +1,7 @@
 import { revalidateTag } from 'next/cache';
 import { NextResponse } from 'next/server';
-import { serverEnv } from '@/env/server';
 import { profileTags } from '@/lib/public/instructor-profile';
+import { devRoutesOpen } from '@/lib/dev-routes';
 
 /**
  * Has every kept public page read fresh, for an end to end test that changed the database
@@ -9,7 +9,7 @@ import { profileTags } from '@/lib/public/instructor-profile';
  * these pages from the actions that change them. Not reachable in production.
  */
 export function POST(): NextResponse {
-  if (serverEnv.APP_ENV === 'production') return new NextResponse('Not found', { status: 404 });
+  if (!devRoutesOpen()) return new NextResponse('Not found', { status: 404 });
   revalidateTag(profileTags.all, { expire: 0 });
   return NextResponse.json({ expired: true });
 }

@@ -5,7 +5,7 @@
  * along they are, and the date of birth that says they may legally learn.
  */
 
-import { z } from 'zod';
+import { z } from '../zod';
 import { isAtLeast, leastLearnerAge } from '../age.ts';
 import { isPostcode, normalisePostcode } from '../postcode.ts';
 import { isValidLocalDate } from '../time/calendar.ts';

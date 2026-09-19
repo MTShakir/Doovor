@@ -37,7 +37,8 @@ export function BottomTabBar({ items, linkComponent: Link = 'a' }: NavProps) {
               )}
             >
               <Icon size={24} strokeWidth={active ? 2 : 1.5} aria-hidden />
-              {label}
+              {/* A tab is a fixed share of the screen, so a label that outgrows it is shortened. */}
+              <span className="max-w-full truncate px-1">{label}</span>
             </Link>
           </li>
         ))}
@@ -97,8 +98,22 @@ export function AppShell({
   return (
     <div className="min-h-dvh bg-white">
       {banner}
+      {/* Past the navigation in one press, for somebody on a keyboard or a screen reader (M6-06).
+          The target is focusable, so the keyboard lands there too and the next press carries on
+          inside the screen rather than back at the top. Each screen has its own main element, so
+          this one is a plain region and not a second landmark. */}
+      <a
+        href="#content"
+        className="sr-only focus:not-sr-only focus:absolute focus:top-2 focus:left-2 focus:z-30 focus:rounded-full focus:bg-black focus:px-4 focus:py-2 focus:text-white"
+      >
+        Skip to content
+      </a>
       {sidebar}
-      <div className={cn(sidebar && 'md:pl-64', tabBar && 'pb-[calc(4rem+env(safe-area-inset-bottom))] md:pb-0')}>
+      <div
+        id="content"
+        tabIndex={-1}
+        className={cn(sidebar && 'md:pl-64', tabBar && 'pb-[calc(4rem+env(safe-area-inset-bottom))] md:pb-0')}
+      >
         {children}
       </div>
       {tabBar}

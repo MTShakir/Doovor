@@ -104,7 +104,7 @@ select is(
   false,
   'but search leaves the profile out while the badge is out of date (INS-03)'
 );
-update public.instructor_profiles set badge_expiry = current_date + 365 where id = :'ivy';
+update public.instructor_profiles set badge_expiry = private.today() + 365 where id = :'ivy';
 select is(
   (select private.instructor_in_search(p.verification_status, p.badge_expiry, p.is_listed, b.status)
      from public.instructor_profiles p join public.businesses b on b.id = p.business_id where p.id = :'ivy'),

@@ -12,6 +12,7 @@ import { toast } from '@repo/ui/toast';
 import { MapPin } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useEffect, useMemo, useState, useSyncExternalStore } from 'react';
+import { track } from '@/lib/analytics/track';
 import { FormAlert } from '@/components/form-alert';
 import { clearDraft, draftSnapshot, newDraft, parseDraft, saveDraft, subscribeToDrafts, type LessonDraft } from '@/lib/lessons/draft';
 import type { TeachingLesson } from '@/lib/lessons/teaching';
@@ -118,6 +119,8 @@ export function LessonScreen({ lesson, startOnRecord }: LessonScreenProps) {
         case 'saved':
         case 'kept':
           clearDraft(lesson.id);
+          track('lesson_completed');
+          track('lesson_record_saved', { seconds: body.secondsTaken });
           toast(outcome.kind === 'saved' ? 'Lesson record saved' : 'Saved on this phone. It sends when you have signal.');
           backToToday();
           return;

@@ -5,7 +5,7 @@
  * off. One of them is the default, which is the one a booking screen offers first.
  */
 
-import { z } from 'zod';
+import { z } from '../zod';
 import { isPostcode, normalisePostcode } from '../postcode.ts';
 
 export const pickupKinds = [

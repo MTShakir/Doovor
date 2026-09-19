@@ -8,7 +8,7 @@
  * a copy of the defaults it would then never see updated.
  */
 
-import { z } from 'zod';
+import { z } from './zod';
 import { reminderHoursDefault, reminderHoursSchema, resolveReminderHours } from './reminders.ts';
 
 export interface BookingRules {

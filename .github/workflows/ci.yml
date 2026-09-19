@@ -40,6 +40,10 @@ jobs:
         run: pnpm typecheck
       - name: Unit tests (core coverage gate 90%)
         run: pnpm test
+      - name: Dependency advisories (high and above)
+        # Anything high or critical fails the build. An advisory with no fixed version is read and
+        # listed in pnpm-workspace.yaml with the reason (M6-02, D-136).
+        run: pnpm audit --audit-level=high
 
   database:
     name: Database tests and lint
@@ -59,6 +63,10 @@ jobs:
         run: pnpm db:lint
       - name: pgTAP (RLS, constraints, RPCs)
         run: pnpm db:test
+      # The same suite with the database on a different date from the UK's, so a test that mixes
+      # the two fails on every run, not only in the hour after midnight (D-156).
+      - name: pgTAP on another day
+        run: pnpm db:test:another-day
       - name: Generated types match the migrations
         run: |
           pnpm db:types
@@ -151,7 +159,9 @@ jobs:
         run: |
           set -o pipefail
           if ! pnpm lighthouse 2>&1 | tee "$RUNNER_TEMP/lighthouse.log"; then
-            echo "::error title=Lighthouse failed::$(tail -n 40 "$RUNNER_TEMP/lighthouse.log" | sed 's/%/%25/g' | sed ':a;N;$!ba;s/\n/%0A/g')"
+            # The scores as well as the failure: without them a failure says which threshold was
+            # missed but never by which page or which metric.
+            echo "::error title=Lighthouse failed::$({ grep '^|' "$RUNNER_TEMP/lighthouse.log"; tail -n 40 "$RUNNER_TEMP/lighthouse.log"; } | sed 's/%/%25/g' | sed ':a;N;$!ba;s/\n/%0A/g')"
             exit 1
           fi
           echo "::notice title=Lighthouse scores::$(grep '^|' "$RUNNER_TEMP/lighthouse.log" | sed 's/%/%25/g' | sed ':a;N;$!ba;s/\n/%0A/g')"
@@ -162,4 +172,70 @@ jobs:
           name: lighthouse
           path: .lighthouseci
           include-hidden-files: true
+          retention-days: 14
+
+  load:
+    # The reads a busy evening is made of, and booking with enough learners at once that two go for
+    # the same slot: p95 under 300 ms for reads and 600 ms for a booking (NFR-PERF-02, M6-05).
+    name: Load (reads and booking)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+      - uses: grafana/setup-k6-action@v1
+      - run: pnpm install --frozen-lockfile
+      - name: Start local Supabase
+        run: node scripts/supabase.mjs start -x "$SUPABASE_EXCLUDE"
+      - name: Write .env.local for the local stack
+        run: node scripts/local-env.mjs --app-env=test
+      - name: Seed
+        run: pnpm db:seed
+      - name: Production build
+        run: |
+          set -o pipefail
+          if ! pnpm build 2>&1 | tee "$RUNNER_TEMP/build.log"; then
+            echo "::error title=Production build failed::$(tail -n 25 "$RUNNER_TEMP/build.log" | sed 's/%/%25/g' | sed ':a;N;$!ba;s/\n/%0A/g')"
+            exit 1
+          fi
+      - name: Start the app
+        run: |
+          pnpm --filter @repo/web start > "$RUNNER_TEMP/web.log" 2>&1 &
+          for attempt in $(seq 1 90); do
+            if curl -fsS http://localhost:3000/api/health > /dev/null; then exit 0; fi
+            sleep 2
+          done
+          tail -n 50 "$RUNNER_TEMP/web.log"
+          exit 1
+      - name: What the load tests are about
+        run: node scripts/load-fixtures.mjs
+      - name: Reads
+        # Logs need repository admin, so the timings go in annotations as well (M5-24's habit).
+        run: |
+          set -o pipefail
+          if ! k6 run --quiet load/reads.js 2>&1 | tee "$RUNNER_TEMP/reads.log"; then
+            echo "::error title=Load (reads) failed::$(grep -E 'http_req_duration|read_|✗|THRESHOLD' "$RUNNER_TEMP/reads.log" | tail -n 30 | sed 's/%/%25/g' | sed ':a;N;$!ba;s/\n/%0A/g')"
+            exit 1
+          fi
+          echo "::notice title=Load (reads)::$(grep -E '^ +(http_req|read_|checks|iterations)' "$RUNNER_TEMP/reads.log" | sed 's/%/%25/g' | sed ':a;N;$!ba;s/\n/%0A/g')"
+      - name: Booking
+        run: |
+          set -o pipefail
+          if ! k6 run --quiet load/booking.js 2>&1 | tee "$RUNNER_TEMP/booking.log"; then
+            echo "::error title=Load (booking) failed::$(grep -E 'http_req_duration|write_|bookings_|✗|THRESHOLD' "$RUNNER_TEMP/booking.log" | tail -n 30 | sed 's/%/%25/g' | sed ':a;N;$!ba;s/\n/%0A/g')"
+            exit 1
+          fi
+          echo "::notice title=Load (booking)::$(grep -E '^ +(http_req|write_|read_|bookings_|checks|iterations)' "$RUNNER_TEMP/booking.log" | sed 's/%/%25/g' | sed ':a;N;$!ba;s/\n/%0A/g')"
+      - name: Upload the runs
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: load
+          path: |
+            ${{ runner.temp }}/reads.log
+            ${{ runner.temp }}/booking.log
           retention-days: 14

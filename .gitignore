@@ -12,6 +12,7 @@ build/
 coverage/
 
 # Tests
+load/fixtures.json
 test-results/
 playwright-report/
 blob-report/

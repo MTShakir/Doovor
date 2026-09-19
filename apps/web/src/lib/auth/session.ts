@@ -4,7 +4,7 @@ import { getAccessContext, SessionEndedError, type AccessContext } from '@repo/d
 import { headers } from 'next/headers';
 import { redirectTo } from '@/lib/redirect-to';
 import { cache } from 'react';
-import { z } from 'zod';
+import { z } from '@repo/core/zod';
 import { viewingId } from './view-as';
 import type { Portal } from '@/lib/navigation';
 import { createSupabaseServerClient } from '@/lib/supabase/server';

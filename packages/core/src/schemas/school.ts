@@ -5,7 +5,7 @@
  * Shared by the forms and their Server Actions, as the instructor's onboarding is.
  */
 
-import { z } from 'zod';
+import { z } from '../zod';
 import { isPostcode, normalisePostcode } from '../postcode.ts';
 import { emailSchema, ukMobileSchema } from './auth.ts';
 

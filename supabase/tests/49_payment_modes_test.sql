@@ -18,10 +18,10 @@ select :'ian', :'school', d, '06:00', '22:00' from generate_series(1, 7) as d;
 insert into public.lesson_prices (business_id, lesson_type_id, duration_minutes, price_pence)
 values (:'school', :'lesson_type', 60, 4200);
 
-select (date_trunc('day', now()) + interval '3 days 10 hours') as by_instructor_at \gset
-select (date_trunc('day', now()) + interval '4 days 10 hours') as by_learner_at \gset
-select (date_trunc('day', now()) + interval '5 days 10 hours') as later_at \gset
-select (date_trunc('day', now()) + interval '6 days 10 hours') as unconnected_at \gset
+select (((private.today() + 3)::timestamp + time '10:00') at time zone 'Europe/London') as by_instructor_at \gset
+select (((private.today() + 4)::timestamp + time '10:00') at time zone 'Europe/London') as by_learner_at \gset
+select (((private.today() + 5)::timestamp + time '10:00') at time zone 'Europe/London') as later_at \gset
+select (((private.today() + 6)::timestamp + time '10:00') at time zone 'Europe/London') as unconnected_at \gset
 
 -- ---------------------------------------------------------------------------------------
 -- Choosing (PAY-03).

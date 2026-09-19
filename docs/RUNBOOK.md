@@ -10,7 +10,7 @@ How to run, deploy and look after the platform. Brand values (name, domain, send
 | CI | Production build in GitHub Actions | Local Supabase in the runner | `test` | Every push: lint, types, unit, pgTAP, Playwright (M0-31) |
 | Preview | Vercel deployment per branch and pull request | Staging Supabase | `preview` | Private (Vercel Authentication). Password sign-in works; email and Google sign-in finish on the staging domain (D-046) |
 | Staging | Vercel production deployment of `main`, on the brand domain until launch | Staging Supabase (free plan, D-032) | `preview` | Not indexed (D-047). Demo data only |
-| Production | From M6 | Supabase Pro in London with point-in-time recovery | `production` | Fake providers refused at boot; indexing allowed for public pages |
+| Production | When the first real user arrives | The staging project, upgraded to Pro and emptied of demo data first (D-154) | `production` | Fake providers refused at boot; indexing allowed for public pages |
 
 ## 2. Local setup (first time)
 
@@ -42,7 +42,7 @@ Do these once, in order. Items marked **You** need the product owner's accounts.
    pnpm supabase db push
    ```
 3. Check the session sign-out guard is active (D-041): in the SQL editor, `select rolconfig from pg_roles where rolname = 'authenticator';` must include `pgrst.db_pre_request=private.check_request`.
-4. **You:** turn on leaked password protection: Authentication > Sign In / Providers > Password > "Prevent use of leaked passwords". Supabase checks a new password against HaveIBeenPwned without ever sending it. The CLI has no config key for it, so it cannot live in `ops/staging/supabase/config.toml` with the rest (M1 security advisor).
+4. **You:** turn on leaked password protection: Authentication > Sign In / Providers > Password > "Prevent use of leaked passwords". Supabase checks a new password against HaveIBeenPwned without ever sending it. The CLI has no config key for it, so it cannot live in `ops/staging/supabase/config.toml` with the rest (M1 security advisor). Supabase offers it on the Pro plan and above: the free staging project has it off (checked 18 September 2026), so it is switched on for production.
 5. **You:** put the provider secrets in `.env.local` (never in git or chat), plus a Supabase access token for the command line:
    ```
    SUPABASE_ACCESS_TOKEN=          # Supabase dashboard > Account > Access Tokens
@@ -89,19 +89,25 @@ Do these once, in order. Items marked **You** need the product owner's accounts.
 
 ### 3.3 Twilio (text codes)
 
+Done on 18 September 2026 on a new, upgraded account: messaging service `Doovor` with the sender `Doovor`, texts to the United Kingdom only, and a £20 balance with auto recharge off.
+
 1. **You:** create a Messaging Service with the alphanumeric sender `Doovor` (UK senders need no registration; people cannot reply).
-2. **You:** Messaging > Geo permissions: allow the United Kingdom only. Set a low monthly spend limit. Public code endpoints attract SMS pumping fraud, and this caps the damage.
-3. **You:** enter the Account SID, Auth Token and Messaging Service SID in the Supabase phone provider.
+2. **You:** Messaging > Geo permissions: allow the United Kingdom only. Twilio has no hard monthly limit, so leave auto recharge off and keep a small balance: the balance is the cap. Public code endpoints attract SMS pumping fraud, and this caps the damage.
+3. **You:** put the Account SID, Auth Token and Messaging Service SID in `.env.local` (`TWILIO_ACCOUNT_SID`, `TWILIO_AUTH_TOKEN`, `TWILIO_MESSAGING_SERVICE_SID`), then push the staging config (3.1 step 6), which sends them to the Supabase phone settings. The push then reads back "Enable phone confirmations" and fails if it is off, because the CLI inverts that one setting for hosted projects (D-155).
 4. **You:** for the app's own reminders (M2-30), put the same three values in Vercel as `TWILIO_ACCOUNT_SID`, `TWILIO_AUTH_TOKEN` and `TWILIO_MESSAGING_SERVICE_SID`, and set `SMS_PROVIDER=twilio`. Without them the app writes a line to the log and texts nobody, which is what every local and test run does. Reminders are the only thing that texts, and only on a plan that includes it: 200 a month on Pro, counted in `sms_usage`.
 
 ### 3.4 Google sign-in
 
-1. **You:** in Google Cloud, for OAuth client `647142621690-...`:
+Made on 18 September 2026 under the Doovor Google account, in the Google Cloud project `doovor`: the web client "Doovor web (Supabase sign-in)", whose ID starts `580489274647-`. The client from M0 (`647142621690-...`, under another account) is no longer used anywhere.
+
+1. **You:** the client, in Google Auth Platform > Clients:
    - Authorised redirect URI: `https://yvxuarrrvgnfcjfyqfyi.supabase.co/auth/v1/callback`.
    - Authorised JavaScript origin: `https://app.doovor.com`, where the sign-in button is (D-084).
-2. **You:** copy the client secret into the Supabase Google provider.
-3. Set `NEXT_PUBLIC_AUTH_GOOGLE_ENABLED=true` in Vercel. The button stays hidden until then.
-4. Locally (optional): add `http://127.0.0.1:54321/auth/v1/callback` as a redirect URI, put the client ID and secret in `.env.local` (`SUPABASE_AUTH_EXTERNAL_GOOGLE_CLIENT_ID`, `SUPABASE_AUTH_EXTERNAL_GOOGLE_SECRET`), set `NEXT_PUBLIC_AUTH_GOOGLE_ENABLED=true`, then run `pnpm db:stop` and `pnpm db:start`.
+   - The consent screen (Branding): app name Doovor, home page `https://doovor.com`, and the privacy and terms pages there.
+2. **You:** put the client ID and secret in `.env.local` (`SUPABASE_AUTH_EXTERNAL_GOOGLE_CLIENT_ID`, `SUPABASE_AUTH_EXTERNAL_GOOGLE_SECRET`). The staging config declares Google on and reads both from there (3.1 step 6), so a push keeps it on. Google shows a secret once, when it is made: a lost one means adding a new secret to the client and deleting the old.
+3. **You:** Google Auth Platform > Audience: a new consent screen is in Testing, where only listed test users can sign in. Publish it before anybody else is meant to: with only the basic scopes (email and profile) it needs no review by Google.
+4. Set `NEXT_PUBLIC_AUTH_GOOGLE_ENABLED=true` in Vercel and redeploy, since a `NEXT_PUBLIC_` value is built into the app. The button stays hidden until then.
+5. Locally (optional): add `http://127.0.0.1:54321/auth/v1/callback` as a redirect URI, set `NEXT_PUBLIC_AUTH_GOOGLE_ENABLED=true`, then run `pnpm db:stop` and `pnpm db:start`.
 
 ### 3.5 Vercel (team `Doovor`)
 
@@ -120,7 +126,7 @@ Do these once, in order. Items marked **You** need the product owner's accounts.
 
    Payments, email and SMS providers keep their fake and log defaults until their milestones. Supabase Auth sends auth emails and texts itself.
 4. **You:** Deployment Protection: keep Standard Protection, so previews need a Vercel login.
-5. **You:** Domains: add `app.doovor.com` for the app, and `doovor.com` (with `www` redirecting to it) for the public site, then create the DNS records Vercel shows: usually a CNAME for `app` and an A record for the bare domain. Both point at this project for now. The app sends an app address opened on `doovor.com` to `app.doovor.com`, and `doovor.com` keeps only its own pages (D-084); when the marketing site is built somewhere else, move `doovor.com` there and nothing in the app changes.
+5. **You:** Domains: add `app.doovor.com` for the app, and `doovor.com` (with `www` redirecting to it) for the public site, then create the DNS records Vercel shows: usually a CNAME for `app` and an A record for the bare domain. Both point at this project for now. `doovor.com` must serve the project, with no redirect of its own: a redirect from `doovor.com` to `app.doovor.com` sends every public page to the app, which sends it back to the public site, and the two loop. Only `www.doovor.com` redirects, to `doovor.com`. After a deployment that makes new pages public, give the caches a moment: the app's own move from the bare domain to the app is temporary so nothing stays redirected (D-134). The app sends an app address opened on `doovor.com` to `app.doovor.com`, and `doovor.com` keeps only its own pages (D-084); when the marketing site is built somewhere else, move `doovor.com` there and nothing in the app changes.
 6. Check: the preview URL loads, `/api/health` returns `ok`, and a seeded account signs in (M0-32 done-when).
 
 ### 3.5a Map (Mapbox)
@@ -172,9 +178,25 @@ Sandbox `Doovor sandbox`, account `acct_1UFF4RDP3EG8YZIf`. Settings > Connect:
    `charge.dispute.created`, with "Listen to events on connected accounts" ticked, and its secret goes in
    `STRIPE_CONNECT_WEBHOOK_SECRET`. `charge.refunded` is not needed: newer API versions leave the refunds
    out of it, and the refund events carry them.
-   `STRIPE_WEBHOOK_SECRET` is for platform events (Stripe Billing, M5) and stays empty until then.
+   `STRIPE_WEBHOOK_SECRET` is for platform events, which only Stripe Billing raises. Subscriptions
+   arrive with ADM-10 in Phase 2 (D-022), so it stays empty and the app does not ask for it (D-153).
 8. **You:** live mode needs the Connect platform onboarding questionnaire finished (Platform profile >
    View onboarding): company identity, the business model and the loss liability elections.
+9. **You, when going live:** four values in Vercel, scoped to **Production only** and set in the same
+   deployment that sets `APP_ENV=production`. All of them come from the main Doovor account in live
+   mode, not from the sandbox:
+
+   | Name | Value |
+   |---|---|
+   | `PAYMENTS_PROVIDER` | `stripe` |
+   | `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY` | the live publishable key, `pk_live_...` |
+   | `STRIPE_SECRET_KEY` | the live secret key, `sk_live_...` (mark as Sensitive) |
+   | `STRIPE_CONNECT_WEBHOOK_SECRET` | the signing secret of the live endpoint in step 7 (mark as Sensitive) |
+
+   The app refuses to start with a live key anywhere but production, and with a test key in
+   production (D-153), so a live key set for Preview, or before `APP_ENV` changes, stops the build
+   with the key's name rather than taking real money for demo data. Supabase needs nothing from
+   Stripe: only the app talks to it.
 
 ### 3.7a The Stripe test-mode run (M3-23)
 
@@ -217,7 +239,170 @@ from `pnpm test:e2e:stripe`; every other run stays on the fake.
 - A migration is frozen once merged to `main` or applied to a shared database (D-045).
 - Deploy to staging after merging: `pnpm supabase db push --dry-run`, then `pnpm supabase db push`. M6 automates this in CI.
 
+### Dependencies
+- Weekly pull requests from Dependabot (`.github/dependabot.yml`): minor and patch versions in one
+  grouped pull request, a major version on its own. Read the notes, let CI run, then merge; a major
+  version that needs work becomes a task rather than a merge.
+- `pnpm audit --audit-level=high` runs in CI. Raise a version above what its dependent asks for with
+  `overrides` in `pnpm-workspace.yaml`. An advisory with no fixed version goes in `auditConfig.ignoreGhsas`
+  in the same file, with the reason and the date it was read, and comes out when a fix exists (M6-02).
+- Licences: `pnpm licenses list`. Nothing under the GPL or AGPL may be added; `docs/SECURITY.md` lists
+  what is there today.
+
+### Going to production (M6-15)
+
+Run through this before every production deploy. Anything unticked stops the deploy.
+
+1. **CI is green on the commit being deployed**: lint and types, unit tests, database tests, the end
+   to end suite at both widths, Lighthouse on the public pages, and the load tests. Check the run,
+   not the badge.
+2. **The twelve acceptance tests ran**: they are part of the end to end suite, and
+   `e2e/specs/acceptance-roll-call.spec.ts` fails if one has been renamed, deleted or skipped.
+3. **No open P1**: see below. A P1 open means no deploy except the fix.
+4. **Migrations are forward only and already on staging**: they were pushed to staging, the app
+   there works, and nothing in `supabase/migrations` has been edited since. A merged migration is
+   frozen; fix it with another.
+5. **Generated types match the migrations**: CI checks this; `pnpm db:types` and a clean `git diff`
+   say it locally.
+6. **Secrets are set for Production in Vercel**: the ones `.env.example` lists, with
+   `INNGEST_SIGNING_KEY` and `FIELD_ENCRYPTION_KEYS` present, which the app refuses to start
+   without, and the four Stripe values in section 3.7 step 9.
+7. **A backup exists from today**, and you know which point to go back to (see backups below). For
+   the first production deploy that means the project is on Pro, the demo data has gone, and the
+   leaked password check is on (D-154).
+8. **Watching is on**: the Sentry DSN is set, the uptime check is green, and an alert reaches a
+   phone.
+9. **Deploy**, then within five minutes: open the public home page, a city page, a profile and a
+   booking link; sign in as an instructor; open the diary; take a test payment in Stripe test mode
+   if payments changed.
+10. **If something is wrong**, roll back first and diagnose afterwards: Vercel keeps the previous
+    deployment and promoting it is one click. A migration does not roll back with it, which is why
+    migrations are forward only.
+
+### P1 bugs (M6-15)
+
+- **A P1 is** anything that loses money, loses data, lets somebody see another Business's data,
+  stops a learner booking or paying, stops an instructor seeing their day, or takes the public site
+  down. Nothing else is a P1, however annoying.
+- **Where they live**: GitHub issues on `MTShakir/Doovor`, labelled `P1`, one per bug, with what
+  happened, who it happened to, and how to see it again.
+- **What happens**: a P1 stops other work. Write the failing test first, fix it, ship it, then write
+  what went wrong and what stops it happening again in `docs/DECISIONS.md`.
+- **Right now**: none open.
+
+### Backups and going back (M6-14)
+
+- **What exists depends on the plan.** The free plan keeps no backup that can be restored: on 18
+  September 2026 the project, on the free plan, listed no backups and no point in time recovery
+  (Management API, `database/backups`). Pro keeps a daily backup for seven days. Point in time
+  recovery, which is what lets you go back to a minute rather than a day, is a paid add on above
+  that (D-032). Data that matters needs Pro at the least.
+- **Product owner, before beta:**
+  1. Put production on the Pro plan, then note what it has: daily backups only, or point in time
+     recovery and the window it covers.
+  2. Do a restore drill into a throwaway project: restore yesterday's backup, point a local checkout
+     at it with that project's URL and keys, and check a learner's lessons, payments and receipts
+     are all there. Write down how long the restore took.
+  3. Delete the drill project, and record the date and the time it took in `docs/PROGRESS.md`.
+- **Going back for real**: restore from the dashboard, then redeploy the app unchanged. Everything
+  written after that point is gone, so tell the people affected which window was lost. A restore is
+  a last resort: one bad migration is better fixed forward.
+
+### A learner says they were charged twice (M6-13)
+
+1. **Find the payments.** Admin, Learners, open them, and read their payments. Two rows for one
+   lesson is a double charge; one row and two card statements is the bank showing an authorisation
+   and a capture, which is not.
+2. **Check what the provider says.** Stripe dashboard, search the learner's email, and compare the
+   charges with `public.payments`. `provider_ref` on each row is the Stripe id.
+3. **If the product took two payments**, refund the later one from the app rather than from Stripe,
+   so the ledger, the receipt and the audit trail agree: Admin, the learner, the payment, Refund.
+   A refund made in Stripe alone leaves our record wrong.
+4. **If Stripe shows two charges and the app one**, the webhook missed one. The app records a
+   payment once per provider event (acceptance-06), so look in `public.provider_events` for the
+   event id: if it is absent, replay it from Stripe, which is safe because a repeat is ignored.
+5. **Tell them what happened and when the money returns**: a card refund is with them in five to
+   ten working days, and the app emails the receipt.
+6. **Write it down.** If the cause was ours, it is a P1 until fixed.
+
+### Rotating a key (M6-13)
+
+Every one of these is: create the new, set it in Vercel, redeploy, check, then delete the old.
+
+- **Supabase secret key**: create a new one, update Vercel, redeploy, delete the old.
+- **Stripe**: roll the secret key in the Stripe dashboard, update `STRIPE_SECRET_KEY`, redeploy, then
+  take one test payment. The webhook secrets are separate: rolling an endpoint's secret means
+  updating `STRIPE_WEBHOOK_SECRET` or `STRIPE_CONNECT_WEBHOOK_SECRET` in the same deploy, or
+  deliveries are refused.
+- **Resend and Twilio**: create a new key, update Vercel, redeploy, send one message to yourself.
+- **Web push (VAPID)**: a new pair invalidates every subscription. Only rotate if the private key
+  has leaked, and tell people they will have to turn notifications on again.
+- **Field encryption (`FIELD_ENCRYPTION_KEYS`)**: add the new key at the front of the ring, keeping
+  the old one, so anything already encrypted can still be read. Remove the old key only once
+  nothing uses it (D-010).
+
+### Watching for errors and outages (M6-10)
+- Errors are reported by `@sentry/nextjs`, started in `apps/web/src/lib/errors/sentry.ts`, from the
+  browser, the server and the jobs. With no `NEXT_PUBLIC_SENTRY_DSN` it does nothing at all, which
+  is how a developer's machine and the test runs stay quiet.
+- Every report passes through `apps/web/src/lib/errors/reporting.ts` first, which drops the query
+  string, the cookies and the body, removes any header whose name says it is a secret, keeps only
+  the account id of the person it happened to, and never records a session (D-150).
+- **Set up on 19 September 2026:** project `doovor-web` in the `doovor` organisation, which stores
+  data in the EU. The DSN is in Vercel for Production and Preview as a Config value, since it ships in
+  every page anyway. The code that uses it arrives with M6, so `app.doovor.com` reports once M6 is
+  merged and deployed; preview builds of the branch report now. The project stores no IP addresses
+  and accepts browser reports only from `app.doovor.com`, `doovor.com` and `localhost:3000`. Two
+  alerts email the team: "New, returning or escalating issues", and "Same issue more than 10 times
+  in 5 minutes", at most once every 30 minutes per issue. Proved end to end from a production build
+  on a laptop: `/dev/error` and thrown browser errors each arrived within seconds, without cookies,
+  query strings, bodies, IP addresses or a user.
+- **Browser reports go through our own server** (`/api/reports`, D-157). Sent straight from a
+  browser, Sentry worked out the visitor's town from their address before dropping it. The route
+  passes on reports for our own project only, with none of the visitor's headers, so Sentry sees
+  Vercel instead. The security policy no longer lets a browser talk to Sentry at all. When Sentry
+  turns a report away, the route logs Sentry's status and short reason, never the report.
+- **Uptime (19 September 2026):** Sentry checks `https://app.doovor.com/api/health` every minute,
+  calls it down after two failures in a row and up after one success, and the two alerts above
+  cover it. Uptime check data may be stored outside the EU; it holds only our endpoint's status and
+  timings, and the product owner accepted that.
+- **How it was switched on, for the next project:**
+  1. Create a Sentry project in the EU region. Copy the DSN into `NEXT_PUBLIC_SENTRY_DSN` in Vercel,
+     for Preview and Production.
+  2. Confirm the wiring on a laptop first: put the DSN in `.env.local` for one run, build, open
+     `/dev/error`, which throws on purpose, and look for it in Sentry within a minute. Then take it
+     back out of `.env.local`. `/dev` routes answer only on a developer's machine and in the test
+     runs (M6-01), so there is nothing to press on staging; there, the proof is the first real
+     error arriving after the deploy.
+  3. Set an alert rule: any new issue in Production to email, and more than 10 of the same issue in
+     5 minutes to the phone.
+  4. Uptime: a check every minute on `https://app.doovor.com/api/health` (Sentry Crons, Better Stack
+     or UptimeRobot all do this), alerting after two failures so one slow response is not an alarm.
+  5. For readable stack traces, set `SENTRY_AUTH_TOKEN`, flip `'@sentry/cli'` to `true` in
+     `pnpm-workspace.yaml` and wrap `next.config.ts` with `withSentryConfig`. Not done here, because
+     it changes the build for everybody and buys nothing until step 1 is done.
+
+### Load tests (M6-05)
+- `pnpm load` runs both, against the local stack and a build of the app on port 3000. It builds
+  `load/fixtures.json` first, from the seeded database, runs the reads and then the booking scenario,
+  and cancels afterwards what the booking run booked.
+- The thresholds are the requirement, so k6 fails the run if it is missed: p95 under 300 ms for the
+  reads, under 600 ms for a booking (NFR-PERF-02). A whole page has its own, looser threshold,
+  because the requirement for a page is NFR-PERF-01 and Lighthouse holds that one.
+- It runs in CI on every push, against a fresh stack and a production build, and the timings are in
+  the job's annotations. `pnpm load` needs k6 on the machine (`winget install k6` or
+  `brew install k6`); CI installs it itself.
+- If a run leaves bookings behind, `pnpm load:clean` cancels them. It only ever touches what a load
+  run booked: the learners in `load/fixtures.json`, from three weeks out.
+- The fixtures file holds the tokens of seeded local accounts, so it is ignored by git. It never
+  points anywhere but the local stack, and the scripts refuse to run if it does.
+
 ### Secrets
+- `pnpm db:env --force` refreshes the local stack's keys and keeps everything else already in
+  `.env.local`, copying the old file aside first (D-145). It used to rewrite the whole file, which
+  threw away every key pasted in by hand; if that has happened, the public values can be recovered
+  from `apps/web/.next`, where a build bakes them in, and the secret ones cannot.
+
 - They live in Vercel (app), the Supabase dashboard (Auth providers, SMTP), and `.env.local` on developer machines. None are in git; CI needs none today.
 - To rotate the Supabase secret key: create a new one, update Vercel, redeploy, then delete the old one.
 

@@ -10,7 +10,7 @@ import { PhotoUpload } from '@repo/ui/photo-upload';
 import { Select } from '@repo/ui/select';
 import { useEffect, useRef, useState, useTransition } from 'react';
 import { Controller, useForm } from 'react-hook-form';
-import type { z } from 'zod';
+import type { z } from '@repo/core/zod';
 import { ClientForm, SubmitButton } from '@/components/client-form';
 import { FormAlert } from '@/components/form-alert';
 import { prepareBadge, type ImageProblem } from '@/lib/images/prepare';

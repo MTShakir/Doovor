@@ -7,7 +7,7 @@ import { Input } from '@repo/ui/input';
 import { Select } from '@repo/ui/select';
 import { useState, useTransition } from 'react';
 import { useForm } from 'react-hook-form';
-import type { z } from 'zod';
+import type { z } from '@repo/core/zod';
 import { ClientForm, SubmitButton } from '@/components/client-form';
 import { FormAlert } from '@/components/form-alert';
 import { saveLearnerProfile } from './actions';

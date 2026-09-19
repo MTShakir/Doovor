@@ -12,6 +12,7 @@ import { TimeSlotGrid } from '@repo/ui/time-slot-grid';
 import { toast } from '@repo/ui/toast';
 import { CalendarPlus } from 'lucide-react';
 import { useEffect, useState, useTransition } from 'react';
+import { track } from '@/lib/analytics/track';
 import { FormAlert } from '@/components/form-alert';
 import type { LessonOption } from '@/lib/booking/day';
 import { bookableLessons, bookLesson, bookWeekly, slotsForDay } from './booking-actions';
@@ -130,6 +131,7 @@ export function BookLesson({ learners, learnerId, date, label = 'Book a lesson',
           setError(result.message);
           return;
         }
+        track('booking_created', { source: 'instructor', recurring: false });
         toast(`Booked for ${formatDate(when)} at ${formatTime(when)}`);
         setOpen(false);
         setChosenSlot(null);
@@ -143,6 +145,7 @@ export function BookLesson({ learners, learnerId, date, label = 'Book a lesson',
         setError(result.message);
         return;
       }
+      track('booking_created', { source: 'instructor', recurring: true });
       toast(
         result.data.booked === 1
           ? `Booked for ${formatDate(when)} at ${formatTime(when)}`

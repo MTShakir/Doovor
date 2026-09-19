@@ -60,7 +60,8 @@ export function LessonRow({
       className="flex flex-col gap-2 px-4 py-3"
       aria-label={`${formatTime(lesson.startsAt)} ${lesson.learnerName}`}
     >
-      <div className="flex items-start gap-3">
+      {/* Wraps at 200% text, where the time, the learner and what is owed will not share a line. */}
+      <div className="flex flex-wrap items-start gap-3">
         <span className="w-14 shrink-0 text-small font-semibold text-ink tabular-nums">
           {formatTime(lesson.startsAt)}
           <span className="block font-normal text-grey-700">{formatTime(lesson.endsAt)}</span>
@@ -82,7 +83,7 @@ export function LessonRow({
             </span>
           ) : null}
         </span>
-        <span className="flex shrink-0 flex-col items-end gap-1">
+        <span className="ml-auto flex shrink-0 flex-col items-end gap-1">
           <StatusPill status={state}>{lessonStateLabel(lesson.facts)}</StatusPill>
           <span className="text-small text-grey-700 tabular-nums">
             {formatPence(lesson.pricePence)}

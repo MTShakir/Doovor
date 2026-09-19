@@ -23,7 +23,7 @@ import { Select } from '@repo/ui/select';
 import { CircleCheck, MapPin } from 'lucide-react';
 import { useEffect, useRef, useState, useTransition, type ReactNode } from 'react';
 import { Controller, useForm, type FieldValues, type Path, type UseFormReturn } from 'react-hook-form';
-import type { z } from 'zod';
+import type { z } from '@repo/core/zod';
 import { ClientForm, SubmitButton } from '@/components/client-form';
 import { FormAlert } from '@/components/form-alert';
 import { checkArea, joinWaitingList, postLessonRequest, type AreaAnswer } from '@/lib/capture/actions';

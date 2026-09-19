@@ -21,12 +21,64 @@ describe('serverEnvSchema', () => {
   });
 
   it('requires a real provider’s secrets once it is selected', () => {
-    const result = serverEnvSchema.safeParse({ ...baseServer, PAYMENTS_PROVIDER: 'stripe', STRIPE_SECRET_KEY: 'sk_test' });
+    const result = serverEnvSchema.safeParse({ ...baseServer, PAYMENTS_PROVIDER: 'stripe', STRIPE_SECRET_KEY: 'sk_test_x' });
     expect(result.success).toBe(false);
     if (!result.success) {
       const paths = result.error.issues.map((i) => i.path.join('.'));
-      expect(paths).toEqual(['STRIPE_WEBHOOK_SECRET', 'STRIPE_CONNECT_WEBHOOK_SECRET']);
+      // Without the publishable key every card form says card payments are not set up (D-153).
+      expect(paths).toEqual(['NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY', 'STRIPE_CONNECT_WEBHOOK_SECRET']);
     }
+  });
+
+  describe('Stripe keys (D-153)', () => {
+    const stripeTest = {
+      PAYMENTS_PROVIDER: 'stripe',
+      NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY: 'pk_test_x',
+      STRIPE_SECRET_KEY: 'sk_test_x',
+      STRIPE_CONNECT_WEBHOOK_SECRET: 'whsec_connect',
+    };
+    const problems = (input: Record<string, string>) => {
+      const result = serverEnvSchema.safeParse({ ...baseServer, ...input });
+      return result.success ? [] : result.error.issues.map((issue) => `${issue.path.join('.')}: ${issue.message}`);
+    };
+
+    // Platform events come only from Stripe Billing, which arrives with ADM-10 in Phase 2 (D-022).
+    it('does not ask for the platform webhook secret, which nothing in Phase 1 uses', () => {
+      expect(problems(stripeTest)).toEqual([]);
+    });
+
+    it('refuses a live key anywhere but production, whichever provider is on', () => {
+      expect(problems({ STRIPE_SECRET_KEY: 'sk_live_x' })).toEqual([
+        'STRIPE_SECRET_KEY: STRIPE_SECRET_KEY must be a test mode key outside production',
+      ]);
+      expect(problems({ ...stripeTest, APP_ENV: 'preview', INNGEST_SIGNING_KEY: 's', STRIPE_SECRET_KEY: 'rk_live_x' })).toEqual([
+        'STRIPE_SECRET_KEY: STRIPE_SECRET_KEY must be a test mode key outside production',
+      ]);
+      expect(problems({ ...stripeTest, NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY: 'pk_live_x' })).toEqual([
+        'NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY: NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY must be a test mode key outside production',
+      ]);
+    });
+
+    it('refuses a test key in production', () => {
+      const production = {
+        APP_ENV: 'production',
+        EMAIL_PROVIDER: 'resend',
+        RESEND_API_KEY: 're_x',
+        SMS_PROVIDER: 'twilio',
+        TWILIO_ACCOUNT_SID: 'AC1',
+        TWILIO_AUTH_TOKEN: 't',
+        TWILIO_MESSAGING_SERVICE_SID: 'MG1',
+        INNGEST_EVENT_KEY: 'e',
+        INNGEST_SIGNING_KEY: 's',
+        FIELD_ENCRYPTION_KEYS: 'v1:abc',
+      };
+      expect(problems({ ...production, ...stripeTest, STRIPE_SECRET_KEY: 'sk_live_x' })).toEqual([
+        'NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY: NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY must be a live mode key in production',
+      ]);
+      expect(problems({ ...production, ...stripeTest, NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY: 'pk_live_x' })).toEqual([
+        'STRIPE_SECRET_KEY: STRIPE_SECRET_KEY must be a live mode key in production',
+      ]);
+    });
   });
 
   it('refuses fakes in production and names each problem', () => {
@@ -52,14 +104,24 @@ describe('serverEnvSchema', () => {
       TWILIO_AUTH_TOKEN: 't',
       TWILIO_MESSAGING_SERVICE_SID: 'MG1',
       PAYMENTS_PROVIDER: 'stripe',
-      STRIPE_SECRET_KEY: 'sk_live',
-      STRIPE_WEBHOOK_SECRET: 'whsec_1',
+      NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY: 'pk_live_x',
+      STRIPE_SECRET_KEY: 'sk_live_x',
       STRIPE_CONNECT_WEBHOOK_SECRET: 'whsec_2',
       INNGEST_EVENT_KEY: 'e',
       INNGEST_SIGNING_KEY: 's',
       FIELD_ENCRYPTION_KEYS: 'v1:abc',
     });
     expect(result.success).toBe(true);
+  });
+
+  it('wants the job runner signing key wherever the app is hosted (M6-01, D-135)', () => {
+    const hosted = serverEnvSchema.safeParse({ APP_ENV: 'preview', SUPABASE_SECRET_KEY: 'secret' });
+    expect(hosted.success).toBe(false);
+    expect(hosted.error?.issues.map((issue) => issue.path.join('.'))).toContain('INNGEST_SIGNING_KEY');
+    const withKey = serverEnvSchema.safeParse({ APP_ENV: 'preview', SUPABASE_SECRET_KEY: 'secret', INNGEST_SIGNING_KEY: 'signkey-test' });
+    expect(withKey.success).toBe(true);
+    // A developer machine and the test runs have no runner to talk to.
+    expect(serverEnvSchema.safeParse({ APP_ENV: 'local', SUPABASE_SECRET_KEY: 'secret' }).success).toBe(true);
   });
 });
 

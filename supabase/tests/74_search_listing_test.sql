@@ -13,17 +13,17 @@ select tests.create_fixture();
 select results_eq(
   $$ select private.instructor_in_search(v, e, l, s)
        from (values ('approved'::public.verification_status, null::date, true, 'active'::public.business_status),
-                    ('approved', current_date, true, 'active'),
-                    ('approved', current_date - 1, true, 'active'),
-                    ('approved', current_date + 30, false, 'active'),
-                    ('pending', current_date + 30, true, 'active'),
-                    ('approved', current_date + 30, true, 'suspended')) as t(v, e, l, s) $$,
+                    ('approved', private.today(), true, 'active'),
+                    ('approved', private.today() - 1, true, 'active'),
+                    ('approved', private.today() + 30, false, 'active'),
+                    ('pending', private.today() + 30, true, 'active'),
+                    ('approved', private.today() + 30, true, 'suspended')) as t(v, e, l, s) $$,
   $$ values (true), (true), (false), (false), (false), (false) $$,
   'in search: approved, a badge in date (today counts), listed, and a Business in good standing; nothing less'
 );
 
 update public.instructor_profiles
-   set public_slug = 'ian-one', verification_status = 'approved', badge_expiry = current_date + 200
+   set public_slug = 'ian-one', verification_status = 'approved', badge_expiry = private.today() + 200
  where id = :'ian';
 insert into public.lesson_prices (business_id, lesson_type_id, duration_minutes, price_pence)
 values (:'school', :'lesson_type', 60, 4200);
@@ -59,7 +59,7 @@ select throws_ok(
 select tests.clear_authentication();
 
 -- Listed again, but the badge has run out: out of search, and not taking bookings (acceptance test 10).
-update public.instructor_profiles set is_listed = true, badge_expiry = current_date - 1 where id = :'ian';
+update public.instructor_profiles set is_listed = true, badge_expiry = private.today() - 1 where id = :'ian';
 select tests.authenticate_as_anon();
 select results_eq(
   $$ select (p ->> 'listed')::boolean, (p ->> 'inSearch')::boolean, (p ->> 'takingBookings')::boolean
@@ -70,7 +70,7 @@ select results_eq(
 select is(public.booking_page('ian-one'), null, 'and its booking link takes no bookings');
 select tests.clear_authentication();
 
-update public.instructor_profiles set badge_expiry = current_date + 365 where id = :'ian';
+update public.instructor_profiles set badge_expiry = private.today() + 365 where id = :'ian';
 select tests.authenticate_as_anon();
 select is((select (public.instructor_profile_page('ian-one') ->> 'inSearch')::boolean), true, 'a renewed badge is back in search at once');
 select tests.clear_authentication();

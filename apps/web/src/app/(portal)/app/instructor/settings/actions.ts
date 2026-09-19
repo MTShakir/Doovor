@@ -6,7 +6,7 @@ import { businessBookingRulesSchema, instructorBookingRulesSchema } from '@repo/
 import { availabilityExceptionSchema, workingWeekSchema } from '@repo/core/schemas/availability';
 import { localToUtc } from '@repo/core/time';
 import { revalidatePath } from 'next/cache';
-import { z } from 'zod';
+import { z } from '@repo/core/zod';
 import { requirePortal } from '@/lib/auth/session';
 import { savePackage, savePrices } from '@/lib/catalogue/save';
 import { fieldErrors } from '@/lib/forms';

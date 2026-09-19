@@ -15,7 +15,7 @@ export function Chip({ selected = false, className, type, children, ...props }: 
       type={type ?? 'button'}
       aria-pressed={selected}
       className={cn(
-        'relative inline-flex h-10 items-center gap-1.5 rounded-full px-4 text-small font-semibold whitespace-nowrap',
+        'relative inline-flex min-h-10 items-center gap-1.5 rounded-full px-4 py-1.5 text-small font-semibold',
         'transition-colors duration-200 ease-out after:absolute after:-inset-1 after:content-[""]',
         'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-black',
         selected ? 'bg-black text-white' : 'bg-grey-100 text-black hover:bg-grey-200',

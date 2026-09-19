@@ -12,15 +12,39 @@ trustPolicyIgnoreAfter: 43200
 
 # Dependencies allowed to run install scripts. Anything new must be reviewed and added here.
 allowBuilds:
+  # Reviewed, not needed: its script downloads the Sentry command line tool, which only a
+  # build that uploads source maps uses. We do not, so nothing needs it (M6-10, D-150).
+  '@sentry/cli': false
   # Reviewed, not needed: its script checks the native binding and, if it is missing,
   # installs a WebAssembly fallback. pnpm installs the binding as an optional dependency.
   '@swc/core': false
+  # Reviewed, not needed: its script only prints a message asking for funding. It builds
+  # nothing (pulled in by posthog-js).
+  core-js: false
   # Reviewed, not needed: its script only checks for the platform binary, which pnpm
   # already installs as an optional dependency.
   esbuild: false
   # Reviewed, not needed: its script only prints warnings about dependents' version
   # schemes. It generates nothing (pulled in by inngest through OpenTelemetry).
   protobufjs: false
+
+# Versions raised above what a dependency asks for, to leave an advisory behind (M6-02, D-136).
+# Each is a build or test tool, none of them in what the app serves.
+overrides:
+  # Unbounded memory growth and a crash on untrusted data, under Serwist at build time.
+  browserslist: '>=4.28.7'
+  # Path traversal through a prefix, under Lighthouse CI.
+  tmp: '>=0.2.6'
+  # Missing bounds check when given a buffer, under Lighthouse CI.
+  uuid: '>=11.1.1'
+
+# An advisory with no fixed version, read and accepted (M6-02, D-136). extract-zip reaches us only
+# through Lighthouse CI's browser downloader, which never runs: the Lighthouse job measures with the
+# runner's own Chrome. Reviewed 17 September 2026; drop this once a fixed version exists.
+auditConfig:
+  ignoreGhsas:
+    - GHSA-jmr9-qjv8-65gv
+    - GHSA-7pqw-9j4j-h8q3
 
 # Shared versions. Workspace packages reference these with "catalog:".
 catalog:

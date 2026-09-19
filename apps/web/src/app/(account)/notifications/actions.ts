@@ -3,7 +3,7 @@
 import { err, ok, type Result } from '@repo/core/result';
 import { notificationPreferenceSchema, pushSubscriptionSchema } from '@repo/core/schemas/notification';
 import { revalidatePath } from 'next/cache';
-import { z } from 'zod';
+import { z } from '@repo/core/zod';
 import { requireAccess } from '@/lib/auth/session';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
 

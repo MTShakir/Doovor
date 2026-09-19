@@ -6,14 +6,15 @@ const site = brand.domain;
 const app = brand.appHost;
 
 describe('which host a request belongs on (D-084)', () => {
-  it('sends an app address opened on the public site to the app, for good, path and query kept', () => {
+  it('sends an app address opened on the public site to the app, path and query kept, and not for good (D-134)', () => {
     expect(hostRedirect(site, '/app/learner/lessons', '?view=past')).toEqual({
       url: `${brand.appUrl}/app/learner/lessons?view=past`,
-      permanent: true,
+      // Temporary: a page that becomes public later must not stay redirected in caches and browsers.
+      permanent: false,
     });
     expect(hostRedirect(`www.${site}`, '/book/sarah-khan', '')).toEqual({
       url: `${brand.appUrl}/book/sarah-khan`,
-      permanent: true,
+      permanent: false,
     });
     expect(hostRedirect(site.toUpperCase(), '/sign-in', '')?.url).toBe(`${brand.appUrl}/sign-in`);
   });

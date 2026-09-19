@@ -6,6 +6,7 @@ import { Input } from '@repo/ui/input';
 import { Select } from '@repo/ui/select';
 import { toast } from '@repo/ui/toast';
 import { useState, useTransition } from 'react';
+import { track } from '@/lib/analytics/track';
 import { ClientForm, SubmitButton } from '@/components/client-form';
 import { FormAlert } from '@/components/form-alert';
 import { addLearner } from './actions';
@@ -35,6 +36,7 @@ export function ManualLearnerForm({ onAdded }: { onAdded: () => void }) {
         setFormError(form ?? (result.fields ? null : result.message));
         return;
       }
+      track('learner_added', { method: 'by_hand', count: 1 });
       setValues(empty);
       toast(`${values.fullName.trim()} is on your list`);
       onAdded();

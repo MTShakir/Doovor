@@ -5,6 +5,7 @@ import { Field } from '@repo/ui/field';
 import { Textarea } from '@repo/ui/input';
 import { toast } from '@repo/ui/toast';
 import { useState, useTransition } from 'react';
+import { track } from '@/lib/analytics/track';
 import { decideVerification } from './actions';
 
 /**
@@ -22,6 +23,7 @@ export function DecisionForm({ profileId, name }: { profileId: string; name: str
     startTransition(async () => {
       const result = await decideVerification({ profileId, approved, reason });
       if (result.ok) {
+        if (approved) track('instructor_verified');
         toast(approved ? `${name} is verified` : `${name} was not approved`);
         setRejecting(false);
         setReason('');

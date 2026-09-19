@@ -15,7 +15,7 @@ import { createSupabaseServerClient } from '@/lib/supabase/server';
 import { describeUserAgent } from '@/lib/user-agent';
 import { signOut } from '../../(auth)/actions';
 import { signOutEverywhere } from './actions';
-import { DeleteAccount, RevokeDeviceButton } from './account-client';
+import { DeleteAccount, KeepMyAccount, RevokeDeviceButton } from './account-client';
 
 export const metadata: Metadata = { title: 'Account and security', robots: { index: false } };
 
@@ -139,14 +139,39 @@ async function AccountContent() {
         </div>
       </Card>
 
+      <Card role="region" aria-labelledby="data-title">
+        <CardTitle id="data-title">Your data</CardTitle>
+        <CardDescription className="mt-1">
+          Everything we hold about you, to read, print or keep as a file (NFR-PRV-03).
+        </CardDescription>
+        <div className="mt-4 flex flex-col gap-2 sm:flex-row">
+          <Button variant="secondary" asChild>
+            <Link href="/account/data">See your data</Link>
+          </Button>
+          <Button variant="secondary" asChild>
+            <a href="/account/data.json" download>
+              Download as JSON
+            </a>
+          </Button>
+        </div>
+      </Card>
+
       <Card role="region" aria-labelledby="delete-title">
         <CardTitle id="delete-title">Delete your account</CardTitle>
         <CardDescription className="mt-1">
-          We delete your details and keep payment records for 6 years, as the law requires.
+          Your name, contact details and anything written about you go. Payment records stay for 6 years without you
+          in them, because the law requires it. Lessons still to come are cancelled, and any money owed for one is
+          between you and your instructor.
         </CardDescription>
         <div className="mt-4">
           {deletion ? (
-            <p className="text-small font-medium text-ink">We received your request on {formatDate(new Date(deletion.requested_at))}.</p>
+            <div className="flex flex-col gap-3">
+              <p className="text-small font-medium text-ink">
+                We received your request on {formatDate(new Date(deletion.requested_at))}. Your account goes seven days
+                later, on {formatDate(new Date(new Date(deletion.requested_at).getTime() + 7 * 24 * 3_600_000))}.
+              </p>
+              <KeepMyAccount />
+            </div>
           ) : (
             <DeleteAccount />
           )}

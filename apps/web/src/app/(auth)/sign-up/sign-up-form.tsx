@@ -8,12 +8,13 @@ import { Input } from '@repo/ui/input';
 import Link from 'next/link';
 import { useState, useTransition } from 'react';
 import { useForm } from 'react-hook-form';
-import type { z } from 'zod';
+import type { z } from '@repo/core/zod';
 import { ClientForm, SubmitButton } from '@/components/client-form';
 import { FormAlert } from '@/components/form-alert';
 import { OAuthButtons } from '@/components/oauth-buttons';
 import { PasswordInput } from '@/components/password-input';
 import { signUp } from '../actions';
+import { track } from '@/lib/analytics/track';
 
 const headings: Record<IntendedRole, string> = {
   learner: 'Create your learner account',
@@ -38,8 +39,10 @@ export function SignUpForm({ role, prefill, flags }: { role: IntendedRole; prefi
 
   const onSubmit = form.handleSubmit((values) => {
     setFormError(null);
+    track('signup_started', { role });
     startTransition(async () => {
       const result = await signUp(values);
+      if (result.ok) track('signup_completed', { role });
       if (!result.ok) {
         setFormError(result.message);
         for (const [field, message] of Object.entries(result.fields ?? {})) {

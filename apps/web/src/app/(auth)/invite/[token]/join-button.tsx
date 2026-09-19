@@ -2,6 +2,7 @@
 
 import { Button } from '@repo/ui/button';
 import { useState, useTransition } from 'react';
+import { track } from '@/lib/analytics/track';
 import { FormAlert } from '@/components/form-alert';
 import { acceptMemberInvitation } from './actions';
 
@@ -21,7 +22,8 @@ export function JoinButton({ token, school }: { token: string; school: string })
           setError(null);
           startTransition(async () => {
             const result = await acceptMemberInvitation(token);
-            if (!result.ok) setError(result.message);
+            if (result.ok) track('invite_accepted', { as: 'instructor' });
+            else setError(result.message);
           });
         }}
       >

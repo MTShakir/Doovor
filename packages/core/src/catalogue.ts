@@ -8,7 +8,7 @@
  * forms, and what they accept.
  */
 
-import { z } from 'zod';
+import { z } from './zod';
 import { formatPence, parsePoundsToPence } from './money.ts';
 import { formatMinutes } from './time/format.ts';
 

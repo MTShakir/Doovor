@@ -2,7 +2,7 @@ import 'server-only';
 import { auditCategoryActions, auditWords } from '@repo/core/audit';
 import type { AuditCursor, AuditLogSearch } from '@repo/core/schemas/admin';
 import { formatDateWithYear, formatTime } from '@repo/core/time';
-import { z } from 'zod';
+import { z } from '@repo/core/zod';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
 
 export const AUDIT_PAGE_SIZE = 50;

@@ -1,6 +1,6 @@
 import 'server-only';
 import { formatDate } from '@repo/core/time';
-import { z } from 'zod';
+import { z } from '@repo/core/zod';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
 
 // The function answers JSON, so it is read the way any input is.

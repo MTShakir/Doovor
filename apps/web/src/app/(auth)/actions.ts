@@ -13,7 +13,7 @@ import {
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
 
-import { z } from 'zod';
+import { z } from '@repo/core/zod';
 import { getAppUrl } from '@/lib/app-url';
 import { authErrorCopy } from '@/lib/auth/auth-errors';
 import { completeSignIn } from '@/lib/auth/complete-sign-in';

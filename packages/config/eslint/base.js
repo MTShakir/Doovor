@@ -34,7 +34,19 @@ export function base(tsconfigRootDir) {
         '@typescript-eslint/prefer-nullish-coalescing': ['error', { ignorePrimitives: { string: true } }],
         eqeqeq: ['error', 'always'],
         'no-console': ['error', { allow: ['warn', 'error'] }],
+        // Zod is handed out by one module, which first tells it what it may do in a browser
+        // (D-140). A schema built from any other copy would ask to compile itself, and our
+        // content security policy would refuse, on every page that has a schema.
+        'no-restricted-imports': [
+          'error',
+          { paths: [{ name: 'zod', message: "Import { z } from '@repo/core/zod' instead (D-140)." }] },
+        ],
       },
+    },
+    {
+      // The one module that may: it is the one doing the telling.
+      files: ['**/src/zod.ts'],
+      rules: { 'no-restricted-imports': 'off' },
     },
     {
       files: ['**/*.js', '**/*.mjs', '**/*.cjs'],

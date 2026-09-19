@@ -56,7 +56,7 @@ export function TodayLessons({ lessons, now, plainLinks = false, waiting = new S
           return (
             <li key={lesson.id}>
               <article className="flex flex-col gap-2 px-4 py-3" aria-label={`${formatTime(lesson.startsAt)} ${lesson.learnerName}`}>
-                <div className="flex items-start gap-3">
+                <div className="flex flex-wrap items-start gap-3">
                   <span className="w-14 shrink-0 text-small font-semibold text-ink tabular-nums">
                     {formatTime(lesson.startsAt)}
                     <span className="block font-normal text-grey-700">{formatTime(lesson.endsAt)}</span>

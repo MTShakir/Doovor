@@ -1,0 +1,43 @@
+# Weekly update pull requests (NFR-SEC-03, M6-02, D-136). Minor and patch versions arrive in one
+# grouped pull request for the whole workspace; a major version comes on its own, with its notes, so
+# it can be read before it lands. CI decides: every pull request runs lint, types, unit, database,
+# end to end and Lighthouse.
+version: 2
+updates:
+  - package-ecosystem: npm
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+      time: '07:00'
+      timezone: Europe/London
+    open-pull-requests-limit: 5
+    versioning-strategy: increase
+    commit-message:
+      prefix: chore(deps)
+    labels:
+      - dependencies
+    groups:
+      # One pull request for everything safe, so the week's reading is one diff.
+      minor-and-patch:
+        patterns:
+          - '*'
+        update-types:
+          - minor
+          - patch
+
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+      time: '07:00'
+      timezone: Europe/London
+    commit-message:
+      prefix: ci(deps)
+    labels:
+      - dependencies
+    groups:
+      actions:
+        patterns:
+          - '*'

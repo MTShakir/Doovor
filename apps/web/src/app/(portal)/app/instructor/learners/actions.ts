@@ -4,7 +4,7 @@ import { defaultErrorCopy, parsePostgresError, type DomainErrorCode } from '@rep
 import { invitationLink } from '@repo/core/invitations';
 import { err, ok, type Result } from '@repo/core/result';
 import { revalidatePath } from 'next/cache';
-import { z } from 'zod';
+import { z } from '@repo/core/zod';
 import { manualLearnerSchema } from '@repo/core/schemas/learner';
 import { getAppUrl } from '@/lib/app-url';
 import { createUnclaimedLearnerAccount, removeUnclaimedLearnerAccount } from '@/lib/learners/account';

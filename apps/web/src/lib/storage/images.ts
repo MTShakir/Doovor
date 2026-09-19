@@ -19,6 +19,16 @@ export function avatarUrl(path: string | null | undefined): string | undefined {
   return `${clientEnv.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/${avatarsBucket}/${path}`;
 }
 
+/**
+ * Whether an address is a stored profile picture of ours, or a picture carried in the address
+ * itself. The share image drawer fetches a photo from the server, so it fetches only these: an
+ * instructor may write their own `photo_path`, and nothing they write should send the server
+ * anywhere else (NFR-SEC-03, M6-01, D-135).
+ */
+export function isDrawablePhotoUrl(url: string): boolean {
+  return url.startsWith('data:image/') || url.startsWith(`${clientEnv.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/${avatarsBucket}/`);
+}
+
 const contentType = { [avatarsBucket]: avatarImage.outputType, [badgesBucket]: badgeImage.outputType };
 
 /**

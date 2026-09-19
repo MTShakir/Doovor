@@ -1,7 +1,7 @@
 import 'server-only';
 import { qualificationSchema } from '@repo/core/schemas/onboarding';
 import { cacheLife, cacheTag, updateTag } from 'next/cache';
-import { z } from 'zod';
+import { z } from '@repo/core/zod';
 import { getSupabaseAnonymousClient } from '@/lib/supabase/anonymous';
 import { profileTags } from './instructor-profile';
 

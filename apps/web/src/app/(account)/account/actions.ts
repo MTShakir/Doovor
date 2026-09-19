@@ -3,7 +3,7 @@
 import { err, ok, type Result } from '@repo/core/result';
 import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
-import { z } from 'zod';
+import { z } from '@repo/core/zod';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
 
 const sessionIdSchema = z.uuid();
@@ -35,6 +35,15 @@ export async function requestDeletion(input: unknown): Promise<Result<null>> {
   if (!parsed.success) return err('VALIDATION_FAILED');
   const supabase = await createSupabaseServerClient();
   const { error } = await supabase.rpc('request_account_deletion', parsed.data.reason ? { p_reason: parsed.data.reason } : {});
+  if (error) return err('UNKNOWN');
+  revalidatePath('/account');
+  return ok(null);
+}
+
+/** Calling it off, while the seven days last (AUTH-09, M6-12, D-149). */
+export async function cancelDeletion(): Promise<Result<null>> {
+  const supabase = await createSupabaseServerClient();
+  const { error } = await supabase.rpc('cancel_account_deletion');
   if (error) return err('UNKNOWN');
   revalidatePath('/account');
   return ok(null);

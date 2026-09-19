@@ -3,7 +3,7 @@ import { flagsFromSettings, isFlagEnabled } from '@repo/config/flags';
 import { getEntitlements } from '@repo/config/plans';
 import { resolveBookingRules, type BookingRules } from '@repo/core/booking-rules';
 import { formatDateWithYear } from '@repo/core/time';
-import { z } from 'zod';
+import { z } from '@repo/core/zod';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
 
 const settingSchema = z.object({ value: z.record(z.string(), z.unknown()), updated_at: z.string() });

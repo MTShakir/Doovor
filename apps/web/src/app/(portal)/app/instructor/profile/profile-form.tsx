@@ -18,7 +18,7 @@ import { Select } from '@repo/ui/select';
 import { toast } from '@repo/ui/toast';
 import { useEffect, useRef, useState, useTransition } from 'react';
 import { Controller, useForm } from 'react-hook-form';
-import type { z } from 'zod';
+import type { z } from '@repo/core/zod';
 import { ClientForm, SubmitButton } from '@/components/client-form';
 import { FormAlert } from '@/components/form-alert';
 import { prepareAvatar, type ImageProblem } from '@/lib/images/prepare';
@@ -177,7 +177,7 @@ export function ProfileForm({ profileId, photoPath, values }: ProfileFormProps) 
       <Field label="Transmission" error={errors.transmission?.message}>
         <Select options={[...transmissions]} {...form.register('transmission')} />
       </Field>
-      <div className="grid gap-3 md:grid-cols-2">
+      <div className="grid grid-cols-[minmax(0,1fr)] gap-3 md:grid-cols-2">
         <Field label="Car make" error={errors.carMake?.message}>
           <Input autoComplete="off" placeholder="Volkswagen" {...form.register('carMake')} />
         </Field>

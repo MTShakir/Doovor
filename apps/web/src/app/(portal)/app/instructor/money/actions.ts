@@ -4,7 +4,7 @@ import { parsePostgresError } from '@repo/core/errors';
 import { paymentModes, type PaymentMode } from '@repo/core/payment-modes';
 import { err, ok, type Result } from '@repo/core/result';
 import { revalidatePath } from 'next/cache';
-import { z } from 'zod';
+import { z } from '@repo/core/zod';
 import { getAppUrl } from '@/lib/app-url';
 import { requireAccess } from '@/lib/auth/session';
 import { connectUrls, moneyScreens, type MoneyScreen } from '@/lib/payments/connect';

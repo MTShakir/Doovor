@@ -6,7 +6,7 @@
  * the entry exactly as shown, so what somebody agreed to is always on record.
  */
 
-import { z } from 'zod';
+import { z } from '../zod';
 import { areaOf, isPostcode, normalisePostcode } from '../postcode.ts';
 import { emailSchema, fullNameSchema, ukMobileSchema } from './auth.ts';
 

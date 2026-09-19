@@ -2,7 +2,7 @@
 
 import { parsePostgresError } from '@repo/core/errors';
 import { err, type Result } from '@repo/core/result';
-import { z } from 'zod';
+import { z } from '@repo/core/zod';
 import { completeSignIn } from '@/lib/auth/complete-sign-in';
 import { getAccess } from '@/lib/auth/session';
 import { redirectTo } from '@/lib/redirect-to';

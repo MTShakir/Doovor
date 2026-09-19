@@ -39,7 +39,7 @@ select throws_ok(
 
 -- Submitting
 select is(
-  public.submit_verification(:'asha', 'adi', ' ab1234 ', (current_date + 400)::date, true, null),
+  public.submit_verification(:'asha', 'adi', ' ab1234 ', (private.today() + 400)::date, true, null),
   'pending'::public.verification_status,
   'a submission is recorded as waiting for review'
 );
@@ -70,19 +70,19 @@ select is(
 
 select tests.authenticate_as(:'asha_user');
 select throws_ok(
-  format($$ select public.submit_verification(%L, 'adi', '123456', (current_date - 1)::date, true, null) $$, :'asha'),
+  format($$ select public.submit_verification(%L, 'adi', '123456', (private.today() - 1)::date, true, null) $$, :'asha'),
   'P0001',
   'VALIDATION_FAILED',
   'an expired badge is refused'
 );
 select throws_ok(
-  format($$ select public.submit_verification(%L, 'adi', '123456', (current_date + 400)::date, false, null) $$, :'asha'),
+  format($$ select public.submit_verification(%L, 'adi', '123456', (private.today() + 400)::date, false, null) $$, :'asha'),
   'P0001',
   'VALIDATION_FAILED',
   'and so is a submission without the DBS confirmation'
 );
 select throws_ok(
-  format($$ select public.submit_verification(%L, 'adi', '123456', (current_date + 400)::date, true, null) $$, :'ian'),
+  format($$ select public.submit_verification(%L, 'adi', '123456', (private.today() + 400)::date, true, null) $$, :'ian'),
   '42501',
   'NOT_ALLOWED',
   'one instructor cannot submit for another'

@@ -16,7 +16,7 @@ import {
 import { err, ok, type Result } from '@repo/core/result';
 import type { Json } from '@repo/db/types';
 import { revalidatePath } from 'next/cache';
-import type { z } from 'zod';
+import type { z } from '@repo/core/zod';
 import { requirePortal } from '@/lib/auth/session';
 import { expireFeatureFlags } from '@/lib/flags';
 import { fieldErrors } from '@/lib/forms';

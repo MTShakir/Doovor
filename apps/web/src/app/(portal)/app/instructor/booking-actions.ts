@@ -4,7 +4,7 @@ import { parsePostgresError } from '@repo/core/errors';
 import { err, ok, type Result } from '@repo/core/result';
 import { isValidLocalDate } from '@repo/core/time';
 import { revalidatePath } from 'next/cache';
-import { z } from 'zod';
+import { z } from '@repo/core/zod';
 import { requirePortal } from '@/lib/auth/session';
 import { fieldErrors } from '@/lib/forms';
 import { bookingDay, lessonOptions, type BookingDay, type LessonOption } from '@/lib/booking/day';

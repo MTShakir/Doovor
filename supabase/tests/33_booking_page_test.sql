@@ -11,7 +11,7 @@ select tests.create_fixture();
 \set lou 'c0000000-0000-0000-0000-000000000002'
 
 update public.instructor_profiles
-   set public_slug = 'ian-one', verification_status = 'approved', badge_expiry = current_date + 200,
+   set public_slug = 'ian-one', verification_status = 'approved', badge_expiry = private.today() + 200,
        buffer_minutes = 30, instant_book = true
  where id = :'ian';
 insert into public.working_hours (instructor_id, business_id, weekday, start_time, end_time)
@@ -39,7 +39,7 @@ select is(
 );
 
 -- Three weeks out, on a Tuesday: inside the horizon, outside the notice.
-select (date_trunc('week', current_date + 21) + interval '1 day')::date as tuesday \gset
+select (date_trunc('week', private.today() + 21) + interval '1 day')::date as tuesday \gset
 
 select is(
   (select count(*)::int from public.open_slots(:'ian', :'tuesday'::date, 60)),

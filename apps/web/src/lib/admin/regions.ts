@@ -1,7 +1,7 @@
 import 'server-only';
 import { postcodeAreaLabel, readiness, wholeHours, type SwitchOnRule } from '@repo/core/regions';
 import { formatDateWithYear } from '@repo/core/time';
-import { z } from 'zod';
+import { z } from '@repo/core/zod';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
 
 const count = z.number().int();

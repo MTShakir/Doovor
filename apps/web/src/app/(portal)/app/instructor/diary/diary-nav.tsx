@@ -40,7 +40,8 @@ export function DiaryNav({ view, date, previous, next, today }: {
 
   return (
     <nav className="flex flex-wrap items-center justify-between gap-3" aria-label="Diary">
-      <div className="flex items-center gap-1">
+      {/* Both groups wrap: at 200% text on a phone the row is wider than the screen (M6-06). */}
+      <div className="flex flex-wrap items-center gap-1">
         <NavLink href={href(view, previous)} aria-label="Previous" className={arrow}>
           <ChevronLeft className="size-5" aria-hidden />
         </NavLink>
@@ -54,7 +55,7 @@ export function DiaryNav({ view, date, previous, next, today }: {
           Today
         </NavLink>
       </div>
-      <ul className="inline-flex h-12 items-center gap-1 rounded-full bg-grey-100 p-1">
+      <ul className="inline-flex min-h-12 flex-wrap items-center gap-1 rounded-full bg-grey-100 p-1">
         {views.map((option) => (
           <li key={option.value}>
             <NavLink

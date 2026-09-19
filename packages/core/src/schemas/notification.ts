@@ -1,4 +1,4 @@
-import { z } from 'zod';
+import { z } from '../zod';
 import { notificationCategories, notificationChannels } from '../notifications/catalogue.ts';
 
 /** One switch on the settings screen (NTF-04). */

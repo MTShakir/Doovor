@@ -4,7 +4,7 @@
  * week, which is as far ahead as anybody teaching with no signal needs.
  */
 
-import { z } from 'zod';
+import { z } from '../zod';
 
 export const keptDaysSchema = z.object({
   days: z.coerce.number().int().min(1).max(7).default(2),

@@ -57,7 +57,7 @@ export function SchoolDiaryNav({
 
   return (
     <nav className="flex flex-wrap items-end justify-between gap-3" aria-label="Diary">
-      <div className="flex items-center gap-1">
+      <div className="flex flex-wrap items-center gap-1">
         <NavLink href={address({ date: previous })} aria-label="Previous" className={arrow}>
           <ChevronLeft className="size-5" aria-hidden />
         </NavLink>
@@ -72,14 +72,14 @@ export function SchoolDiaryNav({
         </NavLink>
       </div>
       <div className="flex flex-wrap items-end gap-3">
-        <Field label="Instructor" className="w-56">
+        <Field label="Instructor" className="max-w-56 flex-1 basis-40">
           <Select
             options={[{ value: '', label: 'Everyone' }, ...instructors.map((one) => ({ value: one.id, label: one.name }))]}
             value={chosen.instructor}
             onChange={(event) => { filter({ instructor: event.target.value }); }}
           />
         </Field>
-        <Field label="Transmission" className="w-48">
+        <Field label="Transmission" className="max-w-48 flex-1 basis-32">
           <Select
             options={[{ value: '', label: 'Any' }, ...transmissions.map((one) => ({ value: one.value, label: one.label }))]}
             value={chosen.transmission}

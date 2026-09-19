@@ -1740,3 +1740,84 @@ export async function schoolRules(schoolName: string): Promise<Record<string, un
     return rows[0]?.settings ?? {};
   });
 }
+
+/**
+ * Puts a deletion request seven days into the past, so the sweep that carries it out has something
+ * to do now rather than next week (M6-12).
+ */
+export async function ageDeletionRequest(email: string, days = 8): Promise<void> {
+  await withDatabase(async (sql) => {
+    const rows = await sql`
+      update public.deletion_requests d
+         set requested_at = now() - make_interval(days => ${days})
+       where d.status = 'pending'
+         and d.user_id = (select u.id from auth.users u where lower(u.email) = lower(${email}))
+      returning d.id`;
+    if (rows.length === 0) throw new Error(`No deletion request waiting for ${email}`);
+  });
+}
+
+/** Runs the sweep that carries out deletions, the way the job runner does (M6-12). */
+export async function eraseDueAccountsNow(): Promise<number> {
+  return withDatabase(async (sql) => {
+    const due = await sql<{ request_id: string }[]>`select request_id from public.system_due_deletions()`;
+    for (const one of due) await sql`select public.system_finish_deletion(${one.request_id}::uuid)`;
+    return due.length;
+  });
+}
+
+/** The account id behind an email address, while it still has one (M6-12). */
+export async function accountIdOf(email: string): Promise<string> {
+  return withDatabase(async (sql) => {
+    const [row] = await sql<{ id: string }[]>`select id from auth.users where lower(email) = lower(${email})`;
+    if (!row) throw new Error(`No account for ${email}`);
+    return row.id;
+  });
+}
+
+/** What is left of somebody after their account has gone, found by their account id (M6-12). */
+export async function whatIsLeftOf(userId: string): Promise<{
+  name: string;
+  email: string | null;
+  banned: boolean;
+  payments: number;
+  notes: number;
+  devices: number;
+}> {
+  return withDatabase(async (sql) => {
+    const [row] = await sql<
+      { name: string; email: string | null; banned: boolean; payments: number; notes: number; devices: number }[]
+    >`
+      select u.full_name as name,
+             u.email,
+             (a.banned_until is not null and a.banned_until > now()) as banned,
+             (select count(*)::int from public.payments p where p.learner_id = u.id) as payments,
+             (select count(*)::int from public.learner_notes n where n.learner_id = u.id) as notes,
+             (select count(*)::int from public.push_subscriptions s where s.user_id = u.id) as devices
+        from public.users u
+        join auth.users a on a.id = u.id
+       where u.id = ${userId}::uuid`;
+    if (!row) throw new Error(`No account ${userId}`);
+    return row;
+  });
+}
+
+/** A payment, a note and a device, so a deletion has something to keep and something to take. */
+export async function giveThemAHistory(userId: string, schoolName = 'Quayside Driving School'): Promise<void> {
+  await withDatabase(async (sql) => {
+    const [business] = await sql<{ id: string }[]>`select id from public.businesses where name = ${schoolName}`;
+    if (!business) throw new Error(`No ${schoolName}`);
+    const [owner] = await sql<{ user_id: string }[]>`
+      select user_id from public.memberships where business_id = ${business.id} and role = 'owner' limit 1`;
+    if (!owner) throw new Error(`No owner of ${schoolName}`);
+    await sql`
+      insert into public.payments (business_id, learner_id, payer_id, amount_pence, method, status)
+      values (${business.id}, ${userId}, ${userId}, 4200, 'card', 'paid')`;
+    await sql`
+      insert into public.learner_notes (business_id, learner_id, author_id, body)
+      values (${business.id}, ${userId}, ${owner.user_id}, 'Kept for the deletion test')`;
+    await sql`
+      insert into public.push_subscriptions (user_id, endpoint, p256dh, auth)
+      values (${userId}, ${`https://push.example.test/${userId}`}, 'a-public-key-long-enough', 'an-auth-secret-too')`;
+  });
+}

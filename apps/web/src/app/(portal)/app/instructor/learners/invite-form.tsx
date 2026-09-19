@@ -8,6 +8,7 @@ import { Select } from '@repo/ui/select';
 import { toast } from '@repo/ui/toast';
 import { Copy, Mail, MessageCircle, Smartphone } from 'lucide-react';
 import { useState, useTransition } from 'react';
+import { track } from '@/lib/analytics/track';
 import { ClientForm, SubmitButton } from '@/components/client-form';
 import { FormAlert } from '@/components/form-alert';
 import { inviteLearner, type Invitation } from './actions';
@@ -39,6 +40,7 @@ export function InviteForm() {
     startTransition(async () => {
       const result = await inviteLearner({ channel, fullName, email, phone });
       if (result.ok) {
+        track('invite_sent', { to: 'learner' });
         setInvitation(result.data);
         return;
       }

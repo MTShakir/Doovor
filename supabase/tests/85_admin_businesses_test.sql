@@ -22,7 +22,7 @@ insert into public.platform_staff (user_id, role) values (:'super', 'super_admin
 update public.businesses set base_postcode = 'ZZ99 9ZZ' where id = :'asha_biz';
 update public.users set phone = '447700911222' where id = :'ben';
 update public.instructor_profiles
-   set verification_status = 'approved', verified_at = now(), public_slug = 'asha-drives-m5-18', badge_expiry = current_date + 365
+   set verification_status = 'approved', verified_at = now(), public_slug = 'asha-drives-m5-18', badge_expiry = private.today() + 365
  where id = :'asha_profile';
 insert into public.lesson_prices (business_id, lesson_type_id, duration_minutes, price_pence) values (:'asha_biz', :'asha_type', 60, 4000);
 insert into public.bookings (business_id, instructor_id, learner_id, lesson_type_id, starts_at, ends_at, buffer_minutes, status, payment_status, price_pence, source)
@@ -91,7 +91,7 @@ select throws_ok($$ select * from public.admin_businesses('Bee') $$, '42501', nu
 -- Suspending.
 -- ---------------------------------------------------------------------------------------
 select tests.authenticate_as(:'lee');
-select ok((select count(*) from public.open_slots(:'asha_profile', current_date + 3, 60)) > 0, 'before, a learner sees Asha''s free times');
+select ok((select count(*) from public.open_slots(:'asha_profile', private.today() + 3, 60)) > 0, 'before, a learner sees Asha''s free times');
 
 select tests.authenticate_as(:'support', 'aal2');
 select throws_ok(
@@ -133,11 +133,11 @@ select is(
 
 select tests.authenticate_as(:'lee');
 select throws_ok(
-  format($$ select public.create_booking(%L, %L, %L, ((current_date + 3)::timestamp + time '10:00') at time zone 'Europe/London', 60) $$,
+  format($$ select public.create_booking(%L, %L, %L, ((private.today() + 3)::timestamp + time '10:00') at time zone 'Europe/London', 60) $$,
          :'asha_profile', :'lee', :'asha_type'),
   'P0001', 'BUSINESS_SUSPENDED', 'a learner cannot book a lesson with a suspended Business'
 );
-select is((select count(*)::int from public.open_slots(:'asha_profile', current_date + 3, 60)), 0, 'and sees no free times');
+select is((select count(*)::int from public.open_slots(:'asha_profile', private.today() + 3, 60)), 0, 'and sees no free times');
 select throws_ok(
   format($$ select public.hold_booking_for_payment(%L) $$, :'booked'),
   'P0001', 'BUSINESS_SUSPENDED', 'nor pays by card for a lesson already booked'
@@ -147,7 +147,7 @@ select is(public.booking_page('asha-drives-m5-18'), null, 'its booking link take
 
 select tests.authenticate_as(:'asha');
 select throws_ok(
-  format($$ select public.create_booking(%L, %L, %L, ((current_date + 3)::timestamp + time '10:00') at time zone 'Europe/London', 60) $$,
+  format($$ select public.create_booking(%L, %L, %L, ((private.today() + 3)::timestamp + time '10:00') at time zone 'Europe/London', 60) $$,
          :'asha_profile', :'lee', :'asha_type'),
   'P0001', 'BUSINESS_SUSPENDED', 'nor does the instructor book one for her own learner'
 );
@@ -188,7 +188,7 @@ select is(
 
 select tests.authenticate_as(:'lee');
 select lives_ok(
-  format($$ select public.create_booking(%L, %L, %L, ((current_date + 3)::timestamp + time '10:00') at time zone 'Europe/London', 60) $$,
+  format($$ select public.create_booking(%L, %L, %L, ((private.today() + 3)::timestamp + time '10:00') at time zone 'Europe/London', 60) $$,
          :'asha_profile', :'lee', :'asha_type'),
   'and a learner books with it again'
 );

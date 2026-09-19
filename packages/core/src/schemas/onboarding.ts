@@ -5,7 +5,7 @@
  * the mobile app. Steps added in M1-05 onwards join this file.
  */
 
-import { z } from 'zod';
+import { z } from '../zod';
 import { parsePoundsToPence } from '../money.ts';
 import { isPostcode, normalisePostcode } from '../postcode.ts';
 import { isValidLocalDate, isValidLocalTime, localTimeToMinutes } from '../time/calendar.ts';

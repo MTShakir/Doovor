@@ -172,7 +172,8 @@ export function SchoolGlimpse({ className }: { className?: string }) {
   ];
   return (
     <Frame title="Overview" className={className}>
-      <ul className="grid grid-cols-2 gap-2">
+      {/* Two tiles while they fit, one when the text is set larger and a figure no longer does. */}
+      <ul className="grid grid-cols-[repeat(auto-fit,minmax(6rem,1fr))] gap-2">
         {[
           { label: 'Lessons today', value: '15', key: false },
           { label: 'This week', value: '84', key: false },

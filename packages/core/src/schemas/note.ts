@@ -5,7 +5,7 @@
  * that a note says something and is not a novel.
  */
 
-import { z } from 'zod';
+import { z } from '../zod';
 
 export const noteBodySchema = z
   .string()

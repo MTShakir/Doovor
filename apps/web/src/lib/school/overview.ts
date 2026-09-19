@@ -1,7 +1,7 @@
 import 'server-only';
 import { moneyPeriod, type MoneyPeriod } from '@repo/core/money-periods';
 import { formatCalendarDate, todayInZone } from '@repo/core/time';
-import { z } from 'zod';
+import { z } from '@repo/core/zod';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
 
 const count = z.number().int();

@@ -1,5 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
-import { authFile } from '../support/accounts';
+import { answeredCookies, authFile } from '../support/accounts';
 import { bookLesson, lessonIdAt, removeLesson } from '../support/database';
 import { addDays, expectAccessible, settled, snap } from '../support/helpers';
 import { keptLessons, keptScreens, londonTime, readyWithNoSignal, type KeptLesson } from '../support/offline';
@@ -280,7 +280,7 @@ test.describe('Today with no signal (PRD 8.1, PRG-09, M4-08)', () => {
     const hour = testInfo.project.name === 'mobile' ? '02:30' : '04:00';
     await bookLesson('Emma Clarke', learner.email, today(), hour);
     // A session of its own: signing out ends the one it signs out of, which other tests share.
-    const context = await browser.newContext({ storageState: { cookies: [], origins: [] } });
+    const context = await browser.newContext({ storageState: answeredCookies });
     try {
       const page = await context.newPage();
       await signInThroughForm(page, 'emma.clarke@example.com', { next: '/app/instructor' });

@@ -15,6 +15,7 @@ import {
   ProfileHeader,
   WhereLessonsStart,
 } from '@/components/public/instructor-profile';
+import { Counted } from '@/components/analytics/counted';
 import { JsonLdScript } from '@/components/public/json-ld';
 import { PlaceLinks } from '@/components/public/place-links';
 import { getAppUrl } from '@/lib/app-url';
@@ -91,8 +92,9 @@ async function InstructorProfile({ params }: Pick<Props, 'params'>) {
   });
 
   return (
-    <div className="grid gap-8 md:grid-cols-[minmax(0,1fr)_20rem] md:items-start">
+    <div className="grid grid-cols-[minmax(0,1fr)] gap-8 md:grid-cols-[minmax(0,1fr)_20rem] md:items-start">
       <JsonLdScript data={structured} />
+      <Counted event="profile_viewed" properties={{ kind: 'instructor' }} once={profile.slug} />
       <div className="flex flex-col gap-8">
         <ProfileHeader
           name={profile.name}

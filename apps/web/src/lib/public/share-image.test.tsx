@@ -1,7 +1,11 @@
 import { instructorShareCard, placeShareCard } from '@repo/core/share-card';
 import sharp from 'sharp';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { drawablePhoto, shareImageResponse } from './share-image';
+
+const storageUrl = 'https://storage.example.com';
+vi.mock('@/env/client', () => ({ clientEnv: { NEXT_PUBLIC_SUPABASE_URL: storageUrl } }));
+
+const { drawablePhoto, shareImageResponse } = await import('./share-image');
 
 /** A PNG's size, from its header chunk, which follows the eight-byte signature. */
 function pngSize(bytes: Uint8Array): { width: number; height: number } {
@@ -13,7 +17,7 @@ async function drawn(response: Response): Promise<Uint8Array> {
   return new Uint8Array(await response.arrayBuffer());
 }
 
-const photoUrl = 'https://storage.example.com/avatars/sarah.webp';
+const photoUrl = `${storageUrl}/storage/v1/object/public/avatars/sarah.webp`;
 const card = instructorShareCard({
   name: 'Sarah Khan',
   qualification: 'adi',
@@ -77,5 +81,21 @@ describe('drawing the image a shared page shows (PRD 14.6, M5-08)', () => {
   it('draws a place page, which has no picture', async () => {
     const place = placeShareCard({ citySlug: 'london', cityName: 'London', area: { slug: 'camden', name: 'Camden' }, instructorCount: 3 });
     expect(pngSize(await drawn(await shareImageResponse(place)))).toEqual({ width: 1200, height: 630 });
+  });
+});
+
+describe('which photos the drawer will fetch (NFR-SEC-03, M6-01, D-135)', () => {
+  it('fetches a stored picture of ours, and a picture carried in the address itself', async () => {
+    const fetchPhoto = photoAnswers(async () => new Response(await sharp({ create: { width: 8, height: 8, channels: 3, background: '#123456' } }).webp().toBuffer()));
+    expect(await drawablePhoto(photoUrl)).toContain('data:image/png;base64,');
+    expect(fetchPhoto).toHaveBeenCalledTimes(1);
+  });
+
+  it('draws initials for a photo anywhere else, without asking for it', async () => {
+    const fetchPhoto = photoAnswers(() => Promise.resolve(new Response('never', { status: 200 })));
+    for (const elsewhere of ['http://169.254.169.254/latest/meta-data/', 'https://evil.example.com/avatar.webp', `${storageUrl}/storage/v1/object/public/badges/secret.webp`]) {
+      expect(await drawablePhoto(elsewhere)).toBeNull();
+    }
+    expect(fetchPhoto).not.toHaveBeenCalled();
   });
 });

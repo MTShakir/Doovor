@@ -22,15 +22,15 @@ on conflict (postcode) do update set admin_district = excluded.admin_district;
 -- Ian from Stockport, automatic; Ivy from Manchester, with her profile hidden from search.
 update public.businesses set base_postcode = 'M1 1AE' where id = :'school';
 update public.instructor_profiles
-   set public_slug = 'asha-one', verification_status = 'approved', badge_expiry = current_date + 200,
+   set public_slug = 'asha-one', verification_status = 'approved', badge_expiry = private.today() + 200,
        base_postcode = 'LS1 4AP', transmission = 'manual'
  where id = :'asha';
 update public.instructor_profiles
-   set public_slug = 'ian-one', verification_status = 'approved', badge_expiry = current_date + 200,
+   set public_slug = 'ian-one', verification_status = 'approved', badge_expiry = private.today() + 200,
        base_postcode = 'SK1 1EB', transmission = 'automatic', badge_number = '234567'
  where id = :'ian';
 update public.instructor_profiles
-   set public_slug = 'ivy-two', verification_status = 'approved', badge_expiry = current_date + 200,
+   set public_slug = 'ivy-two', verification_status = 'approved', badge_expiry = private.today() + 200,
        base_postcode = 'M1 1AE', transmission = 'manual', is_listed = false
  where id = :'ivy';
 
@@ -98,7 +98,7 @@ select ok(
 
 -- Ian's badge runs out, and Bee School has nobody left in search.
 select tests.clear_authentication();
-update public.instructor_profiles set badge_expiry = current_date - 1 where id = :'ian';
+update public.instructor_profiles set badge_expiry = private.today() - 1 where id = :'ian';
 select tests.authenticate_as_anon();
 
 select is(pg_temp.listed('instructors', array['ian-one']), '[]'::jsonb, 'an instructor whose badge has run out leaves the sitemap');

@@ -6,6 +6,7 @@ import { schoolStructuredData } from '@repo/core/structured-data';
 import { Skeleton } from '@repo/ui/skeleton';
 import { notFound, permanentRedirect } from 'next/navigation';
 import { Suspense } from 'react';
+import { Counted } from '@/components/analytics/counted';
 import { PriceList } from '@/components/public/instructor-profile';
 import { JsonLdScript } from '@/components/public/json-ld';
 import { PlaceLinks } from '@/components/public/place-links';
@@ -89,8 +90,9 @@ async function SchoolProfile({ params }: Pick<Props, 'params'>) {
   });
 
   return (
-    <div className="grid gap-8 md:grid-cols-[minmax(0,1fr)_20rem] md:items-start">
+    <div className="grid grid-cols-[minmax(0,1fr)] gap-8 md:grid-cols-[minmax(0,1fr)_20rem] md:items-start">
       <JsonLdScript data={structured} />
+      <Counted event="profile_viewed" properties={{ kind: 'school' }} once={school.slug} />
       <div className="flex flex-col gap-8">
         <SchoolHeader
           name={school.name}

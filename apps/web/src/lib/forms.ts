@@ -1,4 +1,4 @@
-import type { ZodError } from 'zod';
+import type { ZodError } from '@repo/core/zod';
 
 /** First message per field, keyed by field path, for Result.fields. */
 export function fieldErrors(error: ZodError): Record<string, string> {

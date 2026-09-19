@@ -44,7 +44,8 @@ export function WorkingWeek({ days: initial }: { days: WorkingDayValue[] }) {
           const name = weekdays.find((item) => item.value === day.weekday)?.long ?? 'Day';
           return (
             <li key={day.weekday} className="flex flex-wrap items-center gap-3">
-              <div className="w-40 shrink-0">
+              {/* Wide enough for the longest day beside its switch, so no day name breaks. */}
+              <div className="w-48 max-w-full shrink-0">
                 <Switch
                   label={name}
                   checked={day.working}
@@ -52,11 +53,11 @@ export function WorkingWeek({ days: initial }: { days: WorkingDayValue[] }) {
                 />
               </div>
               {day.working ? (
-                <div className="flex items-center gap-2">
+                <div className="flex flex-wrap items-center gap-2">
                   <Input
                     type="time"
                     aria-label={`${name} from`}
-                    className="w-32"
+                    className="w-32 max-w-full"
                     value={day.startTime}
                     onChange={(event) => { change(day.weekday, { startTime: event.target.value }); }}
                   />
@@ -64,7 +65,7 @@ export function WorkingWeek({ days: initial }: { days: WorkingDayValue[] }) {
                   <Input
                     type="time"
                     aria-label={`${name} to`}
-                    className="w-32"
+                    className="w-32 max-w-full"
                     value={day.endTime}
                     onChange={(event) => { change(day.weekday, { endTime: event.target.value }); }}
                   />

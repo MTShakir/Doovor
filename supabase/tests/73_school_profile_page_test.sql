@@ -18,7 +18,7 @@ on conflict (postcode) do update set admin_district = excluded.admin_district;
 
 update public.businesses set base_postcode = 'M1 1AE' where id = :'school';
 update public.instructor_profiles
-   set public_slug = 'ian-one', verification_status = 'approved', badge_expiry = current_date + 200,
+   set public_slug = 'ian-one', verification_status = 'approved', badge_expiry = private.today() + 200,
        base_postcode = 'SK1 1EB', car_make = 'Ford', car_model = 'Fiesta'
  where id = :'ian';
 update public.instructor_profiles
