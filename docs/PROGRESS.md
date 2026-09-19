@@ -26,6 +26,7 @@ On branch `beta-prep`, after Phase 1, merged when the product owner says.
 |---|---|---|---|
 | B-01 | The privacy draft names the companies that work outside the UK | NFR-PRV-02 | Done. It said everything was held in the UK or the EU; Twilio sends from the United States, and Stripe, Resend, Mapbox and Inngest may process data there. |
 | B-02 | Nightly housekeeping keeps what the privacy notice promises | NFR-PRV-03, NFR-SEC-06 | Done. Found writing the legal review pack: the audit trail was kept forever, a checked badge picture stayed, and a deleted person's photos stayed in storage, a profile photo at a public address. The maintenance sweep now removes pictures nothing points to after a day and prunes audit rows past two years (D-158). 15 pgTAP assertions, 6 unit tests, and a run against local storage that saw a picture listed only once a day old and then really removed. |
+| B-03 | The site and every email say who the company is | NFR-PRV-02 | Done. The footer of every public page, the legal pages and every email name the company that owns the product, where it is registered, its company number and its registered office, as the rules on trading disclosures ask of a website and a business email, all from `companyDisclosure()` in `brand.ts`. The privacy notice gives the ICO registration number. A unit test holds the wording, and the email snapshots changed in their footer line only. |
 
 ## M6 progress
 
