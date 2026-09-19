@@ -4,6 +4,7 @@ import { brand, type ColourToken } from '@repo/config/brand';
 import { formatPence } from '@repo/core/money';
 import { Avatar } from '@repo/ui/avatar';
 import { AvatarPicker } from '@repo/ui/avatar-picker';
+import { NotificationBell } from '@repo/ui/notification-bell';
 import { PhotoUpload } from '@repo/ui/photo-upload';
 import { PickupPointPicker } from '@repo/ui/pickup-point-picker';
 import { FormAlert } from '@/components/form-alert';
@@ -1388,6 +1389,23 @@ export function DesignShowcase() {
 
       <Section title="Navigation">
         <p className="text-body text-grey-700">Portal shells with bottom tabs on phones and a sidebar on desktop (PRD 8.2).</p>
+        <p className="text-body text-grey-700">
+          The notification bell, top right on a phone and beside the name at the top of the menu on a larger screen
+          (NTF-01, D-159): before the count is known, with nothing waiting, with three, and with more than nine.
+        </p>
+        <div className="flex flex-wrap items-center gap-6">
+          <NotificationBell href="/notifications" unread={null} />
+          <NotificationBell href="/notifications" unread={0} />
+          <NotificationBell href="/notifications" unread={3} />
+          <NotificationBell href="/notifications" unread={12} />
+        </div>
+        <div className="max-w-sm overflow-hidden rounded-2xl border border-grey-200">
+          <div className="flex min-h-14 items-center justify-between gap-2 border-b border-grey-200 bg-white pr-2 pl-4">
+            <span className="text-h3 text-black">{brand.name}</span>
+            <NotificationBell href="/notifications" unread={3} />
+          </div>
+          <p className="px-4 py-6 text-small text-grey-700">The top bar as it looks on a phone, above the screen&apos;s own title.</p>
+        </div>
         <div className="flex flex-wrap gap-3">
           <Button asChild variant="secondary">
             <Link href="/app/learner">Learner</Link>

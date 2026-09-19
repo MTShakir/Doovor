@@ -82,14 +82,30 @@ export function Sidebar({ items, header, footer, linkComponent: Link = 'a' }: Si
   );
 }
 
+/**
+ * The bar across the top of a phone's screen: the name on the left, and what belongs at the top
+ * right, the notification bell (D-159). From the md breakpoint the sidebar carries both instead.
+ */
+export function MobileTopBar({ title, actions }: { title: ReactNode; actions?: ReactNode }) {
+  return (
+    <header className="flex min-h-14 items-center justify-between gap-2 border-b border-grey-200 bg-white pt-[env(safe-area-inset-top)] pr-2 pl-4 md:hidden">
+      <span className="text-h3 text-black">{title}</span>
+      {actions ? <div className="flex items-center gap-1">{actions}</div> : null}
+    </header>
+  );
+}
+
 /** Page frame that leaves room for the sidebar on desktop and the tab bar on phones. */
 export function AppShell({
   sidebar,
+  topBar,
   tabBar,
   banner,
   children,
 }: {
   sidebar?: ReactNode;
+  /** The phone's top bar (MobileTopBar), before the content so skipping to it skips the bar too. */
+  topBar?: ReactNode;
   tabBar?: ReactNode;
   /** Full-width notice above everything, for example the "Viewing as" banner (ADM-06). */
   banner?: ReactNode;
@@ -109,6 +125,7 @@ export function AppShell({
         Skip to content
       </a>
       {sidebar}
+      {topBar}
       <div
         id="content"
         tabIndex={-1}

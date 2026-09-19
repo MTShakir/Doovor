@@ -2,6 +2,7 @@ import { AppShell } from '@repo/ui/app-shell';
 import type { ReactNode } from 'react';
 import { ConnectionBanner } from '@/components/offline/connection-banner';
 import { OfflineSync } from '@/components/offline/offline-sync';
+import { PortalNotificationBell, PortalTopBar } from '@/components/notification-bell';
 import { PortalGate } from '@/components/portal-gate';
 import { PortalSidebar, PortalTabBar } from '@/components/portal-nav';
 import { OfflineSupport } from '@/components/pwa/offline-support';
@@ -12,7 +13,11 @@ export const instant = false;
 
 export default function InstructorLayout({ children }: { children: ReactNode }) {
   return (
-    <AppShell sidebar={<PortalSidebar portal="instructor" footer={<SidebarFooter />} />} tabBar={<PortalTabBar portal="instructor" />}>
+    <AppShell
+      sidebar={<PortalSidebar portal="instructor" footer={<SidebarFooter />} headerAction={<PortalNotificationBell />} />}
+      topBar={<PortalTopBar />}
+      tabBar={<PortalTabBar portal="instructor" />}
+    >
       <ConnectionBanner />
       <PortalGate portal="instructor">{children}</PortalGate>
       <OfflineSupport />
