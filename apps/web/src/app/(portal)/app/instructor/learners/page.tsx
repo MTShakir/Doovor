@@ -15,7 +15,7 @@ import { LearnerListRow } from './learner-row';
 export const metadata: Metadata = { title: 'Learners' };
 
 interface LearnersPageProps {
-  searchParams: Promise<{ q?: string; status?: string }>;
+  searchParams: Promise<{ q?: string; status?: string; add?: string }>;
 }
 
 export default function LearnersPage({ searchParams }: LearnersPageProps) {
@@ -50,7 +50,7 @@ async function Learners({ searchParams }: LearnersPageProps) {
   const searching = search.trim() !== '' || filter !== 'all';
 
   return (
-    <LearnerBrowser search={search} filter={filter} total={learners.length}>
+    <LearnerBrowser search={search} filter={filter} total={learners.length} startAdding={params.add === '1'}>
       {learners.length === 0 ? (
         <Card padding="none">
           <EmptyState

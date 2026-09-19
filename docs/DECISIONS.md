@@ -845,3 +845,7 @@ Every decision made without the product owner, newest last. Format: date, decisi
 - **Options:** Keep BOK-08 as written; a move request the instructor accepts or declines in the app.
 - **Reason:** The product owner wants every change to an instructor's diary to go through the instructor. The database refuses a learner's move, not only the screen, so nothing but the instructor or the Business can do it. A request flow would be new work for something a phone call settles, and can follow if instructors ask. The learners' landing page no longer says a learner can move a lesson.
 
+## D-165 | 2026-09-19 | Adding a learner from the booking sheet
+- **Decision:** "Who is it for?" ends with "Add a new learner", which opens the Learners screen with its Add a learner sheet already open (`?add=1`). Closing that sheet takes the flag out of the address. The product owner asked for it.
+- **Options:** A link beside the list; adding the learner inside the booking sheet itself.
+- **Reason:** The list is where an instructor looks when the learner is missing. It stays the phone's own select, and its last choice says what it does, so the change of screen is not a surprise (WCAG 3.2.2). A form inside the booking form would be a second form in a sheet; the Learners sheet already has both ways of adding somebody.

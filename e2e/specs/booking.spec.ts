@@ -63,6 +63,27 @@ test.describe('booking a lesson (BOK-01, M2-16)', () => {
     await expect(page.getByRole('article').filter({ hasText: 'Jack Taylor' }).filter({ hasText: '14:00' })).toBeVisible();
   });
 
+  test('adds somebody new from the list of who it is for (LRN-01, D-165)', async ({ page }) => {
+    await page.goto('/app/instructor/diary');
+    await tapUntil(
+      page.getByRole('button', { name: 'Book a lesson' }).first(),
+      page.getByRole('dialog', { name: 'Book a lesson' }),
+    );
+    const sheet = page.getByRole('dialog', { name: 'Book a lesson' });
+    await sheet.getByLabel('Who is it for?').selectOption({ label: 'Add a new learner' });
+
+    // Straight to adding them, with the sheet already open.
+    await expect(page).toHaveURL(/\/app\/instructor\/learners\?add=1$/);
+    const adding = page.getByRole('dialog', { name: 'Add a learner' });
+    await expect(adding).toBeVisible();
+    await expect(adding.getByRole('button', { name: 'Send them a link' })).toBeVisible();
+
+    // Closed, it is the plain list again, so a refresh does not open it a second time.
+    await page.keyboard.press('Escape');
+    await expect(adding).toBeHidden();
+    await expect(page).toHaveURL(/\/app\/instructor\/learners$/);
+  });
+
   test('warns before booking outside the hours they teach (R-04)', async ({ page }, testInfo) => {
     const day = await emptyDay(testInfo.project.name, 1);
     await page.goto(`/app/instructor/diary?view=day&date=${day}`);
