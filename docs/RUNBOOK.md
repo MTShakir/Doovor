@@ -330,6 +330,26 @@ Run through this before every production deploy. Anything unticked stops the dep
   affected which window was lost. A restore is a last resort: one bad migration is better fixed
   forward.
 
+### Making somebody platform staff
+
+Staff come from nowhere else: the product has no screen that makes anybody staff. The account must
+exist first (they sign up, or sign in with Google, once). Then, in the Supabase dashboard's SQL editor
+for the project:
+
+```sql
+insert into public.platform_staff (user_id, role)
+select id, 'super_admin' from public.users where lower(email) = lower('name@example.com')
+returning user_id, role;
+```
+
+One row back means it is done; none means there is no account with that email yet. Use
+`'support_admin'` for support staff. A trigger writes it to the audit trail as "Made platform staff",
+by the platform itself. Staff need two-step verification: the app asks them to set it up at their
+next sign in if they have not. On a phone the admin portal asks for a larger screen and offers the
+person's other portals, if they have any. To remove somebody:
+`delete from public.platform_staff where user_id = (select id from public.users where lower(email) = lower('name@example.com'));`
+which is audited as "Removed from the platform staff".
+
 ### A learner says they were charged twice (M6-13)
 
 1. **Find the payments.** Admin, Learners, open them, and read their payments. Two rows for one

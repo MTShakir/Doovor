@@ -18,6 +18,22 @@ export function canUsePortal(context: AccessContext, portal: Portal): boolean {
   return availablePortals(context).includes(portal);
 }
 
+const besidesAdmin: Record<Exclude<Portal, 'admin'>, string> = {
+  school: 'Open your school',
+  instructor: 'Open your diary',
+  learner: 'Open your lessons',
+};
+
+/**
+ * Where somebody who is staff and more can go on a phone, where the admin portal asks for a larger
+ * screen (PRD 8.2). Staff land on admin first, so without these a phone is a dead end for them.
+ */
+export function portalsBesidesAdmin(context: AccessContext): { href: string; label: string }[] {
+  return availablePortals(context).flatMap((portal) =>
+    portal === 'admin' ? [] : [{ href: portalRoots[portal], label: besidesAdmin[portal] }],
+  );
+}
+
 /**
  * Where to send someone after sign-in. People with no role yet choose one (AUTH-03), and an
  * instructor who has not finished onboarding goes there rather than through their diary. Somebody

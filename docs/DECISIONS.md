@@ -835,3 +835,7 @@ Every decision made without the product owner, newest last. Format: date, decisi
 - **Options:** Three runs, re-running CI when the profile page lands on the line; lowering the bar; a faster profile page.
 - **Reason:** On the same code the profile page's runs go from the mid seventies to 96 (a cold first run is usually the low one), so a median of three sat on the line: 90 on 19 September before the bell, 90 after it, and 88 on `main` the same afternoon, with nothing on the page changed. Locally it scores 95, with the cookie question as its largest paint, as D-152 intends. Five is what Lighthouse advises. The bar does not move, and a page that is really slower still fails.
 
+## D-163 | 2026-09-19 | Staff who are more than staff carry on from a phone
+- **Decision:** On a phone the admin portal still asks for a larger screen (PRD 8.2), and now also offers the person's other portals: Open your school, Open your diary, Open your lessons, in the order they would land in.
+- **Options:** Land staff on another portal when they are on a phone; leave it.
+- **Reason:** Staff land on admin first, so the product owner's own account, a school's owner made super admin, would have met a dead end on the phone at every sign in. Choosing a portal by screen size on the server means guessing the screen; offering the way on is exact.
