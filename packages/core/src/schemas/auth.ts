@@ -4,10 +4,19 @@ import { normaliseUkMobile } from '../phone.ts';
 
 export const emailSchema = z.string().trim().toLowerCase().pipe(z.email({ error: 'Enter an email address like name@example.com' }));
 
-// NCSC guidance: length over composition rules. 72 is the bcrypt limit.
+/**
+ * The shortest password anybody can choose. NCSC guidance: length over composition rules. Ten
+ * rather than eight while the hosted project has no check against leaked passwords, which comes
+ * with Supabase Pro (D-161). Supabase Auth is set to the same number, and a test holds the two
+ * together (packages/db/src/auth-limits.test.ts). Signing in asks for no length at all, so a
+ * password chosen when eight was enough still works.
+ */
+export const passwordMinLength = 10;
+
+// 72 is the bcrypt limit.
 export const passwordSchema = z
   .string()
-  .min(8, { error: 'Use at least 8 characters' })
+  .min(passwordMinLength, { error: `Use at least ${String(passwordMinLength)} characters` })
   .max(72, { error: 'Use 72 characters or fewer' });
 
 export const fullNameSchema = z

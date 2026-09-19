@@ -19,9 +19,12 @@ refresh_token_reuse_interval = 10
 enable_signup = true
 enable_anonymous_sign_ins = false
 enable_manual_linking = false
-minimum_password_length = 8
+# Ten rather than eight while there is no check against leaked passwords (D-161). The app's own
+# rule (passwordMinLength in packages/core) says the same, and a test holds the two together.
+minimum_password_length = 10
 # Refusing passwords that appear in known breaches is a hosted setting the CLI has no key
-# for, so it is a switch in the dashboard rather than a line here (RUNBOOK 3.4).
+# for, so it is a switch in the dashboard rather than a line here (RUNBOOK 3.4). It needs
+# Supabase Pro, which waits for the beta to reach 20 people (D-161).
 
 # Supabase's own defaults, not the generous local ones. Text codes stay tight: a public code
 # endpoint attracts SMS pumping fraud.

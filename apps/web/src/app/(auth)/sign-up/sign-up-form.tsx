@@ -2,7 +2,7 @@
 
 import { zodResolver } from '@hookform/resolvers/zod';
 import type { FlagOverrides } from '@repo/config/flags';
-import { signUpSchema, type IntendedRole } from '@repo/core/schemas/auth';
+import { passwordMinLength, signUpSchema, type IntendedRole } from '@repo/core/schemas/auth';
 import { Field } from '@repo/ui/field';
 import { Input } from '@repo/ui/input';
 import Link from 'next/link';
@@ -74,7 +74,7 @@ export function SignUpForm({ role, prefill, flags }: { role: IntendedRole; prefi
         <Field label="Email" error={errors.email?.message}>
           <Input type="email" autoComplete="email" inputMode="email" defaultValue={prefill?.email} {...form.register('email')} />
         </Field>
-        <Field label="Password" hint="At least 8 characters. A short phrase is easy to remember." error={errors.password?.message}>
+        <Field label="Password" hint={`At least ${String(passwordMinLength)} characters. A short phrase is easy to remember.`} error={errors.password?.message}>
           <PasswordInput autoComplete="new-password" {...form.register('password')} />
         </Field>
         <p className="text-small text-grey-700">

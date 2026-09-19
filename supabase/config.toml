@@ -58,8 +58,8 @@ refresh_token_reuse_interval = 10
 enable_signup = true
 enable_anonymous_sign_ins = false
 enable_manual_linking = false
-# NCSC guidance: favour length over composition rules.
-minimum_password_length = 8
+# NCSC guidance: favour length over composition rules. The same as the hosted project (D-161).
+minimum_password_length = 10
 password_requirements = ""
 
 # Local and CI limits are generous so end-to-end runs from one IP are not throttled.

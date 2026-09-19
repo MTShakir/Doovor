@@ -58,7 +58,7 @@ Do these once, in order. Items marked **You** need the product owner's accounts.
    pnpm supabase config diff --workdir ops/staging --project-ref yvxuarrrvgnfcjfyqfyi
    pnpm supabase config push --workdir ops/staging --project-ref yvxuarrrvgnfcjfyqfyi
    ```
-   That file is deliberately separate from `supabase/config.toml`: the local one carries the test phone numbers, which must never reach a hosted project. Read the diff before pushing, because a push answers its own prompts and can overwrite a hosted setting. The push refuses to run while any provider secret in step 4 is unset, since it would otherwise store placeholder text or an empty password.
+   That file is deliberately separate from `supabase/config.toml`: the local one carries the test phone numbers, which must never reach a hosted project. The shortest password (`minimum_password_length`, 10 since D-161) is also the app's own rule (`passwordMinLength` in `packages/core`), and a test keeps the two equal: deploy the app first, then push, so no form ever allows a password Auth then refuses. Read the diff before pushing, because a push answers its own prompts and can overwrite a hosted setting. The push refuses to run while any provider secret in step 4 is unset, since it would otherwise store placeholder text or an empty password.
 7. **You:** Project Settings > API Keys: copy the publishable key and a secret key for Vercel (section 3.5).
 8. Check the app is reachable at `https://app.doovor.com` once Vercel is connected, then sign in once to confirm emails arrive and their links open the app. The site URL and redirect URLs pushed in step 6 come from `brand.appUrl`.
 9. **You:** optional: under Authentication > Rate Limits, confirm the pushed values look right for your usage.
@@ -267,9 +267,9 @@ Run through this before every production deploy. Anything unticked stops the dep
 6. **Secrets are set for Production in Vercel**: the ones `.env.example` lists, with
    `INNGEST_SIGNING_KEY` and `FIELD_ENCRYPTION_KEYS` present, which the app refuses to start
    without, and the four Stripe values in section 3.7 step 9.
-7. **A backup exists from today**, and you know which point to go back to (see backups below). For
-   the first production deploy that means the project is on Pro, the demo data has gone, and the
-   leaked password check is on (D-154).
+7. **A backup exists from today**, and you know which point to go back to (see backups below).
+   While the project is on the free plan that is `pnpm db:backup`, run today (D-161); on Pro it is
+   the daily backup. Before real people are invited, the demo data has gone (D-154).
 8. **Watching is on**: the Sentry DSN is set, the uptime check is green, and an alert reaches a
    phone.
 9. **Deploy**, then within five minutes: open the public home page, a city page, a profile and a
@@ -290,23 +290,45 @@ Run through this before every production deploy. Anything unticked stops the dep
   what went wrong and what stops it happening again in `docs/DECISIONS.md`.
 - **Right now**: none open.
 
-### Backups and going back (M6-14)
+### Backups and going back (M6-14, D-161)
 
 - **What exists depends on the plan.** The free plan keeps no backup that can be restored: on 18
   September 2026 the project, on the free plan, listed no backups and no point in time recovery
   (Management API, `database/backups`). Pro keeps a daily backup for seven days. Point in time
-  recovery, which is what lets you go back to a minute rather than a day, is a paid add on above
-  that (D-032). Data that matters needs Pro at the least.
-- **Product owner, before beta:**
-  1. Put production on the Pro plan, then note what it has: daily backups only, or point in time
-     recovery and the window it covers.
+  recovery, going back to a minute rather than a day, is a paid add on above that (D-032).
+- **On the free plan, until the beta has 20 people or card payments start (D-161), we keep our own:**
+  1. Once: put `BACKUP_PASSPHRASE` (at least 16 characters) in `.env.local`, and keep a copy in a
+     password manager. Without it no backup opens. `BACKUP_DIR` chooses the folder; empty means a
+     folder named after the product in your home folder. Never inside this repository.
+  2. Every week, and before any database change: with Docker running, `pnpm db:backup`. It dumps the
+     hosted project's roles, schema and data the way Supabase's own guide does, seals them with the
+     passphrase (AES-256-GCM) into `database-<date>-<time>.backup`, and deletes backups older than
+     five weeks, which is what the privacy notice promises. Pictures people upload stay in Supabase
+     Storage and are not in it. It leaves out Supabase's own tables for features we do not use, and
+     lines about Supabase's own roles, which a new project has already and a restore may not write.
+  3. To restore: `pnpm db:backup:open <file>` writes `roles.sql`, `schema.sql` and `data.sql` back
+     out. They are not encrypted, so delete them once done. Into a new, empty Supabase project:
+     ```bash
+     psql --single-transaction --variable ON_ERROR_STOP=1 --file roles.sql --file schema.sql --command 'SET session_replication_role = replica' --file data.sql --dbname '<the new project's connection string>'
+     ```
+     With no `psql` on the machine, run the same inside Docker, with the folder mounted:
+     `docker run --rm -v "<folder>:/backup" -w /backup postgres:17 psql ...`. Then point Vercel at the
+     new project's URL and keys, push the hosted settings (section 3.1 step 6) and redeploy.
+  4. The drill, on 19 September 2026: a backup of the local stack, restored into a second, empty
+     local stack in 2 seconds, matched the source table by table (19 sign-in accounts, 2 Businesses,
+     116 lessons, 4 notifications, 39 audit rows, both storage buckets). Still to do: the same with a
+     backup of the hosted project, into a throwaway free project, deleted afterwards.
+- **Moving to Pro:**
+  1. Upgrade the organisation, then note what the project has: daily backups only, or point in time
+     recovery and the window it covers. Turn on the leaked password check (section 3.4).
   2. Do a restore drill into a throwaway project: restore yesterday's backup, point a local checkout
      at it with that project's URL and keys, and check a learner's lessons, payments and receipts
      are all there. Write down how long the restore took.
   3. Delete the drill project, and record the date and the time it took in `docs/PROGRESS.md`.
-- **Going back for real**: restore from the dashboard, then redeploy the app unchanged. Everything
-  written after that point is gone, so tell the people affected which window was lost. A restore is
-  a last resort: one bad migration is better fixed forward.
+- **Going back for real**: restore from the dashboard (Pro) or as in step 3 above (free), then
+  redeploy the app unchanged. Everything written after that point is gone, so tell the people
+  affected which window was lost. A restore is a last resort: one bad migration is better fixed
+  forward.
 
 ### A learner says they were charged twice (M6-13)
 
