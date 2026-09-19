@@ -3,7 +3,7 @@ import { authFile } from '../support/accounts';
 import { bookLesson, clearDiary, removeLesson } from '../support/database';
 import { dayLabel, expectAccessible, snap, tapUntil } from '../support/helpers';
 
-/** What a learner opens the app for: their own lessons, and the two things they may do to one. */
+/** What a learner opens the app for: their own lessons, cancelling one, and asking to move one. */
 test.describe('my lessons (BOK-08, BOK-09, M2-26)', () => {
   test.use({ storageState: authFile('learner') });
 
@@ -43,7 +43,7 @@ test.describe('my lessons (BOK-08, BOK-09, M2-26)', () => {
     await snap(page, testInfo, 'learner-lessons');
   });
 
-  test('moves one to a time that suits better', async ({ page }, testInfo) => {
+  test('asks their instructor to move one, since only the instructor can (D-164)', async ({ page }, testInfo) => {
     const day = ownDay(testInfo.project.name);
     await clearDiary('Sarah Khan', day);
     await bookLesson('Sarah Khan', 'jack.taylor@example.com', day, '10:00');
@@ -53,20 +53,18 @@ test.describe('my lessons (BOK-08, BOK-09, M2-26)', () => {
     const lesson = coming.getByRole('article').filter({ hasText: dayLabel(day) });
     await expect(lesson).toContainText('10:00');
 
-    await tapUntil(
-      lesson.getByRole('button', { name: 'Move' }),
-      page.getByRole('dialog', { name: 'Move this lesson' }),
-    );
-    const times = page.getByRole('group', { name: /^Times on/ });
-    await expect(times).toBeVisible();
-    // Half an hour later is free: the lesson being moved is not in its own way (BOK-08).
-    await expect(times.getByRole('button', { name: '10:30' })).toBeVisible();
-    await times.getByRole('button', { name: '14:00' }).click();
-    await snap(page, testInfo, 'learner-move', { fullPage: false });
+    const notice = page.getByRole('dialog', { name: 'Only your instructor can move it' });
+    await tapUntil(lesson.getByRole('button', { name: 'Move' }), notice);
+    await expect(notice).toContainText('Contact Sarah Khan directly to ask for another time.');
+    // No times to choose from: nothing a learner does here moves the lesson.
+    await expect(page.getByRole('group', { name: /^Times on/ })).toHaveCount(0);
+    await expectAccessible(page);
+    await snap(page, testInfo, 'learner-move');
 
-    await page.getByRole('button', { name: 'Move to 14:00' }).click();
-    await expect(page.getByText(/^Moved to /)).toBeVisible();
-    await expect(coming.getByRole('article').filter({ hasText: dayLabel(day) })).toContainText('14:00');
+    await notice.getByRole('button', { name: 'Got it' }).click();
+    await expect(notice).toBeHidden();
+    await expect(coming.getByRole('article').filter({ hasText: dayLabel(day) })).toContainText('10:00');
+    await removeLesson('Sarah Khan', 'jack.taylor@example.com', day, '10:00');
   });
 
   test('says what a late cancellation costs before it happens', async ({ page }, testInfo) => {

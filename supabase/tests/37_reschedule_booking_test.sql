@@ -78,13 +78,14 @@ select throws_ok(
 );
 
 -- ---------------------------------------------------------------------------------------
--- The learner, before and after the window closes (R-06).
+-- The learner: only their instructor moves a lesson, however far off it is. They ask
+-- (BOK-08 as the product owner amended it, D-164).
 -- ---------------------------------------------------------------------------------------
 select tests.authenticate_as(:'lee');
 select pg_temp.at_local(7, '12:00') as later \gset
-select lives_ok(
+select throws_ok(
   format($$ select public.reschedule_booking(%L, %L::timestamptz) $$, :'lesson', :'later'),
-  'a learner may move their own lesson while there is time'
+  '42501', 'NOT_ALLOWED', 'a learner cannot move their own lesson, however far off it is'
 );
 
 select tests.clear_authentication();
@@ -94,7 +95,7 @@ select pg_temp.at_local(8, '16:00') as elsewhere \gset
 select tests.authenticate_as(:'lee');
 select throws_ok(
   format($$ select public.reschedule_booking(%L, %L::timestamptz) $$, :'soon', :'elsewhere'),
-  'P0001', 'TOO_CLOSE', 'and not once the free cancellation window has closed'
+  '42501', 'NOT_ALLOWED', 'nor one that is about to happen'
 );
 
 -- ---------------------------------------------------------------------------------------

@@ -840,3 +840,8 @@ Every decision made without the product owner, newest last. Format: date, decisi
 - **Options:** Land staff on another portal when they are on a phone; leave it.
 - **Reason:** Staff land on admin first, so the product owner's own account, a school's owner made super admin, would have met a dead end on the phone at every sign in. Choosing a portal by screen size on the server means guessing the screen; offering the way on is exact.
 
+## D-164 | 2026-09-19 | Only the instructor moves a lesson; a learner asks them | Product owner
+- **Decision (product owner):** A learner no longer moves a lesson themselves. Move on their lesson says only their instructor can move it, and to contact them directly to ask. The instructor, and anybody who manages the Business's bookings, still moves a lesson at any time, and the learner is told. Cancelling is unchanged. This amends BOK-08, which let a learner move their own lesson outside the cancellation window.
+- **Options:** Keep BOK-08 as written; a move request the instructor accepts or declines in the app.
+- **Reason:** The product owner wants every change to an instructor's diary to go through the instructor. The database refuses a learner's move, not only the screen, so nothing but the instructor or the Business can do it. A request flow would be new work for something a phone call settles, and can follow if instructors ask. The learners' landing page no longer says a learner can move a lesson.
+
