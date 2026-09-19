@@ -44,7 +44,7 @@ milestone.
 
 | | What is missing | Who |
 |---|---|---|
-| Monitoring | Errors are wired but silent: no DSN, no uptime check, nowhere for an alert to go. Nothing is watching production yet | Product owner |
+| Monitoring | Errors reach Sentry (EU) since 19 September, and new, returning and spiking issues are emailed. Still missing: the uptime check on `/api/health` | Product owner |
 | Backups | The project is on the free plan, which keeps no backup that can be restored (checked 18 September): there is nothing to go back to. The product owner's decision: stay free until the first real user, then upgrade this project to Pro, clear the demo data and run the restore drill (D-154) | Product owner |
 | Legal | Five pages written as drafts, with twelve gaps marked for a solicitor. Not in force until one has been through them | Product owner and a solicitor |
 | Payments in live mode | Stripe is proved in test mode. Live mode needs the platform questionnaire answered and a hosted webhook | Product owner |
@@ -54,8 +54,9 @@ milestone.
 
 ## Risks worth naming
 
-- **Nothing is watching.** Until the DSN and the uptime check are set, the first anybody knows of a
-  broken production is an instructor saying so. This is the single biggest gap.
+- **Errors are watched, outages are not yet.** Sentry reports errors and emails them (19 September);
+  until the uptime check exists, a site that is down without throwing is noticed by an instructor
+  first.
 - **There is no backup.** The free plan keeps none that can be restored, and a backup nobody has
   restored is a hope, not a plan: Pro first, then the drill.
 - **The legal pages are drafts.** They say so on every page, but they are what a beta instructor

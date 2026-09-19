@@ -348,7 +348,15 @@ Every one of these is: create the new, set it in Vercel, redeploy, check, then d
 - Every report passes through `apps/web/src/lib/errors/reporting.ts` first, which drops the query
   string, the cookies and the body, removes any header whose name says it is a secret, keeps only
   the account id of the person it happened to, and never records a session (D-150).
-- **To switch it on (product owner):**
+- **Switched on 19 September 2026:** project `doovor-web` in the `doovor` organisation, which stores
+  data in the EU. The DSN is in Vercel for Production and Preview as a Config value, since it ships in
+  every page anyway. The project stores no IP addresses and accepts browser reports only from
+  `app.doovor.com`, `doovor.com` and `localhost:3000`. Two alerts email the team: "New, returning or
+  escalating issues", and "Same issue more than 10 times in 5 minutes", at most once every 30
+  minutes per issue. Both were proved end to end from a laptop: `/dev/error` and a thrown browser
+  error each arrived within seconds, without cookies, query strings, bodies, IP addresses or a user.
+  Sentry still adds an approximate town, worked out from the sender's IP before it drops it.
+- **How it was switched on, for the next project:**
   1. Create a Sentry project in the EU region. Copy the DSN into `NEXT_PUBLIC_SENTRY_DSN` in Vercel,
      for Preview and Production.
   2. Confirm the wiring on a laptop first: put the DSN in `.env.local` for one run, build, open
