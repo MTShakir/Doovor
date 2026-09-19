@@ -14,6 +14,7 @@ export const auditCategoryKeys = [
   'deletion',
   'viewing',
   'platform',
+  'housekeeping',
   'bookings',
   'businesses',
 ] as const;
@@ -64,6 +65,7 @@ export const auditActionWords: Readonly<Record<string, string>> = {
   'account.deletion_requested': 'Account deletion asked for',
   'account.deletion_cancelled': 'Account deletion called off',
   'account.deleted': 'Account deleted',
+  'audit_log.pruned': 'Audit entries over two years old removed',
   'impersonation.started': 'Staff started viewing as them',
   'impersonation.ended': 'Staff stopped viewing as them',
   'account.suspended': 'Account suspended',
@@ -167,6 +169,8 @@ export const auditCategories: readonly AuditCategory[] = [
       'region.marketplace_closed',
     ],
   },
+  // What the nightly sweep does on its own, so it is never mistaken for a person's doing (D-158).
+  { key: 'housekeeping', label: 'Housekeeping', required: false, actions: ['audit_log.pruned'] },
   {
     key: 'bookings',
     label: 'Lessons',

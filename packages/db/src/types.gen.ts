@@ -3429,6 +3429,7 @@ export type Database = {
         }
         Returns: Json
       }
+      system_prune_audit_log: { Args: never; Returns: number }
       system_push_targets: {
         Args: { p_user_id: string }
         Returns: {
@@ -3528,6 +3529,13 @@ export type Database = {
       system_unlist_expired_badges: {
         Args: { p_today?: string }
         Returns: number
+      }
+      system_unreferenced_files: {
+        Args: { p_limit?: number }
+        Returns: {
+          bucket: string
+          name: string
+        }[]
       }
       undo_offline_payment: { Args: { p_payment_id: string }; Returns: string }
     }

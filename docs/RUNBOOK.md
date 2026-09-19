@@ -382,6 +382,14 @@ Every one of these is: create the new, set it in Vercel, redeploy, check, then d
      `pnpm-workspace.yaml` and wrap `next.config.ts` with `withSentryConfig`. Not done here, because
      it changes the build for everybody and buys nothing until step 1 is done.
 
+### Nightly housekeeping (D-158)
+- At 03:30 London the maintenance sweep clears old rate limit windows and unaccepted invitations,
+  removes stored pictures nothing points to any more that are more than a day old (a checked badge, a
+  replaced photo or logo, a deleted person's), and prunes audit rows more than two years old. The run's
+  result in Inngest says how many of each went.
+- If a picture that should have gone is still there, check the database no longer points to it: a
+  decided verification has no `badge_path`, an erased instructor no `photo_path` or `badge_path`.
+
 ### Load tests (M6-05)
 - `pnpm load` runs both, against the local stack and a build of the app on port 3000. It builds
   `load/fixtures.json` first, from the seeded database, runs the reads and then the booking scenario,

@@ -1,14 +1,28 @@
 import { cron } from 'inngest';
 import { inngest } from '../client';
-import { clearExpiredInvitations, clearOldRateLimits, eraseDueAccounts, expireBookingRequests, extendRecurrences } from '../maintenance';
+import {
+  clearExpiredInvitations,
+  clearOldRateLimits,
+  eraseDueAccounts,
+  expireBookingRequests,
+  extendRecurrences,
+  pruneAuditTrail,
+  removeUnreferencedFiles,
+} from '../maintenance';
 
 /**
- * Housekeeping, once a day (NFR-SEC-03, AUTH-07): old rate limit windows, and invitations
- * nobody accepted.
+ * Housekeeping, once a day (NFR-SEC-03, AUTH-07, NFR-PRV-03, D-158): old rate limit windows,
+ * invitations nobody accepted, pictures nothing points to any more, and audit rows past the two
+ * years the privacy notice gives.
  */
 export const maintenanceSweep = inngest.createFunction(
   { id: 'maintenance-sweep', name: 'Maintenance sweep', triggers: [cron('TZ=Europe/London 30 3 * * *')] },
-  async () => ({ ...(await clearOldRateLimits()), ...(await clearExpiredInvitations()) }),
+  async () => ({
+    ...(await clearOldRateLimits()),
+    ...(await clearExpiredInvitations()),
+    ...(await removeUnreferencedFiles()),
+    ...(await pruneAuditTrail()),
+  }),
 );
 
 /**

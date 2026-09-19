@@ -18,6 +18,15 @@ M5 Public profiles, schools and admin is approved and merged into `main` (48531e
 
 M6 Hardening and beta is approved (19 September 2026) and merged into `main`, with its 4 migrations applied to staging the same day, before the merge. It closes Phase 1: security reviewed and the content security policy enforced, load tested, accessible, with legal page drafts, consent-gated analytics, errors and uptime watched by Sentry, data export and account deletion, and the runbook. Found and fixed while the product owner's items were done: M6-06b and M6-13a (D-153 to D-157). What only the product owner can finish is in `docs/BETA.md`: a solicitor through the legal pages, Stripe live mode, and Supabase Pro with its restore drill when the first real user arrives (D-154).
 
+## Beta preparation
+
+On branch `beta-prep`, after Phase 1, merged when the product owner says.
+
+| Task | What | PRD | State |
+|---|---|---|---|
+| B-01 | The privacy draft names the companies that work outside the UK | NFR-PRV-02 | Done. It said everything was held in the UK or the EU; Twilio sends from the United States, and Stripe, Resend, Mapbox and Inngest may process data there. |
+| B-02 | Nightly housekeeping keeps what the privacy notice promises | NFR-PRV-03, NFR-SEC-06 | Done. Found writing the legal review pack: the audit trail was kept forever, a checked badge picture stayed, and a deleted person's photos stayed in storage, a profile photo at a public address. The maintenance sweep now removes pictures nothing points to after a day and prunes audit rows past two years (D-158). 15 pgTAP assertions, 6 unit tests, and a run against local storage that saw a picture listed only once a day old and then really removed. |
+
 ## M6 progress
 
 | Task | What | PRD | State |
