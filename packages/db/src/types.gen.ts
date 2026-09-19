@@ -3054,6 +3054,7 @@ export type Database = {
         }[]
       }
       leave_learner_capture: { Args: { p_token: string }; Returns: number }
+      lesson_reminder_options: { Args: { p_booking_id: string }; Returns: Json }
       list_my_sessions: {
         Args: never
         Returns: {
@@ -3138,6 +3139,10 @@ export type Database = {
       }
       refund_options: { Args: { p_payment_id: string }; Returns: Json }
       request_account_deletion: { Args: { p_reason?: string }; Returns: string }
+      request_lesson_reminder: {
+        Args: { p_booking_id: string; p_channel: string }
+        Returns: undefined
+      }
       reschedule_booking: {
         Args: {
           p_booking_id: string
@@ -3512,6 +3517,7 @@ export type Database = {
         Args: { p_business_id: string }
         Returns: undefined
       }
+      system_reminder_notice: { Args: { p_booking_id: string }; Returns: Json }
       system_set_payments_state: {
         Args: {
           p_account_id: string

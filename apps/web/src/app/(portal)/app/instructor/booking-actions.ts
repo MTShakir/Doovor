@@ -8,6 +8,7 @@ import { z } from '@repo/core/zod';
 import { requirePortal } from '@/lib/auth/session';
 import { fieldErrors } from '@/lib/forms';
 import { bookingDay, lessonOptions, type BookingDay, type LessonOption } from '@/lib/booking/day';
+import { lessonDetails, type LessonDetails } from '@/lib/lessons/details';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
 
 /** Where the caller teaches. Every booking screen in this portal is about one instructor. */
@@ -203,6 +204,39 @@ export async function moveLesson(input: unknown): Promise<Result<null>> {
 }
 
 const lessonSchema = z.object({ bookingId: z.uuid() });
+
+const reminderSchema = lessonSchema.extend({ channel: z.enum(['email', 'sms']) });
+
+/**
+ * A reminder sent by hand from the lesson's sheet (NTF-02, D-166). The database checks who is
+ * asking and how often; the job sends it the way automatic reminders go.
+ */
+export async function sendReminder(input: unknown): Promise<Result<null>> {
+  const parsed = reminderSchema.safeParse(input);
+  if (!parsed.success) return err('VALIDATION_FAILED');
+
+  await requirePortal('instructor');
+  const supabase = await createSupabaseServerClient();
+  const { error } = await supabase.rpc('request_lesson_reminder', {
+    p_booking_id: parsed.data.bookingId,
+    p_channel: parsed.data.channel,
+  });
+  if (error) return err(parsePostgresError(error).code);
+  return ok(null);
+}
+
+/**
+ * One lesson, for the sheet a lesson opens from Today and the diary (DIA-04, D-166). Not found for
+ * one this person may not see, which says nothing about whether it exists.
+ */
+export async function lessonDetailsFor(input: unknown): Promise<Result<LessonDetails>> {
+  const parsed = lessonSchema.safeParse(input);
+  if (!parsed.success) return err('VALIDATION_FAILED');
+
+  await requirePortal('instructor');
+  const details = await lessonDetails(parsed.data.bookingId);
+  return details === null ? err('NOT_FOUND') : ok(details);
+}
 
 /** BOK-10: the lesson happened. The lesson record itself arrives with M4. */
 export async function completeLesson(input: unknown): Promise<Result<null>> {

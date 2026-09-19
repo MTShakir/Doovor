@@ -92,6 +92,7 @@ export async function setBookingStatus(
  * | Thursday  | booking-requests      |
  * | Friday    | acceptance            |
  * | Saturday  | offline-payments      |
+ * | Sunday    | lesson-details        |
  *
  * Within a weekday, each width takes its own week, because both widths run at once.
  */

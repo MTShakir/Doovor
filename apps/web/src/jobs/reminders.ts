@@ -2,8 +2,10 @@ import 'server-only';
 import type { NotificationChannel } from '@repo/core/notifications';
 import { getSupabaseServiceClient } from '@/lib/supabase/service';
 import { readPlanLimits, smsAllowance } from './plan-limits';
+import { mutedChannels, writeNotifications } from './notify';
 import {
   peopleToRemind,
+  planReminderByHand,
   planReminders,
   reminderRows,
   type ReminderNotice,
@@ -52,4 +54,33 @@ export async function sendDueReminders(now: Date = new Date()): Promise<Reminder
   const written = await supabase.rpc('system_notify', { p_rows: reminderRows(reminders) });
   if (written.error) throw new Error(`Could not write reminders: ${written.error.message}`);
   return { looked: notices.length, written: written.data };
+}
+
+/**
+ * A reminder an instructor asked for from the lesson's sheet (NTF-02, D-166). The database has
+ * already checked who asked, and how often; this sends it the way the automatic ones go.
+ */
+export async function remindByHand(payload: Record<string, unknown>, now: Date = new Date()): Promise<{ written: number }> {
+  const bookingId = typeof payload.booking_id === 'string' ? payload.booking_id : null;
+  const channel = payload.channel === 'email' || payload.channel === 'sms' ? payload.channel : null;
+  const requestedAt = typeof payload.requested_at === 'string' ? payload.requested_at : now.toISOString();
+  if (bookingId === null || channel === null) return { written: 0 };
+
+  const { data, error } = await getSupabaseServiceClient().rpc('system_reminder_notice', { p_booking_id: bookingId });
+  if (error) throw new Error(`Could not read the lesson to remind about: ${error.message}`);
+  // Cancelled, moved into the past or gone since it was asked for: nothing to remind about.
+  if (data === null) return { written: 0 };
+
+  const notice = data as unknown as ReminderNotice;
+  const [muted, limits] = await Promise.all([mutedChannels([notice.learner_user_id], 'reminders'), readPlanLimits()]);
+  const reminder = planReminderByHand({
+    notice,
+    channel,
+    now,
+    requestedAt,
+    muted,
+    textingAllowed: (one) => smsAllowance(one.business_plan, limits) > 0,
+  });
+  if (reminder === null) return { written: 0 };
+  return { written: await writeNotifications(reminderRows([reminder])) };
 }

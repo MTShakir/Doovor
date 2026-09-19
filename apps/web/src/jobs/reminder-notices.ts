@@ -100,6 +100,54 @@ export function planReminders(input: ReminderPlanInput): PlannedReminder[] {
   return reminders;
 }
 
+export interface ReminderByHandInput {
+  notice: ReminderNotice;
+  /** The way the instructor chose (D-166). The app has it too, always. */
+  channel: 'email' | 'sms';
+  now: Date;
+  /** When it was asked for, so each one is a reminder of its own. */
+  requestedAt: string;
+  muted?: Map<string, NotificationChannel[]>;
+  textingAllowed: (notice: ReminderNotice) => boolean;
+}
+
+/**
+ * A reminder the instructor asked for from the lesson's sheet (NTF-02, D-166): the automatic
+ * reminder's words, to the learner, the one way chosen and in the app. What the learner switched
+ * off stays off, and a text goes only on a plan with texts, to somebody with a number.
+ */
+export function planReminderByHand(input: ReminderByHandInput): PlannedReminder | null {
+  const { notice } = input;
+  const startsAt = new Date(notice.starts_at);
+  const hoursBefore = Math.max(1, Math.round((startsAt.getTime() - input.now.getTime()) / 3_600_000));
+
+  const unavailable: NotificationChannel[] = ['push', input.channel === 'email' ? 'sms' : 'email'];
+  if (input.channel === 'sms' && (!input.textingAllowed(notice) || !notice.learner_phone)) unavailable.push('sms');
+
+  const planned = planNotifications({
+    kind: 'booking.reminder',
+    entityId: notice.booking_id,
+    // Not the automatic reminders' version: each one asked for is its own.
+    version: `hand-${input.requestedAt}`,
+    facts: {
+      learnerName: notice.learner_name,
+      instructorName: notice.instructor_name,
+      when: `${formatDate(startsAt)} at ${formatTime(startsAt)}`,
+      detail: reminderWording(hoursBefore),
+    },
+    recipients: [
+      {
+        userId: notice.learner_user_id,
+        audience: 'learner',
+        muted: input.muted?.get(notice.learner_user_id),
+        unavailable,
+      },
+    ],
+    linkFor: () => '/app/learner/lessons',
+  });
+  return planned.length === 0 ? null : { notice, hoursBefore, planned };
+}
+
 /** Everybody who might be reminded, so their settings are looked up in one go. */
 export function peopleToRemind(notices: ReminderNotice[]): string[] {
   return [...new Set(notices.map((notice) => notice.learner_user_id))];

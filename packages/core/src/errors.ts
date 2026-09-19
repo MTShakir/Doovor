@@ -29,6 +29,7 @@ export const domainErrorCodes = [
   'INSTRUCTOR_INACTIVE',
   'BUSINESS_SUSPENDED',
   'VIEW_AS_ENDED',
+  'PLAN_REQUIRED',
   'UNKNOWN',
 ] as const;
 
@@ -67,6 +68,7 @@ export const defaultErrorCopy: Record<DomainErrorCode, string> = {
   INSTRUCTOR_INACTIVE: 'This instructor is not taking lessons here any more.',
   BUSINESS_SUSPENDED: 'This Business is not taking bookings or payments at the moment.',
   VIEW_AS_ENDED: 'Viewing as somebody else has ended.',
+  PLAN_REQUIRED: 'That is not part of your plan.',
   UNKNOWN: 'Something went wrong. Try again.',
 };
 

@@ -7,13 +7,8 @@ import { Button } from '@repo/ui/button';
 import { StatusPill } from '@repo/ui/status-pill';
 import { Check, CloudUpload, MapPin, Navigation, NotebookPen } from 'lucide-react';
 import Link from 'next/link';
+import { directionsTo, OpenLesson } from '@/components/lessons/lesson-details';
 import type { TeachingLesson } from '@/lib/lessons/teaching';
-
-/** Directions to a pickup in whatever maps app the phone opens a maps link with. */
-function directions(pickup: NonNullable<TeachingLesson['pickup']>): string | null {
-  const place = [pickup.address, pickup.postcode].filter((part) => part !== null && part.trim() !== '').join(', ');
-  return place === '' ? null : `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(place)}`;
-}
 
 export interface TodayLessonsProps {
   lessons: TeachingLesson[];
@@ -51,41 +46,51 @@ export function TodayLessons({ lessons, now, plainLinks = false, waiting = new S
         {dayLessons.map((lesson) => {
           const state = lessonState(lesson.facts);
           const off = state === 'cancelled';
-          const route = lesson.pickup ? directions(lesson.pickup) : null;
+          const route = lesson.pickup ? directionsTo(lesson.pickup) : null;
           const toRecord = needsRecord(lesson, moment);
           return (
             <li key={lesson.id}>
               <article className="flex flex-col gap-2 px-4 py-3" aria-label={`${formatTime(lesson.startsAt)} ${lesson.learnerName}`}>
-                <div className="flex flex-wrap items-start gap-3">
-                  <span className="w-14 shrink-0 text-small font-semibold text-ink tabular-nums">
-                    {formatTime(lesson.startsAt)}
-                    <span className="block font-normal text-grey-700">{formatTime(lesson.endsAt)}</span>
+                <OpenLesson
+                  lesson={{
+                    id: lesson.id,
+                    startsAt: lesson.startsAt.toISOString(),
+                    endsAt: lesson.endsAt.toISOString(),
+                    learnerName: lesson.learnerName,
+                    lessonType: lesson.lessonType,
+                  }}
+                >
+                  <span className="flex flex-wrap items-start gap-3">
+                    <span className="w-14 shrink-0 text-small font-semibold text-ink tabular-nums">
+                      {formatTime(lesson.startsAt)}
+                      <span className="block font-normal text-grey-700">{formatTime(lesson.endsAt)}</span>
+                    </span>
+                    <span className="flex min-w-0 flex-1 flex-col gap-1">
+                      <span className={`text-body font-semibold ${off ? 'text-grey-700 line-through' : 'text-black'}`}>{lesson.learnerName}</span>
+                      <span className="text-small text-grey-700">{lesson.lessonType}</span>
+                      {lesson.pickup ? (
+                        <span className="flex items-center gap-1 text-small text-grey-700">
+                          <MapPin className="size-4 shrink-0" aria-hidden />
+                          {lesson.pickup.label}
+                        </span>
+                      ) : null}
+                    </span>
+                    <span className="flex shrink-0 flex-col items-end gap-1">
+                      <StatusPill status={state}>{lessonStateLabel(lesson.facts)}</StatusPill>
+                      {waiting.has(lesson.id) ? (
+                        <span className="flex items-center gap-1 text-small text-grey-700">
+                          <CloudUpload className="size-4" aria-hidden />
+                          Waiting to send
+                        </span>
+                      ) : lesson.recorded ? (
+                        <span className="flex items-center gap-1 text-small text-grey-700">
+                          <Check className="size-4" aria-hidden />
+                          Recorded
+                        </span>
+                      ) : null}
+                    </span>
                   </span>
-                  <span className="flex min-w-0 flex-1 flex-col gap-1">
-                    <span className={`text-body font-semibold ${off ? 'text-grey-700 line-through' : 'text-black'}`}>{lesson.learnerName}</span>
-                    <span className="text-small text-grey-700">{lesson.lessonType}</span>
-                    {lesson.pickup ? (
-                      <span className="flex items-center gap-1 text-small text-grey-700">
-                        <MapPin className="size-4 shrink-0" aria-hidden />
-                        {lesson.pickup.label}
-                      </span>
-                    ) : null}
-                  </span>
-                  <span className="flex shrink-0 flex-col items-end gap-1">
-                    <StatusPill status={state}>{lessonStateLabel(lesson.facts)}</StatusPill>
-                    {waiting.has(lesson.id) ? (
-                      <span className="flex items-center gap-1 text-small text-grey-700">
-                        <CloudUpload className="size-4" aria-hidden />
-                        Waiting to send
-                      </span>
-                    ) : lesson.recorded ? (
-                      <span className="flex items-center gap-1 text-small text-grey-700">
-                        <Check className="size-4" aria-hidden />
-                        Recorded
-                      </span>
-                    ) : null}
-                  </span>
-                </div>
+                </OpenLesson>
                 {!off && (route !== null || toRecord) ? (
                   <div className="flex flex-wrap justify-end gap-2">
                     {toRecord ? (

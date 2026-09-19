@@ -7,6 +7,7 @@ import { StatusPill } from '@repo/ui/status-pill';
 import { Button } from '@repo/ui/button';
 import { Banknote, CalendarClock, Check, MapPin, X } from 'lucide-react';
 import type { DiaryEntry } from '@/lib/diary/lessons';
+import { OpenLesson } from '@/components/lessons/lesson-details';
 import { RequestActions } from './request-actions';
 
 /**
@@ -24,6 +25,8 @@ export function LessonRow({
   onComplete,
   onNoShow,
   onMarkPaid,
+  openable = false,
+  shouldOpen,
 }: {
   lesson: DiaryEntry;
   showInstructor?: boolean;
@@ -39,6 +42,10 @@ export function LessonRow({
   onNoShow?: () => void;
   /** PAY-05: a lesson somebody paid for in person, in cash or by bank transfer. */
   onMarkPaid?: () => void;
+  /** Tapping what the lesson says opens its sheet (D-166). */
+  openable?: boolean;
+  /** Asked before it opens: a hold on a phone has just opened Move instead. */
+  shouldOpen?: () => boolean;
 }) {
   const state = lessonState(lesson.facts);
   const off = state === 'cancelled';
@@ -55,41 +62,60 @@ export function LessonRow({
       </Button>
     ) : null;
 
+  const summary = (
+    <span className="flex flex-wrap items-start gap-3">
+      <span className="w-14 shrink-0 text-small font-semibold text-ink tabular-nums">
+        {formatTime(lesson.startsAt)}
+        <span className="block font-normal text-grey-700">{formatTime(lesson.endsAt)}</span>
+      </span>
+      <span className="flex min-w-0 flex-1 flex-col gap-1">
+        {/* A cancelled lesson is struck through and muted rather than faded: text behind an
+            opacity is text nobody with low vision can read (D-009). */}
+        <span className={`text-body font-semibold ${off ? 'text-grey-700 line-through' : 'text-black'}`}>
+          {lesson.learnerName}
+        </span>
+        <span className="text-small text-grey-700">
+          {lesson.lessonType}
+          {showInstructor ? ` with ${lesson.instructorName}` : ''}
+        </span>
+        {lesson.pickup ? (
+          <span className="flex items-center gap-1 text-small text-grey-700">
+            <MapPin className="size-4 shrink-0" aria-hidden />
+            {lesson.pickup}
+          </span>
+        ) : null}
+      </span>
+      <span className="ml-auto flex shrink-0 flex-col items-end gap-1">
+        <StatusPill status={state}>{lessonStateLabel(lesson.facts)}</StatusPill>
+        <span className="text-small text-grey-700 tabular-nums">
+          {formatPence(lesson.pricePence)}
+        </span>
+      </span>
+    </span>
+  );
+
   return (
     <article
       className="flex flex-col gap-2 px-4 py-3"
       aria-label={`${formatTime(lesson.startsAt)} ${lesson.learnerName}`}
     >
       {/* Wraps at 200% text, where the time, the learner and what is owed will not share a line. */}
-      <div className="flex flex-wrap items-start gap-3">
-        <span className="w-14 shrink-0 text-small font-semibold text-ink tabular-nums">
-          {formatTime(lesson.startsAt)}
-          <span className="block font-normal text-grey-700">{formatTime(lesson.endsAt)}</span>
-        </span>
-        <span className="flex min-w-0 flex-1 flex-col gap-1">
-          {/* A cancelled lesson is struck through and muted rather than faded: text behind an
-              opacity is text nobody with low vision can read (D-009). */}
-          <span className={`text-body font-semibold ${off ? 'text-grey-700 line-through' : 'text-black'}`}>
-            {lesson.learnerName}
-          </span>
-          <span className="text-small text-grey-700">
-            {lesson.lessonType}
-            {showInstructor ? ` with ${lesson.instructorName}` : ''}
-          </span>
-          {lesson.pickup ? (
-            <span className="flex items-center gap-1 text-small text-grey-700">
-              <MapPin className="size-4 shrink-0" aria-hidden />
-              {lesson.pickup}
-            </span>
-          ) : null}
-        </span>
-        <span className="ml-auto flex shrink-0 flex-col items-end gap-1">
-          <StatusPill status={state}>{lessonStateLabel(lesson.facts)}</StatusPill>
-          <span className="text-small text-grey-700 tabular-nums">
-            {formatPence(lesson.pricePence)}
-          </span>
-        </span>
-      </div>
+      {openable ? (
+        <OpenLesson
+          lesson={{
+            id: lesson.id,
+            startsAt: lesson.startsAt.toISOString(),
+            endsAt: lesson.endsAt.toISOString(),
+            learnerName: lesson.learnerName,
+            lessonType: lesson.lessonType,
+          }}
+          shouldOpen={shouldOpen}
+        >
+          {summary}
+        </OpenLesson>
+      ) : (
+        summary
+      )}
       {/* Its own line: on a phone there is no room beside a lesson for two more buttons. */}
       {canAnswer && asked ? (
         <div className="flex justify-end gap-2">
