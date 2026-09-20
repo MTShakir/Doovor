@@ -6,7 +6,7 @@ import { Card, CardDescription, CardTitle } from '@repo/ui/card';
 import type { Route } from 'next';
 import Link from 'next/link';
 import { Figure } from '@/components/figure';
-import { statsSpans, type EarningsDay, type InstructorStats, type StatsSpan } from '@/lib/instructor/dashboard';
+import { statsSpans, type EarningsDay, type InstructorStats, type StatsSpan } from '@/lib/instructor/spans';
 
 const legend: BarChartLegend[] = [
   { key: 'card', label: 'Card', fill: 'bg-black' },

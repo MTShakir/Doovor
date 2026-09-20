@@ -3,7 +3,8 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 const rpc = vi.fn();
 vi.mock('@/lib/supabase/server', () => ({ createSupabaseServerClient: () => Promise.resolve({ rpc }) }));
 
-const { instructorStats, statsDays, statsSpanFrom } = await import('./dashboard');
+const { instructorStats } = await import('./dashboard');
+const { statsDays, statsSpanFrom } = await import('./spans');
 
 // A Thursday in September 2026, when London is an hour ahead of UTC.
 const now = new Date('2026-09-17T09:00:00Z');

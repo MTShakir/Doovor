@@ -31,7 +31,7 @@ import { KeptRecordsNotice } from '@/components/offline/kept-records-notice';
 import { CardFieldsSkeleton } from '@/components/payments/card-form';
 import { InstallHelpCard } from '@/components/pwa/install-help';
 import { InstructorStatsCard } from '@/components/instructor/stats';
-import type { InstructorStats } from '@/lib/instructor/dashboard';
+import type { InstructorStats } from '@/lib/instructor/spans';
 import { InstallCard } from '@/components/pwa/install-prompt';
 import { LessonRecordCard } from '@/components/progress/lesson-record-card';
 import { EditableSkillMap } from '@/components/progress/editable-skill-map';
@@ -198,8 +198,8 @@ const exampleHighlights: PlatformHighlightsData = {
   busiestSchools: [{ id: 'b1000000-0000-4000-8000-000000000001', name: 'Quayside Driving School', learners: 31, lessons: 96 }],
   busiestInstructors: [{ id: 'b1000000-0000-4000-8000-000000000003', name: 'Sarah Khan Driving', learners: 12, lessons: 40 }],
   arrivals: [
-    { id: 'b1000000-0000-4000-8000-000000000004', name: 'New Wheels', kind: 'school', joinedAt: '2026-09-18T09:00:00+00:00' },
-    { id: 'b1000000-0000-4000-8000-000000000005', name: 'Tom Walsh Driving', kind: 'independent', joinedAt: '2026-09-16T14:00:00+00:00' },
+    { id: 'b1000000-0000-4000-8000-000000000004', name: 'New Wheels', kind: 'school', joined: 'Fri 18 Sep 2026' },
+    { id: 'b1000000-0000-4000-8000-000000000005', name: 'Tom Walsh Driving', kind: 'independent', joined: 'Wed 16 Sep 2026' },
   ],
   more: true,
 };

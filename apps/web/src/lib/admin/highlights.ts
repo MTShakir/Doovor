@@ -1,6 +1,7 @@
 import 'server-only';
 import { periodInstants } from '@repo/core/money-periods';
 import type { StatsRange } from '@repo/core/stats-range';
+import { formatDateWithYear } from '@repo/core/time';
 import { z } from '@repo/core/zod';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
 
@@ -38,7 +39,8 @@ export interface ArrivalRow {
   id: string;
   name: string;
   kind: 'independent' | 'school';
-  joinedAt: string;
+  /** The day they joined, in words: "Fri 18 Sep 2026". */
+  joined: string;
 }
 
 export interface PlatformHighlights {
@@ -83,7 +85,7 @@ export async function platformHighlights(range: StatsRange, joined: number): Pro
     earningInstructors: lists.earning_instructors,
     busiestSchools: lists.busiest_schools,
     busiestInstructors: lists.busiest_instructors,
-    arrivals: lists.joined.map((row) => ({ id: row.id, name: row.name, kind: row.type, joinedAt: row.joined_at })),
+    arrivals: lists.joined.map((row) => ({ id: row.id, name: row.name, kind: row.type, joined: formatDateWithYear(new Date(row.joined_at)) })),
     more: lists.more,
   };
 }

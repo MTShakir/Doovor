@@ -39,7 +39,7 @@ describe('who stands out on the platform (ADM-01, D-172)', () => {
     });
     expect(highlights.busiestInstructors[0]?.learners).toBe(12);
     expect(highlights.arrivals).toEqual([
-      { id: '33333333-3333-4333-8333-333333333333', name: 'New Wheels', kind: 'school', joinedAt: '2026-09-18T09:00:00+00:00' },
+      { id: '33333333-3333-4333-8333-333333333333', name: 'New Wheels', kind: 'school', joined: 'Fri 18 Sep 2026' },
     ]);
     expect(highlights.more).toBe(true);
   });

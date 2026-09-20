@@ -1,7 +1,8 @@
 import 'server-only';
-import { moneyPeriod, periodInstants } from '@repo/core/money-periods';
-import { formatCalendarDate, todayInZone, type LocalDate } from '@repo/core/time';
+import { periodInstants } from '@repo/core/money-periods';
+import { formatCalendarDate, todayInZone } from '@repo/core/time';
 import { z } from '@repo/core/zod';
+import { spanLabels, statsDays, type InstructorStats, type StatsSpan } from '@/lib/instructor/spans';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
 
 const whole = z.number().int();
@@ -15,45 +16,6 @@ const statsSchema = z.object({
   minutes: whole,
   learners: whole,
 });
-
-export type StatsSpan = 'week' | 'month';
-
-export const statsSpans: readonly StatsSpan[] = ['week', 'month'];
-
-export function statsSpanFrom(value: string | undefined): StatsSpan {
-  return value === 'month' ? 'month' : 'week';
-}
-
-export interface EarningsDay {
-  /** The day itself, for the bar's label. */
-  date: LocalDate;
-  /** "Mon 14 Sep 2026", read out with the bar. */
-  when: string;
-  cardPence: number;
-  cashPence: number;
-  bankPence: number;
-  creditPence: number;
-  totalPence: number;
-}
-
-export interface InstructorStats {
-  span: StatsSpan;
-  /** What the tab says: "This week" or "This month so far". */
-  label: string;
-  days: EarningsDay[];
-  earnedPence: number;
-  /** Every lesson that is on, paid for or not. */
-  minutes: number;
-  learners: number;
-}
-
-const spanLabels: Record<StatsSpan, string> = { week: 'This week', month: 'This month so far' };
-
-/** The days a span covers: the whole week, or this month up to today. */
-export function statsDays(span: StatsSpan, today: LocalDate): { from: LocalDate; to: LocalDate } {
-  const period = moneyPeriod(span, today);
-  return span === 'week' ? { from: period.from, to: period.to } : { from: period.from, to: today };
-}
 
 /**
  * How an instructor's week or month is going (MNY-01, D-177): what they earned each day, the hours

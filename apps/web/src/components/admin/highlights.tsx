@@ -1,6 +1,5 @@
 import { countOf } from '@repo/core/counts';
 import { formatPence } from '@repo/core/money';
-import { formatDate } from '@repo/core/time';
 import { Foldable } from '@repo/ui/foldable';
 import { ListDivider, ListRow } from '@repo/ui/list-row';
 import type { Route } from 'next';
@@ -81,7 +80,7 @@ function ArrivalsList({ rows, empty }: { rows: ArrivalRow[]; empty: string }) {
           asChild
           chevron
           title={row.name}
-          subtitle={`${row.kind === 'school' ? 'School' : 'Instructor of one'}, joined ${formatDate(new Date(row.joinedAt))}`}
+          subtitle={`${row.kind === 'school' ? 'School' : 'Instructor of one'}, joined ${row.joined}`}
         >
           <Link href={businessHref(row.name)} />
         </ListRow>
