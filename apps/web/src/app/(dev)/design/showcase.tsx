@@ -1076,8 +1076,22 @@ export function DesignShowcase() {
         </div>
         <Label>A learner&apos;s pickup points on their card: the school&apos;s, where lessons start, and one the learner added; and none yet (COV-04, D-168)</Label>
         <div className="grid items-start gap-4 md:grid-cols-2">
-          <PickupPoints learnerId="design-learner" learnerName="Olivia Brown" pickups={examplePickups} actions={savedPickups} />
-          <PickupPoints learnerId="design-learner-2" learnerName="Noah Wilson" pickups={[]} actions={savedPickups} />
+          <PickupPoints
+            learnerId="design-learner"
+            pickups={examplePickups}
+            actions={savedPickups}
+            addedByOthers="added by Olivia Brown"
+            empty="None saved yet. Add where Olivia Brown is collected, or they can add their own."
+            note="For Olivia Brown. They see it too."
+          />
+          <PickupPoints
+            learnerId="design-learner-2"
+            pickups={[]}
+            actions={savedPickups}
+            addedByOthers="added by your school"
+            empty="None saved yet. Add where you want your lessons to start."
+            note="Your instructor sees this, so they know where to collect you."
+          />
         </div>
       </Section>
 

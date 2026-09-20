@@ -38,15 +38,27 @@ async function checked(input: unknown): Promise<Result<{ values: PickupPoint; pl
   return ok({ values: parsed.data, place: found.place });
 }
 
-/** The columns a pickup point is stored as, from what was typed and the place found. */
+/**
+ * The columns a pickup point is stored as, from what was typed and the place found. The pin
+ * somebody dragged wins over the middle of the postcode, since they know where the door is
+ * (D-182); a pin nowhere near the postcode is ignored rather than trusted.
+ */
 function columns(values: PickupPoint, place: GeoPlace) {
+  const { latitude, longitude } = values;
+  const near =
+    latitude !== undefined &&
+    longitude !== undefined &&
+    Math.abs(latitude - place.latitude) < 0.1 &&
+    Math.abs(longitude - place.longitude) < 0.1;
+  const point = near ? { latitude, longitude } : place;
+
   return {
     kind: values.kind,
     label: values.label === '' ? defaultLabelFor(values.kind) : values.label,
     address: values.address,
     postcode: place.postcode,
     // Well known text, which is how PostGIS takes a point over the API.
-    location: `SRID=4326;POINT(${String(place.longitude)} ${String(place.latitude)})`,
+    location: `SRID=4326;POINT(${String(point.longitude)} ${String(point.latitude)})`,
     is_default: values.isDefault,
   };
 }

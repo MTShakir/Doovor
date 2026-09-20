@@ -118,9 +118,11 @@ async function Learner({ params }: LearnerPageProps) {
         ) : null}
         <PickupPoints
           learnerId={card.learnerId}
-          learnerName={card.fullName}
           pickups={pickups}
           actions={{ add: addLearnerPickup, update: updateLearnerPickup, remove: removeLearnerPickup }}
+          addedByOthers={`added by ${card.fullName}`}
+          empty={`None saved yet. Add where ${card.fullName} is collected, or they can add their own.`}
+          note={`For ${card.fullName}. They see it too.`}
         />
         <Notes learnerId={card.learnerId} notes={notes} viewerId={session.userId} />
         <History entries={history} />
