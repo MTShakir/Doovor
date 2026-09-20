@@ -7,6 +7,7 @@ const { adminPerson, findInstructors, findLearners } = await import('./people');
 
 const person = {
   user_id: 'user-1',
+  platform_number: 42,
   name: 'Lee One',
   email: 'lee@example.com',
   phone: '447700900123',
@@ -28,19 +29,24 @@ describe('people for platform staff (ADM-02, M5-18)', () => {
   it('finds instructors, with where they teach and their badge', async () => {
     rpc.mockResolvedValueOnce({
       data: [
-        { user_id: 'user-9', instructor_id: 'profile-9', display_name: 'Ian', account_name: 'Ian One', email: 'ian@example.com', business_id: 'business-1', business_name: 'Bee School', verification_status: 'pending', suspended: false },
+        { user_id: 'user-9', platform_number: 9, instructor_id: 'profile-9', display_name: 'Ian', account_name: 'Ian One', email: 'ian@example.com', business_id: 'business-1', business_name: 'Bee School', verification_status: 'pending', suspended: false },
       ],
       error: null,
     });
     expect(await findInstructors('ian')).toEqual([
-      { userId: 'user-9', name: 'Ian', email: 'ian@example.com', businessName: 'Bee School', verification: 'pending', suspended: false },
+      { userId: 'user-9', platformId: 'D000009', name: 'Ian', email: 'ian@example.com', businessName: 'Bee School', verification: 'pending', suspended: false },
     ]);
     expect(rpc).toHaveBeenLastCalledWith('admin_instructors', { p_query: 'ian' });
   });
 
   it('finds learners, and the newest when nothing is typed', async () => {
-    rpc.mockResolvedValueOnce({ data: [{ user_id: 'user-1', name: 'Lee One', email: 'lee@example.com', businesses: 2, suspended: true }], error: null });
-    expect(await findLearners('')).toEqual([{ userId: 'user-1', name: 'Lee One', email: 'lee@example.com', businesses: 2, suspended: true }]);
+    rpc.mockResolvedValueOnce({
+      data: [{ user_id: 'user-1', platform_number: 1, name: 'Lee One', email: 'lee@example.com', businesses: 2, suspended: true }],
+      error: null,
+    });
+    expect(await findLearners('')).toEqual([
+      { userId: 'user-1', platformId: 'D000001', name: 'Lee One', email: 'lee@example.com', businesses: 2, suspended: true },
+    ]);
     expect(rpc).toHaveBeenLastCalledWith('admin_learners', {});
   });
 
@@ -48,6 +54,7 @@ describe('people for platform staff (ADM-02, M5-18)', () => {
     rpc.mockResolvedValueOnce({ data: person, error: null });
     expect(await adminPerson('user-1')).toEqual({
       userId: 'user-1',
+      platformId: 'D000042',
       name: 'Lee One',
       email: 'lee@example.com',
       phone: '07700 900123',

@@ -1,7 +1,7 @@
 import { expect, test, type Locator } from '@playwright/test';
 import { brand } from '@repo/config/brand';
 import { authFile, seedAccounts } from '../support/accounts';
-import { authenticatorsOf, giveAuthenticator, makeSchool, makeSchoolLearner } from '../support/database';
+import { authenticatorsOf, giveAuthenticator, makeSchool, makeSchoolLearner, platformIdOf } from '../support/database';
 import { expectAccessible, snap } from '../support/helpers';
 import { signInThroughForm } from '../support/sign-in';
 
@@ -108,5 +108,29 @@ test.describe('people for platform staff (ADM-02, M5-18)', { tag: '@desktop-only
     await expectAccessible(page);
     await snap(page, testInfo, 'admin-person-support', { fullPage: false });
     await context.close();
+  });
+
+  test('finds somebody by the number they were given, and shows it on their card (D-176)', async ({ browser }) => {
+    // A learner the seed made, who has a profile to be found by: the number is theirs for this run.
+    const email = 'jack.taylor@example.com';
+    const id = await platformIdOf(email);
+    expect(id).toMatch(/^D\d{6,}$/);
+
+    const admin = await browser.newContext({ storageState: authFile('admin') });
+    try {
+      const staff = await admin.newPage();
+      await staff.goto('/admin/learners');
+      await staff.getByLabel('Search learners').fill(id);
+      await staff.getByRole('button', { name: 'Search', exact: true }).click();
+      await expect(staff.getByText('1 learner found')).toBeVisible();
+      const row = staff.getByRole('button', { name: /^Jack Taylor/ });
+      await expect(row).toContainText(id);
+
+      await row.click();
+      const panel = staff.getByRole('dialog', { name: 'Jack Taylor' });
+      await expect(panel.locator('dt', { hasText: /^Platform ID$/ }).locator('xpath=following-sibling::dd')).toHaveText(id);
+    } finally {
+      await admin.close();
+    }
   });
 });

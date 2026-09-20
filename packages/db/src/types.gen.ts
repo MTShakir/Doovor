@@ -1193,6 +1193,41 @@ export type Database = {
           },
         ]
       }
+      learner_health: {
+        Row: {
+          created_at: string
+          details: string | null
+          has_disability: boolean
+          told_at: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          details?: string | null
+          has_disability: boolean
+          told_at?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          details?: string | null
+          has_disability?: boolean
+          told_at?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "learner_health_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: true
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       learner_notes: {
         Row: {
           author_id: string
@@ -2633,6 +2668,7 @@ export type Database = {
           marketing_consent_at: string | null
           phone: string | null
           phone_verified_at: string | null
+          platform_number: number
           timezone: string
           updated_at: string
         }
@@ -2651,6 +2687,7 @@ export type Database = {
           marketing_consent_at?: string | null
           phone?: string | null
           phone_verified_at?: string | null
+          platform_number?: number
           timezone?: string
           updated_at?: string
         }
@@ -2669,6 +2706,7 @@ export type Database = {
           marketing_consent_at?: string | null
           phone?: string | null
           phone_verified_at?: string | null
+          platform_number?: number
           timezone?: string
           updated_at?: string
         }
@@ -2883,6 +2921,27 @@ export type Database = {
           type: Database["public"]["Enums"]["business_type"]
         }[]
       }
+      admin_cancel_deletion_request: {
+        Args: { p_note: string; p_request_id: string }
+        Returns: undefined
+      }
+      admin_deletion_requests: {
+        Args: { p_settled?: boolean }
+        Returns: {
+          business_name: string
+          email: string
+          erases_at: string
+          full_name: string
+          id: string
+          intended_role: string
+          phone: string
+          processed_at: string
+          reason: string
+          requested_at: string
+          status: string
+          user_id: string
+        }[]
+      }
       admin_instructors: {
         Args: { p_limit?: number; p_query?: string }
         Returns: {
@@ -2892,6 +2951,7 @@ export type Database = {
           display_name: string
           email: string
           instructor_id: string
+          platform_number: number
           suspended: boolean
           user_id: string
           verification_status: Database["public"]["Enums"]["verification_status"]
@@ -2903,6 +2963,7 @@ export type Database = {
           businesses: number
           email: string
           name: string
+          platform_number: number
           suspended: boolean
           user_id: string
         }[]
@@ -3025,6 +3086,10 @@ export type Database = {
         Returns: Json
       }
       impersonation_context: { Args: never; Returns: Json }
+      instructor_dashboard: {
+        Args: { p_from: string; p_to: string }
+        Returns: Json
+      }
       instructor_profile_page: { Args: { p_slug: string }; Returns: Json }
       invitation_details: {
         Args: { p_token: string }
@@ -3166,7 +3231,15 @@ export type Database = {
           has_hub: boolean
         }[]
       }
-      platform_dashboard: { Args: never; Returns: Json }
+      platform_dashboard: {
+        Args: { p_from: string; p_to: string }
+        Returns: Json
+      }
+      platform_highlights: {
+        Args: { p_from: string; p_joined: number; p_to: string }
+        Returns: Json
+      }
+      platform_income: { Args: { p_from: string; p_to: string }; Returns: Json }
       post_lesson_request: {
         Args: {
           p_budget_pence?: number
@@ -3186,6 +3259,10 @@ export type Database = {
       rate_skill: {
         Args: { p_learner_id: string; p_rating: number; p_skill_code: string }
         Returns: string
+      }
+      record_audit_export: {
+        Args: { p_count: number; p_filters: Json }
+        Returns: undefined
       }
       record_offline_package: {
         Args: { p_learner_id: string; p_method: string; p_package_id: string }

@@ -72,15 +72,12 @@ export function DashboardFigures({
   /** Keeps the heading's id unique where the figures appear more than once, as on the design page. */
   idPrefix?: string;
 }) {
-  const { range, signups, businesses, lessons, money } = dashboard;
+  const { label, signups, businesses, lessons, money } = dashboard;
   return (
     <section className="flex flex-col gap-3" aria-labelledby={`${idPrefix}-title`}>
-      <div className="flex flex-col gap-0.5">
-        <h2 id={`${idPrefix}-title`} className="text-h3 text-black">
-          The last 30 days
-        </h2>
-        <p className="text-small text-grey-700">{range}</p>
-      </div>
+      <h2 id={`${idPrefix}-title`} className="text-h3 text-black">
+        {label}
+      </h2>
       <dl className="grid grid-cols-2 gap-3 lg:grid-cols-4" aria-label="The platform at a glance">
         <Figure
           label="Sign-ups"

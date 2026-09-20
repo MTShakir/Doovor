@@ -3,10 +3,10 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import { experienceLevels, learnerOnboardingSchema, learnerTransmissions } from '@repo/core/schemas/learner';
 import { Field } from '@repo/ui/field';
-import { Input } from '@repo/ui/input';
+import { Input, Textarea } from '@repo/ui/input';
 import { Select } from '@repo/ui/select';
 import { useState, useTransition } from 'react';
-import { useForm } from 'react-hook-form';
+import { useForm, useWatch } from 'react-hook-form';
 import type { z } from '@repo/core/zod';
 import { ClientForm, SubmitButton } from '@/components/client-form';
 import { FormAlert } from '@/components/form-alert';
@@ -19,6 +19,8 @@ export function AboutYouForm({ initialName }: { initialName: string }) {
   const [formError, setFormError] = useState<string | null>(null);
   // No default values on the text fields: they keep anything typed before hydration (D-043).
   const form = useForm<Values>({ resolver: zodResolver(learnerOnboardingSchema) });
+  // What would help is asked only of somebody who says there is something (D-180).
+  const told = useWatch({ control: form.control, name: 'hasDisability' });
   const { errors } = form.formState;
 
   const onSubmit = form.handleSubmit((values) => {
@@ -67,6 +69,30 @@ export function AboutYouForm({ initialName }: { initialName: string }) {
       >
         <Input type="date" autoComplete="bday" {...form.register('dateOfBirth')} />
       </Field>
+      {/* Health is the learner's to tell or keep (D-180): asked here, answered only if they want to. */}
+      <Field
+        label="Do you have a disability, condition or learning difficulty?"
+        hint="You do not have to answer. It helps your instructor plan lessons that suit you, and it is never used to decide whether you can learn with us."
+        error={errors.hasDisability?.message}
+      >
+        <Select
+          options={[
+            { value: 'no', label: 'No' },
+            { value: 'yes', label: 'Yes' },
+          ]}
+          placeholder="Rather not say"
+          {...form.register('hasDisability')}
+        />
+      </Field>
+      {told === 'yes' ? (
+        <Field
+          label="What would help?"
+          hint="Only your instructor and the school you learn with see this."
+          error={errors.disabilityDetails?.message}
+        >
+          <Textarea maxLength={1000} {...form.register('disabilityDetails')} />
+        </Field>
+      ) : null}
       <SubmitButton width="full" size="lg" pending={pending}>
         Finish
       </SubmitButton>

@@ -1,7 +1,7 @@
 -- The audit log viewer: every kind NFR-SEC-06 names can be found, by kind, person, Business and
 -- day, and paged back through; only platform staff read it (ADM-07, M5-22).
 begin;
-select plan(21);
+select plan(24);
 
 select tests.create_fixture();
 
@@ -104,6 +104,30 @@ select is(
 select throws_ok(
   format($$ select * from public.admin_audit_log(null, null, null, null, null, %L) $$, :'last_at'),
   'P0001', 'VALIDATION_FAILED', 'a page is asked for by the moment and the row together'
+);
+
+-- ---------------------------------------------------------------------------------------
+-- Taking a copy away is written down, where reading a page is not (D-130, D-173).
+-- ---------------------------------------------------------------------------------------
+select tests.authenticate_as(:'staff', 'aal2');
+select lives_ok(
+  $$ select public.record_audit_export('{"from": "2026-09-01", "kind": "viewing"}'::jsonb, 42) $$,
+  'staff take a copy of the log, and it is written down'
+);
+select results_eq(
+  $$ select (a.after ->> 'entries')::int, a.after -> 'asked_for' ->> 'kind'
+       from public.audit_log a
+      where a.action = 'audit_log.exported'
+      order by a.occurred_at desc
+      limit 1 $$,
+  $$ values (42, 'viewing') $$,
+  'with how many entries went into it and what was asked for'
+);
+
+select tests.authenticate_as(:'ben', 'aal2');
+select throws_ok(
+  $$ select public.record_audit_export('{}'::jsonb, 1) $$,
+  '42501', 'NOT_ALLOWED', 'and nobody outside the platform staff writes that entry'
 );
 
 select tests.authenticate_as(:'staff');

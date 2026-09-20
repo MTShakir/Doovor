@@ -1,6 +1,6 @@
 import type { Metadata } from 'next';
 import { skillMapSummary } from '@repo/core/skill-map';
-import { formatDateTime, formatMinutes, todayInZone } from '@repo/core/time';
+import { formatDateTime, formatDateWithYear, formatMinutes, todayInZone } from '@repo/core/time';
 import type { AccessContext } from '@repo/db';
 import { PageHeader } from '@repo/ui/app-shell';
 import { Button } from '@repo/ui/button';
@@ -18,6 +18,7 @@ import { lessonWhen } from '@/components/progress/lesson-record-card';
 import { requirePortal } from '@/lib/auth/session';
 import { learnerCard, type LearnerCard } from '@/lib/learners/card';
 import { learnerHistory, type LearnerHistoryEntry } from '@/lib/learners/history';
+import { learnerHealth } from '@/lib/learner/health';
 import { learnerNotes } from '@/lib/learners/notes';
 import { learnerPickupPoints } from '@/lib/pickup/list';
 import { learnerSkillMap, lessonRecordPage } from '@/lib/lessons/records';
@@ -59,10 +60,11 @@ async function Learner({ params }: LearnerPageProps) {
   // not there, and not there and not allowed look the same from here.
   if (!card) notFound();
 
-  const [notes, history, pickups] = await Promise.all([
+  const [notes, history, pickups, health] = await Promise.all([
     learnerNotes(card.learnerId),
     learnerHistory(card.learnerId),
     learnerPickupPoints(card.learnerId, card.businessId),
+    learnerHealth(card.learnerId),
   ]);
   const mine = access.memberships.some((one) => one.instructorProfileId === card.instructorId);
   const gearbox = card.transmission === null ? null : card.transmission === 'manual' ? 'Manual' : 'Automatic';
@@ -104,6 +106,16 @@ async function Learner({ params }: LearnerPageProps) {
         <Lessons card={card} />
         <Progress card={card} />
         <Money card={card} access={access} />
+        {health?.hasDisability ? (
+          <Card className="flex flex-col gap-2" role="region" aria-labelledby="about-them-title">
+            <CardTitle id="about-them-title">What they told us</CardTitle>
+            <p className="text-body text-ink">{health.details}</p>
+            <p className="text-small text-grey-700">
+              {card.fullName.split(' ')[0] ?? card.fullName} told us on {formatDateWithYear(new Date(health.toldAt))}. It is theirs to
+              change, and only you and the school see it.
+            </p>
+          </Card>
+        ) : null}
         <PickupPoints
           learnerId={card.learnerId}
           learnerName={card.fullName}

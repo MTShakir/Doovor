@@ -73,7 +73,7 @@ export function DeleteAccount() {
       >
         <div className="flex flex-col gap-4">
           {error ? <FormAlert>{error}</FormAlert> : null}
-          <Field label="Why are you leaving? (optional)">
+          <Field label="Why are you leaving?" hint="You do not have to say. If you tell us, we may be able to put it right first.">
             <Textarea value={reason} onChange={(e) => { setReason(e.target.value); }} maxLength={500} />
           </Field>
         </div>

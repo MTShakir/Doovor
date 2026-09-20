@@ -41,7 +41,8 @@ test.describe('lesson records saved with no signal (PRG-09, M4-11)', () => {
   const learner = { email: 'amelia.evans@example.com', name: 'Amelia Evans' };
 
   test('waits on the phone, and is sent once when the signal is back', async ({ page, context }, testInfo) => {
-    const day = addDays(today(), testInfo.project.name === 'mobile' ? -6 : -8);
+    // Two days clear of the five the seed fills, so a run that crosses midnight does not land on one.
+    const day = addDays(today(), testInfo.project.name === 'mobile' ? -7 : -8);
     await bookLesson('Emma Clarke', learner.email, day, '08:00');
     const lessonId = await lessonIdAt('Emma Clarke', day, '08:00');
     const summary = `Moving off on a hill, with no signal, ${testInfo.project.name}.`;

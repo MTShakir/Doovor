@@ -1,7 +1,10 @@
 import { expect, test, type Page } from '@playwright/test';
 import { authFile } from '../support/accounts';
 import { makeTakings, platformFigures, type PlatformFacts } from '../support/database';
-import { expectAccessible, snap } from '../support/helpers';
+import { dayLabel, expectAccessible, snap, tapThrough } from '../support/helpers';
+
+/** The day as the dashboard writes a range: "Sun 20 Sep 2026". */
+const dayLabelWithYear = (date: string): string => `${dayLabel(date)} ${date.slice(0, 4)}`;
 
 const wholePounds = new Intl.NumberFormat('en-GB', { style: 'currency', currency: 'GBP', minimumFractionDigits: 0, maximumFractionDigits: 0 });
 
@@ -75,7 +78,8 @@ test.describe('the admin dashboard (ADM-01, M5-17)', { tag: '@desktop-only' }, (
       expect(facts.money.card_pence).toBeGreaterThanOrEqual(takings.cardPence);
       expect(facts.money.fees_pence).toBeGreaterThanOrEqual(takings.feesPence);
       expect(facts.money.refunds_pence).toBeGreaterThanOrEqual(takings.refundsPence);
-      await expect(page.getByText(/^\w{3} \d{1,2} \w{3} to \w{3} \d{1,2} \w{3}$/)).toBeVisible();
+      const dates = page.getByRole('region', { name: 'Dates' });
+      await expect(dates.getByText(/^\w{3} \d{1,2} \w{3} \d{4} to \w{3} \d{1,2} \w{3} \d{4}$/)).toBeVisible();
       await expectAccessible(page);
       await snap(page, testInfo, 'admin-dashboard');
 
@@ -85,6 +89,62 @@ test.describe('the admin dashboard (ADM-01, M5-17)', { tag: '@desktop-only' }, (
     } finally {
       await takings.remove();
     }
+  });
+
+  test('adds the figures up over the days staff choose (D-171)', async ({ page }, testInfo) => {
+    await page.goto('/admin');
+    await expect(page.getByRole('heading', { level: 1, name: 'Dashboard' })).toBeVisible();
+    const dates = page.getByRole('region', { name: 'Dates' });
+    const buttons = dates.getByRole('navigation', { name: 'Dates' });
+    await expect(buttons.getByRole('link', { name: 'Last 30 days' })).toHaveAttribute('aria-current', 'page');
+
+    // Today alone: the dates say so, and the figures are read again for that one day.
+    const today = new Intl.DateTimeFormat('en-CA', { timeZone: 'Europe/London' }).format(new Date());
+    await tapThrough(buttons.getByRole('link', { name: 'Today', exact: true }), /\/admin\?range=today$/);
+    await expect(buttons.getByRole('link', { name: 'Today', exact: true })).toHaveAttribute('aria-current', 'page');
+    await expect(dates).toContainText(dayLabelWithYear(today));
+
+    // A week two years ago, typed by hand: nothing happened then, and the figures say so.
+    await dates.getByLabel('From').fill('2024-01-01');
+    await dates.getByLabel('To').fill('2024-01-07');
+    await dates.getByRole('button', { name: 'Show these days' }).click();
+    await expect(page).toHaveURL(/from=2024-01-01&to=2024-01-07/);
+    await expect(dates).toContainText('Mon 1 Jan 2024 to Sun 7 Jan 2024');
+    await expect(figure(page, 'Sign-ups')).toHaveText('0');
+    await expect(figure(page, 'Lessons booked')).toHaveText('0');
+    await expect(figure(page, 'GMV')).toHaveText('£0');
+    // What is waiting now is not about those days, so it still says what waits.
+    await expect(page.getByRole('region', { name: 'Waiting on a person' })).toBeVisible();
+    await expectAccessible(page);
+    await snap(page, testInfo, 'admin-dashboard-dates');
+  });
+
+  test('folds away the lists of who stands out, and follows the days chosen (D-172)', async ({ page }, testInfo) => {
+    await page.goto('/admin');
+    const stands = page.getByRole('region', { name: 'Who stands out' });
+    const card = (title: string) => stands.locator('details').filter({ hasText: title });
+
+    // Folded away until opened: the dashboard is a screen of figures first.
+    const busiest = card('Schools with the most learners');
+    const school = busiest.getByRole('link', { name: /Quayside Driving School/ });
+    await expect(school).toBeHidden();
+    await busiest.getByText('Schools with the most learners').click();
+    await expect(school).toBeVisible();
+    await expect(school).toContainText(/\d+ learners?/);
+
+    // The seed's own Businesses joined today, so they are new to the platform.
+    const arrivals = card('New to the platform');
+    await arrivals.getByText('New to the platform').click();
+    await expect(arrivals.getByRole('link').first()).toBeVisible();
+    await expectAccessible(page);
+    await snap(page, testInfo, 'admin-highlights');
+
+    // A week in 2024: every list says there was nobody, as the figures say there was nothing.
+    await page.goto('/admin?from=2024-01-01&to=2024-01-07');
+    await stands.locator('details').filter({ hasText: 'Top earning schools' }).getByText('Top earning schools').click();
+    await expect(stands.getByText('No school took a payment in these days.')).toBeVisible();
+    await card('New to the platform').getByText('New to the platform').click();
+    await expect(stands.getByText('Nobody joined in these days.')).toBeVisible();
   });
 
   test('support staff see the same dashboard', async ({ browser }) => {

@@ -12,11 +12,9 @@ const waiting: Record<Portal, Record<string, string>> = {
   },
   instructor: {},
   school: {},
-  // PRD 8.2 puts these in the admin menu, but no requirement or plan task says what they hold (D-133).
-  admin: {
-    bookings: "Not built yet. To look into somebody's lessons, find them under Learners or Instructors and view as them.",
-    payments: "Not built yet. To look into somebody's payments, find them under Learners and view as them.",
-  },
+  // Bookings and Payments were the last of PRD 8.2's admin menu without screens (D-133). Payments
+  // has one now, and Bookings is gone: lessons are looked into through the person (D-174).
+  admin: {},
 };
 
 /** Sections still waiting for their milestone. Sections with real pages are left out. */

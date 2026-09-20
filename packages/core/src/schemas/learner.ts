@@ -46,7 +46,31 @@ export const learnerOnboardingSchema = z.object({
     .refine((date) => !isValidLocalDate(date) || isAtLeast(date, leastLearnerAge, todayInZone()), {
       error: 'You have to be 16 to start learning to drive',
     }),
+  // Asked at sign-up, answered only if they want to (LRN-02, D-180). Nothing chosen comes through
+  // as an empty string from the browser, which is no answer rather than a wrong one.
+  hasDisability: z.preprocess((value) => (value === '' ? undefined : value), z.enum(['yes', 'no']).optional()),
+  disabilityDetails: z.string().trim().max(1000, { error: 'Use 1000 characters or fewer' }).optional(),
+}).refine((answers) => answers.hasDisability !== 'yes' || (answers.disabilityDetails ?? '') !== '', {
+  error: 'Say what would help, so your instructor can plan for it',
+  path: ['disabilityDetails'],
 });
+
+/**
+ * What a learner chooses to tell us about a disability (LRN-02, D-180). Answering is their choice,
+ * so nothing here is required until they pick one; saying yes without saying what would help
+ * leaves their instructor none the wiser, so that much is asked for.
+ */
+export const learnerHealthSchema = z
+  .object({
+    hasDisability: z.enum(['yes', 'no']),
+    details: z.string().trim().max(1000, { error: 'Use 1000 characters or fewer' }).optional(),
+  })
+  .refine((answer) => answer.hasDisability === 'no' || (answer.details ?? '') !== '', {
+    error: 'Say what would help, so your instructor can plan for it',
+    path: ['details'],
+  });
+
+export type LearnerHealth = z.infer<typeof learnerHealthSchema>;
 
 export type LearnerOnboarding = z.infer<typeof learnerOnboardingSchema>;
 

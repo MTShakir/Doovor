@@ -76,6 +76,16 @@ export async function saveLearnerProfile(input: unknown): Promise<Result<null>> 
     if (created) return saveFailed('profile', created);
   }
 
+  // What they chose to tell us about a disability, kept apart from the rest (D-180).
+  if (parsed.data.hasDisability !== undefined) {
+    const { error: told } = await supabase.from('learner_health').insert({
+      user_id: userId,
+      has_disability: parsed.data.hasDisability === 'yes',
+      details: parsed.data.hasDisability === 'yes' ? (parsed.data.disabilityDetails ?? null) : null,
+    });
+    if (told) return saveFailed('disability answer', told);
+  }
+
   // Saving succeeded, so this redirects and never resolves.
   return redirectTo('/app/learner');
 }

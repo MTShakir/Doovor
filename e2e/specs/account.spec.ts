@@ -1,4 +1,5 @@
 import { expect, test, type Browser, type BrowserContext, type Page } from '@playwright/test';
+import { platformIdOf } from '../support/database';
 import { expectAccessible, snap } from '../support/helpers';
 import { signInThroughForm } from '../support/sign-in';
 
@@ -27,6 +28,9 @@ test.describe('account and security (AUTH-09)', () => {
     await signInThroughForm(page, email);
     await page.goto('/account');
     await expect(page.getByRole('heading', { level: 1, name: 'Account and security' })).toBeVisible();
+    // Their own number on the platform, to quote when they get in touch (D-176).
+    await expect(page.getByText(await platformIdOf(email), { exact: true })).toBeVisible();
+
     const devices = page.getByRole('region', { name: 'Devices' });
     await expect(page.getByText('This device')).toBeVisible();
     await expect(page.getByText('Safari on iPhone', { exact: true })).toBeVisible();
@@ -43,7 +47,7 @@ test.describe('account and security (AUTH-09)', () => {
     await page.getByRole('button', { name: 'Ask to delete my account' }).click();
     const sheet = page.getByRole('dialog', { name: 'Delete your account?' });
     await expect(sheet).toBeVisible();
-    await sheet.getByLabel('Why are you leaving? (optional)').fill('Passed my test');
+    await sheet.getByLabel('Why are you leaving?').fill('Passed my test');
     await sheet.getByRole('button', { name: 'Ask to delete my account' }).click();
     await expect(page.getByText(/We received your request on/)).toBeVisible();
   });

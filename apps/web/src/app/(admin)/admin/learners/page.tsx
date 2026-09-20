@@ -36,7 +36,7 @@ async function Learners({ searchParams }: LearnersPageProps) {
 
   return (
     <>
-      <AdminSearch action="/admin/learners" label="Search learners" hint="A name, email or mobile." query={query} />
+      <AdminSearch action="/admin/learners" label="Search learners" hint="A name, email, mobile or ID." query={query} />
       <p className="text-small text-grey-700" aria-live="polite">
         {foundWords(rows.length, query, 'learner', 'learners')}
       </p>

@@ -1,6 +1,7 @@
 'use client';
 
 import { formatPence } from '@repo/core/money';
+import { customLengthHalves, customLengthHours, customLengthPrice } from '@repo/core/lesson-length';
 import { formatDate, formatMinutes, formatTime, todayInZone, utcToLocal } from '@repo/core/time';
 import { Button } from '@repo/ui/button';
 import { Field } from '@repo/ui/field';
@@ -23,6 +24,9 @@ import { bookableLessons, bookLesson, bookWeekly, slotsForDay } from './booking-
  * Learners screen with its add sheet already open (LRN-01, D-165).
  */
 const addLearner = 'add-new-learner';
+
+/** The choice that opens a length of the instructor's own, rather than one from the catalogue. */
+const customLength = 'custom-length';
 const addLearnerPath = '/app/instructor/learners?add=1';
 
 /** How often it happens. Most learners have the same slot every week (BOK-05). */
@@ -68,9 +72,25 @@ export function BookLesson({ learners, learnerId, date, label = 'Book a lesson',
   const [times, setTimes] = useState<{ asked: string; open: string[]; outOfHours: string[] } | null>(null);
   const [chosenSlot, setChosenSlot] = useState<string | null>(null);
   const [repeat, setRepeat] = useState('1');
+  const [customTypeId, setCustomTypeId] = useState('');
+  const [customHours, setCustomHours] = useState(2);
+  const [customHalf, setCustomHalf] = useState(0);
   const [clashes, setClashes] = useState<{ startsAt: string; reason: string }[]>([]);
 
-  const chosen = lessons.find((one) => `${one.lessonTypeId}:${String(one.durationMinutes)}` === lessonKey);
+  // The lesson types with an hourly rate: a length of their own is priced from it (D-179).
+  const hourlyRates = lessons.filter((one) => one.durationMinutes === 60);
+  const customType = hourlyRates.find((one) => one.lessonTypeId === customTypeId) ?? hourlyRates[0];
+  const customMinutes = customHours * 60 + customHalf;
+  const custom =
+    lessonKey === customLength && customType
+      ? {
+          lessonTypeId: customType.lessonTypeId,
+          name: customType.name,
+          durationMinutes: customMinutes,
+          pricePence: customLengthPrice(customType.pricePence, customMinutes),
+        }
+      : undefined;
+  const chosen = custom ?? lessons.find((one) => `${one.lessonTypeId}:${String(one.durationMinutes)}` === lessonKey);
   // What the times on screen are for. Changing the day or the length asks again, and the
   // slot picked before is simply not among the answers any more.
   const asked = chosen ? `${day}:${String(chosen.durationMinutes)}` : '';
@@ -227,12 +247,50 @@ export function BookLesson({ learners, learnerId, date, label = 'Book a lesson',
             <Select
               value={lessonKey}
               onChange={(event) => { setLessonKey(event.target.value); }}
-              options={lessons.map((one) => ({
-                value: `${one.lessonTypeId}:${String(one.durationMinutes)}`,
-                label: `${one.name}, ${formatMinutes(one.durationMinutes)}, ${formatPence(one.pricePence)}`,
-              }))}
+              options={[
+                ...lessons.map((one) => ({
+                  value: `${one.lessonTypeId}:${String(one.durationMinutes)}`,
+                  label: `${one.name}, ${formatMinutes(one.durationMinutes)}, ${formatPence(one.pricePence)}`,
+                })),
+                // A length of their own, priced at the hourly rate, where there is one (BOK-03, D-179).
+                ...(hourlyRates.length > 0 ? [{ value: customLength, label: 'A length of your own' }] : []),
+              ]}
             />
           </Field>
+
+          {custom ? (
+            <div className="flex flex-col gap-3">
+              {hourlyRates.length > 1 ? (
+                <Field label="Which lesson?">
+                  <Select
+                    value={custom.lessonTypeId}
+                    onChange={(event) => { setCustomTypeId(event.target.value); }}
+                    options={hourlyRates.map((one) => ({ value: one.lessonTypeId, label: one.name }))}
+                  />
+                </Field>
+              ) : null}
+              <div className="grid grid-cols-2 gap-3">
+                <Field label="Hours">
+                  <Select
+                    value={String(customHours)}
+                    onChange={(event) => { setCustomHours(Number(event.target.value)); }}
+                    options={customLengthHours.map((hours) => ({ value: String(hours), label: String(hours) }))}
+                  />
+                </Field>
+                <Field label="Minutes">
+                  <Select
+                    value={String(customHalf)}
+                    onChange={(event) => { setCustomHalf(Number(event.target.value)); }}
+                    options={customLengthHalves.map((half) => ({ value: String(half), label: half === 0 ? '00' : '30' }))}
+                  />
+                </Field>
+              </div>
+              <p className="text-small text-grey-700">
+                {formatMinutes(custom.durationMinutes)} at {formatPence(customType?.pricePence ?? 0)} an hour is{' '}
+                {formatPence(custom.pricePence)}.
+              </p>
+            </div>
+          ) : null}
 
           <Field label="How often?">
             <Select value={repeat} onChange={(event) => { setRepeat(event.target.value); }} options={repeats} />

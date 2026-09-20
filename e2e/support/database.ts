@@ -1,3 +1,4 @@
+import { platformId } from '@repo/core/platform-id';
 import postgres from 'postgres';
 
 /**
@@ -1229,11 +1230,16 @@ export interface PlatformFigures {
   disputesOpen: number;
 }
 
-/** The admin dashboard's figures as the database has them now (ADM-01, M5-17). */
-export async function platformFigures(): Promise<PlatformFigures> {
+/**
+ * The admin dashboard's figures as the database has them (ADM-01, M5-17, D-171): over the last 30
+ * days, or over London days from the first to the last, the way the screen asks for them.
+ */
+export async function platformFigures(days?: { from: string; to: string }): Promise<PlatformFigures> {
   return withDatabase(async (sql) => {
+    const from = days ? sql`(${days.from}::date)::timestamp at time zone 'Europe/London'` : sql`now() - interval '30 days'`;
+    const to = days ? sql`(${days.to}::date + 1)::timestamp at time zone 'Europe/London'` : sql`now()`;
     const [row] = await sql<{ facts: PlatformFacts; active: number; suspended: number; badges: number; disputes: number }[]>`
-      select private.platform_dashboard_facts(now()) as facts,
+      select private.platform_dashboard_facts(${from}, ${to}) as facts,
              (select count(*)::int from public.businesses where status = 'active') as active,
              (select count(*)::int from public.businesses where status = 'suspended') as suspended,
              (select count(*)::int from public.instructor_profiles where verification_status = 'pending') as badges,
@@ -1247,6 +1253,61 @@ export async function platformFigures(): Promise<PlatformFigures> {
       disputesOpen: row.disputes,
     };
   });
+}
+
+/** Somebody's ID on the platform, as the screens write it: "D000042" (D-176). */
+export async function platformIdOf(email: string): Promise<string> {
+  return withDatabase(async (sql) => {
+    const [row] = await sql<{ platform_number: string }[]>`
+      select platform_number from public.users where lower(email) = lower(${email})`;
+    if (!row) throw new Error(`No account for ${email}`);
+    return platformId(Number(row.platform_number));
+  });
+}
+
+/** Forgets what a learner told us about a disability, so a test starts from nothing (D-180). */
+export async function clearLearnerHealth(email: string): Promise<void> {
+  await withDatabase(async (sql) => {
+    await sql`
+      delete from public.learner_health h
+       using public.users u
+       where u.id = h.user_id and lower(u.email) = lower(${email})`;
+  });
+}
+
+export interface MadeLeaver {
+  name: string;
+  email: string;
+  reason: string;
+  remove: () => Promise<void>;
+}
+
+/**
+ * Somebody who has asked to delete their account (AUTH-09, D-175), made for one test: a learner of
+ * this test's own, so the staff screen has a request to answer that no other test is watching.
+ */
+export async function makeLeaver(label: string, reason: string): Promise<MadeLeaver> {
+  const userId = crypto.randomUUID();
+  const name = `${label} Leaver`;
+  const email = `${label.toLowerCase()}.leaver.${userId.slice(0, 8)}@example.com`;
+  await withDatabase(async (sql) => {
+    await sql`select tests.create_user_with_id(${userId}::uuid, ${email}, ${name})`;
+    await sql`update public.users set phone = '+447700900321', intended_role = 'learner' where id = ${userId}`;
+    await sql`insert into public.deletion_requests (user_id, reason) values (${userId}, ${reason})`;
+  });
+
+  return {
+    name,
+    email,
+    reason,
+    remove: async () => {
+      await withDatabase(async (sql) => {
+        await sql`delete from public.deletion_requests where user_id = ${userId}`;
+        // What happened to them stays in the audit log, which is append-only (NFR-SEC-06).
+        await sql`delete from auth.users where id = ${userId}`;
+      });
+    },
+  };
 }
 
 export interface MadeSchoolInstructor {
@@ -1456,6 +1517,8 @@ export async function makeSchool(label: string): Promise<MadeSchool> {
 }
 
 export interface MadeTakings {
+  /** The school the money went through, for screens that name who paid. */
+  name: string;
   gmvPence: number;
   cardPence: number;
   feesPence: number;
@@ -1489,6 +1552,7 @@ export async function makeTakings(label: string): Promise<MadeTakings> {
   });
 
   return {
+    name: school.name,
     gmvPence: 42200,
     cardPence: 4200,
     feesPence: 50,

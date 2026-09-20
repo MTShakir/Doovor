@@ -1,5 +1,6 @@
 import 'server-only';
 import { formatUkMobile } from '@repo/core/phone';
+import { platformId } from '@repo/core/platform-id';
 import { formatDate, formatDateTime, formatDateWithYear } from '@repo/core/time';
 import { z } from '@repo/core/zod';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
@@ -9,6 +10,8 @@ export type BadgeState = 'unsubmitted' | 'pending' | 'approved' | 'rejected';
 
 export interface AdminInstructorRow {
   userId: string;
+  /** Their number on the platform, written as D000123 (D-176). */
+  platformId: string;
   /** The name on their profile. */
   name: string;
   email: string | null;
@@ -19,6 +22,8 @@ export interface AdminInstructorRow {
 
 export interface AdminLearnerRow {
   userId: string;
+  /** Their number on the platform, written as D000123 (D-176). */
+  platformId: string;
   name: string;
   email: string | null;
   businesses: number;
@@ -32,6 +37,7 @@ export async function findInstructors(query: string): Promise<AdminInstructorRow
   if (error) throw new Error(`Could not search instructors: ${error.message}`);
   return data.map((row) => ({
     userId: row.user_id,
+    platformId: platformId(row.platform_number),
     name: row.display_name,
     email: row.email,
     businessName: row.business_name,
@@ -47,6 +53,7 @@ export async function findLearners(query: string): Promise<AdminLearnerRow[]> {
   if (error) throw new Error(`Could not search learners: ${error.message}`);
   return data.map((row) => ({
     userId: row.user_id,
+    platformId: platformId(row.platform_number),
     name: row.name,
     email: row.email,
     businesses: row.businesses,
@@ -56,6 +63,7 @@ export async function findLearners(query: string): Promise<AdminLearnerRow[]> {
 
 const personSchema = z.object({
   user_id: z.string(),
+  platform_number: z.number().int(),
   name: z.string().nullable(),
   email: z.string().nullable(),
   phone: z.string().nullable(),
@@ -78,6 +86,8 @@ const personSchema = z.object({
 
 export interface AdminPerson {
   userId: string;
+  /** Their number on the platform, written as D000123 (D-176). */
+  platformId: string;
   name: string;
   email: string | null;
   /** As people write it: "07700 900123". */
@@ -103,6 +113,7 @@ export async function adminPerson(userId: string): Promise<AdminPerson | null> {
 
   return {
     userId: person.user_id,
+    platformId: platformId(person.platform_number),
     name: person.name ?? 'No name given',
     email: person.email,
     phone: person.phone === null ? null : formatUkMobile(person.phone),

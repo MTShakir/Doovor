@@ -4,7 +4,7 @@
 -- rows in its 30 days are the ones made here. Counts that are not about those days (Businesses in
 -- good standing, badges waiting, disputes open) are checked by how much they move.
 begin;
-select plan(12);
+select plan(15);
 
 select tests.create_fixture();
 
@@ -19,7 +19,7 @@ select tests.create_fixture();
 \set staff 'e0000000-0000-0000-0000-000000000010'
 \set now '2021-03-10T12:00:00Z'
 
-select private.platform_dashboard_facts(:'now') as before \gset
+select private.platform_dashboard_facts((:'now')::timestamptz - interval '30 days', :'now') as before \gset
 
 -- Sign-ups in the 30 days: two learners and an instructor who confirmed, a school owner who signed up
 -- by phone, a learner who never confirmed, and somebody who has not chosen a role.
@@ -70,7 +70,7 @@ update public.instructor_profiles set verification_status = 'pending', verificat
 insert into public.no_show_disputes (business_id, booking_id, learner_id, reason)
 values (:'school', :'paid_lesson', :'lee', 'I was there');
 
-select private.platform_dashboard_facts(:'now') as after \gset
+select private.platform_dashboard_facts((:'now')::timestamptz - interval '30 days', :'now') as after \gset
 
 create or replace function pg_temp.moved(p_before jsonb, p_after jsonb, p_path text[]) returns integer language sql as $$
   select ((p_after #>> p_path)::numeric - (p_before #>> p_path)::numeric)::integer;
@@ -102,16 +102,38 @@ select is(pg_temp.moved(:'before', :'after', '{verification,waiting}'), 1, 'one 
 select is(pg_temp.moved(:'before', :'after', '{disputes,open}'), 1, 'and one more dispute waits for a decision');
 
 -- ---------------------------------------------------------------------------------------
+-- Any range of days, not only the 30 before a moment (D-171).
+-- ---------------------------------------------------------------------------------------
+select private.platform_dashboard_facts('2021-03-05T00:00:00Z', '2021-03-06T00:00:00Z') as one_day \gset
+select results_eq(
+  format($$ select (f #>> '{lessons,completed}')::int, (f #>> '{money,payments}')::int, (f #>> '{money,gmv_pence}')::int,
+                  (f #>> '{signups,learners}')::int
+              from (select %L::jsonb as f) as x $$, :'one_day'),
+  $$ values (1, 1, 4200, 0) $$,
+  'a range of one day counts that day alone'
+);
+
+-- ---------------------------------------------------------------------------------------
 -- Who may see it.
 -- ---------------------------------------------------------------------------------------
 select tests.create_user_with_id(:'staff', 'support@test.local', 'Sam Support');
 insert into public.platform_staff (user_id, role) values (:'staff', 'support_admin');
 select tests.authenticate_as(:'staff', 'aal2');
-select lives_ok($$ select public.platform_dashboard() $$, 'support staff past their second step see the dashboard');
+select lives_ok($$ select public.platform_dashboard(now() - interval '30 days', now()) $$, 'support staff past their second step see the dashboard');
 select tests.authenticate_as(:'staff');
-select throws_ok($$ select public.platform_dashboard() $$, '42501', null, 'but not before it (AUTH-08)');
+select throws_ok($$ select public.platform_dashboard(now() - interval '30 days', now()) $$, '42501', null, 'but not before it (AUTH-08)');
 select tests.authenticate_as(:'ben', 'aal2');
-select throws_ok($$ select public.platform_dashboard() $$, '42501', null, 'and the owner of a school does not');
+select throws_ok($$ select public.platform_dashboard(now() - interval '30 days', now()) $$, '42501', null, 'and the owner of a school does not');
+
+select tests.authenticate_as(:'staff', 'aal2');
+select throws_ok(
+  $$ select public.platform_dashboard(now(), now() - interval '1 day') $$,
+  'P0001', 'VALIDATION_FAILED', 'a range that runs backwards is no range'
+);
+select throws_ok(
+  $$ select public.platform_dashboard(now() - interval '6 years', now()) $$,
+  'P0001', 'VALIDATION_FAILED', 'nor is one longer than five years'
+);
 
 select * from finish();
 rollback;

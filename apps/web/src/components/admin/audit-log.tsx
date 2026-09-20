@@ -7,7 +7,7 @@ import { Field } from '@repo/ui/field';
 import { Input } from '@repo/ui/input';
 import { Select } from '@repo/ui/select';
 import { Skeleton, SkeletonRow } from '@repo/ui/skeleton';
-import { ChevronLeft, ChevronRight, ScrollText } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Download, ScrollText } from 'lucide-react';
 import type { Route } from 'next';
 import Link from 'next/link';
 import type { AuditEntry } from '@/lib/admin/audit';
@@ -36,7 +36,7 @@ export function auditLogHref(filters: AuditLogSearch, before?: AuditCursor): Rou
 }
 
 /** ADM-07: a plain form, so a search of the log is an address staff can go back to or share. */
-export function AuditFiltersForm({ filters }: { filters: AuditLogSearch }) {
+export function AuditFiltersForm({ filters, downloadHref }: { filters: AuditLogSearch; downloadHref: Route }) {
   const kinds = [
     { value: '', label: 'Every kind' },
     ...auditCategories.map((category) => ({ value: category.key, label: category.label })),
@@ -60,12 +60,19 @@ export function AuditFiltersForm({ filters }: { filters: AuditLogSearch }) {
       <Field label="To" hint="Included.">
         <Input name="to" type="date" defaultValue={filters.to ?? ''} />
       </Field>
-      <div className="flex items-end gap-2">
-        <Button type="submit" variant="secondary" width="full">
+      <div className="flex flex-wrap items-end gap-2">
+        <Button type="submit" variant="secondary">
           Show
         </Button>
+        {/* The file holds what the filters hold, not only the page on screen (D-173). */}
+        <Button asChild variant="tertiary">
+          <Link href={downloadHref} prefetch={false}>
+            <Download className="size-5" aria-hidden />
+            Download as JSON
+          </Link>
+        </Button>
         {filtered ? (
-          <Button asChild variant="tertiary" width="full">
+          <Button asChild variant="tertiary">
             <Link href="/admin/audit-log">Clear filters</Link>
           </Button>
         ) : null}

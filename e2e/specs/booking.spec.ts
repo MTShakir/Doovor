@@ -103,6 +103,38 @@ test.describe('booking a lesson (BOK-01, M2-16)', () => {
     await expect(sheet.getByRole('button', { name: /^Book 20:00 for £/ })).toBeEnabled();
   });
 
+  test('books a length of its own, priced at the hourly rate (BOK-03, D-179)', async ({ page }, testInfo) => {
+    const day = await emptyDay(testInfo.project.name, 3);
+    await page.goto(`/app/instructor/diary?view=day&date=${day}`);
+    await tapUntil(
+      page.getByRole('button', { name: 'Book a lesson' }).first(),
+      page.getByRole('dialog', { name: 'Book a lesson' }),
+    );
+    const sheet = page.getByRole('dialog', { name: 'Book a lesson' });
+    await sheet.getByLabel('Who is it for?').selectOption({ label: 'Jack Taylor' });
+
+    // A length the catalogue does not sell: two and a half hours at the hourly rate.
+    await sheet.getByLabel('How long?').selectOption({ label: 'A length of your own' });
+    await sheet.getByLabel('Hours').selectOption('2');
+    await sheet.getByLabel('Minutes').selectOption('30');
+    await expect(sheet).toContainText('2 hours 30 minutes at £42 an hour is £105.');
+    await expectAccessible(page);
+
+    await sheet.getByRole('button', { name: '09:00' }).click();
+    await expect(sheet).toContainText('2 hours 30 minutes');
+    await snap(page, testInfo, 'booking-own-length', { fullPage: false });
+    await sheet.getByRole('button', { name: 'Book 09:00 for £105' }).click();
+    await expect(page.getByText('Booked for')).toBeVisible();
+
+    // It runs to half past eleven, so the next free time is after it and its travel.
+    await tapUntil(
+      page.getByRole('button', { name: 'Book a lesson' }).first(),
+      page.getByRole('dialog', { name: 'Book a lesson' }),
+    );
+    await expect(sheet.getByRole('button', { name: '11:00' })).toHaveCount(0);
+    await expect(sheet.getByRole('button', { name: '12:00' })).toBeVisible();
+  });
+
   test('a taken slot is not offered twice @desktop-only', async ({ page }, testInfo) => {
     const day = await emptyDay(testInfo.project.name, 2);
     await page.goto(`/app/instructor/diary?view=day&date=${day}`);

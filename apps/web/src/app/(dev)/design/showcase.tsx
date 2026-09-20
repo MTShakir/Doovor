@@ -30,6 +30,8 @@ import { NoSignalBanner } from '@/components/offline/connection-banner';
 import { KeptRecordsNotice } from '@/components/offline/kept-records-notice';
 import { CardFieldsSkeleton } from '@/components/payments/card-form';
 import { InstallHelpCard } from '@/components/pwa/install-help';
+import { InstructorStatsCard } from '@/components/instructor/stats';
+import type { InstructorStats } from '@/lib/instructor/spans';
 import { InstallCard } from '@/components/pwa/install-prompt';
 import { LessonRecordCard } from '@/components/progress/lesson-record-card';
 import { EditableSkillMap } from '@/components/progress/editable-skill-map';
@@ -46,6 +48,13 @@ import type { LearnerPickupPoint } from '@/lib/pickup/list';
 import { SetupChecklist } from '@/components/setup-checklist';
 import { InstructorWeeks, OverviewFigures, OverviewSkeleton } from '@/components/school/overview';
 import { DashboardFigures, DashboardSkeleton, WaitingOnStaff } from '@/components/admin/dashboard';
+import { DateRangePicker } from '@/components/admin/date-range';
+import { PlatformHighlights } from '@/components/admin/highlights';
+import { PlatformIncomeScreen } from '@/components/admin/income';
+import { DeletionsScreen } from '@/app/(admin)/admin/deletions/deletions-screen';
+import type { DeletionRequest } from '@/lib/admin/deletions';
+import type { PlatformIncome } from '@/lib/admin/income';
+import type { PlatformHighlights as PlatformHighlightsData } from '@/lib/admin/highlights';
 import { BusinessDetails, BusinessResults, SuspendBusinessDialog } from '@/components/admin/businesses';
 import type { AdminBusiness } from '@/lib/admin/businesses';
 import { InstructorResults, LearnerResults, PersonDetails, ResetTwoStepDialog, SuspendAccountDialog, ViewAsDialog } from '@/components/admin/people';
@@ -71,6 +80,7 @@ import { Chip, ChipGroup } from '@repo/ui/chip';
 import { Dialog } from '@repo/ui/dialog';
 import { EmptyState } from '@repo/ui/empty-state';
 import { Field } from '@repo/ui/field';
+import { Foldable } from '@repo/ui/foldable';
 import { Input, Textarea } from '@repo/ui/input';
 import { contrastRatio } from '@repo/ui/lib/contrast';
 import { ListDivider, ListRow } from '@repo/ui/list-row';
@@ -79,6 +89,7 @@ import { OtpInput } from '@repo/ui/otp-input';
 import { PostcodeSearch } from '@repo/ui/postcode-search';
 import { ProgressBar, ProgressRing } from '@repo/ui/progress';
 import { skillMap } from '@repo/core/skill-map';
+import { statsRange } from '@repo/core/stats-range';
 import type { SkillRating } from '@repo/core/skills';
 import { RatingScale } from '@repo/ui/rating-scale';
 import { RatingStars } from '@repo/ui/rating-stars';
@@ -156,7 +167,8 @@ const exampleOverview: SchoolOverview = {
 };
 
 const exampleDashboard: PlatformDashboard = {
-  range: 'Tue 18 Aug to Thu 17 Sep',
+  range: 'Tue 18 Aug 2026 to Thu 17 Sep 2026',
+  label: 'Last 30 days',
   signups: { learners: 212, instructors: 31, schools: 4, undecided: 9, total: 256 },
   businesses: { active: 118, independent: 104, schools: 14, suspended: 2, teaching: 97 },
   lessons: { booked: 4_310, completed: 3_880 },
@@ -166,13 +178,76 @@ const exampleDashboard: PlatformDashboard = {
 };
 
 const quietDashboard: PlatformDashboard = {
-  range: 'Tue 18 Aug to Thu 17 Sep',
+  range: 'Tue 18 Aug 2026 to Thu 17 Sep 2026',
+  label: 'Last 30 days',
   signups: { learners: 0, instructors: 1, schools: 0, undecided: 0, total: 1 },
   businesses: { active: 1, independent: 1, schools: 0, suspended: 0, teaching: 0 },
   lessons: { booked: 0, completed: 0 },
   money: { gmvPence: 0, cardPence: 0, feesPence: 0, payments: 0, refundsPence: 0 },
   verification: { waiting: 0, oldestSince: null },
   disputes: { open: 0, oldestSince: null },
+};
+
+/** The five lists under the dashboard's figures (ADM-01, D-172). */
+const exampleHighlights: PlatformHighlightsData = {
+  earningSchools: [
+    { id: 'b1000000-0000-4000-8000-000000000001', name: 'Quayside Driving School', pence: 420_000, payments: 96 },
+    { id: 'b1000000-0000-4000-8000-000000000002', name: 'Leeds Drive Academy', pence: 288_000, payments: 64 },
+  ],
+  earningInstructors: [{ id: 'b1000000-0000-4000-8000-000000000003', name: 'Sarah Khan Driving', pence: 180_000, payments: 40 }],
+  busiestSchools: [{ id: 'b1000000-0000-4000-8000-000000000001', name: 'Quayside Driving School', learners: 31, lessons: 96 }],
+  busiestInstructors: [{ id: 'b1000000-0000-4000-8000-000000000003', name: 'Sarah Khan Driving', learners: 12, lessons: 40 }],
+  arrivals: [
+    { id: 'b1000000-0000-4000-8000-000000000004', name: 'New Wheels', kind: 'school', joined: 'Fri 18 Sep 2026' },
+    { id: 'b1000000-0000-4000-8000-000000000005', name: 'Tom Walsh Driving', kind: 'independent', joined: 'Wed 16 Sep 2026' },
+  ],
+  more: true,
+};
+
+/** Who has asked to leave (AUTH-09, D-175): one who said why, one who did not. */
+const exampleLeavers: DeletionRequest[] = [
+  {
+    id: 'd1000000-0000-4000-8000-000000000001',
+    userId: 'd2000000-0000-4000-8000-000000000001',
+    name: 'Ruth Leaver',
+    email: 'ruth@example.com',
+    phone: '+447700900321',
+    role: 'learner',
+    business: 'Quayside Driving School',
+    reason: 'My instructor stopped replying to me',
+    status: 'pending',
+    asked: 'Thu 17 Sep 2026, 09:14',
+    erases: 'Thu 24 Sep 2026',
+    daysLeft: 4,
+  },
+  {
+    id: 'd1000000-0000-4000-8000-000000000002',
+    userId: 'd2000000-0000-4000-8000-000000000002',
+    name: 'Owen Quiet',
+    email: null,
+    phone: '+447700900322',
+    role: 'instructor',
+    business: null,
+    reason: null,
+    status: 'pending',
+    asked: 'Sat 19 Sep 2026, 21:40',
+    erases: 'Sat 26 Sep 2026',
+    daysLeft: 1,
+  },
+];
+
+/** What the platform itself earned (ADM-01, ADM-10, D-174). */
+const exampleIncome: PlatformIncome = {
+  fees: { pence: 4_700, payments: 96, onPence: 470_000 },
+  byBusiness: [
+    { id: 'c1000000-0000-4000-8000-000000000001', name: 'Quayside Driving School', kind: 'school', plan: 'school', pence: 4_200, payments: 84 },
+    { id: 'c1000000-0000-4000-8000-000000000002', name: 'Sarah Khan Driving', kind: 'independent', plan: 'free', pence: 500, payments: 12 },
+  ],
+  plans: [
+    { plan: 'free', businesses: 38 },
+    { plan: 'pro', businesses: 4 },
+    { plan: 'school', businesses: 2 },
+  ],
 };
 
 const exampleBusinessRows = [
@@ -215,18 +290,19 @@ const suspendedBusiness: AdminBusiness = {
 };
 
 const exampleInstructorRows = [
-  { userId: 'person-3', name: 'Emma Clarke', email: 'emma.clarke@example.com', businessName: 'Quayside Driving School', verification: 'approved' as const, suspended: false },
-  { userId: 'person-4', name: 'Aisha Rahman', email: null, businessName: 'Quayside Driving School', verification: 'pending' as const, suspended: false },
-  { userId: 'person-5', name: 'Rob Quick', email: 'rob@example.com', businessName: 'Fast Pass Motoring', verification: 'rejected' as const, suspended: true },
+  { userId: 'person-3', platformId: 'D000014', name: 'Emma Clarke', email: 'emma.clarke@example.com', businessName: 'Quayside Driving School', verification: 'approved' as const, suspended: false },
+  { userId: 'person-4', platformId: 'D000027', name: 'Aisha Rahman', email: null, businessName: 'Quayside Driving School', verification: 'pending' as const, suspended: false },
+  { userId: 'person-5', platformId: 'D000031', name: 'Rob Quick', email: 'rob@example.com', businessName: 'Fast Pass Motoring', verification: 'rejected' as const, suspended: true },
 ];
 
 const exampleLearnerRows = [
-  { userId: 'person-6', name: 'Jack Taylor', email: 'jack.taylor@example.com', businesses: 2, suspended: false },
-  { userId: 'person-7', name: 'Mia Walker', email: null, businesses: 0, suspended: true },
+  { userId: 'person-6', platformId: 'D000042', name: 'Jack Taylor', email: 'jack.taylor@example.com', businesses: 2, suspended: false },
+  { userId: 'person-7', platformId: 'D000108', name: 'Mia Walker', email: null, businesses: 0, suspended: true },
 ];
 
 const examplePerson: AdminPerson = {
   userId: 'person-2',
+  platformId: 'D000007',
   name: 'Lucy Grant',
   email: 'lucy.grant@example.com',
   phone: '07700 900123',
@@ -242,6 +318,7 @@ const examplePerson: AdminPerson = {
 const suspendedPerson: AdminPerson = {
   ...examplePerson,
   userId: 'person-7',
+  platformId: 'D000108',
   name: 'Mia Walker',
   email: null,
   lastSignedIn: null,
@@ -483,6 +560,24 @@ const exampleRecords: RecordedLesson[] = [
     ],
   },
 ];
+
+/** How an instructor's week is going (MNY-01, D-177): a quiet Monday, a busy Thursday. */
+const exampleStats: InstructorStats = {
+  span: 'week',
+  label: 'This week',
+  days: [
+    { date: '2026-09-14', when: 'Mon 14 Sep 2026', cardPence: 0, cashPence: 0, bankPence: 0, creditPence: 0, totalPence: 0 },
+    { date: '2026-09-15', when: 'Tue 15 Sep 2026', cardPence: 4200, cashPence: 4200, bankPence: 0, creditPence: 0, totalPence: 8400 },
+    { date: '2026-09-16', when: 'Wed 16 Sep 2026', cardPence: 0, cashPence: 6300, bankPence: 0, creditPence: 4200, totalPence: 10_500 },
+    { date: '2026-09-17', when: 'Thu 17 Sep 2026', cardPence: 8400, cashPence: 0, bankPence: 4200, creditPence: 0, totalPence: 12_600 },
+    { date: '2026-09-18', when: 'Fri 18 Sep 2026', cardPence: 4200, cashPence: 0, bankPence: 0, creditPence: 0, totalPence: 4200 },
+    { date: '2026-09-19', when: 'Sat 19 Sep 2026', cardPence: 0, cashPence: 0, bankPence: 6300, creditPence: 0, totalPence: 6300 },
+    { date: '2026-09-20', when: 'Sun 20 Sep 2026', cardPence: 0, cashPence: 0, bankPence: 0, creditPence: 0, totalPence: 0 },
+  ],
+  earnedPence: 42_000,
+  minutes: 570,
+  learners: 6,
+};
 
 const exampleKeptRecords = [
   { id: 'kept-1', learnerName: 'Jack Taylor', lessonStartsAt: '2026-09-15T08:00:00+00:00', state: 'waiting', message: null },
@@ -829,6 +924,15 @@ export function DesignShowcase() {
           <ListDivider />
           <ListRow title="Payments" subtitle="Card, cash or bank transfer" chevron />
         </Card>
+        <Label>A card that folds away, closed and open (D-172)</Label>
+        <div className="grid items-start gap-4 md:grid-cols-2">
+          <Foldable title="Top earning schools" subtitle="10 schools">
+            <p className="px-4 py-3 text-small text-grey-700">What it holds shows when it is opened.</p>
+          </Foldable>
+          <Foldable title="New to the platform" subtitle="2 Businesses" open>
+            <p className="px-4 py-3 text-small text-grey-700">Open when the page arrives.</p>
+          </Foldable>
+        </div>
       </Section>
 
       <Section title="Feedback">
@@ -895,6 +999,10 @@ export function DesignShowcase() {
           ).map(([skill, rating]) => (
             <SkillBar key={skill} skill={skill} rating={rating} />
           ))}
+        </div>
+        <Label>How an instructor's week is going: earnings by day, and what they were paid with (MNY-01, D-177)</Label>
+        <div className="max-w-lg">
+          <InstructorStatsCard stats={exampleStats} />
         </div>
         <Label>Lesson record: with next steps and an independent instructor, and a first lesson a year ago at a school (M4-06)</Label>
         {/* Formatting a lesson's time reads the clock, which a page built ahead of time must leave to the visit. */}
@@ -1295,11 +1403,21 @@ export function DesignShowcase() {
 
       <Section title="Admin">
         <Label>Dashboard, with badges and a dispute waiting</Label>
+        <Label>The days the figures cover: a button each, and two dates for anything else (ADM-01, D-171)</Label>
+        <DateRangePicker today="2026-09-20" chosen={statsRange('last_30_days', '2026-09-20')} base="/design" />
         <WaitingOnStaff dashboard={exampleDashboard} idPrefix="design-waiting" />
         <DashboardFigures dashboard={exampleDashboard} idPrefix="design-platform-month" />
         <Label>A platform just starting, with nothing waiting</Label>
         <WaitingOnStaff dashboard={quietDashboard} idPrefix="design-waiting-quiet" />
         <DashboardFigures dashboard={quietDashboard} idPrefix="design-platform-month-quiet" />
+        <Label>Who has asked to leave, with a day left and with four (AUTH-09, D-175)</Label>
+        <DeletionsScreen requests={exampleLeavers} canKeep />
+        <Label>What the platform itself earned, and the plans Businesses are on (ADM-01, ADM-10, D-174)</Label>
+        <div className="flex flex-col gap-6">
+          <PlatformIncomeScreen income={exampleIncome} label="Last 30 days" />
+        </div>
+        <Label>Who stands out, each list folded away until it is opened (ADM-01, D-172)</Label>
+        <PlatformHighlights highlights={exampleHighlights} shown={5} moreHref="/design" />
         <Label>Loading</Label>
         <DashboardSkeleton />
         <Label>Businesses found, one of them suspended</Label>
@@ -1384,7 +1502,7 @@ export function DesignShowcase() {
           onCancel={() => { setSwitchingRegion(null); }}
         />
         <Label>Audit log: its filters, entries with what changed, pages either side, nothing found, and loading</Label>
-        <AuditFiltersForm filters={exampleAuditFilters} />
+        <AuditFiltersForm filters={exampleAuditFilters} downloadHref="/design" />
         <AuditEntries entries={exampleAuditEntries} />
         <AuditPager
           filters={{ ...exampleAuditFilters, before: { at: '2026-09-18T09:00:00.000000+00:00', id: '0b7e8c1d-2f3a-4b5c-8d6e-7f8091a2b3c4' } }}

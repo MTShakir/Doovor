@@ -1,6 +1,7 @@
 import { formatUkMobile } from '@repo/core/phone';
 import { formatDate, formatDateTime } from '@repo/core/time';
 import { Button } from '@repo/ui/button';
+import { platformId } from '@repo/core/platform-id';
 import { Card, CardDescription, CardTitle } from '@repo/ui/card';
 import { ListDivider, ListRow } from '@repo/ui/list-row';
 import { SkeletonRow } from '@repo/ui/skeleton';
@@ -39,7 +40,7 @@ async function AccountContent() {
   const { session, access } = await requireAccess();
   const supabase = await createSupabaseServerClient();
   const [{ data: profile }, { data: sessions }, { data: factors }, { data: deletion }] = await Promise.all([
-    supabase.from('users').select('full_name, email, phone, phone_verified_at').eq('id', session.userId).single(),
+    supabase.from('users').select('full_name, email, phone, phone_verified_at, platform_number').eq('id', session.userId).single(),
     supabase.rpc('list_my_sessions'),
     supabase.auth.mfa.listFactors(),
     supabase.from('deletion_requests').select('requested_at').in('status', ['pending', 'processing']).maybeSingle(),
@@ -65,6 +66,13 @@ async function AccountContent() {
         </div>
         <ListRow title="Name" subtitle={profile?.full_name || 'Not set'} />
         <ListDivider />
+        {/* Their own number on the platform, to quote when they get in touch (D-176). */}
+        {profile ? (
+          <>
+            <ListRow title="Your ID" subtitle={platformId(profile.platform_number)} />
+            <ListDivider />
+          </>
+        ) : null}
         <ListRow title="Email" subtitle={profile?.email ?? session.email ?? 'Not set'} />
         <ListDivider />
         <ListRow
