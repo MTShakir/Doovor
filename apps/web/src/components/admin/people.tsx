@@ -70,7 +70,7 @@ export function InstructorResults({ rows, query, onOpen }: { rows: AdminInstruct
       rows={rows}
       query={query}
       what="instructors"
-      summary={(row) => [row.businessName, badgeWords[row.verification], row.email].filter((part) => part !== null).join(' · ')}
+      summary={(row) => [row.platformId, row.businessName, badgeWords[row.verification], row.email].filter((part) => part !== null).join(' · ')}
       onOpen={onOpen}
     />
   );
@@ -84,7 +84,11 @@ export function LearnerResults({ rows, query, onOpen }: { rows: AdminLearnerRow[
       query={query}
       what="learners"
       summary={(row) =>
-        [row.businesses === 0 ? 'Not with a Business yet' : `Learns with ${countOf(row.businesses, 'Business', 'Businesses')}`, row.email]
+        [
+          row.platformId,
+          row.businesses === 0 ? 'Not with a Business yet' : `Learns with ${countOf(row.businesses, 'Business', 'Businesses')}`,
+          row.email,
+        ]
           .filter((part) => part !== null)
           .join(' · ')
       }
@@ -144,9 +148,10 @@ export function PersonDetails({ person, viewer }: { person: AdminPerson; viewer:
       ) : null}
 
       <dl className="grid grid-cols-2 gap-x-4 gap-y-3">
+        <Fact label="Platform ID" value={person.platformId} />
+        <Fact label="Mobile" value={person.phone ?? 'Not given'} />
         {/* An email is the one fact too long for half the panel. */}
         <Fact label="Email" value={person.email ?? 'Not given'} wide />
-        <Fact label="Mobile" value={person.phone ?? 'Not given'} />
         <Fact label="Two-step verification" value={person.twoStep ? 'On' : 'Off'} />
         <Fact label="Joined" value={person.joinedOn} />
         <Fact label="Last signed in" value={person.lastSignedIn ?? 'Never'} />

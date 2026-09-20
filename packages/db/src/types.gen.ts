@@ -2633,6 +2633,7 @@ export type Database = {
           marketing_consent_at: string | null
           phone: string | null
           phone_verified_at: string | null
+          platform_number: number
           timezone: string
           updated_at: string
         }
@@ -2651,6 +2652,7 @@ export type Database = {
           marketing_consent_at?: string | null
           phone?: string | null
           phone_verified_at?: string | null
+          platform_number?: number
           timezone?: string
           updated_at?: string
         }
@@ -2669,6 +2671,7 @@ export type Database = {
           marketing_consent_at?: string | null
           phone?: string | null
           phone_verified_at?: string | null
+          platform_number?: number
           timezone?: string
           updated_at?: string
         }
@@ -2913,6 +2916,7 @@ export type Database = {
           display_name: string
           email: string
           instructor_id: string
+          platform_number: number
           suspended: boolean
           user_id: string
           verification_status: Database["public"]["Enums"]["verification_status"]
@@ -2924,6 +2928,7 @@ export type Database = {
           businesses: number
           email: string
           name: string
+          platform_number: number
           suspended: boolean
           user_id: string
         }[]

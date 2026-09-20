@@ -1,3 +1,4 @@
+import { platformId } from '@repo/core/platform-id';
 import postgres from 'postgres';
 
 /**
@@ -1251,6 +1252,16 @@ export async function platformFigures(days?: { from: string; to: string }): Prom
       badgesWaiting: row.badges,
       disputesOpen: row.disputes,
     };
+  });
+}
+
+/** Somebody's ID on the platform, as the screens write it: "D000042" (D-176). */
+export async function platformIdOf(email: string): Promise<string> {
+  return withDatabase(async (sql) => {
+    const [row] = await sql<{ platform_number: string }[]>`
+      select platform_number from public.users where lower(email) = lower(${email})`;
+    if (!row) throw new Error(`No account for ${email}`);
+    return platformId(Number(row.platform_number));
   });
 }
 

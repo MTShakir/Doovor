@@ -288,18 +288,19 @@ const suspendedBusiness: AdminBusiness = {
 };
 
 const exampleInstructorRows = [
-  { userId: 'person-3', name: 'Emma Clarke', email: 'emma.clarke@example.com', businessName: 'Quayside Driving School', verification: 'approved' as const, suspended: false },
-  { userId: 'person-4', name: 'Aisha Rahman', email: null, businessName: 'Quayside Driving School', verification: 'pending' as const, suspended: false },
-  { userId: 'person-5', name: 'Rob Quick', email: 'rob@example.com', businessName: 'Fast Pass Motoring', verification: 'rejected' as const, suspended: true },
+  { userId: 'person-3', platformId: 'D000014', name: 'Emma Clarke', email: 'emma.clarke@example.com', businessName: 'Quayside Driving School', verification: 'approved' as const, suspended: false },
+  { userId: 'person-4', platformId: 'D000027', name: 'Aisha Rahman', email: null, businessName: 'Quayside Driving School', verification: 'pending' as const, suspended: false },
+  { userId: 'person-5', platformId: 'D000031', name: 'Rob Quick', email: 'rob@example.com', businessName: 'Fast Pass Motoring', verification: 'rejected' as const, suspended: true },
 ];
 
 const exampleLearnerRows = [
-  { userId: 'person-6', name: 'Jack Taylor', email: 'jack.taylor@example.com', businesses: 2, suspended: false },
-  { userId: 'person-7', name: 'Mia Walker', email: null, businesses: 0, suspended: true },
+  { userId: 'person-6', platformId: 'D000042', name: 'Jack Taylor', email: 'jack.taylor@example.com', businesses: 2, suspended: false },
+  { userId: 'person-7', platformId: 'D000108', name: 'Mia Walker', email: null, businesses: 0, suspended: true },
 ];
 
 const examplePerson: AdminPerson = {
   userId: 'person-2',
+  platformId: 'D000007',
   name: 'Lucy Grant',
   email: 'lucy.grant@example.com',
   phone: '07700 900123',
@@ -315,6 +316,7 @@ const examplePerson: AdminPerson = {
 const suspendedPerson: AdminPerson = {
   ...examplePerson,
   userId: 'person-7',
+  platformId: 'D000108',
   name: 'Mia Walker',
   email: null,
   lastSignedIn: null,
