@@ -25,6 +25,7 @@ const daySchema = z.object({
   durationMinutes: z.coerce.number().int().min(15).max(480),
   /** A lesson being moved, which does not count as being in the way (BOK-08). */
   exceptBookingId: z.uuid().optional(),
+  ignoreGap: z.boolean().default(false),
 });
 
 /** BOK-03: the times on one day, and the times only an instructor may take (R-04). */
@@ -43,6 +44,7 @@ export async function slotsForDay(input: unknown): Promise<Result<BookingDay>> {
       'instructor',
       new Date(),
       parsed.data.exceptBookingId,
+      parsed.data.ignoreGap,
     ),
   );
 }
@@ -60,6 +62,8 @@ const bookingSchema = z.object({
   startsAt: z.iso.datetime({ offset: true }),
   durationMinutes: z.coerce.number().int().min(15).max(480),
   pickupPointId: z.union([z.literal('').transform(() => null), z.uuid()]).nullable().default(null),
+  // The instructor saying the travel gap is not needed here (BOK-07, D-187).
+  ignoreGap: z.boolean().default(false),
 });
 
 /** BOK-01: the instructor books a lesson. The RPC decides whether it may happen. */
@@ -79,6 +83,7 @@ export async function bookLesson(input: unknown): Promise<Result<{ bookingId: st
     p_duration_minutes: parsed.data.durationMinutes,
     // Where the learner's lessons start, unless another place was chosen (D-168).
     p_pickup_point_id: parsed.data.pickupPointId ?? (await defaultPickupFor(parsed.data.learnerId)) ?? undefined,
+    p_ignore_gap: parsed.data.ignoreGap,
   });
   if (error) return err(parsePostgresError(error).code);
 
@@ -116,6 +121,7 @@ export async function decideRequest(input: unknown): Promise<Result<{ status: st
 const weeklySchema = bookingSchema.extend({
   weeks: z.coerce.number().int().min(1).max(52),
   openEnded: z.boolean().default(false),
+  ignoreGap: z.boolean().default(false),
 });
 
 export interface WeeklyOutcome {
@@ -142,6 +148,7 @@ export async function bookWeekly(input: unknown): Promise<Result<WeeklyOutcome>>
     p_open_ended: parsed.data.openEnded,
     // Where the learner's lessons start, unless another place was chosen (D-168).
     p_pickup_point_id: parsed.data.pickupPointId ?? (await defaultPickupFor(parsed.data.learnerId)) ?? undefined,
+    p_ignore_gap: parsed.data.ignoreGap,
   });
   if (error) return err(parsePostgresError(error).code);
 
@@ -185,6 +192,7 @@ const moveSchema = z.object({
   bookingId: z.uuid(),
   startsAt: z.iso.datetime({ offset: true }),
   durationMinutes: z.coerce.number().int().min(15).max(480).optional(),
+  ignoreGap: z.boolean().default(false),
 });
 
 /** BOK-08: the same lesson, at another time. */
@@ -198,6 +206,7 @@ export async function moveLesson(input: unknown): Promise<Result<null>> {
     p_booking_id: parsed.data.bookingId,
     p_starts_at: parsed.data.startsAt,
     p_duration_minutes: parsed.data.durationMinutes,
+    p_ignore_gap: parsed.data.ignoreGap,
   });
   if (error) return err(parsePostgresError(error).code);
 
@@ -315,4 +324,24 @@ export async function undoOfflinePayment(input: unknown): Promise<Result<null>> 
   revalidatePath('/app/instructor');
   revalidatePath('/app/instructor/learners', 'layout');
   return ok(null);
+}
+
+const lengthSchema = z.object({ bookingId: z.uuid(), durationMinutes: z.coerce.number().int().min(15).max(480) });
+
+/**
+ * What this lesson would cost at another length (R-05, D-187), so the sheet can say so before the
+ * length changes. Null where the Business sells no lesson of that length.
+ */
+export async function priceForLength(input: unknown): Promise<Result<number | null>> {
+  const parsed = lengthSchema.safeParse(input);
+  if (!parsed.success) return err('VALIDATION_FAILED');
+
+  await requirePortal('instructor');
+  const supabase = await createSupabaseServerClient();
+  const { data, error } = await supabase.rpc('price_for_booking_length', {
+    p_booking_id: parsed.data.bookingId,
+    p_duration_minutes: parsed.data.durationMinutes,
+  });
+  if (error) return err(parsePostgresError(error).code);
+  return ok(data);
 }

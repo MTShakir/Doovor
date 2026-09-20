@@ -3008,6 +3008,7 @@ export type Database = {
         Args: {
           p_duration_minutes: number
           p_first_starts_at: string
+          p_ignore_gap?: boolean
           p_instructor_id: string
           p_learner_id: string
           p_lesson_type_id: string
@@ -3059,6 +3060,7 @@ export type Database = {
       create_booking: {
         Args: {
           p_duration_minutes: number
+          p_ignore_gap?: boolean
           p_instructor_id: string
           p_learner_id: string
           p_lesson_type_id: string
@@ -3268,6 +3270,10 @@ export type Database = {
         }
         Returns: Json
       }
+      price_for_booking_length: {
+        Args: { p_booking_id: string; p_duration_minutes: number }
+        Returns: number
+      }
       rate_skill: {
         Args: { p_learner_id: string; p_rating: number; p_skill_code: string }
         Returns: string
@@ -3294,6 +3300,7 @@ export type Database = {
         Args: {
           p_booking_id: string
           p_duration_minutes?: number
+          p_ignore_gap?: boolean
           p_starts_at: string
         }
         Returns: string

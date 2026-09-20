@@ -1406,7 +1406,7 @@ export interface MadeSchoolLearner {
 /** A learner at a seeded school with nobody teaching them yet, made for one test and removed after it (M5-14). */
 export async function makeSchoolLearner(
   name: string,
-  options: { postcode: string; transmission: 'manual' | 'automatic' },
+  options: { postcode: string; transmission: 'manual' | 'automatic'; instructorName?: string },
   schoolName = 'Quayside Driving School',
 ): Promise<MadeSchoolLearner> {
   const userId = crypto.randomUUID();
@@ -1418,9 +1418,15 @@ export async function makeSchoolLearner(
       select ${userId}, p.postcode, p.location, ${options.transmission}::public.learner_transmission
         from public.postcodes p
        where p.postcode = ${options.postcode}`;
+    // Named an instructor, they are that instructor's learner, which is what makes them
+    // bookable from the diary rather than only visible to the school.
     const made = await sql`
-      insert into public.learner_relationships (business_id, learner_id, source, created_by)
-      select b.id, ${userId}, 'manual', ${userId} from public.businesses b where b.name = ${schoolName} and b.type = 'school'`;
+      insert into public.learner_relationships (business_id, learner_id, instructor_id, source, created_by)
+      select b.id, ${userId},
+             (select p.id from public.instructor_profiles p
+               where p.business_id = b.id and p.display_name = ${options.instructorName ?? null}),
+             'manual', ${userId}
+        from public.businesses b where b.name = ${schoolName} and b.type = 'school'`;
     if (made.count !== 1) throw new Error(`No school called ${schoolName} to add ${name} to`);
   });
   return {

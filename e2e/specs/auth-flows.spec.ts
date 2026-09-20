@@ -197,4 +197,27 @@ test.describe('sign-in (AUTH-01)', () => {
     await signInThroughForm(page, 'support@example.com');
     await expect(page).toHaveURL(/\/admin$/);
   });
+
+  test('can leave the two-step screen instead of being sent back to it (AUTH-08, D-186)', async ({ page }, testInfo) => {
+    // Not support on desktop: the TOTP test above signs in as them at the same moment, and two
+    // tests taking one account through sign-in and out again tread on each other.
+    const who = perProject(testInfo, 'support@example.com', 'admin@example.com');
+    await page.goto('/sign-in');
+    await page.getByLabel('Email').fill(who);
+    await page.getByLabel('Password', { exact: true }).fill(seedAccounts().password);
+    await page.getByRole('button', { name: 'Sign in', exact: true }).click();
+    await expect(page).toHaveURL(/\/mfa/);
+
+    // The trap: signing in has left a session behind, so coming back lands here again.
+    await page.goto('/admin');
+    await expect(page).toHaveURL(/\/mfa/);
+    await expectAccessible(page);
+
+    await page.getByRole('button', { name: 'Start again' }).click();
+    await expect(page).toHaveURL(/\/sign-in/);
+
+    // And the session is gone: a screen behind sign in asks who they are, not for a code.
+    await page.goto('/admin');
+    await expect(page).toHaveURL(/\/sign-in/);
+  });
 });

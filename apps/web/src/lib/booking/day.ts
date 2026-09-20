@@ -28,6 +28,8 @@ export async function bookingDay(
   now: Date = new Date(),
   /** A lesson being moved, which is not in its own way (BOK-08). */
   exceptBookingId?: string,
+  /** The instructor saying they need no travel time here, so the gaps stop hiding slots (D-187). */
+  ignoreGap = false,
 ): Promise<BookingDay> {
   const supabase = await createSupabaseServerClient();
   const dayStart = localToUtc(date, '00:00') ?? now;
@@ -63,7 +65,7 @@ export async function bookingDay(
   const slotRules: SlotRules = {
     durationMinutes,
     stepMinutes: 30,
-    bufferMinutes: rules.bufferMinutes,
+    bufferMinutes: ignoreGap ? 0 : rules.bufferMinutes,
     noticeHours: rules.noticeHours,
     horizonWeeks: rules.horizonWeeks,
   };
@@ -83,7 +85,7 @@ export async function bookingDay(
     .filter((row) => ['pending_payment', 'requested', 'confirmed', 'in_progress', 'completed'].includes(row.status))
     .map((row) => ({
       startsAt: new Date(row.starts_at),
-      endsAt: new Date(new Date(row.ends_at).getTime() + row.buffer_minutes * 60_000),
+      endsAt: new Date(new Date(row.ends_at).getTime() + (ignoreGap ? 0 : row.buffer_minutes) * 60_000),
     }));
 
   const within: TimeRange = { startsAt: dayStart, endsAt: dayEnd };

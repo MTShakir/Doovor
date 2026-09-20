@@ -2,18 +2,20 @@
 
 import { cancellationOutcome, cancellationWarning } from '@repo/core/cancellation';
 import { formatPence } from '@repo/core/money';
-import { formatDate, formatTime, todayInZone, utcToLocal } from '@repo/core/time';
+import { formatDate, formatMinutes, formatTime, todayInZone, utcToLocal } from '@repo/core/time';
 import { Button } from '@repo/ui/button';
+import { Checkbox } from '@repo/ui/checkbox';
 import { Field } from '@repo/ui/field';
 import { Input, Textarea } from '@repo/ui/input';
 import { Sheet } from '@repo/ui/sheet';
+import { Select } from '@repo/ui/select';
 import { Skeleton } from '@repo/ui/skeleton';
 import { TimeSlotGrid } from '@repo/ui/time-slot-grid';
 import { toast } from '@repo/ui/toast';
 import { useEffect, useState, useTransition } from 'react';
 import { FormAlert } from '@/components/form-alert';
 import { MarkPaidSheet } from '@/components/money/mark-paid';
-import { cancelLesson, moveLesson, slotsForDay } from '@/app/(portal)/app/instructor/booking-actions';
+import { cancelLesson, moveLesson, priceForLength, slotsForDay } from '@/app/(portal)/app/instructor/booking-actions';
 
 export interface ChosenLesson {
   bookingId: string;
@@ -48,6 +50,31 @@ function paidBack(paymentStatus: string | undefined, price: string): string | nu
   }
 }
 
+/**
+ * The lengths a lesson can be changed to (BOK-03, D-179, D-187): every half hour from one to four
+ * and a half, and whatever it is now, which may be a length the catalogue no longer sells.
+ */
+function lengthOptions(current: number): { value: string; label: string }[] {
+  const lengths = new Set<number>([current]);
+  for (let each = 60; each <= 270; each += 30) lengths.add(each);
+  return [...lengths]
+    .sort((a, b) => a - b)
+    .map((each) => ({ value: String(each), label: formatMinutes(each) }));
+}
+
+/** What the length change does to the price, in the words under the picker. */
+function priceWords(
+  minutes: number,
+  was: number,
+  pricePence: number,
+  quoted: { minutes: number; pence: number | null } | null,
+): string {
+  if (minutes === was) return `It runs for ${formatMinutes(was)} and costs ${formatPence(pricePence)}.`;
+  if (quoted?.minutes !== minutes) return 'Working out what that costs...';
+  if (quoted.pence === null) return 'No price is set for a lesson that long, so it cannot be changed to it.';
+  return `${formatMinutes(minutes)} costs ${formatPence(quoted.pence)}, instead of ${formatPence(pricePence)}.`;
+}
+
 /** BOK-08, BOK-09, PAY-05: what an instructor does to a lesson that is already in. */
 export function LessonSheets({ lesson, rules, action, onClose }: LessonSheetsProps) {
   const { bookingId, learnerName, startsAt, durationMinutes, pricePence, paymentStatus } = lesson;
@@ -60,26 +87,44 @@ export function LessonSheets({ lesson, rules, action, onClose }: LessonSheetsPro
   const [error, setError] = useState<string | null>(null);
 
   const [day, setDay] = useState(utcToLocal(new Date(startsAt)).date);
+  // How long it runs, which the instructor may change here as well as when (BOK-03, D-187).
+  const [minutes, setMinutes] = useState(durationMinutes);
+  const [newPrice, setNewPrice] = useState<{ minutes: number; pence: number | null } | null>(null);
+  // Travel time after the lesson before, which is not needed where it starts at the same door.
+  const [ignoreGap, setIgnoreGap] = useState(false);
   const [times, setTimes] = useState<{ asked: string; open: string[]; outOfHours: string[] } | null>(null);
   const [slot, setSlot] = useState<string | null>(null);
 
-  const loading = moving && times?.asked !== day;
+  const askedFor = `${day}:${String(minutes)}:${String(ignoreGap)}`;
+  const loading = moving && times?.asked !== askedFor;
 
   useEffect(() => {
-    if (!moving || times?.asked === day) return;
+    if (!moving || times?.asked === askedFor) return;
     let current = true;
-    void slotsForDay({ date: day, durationMinutes, exceptBookingId: bookingId }).then((result) => {
+    void slotsForDay({ date: day, durationMinutes: minutes, exceptBookingId: bookingId, ignoreGap }).then((result) => {
       if (!current) return;
       if (!result.ok) {
         setError(result.message);
         return;
       }
-      setTimes({ asked: day, ...result.data });
+      setTimes({ asked: askedFor, ...result.data });
     });
     return () => {
       current = false;
     };
-  }, [moving, day, bookingId, durationMinutes, times?.asked]);
+  }, [moving, day, bookingId, minutes, ignoreGap, askedFor, times?.asked]);
+
+  // What the new length costs is the database's answer, not this screen's arithmetic (R-05).
+  useEffect(() => {
+    if (!moving || minutes === durationMinutes) return;
+    let current = true;
+    void priceForLength({ bookingId, durationMinutes: minutes }).then((result) => {
+      if (current && result.ok) setNewPrice({ minutes, pence: result.data });
+    });
+    return () => {
+      current = false;
+    };
+  }, [moving, bookingId, minutes, durationMinutes]);
 
   // What the learner would be charged if the instructor were the learner: the instructor
   // cancelling costs them nothing (R-08), so this is only ever the shape of the warning.
@@ -111,7 +156,7 @@ export function LessonSheets({ lesson, rules, action, onClose }: LessonSheetsPro
     if (slot === null) return;
     setError(null);
     startTransition(async () => {
-      const result = await moveLesson({ bookingId, startsAt: slot });
+      const result = await moveLesson({ bookingId, startsAt: slot, durationMinutes: minutes, ignoreGap });
       if (!result.ok) {
         setError(result.message);
         setTimes(null);
@@ -164,7 +209,7 @@ export function LessonSheets({ lesson, rules, action, onClose }: LessonSheetsPro
         open={moving}
         onOpenChange={onClose}
         title={`Move ${learnerName}`}
-        description="The lesson keeps its length and its price."
+        description="Change when it is, how long it runs, or both. A different length is priced like a lesson of that length."
         footer={
           <Button width="full" size="lg" pending={pending} disabled={slot === null} onClick={move}>
             {slot === null ? 'Choose a time' : `Move to ${formatTime(new Date(slot))}`}
@@ -173,10 +218,25 @@ export function LessonSheets({ lesson, rules, action, onClose }: LessonSheetsPro
       >
         <div className="flex flex-col gap-4">
           {error ? <FormAlert>{error}</FormAlert> : null}
+          <Field label="How long?" hint={priceWords(minutes, durationMinutes, pricePence, newPrice)}>
+            <Select
+              value={String(minutes)}
+              onChange={(event) => { setMinutes(Number(event.target.value)); }}
+              options={lengthOptions(durationMinutes)}
+            />
+          </Field>
+
           <Field label="Which day?">
             {/* The browser owns what is in the box; this only listens (D-043). */}
             <Input type="date" defaultValue={day} min={todayInZone()} onChange={(event) => { setDay(event.target.value); }} />
           </Field>
+
+          <Checkbox
+            label="No gap needed after the lesson before"
+            description="For a lesson that starts where the last one finished. It frees the times the travel gap was holding, on both sides."
+            checked={ignoreGap}
+            onCheckedChange={(checked) => { setIgnoreGap(checked === true); }}
+          />
 
           {loading || times === null ? (
             <Skeleton className="h-28 w-full" />

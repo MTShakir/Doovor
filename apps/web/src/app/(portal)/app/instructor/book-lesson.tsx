@@ -4,6 +4,7 @@ import { formatPence } from '@repo/core/money';
 import { customLengthHalves, customLengthHours, customLengthPrice } from '@repo/core/lesson-length';
 import { formatDate, formatMinutes, formatTime, todayInZone, utcToLocal } from '@repo/core/time';
 import { Button } from '@repo/ui/button';
+import { Checkbox } from '@repo/ui/checkbox';
 import { Field } from '@repo/ui/field';
 import { Input } from '@repo/ui/input';
 import { Select } from '@repo/ui/select';
@@ -76,6 +77,8 @@ export function BookLesson({ learners, learnerId, date, label = 'Book a lesson',
   const [customHours, setCustomHours] = useState(2);
   const [customHalf, setCustomHalf] = useState(0);
   const [clashes, setClashes] = useState<{ startsAt: string; reason: string }[]>([]);
+  // Travel time after a lesson, which is not needed where the next one starts at the same door.
+  const [ignoreGap, setIgnoreGap] = useState(false);
 
   // The lesson types with an hourly rate: a length of their own is priced from it (D-179).
   const hourlyRates = lessons.filter((one) => one.durationMinutes === 60);
@@ -93,7 +96,7 @@ export function BookLesson({ learners, learnerId, date, label = 'Book a lesson',
   const chosen = custom ?? lessons.find((one) => `${one.lessonTypeId}:${String(one.durationMinutes)}` === lessonKey);
   // What the times on screen are for. Changing the day or the length asks again, and the
   // slot picked before is simply not among the answers any more.
-  const asked = chosen ? `${day}:${String(chosen.durationMinutes)}` : '';
+  const asked = chosen ? `${day}:${String(chosen.durationMinutes)}:${String(ignoreGap)}` : '';
   const loading = chosen !== undefined && times?.asked !== asked;
   const offered = times === null ? [] : [...times.open, ...times.outOfHours];
   const slot = chosenSlot !== null && offered.includes(chosenSlot) ? chosenSlot : null;
@@ -120,7 +123,7 @@ export function BookLesson({ learners, learnerId, date, label = 'Book a lesson',
   useEffect(() => {
     if (!open || !chosen || times?.asked === asked) return;
     let current = true;
-    void slotsForDay({ date: day, durationMinutes: chosen.durationMinutes }).then((result) => {
+    void slotsForDay({ date: day, durationMinutes: chosen.durationMinutes, ignoreGap }).then((result) => {
       if (!current) return;
       if (!result.ok) {
         setError(result.message);
@@ -131,7 +134,7 @@ export function BookLesson({ learners, learnerId, date, label = 'Book a lesson',
     return () => {
       current = false;
     };
-  }, [open, day, chosen, asked, times?.asked]);
+  }, [open, day, chosen, asked, times?.asked, ignoreGap]);
 
   /** Picking a learner picks the length they usually book, which is usually the right one. */
   const changeLearner = (id: string) => {
@@ -154,6 +157,7 @@ export function BookLesson({ learners, learnerId, date, label = 'Book a lesson',
       lessonTypeId: chosen.lessonTypeId,
       startsAt: slot,
       durationMinutes: chosen.durationMinutes,
+      ignoreGap,
     };
 
     startTransition(async () => {
@@ -295,6 +299,13 @@ export function BookLesson({ learners, learnerId, date, label = 'Book a lesson',
           <Field label="How often?">
             <Select value={repeat} onChange={(event) => { setRepeat(event.target.value); }} options={repeats} />
           </Field>
+
+          <Checkbox
+            label="No gap needed after the lesson before"
+            description="For a lesson that starts where the last one finished. It frees the times the travel gap was holding, on both sides."
+            checked={ignoreGap}
+            onCheckedChange={(checked) => { setIgnoreGap(checked === true); }}
+          />
 
           <Field label="Which day?">
             {/* The browser owns what is in the box; this only listens (D-043). */}
