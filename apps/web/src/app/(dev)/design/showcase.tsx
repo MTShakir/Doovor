@@ -30,6 +30,8 @@ import { NoSignalBanner } from '@/components/offline/connection-banner';
 import { KeptRecordsNotice } from '@/components/offline/kept-records-notice';
 import { CardFieldsSkeleton } from '@/components/payments/card-form';
 import { InstallHelpCard } from '@/components/pwa/install-help';
+import { InstructorStatsCard } from '@/components/instructor/stats';
+import type { InstructorStats } from '@/lib/instructor/dashboard';
 import { InstallCard } from '@/components/pwa/install-prompt';
 import { LessonRecordCard } from '@/components/progress/lesson-record-card';
 import { EditableSkillMap } from '@/components/progress/editable-skill-map';
@@ -559,6 +561,24 @@ const exampleRecords: RecordedLesson[] = [
   },
 ];
 
+/** How an instructor's week is going (MNY-01, D-177): a quiet Monday, a busy Thursday. */
+const exampleStats: InstructorStats = {
+  span: 'week',
+  label: 'This week',
+  days: [
+    { date: '2026-09-14', when: 'Mon 14 Sep 2026', cardPence: 0, cashPence: 0, bankPence: 0, creditPence: 0, totalPence: 0 },
+    { date: '2026-09-15', when: 'Tue 15 Sep 2026', cardPence: 4200, cashPence: 4200, bankPence: 0, creditPence: 0, totalPence: 8400 },
+    { date: '2026-09-16', when: 'Wed 16 Sep 2026', cardPence: 0, cashPence: 6300, bankPence: 0, creditPence: 4200, totalPence: 10_500 },
+    { date: '2026-09-17', when: 'Thu 17 Sep 2026', cardPence: 8400, cashPence: 0, bankPence: 4200, creditPence: 0, totalPence: 12_600 },
+    { date: '2026-09-18', when: 'Fri 18 Sep 2026', cardPence: 4200, cashPence: 0, bankPence: 0, creditPence: 0, totalPence: 4200 },
+    { date: '2026-09-19', when: 'Sat 19 Sep 2026', cardPence: 0, cashPence: 0, bankPence: 6300, creditPence: 0, totalPence: 6300 },
+    { date: '2026-09-20', when: 'Sun 20 Sep 2026', cardPence: 0, cashPence: 0, bankPence: 0, creditPence: 0, totalPence: 0 },
+  ],
+  earnedPence: 42_000,
+  minutes: 570,
+  learners: 6,
+};
+
 const exampleKeptRecords = [
   { id: 'kept-1', learnerName: 'Jack Taylor', lessonStartsAt: '2026-09-15T08:00:00+00:00', state: 'waiting', message: null },
   { id: 'kept-2', learnerName: 'Olivia Brown', lessonStartsAt: '2026-09-15T10:00:00+00:00', state: 'waiting', message: null },
@@ -979,6 +999,10 @@ export function DesignShowcase() {
           ).map(([skill, rating]) => (
             <SkillBar key={skill} skill={skill} rating={rating} />
           ))}
+        </div>
+        <Label>How an instructor's week is going: earnings by day, and what they were paid with (MNY-01, D-177)</Label>
+        <div className="max-w-lg">
+          <InstructorStatsCard stats={exampleStats} />
         </div>
         <Label>Lesson record: with next steps and an independent instructor, and a first lesson a year ago at a school (M4-06)</Label>
         {/* Formatting a lesson's time reads the clock, which a page built ahead of time must leave to the visit. */}

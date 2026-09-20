@@ -7,6 +7,8 @@ import { connection } from 'next/server';
 import { Suspense } from 'react';
 import { TodayLessonsLive } from '@/components/lessons/today-lessons-live';
 import { UpcomingLessons } from '@/components/lessons/upcoming-lessons';
+import { InstructorStatsCard } from '@/components/instructor/stats';
+import { instructorStats, statsSpanFrom } from '@/lib/instructor/dashboard';
 import { InstallPrompt } from '@/components/pwa/install-prompt';
 import { SetupChecklist } from '@/components/setup-checklist';
 import { requirePortal } from '@/lib/auth/session';
@@ -15,7 +17,7 @@ import { upcomingCount } from '@/lib/lessons/upcoming';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
 
 interface TodayProps {
-  searchParams: Promise<{ upcoming?: string }>;
+  searchParams: Promise<{ upcoming?: string; stats?: string }>;
 }
 
 export default function InstructorHomePage({ searchParams }: TodayProps) {
@@ -44,6 +46,9 @@ export default function InstructorHomePage({ searchParams }: TodayProps) {
             <Upcoming searchParams={searchParams} />
           </Suspense>
         </section>
+        <Suspense fallback={<SkeletonRow />}>
+          <Stats searchParams={searchParams} />
+        </Suspense>
         <InstallPrompt why="It opens in one tap, and Today still opens where there is no signal." />
       </div>
     </main>
@@ -65,6 +70,13 @@ async function Upcoming({ searchParams }: TodayProps) {
   const { access } = await requirePortal('instructor');
   const { lessons, more } = await upcomingLessons(teachingProfiles(access), shown);
   return <UpcomingLessons lessons={lessons} more={more} shown={shown} />;
+}
+
+/** How the week or month is going (MNY-01, D-177). */
+async function Stats({ searchParams }: TodayProps) {
+  await requirePortal('instructor');
+  const stats = await instructorStats(statsSpanFrom((await searchParams).stats));
+  return stats === null ? null : <InstructorStatsCard stats={stats} />;
 }
 
 /** Today's date is not something a shell can be prerendered with (Cache Components). */

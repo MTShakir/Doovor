@@ -3051,6 +3051,10 @@ export type Database = {
         Returns: Json
       }
       impersonation_context: { Args: never; Returns: Json }
+      instructor_dashboard: {
+        Args: { p_from: string; p_to: string }
+        Returns: Json
+      }
       instructor_profile_page: { Args: { p_slug: string }; Returns: Json }
       invitation_details: {
         Args: { p_token: string }
