@@ -1197,7 +1197,9 @@ export type Database = {
         Row: {
           created_at: string
           details: string | null
-          has_disability: boolean
+          has_disability: boolean | null
+          medication_details: string | null
+          takes_medication: boolean | null
           told_at: string
           updated_at: string
           user_id: string
@@ -1205,7 +1207,9 @@ export type Database = {
         Insert: {
           created_at?: string
           details?: string | null
-          has_disability: boolean
+          has_disability?: boolean | null
+          medication_details?: string | null
+          takes_medication?: boolean | null
           told_at?: string
           updated_at?: string
           user_id: string
@@ -1213,7 +1217,9 @@ export type Database = {
         Update: {
           created_at?: string
           details?: string | null
-          has_disability?: boolean
+          has_disability?: boolean | null
+          medication_details?: string | null
+          takes_medication?: boolean | null
           told_at?: string
           updated_at?: string
           user_id?: string
@@ -1321,6 +1327,8 @@ export type Database = {
           location: unknown
           postcode: string | null
           provisional_licence_confirmed: boolean
+          setup_skipped: string[]
+          theory_passed: boolean | null
           transmission:
             | Database["public"]["Enums"]["learner_transmission"]
             | null
@@ -1335,6 +1343,8 @@ export type Database = {
           location?: unknown
           postcode?: string | null
           provisional_licence_confirmed?: boolean
+          setup_skipped?: string[]
+          theory_passed?: boolean | null
           transmission?:
             | Database["public"]["Enums"]["learner_transmission"]
             | null
@@ -1349,6 +1359,8 @@ export type Database = {
           location?: unknown
           postcode?: string | null
           provisional_licence_confirmed?: boolean
+          setup_skipped?: string[]
+          theory_passed?: boolean | null
           transmission?:
             | Database["public"]["Enums"]["learner_transmission"]
             | null

@@ -18,7 +18,8 @@ import { lessonWhen } from '@/components/progress/lesson-record-card';
 import { requirePortal } from '@/lib/auth/session';
 import { learnerCard, type LearnerCard } from '@/lib/learners/card';
 import { learnerHistory, type LearnerHistoryEntry } from '@/lib/learners/history';
-import { learnerHealth } from '@/lib/learner/health';
+import { learnerHealth, type LearnerHealth } from '@/lib/learner/health';
+import { learnerDriving, type LearnerDriving } from '@/lib/learner/setup';
 import { learnerNotes } from '@/lib/learners/notes';
 import { learnerPickupPoints } from '@/lib/pickup/list';
 import { learnerSkillMap, lessonRecordPage } from '@/lib/lessons/records';
@@ -60,11 +61,12 @@ async function Learner({ params }: LearnerPageProps) {
   // not there, and not there and not allowed look the same from here.
   if (!card) notFound();
 
-  const [notes, history, pickups, health] = await Promise.all([
+  const [notes, history, pickups, health, driving] = await Promise.all([
     learnerNotes(card.learnerId),
     learnerHistory(card.learnerId),
     learnerPickupPoints(card.learnerId, card.businessId),
     learnerHealth(card.learnerId),
+    learnerDriving(card.learnerId),
   ]);
   const mine = access.memberships.some((one) => one.instructorProfileId === card.instructorId);
   const gearbox = card.transmission === null ? null : card.transmission === 'manual' ? 'Manual' : 'Automatic';
@@ -106,16 +108,7 @@ async function Learner({ params }: LearnerPageProps) {
         <Lessons card={card} />
         <Progress card={card} />
         <Money card={card} access={access} />
-        {health?.hasDisability ? (
-          <Card className="flex flex-col gap-2" role="region" aria-labelledby="about-them-title">
-            <CardTitle id="about-them-title">What they told us</CardTitle>
-            <p className="text-body text-ink">{health.details}</p>
-            <p className="text-small text-grey-700">
-              {card.fullName.split(' ')[0] ?? card.fullName} told us on {formatDateWithYear(new Date(health.toldAt))}. It is theirs to
-              change, and only you and the school see it.
-            </p>
-          </Card>
-        ) : null}
+        <WhatTheyToldUs card={card} health={health} driving={driving} />
         <PickupPoints
           learnerId={card.learnerId}
           pickups={pickups}
@@ -128,6 +121,42 @@ async function Learner({ params }: LearnerPageProps) {
         <History entries={history} />
       </div>
     </>
+  );
+}
+
+/**
+ * What the learner chose to tell us (LRN-02, D-180, D-183): a disability, medication that could
+ * affect their driving, and whether the theory test is behind them. Theirs to change, and read
+ * only by the instructor who teaches them and the people who run their Business.
+ */
+function WhatTheyToldUs({ card, health, driving }: { card: LearnerCard; health: LearnerHealth | null; driving: LearnerDriving }) {
+  const lines = [
+    health?.hasDisability === true ? { term: 'A disability or condition', detail: health.details ?? 'They did not say more.' } : null,
+    health?.takesMedication === true ? { term: 'Medication', detail: health.medicationDetails ?? 'They did not say more.' } : null,
+    driving.theoryPassed === null
+      ? null
+      : { term: 'Theory test', detail: driving.theoryPassed ? 'Passed within the last 2 years' : 'Not passed yet' },
+  ].filter((line) => line !== null);
+  if (lines.length === 0) return null;
+
+  const first = card.fullName.split(' ')[0] ?? card.fullName;
+  return (
+    <Card className="flex flex-col gap-3" role="region" aria-labelledby="about-them-title">
+      <CardTitle id="about-them-title">What they told us</CardTitle>
+      <dl className="flex flex-col gap-2" aria-label="What they told us">
+        {lines.map((line) => (
+          <div key={line.term} className="flex flex-col">
+            <dt className="text-small text-grey-700">{line.term}</dt>
+            <dd className="text-body text-ink">{line.detail}</dd>
+          </div>
+        ))}
+      </dl>
+      <p className="text-small text-grey-700">
+        {health === null
+          ? `${first} told us this, and it is theirs to change.`
+          : `${first} told us on ${formatDateWithYear(new Date(health.toldAt))}. It is theirs to change, and only you and the school see it.`}
+      </p>
+    </Card>
   );
 }
 

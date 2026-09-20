@@ -1399,6 +1399,7 @@ export async function schoolMemberState(email: string): Promise<SchoolMemberStat
 export interface MadeSchoolLearner {
   name: string;
   email: string;
+  userId: string;
   remove: () => Promise<void>;
 }
 
@@ -1425,6 +1426,7 @@ export async function makeSchoolLearner(
   return {
     name,
     email,
+    userId,
     remove: () =>
       withDatabase(async (sql) => {
         await sql`delete from public.learner_relationships where learner_id = ${userId}`;
@@ -1901,3 +1903,4 @@ export async function clearBusinessPickups(learnerEmail: string): Promise<void> 
          and p.business_id is not null`;
   });
 }
+

@@ -37,6 +37,7 @@ import { LessonRecordCard } from '@/components/progress/lesson-record-card';
 import { EditableSkillMap } from '@/components/progress/editable-skill-map';
 import { SkillMap } from '@/components/progress/skill-map';
 import { PickupPoints } from '@/components/learners/pickup-points';
+import { SetupCard } from '@/app/(portal)/app/learner/setup-card';
 import { LessonDetailsBody } from '@/components/lessons/lesson-details';
 import { LessonsCalendar } from '@/components/lessons/lessons-calendar';
 import { MyLessonRow } from '@/app/(portal)/app/learner/lessons/my-lesson';
@@ -1092,6 +1093,12 @@ export function DesignShowcase() {
             empty="None saved yet. Add where you want your lessons to start."
             note="Your instructor sees this, so they know where to collect you."
           />
+        </div>
+        <Label>Getting started on the learner&apos;s home: the first question, one in the middle, and the last one (LRN-02, D-183)</Label>
+        <div className="grid items-start gap-4 md:grid-cols-2">
+          <SetupCard setup={{ toAsk: ['pickup', 'disability', 'gearbox', 'medication', 'theory'], answered: 0, total: 5 }} />
+          <SetupCard setup={{ toAsk: ['medication', 'theory'], answered: 2, total: 5 }} />
+          <SetupCard setup={{ toAsk: ['theory'], answered: 4, total: 5 }} />
         </div>
       </Section>
 

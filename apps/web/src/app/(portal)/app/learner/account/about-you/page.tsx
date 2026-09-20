@@ -4,7 +4,8 @@ import type { Metadata } from 'next';
 import { Suspense } from 'react';
 import { requirePortal } from '@/lib/auth/session';
 import { learnerHealth } from '@/lib/learner/health';
-import { AboutYouForm } from './about-you-form';
+import { learnerDriving } from '@/lib/learner/setup';
+import { AboutYouForm, DrivingForm, MedicationForm } from './about-you-form';
 
 export const metadata: Metadata = { title: 'About you', robots: { index: false } };
 
@@ -24,6 +25,12 @@ export default function AboutYouPage() {
 
 async function AboutYou() {
   const { session } = await requirePortal('learner');
-  const held = await learnerHealth(session.userId);
-  return <AboutYouForm held={held} />;
+  const [held, driving] = await Promise.all([learnerHealth(session.userId), learnerDriving(session.userId)]);
+  return (
+    <>
+      <DrivingForm driving={driving} />
+      <AboutYouForm held={held} />
+      <MedicationForm held={held} />
+    </>
+  );
 }
