@@ -24,6 +24,17 @@ test.describe('a learner says where lessons start (COV-04, D-182)', () => {
       await adding.getByLabel('Postcode').fill('ls2 9jt');
       await expect(adding.getByText(/^Found .*LS2 9JT\.$/)).toBeVisible();
 
+      // The pin is theirs to move, and stays where it is dropped rather than springing back to
+      // the middle of the map (D-190).
+      const marker = page.locator('.mapboxgl-marker').first();
+      const was = await marker.boundingBox();
+      if (was === null) throw new Error('No pin on the map to drag');
+      await page.mouse.move(was.x + was.width / 2, was.y + was.height / 2);
+      await page.mouse.down();
+      await page.mouse.move(was.x + was.width / 2 + 50, was.y + was.height / 2 + 30, { steps: 10 });
+      await page.mouse.up();
+      await expect.poll(async () => (await marker.boundingBox())?.x).toBeGreaterThan(was.x + 40);
+
       await adding.getByLabel('Address').fill('Leeds station, New Station Street');
       await adding.getByLabel('What to call it').fill('Station');
       await adding.getByRole('checkbox', { name: 'Lessons start here' }).check();

@@ -140,7 +140,7 @@ export function LessonRow({
         <div className="flex flex-wrap justify-end gap-2">
           <Button variant="secondary" onClick={onMove}>
             <CalendarClock className="size-5" aria-hidden />
-            Move
+            Edit lesson
           </Button>
           <Button variant="tertiary" onClick={onCancel}>
             <X className="size-5" aria-hidden />

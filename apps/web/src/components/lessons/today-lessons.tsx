@@ -1,7 +1,7 @@
 'use client';
 
 import { lessonState, lessonStateLabel } from '@repo/core/diary';
-import { lessonToStart, needsRecord } from '@repo/core/lesson-records';
+import { lessonToStart, needsRecord, nextLesson } from '@repo/core/lesson-records';
 import { formatTime } from '@repo/core/time';
 import { Button } from '@repo/ui/button';
 import { StatusPill } from '@repo/ui/status-pill';
@@ -40,7 +40,10 @@ export function TodayLessons({ lessons, now, plainLinks = false, waiting = new S
     endsAt: new Date(lesson.endsAt),
     status: lesson.facts.status,
   }));
-  const next = lessonToStart(dayLessons, moment);
+  const starting = lessonToStart(dayLessons, moment);
+  // Where to drive to is only ever a question about the lesson they are going to next, so the
+  // day does not carry a row of identical buttons down the screen (D-190).
+  const next = nextLesson(dayLessons, moment);
 
   return (
     <div className="flex flex-col gap-4">
@@ -50,7 +53,8 @@ export function TodayLessons({ lessons, now, plainLinks = false, waiting = new S
           const off = state === 'cancelled';
           const route = lesson.pickup ? directionsTo(lesson.pickup) : null;
           const toRecord = needsRecord(lesson, moment);
-          const toStart = next?.id === lesson.id;
+          const toStart = starting?.id === lesson.id;
+          const toDrive = route !== null && next?.id === lesson.id;
           return (
             <li key={lesson.id}>
               <article className="flex flex-col gap-2 px-4 py-3" aria-label={`${formatTime(lesson.startsAt)} ${lesson.learnerName}`}>
@@ -94,7 +98,7 @@ export function TodayLessons({ lessons, now, plainLinks = false, waiting = new S
                     </span>
                   </span>
                 </OpenLesson>
-                {!off && (route !== null || toRecord || toStart) ? (
+                {!off && (toDrive || toRecord || toStart) ? (
                   <div className="flex flex-wrap justify-end gap-2">
                     {toStart ? <StartLessonButton bookingId={lesson.id} plainLinks={plainLinks} /> : null}
                     {toRecord ? (
@@ -105,7 +109,7 @@ export function TodayLessons({ lessons, now, plainLinks = false, waiting = new S
                         </Go>
                       </Button>
                     ) : null}
-                    {route !== null ? (
+                    {toDrive ? (
                       <Button asChild variant="secondary">
                         <a href={route} target="_blank" rel="noreferrer">
                           <Navigation className="size-5" aria-hidden />

@@ -208,7 +208,7 @@ export function LessonSheets({ lesson, rules, action, onClose }: LessonSheetsPro
       <Sheet
         open={moving}
         onOpenChange={onClose}
-        title={`Move ${learnerName}`}
+        title={`Edit ${learnerName}'s lesson`}
         description="Change when it is, how long it runs, or both. A different length is priced like a lesson of that length."
         footer={
           <Button width="full" size="lg" pending={pending} disabled={slot === null} onClick={move}>

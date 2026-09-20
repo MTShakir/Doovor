@@ -29,8 +29,8 @@ test.describe('a lesson an instructor can lengthen, and a gap they can skip (BOK
       await expect(page.getByText(learner.name)).toBeVisible();
 
       // An hour becomes two, and the price says what that costs before it happens.
-      const moving = page.getByRole('dialog', { name: `Move ${learner.name}` });
-      await tapUntil(page.getByRole('button', { name: 'Move' }).first(), moving);
+      const moving = page.getByRole('dialog', { name: `Edit ${learner.name}'s lesson` });
+      await tapUntil(page.getByRole('button', { name: 'Edit lesson' }).first(), moving);
       await moving.getByLabel('How long?').selectOption({ label: '2 hours' });
       await expect(moving.getByText(/^2 hours costs £\d+/)).toBeVisible();
       await expectAccessible(page);

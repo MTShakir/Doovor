@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { formatElapsed, lessonToStart, needsRecord, startWindowMinutes, type DayLesson } from './lesson-records.ts';
+import { formatElapsed, lessonToStart, needsRecord, nextLesson, startWindowMinutes, type DayLesson } from './lesson-records.ts';
 
 const at = (time: string) => new Date(`2026-09-15T${time}:00+01:00`);
 
@@ -69,5 +69,33 @@ describe('how long a lesson has been running (PRD 7.5, M4-04)', () => {
   it('never runs backwards or shows a fraction', () => {
     expect(formatElapsed(-5)).toBe('0:00');
     expect(formatElapsed(59.9)).toBe('0:59');
+  });
+});
+
+describe('the lesson they are going to next (PRD 7.5, D-190)', () => {
+  const day = [
+    lesson('early', '08:00', '09:00'),
+    lesson('late', '14:00', '15:30'),
+    lesson('mid', '10:00', '11:00'),
+    lesson('off', '12:00', '13:00', { status: 'cancelled' }),
+  ];
+
+  it('is the first one still to come, however far off it is', () => {
+    expect(nextLesson(day, at('07:00'))?.id).toBe('early');
+    expect(nextLesson(day, at('09:30'))?.id).toBe('mid');
+    expect(nextLesson(day, at('11:30'))?.id).toBe('late');
+  });
+
+  it('is the one under way while it is on', () => {
+    expect(nextLesson(day, at('10:30'))?.id).toBe('mid');
+  });
+
+  it('skips a lesson that was called off, and ends the day with nothing left', () => {
+    expect(nextLesson(day, at('11:05'))?.id).toBe('late');
+    expect(nextLesson(day, at('16:00'))).toBeNull();
+  });
+
+  it('is what Start lesson picks from, so the two never disagree', () => {
+    expect(lessonToStart(day, at('09:50'))?.id).toBe(nextLesson(day, at('09:50'))?.id);
   });
 });

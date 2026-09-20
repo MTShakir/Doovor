@@ -197,7 +197,7 @@ test.describe('booking a lesson (BOK-01, M2-16)', () => {
     const lesson = page.getByRole('article').filter({ hasText: 'Jack Taylor' });
     await expect(lesson).toContainText('09:00');
 
-    await tapUntil(lesson.getByRole('button', { name: 'Move' }), page.getByRole('dialog', { name: /^Move Jack/ }));
+    await tapUntil(lesson.getByRole('button', { name: 'Edit lesson' }), page.getByRole('dialog', { name: /^Edit Jack/ }));
     await page.getByRole('button', { name: '15:00' }).click();
     await page.getByRole('button', { name: 'Move to 15:00' }).click();
 
@@ -262,7 +262,7 @@ test.describe('booking a lesson (BOK-01, M2-16)', () => {
     // A finger, not a mouse: Playwright's click is a mouse whatever the device is, and a
     // mouse drags a lesson rather than holding it. Once the sheet is open the diary behind
     // it is hidden from the page, so the hold is only tried while it is not.
-    const sheet = page.getByRole('dialog', { name: /^Move Olivia/ });
+    const sheet = page.getByRole('dialog', { name: /^Edit Olivia/ });
     await expect(async () => {
       if (await sheet.isVisible()) return;
       await lesson.dispatchEvent('pointerdown', { pointerType: 'touch', isPrimary: true });
@@ -289,7 +289,7 @@ test.describe('booking a lesson (BOK-01, M2-16)', () => {
     const absent = page.getByRole('article').filter({ hasText: 'Olivia Brown' });
 
     // A lesson in the past is asked about, not moved.
-    await expect(taught.getByRole('button', { name: 'Move' })).toBeHidden();
+    await expect(taught.getByRole('button', { name: 'Edit lesson' })).toBeHidden();
     // Done opens the lesson's record, to be written straight after it (PRD 10.2, M4-05).
     await taught.getByRole('button', { name: 'Done' }).click();
     await expect(page.getByText('Marked as done')).toBeVisible();
