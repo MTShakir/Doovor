@@ -56,9 +56,11 @@ test.describe('the lesson about to be taught (PRD 7.5, D-178)', () => {
       await expect(sheet.getByRole('link', { name: 'Start lesson' })).toBeVisible();
       await page.keyboard.press('Escape');
 
-      // It opens the lesson itself, where the timer runs.
+      // It opens the lesson itself, where the timer runs. The clock on screen is what says the
+      // lesson has actually been started on this phone, which is what Today reads afterwards.
       await starting.getByRole('link', { name: 'Start lesson' }).click();
       await expect(page).toHaveURL(/\/app\/instructor\/lessons\/[0-9a-f-]{36}$/);
+      await expect(page.getByRole('timer')).toBeVisible();
 
       // And back on Today the card counts the lesson up rather than offering to start it again.
       await page.goto('/app/instructor');

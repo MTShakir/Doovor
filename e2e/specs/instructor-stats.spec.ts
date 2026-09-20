@@ -39,6 +39,8 @@ test.describe('an instructor sees how it is going (MNY-01, D-177)', () => {
     const week = stats.getByRole('list', { name: 'What you earned each day, this week' });
     const bars = async (): Promise<string[]> => week.getByRole('img').evaluateAll((all) => all.map((one) => one.getAttribute('aria-label') ?? ''));
 
+    // Read once the week has arrived: the card streams in, and evaluateAll does not wait.
+    await expect(week.getByRole('listitem')).toHaveCount(7);
     const first = await bars();
     expect(first).toHaveLength(7);
 
@@ -47,7 +49,7 @@ test.describe('an instructor sees how it is going (MNY-01, D-177)', () => {
       await tapThrough(stats.getByRole('link', { name: 'This month so far' }), /\/app\/instructor\?stats=month$/);
       await expect(page.getByRole('list', { name: 'What you earned each day, this month so far' })).toBeVisible();
       await tapThrough(page.getByRole('region', { name: 'How it is going' }).getByRole('link', { name: 'This week' }), /\/app\/instructor$/);
-      await expect(week).toBeVisible();
+      await expect(week.getByRole('listitem')).toHaveCount(7);
     }
     expect(await bars()).toEqual(first);
   });
