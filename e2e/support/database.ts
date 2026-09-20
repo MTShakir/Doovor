@@ -1229,11 +1229,16 @@ export interface PlatformFigures {
   disputesOpen: number;
 }
 
-/** The admin dashboard's figures as the database has them now (ADM-01, M5-17). */
-export async function platformFigures(): Promise<PlatformFigures> {
+/**
+ * The admin dashboard's figures as the database has them (ADM-01, M5-17, D-171): over the last 30
+ * days, or over London days from the first to the last, the way the screen asks for them.
+ */
+export async function platformFigures(days?: { from: string; to: string }): Promise<PlatformFigures> {
   return withDatabase(async (sql) => {
+    const from = days ? sql`(${days.from}::date)::timestamp at time zone 'Europe/London'` : sql`now() - interval '30 days'`;
+    const to = days ? sql`(${days.to}::date + 1)::timestamp at time zone 'Europe/London'` : sql`now()`;
     const [row] = await sql<{ facts: PlatformFacts; active: number; suspended: number; badges: number; disputes: number }[]>`
-      select private.platform_dashboard_facts(now()) as facts,
+      select private.platform_dashboard_facts(${from}, ${to}) as facts,
              (select count(*)::int from public.businesses where status = 'active') as active,
              (select count(*)::int from public.businesses where status = 'suspended') as suspended,
              (select count(*)::int from public.instructor_profiles where verification_status = 'pending') as badges,

@@ -1,4 +1,6 @@
 import 'server-only';
+import { periodInstants } from '@repo/core/money-periods';
+import type { StatsRange } from '@repo/core/stats-range';
 import { formatDate } from '@repo/core/time';
 import { z } from '@repo/core/zod';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
@@ -9,6 +11,7 @@ const since = z.string().nullable();
 // The function answers JSON, so it is read the way any input is.
 const dashboardSchema = z.object({
   from: z.string(),
+  to: z.string(),
   signups: z.object({ learners: count, instructors: count, schools: count, undecided: count }),
   businesses: z.object({ active: count, independent: count, schools: count, suspended: count, teaching: count }),
   lessons: z.object({ booked: count, completed: count }),
@@ -17,11 +20,11 @@ const dashboardSchema = z.object({
   disputes: z.object({ open: count, oldest: since }),
 });
 
-const SPAN_MS = 30 * 24 * 60 * 60 * 1000;
-
 export interface PlatformDashboard {
-  /** "Tue 18 Aug to Thu 17 Sep": the 30 days the figures cover, in London. */
+  /** "Tue 18 Aug 2026 to Sun 20 Sep 2026": the days the figures cover, in London. */
   range: string;
+  /** What those days are called: "Last 30 days", "Today", or the days themselves. */
+  label: string;
   signups: { learners: number; instructors: number; schools: number; undecided: number; total: number };
   businesses: { active: number; independent: number; schools: number; suspended: number; teaching: number };
   lessons: { booked: number; completed: number };
@@ -36,20 +39,21 @@ function day(moment: string | null): string | null {
 }
 
 /**
- * The platform dashboard (ADM-01, M5-17). The database works the figures out, and refuses anybody
- * who is not platform staff past their second step; this puts the days they cover into words.
- * Throws when the figures cannot be read, rather than passing for a quiet month.
+ * The platform dashboard over a range of days (ADM-01, M5-17, D-171). The database works the
+ * figures out, and refuses anybody who is not platform staff past their second step. Throws when
+ * the figures cannot be read, rather than passing for a quiet month.
  */
-export async function platformDashboard(): Promise<PlatformDashboard> {
+export async function platformDashboard(range: StatsRange): Promise<PlatformDashboard> {
+  const { from, to } = periodInstants(range);
   const supabase = await createSupabaseServerClient();
-  const { data, error } = await supabase.rpc('platform_dashboard');
+  const { data, error } = await supabase.rpc('platform_dashboard', { p_from: from.toISOString(), p_to: to.toISOString() });
   if (error) throw new Error(`Could not read the platform dashboard: ${error.message}`);
   const facts = dashboardSchema.parse(data);
-  const from = new Date(facts.from);
   const { signups, businesses, lessons, money, verification, disputes } = facts;
 
   return {
-    range: `${formatDate(from)} to ${formatDate(new Date(from.getTime() + SPAN_MS))}`,
+    range: range.range,
+    label: range.label,
     signups: { ...signups, total: signups.learners + signups.instructors + signups.schools + signups.undecided },
     businesses,
     lessons,

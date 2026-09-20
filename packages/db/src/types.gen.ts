@@ -3166,7 +3166,10 @@ export type Database = {
           has_hub: boolean
         }[]
       }
-      platform_dashboard: { Args: never; Returns: Json }
+      platform_dashboard: {
+        Args: { p_from: string; p_to: string }
+        Returns: Json
+      }
       post_lesson_request: {
         Args: {
           p_budget_pence?: number

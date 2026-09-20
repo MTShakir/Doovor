@@ -46,6 +46,7 @@ import type { LearnerPickupPoint } from '@/lib/pickup/list';
 import { SetupChecklist } from '@/components/setup-checklist';
 import { InstructorWeeks, OverviewFigures, OverviewSkeleton } from '@/components/school/overview';
 import { DashboardFigures, DashboardSkeleton, WaitingOnStaff } from '@/components/admin/dashboard';
+import { DateRangePicker } from '@/components/admin/date-range';
 import { BusinessDetails, BusinessResults, SuspendBusinessDialog } from '@/components/admin/businesses';
 import type { AdminBusiness } from '@/lib/admin/businesses';
 import { InstructorResults, LearnerResults, PersonDetails, ResetTwoStepDialog, SuspendAccountDialog, ViewAsDialog } from '@/components/admin/people';
@@ -79,6 +80,7 @@ import { OtpInput } from '@repo/ui/otp-input';
 import { PostcodeSearch } from '@repo/ui/postcode-search';
 import { ProgressBar, ProgressRing } from '@repo/ui/progress';
 import { skillMap } from '@repo/core/skill-map';
+import { statsRange } from '@repo/core/stats-range';
 import type { SkillRating } from '@repo/core/skills';
 import { RatingScale } from '@repo/ui/rating-scale';
 import { RatingStars } from '@repo/ui/rating-stars';
@@ -156,7 +158,8 @@ const exampleOverview: SchoolOverview = {
 };
 
 const exampleDashboard: PlatformDashboard = {
-  range: 'Tue 18 Aug to Thu 17 Sep',
+  range: 'Tue 18 Aug 2026 to Thu 17 Sep 2026',
+  label: 'Last 30 days',
   signups: { learners: 212, instructors: 31, schools: 4, undecided: 9, total: 256 },
   businesses: { active: 118, independent: 104, schools: 14, suspended: 2, teaching: 97 },
   lessons: { booked: 4_310, completed: 3_880 },
@@ -166,7 +169,8 @@ const exampleDashboard: PlatformDashboard = {
 };
 
 const quietDashboard: PlatformDashboard = {
-  range: 'Tue 18 Aug to Thu 17 Sep',
+  range: 'Tue 18 Aug 2026 to Thu 17 Sep 2026',
+  label: 'Last 30 days',
   signups: { learners: 0, instructors: 1, schools: 0, undecided: 0, total: 1 },
   businesses: { active: 1, independent: 1, schools: 0, suspended: 0, teaching: 0 },
   lessons: { booked: 0, completed: 0 },
@@ -1295,6 +1299,8 @@ export function DesignShowcase() {
 
       <Section title="Admin">
         <Label>Dashboard, with badges and a dispute waiting</Label>
+        <Label>The days the figures cover: a button each, and two dates for anything else (ADM-01, D-171)</Label>
+        <DateRangePicker today="2026-09-20" chosen={statsRange('last_30_days', '2026-09-20')} base="/design" />
         <WaitingOnStaff dashboard={exampleDashboard} idPrefix="design-waiting" />
         <DashboardFigures dashboard={exampleDashboard} idPrefix="design-platform-month" />
         <Label>A platform just starting, with nothing waiting</Label>
