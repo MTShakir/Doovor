@@ -98,6 +98,25 @@ if (result.status === 0 && argv.includes('config') && argv.includes('push') && r
       process.exit(1);
     }
     process.stdout.write('Checked: phone confirmations are on.\n');
+
+    // And that the Twilio credentials the project now holds are ones Twilio accepts. On
+    // 20 September 2026 the stored auth token was refused, so every verification text failed
+    // before Twilio had any record of it, and the app could only say it could not send one (D-191).
+    const account = auth?.sms_twilio_account_sid;
+    const stored = auth?.sms_twilio_auth_token;
+    if (auth?.sms_provider === 'twilio' && account && stored) {
+      const probe = await fetch(`https://api.twilio.com/2010-04-01/Accounts/${account}/Balance.json`, {
+        headers: { Authorization: `Basic ${Buffer.from(`${account}:${stored}`).toString('base64')}` },
+      });
+      if (!probe.ok) {
+        process.stderr.write(
+          `Pushed, but Twilio refuses the credentials ${ref} now holds (HTTP ${String(probe.status)}): no code would reach anybody. ` +
+            'Check TWILIO_ACCOUNT_SID and TWILIO_AUTH_TOKEN in .env.local, then push again.\n',
+        );
+        process.exit(1);
+      }
+      process.stdout.write('Checked: Twilio accepts the credentials the project holds.\n');
+    }
   }
 }
 process.exit(result.status ?? 1);
