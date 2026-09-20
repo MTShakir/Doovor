@@ -25,10 +25,16 @@ function inMinutes(minutes: number): { day: string; time: string } {
  */
 test.describe('the lesson about to be taught (PRD 7.5, D-178)', () => {
   test('carries Start lesson on its own card, and only once it is close', async ({ page }, testInfo) => {
+    // A lesson ten minutes from now falls on tomorrow when it is nearly midnight, and Today is
+    // about today, so the card this test is about is correctly somewhere else. The behaviour is
+    // right; there is simply nothing here to assert until the hour passes.
+    const soonest = inMinutes(10);
+    test.skip(soonest.day !== inMinutes(0).day, 'Ten minutes from now is tomorrow, so Today has nothing to start');
+
     const mobile = testInfo.project.name === 'mobile';
     const learner = mobile ? 'harry.thomas@example.com' : 'tom.walsh@example.com';
     const instructor = await makeSchoolInstructor(`Starter ${testInfo.project.name}`);
-    const soon = inMinutes(10);
+    const soon = soonest;
     const later = inMinutes(120);
     await bookLesson(instructor.name, learner, soon.day, soon.time);
     await bookLesson(instructor.name, learner, later.day, later.time);
