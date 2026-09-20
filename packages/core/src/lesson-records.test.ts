@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { formatElapsed, lessonToStart, needsRecord, type DayLesson } from './lesson-records.ts';
+import { formatElapsed, lessonToStart, needsRecord, startWindowMinutes, type DayLesson } from './lesson-records.ts';
 
 const at = (time: string) => new Date(`2026-09-15T${time}:00+01:00`);
 
@@ -12,7 +12,7 @@ const lesson = (id: string, starts: string, ends: string, overrides: Partial<Day
   ...overrides,
 });
 
-describe('the lesson "Start lesson" means (PRD 7.5, M4-04)', () => {
+describe('the lesson "Start lesson" means (PRD 7.5, M4-04, D-178)', () => {
   const day = [
     lesson('early', '08:00', '09:00'),
     lesson('late', '14:00', '15:30'),
@@ -20,8 +20,15 @@ describe('the lesson "Start lesson" means (PRD 7.5, M4-04)', () => {
     lesson('off', '12:00', '13:00', { status: 'cancelled' }),
   ];
 
-  it('is the next lesson going ahead, whatever order the day came in', () => {
-    expect(lessonToStart(day, at('09:30'))?.id).toBe('mid');
+  it('is the next lesson going ahead, once it is close enough to start', () => {
+    expect(lessonToStart(day, at('09:46'))?.id).toBe('mid');
+    expect(lessonToStart(day, at('09:45'))?.id).toBe('mid');
+  });
+
+  it('is nothing while the next lesson is still more than a quarter of an hour away', () => {
+    expect(lessonToStart(day, at('09:30'))).toBeNull();
+    expect(lessonToStart(day, at('11:30'))).toBeNull();
+    expect(startWindowMinutes).toBe(15);
   });
 
   it('is the lesson under way until it ends', () => {
@@ -30,9 +37,9 @@ describe('the lesson "Start lesson" means (PRD 7.5, M4-04)', () => {
   });
 
   it('skips a lesson that was called off, and has nothing once the day is over', () => {
-    expect(lessonToStart(day, at('11:30'))?.id).toBe('late');
+    expect(lessonToStart(day, at('13:50'))?.id).toBe('late');
     expect(lessonToStart(day, at('15:30'))).toBeNull();
-    expect(lessonToStart([lesson('asked', '16:00', '17:00', { status: 'requested' })], at('09:00'))).toBeNull();
+    expect(lessonToStart([lesson('asked', '16:00', '17:00', { status: 'requested' })], at('15:55'))).toBeNull();
   });
 });
 

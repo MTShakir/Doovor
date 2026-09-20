@@ -20,13 +20,21 @@ export interface DayLesson {
 
 const goingAhead: ReadonlySet<BookingStatus> = new Set(['confirmed', 'in_progress']);
 
+/** How long before a lesson its card offers to start it (D-178). */
+export const startWindowMinutes = 15;
+
 /**
- * The lesson "Start lesson" means (PRD 7.5): the one under way, or else the next one to come, and
- * only one that is going ahead. A lesson that has ended is recorded, not started.
+ * The lesson "Start lesson" means (PRD 7.5, D-178): the one under way, or the next one once it is
+ * a quarter of an hour away or less, and only one that is going ahead. Earlier in the day there is
+ * nothing to start, and a lesson that has ended is recorded, not started.
  */
 export function lessonToStart<L extends DayLesson>(lessons: readonly L[], now: Date): L | null {
+  const soon = now.getTime() + startWindowMinutes * 60 * 1000;
   const upcoming = lessons
-    .filter((lesson) => goingAhead.has(lesson.status) && lesson.endsAt.getTime() > now.getTime())
+    .filter(
+      (lesson) =>
+        goingAhead.has(lesson.status) && lesson.endsAt.getTime() > now.getTime() && lesson.startsAt.getTime() <= soon,
+    )
     .sort((a, b) => a.startsAt.getTime() - b.startsAt.getTime());
   return upcoming[0] ?? null;
 }

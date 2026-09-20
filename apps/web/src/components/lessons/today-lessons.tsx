@@ -5,7 +5,7 @@ import { lessonToStart, needsRecord } from '@repo/core/lesson-records';
 import { formatTime } from '@repo/core/time';
 import { Button } from '@repo/ui/button';
 import { StatusPill } from '@repo/ui/status-pill';
-import { Check, CloudUpload, MapPin, Navigation, NotebookPen } from 'lucide-react';
+import { Check, CloudUpload, MapPin, Navigation, NotebookPen, Play } from 'lucide-react';
 import Link from 'next/link';
 import { directionsTo, OpenLesson } from '@/components/lessons/lesson-details';
 import type { TeachingLesson } from '@/lib/lessons/teaching';
@@ -24,9 +24,10 @@ export interface TodayLessonsProps {
 }
 
 /**
- * Today, for an instructor (PRD 7.5, 10.2, M4-04): the day's lessons top to bottom, each with
- * where to go and whether it is paid, and one big button for the lesson to start. A lesson that
- * has been taught and has no record yet says so, since writing it is the one thing left to do.
+ * Today, for an instructor (PRD 7.5, 10.2, M4-04, D-178): the day's lessons top to bottom, each
+ * with where to go and whether it is paid. The lesson about to be taught carries Start lesson on
+ * its own card, from a quarter of an hour before it until it ends. A lesson that has been taught
+ * and has no record yet says so, since writing it is the one thing left to do.
  */
 export function TodayLessons({ lessons, now, plainLinks = false, waiting = new Set<string>() }: TodayLessonsProps) {
   const moment = new Date(now);
@@ -48,6 +49,7 @@ export function TodayLessons({ lessons, now, plainLinks = false, waiting = new S
           const off = state === 'cancelled';
           const route = lesson.pickup ? directionsTo(lesson.pickup) : null;
           const toRecord = needsRecord(lesson, moment);
+          const toStart = next?.id === lesson.id;
           return (
             <li key={lesson.id}>
               <article className="flex flex-col gap-2 px-4 py-3" aria-label={`${formatTime(lesson.startsAt)} ${lesson.learnerName}`}>
@@ -91,8 +93,16 @@ export function TodayLessons({ lessons, now, plainLinks = false, waiting = new S
                     </span>
                   </span>
                 </OpenLesson>
-                {!off && (route !== null || toRecord) ? (
+                {!off && (route !== null || toRecord || toStart) ? (
                   <div className="flex flex-wrap justify-end gap-2">
+                    {toStart ? (
+                      <Button asChild>
+                        <Go href={`/app/instructor/lessons/${lesson.id}`}>
+                          <Play className="size-5" aria-hidden />
+                          Start lesson
+                        </Go>
+                      </Button>
+                    ) : null}
                     {toRecord ? (
                       <Button asChild variant="secondary">
                         <Go href={`/app/instructor/lessons/${lesson.id}?record=1`}>
@@ -116,16 +126,6 @@ export function TodayLessons({ lessons, now, plainLinks = false, waiting = new S
           );
         })}
       </ol>
-      {next === null ? null : (
-        <div className="flex flex-col gap-1">
-          <Button asChild width="responsive" size="lg">
-            <Go href={`/app/instructor/lessons/${next.id}`}>Start lesson</Go>
-          </Button>
-          <p className="text-center text-small text-grey-700 md:text-left">
-            {formatTime(next.startsAt)} with {next.learnerName}
-          </p>
-        </div>
-      )}
     </div>
   );
 }
