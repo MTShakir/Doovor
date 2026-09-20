@@ -34,6 +34,7 @@ export default function LearnerTermsPage() {
             'A booking is made when the app says it is, and you will see it in your lessons straight away.',
             'Each Business sets how long before a lesson you may cancel without paying for it. The app shows you that window before you confirm, and again when you cancel.',
             'If your instructor cancels, you pay nothing and anything you have paid for that lesson comes back to you.',
+            'Your instructor may change when a lesson is, or how long it runs. If the length changes, what you paid for the old length comes back to you and the new length is charged at the price that Business has set for it, so you never pay for time you did not have.',
             'If you do not turn up, the Business may charge you for the lesson, and the app will say so before it does.',
           ]}
         />

@@ -58,6 +58,11 @@ export const serverEnvSchema = z.preprocess(
       TWILIO_ACCOUNT_SID: optionalString,
       TWILIO_AUTH_TOKEN: optionalString,
       TWILIO_MESSAGING_SERVICE_SID: optionalString,
+      // Where Twilio holds what it handles for us. A Messaging Service belongs to one region and
+      // is reachable only through that region's endpoint (D-192).
+      TWILIO_REGION: z.enum(['us1', 'ie1']).default('us1'),
+      // Shared with Supabase Auth, which signs every request asking us to send a code (D-192).
+      SUPABASE_SEND_SMS_HOOK_SECRET: optionalString,
 
       PAYMENTS_PROVIDER: z.enum(['fake', 'stripe']).default('fake'),
       // Public, and read here only to be checked: the card form needs it (D-153).
@@ -92,6 +97,8 @@ export const serverEnvSchema = z.preprocess(
         'TWILIO_AUTH_TOKEN',
         'TWILIO_MESSAGING_SERVICE_SID',
       ], 'SMS_PROVIDER is twilio');
+      // Without the secret the hook refuses every request, so sign-in codes would stop.
+      require(env.APP_ENV === 'production', ['SUPABASE_SEND_SMS_HOOK_SECRET'], 'this is production');
       require(env.PAYMENTS_PROVIDER === 'stripe', [
         'NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY',
         'STRIPE_SECRET_KEY',

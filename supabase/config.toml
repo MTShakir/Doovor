@@ -124,6 +124,17 @@ account_sid = "ACLOCALDEVELOPMENTONLY00000000000"
 message_service_sid = "MGLOCALDEVELOPMENTONLY0000000000"
 auth_token = "local-development-only"
 
+# The code itself is sent by the app, not by Supabase (AUTH-02, D-192). Supabase still makes the
+# code and checks it; this says where to hand it over. That keeps every text on the provider and
+# in the region we choose, which a Messaging Service outside us1 needs.
+#
+# Locally the numbers in [auth.sms.test_otp] never reach here, and the app writes texts to its log
+# rather than sending them, so this is only exercised by a number nobody seeded.
+[auth.hook.send_sms]
+enabled = true
+uri = "http://host.docker.internal:3000/api/webhooks/supabase-sms"
+secrets = "env(SUPABASE_SEND_SMS_HOOK_SECRET)"
+
 [auth.mfa]
 max_enrolled_factors = 10
 

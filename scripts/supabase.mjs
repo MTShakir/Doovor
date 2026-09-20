@@ -13,6 +13,9 @@ if (existsSync(envFile)) process.loadEnvFile(envFile);
 // Empty placeholders keep config.toml valid when Google sign-in is not configured locally.
 process.env.SUPABASE_AUTH_EXTERNAL_GOOGLE_CLIENT_ID ||= 'not-configured';
 process.env.SUPABASE_AUTH_EXTERNAL_GOOGLE_SECRET ||= 'not-configured';
+// A local-only signing secret, so the send SMS hook works on a machine with no real one. The
+// app falls back to the same value, and a hosted push refuses to send it (see `needed` below).
+process.env.SUPABASE_SEND_SMS_HOOK_SECRET ||= 'v1,whsec_bG9jYWwtZGV2ZWxvcG1lbnQtb25seS1zZWNyZXQ=';
 
 // The hosted config (config.toml [remotes.*]) takes its brand values from brand.ts, so the
 // name, domain and sender addresses stay in one file (rule 8). Never name these
@@ -24,6 +27,8 @@ process.env.BRAND_SITE_URL ||= brand.appUrl;
 process.env.BRAND_REDIRECT_URL ||= `${brand.appUrl}/**`;
 process.env.BRAND_SENDER_EMAIL ||= brand.email.fromAddress;
 process.env.BRAND_SENDER_NAME ||= brand.name;
+// Where Supabase Auth hands a sign-in code over for us to send (AUTH-02, D-192).
+process.env.BRAND_SEND_SMS_HOOK_URL ||= `${brand.appUrl}/api/webhooks/supabase-sms`;
 
 // Ofcom drama numbers with a fixed code, for local and CI phone tests (D-033). The CLI
 // forwards SUPABASE_AUTH_* into the local auth container, so these never reach a hosted
@@ -57,10 +62,12 @@ if (argv.includes('config') && argv.includes('push')) {
     'TWILIO_MESSAGING_SERVICE_SID',
     'SUPABASE_AUTH_EXTERNAL_GOOGLE_CLIENT_ID',
     'SUPABASE_AUTH_EXTERNAL_GOOGLE_SECRET',
+    'SUPABASE_SEND_SMS_HOOK_SECRET',
   ];
+  const localOnly = new Set(['v1,whsec_bG9jYWwtZGV2ZWxvcG1lbnQtb25seS1zZWNyZXQ=']);
   const missing = needed.filter((name) => {
     const value = process.env[name];
-    return !value || value === 'not-configured';
+    return !value || value === 'not-configured' || localOnly.has(value);
   });
   if (missing.length > 0) {
     const newline = String.fromCharCode(10);
