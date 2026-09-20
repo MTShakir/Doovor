@@ -90,6 +90,14 @@ account_sid = "env(TWILIO_ACCOUNT_SID)"
 message_service_sid = "env(TWILIO_MESSAGING_SERVICE_SID)"
 auth_token = "env(TWILIO_AUTH_TOKEN)"
 
+# The code itself is sent by the app, not by Supabase (AUTH-02, D-192). Supabase makes the code and
+# checks it, and hands the sending to the app, which uses the Messaging Service in Ireland. Supabase
+# can only reach Twilio's default endpoint, so a service outside us1 is unreachable any other way.
+[auth.hook.send_sms]
+enabled = true
+uri = "env(BRAND_SEND_SMS_HOOK_URL)"
+secrets = "env(SUPABASE_SEND_SMS_HOOK_SECRET)"
+
 [auth.mfa.totp]
 enroll_enabled = true
 verify_enabled = true

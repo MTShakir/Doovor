@@ -13,5 +13,8 @@ export function smsProvider(): SmsProvider {
     accountSid: serverEnv.TWILIO_ACCOUNT_SID,
     authToken: serverEnv.TWILIO_AUTH_TOKEN,
     messagingServiceSid: serverEnv.TWILIO_MESSAGING_SERVICE_SID,
+    // A Messaging Service lives in one region and answers only on that region's endpoint: asking
+    // the wrong one is a 404 saying the service does not exist (D-192).
+    baseUrl: serverEnv.TWILIO_REGION === 'ie1' ? 'https://api.ie1.twilio.com' : 'https://api.twilio.com',
   });
 }
