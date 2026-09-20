@@ -24,19 +24,23 @@ const goingAhead: ReadonlySet<BookingStatus> = new Set(['confirmed', 'in_progres
 export const startWindowMinutes = 15;
 
 /**
- * The lesson "Start lesson" means (PRD 7.5, D-178): the one under way, or the next one once it is
- * a quarter of an hour away or less, and only one that is going ahead. Earlier in the day there is
- * nothing to start, and a lesson that has ended is recorded, not started.
+ * The next lesson of the day: the one under way, or the first still to come, and only one that is
+ * going ahead (PRD 7.5, D-190). A lesson that has ended is behind them, whatever else the day holds.
+ */
+export function nextLesson<L extends DayLesson>(lessons: readonly L[], now: Date): L | null {
+  const ahead = lessons
+    .filter((lesson) => goingAhead.has(lesson.status) && lesson.endsAt.getTime() > now.getTime())
+    .sort((a, b) => a.startsAt.getTime() - b.startsAt.getTime());
+  return ahead[0] ?? null;
+}
+
+/**
+ * The lesson "Start lesson" means (PRD 7.5, D-178): the next one, once it is a quarter of an hour
+ * away or less. Earlier in the day there is nothing to start yet.
  */
 export function lessonToStart<L extends DayLesson>(lessons: readonly L[], now: Date): L | null {
-  const soon = now.getTime() + startWindowMinutes * 60 * 1000;
-  const upcoming = lessons
-    .filter(
-      (lesson) =>
-        goingAhead.has(lesson.status) && lesson.endsAt.getTime() > now.getTime() && lesson.startsAt.getTime() <= soon,
-    )
-    .sort((a, b) => a.startsAt.getTime() - b.startsAt.getTime());
-  return upcoming[0] ?? null;
+  const next = nextLesson(lessons, now);
+  return next !== null && next.startsAt.getTime() <= now.getTime() + startWindowMinutes * 60 * 1000 ? next : null;
 }
 
 /**

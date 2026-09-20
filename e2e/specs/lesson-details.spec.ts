@@ -35,7 +35,7 @@ test.describe('a lesson opened from its card (DIA-04, D-166)', () => {
     await expect(sheet.getByRole('link', { name: 'Call' })).toHaveAttribute('href', 'tel:+447700900011');
     await expect(sheet.getByRole('link', { name: 'Text' })).toHaveAttribute('href', 'sms:+447700900011');
     await expect(sheet.getByRole('link', { name: 'WhatsApp' })).toHaveAttribute('href', 'https://wa.me/447700900011');
-    await expect(sheet.getByRole('region', { name: 'This lesson' }).getByRole('button', { name: 'Move' })).toBeVisible();
+    await expect(sheet.getByRole('region', { name: 'This lesson' }).getByRole('button', { name: 'Edit lesson' })).toBeVisible();
     await expectAccessible(page);
     await snap(page, testInfo, 'lesson-details');
 
@@ -55,8 +55,8 @@ test.describe('a lesson opened from its card (DIA-04, D-166)', () => {
     await expect(page.getByText('Reminder on its way to Jack Taylor by text')).toBeVisible();
 
     // Moving it from here opens the diary's own sheet for that.
-    await sheet.getByRole('region', { name: 'This lesson' }).getByRole('button', { name: 'Move' }).click();
-    await expect(page.getByRole('dialog', { name: /^Move/ })).toBeVisible();
+    await sheet.getByRole('region', { name: 'This lesson' }).getByRole('button', { name: 'Edit lesson' }).click();
+    await expect(page.getByRole('dialog', { name: /^Edit/ })).toBeVisible();
     await removeLesson('Sarah Khan', learner, day, '10:00');
   });
 

@@ -55,7 +55,7 @@ type Channel = 'email' | 'sms';
 export type LessonDetailsState =
   | { kind: 'loading' }
   | { kind: 'failed' }
-  | { kind: 'ready'; details: LessonDetails; ahead: boolean; startable: boolean };
+  | { kind: 'ready'; details: LessonDetails; ahead: boolean; startable: boolean; editable: boolean };
 
 /**
  * What a lesson's sheet says (DIA-04, LRN-02, D-166): when and where, the learner's number with a
@@ -87,7 +87,7 @@ export function LessonDetailsBody({
     );
   }
 
-  const { details, ahead, startable } = state;
+  const { details, ahead, startable, editable } = state;
   const lessonFacts = { status: details.status, paymentStatus: details.paymentStatus, kind: details.kind, source: details.source };
   const off = details.status === 'cancelled' || details.status === 'declined' || details.status === 'expired';
   const asked = details.status === 'requested';
@@ -96,7 +96,7 @@ export function LessonDetailsBody({
   const route = details.pickup ? directionsTo(details.pickup) : null;
   const phone = details.learner.phone;
   const remindable = details.status === 'confirmed' && ahead;
-  const changeable = ahead && !asked && !off && !done;
+  const changeable = editable && !asked && !off && !done;
 
   return (
     <div className="flex flex-col gap-6">
@@ -208,7 +208,7 @@ export function LessonDetailsBody({
               <>
                 <Button variant="secondary" onClick={() => { onAction('move'); }}>
                   <CalendarClock className="size-5" aria-hidden />
-                  Move
+                  Edit lesson
                 </Button>
                 <Button variant="tertiary" onClick={() => { onAction('cancel'); }}>
                   <X className="size-5" aria-hidden />
@@ -264,6 +264,8 @@ export function LessonDetailsSheet({ lesson, onClose }: { lesson: LessonAtAGlanc
           kind: 'ready',
           details,
           ahead: one.startsAt.getTime() > Date.now(),
+          // Until it is over, not until it starts: extending a lesson is decided during it (D-190).
+          editable: one.endsAt.getTime() > Date.now(),
           // The same quarter of an hour the card on Today uses (D-178, D-184).
           startable: lessonToStart([one], new Date()) !== null,
         });

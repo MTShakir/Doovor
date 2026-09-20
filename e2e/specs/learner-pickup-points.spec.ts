@@ -24,6 +24,24 @@ test.describe('a learner says where lessons start (COV-04, D-182)', () => {
       await adding.getByLabel('Postcode').fill('ls2 9jt');
       await expect(adding.getByText(/^Found .*LS2 9JT\.$/)).toBeVisible();
 
+      // The pin is theirs to move, and stays where it is dropped rather than springing back to
+      // the middle of the map (D-190). Drawing a map needs a Mapbox token, which CI is not given,
+      // and without one the form is the postcode and the address, which still find the place.
+      const marker = page.locator('.mapboxgl-marker').first();
+      const onAMap = await marker
+        .waitFor({ state: 'visible', timeout: 15_000 })
+        .then(() => true)
+        .catch(() => false);
+      if (onAMap) {
+        const was = await marker.boundingBox();
+        if (was === null) throw new Error('A pin that is visible has no place on the screen');
+        await page.mouse.move(was.x + was.width / 2, was.y + was.height / 2);
+        await page.mouse.down();
+        await page.mouse.move(was.x + was.width / 2 + 50, was.y + was.height / 2 + 30, { steps: 10 });
+        await page.mouse.up();
+        await expect.poll(async () => (await marker.boundingBox())?.x).toBeGreaterThan(was.x + 40);
+      }
+
       await adding.getByLabel('Address').fill('Leeds station, New Station Street');
       await adding.getByLabel('What to call it').fill('Station');
       await adding.getByRole('checkbox', { name: 'Lessons start here' }).check();

@@ -3,7 +3,7 @@
 -- already paid for in money is left alone, and ignoring the gap gives up travel time on both
 -- sides without ever touching a lesson itself.
 begin;
-select plan(15);
+select plan(16);
 
 select tests.create_fixture();
 
@@ -138,6 +138,19 @@ select is(
   true,
   'the audit says the gap was ignored'
 );
+
+-- A lesson being taught can still be lengthened, which is when an instructor usually decides to
+-- run on for another half hour (D-190).
+select tests.clear_authentication();
+update public.bookings
+   set starts_at = now() - interval '20 minutes', ends_at = now() + interval '40 minutes', status = 'in_progress'
+ where id = :'morning';
+select tests.authenticate_as(:'asha_user');
+select lives_ok(
+  format($$ select public.reschedule_booking(%L, (now() - interval '20 minutes')::timestamptz, 120) $$, :'morning'),
+  'a lesson under way can be lengthened'
+);
+select tests.clear_authentication();
 
 select * from finish();
 rollback;

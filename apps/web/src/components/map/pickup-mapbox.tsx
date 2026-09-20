@@ -67,8 +67,15 @@ export default function PickupMapbox({ token, styleUrl, pin, onMove, description
 
   useEffect(() => {
     const instance = map.current;
-    if (!instance) return;
-    marker.current?.setLngLat([pin.longitude, pin.latitude]);
+    const dropped = marker.current;
+    if (!instance || !dropped) return;
+
+    // A pin that has just been dragged is already where it belongs. Moving the map under it would
+    // put it back in the middle of the screen, which reads as the drag springing back (D-190).
+    const at = dropped.getLngLat();
+    if (Math.abs(at.lat - pin.latitude) < 1e-9 && Math.abs(at.lng - pin.longitude) < 1e-9) return;
+
+    dropped.setLngLat([pin.longitude, pin.latitude]);
     instance.easeTo({ center: [pin.longitude, pin.latitude], duration: 300 });
   }, [pin]);
 
