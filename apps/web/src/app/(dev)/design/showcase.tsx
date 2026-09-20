@@ -103,6 +103,7 @@ import { StatusPill, type PillStatus } from '@repo/ui/status-pill';
 import { NumberStepper, StepProgress } from '@repo/ui/stepper';
 import { Switch } from '@repo/ui/switch';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@repo/ui/tabs';
+import { LearnerTabs, LessonHistoryTabs } from '@/app/(portal)/app/instructor/learners/[id]/learner-tabs';
 import { TimeSlotGrid } from '@repo/ui/time-slot-grid';
 import { toast, toastWithUndo } from '@repo/ui/toast';
 import { BadgeCheck, CalendarX, Car, CreditCard, WifiOff } from 'lucide-react';
@@ -789,6 +790,16 @@ export function DesignShowcase() {
           <TabsContent value="week">Week view arrives in M1.</TabsContent>
           <TabsContent value="month">Month view arrives in M1.</TabsContent>
         </Tabs>
+        <Label>A learner&apos;s card, one subject at a time: five of them scroll rather than wrap on a phone (LRN-02, D-189)</Label>
+        <LearnerTabs
+          tabs={[
+            { value: 'summary', label: 'Summary', panel: <p className="text-body text-ink">The figures, where they are collected, and the private notes.</p> },
+            { value: 'lessons', label: 'Lessons', panel: <LessonHistoryTabs upcoming={<p className="text-body text-ink">Nothing booked yet.</p>} past={<p className="text-body text-ink">Two lessons taught.</p>} /> },
+            { value: 'payments', label: 'Payments', panel: <p className="text-body text-ink">Every payment, newest first.</p> },
+            { value: 'progress', label: 'Progress', panel: <p className="text-body text-ink">The skill map and the lesson records.</p> },
+            { value: 'history', label: 'History', panel: <p className="text-body text-ink">What has happened to this learner here.</p> },
+          ]}
+        />
       </Section>
 
       <Section title="Chips and pills">

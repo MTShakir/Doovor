@@ -105,7 +105,11 @@ test.describe('the learner list (LRN-01, M2-04)', () => {
     await expect(page.getByRole('link', { name: 'Text' })).toHaveAttribute('href', 'sms:+447700900011');
     await expect(page.getByRole('link', { name: 'Email' })).toHaveAttribute('href', 'mailto:jack.taylor@example.com');
 
-    const lessons = page.getByRole('region', { name: 'Lessons' });
+    // The card opens on Summary: the figures first, then where they are collected (D-189).
+    const lessons = page.getByRole('region', { name: 'Lessons and money' });
+    await expect(lessons.getByText('Booked')).toBeVisible();
+    await expect(lessons.getByText('Paid')).toBeVisible();
+    await expect(lessons.getByText('Credit left')).toBeVisible();
     await expect(lessons.getByText('Hours driven')).toBeVisible();
     await expect(lessons.getByText('Usual lesson')).toBeVisible();
     await expect(lessons.getByText('1 hour', { exact: true })).toBeVisible();
@@ -119,6 +123,19 @@ test.describe('the learner list (LRN-01, M2-04)', () => {
     await expectAccessible(page);
     await snap(page, testInfo, 'learner-card');
 
+    // The rest of the card is a tab away, and each one is there when it is opened (D-189).
+    const tabs = page.getByRole('tablist', { name: 'About this learner' });
+    await tabs.getByRole('tab', { name: 'Lessons' }).click();
+    await expect(page.getByRole('tablist', { name: 'Which lessons' })).toBeVisible();
+    await tabs.getByRole('tab', { name: 'Payments' }).click();
+    await expect(page.getByRole('region', { name: 'Payments' })).toBeVisible();
+    await tabs.getByRole('tab', { name: 'Progress' }).click();
+    await expect(page.getByRole('region', { name: 'Progress' })).toBeVisible();
+    await tabs.getByRole('tab', { name: 'History' }).click();
+    await expect(page.getByRole('region', { name: 'History' })).toBeVisible();
+    await expectAccessible(page);
+
+    await tabs.getByRole('tab', { name: 'Summary' }).click();
     await page.getByRole('main').getByRole('link', { name: 'Learners' }).click();
     await expect(page.getByRole('heading', { level: 1, name: 'Learners' })).toBeVisible();
   });

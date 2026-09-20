@@ -43,7 +43,7 @@ test.describe('a learner tells us what helps (LRN-02, D-180)', () => {
     try {
       const staff = await theirs.newPage();
       await staff.goto(`/app/instructor/learners/${await userIdOf(email)}`);
-      const told = staff.getByRole('region', { name: 'What they told us' });
+      const told = staff.getByRole('region', { name: 'About them' });
       await expect(told).toContainText(wording);
       await expect(told).toContainText(`Tablets that make me drowsy, ${testInfo.project.name}`);
       await expect(told).toContainText('Passed within the last 2 years');
