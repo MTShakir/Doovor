@@ -3,7 +3,7 @@
 -- already paid for in money is left alone, and ignoring the gap gives up travel time on both
 -- sides without ever touching a lesson itself.
 begin;
-select plan(12);
+select plan(15);
 
 select tests.create_fixture();
 
@@ -54,19 +54,34 @@ select is(
   'back to the price of an hour'
 );
 
--- Money already taken is not quietly repriced. Nobody is granted an update on a booking, so the
--- money is marked as taken from outside a session, the way a payment would land.
+-- Money already taken starts again at the new length (D-188): it goes back the way calling the
+-- lesson off would give it back, and the lesson is unpaid at its new price. Nobody is granted an
+-- update on a booking, so the money is marked as taken from outside a session, as a payment lands.
 select tests.clear_authentication();
-update public.bookings set payment_status = 'paid_card' where id = :'morning';
+update public.bookings set payment_status = 'paid_cash' where id = :'morning';
+insert into public.payments (business_id, learner_id, booking_id, amount_pence, method, status, paid_at)
+values (:'biz', :'learner', :'morning', 4200, 'cash', 'paid', now());
 select tests.authenticate_as(:'asha_user');
-select throws_ok(
+select lives_ok(
   format($$ select public.reschedule_booking(%L, (date_trunc('day', now()) + interval '9 days 9 hours')::timestamptz, 120) $$, :'morning'),
-  'ALREADY_PAID',
-  'a lesson paid for in money keeps its length until the money is sorted out'
+  'a lesson paid for in cash can still be lengthened'
+);
+select is(
+  (select payment_status::text from public.bookings where id = :'morning'),
+  'unpaid',
+  'and it is unpaid again, at the new price'
 );
 select tests.clear_authentication();
-update public.bookings set payment_status = 'unpaid' where id = :'morning';
+select is(
+  (select amount_pence from public.refunds where booking_id = :'morning'),
+  4200,
+  'with the whole of what they paid owed back to them'
+);
 select tests.authenticate_as(:'asha_user');
+select lives_ok(
+  format($$ select public.reschedule_booking(%L, (date_trunc('day', now()) + interval '9 days 9 hours')::timestamptz, 60) $$, :'morning'),
+  'and goes back to an hour'
+);
 
 -- ---------------------------------------------------------------------------------------
 -- The gap after a lesson, which the instructor may say is not needed.
