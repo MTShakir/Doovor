@@ -49,6 +49,8 @@ import { DashboardFigures, DashboardSkeleton, WaitingOnStaff } from '@/component
 import { DateRangePicker } from '@/components/admin/date-range';
 import { PlatformHighlights } from '@/components/admin/highlights';
 import { PlatformIncomeScreen } from '@/components/admin/income';
+import { DeletionsScreen } from '@/app/(admin)/admin/deletions/deletions-screen';
+import type { DeletionRequest } from '@/lib/admin/deletions';
 import type { PlatformIncome } from '@/lib/admin/income';
 import type { PlatformHighlights as PlatformHighlightsData } from '@/lib/admin/highlights';
 import { BusinessDetails, BusinessResults, SuspendBusinessDialog } from '@/components/admin/businesses';
@@ -199,6 +201,38 @@ const exampleHighlights: PlatformHighlightsData = {
   ],
   more: true,
 };
+
+/** Who has asked to leave (AUTH-09, D-175): one who said why, one who did not. */
+const exampleLeavers: DeletionRequest[] = [
+  {
+    id: 'd1000000-0000-4000-8000-000000000001',
+    userId: 'd2000000-0000-4000-8000-000000000001',
+    name: 'Ruth Leaver',
+    email: 'ruth@example.com',
+    phone: '+447700900321',
+    role: 'learner',
+    business: 'Quayside Driving School',
+    reason: 'My instructor stopped replying to me',
+    status: 'pending',
+    asked: 'Thu 17 Sep 2026, 09:14',
+    erases: 'Thu 24 Sep 2026',
+    daysLeft: 4,
+  },
+  {
+    id: 'd1000000-0000-4000-8000-000000000002',
+    userId: 'd2000000-0000-4000-8000-000000000002',
+    name: 'Owen Quiet',
+    email: null,
+    phone: '+447700900322',
+    role: 'instructor',
+    business: null,
+    reason: null,
+    status: 'pending',
+    asked: 'Sat 19 Sep 2026, 21:40',
+    erases: 'Sat 26 Sep 2026',
+    daysLeft: 1,
+  },
+];
 
 /** What the platform itself earned (ADM-01, ADM-10, D-174). */
 const exampleIncome: PlatformIncome = {
@@ -1350,6 +1384,8 @@ export function DesignShowcase() {
         <Label>A platform just starting, with nothing waiting</Label>
         <WaitingOnStaff dashboard={quietDashboard} idPrefix="design-waiting-quiet" />
         <DashboardFigures dashboard={quietDashboard} idPrefix="design-platform-month-quiet" />
+        <Label>Who has asked to leave, with a day left and with four (AUTH-09, D-175)</Label>
+        <DeletionsScreen requests={exampleLeavers} canKeep />
         <Label>What the platform itself earned, and the plans Businesses are on (ADM-01, ADM-10, D-174)</Label>
         <div className="flex flex-col gap-6">
           <PlatformIncomeScreen income={exampleIncome} label="Last 30 days" />

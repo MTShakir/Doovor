@@ -1254,6 +1254,41 @@ export async function platformFigures(days?: { from: string; to: string }): Prom
   });
 }
 
+export interface MadeLeaver {
+  name: string;
+  email: string;
+  reason: string;
+  remove: () => Promise<void>;
+}
+
+/**
+ * Somebody who has asked to delete their account (AUTH-09, D-175), made for one test: a learner of
+ * this test's own, so the staff screen has a request to answer that no other test is watching.
+ */
+export async function makeLeaver(label: string, reason: string): Promise<MadeLeaver> {
+  const userId = crypto.randomUUID();
+  const name = `${label} Leaver`;
+  const email = `${label.toLowerCase()}.leaver.${userId.slice(0, 8)}@example.com`;
+  await withDatabase(async (sql) => {
+    await sql`select tests.create_user_with_id(${userId}::uuid, ${email}, ${name})`;
+    await sql`update public.users set phone = '+447700900321', intended_role = 'learner' where id = ${userId}`;
+    await sql`insert into public.deletion_requests (user_id, reason) values (${userId}, ${reason})`;
+  });
+
+  return {
+    name,
+    email,
+    reason,
+    remove: async () => {
+      await withDatabase(async (sql) => {
+        await sql`delete from public.deletion_requests where user_id = ${userId}`;
+        // What happened to them stays in the audit log, which is append-only (NFR-SEC-06).
+        await sql`delete from auth.users where id = ${userId}`;
+      });
+    },
+  };
+}
+
 export interface MadeSchoolInstructor {
   name: string;
   /** Signs in with the seed's password (supabase/seeds/test_helpers.sql). */

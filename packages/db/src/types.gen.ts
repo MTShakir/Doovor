@@ -2883,6 +2883,27 @@ export type Database = {
           type: Database["public"]["Enums"]["business_type"]
         }[]
       }
+      admin_cancel_deletion_request: {
+        Args: { p_note: string; p_request_id: string }
+        Returns: undefined
+      }
+      admin_deletion_requests: {
+        Args: { p_settled?: boolean }
+        Returns: {
+          business_name: string
+          email: string
+          erases_at: string
+          full_name: string
+          id: string
+          intended_role: string
+          phone: string
+          processed_at: string
+          reason: string
+          requested_at: string
+          status: string
+          user_id: string
+        }[]
+      }
       admin_instructors: {
         Args: { p_limit?: number; p_query?: string }
         Returns: {

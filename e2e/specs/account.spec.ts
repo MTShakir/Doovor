@@ -43,7 +43,7 @@ test.describe('account and security (AUTH-09)', () => {
     await page.getByRole('button', { name: 'Ask to delete my account' }).click();
     const sheet = page.getByRole('dialog', { name: 'Delete your account?' });
     await expect(sheet).toBeVisible();
-    await sheet.getByLabel('Why are you leaving? (optional)').fill('Passed my test');
+    await sheet.getByLabel('Why are you leaving?').fill('Passed my test');
     await sheet.getByRole('button', { name: 'Ask to delete my account' }).click();
     await expect(page.getByText(/We received your request on/)).toBeVisible();
   });
