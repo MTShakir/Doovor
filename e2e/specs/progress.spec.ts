@@ -1,7 +1,7 @@
 import { expect, test, type Locator, type Page } from '@playwright/test';
 import { authFile } from '../support/accounts';
 import { recordLessons, userIdOf, type RecordedLessonSeed } from '../support/database';
-import { addDays, dayLabel, expectAccessible, settled, snap } from '../support/helpers';
+import { addDays, dayLabel, expectAccessible, openLearnerTab, settled, snap } from '../support/helpers';
 
 /**
  * A learner's progress, and their instructor's view of it (PRD 10.3 step 4, PRG-03, M4-06, M4-07).
@@ -165,6 +165,7 @@ test.describe('progress: lesson records and the skill map (PRG-03, M4-06, M4-07)
       const jack = await userIdOf(learner);
 
       await page.goto(`/app/instructor/learners/${jack}`);
+      await openLearnerTab(page, 'Progress');
       const progress = page.getByRole('region', { name: 'Progress' });
       await expect(progress).toContainText(/\d+ of 23 areas worked on/);
       await expect(progress).toContainText('Last record, ');

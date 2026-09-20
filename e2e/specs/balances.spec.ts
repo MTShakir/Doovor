@@ -1,7 +1,7 @@
 import { expect, test } from '@playwright/test';
 import { authFile, roles } from '../support/accounts';
 import { bookLesson, clearPaymentsAccount, giveCredit, holdPaymentsBusiness, userIdOf } from '../support/database';
-import { dayLabel, expectAccessible, settled, snap } from '../support/helpers';
+import { dayLabel, expectAccessible, openLearnerTab, settled, snap } from '../support/helpers';
 import { signInThroughForm } from '../support/sign-in';
 
 /**
@@ -69,7 +69,8 @@ test.describe('what a learner has and owes (PAY-06, M3-16)', () => {
     const instructor = await browser.newContext({ storageState: authFile('schoolInstructor') });
     const card = await instructor.newPage();
     await card.goto(`/app/instructor/learners/${await userIdOf(learner.email)}`);
-    const money = card.getByRole('region', { name: 'Money' });
+    await openLearnerTab(card, 'Payments');
+    const money = card.getByRole('region', { name: 'Payments' });
     const cardLines = money.getByRole('list', { name: 'Balance' }).getByRole('listitem');
     await expect(cardLines).toHaveText(learnerSees);
     const cardOwed = money.getByRole('list', { name: 'Lessons owed for' }).getByRole('listitem');

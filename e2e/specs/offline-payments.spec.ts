@@ -1,7 +1,7 @@
 import { expect, test } from '@playwright/test';
 import { authFile, roles } from '../support/accounts';
 import { bookLesson, clearDiary, lateFeeOwed, lessonIdAt, lessonMoney, offlinePaymentOn, userIdOf } from '../support/database';
-import { dayLabel, expectAccessible, settled, snap } from '../support/helpers';
+import { dayLabel, expectAccessible, openLearnerTab, settled, snap } from '../support/helpers';
 
 /**
  * Cash and bank transfers, recorded in two taps (PAY-05, M3-15), and given back (M3-18).
@@ -69,7 +69,8 @@ test.describe('lessons paid in person (PAY-05, M3-15)', () => {
 
     // Sarah runs her own Business, so she can hand the money back, from the learner card (PAY-07, M3-17).
     await page.goto(`/app/instructor/learners/${await userIdOf(roles.learner.email)}`);
-    const money = page.getByRole('region', { name: 'Money' });
+    await openLearnerTab(page, 'Payments');
+    const money = page.getByRole('region', { name: 'Payments' });
     const entry = money.getByRole('list', { name: 'Recent payments and credit' }).getByRole('listitem').filter({ hasText: `Lesson on ${dayLabel(day)}` });
     const refund = page.getByRole('dialog', { name: 'Refund Jack Taylor' });
     await expect(async () => {
@@ -142,7 +143,8 @@ test.describe('lessons paid in person (PAY-05, M3-15)', () => {
 
     // Sarah marks the cash handed back, from the learner card, in two taps.
     await page.goto(`/app/instructor/learners/${await userIdOf(roles.learner.email)}`);
-    const money = page.getByRole('region', { name: 'Money' });
+    await openLearnerTab(page, 'Payments');
+    const money = page.getByRole('region', { name: 'Payments' });
     const owedBack = money.getByRole('list', { name: 'Owed back' }).getByRole('listitem').filter({ hasText: `For the lesson on ${feeDay}` });
     await expect(owedBack).toContainText('£42 owed back');
     // Nothing is left to refund on the payment: all of it is already owed back.
