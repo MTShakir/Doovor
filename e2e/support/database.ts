@@ -1265,6 +1265,16 @@ export async function platformIdOf(email: string): Promise<string> {
   });
 }
 
+/** Forgets what a learner told us about a disability, so a test starts from nothing (D-180). */
+export async function clearLearnerHealth(email: string): Promise<void> {
+  await withDatabase(async (sql) => {
+    await sql`
+      delete from public.learner_health h
+       using public.users u
+       where u.id = h.user_id and lower(u.email) = lower(${email})`;
+  });
+}
+
 export interface MadeLeaver {
   name: string;
   email: string;

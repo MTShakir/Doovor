@@ -47,6 +47,10 @@ export default function PrivacyPage() {
             ['Your account', 'Name, email address, mobile number, password (stored only as a hash), and the dates you signed in.'],
             ['Instructors and schools', 'Business name, the area you cover, your working hours, your prices, your car, the languages you teach in, and your ADI or PDI badge number and its expiry date.'],
             ['Learners', 'Who teaches you, your lessons, what you have paid, your progress against the DVSA syllabus, and your date of birth where a Business asks for it so it knows whether you are under 18.'],
+            [
+              'A disability, if you tell us',
+              'You can tell us about a disability, health condition or learning difficulty so your instructor can plan lessons that suit you. This is health information, which the law treats as special. Answering is your choice, and you may change it or take it off your record at any time from About you in your account. We keep it apart from the rest of your details, and only the instructor who teaches you and the people who run the school you learn with can read it. It is never used to decide whether you can learn with us, and it is never sold or shared.',
+            ],
             ['Lessons and money', 'Bookings, cancellations, payments, refunds, receipts and credit. Card numbers are never sent to us: the card fields belong to Stripe and the card goes straight to them.'],
             ['Pictures', 'A profile photograph if you add one, and a picture of a badge or a licence while it is being checked.'],
             ['Notes', 'An instructor can write private notes about a learner. Those are theirs, and no learner sees them.'],

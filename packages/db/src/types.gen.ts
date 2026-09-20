@@ -1193,6 +1193,41 @@ export type Database = {
           },
         ]
       }
+      learner_health: {
+        Row: {
+          created_at: string
+          details: string | null
+          has_disability: boolean
+          told_at: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          details?: string | null
+          has_disability: boolean
+          told_at?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          details?: string | null
+          has_disability?: boolean
+          told_at?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "learner_health_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: true
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       learner_notes: {
         Row: {
           author_id: string
