@@ -47,6 +47,8 @@ import { SetupChecklist } from '@/components/setup-checklist';
 import { InstructorWeeks, OverviewFigures, OverviewSkeleton } from '@/components/school/overview';
 import { DashboardFigures, DashboardSkeleton, WaitingOnStaff } from '@/components/admin/dashboard';
 import { DateRangePicker } from '@/components/admin/date-range';
+import { PlatformHighlights } from '@/components/admin/highlights';
+import type { PlatformHighlights as PlatformHighlightsData } from '@/lib/admin/highlights';
 import { BusinessDetails, BusinessResults, SuspendBusinessDialog } from '@/components/admin/businesses';
 import type { AdminBusiness } from '@/lib/admin/businesses';
 import { InstructorResults, LearnerResults, PersonDetails, ResetTwoStepDialog, SuspendAccountDialog, ViewAsDialog } from '@/components/admin/people';
@@ -72,6 +74,7 @@ import { Chip, ChipGroup } from '@repo/ui/chip';
 import { Dialog } from '@repo/ui/dialog';
 import { EmptyState } from '@repo/ui/empty-state';
 import { Field } from '@repo/ui/field';
+import { Foldable } from '@repo/ui/foldable';
 import { Input, Textarea } from '@repo/ui/input';
 import { contrastRatio } from '@repo/ui/lib/contrast';
 import { ListDivider, ListRow } from '@repo/ui/list-row';
@@ -177,6 +180,22 @@ const quietDashboard: PlatformDashboard = {
   money: { gmvPence: 0, cardPence: 0, feesPence: 0, payments: 0, refundsPence: 0 },
   verification: { waiting: 0, oldestSince: null },
   disputes: { open: 0, oldestSince: null },
+};
+
+/** The five lists under the dashboard's figures (ADM-01, D-172). */
+const exampleHighlights: PlatformHighlightsData = {
+  earningSchools: [
+    { id: 'b1000000-0000-4000-8000-000000000001', name: 'Quayside Driving School', pence: 420_000, payments: 96 },
+    { id: 'b1000000-0000-4000-8000-000000000002', name: 'Leeds Drive Academy', pence: 288_000, payments: 64 },
+  ],
+  earningInstructors: [{ id: 'b1000000-0000-4000-8000-000000000003', name: 'Sarah Khan Driving', pence: 180_000, payments: 40 }],
+  busiestSchools: [{ id: 'b1000000-0000-4000-8000-000000000001', name: 'Quayside Driving School', learners: 31, lessons: 96 }],
+  busiestInstructors: [{ id: 'b1000000-0000-4000-8000-000000000003', name: 'Sarah Khan Driving', learners: 12, lessons: 40 }],
+  arrivals: [
+    { id: 'b1000000-0000-4000-8000-000000000004', name: 'New Wheels', kind: 'school', joinedAt: '2026-09-18T09:00:00+00:00' },
+    { id: 'b1000000-0000-4000-8000-000000000005', name: 'Tom Walsh Driving', kind: 'independent', joinedAt: '2026-09-16T14:00:00+00:00' },
+  ],
+  more: true,
 };
 
 const exampleBusinessRows = [
@@ -833,6 +852,15 @@ export function DesignShowcase() {
           <ListDivider />
           <ListRow title="Payments" subtitle="Card, cash or bank transfer" chevron />
         </Card>
+        <Label>A card that folds away, closed and open (D-172)</Label>
+        <div className="grid items-start gap-4 md:grid-cols-2">
+          <Foldable title="Top earning schools" subtitle="10 schools">
+            <p className="px-4 py-3 text-small text-grey-700">What it holds shows when it is opened.</p>
+          </Foldable>
+          <Foldable title="New to the platform" subtitle="2 Businesses" open>
+            <p className="px-4 py-3 text-small text-grey-700">Open when the page arrives.</p>
+          </Foldable>
+        </div>
       </Section>
 
       <Section title="Feedback">
@@ -1306,6 +1334,8 @@ export function DesignShowcase() {
         <Label>A platform just starting, with nothing waiting</Label>
         <WaitingOnStaff dashboard={quietDashboard} idPrefix="design-waiting-quiet" />
         <DashboardFigures dashboard={quietDashboard} idPrefix="design-platform-month-quiet" />
+        <Label>Who stands out, each list folded away until it is opened (ADM-01, D-172)</Label>
+        <PlatformHighlights highlights={exampleHighlights} shown={5} moreHref="/design" />
         <Label>Loading</Label>
         <DashboardSkeleton />
         <Label>Businesses found, one of them suspended</Label>

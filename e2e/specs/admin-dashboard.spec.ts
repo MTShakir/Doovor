@@ -119,6 +119,34 @@ test.describe('the admin dashboard (ADM-01, M5-17)', { tag: '@desktop-only' }, (
     await snap(page, testInfo, 'admin-dashboard-dates');
   });
 
+  test('folds away the lists of who stands out, and follows the days chosen (D-172)', async ({ page }, testInfo) => {
+    await page.goto('/admin');
+    const stands = page.getByRole('region', { name: 'Who stands out' });
+    const card = (title: string) => stands.locator('details').filter({ hasText: title });
+
+    // Folded away until opened: the dashboard is a screen of figures first.
+    const busiest = card('Schools with the most learners');
+    const school = busiest.getByRole('link', { name: /Quayside Driving School/ });
+    await expect(school).toBeHidden();
+    await busiest.getByText('Schools with the most learners').click();
+    await expect(school).toBeVisible();
+    await expect(school).toContainText(/\d+ learners?/);
+
+    // The seed's own Businesses joined today, so they are new to the platform.
+    const arrivals = card('New to the platform');
+    await arrivals.getByText('New to the platform').click();
+    await expect(arrivals.getByRole('link').first()).toBeVisible();
+    await expectAccessible(page);
+    await snap(page, testInfo, 'admin-highlights');
+
+    // A week in 2024: every list says there was nobody, as the figures say there was nothing.
+    await page.goto('/admin?from=2024-01-01&to=2024-01-07');
+    await stands.locator('details').filter({ hasText: 'Top earning schools' }).getByText('Top earning schools').click();
+    await expect(stands.getByText('No school took a payment in these days.')).toBeVisible();
+    await card('New to the platform').getByText('New to the platform').click();
+    await expect(stands.getByText('Nobody joined in these days.')).toBeVisible();
+  });
+
   test('support staff see the same dashboard', async ({ browser }) => {
     const context = await browser.newContext({ storageState: authFile('support') });
     const page = await context.newPage();

@@ -1,17 +1,19 @@
 import { rangeFromParams } from '@repo/core/stats-range';
 import { todayInZone } from '@repo/core/time';
 import { PageHeader } from '@repo/ui/app-shell';
-import type { Metadata } from 'next';
+import type { Metadata, Route } from 'next';
 import { Suspense } from 'react';
 import { DashboardFigures, DashboardSkeleton, WaitingOnStaff } from '@/components/admin/dashboard';
 import { DateRangePicker } from '@/components/admin/date-range';
+import { PlatformHighlights } from '@/components/admin/highlights';
 import { platformDashboard } from '@/lib/admin/dashboard';
+import { arrivalsCount, arrivalsStep, platformHighlights } from '@/lib/admin/highlights';
 import { requirePortal } from '@/lib/auth/session';
 
 export const metadata: Metadata = { title: 'Dashboard' };
 
 interface DashboardProps {
-  searchParams: Promise<{ range?: string; from?: string; to?: string }>;
+  searchParams: Promise<{ range?: string; from?: string; to?: string; joined?: string }>;
 }
 
 /** ADM-01: how the platform is doing over the days staff choose, and what is waiting on its people. */
@@ -31,13 +33,27 @@ export default function AdminDashboardPage({ searchParams }: DashboardProps) {
 async function Dashboard({ searchParams }: DashboardProps) {
   await requirePortal('admin');
   const today = todayInZone();
-  const range = rangeFromParams(await searchParams, today);
-  const dashboard = await platformDashboard(range);
+  const params = await searchParams;
+  const range = rangeFromParams(params, today);
+  const shown = arrivalsCount(params.joined);
+  const [dashboard, highlights] = await Promise.all([platformDashboard(range), platformHighlights(range, shown)]);
+
+  // More arrivals, over the same days: the days are kept, the count goes up.
+  const asked = new URLSearchParams();
+  if (range.key === 'custom') {
+    asked.set('from', range.from);
+    asked.set('to', range.to);
+  } else if (range.key !== 'last_30_days') {
+    asked.set('range', range.key);
+  }
+  asked.set('joined', String(shown + arrivalsStep));
+
   return (
     <>
       <DateRangePicker today={today} chosen={range} base="/admin" />
       <WaitingOnStaff dashboard={dashboard} />
       <DashboardFigures dashboard={dashboard} />
+      <PlatformHighlights highlights={highlights} shown={shown} moreHref={`/admin?${asked.toString()}` as Route} />
     </>
   );
 }
