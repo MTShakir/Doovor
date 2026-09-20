@@ -53,39 +53,43 @@ export function DiaryNav({ view, date, previous, next, today }: {
     'flex size-12 shrink-0 items-center justify-center rounded-full bg-grey-100 text-black hover:bg-grey-200 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-black';
 
   return (
-    <nav className="flex flex-wrap items-center justify-between gap-3" aria-label="Diary">
-      {/* Both groups wrap: at 200% text on a phone the row is wider than the screen (M6-06). */}
-      <div className="flex flex-wrap items-center gap-1">
-        <NavLink href={href(view, previous)} aria-label="Previous" className={arrow}>
-          <ChevronLeft className="size-5" aria-hidden />
-        </NavLink>
-        <NavLink href={href(view, next)} aria-label="Next" className={arrow}>
-          <ChevronRight className="size-5" aria-hidden />
-        </NavLink>
-        {backToToday ? (
-          <NavLink
-            href={href(view, today)}
-            className={`${backToToday} h-12 items-center rounded-full px-4 text-body font-semibold text-black underline-offset-4 hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-black`}
-          >
-            Back to today
+    <nav className="flex flex-col gap-2" aria-label="Diary">
+      {/* The arrows and the views hold their places, whatever else is on screen: what comes and
+          goes sits on the line below, so moving through the diary never moves them (D-181). The
+          row still wraps, since at 200% text on a phone it is wider than the screen (M6-06). */}
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div className="flex items-center gap-1">
+          <NavLink href={href(view, previous)} aria-label="Previous" className={arrow}>
+            <ChevronLeft className="size-5" aria-hidden />
           </NavLink>
-        ) : null}
+          <NavLink href={href(view, next)} aria-label="Next" className={arrow}>
+            <ChevronRight className="size-5" aria-hidden />
+          </NavLink>
+        </div>
+        <ul className="inline-flex min-h-12 flex-wrap items-center gap-1 rounded-full bg-grey-100 p-1">
+          {views.map((option) => (
+            <li key={option.value}>
+              <NavLink
+                href={href(option.value, date)}
+                aria-current={option.value === view ? 'page' : undefined}
+                className={`flex h-10 items-center rounded-full px-4 text-small font-semibold focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-black ${
+                  view === 'responsive' ? option.whenResponsive : option.value === view ? chosen : notChosen
+                }`}
+              >
+                {option.label}
+              </NavLink>
+            </li>
+          ))}
+        </ul>
       </div>
-      <ul className="inline-flex min-h-12 flex-wrap items-center gap-1 rounded-full bg-grey-100 p-1">
-        {views.map((option) => (
-          <li key={option.value}>
-            <NavLink
-              href={href(option.value, date)}
-              aria-current={option.value === view ? 'page' : undefined}
-              className={`flex h-10 items-center rounded-full px-4 text-small font-semibold focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-black ${
-                view === 'responsive' ? option.whenResponsive : option.value === view ? chosen : notChosen
-              }`}
-            >
-              {option.label}
-            </NavLink>
-          </li>
-        ))}
-      </ul>
+      {backToToday ? (
+        <NavLink
+          href={href(view, today)}
+          className={`${backToToday} h-12 w-fit items-center rounded-full px-4 text-body font-semibold text-black underline-offset-4 hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-black`}
+        >
+          Back to today
+        </NavLink>
+      ) : null}
     </nav>
   );
 }

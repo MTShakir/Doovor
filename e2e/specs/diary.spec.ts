@@ -38,12 +38,21 @@ test.describe('instructor diary (DIA-03, DIA-04, M1-19)', () => {
     // The portal has a Today tab of its own, so this is the diary's own navigation.
     const diary = page.getByRole('navigation', { name: 'Diary' });
 
+    // Where the buttons sit before anything is pressed: moving through the diary must not move
+    // them, which it did while Back to today shared their row (D-181).
+    const dayButton = diary.getByRole('link', { name: 'Day', exact: true });
+    const before = await dayButton.boundingBox();
+
     await diary.getByRole('link', { name: 'Next' }).click();
     await expect(page).toHaveURL(new RegExp(`date=${wednesday}`));
     await expect(page.getByText(longLabel(wednesday))).toBeVisible();
 
     await diary.getByRole('link', { name: 'Previous' }).click();
     await expect(page).toHaveURL(new RegExp(`date=${tuesday}`));
+
+    // Back to today is on screen now, on its own line: the views are where they were.
+    await expect(diary.getByRole('link', { name: 'Back to today' })).toBeVisible();
+    expect(await dayButton.boundingBox()).toEqual(before);
 
     // The day these tests start from is never today, so going back to today always leaves it. It
     // says where it goes, rather than looking like a label for the day on screen, and once there it
