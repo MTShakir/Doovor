@@ -46,8 +46,9 @@ export const learnerOnboardingSchema = z.object({
     .refine((date) => !isValidLocalDate(date) || isAtLeast(date, leastLearnerAge, todayInZone()), {
       error: 'You have to be 16 to start learning to drive',
     }),
-  // Asked at sign-up, answered only if they want to (LRN-02, D-180).
-  hasDisability: z.enum(['yes', 'no']).optional(),
+  // Asked at sign-up, answered only if they want to (LRN-02, D-180). Nothing chosen comes through
+  // as an empty string from the browser, which is no answer rather than a wrong one.
+  hasDisability: z.preprocess((value) => (value === '' ? undefined : value), z.enum(['yes', 'no']).optional()),
   disabilityDetails: z.string().trim().max(1000, { error: 'Use 1000 characters or fewer' }).optional(),
 }).refine((answers) => answers.hasDisability !== 'yes' || (answers.disabilityDetails ?? '') !== '', {
   error: 'Say what would help, so your instructor can plan for it',

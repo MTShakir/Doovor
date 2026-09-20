@@ -51,6 +51,21 @@ describe('learner onboarding (AUTH-06, M2-01)', () => {
   });
 });
 
+describe('the disability question at sign-up (LRN-02, D-180)', () => {
+  it('finishes with nothing chosen, which the browser sends as an empty answer', () => {
+    const answers = learnerOnboardingSchema.safeParse({ ...valid, hasDisability: '', disabilityDetails: '' });
+    expect(answers.success).toBe(true);
+    expect(answers.data?.hasDisability).toBeUndefined();
+  });
+
+  it('takes a yes with what would help, and asks for it when it is missing', () => {
+    expect(learnerOnboardingSchema.safeParse({ ...valid, hasDisability: 'yes', disabilityDetails: 'Needs quieter roads' }).success).toBe(true);
+    const empty = learnerOnboardingSchema.safeParse({ ...valid, hasDisability: 'yes' });
+    expect(empty.success).toBe(false);
+    expect(empty.error?.issues[0]?.path).toEqual(['disabilityDetails']);
+  });
+});
+
 describe('what a learner tells us about a disability (LRN-02, D-180)', () => {
   it('takes a plain no, with nothing else to say', () => {
     expect(learnerHealthSchema.safeParse({ hasDisability: 'no' }).success).toBe(true);
