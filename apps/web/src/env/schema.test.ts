@@ -68,6 +68,7 @@ describe('serverEnvSchema', () => {
         TWILIO_ACCOUNT_SID: 'AC1',
         TWILIO_AUTH_TOKEN: 't',
         TWILIO_MESSAGING_SERVICE_SID: 'MG1',
+        SUPABASE_SEND_SMS_HOOK_SECRET: 'v1,whsec_abc',
         INNGEST_EVENT_KEY: 'e',
         INNGEST_SIGNING_KEY: 's',
         FIELD_ENCRYPTION_KEYS: 'v1:abc',
@@ -103,6 +104,7 @@ describe('serverEnvSchema', () => {
       TWILIO_ACCOUNT_SID: 'AC1',
       TWILIO_AUTH_TOKEN: 't',
       TWILIO_MESSAGING_SERVICE_SID: 'MG1',
+      SUPABASE_SEND_SMS_HOOK_SECRET: 'v1,whsec_abc',
       PAYMENTS_PROVIDER: 'stripe',
       NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY: 'pk_live_x',
       STRIPE_SECRET_KEY: 'sk_live_x',
@@ -112,6 +114,32 @@ describe('serverEnvSchema', () => {
       FIELD_ENCRYPTION_KEYS: 'v1:abc',
     });
     expect(result.success).toBe(true);
+  });
+
+  it('wants the secret the send SMS hook signs with, in production (AUTH-02, D-192)', () => {
+    const production = {
+      APP_ENV: 'production',
+      SUPABASE_SECRET_KEY: 'secret',
+      EMAIL_PROVIDER: 'resend',
+      RESEND_API_KEY: 're_x',
+      SMS_PROVIDER: 'twilio',
+      TWILIO_ACCOUNT_SID: 'AC1',
+      TWILIO_AUTH_TOKEN: 't',
+      TWILIO_MESSAGING_SERVICE_SID: 'MG1',
+      PAYMENTS_PROVIDER: 'stripe',
+      NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY: 'pk_live_x',
+      STRIPE_SECRET_KEY: 'sk_live_x',
+      STRIPE_CONNECT_WEBHOOK_SECRET: 'whsec_2',
+      INNGEST_EVENT_KEY: 'e',
+      INNGEST_SIGNING_KEY: 's',
+      FIELD_ENCRYPTION_KEYS: 'v1:abc',
+    };
+    const without = serverEnvSchema.safeParse(production);
+    expect(without.success).toBe(false);
+    expect(without.error?.issues.map((issue) => issue.path.join('.'))).toContain('SUPABASE_SEND_SMS_HOOK_SECRET');
+
+    const with_it = serverEnvSchema.safeParse({ ...production, SUPABASE_SEND_SMS_HOOK_SECRET: 'v1,whsec_abc' });
+    expect(with_it.success).toBe(true);
   });
 
   it('wants the job runner signing key wherever the app is hosted (M6-01, D-135)', () => {

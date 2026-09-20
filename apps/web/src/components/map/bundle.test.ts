@@ -26,17 +26,20 @@ function everyFile(directory: string): string[] {
  * reached through `next/dynamic` and nothing else imports it, which is what this checks.
  */
 describe('the map library stays out of the shared bundle (COV-01, M1-06)', () => {
+  // Every file, read once. Walking the tree again for each lazy module made this the slowest
+  // test in the suite, and slow enough under a whole run to time out (D-192).
+  const files = everyFile(source).map((path) => ({ path, text: readFileSync(path, 'utf8') }));
+
   it('is imported by the lazy modules only', () => {
-    const importers = everyFile(source).filter((file) => readFileSync(file, 'utf8').includes("from 'mapbox-gl"));
+    const importers = files.filter((file) => file.text.includes("from 'mapbox-gl")).map((file) => file.path);
 
     expect(importers.sort()).toEqual(lazy.map((one) => one.module).sort());
   });
 
   it('and each of those is only ever reached through next/dynamic', () => {
     for (const { module, container, name } of lazy) {
-      const statics = everyFile(source).filter(
-        (file) => file !== module && new RegExp(`^import .*from '.*${name.slice(1)}'`, 'm').test(readFileSync(file, 'utf8')),
-      );
+      const imports = new RegExp(`^import .*from '.*${name.slice(1)}'`, 'm');
+      const statics = files.filter((file) => file.path !== module && imports.test(file.text)).map((file) => file.path);
 
       expect(statics).toEqual([]);
       expect(readFileSync(container, 'utf8')).toMatch(new RegExp(`dynamic\\(\\(\\) => import\\('${name}'\\), \\{\\s*ssr: false`));
