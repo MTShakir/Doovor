@@ -50,8 +50,9 @@ async function Dashboard({ searchParams }: DashboardProps) {
 
   return (
     <>
-      <DateRangePicker today={today} chosen={range} base="/admin" />
+      {/* What waits on a person comes first: it is about now, and the dates below it are not. */}
       <WaitingOnStaff dashboard={dashboard} />
+      <DateRangePicker today={today} chosen={range} base="/admin" />
       <DashboardFigures dashboard={dashboard} />
       <PlatformHighlights highlights={highlights} shown={shown} moreHref={`/admin?${asked.toString()}` as Route} />
     </>

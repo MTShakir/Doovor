@@ -3194,6 +3194,10 @@ export type Database = {
         Args: { p_learner_id: string; p_rating: number; p_skill_code: string }
         Returns: string
       }
+      record_audit_export: {
+        Args: { p_count: number; p_filters: Json }
+        Returns: undefined
+      }
       record_offline_package: {
         Args: { p_learner_id: string; p_method: string; p_package_id: string }
         Returns: string

@@ -62,6 +62,7 @@ export const auditActionWords: Readonly<Record<string, string>> = {
   'receipt.issued': 'Receipt issued',
   'credit.purchased': 'Package bought',
   'account.data_exported': 'Personal data exported',
+  'audit_log.exported': 'Audit log downloaded',
   'account.deletion_requested': 'Account deletion asked for',
   'account.deletion_cancelled': 'Account deletion called off',
   'account.deleted': 'Account deleted',
@@ -152,7 +153,7 @@ export const auditCategories: readonly AuditCategory[] = [
       'credit.purchased',
     ],
   },
-  { key: 'export', label: 'Data exports', required: true, actions: ['account.data_exported'] },
+  { key: 'export', label: 'Data exports', required: true, actions: ['account.data_exported', 'audit_log.exported'] },
   { key: 'deletion', label: 'Account deletions', required: true, actions: ['account.deletion_requested', 'account.deletion_cancelled', 'account.deleted'] },
   { key: 'viewing', label: 'Viewing as somebody', required: true, actions: ['impersonation.started', 'impersonation.ended'] },
   {

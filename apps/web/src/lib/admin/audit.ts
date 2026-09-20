@@ -1,4 +1,5 @@
 import 'server-only';
+import { brand } from '@repo/config/brand';
 import { auditCategoryActions, auditWords } from '@repo/core/audit';
 import type { AuditCursor, AuditLogSearch } from '@repo/core/schemas/admin';
 import { formatDateWithYear, formatTime } from '@repo/core/time';
@@ -57,8 +58,8 @@ function nameOf(name: string | null, email: string | null): string | null {
   return named ?? email;
 }
 
-/** The audit log, newest first, narrowed as staff asked, a page at a time (ADM-07, NFR-SEC-06, M5-22). */
-export async function auditLog(filters: AuditLogSearch): Promise<AuditPage> {
+/** Entries the filters match, newest first, and whether there are older ones beyond them. */
+async function readEntries(filters: AuditLogSearch, limit: number): Promise<{ entries: AuditEntry[]; more: boolean }> {
   const supabase = await createSupabaseServerClient();
   const actions = auditCategoryActions(filters.kind);
   const { data, error } = await supabase.rpc('admin_audit_log', {
@@ -68,16 +69,15 @@ export async function auditLog(filters: AuditLogSearch): Promise<AuditPage> {
     ...(filters.from === undefined ? {} : { p_from: filters.from }),
     ...(filters.to === undefined ? {} : { p_to: filters.to }),
     ...(filters.before === undefined ? {} : { p_before_at: filters.before.at, p_before_id: filters.before.id }),
-    // One more than a page, to know whether there is an older one.
-    p_limit: AUDIT_PAGE_SIZE + 1,
+    // One more than is wanted, to know whether there is an older one.
+    p_limit: limit + 1,
   });
   if (error) throw new Error(`Could not read the audit log: ${error.message}`);
 
   const rows = z.array(rowSchema).parse(data);
-  const shown = rows.slice(0, AUDIT_PAGE_SIZE);
-  const last = shown.at(-1);
   return {
-    entries: shown.map((row) => {
+    more: rows.length > limit,
+    entries: rows.slice(0, limit).map((row) => {
       const at = new Date(row.occurred_at);
       return {
         id: row.id,
@@ -93,6 +93,31 @@ export async function auditLog(filters: AuditLogSearch): Promise<AuditPage> {
         after: row.after,
       };
     }),
-    older: rows.length > AUDIT_PAGE_SIZE && last ? { at: last.occurred_at, id: last.id } : null,
   };
+}
+
+/** The audit log, newest first, narrowed as staff asked, a page at a time (ADM-07, NFR-SEC-06, M5-22). */
+export async function auditLog(filters: AuditLogSearch): Promise<AuditPage> {
+  const { entries, more } = await readEntries(filters, AUDIT_PAGE_SIZE);
+  const last = entries.at(-1);
+  return { entries, older: more && last ? { at: last.occurredAt, id: last.id } : null };
+}
+
+/** The most entries one file holds. Beyond it, staff narrow the days and take another. */
+export const AUDIT_EXPORT_LIMIT = 5000;
+
+/** What the file is called: the product, the days it covers, and the day it was taken. */
+export function auditExportName(filters: AuditLogSearch, when: Date): string {
+  const days = filters.from ?? filters.to ? `-${filters.from ?? 'start'}-to-${filters.to ?? 'now'}` : '';
+  return `${brand.shortName.toLowerCase()}-audit-log${days}-${when.toISOString().slice(0, 10)}.json`;
+}
+
+/**
+ * The audit log as a file (ADM-07, D-173): every entry the filters match, newest first, stopped at
+ * the cap so one download cannot ask for the whole history. The file says when it was cut short,
+ * so staff know to narrow the days and take another.
+ */
+export async function auditLogForExport(filters: AuditLogSearch): Promise<{ entries: AuditEntry[]; capped: boolean }> {
+  const { entries, more } = await readEntries(filters, AUDIT_EXPORT_LIMIT);
+  return { entries, capped: more };
 }

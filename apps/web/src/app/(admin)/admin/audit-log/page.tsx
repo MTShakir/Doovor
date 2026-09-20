@@ -1,6 +1,6 @@
 import { auditLogSearchSchema } from '@repo/core/schemas/admin';
 import { PageHeader } from '@repo/ui/app-shell';
-import type { Metadata } from 'next';
+import type { Metadata, Route } from 'next';
 import { Suspense } from 'react';
 import { AuditEntries, AuditFiltersForm, AuditLogSkeleton, AuditPager } from '@/components/admin/audit-log';
 import { auditLog } from '@/lib/admin/audit';
@@ -31,9 +31,18 @@ async function AuditLog({ searchParams }: AuditLogPageProps) {
   const filters = auditLogSearchSchema.parse(await searchParams);
   const { entries, older } = await auditLog(filters);
 
+  // The file covers the filters, wherever the reader has paged back to.
+  const asked = new URLSearchParams();
+  if (filters.kind !== undefined) asked.set('kind', filters.kind);
+  if (filters.person !== '') asked.set('person', filters.person);
+  if (filters.business !== '') asked.set('business', filters.business);
+  if (filters.from !== undefined) asked.set('from', filters.from);
+  if (filters.to !== undefined) asked.set('to', filters.to);
+  const query = asked.toString();
+
   return (
     <>
-      <AuditFiltersForm filters={filters} />
+      <AuditFiltersForm filters={filters} downloadHref={`/admin/audit-log/log.json${query === '' ? '' : `?${query}`}` as Route} />
       <AuditEntries entries={entries} />
       <AuditPager filters={filters} older={older} />
     </>

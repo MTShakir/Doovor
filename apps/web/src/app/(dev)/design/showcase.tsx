@@ -1420,7 +1420,7 @@ export function DesignShowcase() {
           onCancel={() => { setSwitchingRegion(null); }}
         />
         <Label>Audit log: its filters, entries with what changed, pages either side, nothing found, and loading</Label>
-        <AuditFiltersForm filters={exampleAuditFilters} />
+        <AuditFiltersForm filters={exampleAuditFilters} downloadHref="/design" />
         <AuditEntries entries={exampleAuditEntries} />
         <AuditPager
           filters={{ ...exampleAuditFilters, before: { at: '2026-09-18T09:00:00.000000+00:00', id: '0b7e8c1d-2f3a-4b5c-8d6e-7f8091a2b3c4' } }}

@@ -1,3 +1,4 @@
+import { brand } from '@repo/config/brand';
 import { expect, test, type Page } from '@playwright/test';
 import { authFile } from '../support/accounts';
 import { makeSchool, recordAuditTrail } from '../support/database';
@@ -105,6 +106,43 @@ test.describe('the audit log (ADM-07, NFR-SEC-06, M5-22)', { tag: '@desktop-only
       await expect.poll(() => whatHappened(page)).toEqual(['Staff started viewing as them']);
     } finally {
       await support.close();
+      await school.remove();
+    }
+  });
+
+  test('staff take the log away as a file for the days they chose, and that is written down too (D-173)', async ({ browser }) => {
+    const school = await makeSchool('Download');
+    await recordAuditTrail(school, 3);
+    const admin = await browser.newContext({ storageState: authFile('admin') });
+    try {
+      const page = await admin.newPage();
+      const asked = new URLSearchParams({ business: school.name }).toString();
+      await page.goto(`/admin/audit-log?${asked}`);
+      const download = page.getByRole('link', { name: 'Download as JSON' });
+      await expect(download).toHaveAttribute('href', `/admin/audit-log/log.json?${asked}`);
+
+      // Asked for the way the browser asks, so the file is what a member of staff would get.
+      const file = await page.request.get(`/admin/audit-log/log.json?${asked}`);
+      expect(file.status()).toBe(200);
+      const named = new RegExp(String.raw`^attachment; filename="${brand.shortName.toLowerCase()}-audit-log-\d{4}-\d{2}-\d{2}\.json"$`);
+      expect(file.headers()['content-disposition']).toMatch(named);
+      const held = (await file.json()) as {
+        asked_for: { business: string | null; kind: string | null };
+        entries_shown: number;
+        more_than_shown: boolean;
+        entries: { action: string; business: string | null }[];
+      };
+      expect(held.asked_for.business).toBe(school.name);
+      expect(held.more_than_shown).toBe(false);
+      expect(held.entries_shown).toBe(held.entries.length);
+      expect(held.entries.length).toBeGreaterThan(0);
+      expect(new Set(held.entries.map((entry) => entry.business))).toEqual(new Set([school.name]));
+
+      // Taking the copy is itself an entry, where reading a page is not (D-130).
+      await page.goto('/admin/audit-log?kind=export');
+      await expect.poll(async () => whatHappened(page)).toContain('Audit log downloaded');
+    } finally {
+      await admin.close();
       await school.remove();
     }
   });
