@@ -8,7 +8,7 @@ import { Button } from '@repo/ui/button';
 import { Sheet } from '@repo/ui/sheet';
 import { StatusPill } from '@repo/ui/status-pill';
 import { toast } from '@repo/ui/toast';
-import { MapPin } from 'lucide-react';
+import { ChevronRight, MapPin } from 'lucide-react';
 import Link from 'next/link';
 import { useState, useTransition } from 'react';
 import { FormAlert } from '@/components/form-alert';
@@ -81,7 +81,12 @@ export function MyLessonRow({ lesson, rules, now, canChange }: MyLessonRowProps)
 
   return (
     <article className="flex flex-col gap-2 px-4 py-3">
-      <div className="flex items-start gap-3">
+      {/* What the card says opens the lesson; the buttons under it stay buttons of their own. */}
+      <Link
+        href={`/app/learner/lessons/${lesson.id}`}
+        aria-label={`Open ${formatDate(new Date(lesson.startsAt))} at ${formatTime(new Date(lesson.startsAt))} with ${lesson.instructorName}`}
+        className="flex items-start gap-3 rounded-input focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-black"
+      >
         <span className="flex min-w-0 flex-1 flex-col gap-1">
           <span className="text-body font-semibold text-black">
             {formatDate(new Date(lesson.startsAt))} at {formatTime(new Date(lesson.startsAt))}
@@ -102,7 +107,8 @@ export function MyLessonRow({ lesson, rules, now, canChange }: MyLessonRowProps)
           </StatusPill>
           <span className="text-small text-grey-700 tabular-nums">{formatPence(lesson.pricePence)}</span>
         </span>
-      </div>
+        <ChevronRight className="mt-0.5 size-5 shrink-0 text-grey-700" aria-hidden />
+      </Link>
 
       {lesson.status === 'no_show' ? <NoShowDispute lesson={lesson} now={now} /> : null}
 

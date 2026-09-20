@@ -3332,6 +3332,10 @@ export type Database = {
         Args: { p_business_id: string; p_customer_id: string }
         Returns: string
       }
+      set_booking_pickup: {
+        Args: { p_booking_id: string; p_pickup_point_id?: string }
+        Returns: undefined
+      }
       set_booking_rules: {
         Args: { p_business_id: string; p_rules: Json }
         Returns: Json

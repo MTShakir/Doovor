@@ -1904,3 +1904,15 @@ export async function clearBusinessPickups(learnerEmail: string): Promise<void> 
   });
 }
 
+
+/**
+ * A place of the learner's own, written straight in (COV-04, D-185), so a test about choosing one
+ * for a lesson does not have to fill the postcode form first.
+ */
+export async function giveLearnerPickup(learnerId: string, label: string, address: string, postcode: string): Promise<void> {
+  await withDatabase(async (sql) => {
+    await sql`
+      insert into public.pickup_points (learner_id, kind, label, address, postcode)
+      values (${learnerId}, 'home', ${label}, ${address}, ${postcode})`;
+  });
+}

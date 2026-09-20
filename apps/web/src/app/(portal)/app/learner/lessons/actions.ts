@@ -44,3 +44,28 @@ export async function disputeNoShow(input: unknown): Promise<Result<{ disputeId:
   revalidatePath('/app/learner/lessons');
   return ok({ disputeId: data });
 }
+
+const pickupSchema = lessonSchema.extend({ pickupPointId: z.union([z.literal('').transform(() => null), z.uuid()]) });
+
+/**
+ * Where this lesson is collected from (COV-04, D-185). The learner picks one of their own places,
+ * or takes it off again; the database checks it is theirs and that the lesson is still to happen.
+ */
+export async function setMyLessonPickup(input: unknown): Promise<Result<null>> {
+  const parsed = pickupSchema.safeParse(input);
+  if (!parsed.success) return err('VALIDATION_FAILED');
+
+  await requirePortal('learner');
+  const supabase = await createSupabaseServerClient();
+  const { error } = await supabase.rpc('set_booking_pickup', {
+    p_booking_id: parsed.data.bookingId,
+    // The RPC takes no argument at all for "nowhere", which is its own default.
+    p_pickup_point_id: parsed.data.pickupPointId ?? undefined,
+  });
+  if (error) return err(parsePostgresError(error).code);
+
+  revalidatePath(`/app/learner/lessons/${parsed.data.bookingId}`);
+  revalidatePath('/app/learner/lessons');
+  revalidatePath('/app/learner');
+  return ok(null);
+}
