@@ -5,9 +5,10 @@ import { lessonToStart, needsRecord } from '@repo/core/lesson-records';
 import { formatTime } from '@repo/core/time';
 import { Button } from '@repo/ui/button';
 import { StatusPill } from '@repo/ui/status-pill';
-import { Check, CloudUpload, MapPin, Navigation, NotebookPen, Play } from 'lucide-react';
+import { Check, CloudUpload, MapPin, Navigation, NotebookPen } from 'lucide-react';
 import Link from 'next/link';
 import { directionsTo, OpenLesson } from '@/components/lessons/lesson-details';
+import { StartLessonButton } from '@/components/lessons/start-lesson';
 import type { TeachingLesson } from '@/lib/lessons/teaching';
 
 export interface TodayLessonsProps {
@@ -95,14 +96,7 @@ export function TodayLessons({ lessons, now, plainLinks = false, waiting = new S
                 </OpenLesson>
                 {!off && (route !== null || toRecord || toStart) ? (
                   <div className="flex flex-wrap justify-end gap-2">
-                    {toStart ? (
-                      <Button asChild>
-                        <Go href={`/app/instructor/lessons/${lesson.id}`}>
-                          <Play className="size-5" aria-hidden />
-                          Start lesson
-                        </Go>
-                      </Button>
-                    ) : null}
+                    {toStart ? <StartLessonButton bookingId={lesson.id} plainLinks={plainLinks} /> : null}
                     {toRecord ? (
                       <Button asChild variant="secondary">
                         <Go href={`/app/instructor/lessons/${lesson.id}?record=1`}>

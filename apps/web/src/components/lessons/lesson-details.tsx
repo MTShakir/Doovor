@@ -1,6 +1,7 @@
 'use client';
 
 import { lessonState, lessonStateLabel } from '@repo/core/diary';
+import { lessonToStart } from '@repo/core/lesson-records';
 import { formatPence } from '@repo/core/money';
 import { formatDate, formatTime } from '@repo/core/time';
 import { Button } from '@repo/ui/button';
@@ -15,6 +16,7 @@ import Link from 'next/link';
 import { useEffect, useState, useTransition, type ReactNode } from 'react';
 import { lessonDetailsFor, sendReminder } from '@/app/(portal)/app/instructor/booking-actions';
 import { LessonSheets } from '@/components/diary/lesson-sheets';
+import { StartLessonButton } from '@/components/lessons/start-lesson';
 import type { LessonDetails } from '@/lib/lessons/details';
 
 /** What a lesson's card already knows, so the sheet opens with it at once. */
@@ -53,7 +55,7 @@ type Channel = 'email' | 'sms';
 export type LessonDetailsState =
   | { kind: 'loading' }
   | { kind: 'failed' }
-  | { kind: 'ready'; details: LessonDetails; ahead: boolean };
+  | { kind: 'ready'; details: LessonDetails; ahead: boolean; startable: boolean };
 
 /**
  * What a lesson's sheet says (DIA-04, LRN-02, D-166): when and where, the learner's number with a
@@ -85,7 +87,7 @@ export function LessonDetailsBody({
     );
   }
 
-  const { details, ahead } = state;
+  const { details, ahead, startable } = state;
   const lessonFacts = { status: details.status, paymentStatus: details.paymentStatus, kind: details.kind, source: details.source };
   const off = details.status === 'cancelled' || details.status === 'declined' || details.status === 'expired';
   const asked = details.status === 'requested';
@@ -102,6 +104,8 @@ export function LessonDetailsBody({
         <StatusPill status={lessonState(lessonFacts)}>{lessonStateLabel(lessonFacts)}</StatusPill>
         <span className="text-body font-semibold text-black tabular-nums">{formatPence(details.pricePence)}</span>
       </div>
+
+      {startable ? <StartLessonButton bookingId={details.id} /> : null}
 
       <Section title="Pickup">
         {details.pickup ? (
@@ -244,11 +248,25 @@ export function LessonDetailsSheet({ lesson, onClose }: { lesson: LessonAtAGlanc
       .then((result) => {
         if (!current) return;
         // Whether it is still to come, decided when it opened rather than again on every redraw.
-        setState(
-          result.ok
-            ? { kind: 'ready', details: result.data, ahead: new Date(result.data.startsAt).getTime() > Date.now() }
-            : { kind: 'failed' },
-        );
+        if (!result.ok) {
+          setState({ kind: 'failed' });
+          return;
+        }
+        const details = result.data;
+        const one = {
+          id: details.id,
+          startsAt: new Date(details.startsAt),
+          endsAt: new Date(details.endsAt),
+          status: details.status,
+          recorded: false,
+        };
+        setState({
+          kind: 'ready',
+          details,
+          ahead: one.startsAt.getTime() > Date.now(),
+          // The same quarter of an hour the card on Today uses (D-178, D-184).
+          startable: lessonToStart([one], new Date()) !== null,
+        });
       })
       // No signal: the card said what it knows, and the rest waits for a connection.
       .catch(() => { if (current) setState({ kind: 'failed' }); });

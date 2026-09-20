@@ -59,8 +59,15 @@ async function Diary({ searchParams }: DiaryParams) {
 
   const dayOf = (instant: Date) => utcToLocal(instant).date;
   const onThisDay = lessons.filter((lesson) => dayOf(lesson.startsAt) === date);
-  const day = <DayView lessons={onThisDay} opens={opens} closes={closes} canAnswer rules={rules} now={new Date()} openable />;
+  const now = new Date();
+  const day = <DayView lessons={onThisDay} opens={opens} closes={closes} canAnswer rules={rules} now={now} openable />;
   const week = <WeekView from={range.from} lessons={lessons} dayOf={dayOf} today={todayInZone()} openable />;
+  // Every day of the month that has lessons, drawn here so the month can list one without
+  // leaving the month (D-184). The gaps belong to the day view, where the hours are known.
+  const monthDays = [...byDay(lessons, dayOf).entries()].map(([on, theirs]) => ({
+    date: on,
+    lessons: <DayView lessons={theirs} opens={null} closes={null} canAnswer rules={rules} now={now} openable />,
+  }));
 
   return (
     <>
@@ -78,9 +85,7 @@ async function Diary({ searchParams }: DiaryParams) {
           <LiveDiary instructorIds={[membership.instructorProfileId]} />
           {view === 'day' ? day : null}
           {view === 'week' ? week : null}
-          {view === 'month' ? (
-            <MonthView month={range.from} today={todayInZone()} busy={[...byDay(lessons, dayOf).keys()]} />
-          ) : null}
+          {view === 'month' ? <MonthView month={range.from} opensOn={date} today={todayInZone()} days={monthDays} learners={learners} /> : null}
           {view === 'responsive' ? (
             <>
               <div className="md:hidden">{day}</div>

@@ -1590,9 +1590,9 @@ export function DesignShowcase() {
             [
               ['On its way', { kind: 'loading' }],
               ['No signal', { kind: 'failed' }],
-              ['Olivia Brown', { kind: 'ready', details: exampleLesson, ahead: true }],
-              ['Noah Wilson', { kind: 'ready', details: exampleLessonUnreachable, ahead: true }],
-              ['Olivia Brown, last week', { kind: 'ready', details: exampleLessonDone, ahead: false }],
+              ['Olivia Brown', { kind: 'ready', details: exampleLesson, ahead: true, startable: false }],
+              ['Noah Wilson', { kind: 'ready', details: exampleLessonUnreachable, ahead: true, startable: false }],
+              ['Olivia Brown, last week', { kind: 'ready', details: exampleLessonDone, ahead: false, startable: false }],
             ] as const
           ).map(([title, state]) => (
             <Card key={title} className="flex flex-col gap-4">
