@@ -35,6 +35,28 @@ export async function learnerPickupPoints(learnerId: string, businessId: string)
   }));
 }
 
+/** A learner's own pickup points, as they see them: theirs to change, the school's to read (D-182). */
+export async function myPickupPoints(learnerId: string): Promise<LearnerPickupPoint[]> {
+  const supabase = await createSupabaseServerClient();
+  const { data, error } = await supabase
+    .from('pickup_points')
+    .select('id, kind, label, address, postcode, is_default, business_id')
+    .eq('learner_id', learnerId)
+    .order('is_default', { ascending: false })
+    .order('label');
+  if (error) throw error;
+  return data.map((row) => ({
+    id: row.id,
+    kind: row.kind,
+    label: row.label,
+    address: row.address,
+    postcode: row.postcode,
+    isDefault: row.is_default,
+    // Their own are the ones no Business added, and the only ones they may change.
+    ours: row.business_id === null,
+  }));
+}
+
 /**
  * Where a learner's lessons start unless another place is chosen: their default pickup point
  * (COV-04, D-168). A lesson the instructor books takes it, so it shows on Today, in the lesson's

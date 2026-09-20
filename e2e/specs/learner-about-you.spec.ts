@@ -29,13 +29,24 @@ test.describe('a learner tells us what helps (LRN-02, D-180)', () => {
     await card.getByRole('button', { name: 'Save' }).click();
     await expect(page.getByText('Saved. Your instructor can see it.')).toBeVisible();
 
-    // Their instructor reads it on their card, with who told them and when.
+    // Medication and the theory test are the same card's business (D-183).
+    const medication = page.getByRole('region', { name: 'Medication' });
+    await medication.getByLabel('Are you taking any medication that could affect your driving?').selectOption('yes');
+    await medication.getByLabel('What is it, and how does it affect you?').fill(`Tablets that make me drowsy, ${testInfo.project.name}`);
+    await medication.getByRole('button', { name: 'Save' }).click();
+    await expect(page.getByText('Saved. Your instructor can see it.')).toBeVisible();
+    await page.getByRole('region', { name: 'Your driving' }).getByLabel('Have you passed your theory test?').selectOption('passed');
+    await expect(page.getByText('Saved', { exact: true })).toBeVisible();
+
+    // Their instructor reads it all on their card, with who told them and when.
     const theirs = await browser.newContext({ storageState: authFile('instructor') });
     try {
       const staff = await theirs.newPage();
       await staff.goto(`/app/instructor/learners/${await userIdOf(email)}`);
-      const told = staff.getByRole('region', { name: 'What they told us' });
+      const told = staff.getByRole('region', { name: 'About them' });
       await expect(told).toContainText(wording);
+      await expect(told).toContainText(`Tablets that make me drowsy, ${testInfo.project.name}`);
+      await expect(told).toContainText('Passed within the last 2 years');
       await expect(told).toContainText('only you and the school see it');
     } finally {
       await theirs.close();

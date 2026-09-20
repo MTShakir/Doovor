@@ -1197,7 +1197,9 @@ export type Database = {
         Row: {
           created_at: string
           details: string | null
-          has_disability: boolean
+          has_disability: boolean | null
+          medication_details: string | null
+          takes_medication: boolean | null
           told_at: string
           updated_at: string
           user_id: string
@@ -1205,7 +1207,9 @@ export type Database = {
         Insert: {
           created_at?: string
           details?: string | null
-          has_disability: boolean
+          has_disability?: boolean | null
+          medication_details?: string | null
+          takes_medication?: boolean | null
           told_at?: string
           updated_at?: string
           user_id: string
@@ -1213,7 +1217,9 @@ export type Database = {
         Update: {
           created_at?: string
           details?: string | null
-          has_disability?: boolean
+          has_disability?: boolean | null
+          medication_details?: string | null
+          takes_medication?: boolean | null
           told_at?: string
           updated_at?: string
           user_id?: string
@@ -1321,6 +1327,8 @@ export type Database = {
           location: unknown
           postcode: string | null
           provisional_licence_confirmed: boolean
+          setup_skipped: string[]
+          theory_passed: boolean | null
           transmission:
             | Database["public"]["Enums"]["learner_transmission"]
             | null
@@ -1335,6 +1343,8 @@ export type Database = {
           location?: unknown
           postcode?: string | null
           provisional_licence_confirmed?: boolean
+          setup_skipped?: string[]
+          theory_passed?: boolean | null
           transmission?:
             | Database["public"]["Enums"]["learner_transmission"]
             | null
@@ -1349,6 +1359,8 @@ export type Database = {
           location?: unknown
           postcode?: string | null
           provisional_licence_confirmed?: boolean
+          setup_skipped?: string[]
+          theory_passed?: boolean | null
           transmission?:
             | Database["public"]["Enums"]["learner_transmission"]
             | null
@@ -2996,6 +3008,7 @@ export type Database = {
         Args: {
           p_duration_minutes: number
           p_first_starts_at: string
+          p_ignore_gap?: boolean
           p_instructor_id: string
           p_learner_id: string
           p_lesson_type_id: string
@@ -3047,6 +3060,7 @@ export type Database = {
       create_booking: {
         Args: {
           p_duration_minutes: number
+          p_ignore_gap?: boolean
           p_instructor_id: string
           p_learner_id: string
           p_lesson_type_id: string
@@ -3256,6 +3270,10 @@ export type Database = {
         }
         Returns: Json
       }
+      price_for_booking_length: {
+        Args: { p_booking_id: string; p_duration_minutes: number }
+        Returns: number
+      }
       rate_skill: {
         Args: { p_learner_id: string; p_rating: number; p_skill_code: string }
         Returns: string
@@ -3282,6 +3300,7 @@ export type Database = {
         Args: {
           p_booking_id: string
           p_duration_minutes?: number
+          p_ignore_gap?: boolean
           p_starts_at: string
         }
         Returns: string
@@ -3319,6 +3338,10 @@ export type Database = {
       set_billing_customer: {
         Args: { p_business_id: string; p_customer_id: string }
         Returns: string
+      }
+      set_booking_pickup: {
+        Args: { p_booking_id: string; p_pickup_point_id?: string }
+        Returns: undefined
       }
       set_booking_rules: {
         Args: { p_business_id: string; p_rules: Json }

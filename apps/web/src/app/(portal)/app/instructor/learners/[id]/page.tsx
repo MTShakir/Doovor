@@ -1,5 +1,7 @@
 import type { Metadata } from 'next';
+import { lessonState, lessonStateLabel } from '@repo/core/diary';
 import { skillMapSummary } from '@repo/core/skill-map';
+import { formatPence } from '@repo/core/money';
 import { formatDateTime, formatDateWithYear, formatMinutes, todayInZone } from '@repo/core/time';
 import type { AccessContext } from '@repo/db';
 import { PageHeader } from '@repo/ui/app-shell';
@@ -10,15 +12,18 @@ import { SkeletonRow } from '@repo/ui/skeleton';
 import { ChevronLeft, Mail, MessageSquare, Phone, TrendingUp } from 'lucide-react';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
-import { Suspense } from 'react';
+import { Fragment, Suspense } from 'react';
 import { PickupPoints } from '@/components/learners/pickup-points';
 import { BalanceHistory, BalanceLines, OwedBackList, OwedLessons } from '@/components/money/balance';
 import { MarkPaidButton } from '@/components/money/mark-paid';
 import { lessonWhen } from '@/components/progress/lesson-record-card';
+import { StatusPill } from '@repo/ui/status-pill';
 import { requirePortal } from '@/lib/auth/session';
 import { learnerCard, type LearnerCard } from '@/lib/learners/card';
+import { learnerLessons, learnerTotals, type LearnerLesson, type LearnerTotals } from '@/lib/learners/totals';
 import { learnerHistory, type LearnerHistoryEntry } from '@/lib/learners/history';
-import { learnerHealth } from '@/lib/learner/health';
+import { learnerHealth, type LearnerHealth } from '@/lib/learner/health';
+import { learnerDriving, type LearnerDriving } from '@/lib/learner/setup';
 import { learnerNotes } from '@/lib/learners/notes';
 import { learnerPickupPoints } from '@/lib/pickup/list';
 import { learnerSkillMap, lessonRecordPage } from '@/lib/lessons/records';
@@ -28,6 +33,7 @@ import { packagesForSale } from '@/lib/payments/packages';
 import { BookLesson } from '../../book-lesson';
 import { addLearnerPickup, removeLearnerPickup, updateLearnerPickup } from './actions';
 import { HandBack } from './hand-back';
+import { LearnerTabs, LessonHistoryTabs } from './learner-tabs';
 import { NoShowDisputes } from './no-show-disputes';
 import { Notes } from './notes';
 import { RefundPayment } from './refund-payment';
@@ -60,11 +66,15 @@ async function Learner({ params }: LearnerPageProps) {
   // not there, and not there and not allowed look the same from here.
   if (!card) notFound();
 
-  const [notes, history, pickups, health] = await Promise.all([
+  const [notes, history, pickups, health, driving, totals, lessons, balance] = await Promise.all([
     learnerNotes(card.learnerId),
     learnerHistory(card.learnerId),
     learnerPickupPoints(card.learnerId, card.businessId),
     learnerHealth(card.learnerId),
+    learnerDriving(card.learnerId),
+    learnerTotals(card.businessId, card.learnerId),
+    learnerLessons(card.businessId, card.learnerId),
+    learnerBalance(card.businessId, card.learnerId),
   ]);
   const mine = access.memberships.some((one) => one.instructorProfileId === card.instructorId);
   const gearbox = card.transmission === null ? null : card.transmission === 'manual' ? 'Manual' : 'Automatic';
@@ -103,29 +113,83 @@ async function Learner({ params }: LearnerPageProps) {
             variant="secondary"
           />
         ) : null}
-        <Lessons card={card} />
-        <Progress card={card} />
-        <Money card={card} access={access} />
-        {health?.hasDisability ? (
-          <Card className="flex flex-col gap-2" role="region" aria-labelledby="about-them-title">
-            <CardTitle id="about-them-title">What they told us</CardTitle>
-            <p className="text-body text-ink">{health.details}</p>
-            <p className="text-small text-grey-700">
-              {card.fullName.split(' ')[0] ?? card.fullName} told us on {formatDateWithYear(new Date(health.toldAt))}. It is theirs to
-              change, and only you and the school see it.
-            </p>
-          </Card>
-        ) : null}
-        <PickupPoints
-          learnerId={card.learnerId}
-          learnerName={card.fullName}
-          pickups={pickups}
-          actions={{ add: addLearnerPickup, update: updateLearnerPickup, remove: removeLearnerPickup }}
+        <LearnerTabs
+          tabs={[
+            {
+              value: 'summary',
+              label: 'Summary',
+              panel: (
+                <>
+                  <Summary card={card} totals={totals} creditMinutes={balance?.creditMinutes ?? 0} />
+                  <PickupPoints
+                    learnerId={card.learnerId}
+                    pickups={pickups}
+                    actions={{ add: addLearnerPickup, update: updateLearnerPickup, remove: removeLearnerPickup }}
+                    addedByOthers={`added by ${card.fullName}`}
+                    empty={`None saved yet. Add where ${card.fullName} is collected, or they can add their own.`}
+                    note={`For ${card.fullName}. They see it too.`}
+                  />
+                  <WhatTheyToldUs card={card} health={health} driving={driving} />
+                  <Notes learnerId={card.learnerId} notes={notes} viewerId={session.userId} />
+                </>
+              ),
+            },
+            {
+              value: 'lessons',
+              label: 'Lessons',
+              panel: (
+                <LessonHistoryTabs
+                  upcoming={<LessonList lessons={lessons.upcoming} label="Lessons to come" empty="Nothing booked yet." />}
+                  past={<LessonList lessons={lessons.past} label="Lessons that have been" empty="No lessons yet." />}
+                />
+              ),
+            },
+            { value: 'payments', label: 'Payments', panel: <Money card={card} access={access} balance={balance} /> },
+            { value: 'progress', label: 'Progress', panel: <Progress card={card} /> },
+            { value: 'history', label: 'History', panel: <History entries={history} /> },
+          ]}
         />
-        <Notes learnerId={card.learnerId} notes={notes} viewerId={session.userId} />
-        <History entries={history} />
       </div>
     </>
+  );
+}
+
+/**
+ * What the learner chose to tell us (LRN-02, D-180, D-183): a disability, medication that could
+ * affect their driving, and whether the theory test is behind them. Theirs to change, and read
+ * only by the instructor who teaches them and the people who run their Business.
+ */
+function WhatTheyToldUs({ card, health, driving }: { card: LearnerCard; health: LearnerHealth | null; driving: LearnerDriving }) {
+  const lines = [
+    driving.transmission === null
+      ? null
+      : { term: 'Gearbox', detail: driving.transmission === 'manual' ? 'Manual' : 'Automatic' },
+    health?.hasDisability === true ? { term: 'A disability or condition', detail: health.details ?? 'They did not say more.' } : null,
+    health?.takesMedication === true ? { term: 'Medication', detail: health.medicationDetails ?? 'They did not say more.' } : null,
+    driving.theoryPassed === null
+      ? null
+      : { term: 'Theory test', detail: driving.theoryPassed ? 'Passed within the last 2 years' : 'Not passed yet' },
+  ].filter((line) => line !== null);
+  if (lines.length === 0) return null;
+
+  const first = card.fullName.split(' ')[0] ?? card.fullName;
+  return (
+    <Card className="flex flex-col gap-3" role="region" aria-labelledby="about-them-title">
+      <CardTitle id="about-them-title">About them</CardTitle>
+      <dl className="flex flex-col gap-2" aria-label="About them">
+        {lines.map((line) => (
+          <div key={line.term} className="flex flex-col">
+            <dt className="text-small text-grey-700">{line.term}</dt>
+            <dd className="text-body text-ink">{line.detail}</dd>
+          </div>
+        ))}
+      </dl>
+      <p className="text-small text-grey-700">
+        {health === null
+          ? `${first} told us this, and it is theirs to change.`
+          : `${first} told us on ${formatDateWithYear(new Date(health.toldAt))}. It is theirs to change, and only you and the school see it.`}
+      </p>
+    </Card>
   );
 }
 
@@ -165,13 +229,23 @@ function Reach({ card }: { card: LearnerCard }) {
   );
 }
 
-function Lessons({ card }: { card: LearnerCard }) {
+/**
+ * The figures an instructor wants before a lesson (LRN-02, D-189): how much has been taught, how
+ * much has been paid, and how much is already paid for.
+ */
+function Summary({ card, totals, creditMinutes }: { card: LearnerCard; totals: LearnerTotals; creditMinutes: number }) {
   return (
     <Card padding="none" role="region" aria-labelledby="lessons-title">
       <div className="px-4 pt-4">
-        <CardTitle id="lessons-title">Lessons</CardTitle>
+        <CardTitle id="lessons-title">Lessons and money</CardTitle>
       </div>
-      <ListRow title="Taken" trailing={String(card.lessonsTaken)} />
+      <ListRow title="Booked" trailing={String(totals.booked)} />
+      <ListDivider />
+      <ListRow title="Taken" trailing={String(totals.taken)} />
+      <ListDivider />
+      <ListRow title="Paid" trailing={formatPence(totals.paidPence)} />
+      <ListDivider />
+      <ListRow title="Credit left" trailing={creditMinutes === 0 ? 'None' : formatMinutes(creditMinutes)} />
       <ListDivider />
       <ListRow title="Hours driven" trailing={card.minutesTaught === 0 ? 'None yet' : formatMinutes(card.minutesTaught)} />
       <ListDivider />
@@ -189,6 +263,30 @@ function Lessons({ card }: { card: LearnerCard }) {
         title="Last lesson"
         trailing={card.lastLessonAt === null ? 'None yet' : formatDateTime(new Date(card.lastLessonAt))}
       />
+    </Card>
+  );
+}
+
+/** This learner's lessons with this Business, as a list under the Lessons tab (LRN-02, D-189). */
+function LessonList({ lessons, label, empty }: { lessons: LearnerLesson[]; label: string; empty: string }) {
+  if (lessons.length === 0) return <p className="px-1 text-small text-grey-700">{empty}</p>;
+
+  return (
+    <Card padding="none" role="region" aria-label={label}>
+      {lessons.map((lesson, index) => {
+        const facts = { status: lesson.status as never, paymentStatus: lesson.paymentStatus as never, kind: 'standard' as const };
+        const minutes = Math.round((new Date(lesson.endsAt).getTime() - new Date(lesson.startsAt).getTime()) / 60_000);
+        return (
+          <Fragment key={lesson.id}>
+            {index === 0 ? null : <ListDivider />}
+            <ListRow
+              title={formatDateTime(new Date(lesson.startsAt))}
+              subtitle={`${lesson.lessonType}, ${formatMinutes(minutes)}, with ${lesson.instructorName}`}
+              trailing={<StatusPill status={lessonState(facts)}>{lessonStateLabel(facts)}</StatusPill>}
+            />
+          </Fragment>
+        );
+      })}
     </Card>
   );
 }
@@ -230,9 +328,16 @@ async function Progress({ card }: { card: LearnerCard }) {
  * Payments screen, what they owe with a way to mark it paid, money owed back with a way to mark it
  * handed back, and a package paid for in person.
  */
-async function Money({ card, access }: { card: LearnerCard; access: AccessContext }) {
-  const [balance, packages, disputes] = await Promise.all([
-    learnerBalance(card.businessId, card.learnerId),
+async function Money({
+  card,
+  access,
+  balance,
+}: {
+  card: LearnerCard;
+  access: AccessContext;
+  balance: Awaited<ReturnType<typeof learnerBalance>>;
+}) {
+  const [packages, disputes] = await Promise.all([
     packagesForSale(card.businessId),
     noShowDisputes(card.businessId, card.learnerId),
   ]);
@@ -246,7 +351,7 @@ async function Money({ card, access }: { card: LearnerCard; access: AccessContex
   return (
     <Card padding="none" role="region" aria-labelledby="money-title">
       <div className="flex flex-col gap-2 px-4 pt-4 pb-3">
-        <CardTitle id="money-title">Money</CardTitle>
+        <CardTitle id="money-title">Payments</CardTitle>
         <BalanceLines balance={balance} />
       </div>
       <OwedLessons
@@ -281,7 +386,7 @@ async function Money({ card, access }: { card: LearnerCard; access: AccessContex
       )}
       <BalanceHistory
         history={balance.history}
-        limit={10}
+        limit={100}
         action={
           // Money goes back only by the people who run the Business (PAY-07, PRD 6.2), and only
           // while some of it is not already on its way back or owed back (M3-18).

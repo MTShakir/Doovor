@@ -32,4 +32,25 @@ test.describe('an instructor sees how it is going (MNY-01, D-177)', () => {
     await expect(page.getByRole('list', { name: 'What you earned each day, this month so far' })).toBeVisible();
     await expect(page.getByRole('link', { name: 'This month so far' })).toHaveAttribute('aria-current', 'page');
   });
+
+  test('draws the same week however often the tabs are switched (D-177)', async ({ page }) => {
+    await page.goto('/app/instructor');
+    const stats = page.getByRole('region', { name: 'How it is going' });
+    const week = stats.getByRole('list', { name: 'What you earned each day, this week' });
+    const bars = async (): Promise<string[]> => week.getByRole('img').evaluateAll((all) => all.map((one) => one.getAttribute('aria-label') ?? ''));
+
+    // Read once the week has arrived: the card streams in, and evaluateAll does not wait.
+    await expect(week.getByRole('listitem')).toHaveCount(7);
+    const first = await bars();
+    expect(first).toHaveLength(7);
+
+    // There and back twice: a month has more days than a week, and the week must not keep any.
+    for (let turn = 0; turn < 2; turn += 1) {
+      await tapThrough(stats.getByRole('link', { name: 'This month so far' }), /\/app\/instructor\?stats=month$/);
+      await expect(page.getByRole('list', { name: 'What you earned each day, this month so far' })).toBeVisible();
+      await tapThrough(page.getByRole('region', { name: 'How it is going' }).getByRole('link', { name: 'This week' }), /\/app\/instructor$/);
+      await expect(week.getByRole('listitem')).toHaveCount(7);
+    }
+    expect(await bars()).toEqual(first);
+  });
 });

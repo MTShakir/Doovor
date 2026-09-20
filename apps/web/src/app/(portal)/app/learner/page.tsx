@@ -10,8 +10,10 @@ import Link from 'next/link';
 import { Suspense } from 'react';
 import { ComingSoon } from '@/components/capture/coming-soon';
 import { InstallPrompt } from '@/components/pwa/install-prompt';
+import { SetupCard } from './setup-card';
 import { requirePortal } from '@/lib/auth/session';
 import { myLessons } from '@/lib/learner/lessons';
+import { learnerSetup } from '@/lib/learner/setup';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
 
 export const metadata: Metadata = { title: 'Home' };
@@ -29,13 +31,14 @@ export default function LearnerHomePage() {
 /** PRD 8.2: the one thing a learner opens the app for is when their next lesson is. */
 async function Home() {
   const { session } = await requirePortal('learner');
-  const { upcoming, past } = await myLessons();
+  const [{ upcoming, past }, setup] = await Promise.all([myLessons(), learnerSetup(session.userId)]);
   const next = upcoming[0];
 
   return (
     <>
       <PageHeader title="Home" subtitle="Your next lesson, and how to get to it." />
       <div className="flex flex-col gap-4 px-4 md:max-w-2xl md:px-8">
+        <SetupCard setup={setup} />
         {next ? (
           <Card className="flex flex-col gap-3">
             <div className="flex flex-col gap-1">

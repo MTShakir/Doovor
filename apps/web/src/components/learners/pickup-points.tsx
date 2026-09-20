@@ -1,29 +1,18 @@
 'use client';
 
 import type { Result } from '@repo/core/result';
-import { pickupKinds, type PickupKind } from '@repo/core/schemas/pickup';
+
 import { Button } from '@repo/ui/button';
 import { Card, CardTitle } from '@repo/ui/card';
-import { Checkbox } from '@repo/ui/checkbox';
-import { Field } from '@repo/ui/field';
-import { Input } from '@repo/ui/input';
 import { ListDivider, ListRow } from '@repo/ui/list-row';
-import { Select } from '@repo/ui/select';
 import { Sheet } from '@repo/ui/sheet';
 import { StatusPill } from '@repo/ui/status-pill';
 import { toast } from '@repo/ui/toast';
 import { Plus } from 'lucide-react';
 import { Fragment, useId, useState, useTransition } from 'react';
 import { FormAlert } from '@/components/form-alert';
+import { PickupForm, type PickupDraft } from '@/components/learners/pickup-form';
 import type { LearnerPickupPoint } from '@/lib/pickup/list';
-
-export interface PickupDraft {
-  kind: PickupKind;
-  label: string;
-  address: string;
-  postcode: string;
-  isDefault: boolean;
-}
 
 /** What the card saves with: the learner's page hands in its actions, the design page stand-ins. */
 export interface PickupActions {
@@ -38,19 +27,27 @@ function where(pickup: LearnerPickupPoint, after: string): string {
 }
 
 /**
- * A learner's pickup points on their card (COV-04, D-168): the ones the Business added, to add,
- * correct, remove and make the one lessons start from, and the learner's own, which stay theirs.
+ * Somebody's pickup points (COV-04, D-168, D-182): the ones this person may change, and the ones
+ * the other side added, which stay theirs. The same card serves an instructor looking at a
+ * learner's and a learner looking at their own, so it is told how to say both.
  */
 export function PickupPoints({
   learnerId,
-  learnerName,
   pickups,
   actions,
+  addedByOthers,
+  empty,
+  note,
 }: {
   learnerId: string;
-  learnerName: string;
   pickups: LearnerPickupPoint[];
   actions: PickupActions;
+  /** What a row this person may not change says: "added by Jack Taylor", or "added by your school". */
+  addedByOthers: string;
+  /** What the card says with nothing saved yet, in the voice of whoever is reading it. */
+  empty: string;
+  /** Under the sheet's title: who else sees what is saved. */
+  note: string;
 }) {
   const titleId = useId();
   const [editing, setEditing] = useState<{ id: string | null; draft: PickupDraft } | null>(null);
@@ -122,9 +119,7 @@ export function PickupPoints({
         </Button>
       </div>
       {pickups.length === 0 ? (
-        <p className="px-4 pb-4 text-small text-grey-700">
-          None saved yet. Add where their lessons start, or they can add their own.
-        </p>
+        <p className="px-4 pb-4 text-small text-grey-700">{empty}</p>
       ) : (
         pickups.map((pickup, index) => (
           <Fragment key={pickup.id}>
@@ -142,7 +137,7 @@ export function PickupPoints({
             ) : (
               <ListRow
                 title={pickup.label}
-                subtitle={where(pickup, `added by ${learnerName}`)}
+                subtitle={where(pickup, addedByOthers)}
                 trailing={pickup.isDefault ? <StatusPill status="credit">Lessons start here</StatusPill> : undefined}
               />
             )}
@@ -154,7 +149,7 @@ export function PickupPoints({
         open={editing !== null}
         onOpenChange={(isOpen) => { if (!isOpen) setEditing(null); }}
         title={editing?.id ? 'Change this pickup point' : 'Add a pickup point'}
-        description={`For ${learnerName}. They see it too.`}
+        description={note}
         footer={
           <Button width="full" size="lg" pending={pending} onClick={save}>
             Save
@@ -164,38 +159,7 @@ export function PickupPoints({
         {editing ? (
           <div className="flex flex-col gap-4">
             {formError ? <FormAlert>{formError}</FormAlert> : null}
-            <Field label="What kind of place?" error={errors.kind}>
-              <Select
-                options={[...pickupKinds]}
-                value={editing.draft.kind}
-                onChange={(event) => { change({ kind: event.target.value as PickupKind }); }}
-              />
-            </Field>
-            <Field
-              label="What to call it"
-              hint={`Optional. Left empty, it is called ${pickupKinds.find((kind) => kind.value === editing.draft.kind)?.label ?? 'by its kind'}.`}
-              error={errors.label}
-            >
-              <Input value={editing.draft.label} onChange={(event) => { change({ label: event.target.value }); }} />
-            </Field>
-            <Field label="Address" error={errors.address}>
-              <Input autoComplete="off" value={editing.draft.address} onChange={(event) => { change({ address: event.target.value }); }} />
-            </Field>
-            <Field label="Postcode" error={errors.postcode}>
-              <Input
-                autoCapitalize="characters"
-                spellCheck={false}
-                className="uppercase"
-                value={editing.draft.postcode}
-                onChange={(event) => { change({ postcode: event.target.value }); }}
-              />
-            </Field>
-            <Checkbox
-              label="Lessons start here"
-              description="New lessons use it, unless you choose another."
-              checked={editing.draft.isDefault}
-              onCheckedChange={(checked) => { change({ isDefault: checked === true }); }}
-            />
+            <PickupForm draft={editing.draft} errors={errors} onChange={change} />
             {editing.id ? (
               <div className="flex flex-col gap-1 border-t border-grey-200 pt-4">
                 <Button variant="tertiary" className="self-start" disabled={pending} onClick={remove}>

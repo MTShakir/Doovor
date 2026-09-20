@@ -1,7 +1,7 @@
 import { expect, test } from '@playwright/test';
 import { authFile, roles } from '../support/accounts';
 import { bookLesson, lessonEvents, lessonIdAt, notificationChannels, userIdOf } from '../support/database';
-import { dayLabel, expectAccessible, settled, snap, tapUntil } from '../support/helpers';
+import { dayLabel, expectAccessible, openLearnerTab, settled, snap, tapUntil } from '../support/helpers';
 import { signInThroughForm } from '../support/sign-in';
 
 /**
@@ -60,7 +60,8 @@ test.describe('disputing a no-show (R-09, M3-19)', () => {
     expect(await notificationChannels(roles.instructor.email, 'booking.disputed', bookingId)).toContain('email');
 
     await diary.goto(`/app/instructor/learners/${await userIdOf(learner.email)}`);
-    const money = diary.getByRole('region', { name: 'Money' });
+    await openLearnerTab(diary, 'Payments');
+    const money = diary.getByRole('region', { name: 'Payments' });
     const owed = money.getByRole('list', { name: 'Lessons owed for' }).getByRole('listitem').filter({ hasText: `${dayLabel(day)} at ${hour}` });
     await expect(owed).toContainText('No-show fee');
     const dispute = money

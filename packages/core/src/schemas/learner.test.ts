@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { experienceLevels, learnerHealthSchema, learnerOnboardingSchema, learnerTransmissions } from './learner.ts';
+import { experienceLevels, learnerGearboxSchema, learnerHealthSchema, learnerMedicationSchema, learnerOnboardingSchema, learnerTheorySchema, learnerTransmissions, setupStepSchema, setupSteps, theoryAnswers } from './learner.ts';
 
 const valid = {
   fullName: 'Jack Taylor',
@@ -90,5 +90,39 @@ describe('what a learner tells us about a disability (LRN-02, D-180)', () => {
   it('is not answered by anything but yes or no', () => {
     expect(learnerHealthSchema.safeParse({ hasDisability: 'maybe' }).success).toBe(false);
     expect(learnerHealthSchema.safeParse({}).success).toBe(false);
+  });
+});
+
+describe('the getting-started questions (LRN-02, D-183)', () => {
+  it('takes a plain no to medication, with nothing else to say', () => {
+    expect(learnerMedicationSchema.safeParse({ takesMedication: 'no' }).success).toBe(true);
+  });
+
+  it('asks what it is before it takes a yes, since a yes alone tells an instructor nothing', () => {
+    const answer = learnerMedicationSchema.safeParse({ takesMedication: 'yes', details: '  ' });
+    expect(answer.success).toBe(false);
+    expect(answer.error?.issues[0]?.message).toBe('Say what it is, so your instructor knows what to watch for');
+    expect(answer.error?.issues[0]?.path).toEqual(['details']);
+  });
+
+  it('keeps what they write to a length somebody can read', () => {
+    expect(learnerMedicationSchema.safeParse({ takesMedication: 'yes', details: 'a'.repeat(1001) }).success).toBe(false);
+  });
+
+  it('asks about the theory test in the two years a pass lasts', () => {
+    expect(theoryAnswers.map((one) => one.value)).toEqual(['passed', 'not_yet']);
+    expect(theoryAnswers[0].label).toBe('Yes, passed within the last 2 years');
+    expect(learnerTheorySchema.safeParse({ theory: 'passed' }).success).toBe(true);
+    expect(learnerTheorySchema.safeParse({ theory: 'someday' }).success).toBe(false);
+  });
+
+  it('takes a gearbox, and nothing else', () => {
+    expect(learnerGearboxSchema.safeParse({ transmission: 'automatic' }).success).toBe(true);
+    expect(learnerGearboxSchema.safeParse({ transmission: 'hybrid' }).success).toBe(false);
+  });
+
+  it('lets any of them be skipped, and nothing else', () => {
+    for (const step of setupSteps) expect(setupStepSchema.safeParse({ step }).success).toBe(true);
+    expect(setupStepSchema.safeParse({ step: 'everything' }).success).toBe(false);
   });
 });

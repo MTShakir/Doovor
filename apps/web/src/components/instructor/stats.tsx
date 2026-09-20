@@ -32,6 +32,7 @@ function dayInWords(day: EarningsDay): string {
 /** A month has too many bars to name every one, so it names one a week. */
 function barsFrom(stats: InstructorStats): Bar[] {
   return stats.days.map((day, index) => ({
+    id: day.date,
     label: stats.span === 'week' ? day.when.slice(0, 3) : index % 7 === 0 ? day.date.slice(-2).replace(/^0/, '') : '',
     description: dayInWords(day),
     slices: [

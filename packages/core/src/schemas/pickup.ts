@@ -37,6 +37,12 @@ export const pickupPointSchema = z.object({
     .refine(isPostcode, { error: 'Enter a UK postcode like LS1 4DY' })
     .transform((value) => normalisePostcode(value) ?? value),
   isDefault: z.boolean(),
+  /**
+   * Where exactly, when somebody moved the pin off the middle of the postcode (D-182). Left out,
+   * the postcode's own point is used, as it always was.
+   */
+  latitude: z.number().min(49).max(61).optional(),
+  longitude: z.number().min(-9).max(2).optional(),
 });
 
 export type PickupPoint = z.infer<typeof pickupPointSchema>;

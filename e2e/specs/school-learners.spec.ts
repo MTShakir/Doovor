@@ -1,6 +1,6 @@
 import { expect, test } from '@playwright/test';
 import { authFile } from '../support/accounts';
-import { expectAccessible, snap, tapUntil } from '../support/helpers';
+import { expectAccessible, openLearnerTab, snap, tapUntil } from '../support/helpers';
 
 /** A school moves a learner between its instructors (LRN-06, M2-10). */
 test.describe('the school learner list (LRN-06, M2-10)', () => {
@@ -52,6 +52,7 @@ test.describe('the school learner list (LRN-06, M2-10)', () => {
       await page.goto('/app/instructor/learners');
       await page.getByRole('link', { name: 'Amelia Evans', exact: true }).click();
 
+      await openLearnerTab(page, 'History');
       const history = page.getByRole('region', { name: 'History' });
       await expect(history.getByText(/Added by|Imported by/)).toBeVisible();
     });

@@ -7,7 +7,9 @@ export interface BarSlice {
 }
 
 export interface Bar {
-  /** Under the bar, short enough to fit: "Mon". */
+  /** What this bar is, told apart from the rest however the label reads: the day it covers. */
+  id: string;
+  /** Under the bar, short enough to fit: "Mon". Blank where there is no room for one. */
   label: string;
   /** Read out instead of the bar: "Mon 14 Sep: £42, all cash". */
   description: string;
@@ -49,7 +51,7 @@ export function BarChart({
         {bars.map((bar, index) => {
           const total = totals[index] ?? 0;
           return (
-            <li key={bar.label} className="flex h-full min-w-0 flex-1 flex-col items-center justify-end gap-1">
+            <li key={bar.id} className="flex h-full min-w-0 flex-1 flex-col items-center justify-end gap-1">
               <span className="flex w-full flex-1 flex-col justify-end" aria-label={bar.description} role="img">
                 {total === 0 ? (
                   <span className="h-0.5 w-full rounded-full bg-grey-200" />

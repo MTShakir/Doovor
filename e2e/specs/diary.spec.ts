@@ -38,12 +38,21 @@ test.describe('instructor diary (DIA-03, DIA-04, M1-19)', () => {
     // The portal has a Today tab of its own, so this is the diary's own navigation.
     const diary = page.getByRole('navigation', { name: 'Diary' });
 
+    // Where the buttons sit before anything is pressed: moving through the diary must not move
+    // them, which it did while Back to today shared their row (D-181).
+    const dayButton = diary.getByRole('link', { name: 'Day', exact: true });
+    const before = await dayButton.boundingBox();
+
     await diary.getByRole('link', { name: 'Next' }).click();
     await expect(page).toHaveURL(new RegExp(`date=${wednesday}`));
     await expect(page.getByText(longLabel(wednesday))).toBeVisible();
 
     await diary.getByRole('link', { name: 'Previous' }).click();
     await expect(page).toHaveURL(new RegExp(`date=${tuesday}`));
+
+    // Back to today is on screen now, on its own line: the views are where they were.
+    await expect(diary.getByRole('link', { name: 'Back to today' })).toBeVisible();
+    expect(await dayButton.boundingBox()).toEqual(before);
 
     // The day these tests start from is never today, so going back to today always leaves it. It
     // says where it goes, rather than looking like a label for the day on screen, and once there it
@@ -105,17 +114,26 @@ test.describe('diary week view (DIA-03, M1-20)', () => {
 test.describe('diary month view (DIA-03, M1-21)', () => {
   test.use({ storageState: authFile('instructor') });
 
-  test('marks the days with lessons and opens the one chosen', async ({ page }, testInfo) => {
+  test('marks the days with lessons and lists the one chosen without leaving the month (D-184)', async ({ page }, testInfo) => {
     await page.goto(`/app/instructor/diary?view=month&date=${tuesday}`);
     await expect(page.getByRole('heading', { name: dayWords(tuesday, { month: 'long', year: 'numeric' }) })).toBeVisible();
+    // The month opens on the day the diary is on, with that day's lessons beside it.
+    await expect(page.getByRole('heading', { name: dayLabel(tuesday) })).toBeVisible();
 
-    // Definition of done: a day in the month opens that day.
+    // Definition of done: a day in the month lists that day, on the same screen.
     await expectAccessible(page);
     await snap(page, testInfo, 'diary-month');
     await page.getByRole('button', { name: dayWords(tuesday, { weekday: 'long', day: 'numeric', month: 'long' }) }).click();
 
-    await expect(page).toHaveURL(new RegExp(`view=day&date=${tuesday}`));
+    // Still the month: choosing a day lists it here rather than leaving for the day view.
+    await expect(page).toHaveURL(new RegExp(`view=month&date=${tuesday}`));
+    await expect(page.getByRole('heading', { name: dayLabel(tuesday) })).toBeVisible();
     await expect(page.getByText(/^\d+ lessons?, \d+ hours?|^Nothing booked/)).toBeVisible();
+
+    // And a lesson can be added to it without going looking for the day first.
+    await page.getByRole('button', { name: 'Add a lesson on this day' }).click();
+    const booking = page.getByRole('dialog', { name: 'Book a lesson' });
+    await expect(booking.getByLabel('Which day?')).toHaveValue(tuesday);
   });
 
   test('moves a month at a time', async ({ page }) => {

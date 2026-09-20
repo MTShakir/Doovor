@@ -37,6 +37,7 @@ import { LessonRecordCard } from '@/components/progress/lesson-record-card';
 import { EditableSkillMap } from '@/components/progress/editable-skill-map';
 import { SkillMap } from '@/components/progress/skill-map';
 import { PickupPoints } from '@/components/learners/pickup-points';
+import { SetupCard } from '@/app/(portal)/app/learner/setup-card';
 import { LessonDetailsBody } from '@/components/lessons/lesson-details';
 import { LessonsCalendar } from '@/components/lessons/lessons-calendar';
 import { MyLessonRow } from '@/app/(portal)/app/learner/lessons/my-lesson';
@@ -102,6 +103,7 @@ import { StatusPill, type PillStatus } from '@repo/ui/status-pill';
 import { NumberStepper, StepProgress } from '@repo/ui/stepper';
 import { Switch } from '@repo/ui/switch';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@repo/ui/tabs';
+import { LearnerTabs, LessonHistoryTabs } from '@/app/(portal)/app/instructor/learners/[id]/learner-tabs';
 import { TimeSlotGrid } from '@repo/ui/time-slot-grid';
 import { toast, toastWithUndo } from '@repo/ui/toast';
 import { BadgeCheck, CalendarX, Car, CreditCard, WifiOff } from 'lucide-react';
@@ -788,6 +790,16 @@ export function DesignShowcase() {
           <TabsContent value="week">Week view arrives in M1.</TabsContent>
           <TabsContent value="month">Month view arrives in M1.</TabsContent>
         </Tabs>
+        <Label>A learner&apos;s card, one subject at a time: five of them scroll rather than wrap on a phone (LRN-02, D-189)</Label>
+        <LearnerTabs
+          tabs={[
+            { value: 'summary', label: 'Summary', panel: <p className="text-body text-ink">The figures, where they are collected, and the private notes.</p> },
+            { value: 'lessons', label: 'Lessons', panel: <LessonHistoryTabs upcoming={<p className="text-body text-ink">Nothing booked yet.</p>} past={<p className="text-body text-ink">Two lessons taught.</p>} /> },
+            { value: 'payments', label: 'Payments', panel: <p className="text-body text-ink">Every payment, newest first.</p> },
+            { value: 'progress', label: 'Progress', panel: <p className="text-body text-ink">The skill map and the lesson records.</p> },
+            { value: 'history', label: 'History', panel: <p className="text-body text-ink">What has happened to this learner here.</p> },
+          ]}
+        />
       </Section>
 
       <Section title="Chips and pills">
@@ -1076,8 +1088,28 @@ export function DesignShowcase() {
         </div>
         <Label>A learner&apos;s pickup points on their card: the school&apos;s, where lessons start, and one the learner added; and none yet (COV-04, D-168)</Label>
         <div className="grid items-start gap-4 md:grid-cols-2">
-          <PickupPoints learnerId="design-learner" learnerName="Olivia Brown" pickups={examplePickups} actions={savedPickups} />
-          <PickupPoints learnerId="design-learner-2" learnerName="Noah Wilson" pickups={[]} actions={savedPickups} />
+          <PickupPoints
+            learnerId="design-learner"
+            pickups={examplePickups}
+            actions={savedPickups}
+            addedByOthers="added by Olivia Brown"
+            empty="None saved yet. Add where Olivia Brown is collected, or they can add their own."
+            note="For Olivia Brown. They see it too."
+          />
+          <PickupPoints
+            learnerId="design-learner-2"
+            pickups={[]}
+            actions={savedPickups}
+            addedByOthers="added by your school"
+            empty="None saved yet. Add where you want your lessons to start."
+            note="Your instructor sees this, so they know where to collect you."
+          />
+        </div>
+        <Label>Getting started on the learner&apos;s home: the first question, one in the middle, and the last one (LRN-02, D-183)</Label>
+        <div className="grid items-start gap-4 md:grid-cols-2">
+          <SetupCard setup={{ toAsk: ['pickup', 'disability', 'gearbox', 'medication', 'theory'], answered: 0, total: 5 }} />
+          <SetupCard setup={{ toAsk: ['medication', 'theory'], answered: 2, total: 5 }} />
+          <SetupCard setup={{ toAsk: ['theory'], answered: 4, total: 5 }} />
         </div>
       </Section>
 
@@ -1569,9 +1601,9 @@ export function DesignShowcase() {
             [
               ['On its way', { kind: 'loading' }],
               ['No signal', { kind: 'failed' }],
-              ['Olivia Brown', { kind: 'ready', details: exampleLesson, ahead: true }],
-              ['Noah Wilson', { kind: 'ready', details: exampleLessonUnreachable, ahead: true }],
-              ['Olivia Brown, last week', { kind: 'ready', details: exampleLessonDone, ahead: false }],
+              ['Olivia Brown', { kind: 'ready', details: exampleLesson, ahead: true, startable: false }],
+              ['Noah Wilson', { kind: 'ready', details: exampleLessonUnreachable, ahead: true, startable: false }],
+              ['Olivia Brown, last week', { kind: 'ready', details: exampleLessonDone, ahead: false, startable: false }],
             ] as const
           ).map(([title, state]) => (
             <Card key={title} className="flex flex-col gap-4">

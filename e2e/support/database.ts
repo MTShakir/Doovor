@@ -1399,13 +1399,14 @@ export async function schoolMemberState(email: string): Promise<SchoolMemberStat
 export interface MadeSchoolLearner {
   name: string;
   email: string;
+  userId: string;
   remove: () => Promise<void>;
 }
 
 /** A learner at a seeded school with nobody teaching them yet, made for one test and removed after it (M5-14). */
 export async function makeSchoolLearner(
   name: string,
-  options: { postcode: string; transmission: 'manual' | 'automatic' },
+  options: { postcode: string; transmission: 'manual' | 'automatic'; instructorName?: string },
   schoolName = 'Quayside Driving School',
 ): Promise<MadeSchoolLearner> {
   const userId = crypto.randomUUID();
@@ -1417,14 +1418,21 @@ export async function makeSchoolLearner(
       select ${userId}, p.postcode, p.location, ${options.transmission}::public.learner_transmission
         from public.postcodes p
        where p.postcode = ${options.postcode}`;
+    // Named an instructor, they are that instructor's learner, which is what makes them
+    // bookable from the diary rather than only visible to the school.
     const made = await sql`
-      insert into public.learner_relationships (business_id, learner_id, source, created_by)
-      select b.id, ${userId}, 'manual', ${userId} from public.businesses b where b.name = ${schoolName} and b.type = 'school'`;
+      insert into public.learner_relationships (business_id, learner_id, instructor_id, source, created_by)
+      select b.id, ${userId},
+             (select p.id from public.instructor_profiles p
+               where p.business_id = b.id and p.display_name = ${options.instructorName ?? null}),
+             'manual', ${userId}
+        from public.businesses b where b.name = ${schoolName} and b.type = 'school'`;
     if (made.count !== 1) throw new Error(`No school called ${schoolName} to add ${name} to`);
   });
   return {
     name,
     email,
+    userId,
     remove: () =>
       withDatabase(async (sql) => {
         await sql`delete from public.learner_relationships where learner_id = ${userId}`;
@@ -1899,5 +1907,18 @@ export async function clearBusinessPickups(learnerEmail: string): Promise<void> 
        where u.id = p.learner_id
          and lower(u.email) = lower(${learnerEmail})
          and p.business_id is not null`;
+  });
+}
+
+
+/**
+ * A place of the learner's own, written straight in (COV-04, D-185), so a test about choosing one
+ * for a lesson does not have to fill the postcode form first.
+ */
+export async function giveLearnerPickup(learnerId: string, label: string, address: string, postcode: string): Promise<void> {
+  await withDatabase(async (sql) => {
+    await sql`
+      insert into public.pickup_points (learner_id, kind, label, address, postcode)
+      values (${learnerId}, 'home', ${label}, ${address}, ${postcode})`;
   });
 }

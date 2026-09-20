@@ -37,6 +37,9 @@ export default function InstructorHomePage({ searchParams }: TodayProps) {
           <Setup />
         </Suspense>
         <Suspense fallback={<SkeletonRow />}>
+          <Stats searchParams={searchParams} />
+        </Suspense>
+        <Suspense fallback={<SkeletonRow />}>
           <Lessons />
         </Suspense>
         <section aria-labelledby="upcoming-title" className="flex flex-col gap-2">
@@ -47,9 +50,6 @@ export default function InstructorHomePage({ searchParams }: TodayProps) {
             <Upcoming searchParams={searchParams} />
           </Suspense>
         </section>
-        <Suspense fallback={<SkeletonRow />}>
-          <Stats searchParams={searchParams} />
-        </Suspense>
         <InstallPrompt why="It opens in one tap, and Today still opens where there is no signal." />
       </div>
     </main>

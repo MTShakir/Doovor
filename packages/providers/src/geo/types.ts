@@ -28,8 +28,22 @@ export type GeoFailure =
 
 export type GeoLookup = { ok: true; place: GeoPlace } | { ok: false; reason: GeoFailure };
 
+/** One address inside a postcode, from a service that knows them by house (D-182). */
+export interface GeoAddress {
+  /** The line as it is written: "12 Hyde Park Road". */
+  line: string;
+  latitude: number;
+  longitude: number;
+}
+
 export interface GeoProvider {
   lookup: (postcode: string) => Promise<GeoLookup>;
+  /**
+   * The addresses in a postcode, where the service knows them. Null from a service that only
+   * knows postcodes, such as the free one we use: the screen then asks for the house instead of
+   * offering a list (D-182).
+   */
+  addresses?: (postcode: string) => Promise<GeoAddress[] | null>;
 }
 
 /** Where looked-up places are kept, so the same postcode is asked for once (COV-03). */

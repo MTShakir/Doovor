@@ -197,3 +197,17 @@ export function dayLabel(date: string): string {
   const part = (type: Intl.DateTimeFormatPartTypes): string => parts.find((one) => one.type === type)?.value ?? '';
   return `${part('weekday')} ${part('day')} ${part('month').slice(0, 3)}`;
 }
+
+/**
+ * Opens a tab on a learner's card (LRN-02, D-189). The card used to be one long page; each
+ * subject now has a tab of its own, and only the open one is on screen.
+ */
+export async function openLearnerTab(
+  page: Page,
+  name: 'Summary' | 'Lessons' | 'Payments' | 'Progress' | 'History',
+): Promise<void> {
+  const tab = page.getByRole('tablist', { name: 'About this learner' }).getByRole('tab', { name });
+  await expect(tab).toBeVisible();
+  await tab.click();
+  await expect(tab).toHaveAttribute('aria-selected', 'true');
+}

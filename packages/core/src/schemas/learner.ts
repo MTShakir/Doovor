@@ -72,6 +72,44 @@ export const learnerHealthSchema = z
 
 export type LearnerHealth = z.infer<typeof learnerHealthSchema>;
 
+/**
+ * Medication that could affect their driving (LRN-02, D-183). We ask for the detail only where
+ * there is something to say, because medication that does not affect driving is none of our
+ * business and we would rather not be told about it.
+ */
+export const learnerMedicationSchema = z
+  .object({
+    takesMedication: z.enum(['yes', 'no']),
+    details: z.string().trim().max(1000, { error: 'Use 1000 characters or fewer' }).optional(),
+  })
+  .refine((answer) => answer.takesMedication === 'no' || (answer.details ?? '') !== '', {
+    error: 'Say what it is, so your instructor knows what to watch for',
+    path: ['details'],
+  });
+
+export type LearnerMedication = z.infer<typeof learnerMedicationSchema>;
+
+/** A theory pass lasts two years, so the question is about the last two years (LRN-02, D-183). */
+export const theoryAnswers = [
+  { value: 'passed', label: 'Yes, passed within the last 2 years' },
+  { value: 'not_yet', label: 'Not yet' },
+] as const;
+
+export const learnerTheorySchema = z.object({ theory: z.enum(['passed', 'not_yet']) });
+
+/** The gearbox their lessons are in, which is the one they will take the test in (LRN-02). */
+export const learnerGearboxSchema = z.object({ transmission: z.enum(['manual', 'automatic']) });
+
+/**
+ * The getting-started questions (LRN-02, D-183), in the order they are asked. Each one may be
+ * skipped, and each one is on the learner's Account afterwards, so skipping loses nothing.
+ */
+export const setupSteps = ['pickup', 'disability', 'gearbox', 'medication', 'theory'] as const;
+
+export type SetupStep = (typeof setupSteps)[number];
+
+export const setupStepSchema = z.object({ step: z.enum(setupSteps) });
+
 export type LearnerOnboarding = z.infer<typeof learnerOnboardingSchema>;
 
 /**
