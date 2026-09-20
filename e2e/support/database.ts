@@ -1461,6 +1461,8 @@ export async function makeSchool(label: string): Promise<MadeSchool> {
 }
 
 export interface MadeTakings {
+  /** The school the money went through, for screens that name who paid. */
+  name: string;
   gmvPence: number;
   cardPence: number;
   feesPence: number;
@@ -1494,6 +1496,7 @@ export async function makeTakings(label: string): Promise<MadeTakings> {
   });
 
   return {
+    name: school.name,
     gmvPence: 42200,
     cardPence: 4200,
     feesPence: 50,

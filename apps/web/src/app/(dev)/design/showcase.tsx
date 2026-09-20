@@ -48,6 +48,8 @@ import { InstructorWeeks, OverviewFigures, OverviewSkeleton } from '@/components
 import { DashboardFigures, DashboardSkeleton, WaitingOnStaff } from '@/components/admin/dashboard';
 import { DateRangePicker } from '@/components/admin/date-range';
 import { PlatformHighlights } from '@/components/admin/highlights';
+import { PlatformIncomeScreen } from '@/components/admin/income';
+import type { PlatformIncome } from '@/lib/admin/income';
 import type { PlatformHighlights as PlatformHighlightsData } from '@/lib/admin/highlights';
 import { BusinessDetails, BusinessResults, SuspendBusinessDialog } from '@/components/admin/businesses';
 import type { AdminBusiness } from '@/lib/admin/businesses';
@@ -196,6 +198,20 @@ const exampleHighlights: PlatformHighlightsData = {
     { id: 'b1000000-0000-4000-8000-000000000005', name: 'Tom Walsh Driving', kind: 'independent', joinedAt: '2026-09-16T14:00:00+00:00' },
   ],
   more: true,
+};
+
+/** What the platform itself earned (ADM-01, ADM-10, D-174). */
+const exampleIncome: PlatformIncome = {
+  fees: { pence: 4_700, payments: 96, onPence: 470_000 },
+  byBusiness: [
+    { id: 'c1000000-0000-4000-8000-000000000001', name: 'Quayside Driving School', kind: 'school', plan: 'school', pence: 4_200, payments: 84 },
+    { id: 'c1000000-0000-4000-8000-000000000002', name: 'Sarah Khan Driving', kind: 'independent', plan: 'free', pence: 500, payments: 12 },
+  ],
+  plans: [
+    { plan: 'free', businesses: 38 },
+    { plan: 'pro', businesses: 4 },
+    { plan: 'school', businesses: 2 },
+  ],
 };
 
 const exampleBusinessRows = [
@@ -1334,6 +1350,10 @@ export function DesignShowcase() {
         <Label>A platform just starting, with nothing waiting</Label>
         <WaitingOnStaff dashboard={quietDashboard} idPrefix="design-waiting-quiet" />
         <DashboardFigures dashboard={quietDashboard} idPrefix="design-platform-month-quiet" />
+        <Label>What the platform itself earned, and the plans Businesses are on (ADM-01, ADM-10, D-174)</Label>
+        <div className="flex flex-col gap-6">
+          <PlatformIncomeScreen income={exampleIncome} label="Last 30 days" />
+        </div>
         <Label>Who stands out, each list folded away until it is opened (ADM-01, D-172)</Label>
         <PlatformHighlights highlights={exampleHighlights} shown={5} moreHref="/design" />
         <Label>Loading</Label>

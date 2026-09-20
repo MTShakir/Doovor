@@ -17,6 +17,12 @@ describe('portal navigation (PRD 8.2)', () => {
     expect(sectionsFor('admin')).not.toContain('reviews');
   });
 
+  it('has no Bookings in the admin menu: lessons are looked into through the person (D-174)', () => {
+    expect(navFor('admin', 'desktop').map((i) => i.label)).not.toContain('Bookings');
+    expect(sectionsFor('admin')).not.toContain('bookings');
+    expect(sectionsFor('admin')).toContain('payments');
+  });
+
   it('keeps admin off mobile', () => {
     expect(navFor('admin', 'mobile')).toHaveLength(0);
   });

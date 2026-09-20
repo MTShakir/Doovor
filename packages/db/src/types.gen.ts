@@ -3174,6 +3174,7 @@ export type Database = {
         Args: { p_from: string; p_joined: number; p_to: string }
         Returns: Json
       }
+      platform_income: { Args: { p_from: string; p_to: string }; Returns: Json }
       post_lesson_request: {
         Args: {
           p_budget_pence?: number
