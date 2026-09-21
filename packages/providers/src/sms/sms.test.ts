@@ -49,6 +49,32 @@ describe('the local provider (ARCHITECTURE 10)', () => {
 describe('Twilio (PRD 13)', () => {
   const credentials = { accountSid: 'AC123', authToken: 'secret', messagingServiceSid: 'MG123' };
 
+  it('signs with an API key where one is given, and still names the account in the address', async () => {
+    // Ireland refuses the account's own token and wants a key made there instead (D-193).
+    const { calls, fetchImpl } = recorder({ sid: 'SM2' });
+    const provider = twilioSmsProvider({
+      ...credentials,
+      apiKeySid: 'SK9',
+      apiKeySecret: 'keysecret',
+      baseUrl: 'https://api.dublin.ie1.twilio.com',
+      fetchImpl,
+    });
+
+    const result = await provider.send(message);
+
+    expect(result).toEqual({ ok: true, id: 'SM2' });
+    expect(calls[0]?.url).toBe('https://api.dublin.ie1.twilio.com/2010-04-01/Accounts/AC123/Messages.json');
+    const headers = new Headers(calls[0]?.init?.headers);
+    expect(headers.get('authorization')).toBe(`Basic ${btoa('SK9:keysecret')}`);
+  });
+
+  it('falls back to the account token where no key is given', async () => {
+    const { calls, fetchImpl } = recorder({ sid: 'SM3' });
+    await twilioSmsProvider({ ...credentials, fetchImpl }).send(message);
+    const headers = new Headers(calls[0]?.init?.headers);
+    expect(headers.get('authorization')).toBe(`Basic ${btoa('AC123:secret')}`);
+  });
+
   it('sends through the messaging service that owns the sender', async () => {
     const { calls, fetchImpl } = recorder({ sid: 'SM1' });
     const provider = twilioSmsProvider({ ...credentials, fetchImpl });
