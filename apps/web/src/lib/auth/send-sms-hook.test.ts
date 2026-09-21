@@ -44,6 +44,22 @@ describe('sending a sign-in code ourselves (AUTH-02, D-192)', () => {
     expect(codeMessage('123456')).toContain('123456');
   });
 
+  it('sends to the number being added, which is where a phone change puts it (D-192)', async () => {
+    // What Supabase sends when somebody adds a number to an account they already have: the one
+    // they are verifying is new_phone, and phone is whatever was there before, which is nothing.
+    const change = JSON.stringify({ user: { phone: '', new_phone: '+447700900004' }, sms: { otp: '654321' } });
+    const result = await handleSendSmsHook({ body: change, headers: await signedHeaders(change), now });
+    expect(result.status).toBe(200);
+    expect(sent).toEqual([{ to: '+447700900004', body: codeMessage('654321') }]);
+  });
+
+  it('refuses a signed request with no number to send to', async () => {
+    const nowhere = JSON.stringify({ user: { phone: '' }, sms: { otp: '123456' } });
+    const result = await handleSendSmsHook({ body: nowhere, headers: await signedHeaders(nowhere), now });
+    expect(result.status).toBe(400);
+    expect(sent).toEqual([]);
+  });
+
   it('sends nothing at all for a request that is not signed by us', async () => {
     const headers = await signedHeaders(ask, 'v1,whsec_YW5vdGhlci1rZXktZW50aXJlbHktaGVyZQ==');
     const result = await handleSendSmsHook({ body: ask, headers, now });
