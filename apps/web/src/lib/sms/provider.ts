@@ -13,8 +13,11 @@ export function smsProvider(): SmsProvider {
     accountSid: serverEnv.TWILIO_ACCOUNT_SID,
     authToken: serverEnv.TWILIO_AUTH_TOKEN,
     messagingServiceSid: serverEnv.TWILIO_MESSAGING_SERVICE_SID,
-    // A Messaging Service lives in one region and answers only on that region's endpoint: asking
-    // the wrong one is a 404 saying the service does not exist (D-192).
-    baseUrl: serverEnv.TWILIO_REGION === 'ie1' ? 'https://api.ie1.twilio.com' : 'https://api.twilio.com',
+    // A Messaging Service lives in one region and answers only on that region's address. Ireland
+    // spells it `dublin.ie1`, and refuses the account's own token, so it needs a key made there
+    // (D-193). The wrong address answers, but says the service does not exist.
+    apiKeySid: serverEnv.TWILIO_API_KEY_SID,
+    apiKeySecret: serverEnv.TWILIO_API_KEY_SECRET,
+    baseUrl: serverEnv.TWILIO_REGION === 'ie1' ? 'https://api.dublin.ie1.twilio.com' : 'https://api.twilio.com',
   });
 }

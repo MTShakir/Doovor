@@ -9,6 +9,12 @@ export interface TwilioOptions {
   authToken: string | undefined;
   /** The Messaging Service that owns the sender ID and the geo permissions. */
   messagingServiceSid: string | undefined;
+  /**
+   * An API key to authenticate with instead of the account's own token. A region outside us1
+   * refuses the account token and wants a key made in that region (D-193).
+   */
+  apiKeySid?: string | undefined;
+  apiKeySecret?: string | undefined;
   baseUrl?: string;
   timeoutMs?: number;
   fetchImpl?: typeof fetch;
@@ -30,8 +36,11 @@ export function twilioSmsProvider(options: TwilioOptions): SmsProvider {
 
   return {
     send: async (message: SmsMessage): Promise<SmsResult> => {
-      const { accountSid, authToken, messagingServiceSid } = options;
-      if (!accountSid || !authToken || !messagingServiceSid) {
+      const { accountSid, authToken, messagingServiceSid, apiKeySid, apiKeySecret } = options;
+      // The account is always named in the address; who signs the request may be an API key.
+      const user = apiKeySid && apiKeySecret ? apiKeySid : accountSid;
+      const password = apiKeySid && apiKeySecret ? apiKeySecret : authToken;
+      if (!accountSid || !user || !password || !messagingServiceSid) {
         return { ok: false, reason: 'NOT_CONFIGURED', message: 'Twilio is not set up here.' };
       }
 
@@ -42,7 +51,7 @@ export function twilioSmsProvider(options: TwilioOptions): SmsProvider {
           method: 'POST',
           signal: controller.signal,
           headers: {
-            authorization: `Basic ${btoa(`${accountSid}:${authToken}`)}`,
+            authorization: `Basic ${btoa(`${user}:${password}`)}`,
             'content-type': 'application/x-www-form-urlencoded',
           },
           body: new URLSearchParams({

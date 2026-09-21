@@ -61,6 +61,10 @@ export const serverEnvSchema = z.preprocess(
       // Where Twilio holds what it handles for us. A Messaging Service belongs to one region and
       // is reachable only through that region's endpoint (D-192).
       TWILIO_REGION: z.enum(['us1', 'ie1']).default('us1'),
+      // A region outside us1 refuses the account's own token and wants a key made in that
+      // region instead (D-193). The account is still named in the address either way.
+      TWILIO_API_KEY_SID: optionalString,
+      TWILIO_API_KEY_SECRET: optionalString,
       // Shared with Supabase Auth, which signs every request asking us to send a code (D-192).
       SUPABASE_SEND_SMS_HOOK_SECRET: optionalString,
 
@@ -97,6 +101,11 @@ export const serverEnvSchema = z.preprocess(
         'TWILIO_AUTH_TOKEN',
         'TWILIO_MESSAGING_SERVICE_SID',
       ], 'SMS_PROVIDER is twilio');
+      // Ireland refuses the account token, so a key made there is not optional (D-193).
+      require(env.SMS_PROVIDER === 'twilio' && env.TWILIO_REGION === 'ie1', [
+        'TWILIO_API_KEY_SID',
+        'TWILIO_API_KEY_SECRET',
+      ], 'TWILIO_REGION is ie1');
       // Without the secret the hook refuses every request, so sign-in codes would stop.
       require(env.APP_ENV === 'production', ['SUPABASE_SEND_SMS_HOOK_SECRET'], 'this is production');
       require(env.PAYMENTS_PROVIDER === 'stripe', [
