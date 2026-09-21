@@ -17,9 +17,19 @@ import { serverEnv } from '@/env/server';
  * to send texts at our expense to any number somebody liked.
  */
 const askSchema = z.object({
-  user: z.object({ phone: z.string().trim().min(1) }),
+  user: z.object({
+    phone: z.string().trim().optional(),
+    // Adding or changing a number puts the one being verified here, and leaves `phone` as the
+    // number they had before, which is empty for somebody adding their first (D-192).
+    new_phone: z.string().trim().optional(),
+  }),
   sms: z.object({ otp: z.string().trim().min(1) }),
 });
+
+/** The number the code is for: the one being changed to, or the one already on the account. */
+function numberFor(user: { phone?: string; new_phone?: string }): string {
+  return user.new_phone !== undefined && user.new_phone !== '' ? user.new_phone : (user.phone ?? '');
+}
 
 /** What the hook answers with: Supabase reads the status, and the body when something went wrong. */
 export interface HookAnswer {
@@ -49,7 +59,10 @@ export async function handleSendSmsHook(input: { body: string; headers: WebhookH
   const parsed = askSchema.safeParse(JSON.parse(input.body) as unknown);
   if (!parsed.success) return refused(400, 'That is not a request to send a code.');
 
-  const sent = await smsProvider().send({ to: parsed.data.user.phone, body: codeMessage(parsed.data.sms.otp) });
+  const to = numberFor(parsed.data.user);
+  if (to === '') return refused(400, 'That request has no number to send to.');
+
+  const sent = await smsProvider().send({ to, body: codeMessage(parsed.data.sms.otp) });
   if (!sent.ok) {
     // The provider's own words, which is what tells anybody looking why no code arrived. A
     // refusal is the number or the account, and is not worth Supabase trying again.
