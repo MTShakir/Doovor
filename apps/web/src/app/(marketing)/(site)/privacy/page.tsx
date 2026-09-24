@@ -46,6 +46,10 @@ export default function PrivacyPage() {
           rows={[
             ['Your account', 'Name, email address, mobile number, password (stored only as a hash), the dates you signed in, and an account number of our own so we can find you without using your name.'],
             ['Instructors and schools', 'Business name, the area you cover, your working hours, your prices, your car, the languages you teach in, and your ADI or PDI badge number and its expiry date.'],
+            [
+              'An instructor’s books',
+              'If you keep your books with us: what you spent and what it was for, a photograph of the receipt where you add one, the cars you teach in and how each one is claimed, the miles you drove for work, and whether you are registered for VAT along with your VAT number. These are your business records rather than anything about a learner. Only you can see them, and nobody at a school you teach for can. Working them into a tax figure is ours to get right and your accountant’s to check, and we never file anything on your behalf.',
+            ],
             ['Learners', 'Who teaches you, your lessons, what you have paid, your progress against the DVSA syllabus, and your date of birth where a Business asks for it so it knows whether you are under 18. You are also asked which gearbox you want to learn in and whether you have passed the theory test, so your instructor can plan around both. Answering is your choice and you can change either whenever you like.'],
             [
               'Your health, if you tell us',
@@ -115,6 +119,7 @@ export default function PrivacyPage() {
           items={[
             'Your account and what is in it: while your account is open.',
             'Financial records: six years, because HMRC requires it. When an account is deleted these are kept but the person behind them is removed.',
+            'An instructor’s own books, and the receipts photographed into them: six years for the same reason, and they go with the Business if it is closed.',
             'The audit trail: two years.',
             'Backups of the database: five weeks, encrypted, then deleted, so a deleted account has left every backup five weeks later.',
             'Pictures of a badge or a licence: removed once the check is done.',

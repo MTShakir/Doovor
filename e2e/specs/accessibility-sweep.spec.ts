@@ -36,6 +36,10 @@ async function sidewaysOverflow(page: Page): Promise<number> {
 
 test.describe('every screen passes the scan (M6-06)', () => {
   test('the public pages', async ({ page }) => {
+    // Twenty pages, each scanned. Against a built server that is quick; against a development
+    // server each one is compiled the first time it is asked for, and the default minute is not
+    // enough for the lot. CI builds first, so this is a local cost only.
+    test.slow();
     for (const path of publicPages) {
       await page.goto(path);
       await expectAccessible(page);

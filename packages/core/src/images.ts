@@ -26,6 +26,16 @@ export const avatarImage = {
  * its shape and far more detail than an avatar. It is re-encoded all the same: a badge is
  * usually photographed at home (INS-02, M1-04).
  */
+/** A photographed receipt. Read by a person, so the same size as a badge is plenty. */
+export const receiptImage = {
+  outputType: 'image/webp',
+  outputQuality: 0.92,
+  maxSide: 1600,
+  acceptedTypes: avatarImage.acceptedTypes,
+  maxInputBytes: 15 * 1024 * 1024,
+  maxOutputBytes: 5 * 1024 * 1024,
+} as const;
+
 export const badgeImage = {
   outputType: 'image/webp',
   outputQuality: 0.92,
@@ -98,6 +108,19 @@ export function isProfileObjectPath(path: string, profileId: string): boolean {
  */
 export function businessObjectPath(businessId: string, token: string): string {
   return `businesses/${businessId}/${token}.webp`;
+}
+
+/**
+ * Where a photographed receipt is kept: the Business's own folder, so storage can be told who
+ * may read it without knowing anything about expenses (MNY-02, D-198).
+ */
+export function receiptObjectPath(businessId: string, token: string): string {
+  return `${businessId}/${token}.webp`;
+}
+
+export function isReceiptObjectPath(path: string, businessId: string): boolean {
+  const parts = path.split('/');
+  return parts.length === 2 && parts[0] === businessId && objectFileName.test(parts[1] ?? '');
 }
 
 export function isBusinessObjectPath(path: string, businessId: string): boolean {

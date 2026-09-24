@@ -45,7 +45,38 @@ export async function handleProviderEvent(input: { body: string; signature: stri
     return { status: 500, body: { error: 'Could not process the event' } };
   }
 
+  await rememberWhatItCost(event);
+
   return { status: 200, body: data };
+}
+
+/**
+ * What the provider kept out of a payment, written down beside it (MNY-02, D-198).
+ *
+ * The event that says a payment succeeded does not carry the fee, so it is asked for afterwards.
+ * Nothing here may fail the webhook: the payment is already recorded, and answering anything but
+ * 200 would have the provider send the whole event again. A fee we could not fetch stays unknown,
+ * and the books say so rather than pretending it was nothing.
+ */
+async function rememberWhatItCost(event: { type: string; accountId?: string | null; data: unknown }): Promise<void> {
+  if (event.type !== 'payment_intent.succeeded') return;
+  const payload = event.data;
+  if (payload === null || typeof payload !== 'object') return;
+  const intentId = 'id' in payload && typeof payload.id === 'string' ? payload.id : null;
+  const charge = 'latest_charge' in payload && typeof payload.latest_charge === 'string' ? payload.latest_charge : null;
+  const accountId = event.accountId ?? null;
+  if (intentId === null || charge === null || accountId === null || accountId === '') return;
+
+  try {
+    const fee = await paymentsProvider().getChargeFee({ accountId, chargeId: charge });
+    if (!fee.ok || fee.data.feePence === null) return;
+    await getSupabaseServiceClient().rpc('system_set_provider_fee', {
+      p_provider_ref: intentId,
+      p_fee_pence: fee.data.feePence,
+    });
+  } catch {
+    // Asked and not answered. The payment stands; the fee stays unknown.
+  }
 }
 
 export interface FakeOutcome {

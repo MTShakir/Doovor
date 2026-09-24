@@ -42,6 +42,22 @@ export async function holdPaymentsBusiness(): Promise<() => Promise<void>> {
 }
 
 /**
+ * Keeps whether the books' Business charges VAT to one spec at a time (MNY-02, D-198).
+ *
+ * The 390 px and 1440 px runs go at the same moment against the same instructor, and the VAT
+ * question is one answer for the whole Business: one run turning it off while the other is half
+ * way through answering it fails the other for a reason that has nothing to do with the app.
+ */
+export async function holdBooksBusiness(): Promise<() => Promise<void>> {
+  const sql = postgres(databaseUrl, { max: 1, idle_timeout: 0, max_lifetime: null });
+  await sql`select pg_advisory_lock(hashtext('e2e:books-business'))`;
+  return async () => {
+    await sql`select pg_advisory_unlock(hashtext('e2e:books-business'))`;
+    await sql.end();
+  };
+}
+
+/**
  * Who a learner is linked to, found by the email they signed up with. An invitation is only
  * really accepted if this row exists, and no page shows it until the CRM arrives (M2-04).
  */

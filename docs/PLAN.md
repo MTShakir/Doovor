@@ -266,6 +266,43 @@ Goal: safe, observable, accessible and ready for 20 beta instructors.
 
 M6 Definition of Done: all 12 PRD acceptance tests pass in CI, no open P1 bugs, production deploy checklist complete.
 
+## M7 Bookkeeping
+
+Goal: a solo instructor can keep their books in the app and hand an accountant, or MTD software, figures
+they can file from. Schools are told it is coming. The whole feature carries a beta marker while it is
+tested against real returns (D-198).
+
+Cash basis, which is the default for sole traders and what almost every instructor uses. Accruals are
+out of scope for M7.
+
+| ID | Task | PRD | Done when |
+|---|---|---|---|
+| M7-01 | Tax years, MTD quarters and the SA103 boxes in core, per form and per year | MNY-04 | Unit tests across a year boundary |
+| M7-02 | Expense categories with their SA103S and SA103F boxes, and which are disallowable | MNY-02 | Unit tests, 90% lines |
+| M7-03 | `expenses` table: business scoped, integer pence, category, date, VAT, RLS | MNY-02 | pgTAP for RLS and every constraint |
+| M7-04 | Expense writes through `SECURITY DEFINER` RPCs, with audit rows | MNY-02 | pgTAP including the failure paths |
+| M7-05 | Receipt photo per expense, in a private bucket | MNY-02 | pgTAP plus a storage policy test |
+| M7-06 | `vehicles`, and the claim method locked per vehicle once used | MNY-03 | pgTAP: the method cannot change after a claim |
+| M7-07 | Mileage log, per lesson and standalone, at the AMAP rate of the day | MNY-03 | pgTAP for the 10,000 mile step |
+| M7-08 | Stripe fees recorded on each card payment from the webhook | MNY-02 | pgTAP plus an integration test |
+| M7-09 | VAT registration on the Business: whether, the number, and from when | MNY-02 | pgTAP |
+| M7-10 | Income for a tax year: payments, refunds and fees in one ledger | MNY-04 | Unit and pgTAP against worked examples |
+| M7-11 | Tax year summary: turnover, expenses by box, net profit | MNY-04 | pgTAP against a worked return |
+| M7-12 | Bookkeeping home under More: Pro, solo only, beta marker | MNY-02 | End to end at both widths |
+| M7-13 | Add an expense, with its receipt photographed | MNY-02 | End to end at both widths |
+| M7-14 | Expenses for a tax year, totalled by category | MNY-02 | End to end at both widths |
+| M7-15 | Log mileage against a lesson, and on its own | MNY-03 | End to end at both widths |
+| M7-16 | The VAT question, its number, and figures that follow it | MNY-02 | End to end at both widths |
+| M7-17 | The tax year summary, box by box | MNY-04 | End to end at both widths |
+| M7-18 | Export CSV and PDF, by tax year and by MTD quarter | MNY-04 | End to end downloads the file and reads it |
+| M7-19 | A school sees "Coming soon" rather than the feature | MNY-06 | End to end at both widths |
+| M7-20 | Privacy notice and terms cover the financial records kept | NFR-PRV-01 | Copy guards pass |
+| M7-21 | Words and a kind for every new audit action | ADM-07 | Unit test |
+| M7-22 | Financial records kept six years, and deletion anonymises rather than removes | NFR-PRV-03 | pgTAP |
+
+M7 Definition of Done: every task green, end to end at 390 and 1440 px, and a worked example of a year's
+trading produces the SA103 boxes an accountant would write by hand.
+
 ## Phase 1 requirement coverage
 
 | PRD area | IDs | Tasks |

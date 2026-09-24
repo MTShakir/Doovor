@@ -1,4 +1,4 @@
-import { avatarImage, badgeImage, businessObjectPath, profileObjectPath } from '@repo/core/images';
+import { avatarImage, badgeImage, businessObjectPath, profileObjectPath, receiptImage, receiptObjectPath } from '@repo/core/images';
 import type { Database } from '@repo/db/types';
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { clientEnv } from '@/env/client';
@@ -8,7 +8,10 @@ export const avatarsBucket = 'avatars';
 /** Badge photos: private, readable only by the instructor and the staff reviewing them. */
 export const badgesBucket = 'badges';
 
-export type ImageBucket = typeof avatarsBucket | typeof badgesBucket;
+/** Photographed receipts: private, readable only by the Business whose books they are (MNY-02). */
+export const receiptsBucket = 'receipts';
+
+export type ImageBucket = typeof avatarsBucket | typeof badgesBucket | typeof receiptsBucket;
 
 /**
  * Public address of a stored photo (M1-03). The database keeps the path only, so the address
@@ -29,7 +32,11 @@ export function isDrawablePhotoUrl(url: string): boolean {
   return url.startsWith('data:image/') || url.startsWith(`${clientEnv.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/${avatarsBucket}/`);
 }
 
-const contentType = { [avatarsBucket]: avatarImage.outputType, [badgesBucket]: badgeImage.outputType };
+const contentType = {
+  [avatarsBucket]: avatarImage.outputType,
+  [badgesBucket]: badgeImage.outputType,
+  [receiptsBucket]: receiptImage.outputType,
+};
 
 /**
  * Uploads a prepared picture as the signed-in instructor. Storage checks the folder against
@@ -69,6 +76,30 @@ export async function removeProfileImage(
   path: string | null,
 ): Promise<void> {
   if (path) await supabase.storage.from(bucket).remove([path]);
+}
+
+/**
+ * Uploads a photographed receipt into its Business's folder (MNY-02). Storage checks that folder
+ * against who keeps those books, whatever the app sends.
+ */
+export async function uploadReceipt(supabase: SupabaseClient<Database>, businessId: string, blob: Blob): Promise<string | null> {
+  const path = receiptObjectPath(businessId, crypto.randomUUID());
+  const { error } = await supabase.storage.from(receiptsBucket).upload(path, blob, {
+    contentType: receiptImage.outputType,
+    cacheControl: '31536000',
+  });
+  return error ? null : path;
+}
+
+/** A receipt is private, so it is shown through a short-lived address, as a badge is. */
+export async function signedReceiptUrl(
+  supabase: SupabaseClient<Database>,
+  path: string | null,
+  seconds = 300,
+): Promise<string | undefined> {
+  if (!path) return undefined;
+  const { data } = await supabase.storage.from(receiptsBucket).createSignedUrl(path, seconds);
+  return data?.signedUrl;
 }
 
 /** A badge photo is private, so it is shown through a short-lived address (INS-02). */
