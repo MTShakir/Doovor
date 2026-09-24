@@ -99,7 +99,7 @@ async function Books({ searchParams }: { searchParams: Promise<{ year?: string |
           <CardTitle id="books-year-title">{year.label} tax year</CardTitle>
           <CardDescription>{year.range}</CardDescription>
         </div>
-        <dl className="flex flex-col">
+        <div className="flex flex-col">
           <ListRow title={sa103Summary.turnover} trailing={formatPence(summary.turnoverPence)} />
           <ListDivider />
           <ListRow title={sa103Summary.totalExpenses} trailing={formatPence(summary.totalExpensesPence)} />
@@ -109,7 +109,7 @@ async function Books({ searchParams }: { searchParams: Promise<{ year?: string |
             trailing={formatPence(summary.netProfitPence)}
             subtitle={summary.netProfitPence < 0 ? 'A loss this year' : undefined}
           />
-        </dl>
+        </div>
         {summary.vatRegistered ? (
           <p className="text-small text-grey-700">
             You are registered for VAT, so these leave out the {formatPence(summary.vatOnSalesPence)} of VAT in what
@@ -131,14 +131,14 @@ async function Books({ searchParams }: { searchParams: Promise<{ year?: string |
             <CardTitle id="books-lines-title">Your expenses, as the return asks for them</CardTitle>
             <CardDescription>Each line is a heading on the self-employment pages.</CardDescription>
           </div>
-          <dl className="flex flex-col">
+          <div className="flex flex-col">
             {summary.expenseLines.map((line, index) => (
               <Fragment key={line.heading}>
                 {index === 0 ? null : <ListDivider />}
                 <ListRow title={line.label} trailing={formatPence(line.totalPence)} />
               </Fragment>
             ))}
-          </dl>
+          </div>
           {summary.mileage.claimPence > 0 ? (
             <p className="text-small text-grey-700">
               {formatMiles(summary.mileage.tenths)} over {String(summary.mileage.trips)}{' '}

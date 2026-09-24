@@ -92,10 +92,10 @@ export function AddExpense({
     })();
   };
 
-  const onSubmit = form.handleSubmit((values) => {
+  const onSubmit = form.handleSubmit(() => {
     setError(null);
     startTransition(async () => {
-      const result = await recordExpense({ ...form.getValues(), receiptPath, vehicleId: values.vehicleId ?? null });
+      const result = await recordExpense({ ...form.getValues(), receiptPath });
       if (!result.ok) {
         setError(result.message);
         for (const [field, message] of Object.entries(result.fields ?? {})) {
@@ -157,6 +157,7 @@ export function AddExpense({
             <Field
               label={wantsCar ? 'Which car?' : 'Which car? (optional)'}
               hint={wantsCar && offered.length < vehicles.length ? 'Cars you claim by the mile are not listed.' : undefined}
+              error={errors.vehicleId?.message}
             >
               <Select
                 placeholder="Not about a car"

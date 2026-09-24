@@ -28,9 +28,14 @@ export function VatQuestion({ registered, number }: { registered: boolean; numbe
     startTransition(async () => {
       const result = await setVatRegistration({ registered: wanted, number: vatNumber });
       if (!result.ok) {
+        // A bad number is something to fix, so the switch stays on and the field stays open with
+        // the reason beside it. Anything else puts the switch back where it was.
+        if (result.fields?.number) {
+          setNumberError(result.fields.number);
+          return;
+        }
         setOn(registered);
-        if (result.fields?.number) setNumberError(result.fields.number);
-        else setError(result.message);
+        setError(result.message);
         return;
       }
       toast(wanted ? 'Your figures now allow for VAT' : 'Your figures no longer allow for VAT');

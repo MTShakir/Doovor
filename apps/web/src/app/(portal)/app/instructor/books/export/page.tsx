@@ -56,13 +56,13 @@ async function Export({ searchParams }: { searchParams: Promise<{ year?: string 
           <CardTitle id="export-year-title">{year.label} tax year</CardTitle>
           <CardDescription>{year.range}</CardDescription>
         </div>
-        <dl className="flex flex-col">
+        <div className="flex flex-col">
           <ListRow title={sa103Summary.turnover} trailing={formatPence(summary.turnoverPence)} />
           <ListDivider />
           <ListRow title={sa103Summary.totalExpenses} trailing={formatPence(summary.totalExpensesPence)} />
           <ListDivider />
           <ListRow title={sa103Summary.netProfit} trailing={formatPence(summary.netProfitPence)} />
-        </dl>
+        </div>
         <div className="flex flex-col gap-2 print:hidden">
           <Button asChild>
             <a href={`/app/instructor/books/export/download?year=${String(year.starts)}&period=year`}>

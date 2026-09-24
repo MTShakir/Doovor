@@ -35,7 +35,14 @@ export const expenseInputSchema = z
     note: z.string().trim().max(500, { error: 'Use 500 characters or fewer' }).default(''),
     /** Where the photographed receipt was stored. The server checks it belongs to this Business. */
     receiptPath: z.string().max(200).nullish(),
-    vehicleId: z.uuid().nullish(),
+    /**
+     * Which car it was about, or none. A picker's "not about a car" sends an empty string, which
+     * is the same answer as leaving it out, so it is read as one rather than refused.
+     */
+    vehicleId: z
+      .union([z.literal(''), z.uuid(), z.null()])
+      .optional()
+      .transform((value) => (value === '' || value === undefined ? null : value)),
   })
   .refine((value) => value.vat <= value.amount, {
     error: 'The VAT cannot be more than the amount it is inside',
