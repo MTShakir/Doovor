@@ -33,7 +33,7 @@ select is(
 
 -- Against no car in particular, so the corsa's method is still a choice further down: the
 -- first running cost recorded against a car settles it on actual costs (see 103).
-select public.record_expense(:'asha_business', 'fuel', current_date - 3, 6500, 0, 'Filled up before the test') as fuel \gset
+select public.record_expense(:'asha_business', 'fuel', private.today() - 3, 6500, 0, 'Filled up before the test') as fuel \gset
 select is(
   (select amount_pence from public.expenses where id = :'fuel'),
   6500,
@@ -59,12 +59,12 @@ select throws_ok(
   'but it cannot be changed to the other, because HMRC only allows that when the car is replaced'
 );
 select throws_ok(
-  format($$ select public.record_expense(%L, 'fuel', current_date, 5000, 0, null, null, %L) $$, :'asha_business', :'corsa'),
+  format($$ select public.record_expense(%L, 'fuel', private.today(), 5000, 0, null, null, %L) $$, :'asha_business', :'corsa'),
   'P0001', 'CLAIMED_BY_MILEAGE',
   'and its running costs cannot be claimed as well, which would count the same money twice'
 );
 select lives_ok(
-  format($$ select public.record_expense(%L, 'training', current_date, 12000, 0, null, null, %L) $$, :'asha_business', :'corsa'),
+  format($$ select public.record_expense(%L, 'training', private.today(), 12000, 0, null, null, %L) $$, :'asha_business', :'corsa'),
   'something that is not a running cost is still fine against that car'
 );
 
@@ -72,19 +72,19 @@ select lives_ok(
 -- What the books refuse.
 -- ---------------------------------------------------------------------------------------
 select throws_ok(
-  format($$ select public.record_expense(%L, 'yacht', current_date, 5000) $$, :'asha_business'),
+  format($$ select public.record_expense(%L, 'yacht', private.today(), 5000) $$, :'asha_business'),
   'P0001', 'VALIDATION_FAILED', 'a category the books do not know is refused'
 );
 select throws_ok(
-  format($$ select public.record_expense(%L, 'fuel', current_date + 1, 5000) $$, :'asha_business'),
+  format($$ select public.record_expense(%L, 'fuel', private.today() + 1, 5000) $$, :'asha_business'),
   'P0001', 'VALIDATION_FAILED', 'so is money that goes out tomorrow'
 );
 select throws_ok(
-  format($$ select public.record_expense(%L, 'fuel', current_date, 0) $$, :'asha_business'),
+  format($$ select public.record_expense(%L, 'fuel', private.today(), 0) $$, :'asha_business'),
   'P0001', 'VALIDATION_FAILED', 'and an expense of nothing'
 );
 select throws_ok(
-  format($$ select public.record_expense(%L, 'fuel', current_date, 5000, 6000) $$, :'asha_business'),
+  format($$ select public.record_expense(%L, 'fuel', private.today(), 5000, 6000) $$, :'asha_business'),
   'P0001', 'VALIDATION_FAILED', 'and VAT larger than the amount it is inside'
 );
 
@@ -109,7 +109,7 @@ select throws_ok(
 );
 select tests.authenticate_as(:'ian_user');
 select throws_ok(
-  format($$ select public.record_expense(%L, 'fuel', current_date, 5000) $$, :'asha_business'),
+  format($$ select public.record_expense(%L, 'fuel', private.today(), 5000) $$, :'asha_business'),
   '42501', null, 'an instructor at another Business cannot write to these books'
 );
 select tests.authenticate_as(:'lee');

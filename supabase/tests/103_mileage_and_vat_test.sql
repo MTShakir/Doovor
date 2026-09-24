@@ -24,7 +24,7 @@ select public.add_vehicle(:'asha_business', 'The van') as van \gset
 -- ---------------------------------------------------------------------------------------
 -- The first claim decides how a car is claimed from then on.
 -- ---------------------------------------------------------------------------------------
-select public.record_mileage(:'asha_business', :'corsa', current_date - 1, 75) as trip \gset
+select public.record_mileage(:'asha_business', :'corsa', private.today() - 1, 75) as trip \gset
 select is(
   (select claim_method::text from public.vehicles where id = :'corsa'),
   'mileage',
@@ -33,20 +33,20 @@ select is(
 select is((select miles_tenths from public.mileage_log where id = :'trip'), 75, 'and the trip is kept in tenths of a mile');
 
 select throws_ok(
-  format($$ select public.record_expense(%L, 'fuel', current_date, 5000, 0, null, null, %L) $$, :'asha_business', :'corsa'),
+  format($$ select public.record_expense(%L, 'fuel', private.today(), 5000, 0, null, null, %L) $$, :'asha_business', :'corsa'),
   'P0001', 'CLAIMED_BY_MILEAGE',
   'so its fuel cannot be claimed as well'
 );
 
 -- The other way round: a running cost settles the other car on actual costs.
-select public.record_expense(:'asha_business', 'servicing', current_date - 2, 18000, 0, null, null, :'van');
+select public.record_expense(:'asha_business', 'servicing', private.today() - 2, 18000, 0, null, null, :'van');
 select is(
   (select claim_method::text from public.vehicles where id = :'van'),
   'actual_costs',
   'recording what a car costs to run settles it on actual costs'
 );
 select throws_ok(
-  format($$ select public.record_mileage(%L, %L, current_date, 120) $$, :'asha_business', :'van'),
+  format($$ select public.record_mileage(%L, %L, private.today(), 120) $$, :'asha_business', :'van'),
   'P0001', 'CLAIMED_ON_COSTS',
   'and that car cannot then be claimed by the mile'
 );
@@ -54,8 +54,8 @@ select throws_ok(
 -- ---------------------------------------------------------------------------------------
 -- A lesson's miles are recorded once.
 -- ---------------------------------------------------------------------------------------
-select public.record_mileage(:'asha_business', :'corsa', current_date - 2, 120, :'lesson');
-select public.record_mileage(:'asha_business', :'corsa', current_date - 2, 140, :'lesson');
+select public.record_mileage(:'asha_business', :'corsa', private.today() - 2, 120, :'lesson');
+select public.record_mileage(:'asha_business', :'corsa', private.today() - 2, 140, :'lesson');
 select results_eq(
   format($$ select count(*)::int, max(miles_tenths) from public.mileage_log where booking_id = %L $$, :'lesson'),
   $$ values (1, 140) $$,
@@ -63,11 +63,11 @@ select results_eq(
 );
 
 select throws_ok(
-  format($$ select public.record_mileage(%L, %L, current_date + 1, 100) $$, :'asha_business', :'corsa'),
+  format($$ select public.record_mileage(%L, %L, private.today() + 1, 100) $$, :'asha_business', :'corsa'),
   'P0001', 'VALIDATION_FAILED', 'miles driven tomorrow are refused'
 );
 select throws_ok(
-  format($$ select public.record_mileage(%L, %L, current_date, 0) $$, :'asha_business', :'corsa'),
+  format($$ select public.record_mileage(%L, %L, private.today(), 0) $$, :'asha_business', :'corsa'),
   'P0001', 'VALIDATION_FAILED', 'and so is a trip of no distance'
 );
 
@@ -83,7 +83,7 @@ select is(
   'a Business is not registered for VAT until it says it is'
 );
 select is(
-  (public.set_vat_registration(:'asha_business', true, 'GB 123 4567 89', current_date) ->> 'number'),
+  (public.set_vat_registration(:'asha_business', true, 'GB 123 4567 89', private.today()) ->> 'number'),
   '123456789',
   'a number is taken however it is written down, and kept as nine digits'
 );
