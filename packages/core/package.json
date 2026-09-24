@@ -20,6 +20,7 @@
     "./time": "./src/time/index.ts",
     "./expenses": "./src/expenses.ts",
     "./tax-year": "./src/tax-year.ts",
+    "./books": "./src/books.ts",
     "./mileage": "./src/mileage.ts",
     "./person-name": "./src/person-name.ts",
     "./phone": "./src/phone.ts",

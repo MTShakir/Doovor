@@ -3195,6 +3195,10 @@ export type Database = {
         }[]
       }
       booking_page: { Args: { p_slug: string }; Returns: Json }
+      books_year: {
+        Args: { p_business_id: string; p_from: string; p_to: string }
+        Returns: Json
+      }
       business_billing: {
         Args: { p_business_id: string }
         Returns: {
