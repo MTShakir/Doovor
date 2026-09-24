@@ -23,3 +23,14 @@ export function formatUkMobile(e164: string): string {
   const match = /^\+?44(7\d{3})(\d{6})$/.exec(e164);
   return match ? `0${match[1] ?? ''} ${match[2] ?? ''}` : e164;
 }
+
+/**
+ * A link that opens WhatsApp on a chat with this number (D-194). WhatsApp wants digits only, with
+ * the country code and no plus sign, so "+44 7700 900001" becomes ".../447700900001".
+ *
+ * Lives here rather than beside a button because a server-rendered page builds the link too, and a
+ * function exported from a client component is only a reference on the server, not something to call.
+ */
+export function whatsAppTo(phone: string): string {
+  return `https://wa.me/${phone.replace(/\D/g, '')}`;
+}

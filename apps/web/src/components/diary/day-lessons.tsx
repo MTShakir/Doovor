@@ -131,8 +131,11 @@ export function DayLessons({ lessons, gaps, now, showInstructor = false, canAnsw
                   lesson={lesson}
                   showInstructor={showInstructor}
                   canAnswer={canAnswer}
-                  onMove={rules ? () => { setSheet({ id: lesson.id, action: 'move' }); } : undefined}
-                  onCancel={rules ? () => { setSheet({ id: lesson.id, action: 'cancel' }); } : undefined}
+                  // Where the card opens the lesson, its sheet carries Edit lesson and Cancel, and
+                  // a second pair under every card is a row of buttons nobody reads (D-194). Where
+                  // it does not open, the card is the only way to either, so they stay.
+                  onMove={rules && !openable ? () => { setSheet({ id: lesson.id, action: 'move' }); } : undefined}
+                  onCancel={rules && !openable ? () => { setSheet({ id: lesson.id, action: 'cancel' }); } : undefined}
                   started={lesson.startsAt.getTime() <= now.getTime()}
                   canMarkNoShow={now.getTime() >= lesson.startsAt.getTime() + 15 * 60_000}
                   onComplete={() => { done(lesson.id); }}

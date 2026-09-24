@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import { lessonState, lessonStateLabel } from '@repo/core/diary';
 import { skillMapSummary } from '@repo/core/skill-map';
 import { formatPence } from '@repo/core/money';
+import { whatsAppTo } from '@repo/core/phone';
 import { formatDateTime, formatDateWithYear, formatMinutes, todayInZone } from '@repo/core/time';
 import type { AccessContext } from '@repo/db';
 import { PageHeader } from '@repo/ui/app-shell';
@@ -9,7 +10,7 @@ import { Button } from '@repo/ui/button';
 import { Card, CardTitle } from '@repo/ui/card';
 import { ListDivider, ListRow } from '@repo/ui/list-row';
 import { SkeletonRow } from '@repo/ui/skeleton';
-import { ChevronLeft, Mail, MessageSquare, Phone, TrendingUp } from 'lucide-react';
+import { ChevronLeft, Mail, MessageCircle, MessageSquare, Phone, TrendingUp } from 'lucide-react';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { Fragment, Suspense } from 'react';
@@ -199,32 +200,31 @@ function Reach({ card }: { card: LearnerCard }) {
     return <p className="text-small text-grey-700">No phone number or email address yet.</p>;
   }
 
+  // Four ways to reach somebody, side by side rather than wrapping onto a second line (D-194):
+  // equal columns however many there are, and on a phone the label sits under its icon, which is
+  // the only way "WhatsApp" fits in a quarter of a 390 px screen without being cut short.
+  const ways = [
+    card.phone === null ? null : { key: 'call', href: `tel:${card.phone}`, icon: Phone, label: 'Call' },
+    card.phone === null ? null : { key: 'text', href: `sms:${card.phone}`, icon: MessageSquare, label: 'Text' },
+    card.phone === null ? null : { key: 'whatsapp', href: whatsAppTo(card.phone), icon: MessageCircle, label: 'WhatsApp', away: true },
+    card.email === null ? null : { key: 'email', href: `mailto:${card.email}`, icon: Mail, label: 'Email' },
+  ].filter((one) => one !== null);
+
   return (
-    <div className="flex flex-wrap gap-2">
-      {card.phone === null ? null : (
-        <>
-          <Button asChild>
-            <a href={`tel:${card.phone}`}>
-              <Phone className="size-5" aria-hidden />
-              Call
-            </a>
-          </Button>
-          <Button variant="secondary" asChild>
-            <a href={`sms:${card.phone}`}>
-              <MessageSquare className="size-5" aria-hidden />
-              Text
-            </a>
-          </Button>
-        </>
-      )}
-      {card.email === null ? null : (
-        <Button variant="secondary" asChild>
-          <a href={`mailto:${card.email}`}>
-            <Mail className="size-5" aria-hidden />
-            Email
+    <div className="grid grid-flow-col auto-cols-fr gap-2">
+      {ways.map((way) => (
+        <Button
+          key={way.key}
+          variant={way.key === 'call' ? 'primary' : 'secondary'}
+          className="flex-col gap-1 px-1 text-small sm:flex-row sm:gap-2 sm:px-4"
+          asChild
+        >
+          <a href={way.href} {...(way.away === true ? { target: '_blank', rel: 'noreferrer' } : {})}>
+            <way.icon className="size-5 shrink-0" aria-hidden />
+            {way.label}
           </a>
         </Button>
-      )}
+      ))}
     </div>
   );
 }
