@@ -1,5 +1,6 @@
 'use server';
 
+import { parsePostgresError } from '@repo/core/errors';
 import { isProfileObjectPath } from '@repo/core/images';
 import { err, ok, type Result } from '@repo/core/result';
 import { instructorProfileSchema } from '@repo/core/schemas/profile';
@@ -26,6 +27,20 @@ export async function saveProfile(input: unknown, photoPath?: string | null): Pr
   }
 
   const supabase = await createSupabaseServerClient();
+  // What they trade as, for somebody who owns their own business (D-196). The database checks
+  // the role again; at a school the field is never rendered and is ignored if it turns up.
+  if (
+    parsed.data.businessName !== undefined &&
+    membership.businessType === 'independent' &&
+    membership.role === 'owner'
+  ) {
+    const named = await supabase.rpc('set_business_name', {
+      p_business_id: membership.businessId,
+      p_name: parsed.data.businessName,
+    });
+    if (named.error) return err(parsePostgresError(named.error).code, 'We could not save your business name. Try again.');
+  }
+
   const { data: current } = await supabase
     .from('instructor_profiles')
     .select('photo_path')

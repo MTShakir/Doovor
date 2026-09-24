@@ -3208,6 +3208,10 @@ export type Database = {
         Args: { p_business_id: string; p_from: string; p_to: string }
         Returns: Json
       }
+      money_transactions: {
+        Args: { p_business_id: string; p_limit: number; p_offset: number }
+        Returns: Json
+      }
       next_open_slots: {
         Args: {
           p_duration_minutes: number
@@ -3235,6 +3239,7 @@ export type Database = {
           payouts_enabled: boolean
         }[]
       }
+      pending_refunds: { Args: { p_business_id: string }; Returns: Json }
       place_of_postcode: {
         Args: { p_postcode: string }
         Returns: {
@@ -3346,6 +3351,10 @@ export type Database = {
       set_booking_rules: {
         Args: { p_business_id: string; p_rules: Json }
         Returns: Json
+      }
+      set_business_name: {
+        Args: { p_business_id: string; p_name: string }
+        Returns: string
       }
       set_learner_status: {
         Args: { p_learner_id: string; p_reason?: string; p_status: string }

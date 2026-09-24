@@ -57,7 +57,7 @@ test.describe('sign-up (AUTH-01, AUTH-03)', () => {
     await page.getByRole('button', { name: 'Text me a code' }).click();
     await enterCode(page, '123456');
     await expect(page).toHaveURL(/\/onboarding\/name$/);
-    await expect(page.getByRole('heading', { level: 1, name: 'What should learners call you?' })).toBeVisible();
+    await expect(page.getByRole('heading', { level: 1, name: 'Your name and your business' })).toBeVisible();
   });
 
   test('a school owner signs up, must turn on two-step verification, then sets the school up (AUTH-08, AUTH-05)', async ({ page }, testInfo) => {

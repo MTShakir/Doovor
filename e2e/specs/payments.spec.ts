@@ -29,7 +29,7 @@ import {
   requestLesson,
   setBookingStatus,
 } from '../support/database';
-import { dayLabel, expectAccessible, fillUntil, settled, snap, tapThrough } from '../support/helpers';
+import { dayLabel, expectAccessible, fillUntil, openDiaryLesson, settled, snap, tapThrough } from '../support/helpers';
 import { signInThroughForm } from '../support/sign-in';
 import { fakeSignature } from '../support/webhooks';
 
@@ -63,7 +63,8 @@ test.describe('connecting payments (PAY-01, M3-02)', () => {
 
     const context = await browser.newContext({ storageState: authFile('schoolOwner') });
     const page = await context.newPage();
-    await page.goto('/app/school/money');
+    // Setting payments up is a page of its own now, under More (D-195).
+    await page.goto('/app/school/money/setup');
 
     const card = page.getByRole('region', { name: 'Card payments' });
     await expect(card).toContainText('Set this up once');
@@ -86,17 +87,23 @@ test.describe('connecting payments (PAY-01, M3-02)', () => {
     await expect(how).toContainText('The slot is held while they pay');
     await expectAccessible(page);
 
-    await expect(choice.locator('option')).toHaveText(['When they book', 'The day before the lesson', 'After the lesson', 'In person']);
-    await choice.selectOption('offline');
-    await expect(page.getByText('Learners now pay in person')).toBeVisible();
-    await expect(how).toContainText('Learners are not asked for a card.');
-    await expect(choice).toBeEnabled();
+    // Being paid in person is not one of these: it is the switch above, which is the same
+    // setting said the other way round (D-195).
+    await expect(choice.locator('option')).toHaveText(['When they book', 'The day before the lesson', 'After the lesson']);
+    await choice.selectOption('after_lesson');
+    await expect(page.getByText('Learners now pay after the lesson')).toBeVisible();
     await snap(page, testInfo, 'payments-mode');
     await page.reload();
-    await expect(page.getByRole('region', { name: 'How learners pay' }).getByLabel('Learners pay')).toHaveValue('offline');
+    await expect(page.getByRole('region', { name: 'How learners pay' }).getByLabel('Learners pay')).toHaveValue('after_lesson');
 
-    await page.getByRole('region', { name: 'How learners pay' }).getByLabel('Learners pay').selectOption('at_booking');
-    await expect(page.getByText('Learners now pay when they book')).toBeVisible();
+    // The switch off means paid in person, and How learners pay goes with it.
+    const accepting = page.getByRole('switch', { name: 'Accept online payments' });
+    await accepting.click();
+    await expect(page.getByText('Learners pay you in person')).toBeVisible();
+    await expect(page.getByRole('region', { name: 'How learners pay' })).toHaveCount(0);
+    await accepting.click();
+    await expect(page.getByText('Learners can pay online')).toBeVisible();
+    await expect(page.getByRole('region', { name: 'How learners pay' }).getByLabel('Learners pay')).toHaveValue('at_booking');
 
     expect(await paymentsAccountOf(email), 'the account is written down against the Business').toMatch(/^fake_acct_/);
 
@@ -118,20 +125,25 @@ test.describe('connecting payments (PAY-01, M3-02)', () => {
     await expect(moneyIn.getByText('Paid', { exact: true })).toHaveCount(0);
     await expect(moneyIn.getByText('Credit sold', { exact: true })).toHaveCount(0);
 
-    // Nothing about the payments account, its payouts or how to set it up (M5-16).
+    await expectAccessible(page);
+    await snap(page, testInfo, 'acceptance-11');
+
+    // Nothing about the payments account, its payouts or how to set it up, on the page where a
+    // manager might look for it (M5-16, D-195).
+    await page.goto('/app/school/money/setup');
     await expect(page.getByRole('region', { name: 'Card payments' })).toHaveCount(0);
     await expect(page.getByText(/payout/i)).toHaveCount(0);
     await expect(page.getByRole('button', { name: /Set up payments|Finish setting up/ })).toHaveCount(0);
-    await expectAccessible(page);
-    await snap(page, testInfo, 'acceptance-11');
+    await expect(page.getByRole('switch', { name: 'Accept online payments' })).toHaveCount(0);
     await context.close();
 
-    // The owner, on the same screen, has the account.
+    // The owner, on those same screens, has the account.
     const ownerContext = await browser.newContext({ storageState: authFile('schoolOwner') });
     const ownerPage = await ownerContext.newPage();
     await ownerPage.goto('/app/school/money');
-    await expect(ownerPage.getByRole('region', { name: 'Card payments' })).toBeVisible();
     await expect(ownerPage.getByRole('region', { name: 'Money in' }).getByText('Paid', { exact: true })).toBeVisible();
+    await ownerPage.goto('/app/school/money/setup');
+    await expect(ownerPage.getByRole('region', { name: 'Card payments' })).toBeVisible();
     await ownerContext.close();
   });
 });
@@ -816,12 +828,12 @@ test.describe('calling off a lesson that was paid for (PAY-09, R-06, R-08, M3-18
       const instructor = await browser.newContext({ storageState: authFile('schoolInstructor') });
       const diary = await instructor.newPage();
       await diary.goto(`/app/instructor/diary?view=day&date=${day}`);
-      const lesson = diary.getByRole('article', { name: `${hour} ${name}` });
       const sheet = diary.getByRole('dialog', { name: `Cancel ${name}?` });
-      await expect(async () => {
-        await lesson.getByRole('button', { name: 'Cancel' }).click();
-        await expect(sheet).toBeVisible({ timeout: 5000 });
-      }).toPass({ timeout: 20_000 });
+      // The card opens the lesson, and its sheet calls it off (D-194). Opening it already waits
+      // for the page to be interactive, so the second tap needs no retry of its own (D-043).
+      const actions = await openDiaryLesson(diary, hour, name);
+      await actions.getByRole('button', { name: 'Cancel' }).click();
+      await expect(sheet).toBeVisible();
       await expect(sheet).toContainText('Because you are, they are charged nothing. The £42 they paid goes back to their card.');
       await sheet.getByLabel('Why?').fill('Car in for repair');
       await expectAccessible(diary);
@@ -1027,11 +1039,11 @@ test.describe('receipts (PAY-08, M3-20)', () => {
     return day.toISOString().slice(0, 10);
   };
 
-  /** The owner says what goes on receipts, from the Money screen. */
+  /** The owner says what goes on receipts, from the Payment setup page (D-195). */
   const saveReceiptDetails = async (browser: Browser, vatNumber: string, testInfo: TestInfo | null) => {
     const context = await browser.newContext({ storageState: authFile('schoolOwner') });
     const money = await context.newPage();
-    await money.goto('/app/school/money');
+    await money.goto('/app/school/money/setup');
     const receipts = money.getByRole('region', { name: 'Receipts' });
     // Typed until each value sticks: a value typed before the page is interactive is lost (D-043).
     await fillUntil(receipts.getByLabel('Address line 1'), '4 Quay Street');

@@ -71,8 +71,7 @@ export async function connectPayments(input: unknown): Promise<Result<{ url: str
   const link = await provider.createAccountLink({ accountId, ...connectUrls(screen.data.screen) });
   if (!link.ok) return err('UNKNOWN', 'We could not open the setup page. Try again.');
 
-  revalidatePath('/app/instructor/money');
-  revalidatePath('/app/school/money');
+  for (const path of Object.values(moneyScreens)) revalidatePath(`${path}/setup`);
   return ok({ url: link.data.url });
 }
 
@@ -95,8 +94,7 @@ export async function refreshPaymentsState(): Promise<Result<{ chargesEnabled: b
   });
   if (error) return err(parsePostgresError(error).code);
 
-  revalidatePath('/app/instructor/money');
-  revalidatePath('/app/school/money');
+  for (const path of Object.values(moneyScreens)) revalidatePath(`${path}/setup`);
   return ok({ chargesEnabled: live.data.chargesEnabled });
 }
 
@@ -117,6 +115,10 @@ export async function setPaymentMode(input: unknown): Promise<Result<{ mode: Pay
   const { error } = await supabase.rpc('set_payment_mode', { p_business_id: business.id, p_mode: parsed.data.mode });
   if (error) return err(parsePostgresError(error).code);
 
-  for (const path of Object.values(moneyScreens)) revalidatePath(path);
+  // The mode is set on the setup page, and the Money screen reads it too.
+  for (const path of Object.values(moneyScreens)) {
+    revalidatePath(path);
+    revalidatePath(`${path}/setup`);
+  }
   return ok({ mode: parsed.data.mode });
 }

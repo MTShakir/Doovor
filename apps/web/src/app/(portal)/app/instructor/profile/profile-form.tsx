@@ -134,6 +134,16 @@ export function ProfileForm({ profileId, photoPath, values }: ProfileFormProps) 
       <Field label="Display name" hint="The name learners see." error={errors.displayName?.message}>
         <Input autoComplete="name" {...form.register('displayName')} />
       </Field>
+      {/* Only somebody who owns their own business: at a school the name is not theirs (D-196). */}
+      {values.businessName === undefined ? null : (
+        <Field
+          label="Your business name"
+          hint="Shown on your public profile and on receipts."
+          error={errors.businessName?.message}
+        >
+          <Input autoComplete="organization" {...form.register('businessName')} />
+        </Field>
+      )}
       <Field label="About you" hint="Up to 300 characters." error={errors.bio?.message}>
         <Textarea rows={4} {...form.register('bio')} />
       </Field>

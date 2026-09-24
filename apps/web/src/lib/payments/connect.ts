@@ -42,7 +42,8 @@ export type MoneyScreen = keyof typeof moneyScreens;
  */
 export function connectUrls(screen: MoneyScreen): { returnUrl: string; refreshUrl: string } {
   const base = getAppUrl();
-  const path = moneyScreens[screen];
+  // Back to the Payment setup page they started from, which is where this is now done (D-195).
+  const path = `${moneyScreens[screen]}/setup`;
   return { returnUrl: `${base}${path}?connected=1`, refreshUrl: `${base}${path}?again=1` };
 }
 

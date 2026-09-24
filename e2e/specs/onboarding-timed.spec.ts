@@ -32,7 +32,8 @@ test.describe('an instructor sets up in five minutes (AUTH-04, M1-24)', { tag: '
     const avatar = page.waitForRequest((r) => r.url().includes('/storage/v1/object/avatars/') && r.method() === 'POST');
     await page.setInputFiles('input[type="file"]', { name: 'me.jpg', mimeType: 'image/jpeg', buffer: photo });
     await avatar;
-    await page.getByLabel('Your name').fill('Nadia Fresh');
+    await page.getByLabel('First name').fill('Nadia');
+    await page.getByLabel('Last name').fill('Fresh');
     await page.getByRole('button', { name: 'Continue' }).click();
     await expect(page).toHaveURL(/\/onboarding\/badge$/);
 

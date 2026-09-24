@@ -128,6 +128,10 @@ async function Profile() {
         photoPath={profile.photo_path}
         values={{
           displayName: profile.display_name,
+          // Their own business is theirs to name; a school's is not (D-196).
+          ...(membership.businessType === 'independent' && membership.role === 'owner'
+            ? { businessName: membership.businessName }
+            : {}),
           bio: profile.bio ?? '',
           languages: profile.languages,
           yearsTeaching: profile.years_teaching === null ? '' : String(profile.years_teaching),

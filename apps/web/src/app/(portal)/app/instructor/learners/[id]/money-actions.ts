@@ -51,6 +51,11 @@ export async function markHandedBack(input: unknown): Promise<Result<null>> {
 
   revalidatePath(`/app/instructor/learners/${parsed.data.learnerId}`);
   revalidatePath('/app/instructor/diary');
+  // The Money screen counts what is still owed back, and the list it links to is this refund (D-195).
+  for (const screen of ['/app/instructor/money', '/app/school/money']) {
+    revalidatePath(screen);
+    revalidatePath(`${screen}/refunds`);
+  }
   return ok(null);
 }
 

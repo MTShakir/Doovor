@@ -1,6 +1,6 @@
 import { expect, test } from '@playwright/test';
 import { bookLesson, makeSchoolInstructor, makeSchoolLearner, removeLesson } from '../support/database';
-import { expectAccessible, snap, tapUntil } from '../support/helpers';
+import { expectAccessible, openDiaryLesson, snap, tapUntil } from '../support/helpers';
 import { signInThroughForm } from '../support/sign-in';
 
 /** A weekday of this spec's own, three weeks out, well clear of the seeded fortnight. */
@@ -28,9 +28,12 @@ test.describe('a lesson an instructor can lengthen, and a gap they can skip (BOK
       await page.goto(`/app/instructor/diary?view=day&date=${day}`);
       await expect(page.getByText(learner.name)).toBeVisible();
 
-      // An hour becomes two, and the price says what that costs before it happens.
+      // An hour becomes two, and the price says what that costs before it happens. Editing is
+      // two steps: the card opens the lesson, and its sheet edits it (D-194).
       const moving = page.getByRole('dialog', { name: `Edit ${learner.name}'s lesson` });
-      await tapUntil(page.getByRole('button', { name: 'Edit lesson' }).first(), moving);
+      const actions = await openDiaryLesson(page, time, learner.name);
+      await actions.getByRole('button', { name: 'Edit lesson' }).click();
+      await expect(moving).toBeVisible();
       await moving.getByLabel('How long?').selectOption({ label: '2 hours' });
       await expect(moving.getByText(/^2 hours costs £\d+/)).toBeVisible();
       await expectAccessible(page);

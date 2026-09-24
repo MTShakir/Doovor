@@ -136,16 +136,22 @@ export function LessonRow({
           {markPaid}
         </div>
       ) : null}
-      {canAnswer && !asked && !off && !done && !started && onMove && onCancel ? (
+      {/* Paying is its own thing: a card that leaves moving and calling off to the sheet behind
+          it still offers Mark paid here (D-194). */}
+      {canAnswer && !asked && !off && !done && !started && (markPaid !== null || (onMove && onCancel)) ? (
         <div className="flex flex-wrap justify-end gap-2">
-          <Button variant="secondary" onClick={onMove}>
-            <CalendarClock className="size-5" aria-hidden />
-            Edit lesson
-          </Button>
-          <Button variant="tertiary" onClick={onCancel}>
-            <X className="size-5" aria-hidden />
-            Cancel
-          </Button>
+          {onMove && onCancel ? (
+            <>
+              <Button variant="secondary" onClick={onMove}>
+                <CalendarClock className="size-5" aria-hidden />
+                Edit lesson
+              </Button>
+              <Button variant="tertiary" onClick={onCancel}>
+                <X className="size-5" aria-hidden />
+                Cancel
+              </Button>
+            </>
+          ) : null}
           {markPaid}
         </div>
       ) : null}

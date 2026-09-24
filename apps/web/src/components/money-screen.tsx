@@ -1,36 +1,40 @@
 import { formatPence } from '@repo/core/money';
 import { moneyPeriodKeys, type MoneyPeriodKey } from '@repo/core/money-periods';
-import { paymentModeCopy, type PaymentMode } from '@repo/core/payment-modes';
-import { formatMinutes } from '@repo/core/time';
+import { formatDate, formatMinutes } from '@repo/core/time';
 import { PageHeader } from '@repo/ui/app-shell';
+import { Button } from '@repo/ui/button';
 import { Card, CardDescription, CardTitle } from '@repo/ui/card';
 import { EmptyState } from '@repo/ui/empty-state';
 import { SkeletonRow } from '@repo/ui/skeleton';
-import { StatusPill } from '@repo/ui/status-pill';
-import { BadgePoundSterling, CreditCard } from 'lucide-react';
+import { BadgePoundSterling, ChevronRight, HandCoins } from 'lucide-react';
 import Link from 'next/link';
 import { connection } from 'next/server';
 import { Suspense } from 'react';
-import { paymentsState, requirementInWords, type PaymentsAccount } from '@/lib/payments/connect';
+import { paymentsState } from '@/lib/payments/connect';
 import { moneySummary } from '@/lib/payments/money-summary';
-import { receiptDetails } from '@/lib/payments/receipts';
-import { ConnectPayments } from '@/app/(portal)/app/instructor/money/connect-payments';
-import { PaymentModeChoice } from '@/app/(portal)/app/instructor/money/payment-mode';
-import { ReceiptDetailsForm } from '@/app/(portal)/app/instructor/money/receipt-details';
+import { moneyTransactions, pendingRefunds, type Transaction } from '@/lib/payments/transactions';
+
+/** The two Money screens, spelled out so a link built from one is still a route the app has. */
+type MoneyBase = '/app/instructor/money' | '/app/school/money';
+
+/** How many transactions a first look shows, and how many more each time (D-195). */
+const PAGE = 5;
+/** As many as the database will hand over in one go. */
+const MOST = 50;
 
 export function MoneyScreen({
   screen,
   searchParams,
 }: {
   screen: 'instructor' | 'school';
-  searchParams: Promise<{ period?: string | string[] }>;
+  searchParams: Promise<{ period?: string | string[]; show?: string | string[] }>;
 }) {
   return (
     <main className="flex flex-col gap-4 pb-8">
-      <PageHeader title="Money" subtitle="Taking payments, and what you are owed." />
+      <PageHeader title="Money" subtitle="What you have taken, and what is owed." />
       <div className="flex flex-col gap-4 px-4 md:max-w-2xl md:px-8">
         <Suspense fallback={<SkeletonRow />}>
-          <Payments screen={screen} searchParams={searchParams} />
+          <Money screen={screen} searchParams={searchParams} />
         </Suspense>
       </div>
     </main>
@@ -41,6 +45,13 @@ const periodTabs: Record<MoneyPeriodKey, string> = { week: 'This week', month: '
 
 function periodFrom(value: string | string[] | undefined): MoneyPeriodKey {
   return typeof value === 'string' && (moneyPeriodKeys as readonly string[]).includes(value) ? (value as MoneyPeriodKey) : 'week';
+}
+
+/** How many transactions to show, a page at a time and never more than the database will give. */
+function showFrom(value: string | string[] | undefined): number {
+  const asked = typeof value === 'string' ? Number(value) : PAGE;
+  if (!Number.isInteger(asked) || asked < PAGE) return PAGE;
+  return Math.min(asked, MOST);
 }
 
 /** One figure on the dashboard, with what makes it up underneath. */
@@ -120,17 +131,19 @@ async function MoneyDashboard({ businessId, screen, period }: { businessId: stri
   );
 }
 
-/** PAY-01: where this Business stands with taking card payments. */
-async function Payments({
+/** MNY-01, PAY-01: the figures, what is still owed back, and the money itself underneath. */
+async function Money({
   screen,
   searchParams,
 }: {
   screen: 'instructor' | 'school';
-  searchParams: Promise<{ period?: string | string[] }>;
+  searchParams: Promise<{ period?: string | string[]; show?: string | string[] }>;
 }) {
   // The provider is asked as the page renders, which a prerendered shell cannot do.
   await connection();
-  const period = periodFrom((await searchParams).period);
+  const asked = await searchParams;
+  const period = periodFrom(asked.period);
+  const show = showFrom(asked.show);
   const state = await paymentsState();
   if (!state) {
     return (
@@ -144,132 +157,109 @@ async function Payments({
     );
   }
 
-  const ready = state.chargesEnabled;
-  const { account } = state;
+  const base: MoneyBase = screen === 'school' ? '/app/school/money' : '/app/instructor/money';
+  const owed = await pendingRefunds(state.businessId);
 
   return (
     <>
-    <MoneyDashboard businessId={state.businessId} screen={screen} period={period} />
-    {/* The account and its payouts are the owner's: nobody else sees them (PRD 6.2, acceptance test 11). */}
-    {account ? <CardPayments account={account} businessName={state.businessName} ready={ready} screen={screen} /> : null}
-    {ready ? <HowLearnersPay mode={state.paymentMode} canManage={state.canManage} /> : null}
-    <Receipts businessId={state.businessId} canManage={state.canManage} />
+      {/* Money waiting to be handed over is the one thing here somebody has to act on, so it
+          sits above the figures rather than under them (R-08, D-195). */}
+      {owed.length > 0 ? (
+        <Button variant="secondary" width="full" className="justify-between" asChild>
+          <Link href={`${base}/refunds`}>
+            <span className="flex items-center gap-2">
+              <HandCoins className="size-5 shrink-0" aria-hidden />
+              Pending refunds
+            </span>
+            <span className="flex items-center gap-1">
+              <span className="tabular-nums">{formatPence(owed.reduce((total, one) => total + one.amountPence, 0))}</span>
+              <ChevronRight className="size-5 shrink-0" aria-hidden />
+            </span>
+          </Link>
+        </Button>
+      ) : null}
+      <MoneyDashboard businessId={state.businessId} screen={screen} period={period} />
+      <Suspense fallback={<SkeletonRow />}>
+        <RecentTransactions businessId={state.businessId} base={base} period={period} show={show} />
+      </Suspense>
     </>
   );
 }
 
-/** PAY-01: the owner's payments account, and whether its payouts are set up. */
-function CardPayments({
-  account,
-  businessName,
-  ready,
-  screen,
+/** What each transaction says, in the words somebody reading their own books would use. */
+function transactionLine(one: Transaction): { title: string; detail: string; amount: string } {
+  if (one.kind === 'refund') {
+    const waiting = one.status === 'pending';
+    const way = one.refundKind === 'offline' ? (waiting ? 'To hand back' : 'Handed back') : waiting ? 'Going back to their card' : 'Back to their card';
+    return { title: `Refund to ${one.learnerName}`, detail: `${formatDate(one.at)} · ${way}`, amount: `-${formatPence(one.amountPence)}` };
+  }
+
+  const how = one.method === 'card' ? 'Card' : one.method === 'cash' ? 'Cash' : one.method === 'bank' ? 'Bank transfer' : 'Paid';
+  // A payment is for a lesson or for a package. Say which, and say nothing when it is neither.
+  const what = one.creditMinutes === null ? (one.lessonAt === null ? null : 'Lesson') : `Package, ${formatMinutes(one.creditMinutes)}`;
+  const back = one.refundedPence > 0 ? `${formatPence(one.refundedPence)} refunded` : null;
+  const detail = [formatDate(one.at), what, how, back].filter((part) => part !== null).join(' · ');
+  return { title: one.learnerName, detail, amount: formatPence(one.amountPence) };
+}
+
+/** MNY-01, D-195: the money itself, newest first, five at a time. */
+async function RecentTransactions({
+  businessId,
+  base,
+  period,
+  show,
 }: {
-  account: PaymentsAccount;
-  businessName: string;
-  ready: boolean;
-  screen: 'instructor' | 'school';
+  businessId: string;
+  base: MoneyBase;
+  period: MoneyPeriodKey;
+  show: number;
 }) {
-  const started = account.accountId !== null;
-  return (
-    <Card className="flex flex-col gap-3" role="region" aria-labelledby="payments-title">
-      <div className="flex items-start justify-between gap-3">
-        <div className="flex flex-col gap-1">
-          <CardTitle id="payments-title">Card payments</CardTitle>
-          <CardDescription>
-            Learners pay {businessName} directly. The money is yours, and we never hold it.
-          </CardDescription>
-        </div>
-        <StatusPill status={ready ? 'confirmed' : started ? 'attention' : 'pending'}>
-          {ready ? 'On' : started ? 'Nearly' : 'Off'}
-        </StatusPill>
-      </div>
-
-      {ready ? (
-        <p className="flex items-center gap-2 text-body text-ink">
-          <CreditCard className="size-5 shrink-0 text-grey-700" aria-hidden />
-          You can take card, Apple Pay and Google Pay.
-          {account.payoutsEnabled ? '' : ' Payouts are still being set up.'}
-        </p>
-      ) : (
-        <p className="text-body text-grey-700">
-          {started
-            ? 'Your account is made. There are a few things left before you can take payments.'
-            : 'Set this up once and learners can pay when they book.'}
-        </p>
-      )}
-
-      {account.requirements.length > 0 ? (
-        <div className="flex flex-col gap-1">
-          <h3 className="text-small font-semibold text-black">Still needed</h3>
-          <ul className="flex list-disc flex-col gap-1 pl-5 text-small text-grey-700">
-            {account.requirements.slice(0, 6).map((requirement) => (
-              <li key={requirement}>{requirementInWords(requirement)}</li>
-            ))}
-          </ul>
-        </div>
-      ) : null}
-
-      {account.stale ? (
-        <p className="text-small text-grey-700">
-          We could not reach the payments service just now, so this may be out of date.
-        </p>
-      ) : null}
-
-      <ConnectPayments started={started} ready={ready} screen={screen} />
-    </Card>
-  );
-}
-
-/** PAY-08, M3-20: what goes on the receipts learners are sent, set by the owner. */
-async function Receipts({ businessId, canManage }: { businessId: string; canManage: boolean }) {
-  const details = await receiptDetails(businessId);
-  const lines = [details.line1, details.line2, details.town, details.postcode].filter((line) => line.trim() !== '');
+  const page = await moneyTransactions(businessId, show);
+  if (!page) return null;
 
   return (
-    <Card className="flex flex-col gap-3" role="region" aria-labelledby="receipts-title">
+    <Card className="flex flex-col gap-3" role="region" aria-labelledby="transactions-title">
       <div className="flex flex-col gap-1">
-        <CardTitle id="receipts-title">Receipts</CardTitle>
-        <CardDescription>Every payment gets a numbered receipt by email, with your address on it.</CardDescription>
+        <CardTitle id="transactions-title">Recent transactions</CardTitle>
+        <CardDescription>Every payment and refund, newest first.</CardDescription>
       </div>
-      {canManage ? (
-        <ReceiptDetailsForm initial={details} />
+      {page.rows.length === 0 ? (
+        <p className="text-body text-grey-700">Nothing yet. Payments show up here as soon as they are taken.</p>
       ) : (
-        <div className="flex flex-col gap-1">
-          {lines.length === 0 ? (
-            <p className="text-body text-grey-700">No address yet. The owner of the business adds it.</p>
-          ) : (
-            lines.map((line) => (
-              <p key={line} className="text-body text-ink">
-                {line}
-              </p>
-            ))
-          )}
-          {details.vatNumber === '' ? null : <p className="text-body text-ink">VAT number {details.vatNumber}</p>}
-        </div>
+        <ul className="flex flex-col divide-y divide-grey-200" aria-label="Payments and refunds">
+          {page.rows.map((one) => {
+            const line = transactionLine(one);
+            return (
+              <li key={one.id}>
+                <Link
+                  href={`/app/instructor/learners/${one.learnerId}`}
+                  className="flex min-h-12 items-start gap-3 py-3 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-black"
+                >
+                  <span className="flex min-w-0 flex-1 flex-col">
+                    <span className="text-body text-ink">{line.title}</span>
+                    <span className="text-small text-grey-700">{line.detail}</span>
+                  </span>
+                  <span className={`shrink-0 text-body tabular-nums ${one.kind === 'refund' ? 'text-grey-700' : 'text-ink'}`}>
+                    {line.amount}
+                  </span>
+                </Link>
+              </li>
+            );
+          })}
+        </ul>
       )}
-    </Card>
-  );
-}
-
-/** The ways of paying this app can take today, in the order an owner reads them (PAY-03). */
-const choices: PaymentMode[] = ['at_booking', 'before_lesson', 'after_lesson', 'offline'];
-
-/** PAY-03: once cards can be taken, the owner decides when learners are asked for one. */
-function HowLearnersPay({ mode, canManage }: { mode: PaymentMode; canManage: boolean }) {
-  return (
-    <Card className="flex flex-col gap-3" role="region" aria-labelledby="payment-mode-title">
-      <div className="flex flex-col gap-1">
-        <CardTitle id="payment-mode-title">How learners pay</CardTitle>
-        <CardDescription>Credit a learner has already bought is always used first.</CardDescription>
-      </div>
-      {canManage ? (
-        <PaymentModeChoice current={mode} choices={choices.includes(mode) ? choices : [...choices, mode]} />
-      ) : (
-        <p className="text-body text-ink">
-          Learners pay {paymentModeCopy[mode].label.toLowerCase()}. {paymentModeCopy[mode].description}
-        </p>
-      )}
+      {page.more ? (
+        <Button variant="secondary" width="full" asChild>
+          {/* A link rather than a button: the next five are fetched on the server, and the page
+              keeps its place because nothing above it changes. */}
+          <Link
+            href={`${base}?period=${period}&show=${String(Math.min(show + PAGE, MOST))}`}
+            scroll={false}
+          >
+            Load more
+          </Link>
+        </Button>
+      ) : null}
     </Card>
   );
 }

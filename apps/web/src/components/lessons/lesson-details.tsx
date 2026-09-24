@@ -3,6 +3,7 @@
 import { lessonState, lessonStateLabel } from '@repo/core/diary';
 import { lessonToStart } from '@repo/core/lesson-records';
 import { formatPence } from '@repo/core/money';
+import { whatsAppTo } from '@repo/core/phone';
 import { formatDate, formatTime } from '@repo/core/time';
 import { Button } from '@repo/ui/button';
 import { cn } from '@repo/ui/lib/cn';
@@ -35,10 +36,6 @@ export function directionsTo(pickup: { address: string | null; postcode: string 
 }
 
 /** A chat in WhatsApp with a UK mobile, which wa.me wants as digits without the plus. */
-export function whatsAppTo(phone: string): string {
-  return `https://wa.me/${phone.replace(/\D/g, '')}`;
-}
-
 function Section({ title, children }: { title: string; children: ReactNode }) {
   return (
     <section className="flex flex-col gap-2" aria-label={title}>

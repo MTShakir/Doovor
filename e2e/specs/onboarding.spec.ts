@@ -22,13 +22,19 @@ test.describe('instructor onboarding (AUTH-04, M1-02)', () => {
     await enterCode(page, '123456');
 
     await expect(page).toHaveURL(/\/onboarding\/name$/);
-    await expect(page.getByRole('heading', { level: 1, name: 'What should learners call you?' })).toBeVisible();
+    await expect(page.getByRole('heading', { level: 1, name: 'Your name and your business' })).toBeVisible();
     await expect(page.getByText('Step 1 of 5')).toBeVisible();
     await expectAccessible(page);
     await snap(page, testInfo, 'onboarding-name');
 
     // The name is the one step that cannot be skipped.
-    await page.getByLabel('Your name').fill('Nina Newstart');
+    await page.getByLabel('First name').fill('Nina');
+    await page.getByLabel('Last name').fill('Newstart');
+    // Somebody running their own business is asked what it trades as, which starts as their
+    // own name and is usually something else (D-196).
+    const business = page.getByLabel('Your business name');
+    await expect(business).toHaveValue('Nina Newstart');
+    await business.fill('Perfect Driving');
     await page.getByRole('button', { name: 'Continue' }).click();
     await expect(page).toHaveURL(/\/onboarding\/badge$/);
     await expect(page.getByText('Step 2 of 5')).toBeVisible();
@@ -90,7 +96,8 @@ test.describe('instructor onboarding (AUTH-04, M1-02)', () => {
     await expectAccessible(page);
     await snap(page, testInfo, 'onboarding-photo');
 
-    await page.getByLabel('Your name').fill('Nina Newstart');
+    await page.getByLabel('First name').fill('Nina');
+    await page.getByLabel('Last name').fill('Newstart');
     await page.getByRole('button', { name: 'Continue' }).click();
     await expect(page).toHaveURL(/\/onboarding\/badge$/);
 
@@ -113,7 +120,8 @@ test.describe('instructor onboarding (AUTH-04, M1-02)', () => {
     await page.goto(await linkFromEmail(email, 'Confirm your email'));
     await page.getByRole('link', { name: 'Do this later' }).click();
 
-    await page.getByLabel('Your name').fill('Nina Newstart');
+    await page.getByLabel('First name').fill('Nina');
+    await page.getByLabel('Last name').fill('Newstart');
     await page.getByRole('button', { name: 'Continue' }).click();
     await expect(page).toHaveURL(/\/onboarding\/badge$/);
     await expect(page.getByRole('button', { name: 'Continue' })).toBeEnabled();
@@ -150,7 +158,8 @@ test.describe('instructor onboarding (AUTH-04, M1-02)', () => {
     );
     await page.goto(await linkFromEmail(email, 'Confirm your email'));
     await page.getByRole('link', { name: 'Do this later' }).click();
-    await page.getByLabel('Your name').fill('Nina Newstart');
+    await page.getByLabel('First name').fill('Nina');
+    await page.getByLabel('Last name').fill('Newstart');
     await page.getByRole('button', { name: 'Continue' }).click();
 
     await page.getByLabel('Badge number').fill('123456');
@@ -171,7 +180,8 @@ test.describe('instructor onboarding (AUTH-04, M1-02)', () => {
     );
     await page.goto(await linkFromEmail(email, 'Confirm your email'));
     await page.getByRole('link', { name: 'Do this later' }).click();
-    await page.getByLabel('Your name').fill('Nina Newstart');
+    await page.getByLabel('First name').fill('Nina');
+    await page.getByLabel('Last name').fill('Newstart');
     await page.getByRole('button', { name: 'Continue' }).click();
     await page.getByRole('button', { name: 'Skip for now' }).click();
     await expect(page).toHaveURL(/\/onboarding\/area$/);
@@ -210,7 +220,8 @@ test.describe('instructor onboarding (AUTH-04, M1-02)', () => {
     );
     await page.goto(await linkFromEmail(email, 'Confirm your email'));
     await page.getByRole('link', { name: 'Do this later' }).click();
-    await page.getByLabel('Your name').fill('Nina Newstart');
+    await page.getByLabel('First name').fill('Nina');
+    await page.getByLabel('Last name').fill('Newstart');
     await page.getByRole('button', { name: 'Continue' }).click();
     await page.getByRole('button', { name: 'Skip for now' }).click();
 
@@ -230,7 +241,8 @@ test.describe('instructor onboarding (AUTH-04, M1-02)', () => {
     );
     await page.goto(await linkFromEmail(email, 'Confirm your email'));
     await page.getByRole('link', { name: 'Do this later' }).click();
-    await page.getByLabel('Your name').fill('Nina Newstart');
+    await page.getByLabel('First name').fill('Nina');
+    await page.getByLabel('Last name').fill('Newstart');
     await page.getByRole('button', { name: 'Continue' }).click();
     for (const step of ['area', 'prices']) {
       await page.getByRole('button', { name: 'Skip for now' }).click();
@@ -262,7 +274,8 @@ test.describe('instructor onboarding (AUTH-04, M1-02)', () => {
     );
     await page.goto(await linkFromEmail(email, 'Confirm your email'));
     await page.getByRole('link', { name: 'Do this later' }).click();
-    await page.getByLabel('Your name').fill('Nina Newstart');
+    await page.getByLabel('First name').fill('Nina');
+    await page.getByLabel('Last name').fill('Newstart');
     await page.getByRole('button', { name: 'Continue' }).click();
     for (const step of ['area', 'prices']) {
       await page.getByRole('button', { name: 'Skip for now' }).click();
@@ -285,7 +298,8 @@ test.describe('instructor onboarding (AUTH-04, M1-02)', () => {
     );
     await page.goto(await linkFromEmail(email, 'Confirm your email'));
     await page.getByRole('link', { name: 'Do this later' }).click();
-    await page.getByLabel('Your name').fill('Nina Newstart');
+    await page.getByLabel('First name').fill('Nina');
+    await page.getByLabel('Last name').fill('Newstart');
     await page.getByRole('button', { name: 'Continue' }).click();
     for (const step of ['area', 'prices', 'hours']) {
       await page.getByRole('button', { name: 'Skip for now' }).click();
@@ -327,7 +341,8 @@ test.describe('instructor onboarding (AUTH-04, M1-02)', () => {
     );
     await page.goto(await linkFromEmail(email, 'Confirm your email'));
     await page.getByRole('link', { name: 'Do this later' }).click();
-    await page.getByLabel('Your name').fill('Nina Newstart');
+    await page.getByLabel('First name').fill('Nina');
+    await page.getByLabel('Last name').fill('Newstart');
     await page.getByRole('button', { name: 'Continue' }).click();
     for (const step of ['area', 'prices', 'hours']) {
       await page.getByRole('button', { name: 'Skip for now' }).click();
