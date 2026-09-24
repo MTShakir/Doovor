@@ -13,8 +13,8 @@ select tests.create_fixture();
 
 select tests.authenticate_as(:'asha');
 select public.add_vehicle(:'asha_business', 'LS06 ADI') as corsa \gset
-select public.record_expense(:'asha_business', 'franchise_fee', current_date - 10, 30000) as spend \gset
-select public.record_mileage(:'asha_business', :'corsa', current_date - 10, 250) as trip \gset
+select public.record_expense(:'asha_business', 'franchise_fee', private.today() - 10, 30000) as spend \gset
+select public.record_mileage(:'asha_business', :'corsa', private.today() - 10, 250) as trip \gset
 select tests.clear_authentication();
 
 select is((select created_by from public.expenses where id = :'spend'), :'asha'::uuid, 'an expense is recorded against whoever recorded it');
