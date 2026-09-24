@@ -1,7 +1,7 @@
 import { expect, test } from '@playwright/test';
 import { authFile, roles } from '../support/accounts';
 import { bookLesson, clearDiary, lateFeeOwed, lessonIdAt, lessonMoney, offlinePaymentOn, userIdOf } from '../support/database';
-import { dayLabel, expectAccessible, openLearnerTab, settled, snap } from '../support/helpers';
+import { dayLabel, expectAccessible, openDiaryLesson, openLearnerTab, settled, snap } from '../support/helpers';
 
 /**
  * Cash and bank transfers, recorded in two taps (PAY-05, M3-15), and given back (M3-18).
@@ -113,8 +113,10 @@ test.describe('lessons paid in person (PAY-05, M3-15)', () => {
     await paid.getByRole('button', { name: 'Cash' }).click();
     await expect(lesson.getByText('Paid (cash)', { exact: true })).toBeVisible();
 
+    // Calling it off is two steps: the card opens the lesson, and its sheet calls it off (D-194).
     const cancel = page.getByRole('dialog', { name: 'Cancel Jack Taylor?' });
-    await lesson.getByRole('button', { name: 'Cancel' }).click();
+    const actions = await openDiaryLesson(page, '12:00', 'Jack Taylor');
+    await actions.getByRole('button', { name: 'Cancel' }).click();
     await expect(cancel).toContainText('The £42 they paid is owed back to them: mark it handed back on their learner card once it is.');
     await cancel.getByLabel('Why?').fill('Car off the road');
     await cancel.getByRole('button', { name: 'Cancel the lesson' }).click();

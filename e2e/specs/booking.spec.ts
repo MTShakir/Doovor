@@ -1,7 +1,7 @@
 import { expect, test } from '@playwright/test';
 import { authFile } from '../support/accounts';
 import { acceptRequests, clearDiary, requestLesson } from '../support/database';
-import { expectAccessible, snap, tapUntil } from '../support/helpers';
+import { expectAccessible, openDiaryLesson, snap, tapUntil } from '../support/helpers';
 
 /** The instructor's three taps: who it is for, when it is, and yes (BOK-01, BOK-03, M2-16). */
 test.describe('booking a lesson (BOK-01, M2-16)', () => {
@@ -197,7 +197,10 @@ test.describe('booking a lesson (BOK-01, M2-16)', () => {
     const lesson = page.getByRole('article').filter({ hasText: 'Jack Taylor' });
     await expect(lesson).toContainText('09:00');
 
-    await tapUntil(lesson.getByRole('button', { name: 'Edit lesson' }), page.getByRole('dialog', { name: /^Edit Jack/ }));
+    // Moving it is two steps: the card opens the lesson, and its sheet moves it (D-194).
+    const actions = await openDiaryLesson(page, '09:00', 'Jack Taylor');
+    await actions.getByRole('button', { name: 'Edit lesson' }).click();
+    await expect(page.getByRole('dialog', { name: /^Edit Jack/ })).toBeVisible();
     await page.getByRole('button', { name: '15:00' }).click();
     await page.getByRole('button', { name: 'Move to 15:00' }).click();
 
@@ -215,7 +218,9 @@ test.describe('booking a lesson (BOK-01, M2-16)', () => {
     await page.goto(`/app/instructor/diary?view=day&date=${day}`);
     const lesson = page.getByRole('article').filter({ hasText: 'Olivia Brown' });
 
-    await tapUntil(lesson.getByRole('button', { name: 'Cancel' }), page.getByRole('dialog', { name: /^Cancel Olivia/ }));
+    const actions = await openDiaryLesson(page, '11:00', 'Olivia Brown');
+    await actions.getByRole('button', { name: 'Cancel' }).click();
+    await expect(page.getByRole('dialog', { name: /^Cancel Olivia/ })).toBeVisible();
     // Nothing happens until there is a reason to give the learner (R-08).
     await expect(page.getByRole('button', { name: 'Cancel the lesson' })).toBeDisabled();
     await page.getByLabel('Why?').fill('Car in for repair');
@@ -288,8 +293,8 @@ test.describe('booking a lesson (BOK-01, M2-16)', () => {
     const taught = page.getByRole('article').filter({ hasText: 'Jack Taylor' });
     const absent = page.getByRole('article').filter({ hasText: 'Olivia Brown' });
 
-    // A lesson in the past is asked about, not moved.
-    await expect(taught.getByRole('button', { name: 'Edit lesson' })).toBeHidden();
+    // A lesson in the past is asked about, not moved: the card offers Done, and Edit lesson
+    // lives in the sheet behind it (D-194), where lesson-details.spec.ts checks it.
     // Done opens the lesson's record, to be written straight after it (PRD 10.2, M4-05).
     await taught.getByRole('button', { name: 'Done' }).click();
     await expect(page.getByText('Marked as done')).toBeVisible();

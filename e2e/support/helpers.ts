@@ -211,3 +211,14 @@ export async function openLearnerTab(
   await tab.click();
   await expect(tab).toHaveAttribute('aria-selected', 'true');
 }
+
+/**
+ * Opens a lesson from the instructor's daily diary and returns the part of its sheet that moves
+ * or calls it off (D-194). The cards used to carry Edit lesson and Cancel themselves, and a
+ * second pair under every card was a row nobody read; the sheet behind the card has both.
+ */
+export async function openDiaryLesson(page: Page, at: string, learner: string): Promise<Locator> {
+  const sheet = page.getByRole('dialog', { name: learner });
+  await tapUntil(page.getByRole('button', { name: `Open ${at} with ${learner}` }), sheet);
+  return sheet.getByRole('region', { name: 'This lesson' });
+}
