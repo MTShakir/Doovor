@@ -286,6 +286,15 @@ begin
     if v_running and v_method = 'mileage' then
       raise exception 'CLAIMED_BY_MILEAGE' using detail = '{"field": "category"}';
     end if;
+    -- The first claim against a car decides how it is claimed from then on, which is HMRC's own
+    -- rule rather than ours. Recording what it costs to run settles it on actual costs.
+    if v_running and v_method is null then
+      update public.vehicles
+         set claim_method = 'actual_costs', method_settled_at = now(), updated_at = now()
+       where id = p_vehicle_id;
+      perform private.write_audit('vehicle.method_set', 'vehicle', p_vehicle_id, p_business_id, null,
+        jsonb_build_object('method', 'actual_costs', 'settled_by', 'expense'));
+    end if;
   end if;
 
   insert into public.expenses (

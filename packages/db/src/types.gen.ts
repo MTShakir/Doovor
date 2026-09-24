@@ -540,6 +540,8 @@ export type Database = {
           type: Database["public"]["Enums"]["business_type"]
           updated_at: string
           vat_number: string | null
+          vat_registered: boolean
+          vat_registered_from: string | null
         }
         Insert: {
           address?: Json | null
@@ -570,6 +572,8 @@ export type Database = {
           type: Database["public"]["Enums"]["business_type"]
           updated_at?: string
           vat_number?: string | null
+          vat_registered?: boolean
+          vat_registered_from?: string | null
         }
         Update: {
           address?: Json | null
@@ -600,6 +604,8 @@ export type Database = {
           type?: Database["public"]["Enums"]["business_type"]
           updated_at?: string
           vat_number?: string | null
+          vat_registered?: boolean
+          vat_registered_from?: string | null
         }
         Relationships: [
           {
@@ -1829,6 +1835,64 @@ export type Database = {
             columns: ["user_id"]
             isOneToOne: false
             referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      mileage_log: {
+        Row: {
+          booking_id: string | null
+          business_id: string
+          created_at: string
+          created_by: string | null
+          id: string
+          miles_tenths: number
+          note: string | null
+          travelled_on: string
+          vehicle_id: string
+        }
+        Insert: {
+          booking_id?: string | null
+          business_id: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          miles_tenths: number
+          note?: string | null
+          travelled_on: string
+          vehicle_id: string
+        }
+        Update: {
+          booking_id?: string | null
+          business_id?: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          miles_tenths?: number
+          note?: string | null
+          travelled_on?: string
+          vehicle_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "mileage_log_booking_id_fkey"
+            columns: ["booking_id"]
+            isOneToOne: false
+            referencedRelation: "bookings"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "mileage_log_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "businesses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "mileage_log_vehicle_id_fkey"
+            columns: ["vehicle_id"]
+            isOneToOne: false
+            referencedRelation: "vehicles"
             referencedColumns: ["id"]
           },
         ]
@@ -3405,6 +3469,17 @@ export type Database = {
         }
         Returns: string
       }
+      record_mileage: {
+        Args: {
+          p_booking_id?: string
+          p_business_id: string
+          p_miles_tenths: number
+          p_note?: string
+          p_travelled_on: string
+          p_vehicle_id: string
+        }
+        Returns: string
+      }
       record_offline_package: {
         Args: { p_learner_id: string; p_method: string; p_package_id: string }
         Returns: string
@@ -3415,6 +3490,7 @@ export type Database = {
       }
       refund_options: { Args: { p_payment_id: string }; Returns: Json }
       remove_expense: { Args: { p_expense_id: string }; Returns: Json }
+      remove_mileage: { Args: { p_mileage_id: string }; Returns: undefined }
       request_account_deletion: { Args: { p_reason?: string }; Returns: string }
       request_lesson_reminder: {
         Args: { p_booking_id: string; p_channel: string }
@@ -3535,6 +3611,15 @@ export type Database = {
       set_supervisor: {
         Args: { p_instructor_id: string; p_supervised: boolean }
         Returns: boolean
+      }
+      set_vat_registration: {
+        Args: {
+          p_business_id: string
+          p_from?: string
+          p_number?: string
+          p_registered: boolean
+        }
+        Returns: Json
       }
       set_vehicle_method: {
         Args: { p_method: string; p_vehicle_id: string }

@@ -31,7 +31,9 @@ select is(
   'and how it is claimed is not settled until it is chosen'
 );
 
-select public.record_expense(:'asha_business', 'fuel', current_date - 3, 6500, 0, 'Filled up before the test', null, :'corsa') as fuel \gset
+-- Against no car in particular, so the corsa's method is still a choice further down: the
+-- first running cost recorded against a car settles it on actual costs (see 103).
+select public.record_expense(:'asha_business', 'fuel', current_date - 3, 6500, 0, 'Filled up before the test') as fuel \gset
 select is(
   (select amount_pence from public.expenses where id = :'fuel'),
   6500,
