@@ -18,6 +18,8 @@
     "./standard-webhook": "./src/standard-webhook.ts",
     "./setup-checklist": "./src/setup-checklist.ts",
     "./time": "./src/time/index.ts",
+    "./expenses": "./src/expenses.ts",
+    "./tax-year": "./src/tax-year.ts",
     "./person-name": "./src/person-name.ts",
     "./phone": "./src/phone.ts",
     "./postcode": "./src/postcode.ts",
