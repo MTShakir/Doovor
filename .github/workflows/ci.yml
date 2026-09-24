@@ -75,7 +75,10 @@ jobs:
   e2e:
     name: End to end (390 and 1440 px)
     runs-on: ubuntu-24.04
-    timeout-minutes: 30
+    # The suite takes about 25 minutes on a quick runner, and a slow one is half as fast again:
+    # on 2026-09-24 the same 526 tests took 24m30s on one runner and were cut off at 30 minutes
+    # on the next. The limit is here to catch a test that hangs, not to race a shared machine.
+    timeout-minutes: 45
     steps:
       - uses: actions/checkout@v4
       - uses: pnpm/action-setup@v4
