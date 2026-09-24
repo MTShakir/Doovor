@@ -2144,6 +2144,7 @@ export type Database = {
           paid_at: string | null
           payer_id: string | null
           provider: string
+          provider_fee_pence: number | null
           provider_ref: string | null
           receipt_url: string | null
           refunded_pence: number
@@ -2161,6 +2162,7 @@ export type Database = {
           paid_at?: string | null
           payer_id?: string | null
           provider?: string
+          provider_fee_pence?: number | null
           provider_ref?: string | null
           receipt_url?: string | null
           refunded_pence?: number
@@ -2178,6 +2180,7 @@ export type Database = {
           paid_at?: string | null
           payer_id?: string | null
           provider?: string
+          provider_fee_pence?: number | null
           provider_ref?: string | null
           receipt_url?: string | null
           refunded_pence?: number
@@ -3901,6 +3904,10 @@ export type Database = {
           p_payouts_enabled: boolean
         }
         Returns: number
+      }
+      system_set_provider_fee: {
+        Args: { p_fee_pence: number; p_provider_ref: string }
+        Returns: Json
       }
       system_settle_refund: {
         Args: { p_provider_ref: string; p_refund_id: string; p_status?: string }

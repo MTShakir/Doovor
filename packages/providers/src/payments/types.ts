@@ -221,6 +221,12 @@ export interface PaymentsProvider {
   /** Paying for a lesson (PAY-02, PAY-03, R-10, R-12). */
   createCheckoutIntent: (input: CheckoutIntentInput) => Promise<PaymentResult<PaymentIntent>>;
   getPaymentIntent: (input: { accountId: string; paymentIntentId: string }) => Promise<PaymentResult<PaymentIntent>>;
+  /**
+   * What the provider kept out of a payment, in pence (MNY-02, D-198). It is not in the event that
+   * says the payment succeeded, so it is asked for afterwards. Null when the provider has not
+   * settled the charge yet, which is different from a fee of nothing.
+   */
+  getChargeFee: (input: { accountId: string; chargeId: string }) => Promise<PaymentResult<{ feePence: number | null }>>;
   captureHold: (input: {
     accountId: string;
     paymentIntentId: string;

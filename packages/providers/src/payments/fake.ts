@@ -327,6 +327,13 @@ export function fakePaymentsProvider(options: FakePaymentsOptions = {}): FakePay
       return Promise.resolve(intent ? ok(intent) : { ok: false, reason: 'NOT_FOUND', message: 'No such payment.' });
     },
 
+    getChargeFee: (input): Promise<PaymentResult<{ feePence: number | null }>> => {
+      // What Stripe charges in the United Kingdom, so a local run sees a number of the right size.
+      const intent = [...state.intents.values()].find((one) => one.chargeId === input.chargeId);
+      if (!intent) return Promise.resolve({ ok: false, reason: 'NOT_FOUND', message: 'No such charge.' });
+      return Promise.resolve(ok({ feePence: Math.round(intent.amountPence * 0.015) + 20 }));
+    },
+
     captureHold: (input): Promise<PaymentResult<PaymentIntent>> => {
       const intent = intentOf(input.paymentIntentId);
       if (!intent) return Promise.resolve({ ok: false, reason: 'NOT_FOUND', message: 'No such payment.' });

@@ -302,6 +302,20 @@ export function stripePaymentsProvider(options: StripeOptions): PaymentsProvider
         return asIntent(intent, input.accountId);
       }),
 
+    getChargeFee: (input): Promise<PaymentResult<{ feePence: number | null }>> =>
+      call(async (stripe) => {
+        // The fee is on the balance transaction rather than the charge, and a charge that has not
+        // settled has no balance transaction yet.
+        const charge = await stripe.charges.retrieve(input.chargeId, { expand: ['balance_transaction'] }, {
+          stripeAccount: input.accountId,
+        });
+        const settled: unknown = charge.balance_transaction;
+        if (settled === null || typeof settled !== 'object' || !('fee' in settled) || typeof settled.fee !== 'number') {
+          return { feePence: null };
+        }
+        return { feePence: settled.fee };
+      }),
+
     captureHold: (input): Promise<PaymentResult<PaymentIntent>> =>
       call(async (stripe) => {
         const intent = await stripe.paymentIntents.capture(
