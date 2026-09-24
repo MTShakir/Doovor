@@ -6,7 +6,7 @@ import type { BusinessType } from '@repo/db';
  * instructor who joins a school has four: the school sets the prices (AUTH-05, SCH-04, D-118).
  */
 export const onboardingSteps = [
-  { step: 1, slug: 'name', title: 'What should learners call you?', skippable: false },
+  { step: 1, slug: 'name', title: 'Your name and your business', skippable: false },
   { step: 2, slug: 'badge', title: 'Your instructor badge', skippable: true },
   { step: 3, slug: 'area', title: 'Where do you teach?', skippable: true },
   { step: 4, slug: 'prices', title: 'Your prices', skippable: true },

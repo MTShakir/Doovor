@@ -7,6 +7,7 @@
 
 import { z } from '../zod';
 import { fullNameSchema } from './auth.ts';
+import { businessNameSchema } from './onboarding.ts';
 
 /** The list the database accepts, with the words a person would use (PRD 9.2). */
 export const specialisms = [
@@ -53,6 +54,11 @@ const specialismValues = specialisms.map((item) => item.value) as [Specialism, .
 
 export const instructorProfileSchema = z.object({
   displayName: fullNameSchema.pipe(z.string().max(80, { error: 'Use 80 characters or fewer' })),
+  /**
+   * What they trade as, which is usually not their own name (D-196). Only somebody who owns their
+   * own business sends it; at a school the name belongs to the school.
+   */
+  businessName: businessNameSchema.optional(),
   /** 300 characters, as the PRD asks. Empty is allowed: a bio can wait. */
   bio: z.string().trim().max(300, { error: 'Use 300 characters or fewer' }),
   languages: z

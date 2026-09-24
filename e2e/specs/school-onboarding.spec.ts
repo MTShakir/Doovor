@@ -108,7 +108,10 @@ test.describe('school onboarding (AUTH-05, M5-11)', () => {
 
     await expect(nia).toHaveURL(/\/onboarding\/name$/);
     await expect(nia.getByText('Step 1 of 4')).toBeVisible();
-    await expect(nia.getByLabel('Your name')).toHaveValue('Nia Newcomer');
+    await expect(nia.getByLabel('First name')).toHaveValue('Nia');
+    await expect(nia.getByLabel('Last name')).toHaveValue('Newcomer');
+    // A school's name is not theirs to change, so they are never asked for one (D-196).
+    await expect(nia.getByLabel('Your business name')).toHaveCount(0);
     await expect(nia.getByRole('button', { name: 'Continue' })).toBeEnabled();
     await nia.getByRole('button', { name: 'Continue' }).click();
 

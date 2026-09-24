@@ -2,6 +2,7 @@
 
 import { parsePostgresError } from '@repo/core/errors';
 import { isProfileObjectPath } from '@repo/core/images';
+import { wholeName } from '@repo/core/person-name';
 import { err, type Result } from '@repo/core/result';
 import {
   onboardingAreaSchema,
@@ -31,19 +32,32 @@ async function advance(session: { profileId: string; step: number; businessType:
   redirectTo(next ? `/onboarding/${slugForStep(next.step)}` : '/app/instructor');
 }
 
-/** AUTH-04 step 1: the name learners see, and their photo. Success redirects to the next step. */
+/**
+ * AUTH-04 step 1: the name learners see, what the business is called, and their photo. Success
+ * redirects to the next step.
+ *
+ * Signing up named the Business after the person, because that was all we knew. Somebody running
+ * their own business is asked here what they actually trade as (D-196); an instructor at a school
+ * is not, because the school's name is not theirs to change.
+ */
 export async function saveName(input: unknown): Promise<Result<null>> {
   const parsed = onboardingNameSchema.safeParse(input);
   if (!parsed.success) return err('VALIDATION_FAILED', undefined, fieldErrors(parsed.error));
 
   const session = await requireOnboarding();
-  const { fullName, photoPath } = parsed.data;
+  const { firstName, lastName, businessName, photoPath } = parsed.data;
+  const fullName = wholeName({ firstName, lastName });
   // Storage refuses a folder that is not theirs, and so does this: the browser sends the path.
   if (typeof photoPath === 'string' && !isProfileObjectPath(photoPath, session.profileId)) {
     return err('NOT_ALLOWED', 'That photo could not be saved. Try choosing it again.');
   }
 
   const supabase = await createSupabaseServerClient();
+  if (session.businessType === 'independent' && businessName !== undefined) {
+    const named = await supabase.rpc('set_business_name', { p_business_id: session.businessId, p_name: businessName });
+    if (named.error) return err(parsePostgresError(named.error).code, 'We could not save your business name. Try again.');
+  }
+
   const patch =
     photoPath === undefined ? { display_name: fullName } : { display_name: fullName, photo_path: photoPath };
   const { error } = await supabase.from('instructor_profiles').update(patch).eq('id', session.profileId);

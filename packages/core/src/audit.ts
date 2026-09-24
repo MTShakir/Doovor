@@ -93,6 +93,7 @@ export const auditActionWords: Readonly<Record<string, string>> = {
   'no_show.disputed': 'No-show disputed',
   'no_show.dispute_decided': 'No-show dispute decided',
   'business.created': 'Business started',
+  'business.renamed': 'Business name changed',
   'business.prices_set': 'Prices set',
   'business.booking_rules_changed': 'Booking rules changed',
   'catalogue.prices_changed': 'Prices or packages changed',
@@ -202,6 +203,7 @@ export const auditCategories: readonly AuditCategory[] = [
     required: false,
     actions: [
       'business.created',
+      'business.renamed',
       'business.prices_set',
       'business.booking_rules_changed',
       'catalogue.prices_changed',

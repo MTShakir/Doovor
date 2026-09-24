@@ -2,6 +2,7 @@
 
 import { zodResolver } from '@hookform/resolvers/zod';
 import { avatarImage } from '@repo/core/images';
+import { nameHalves } from '@repo/core/person-name';
 import { onboardingNameSchema } from '@repo/core/schemas/onboarding';
 import { AvatarPicker } from '@repo/ui/avatar-picker';
 import { Field } from '@repo/ui/field';
@@ -26,9 +27,11 @@ interface NameFormProps {
   profileId: string;
   initialName: string;
   initialPhotoPath: string | null;
+  /** What the Business is called today. Absent for an instructor at a school, who is not asked. */
+  initialBusinessName?: string;
 }
 
-export function NameForm({ profileId, initialName, initialPhotoPath }: NameFormProps) {
+export function NameForm({ profileId, initialName, initialPhotoPath, initialBusinessName }: NameFormProps) {
   const [pending, startTransition] = useTransition();
   const [formError, setFormError] = useState<string | null>(null);
   const [photoError, setPhotoError] = useState<string | undefined>(undefined);
@@ -40,6 +43,7 @@ export function NameForm({ profileId, initialName, initialPhotoPath }: NameFormP
   const unsaved = useRef<string | null>(null);
   // No default values: the field keeps anything typed before hydration (ClientForm, D-043).
   const form = useForm<z.input<typeof onboardingNameSchema>>({ resolver: zodResolver(onboardingNameSchema) });
+  const halves = nameHalves(initialName);
 
   useEffect(() => {
     // The preview is an address for bytes in this tab; let go of it when it changes.
@@ -86,7 +90,7 @@ export function NameForm({ profileId, initialName, initialPhotoPath }: NameFormP
     setFormError(null);
     startTransition(async () => {
       // Saving redirects, so this only resolves when something needs fixing.
-      const result = await saveName({ fullName: values.fullName, photoPath });
+      const result = await saveName({ ...values, photoPath });
       if (!result.ok) {
         setFormError(result.message);
         for (const [field, message] of Object.entries(result.fields ?? {})) {
@@ -110,13 +114,25 @@ export function NameForm({ profileId, initialName, initialPhotoPath }: NameFormP
         onChoose={choose}
         onRemove={remove}
       />
-      <Field
-        label="Your name"
-        hint="Learners see this on your profile and in messages."
-        error={form.formState.errors.fullName?.message}
-      >
-        <Input autoComplete="name" defaultValue={initialName} {...form.register('fullName')} />
-      </Field>
+      {/* Two fields rather than one: it says plainly that this is the person, not the business,
+          and a browser fills both from its saved details (D-196). */}
+      <div className="grid gap-4 sm:grid-cols-2">
+        <Field label="First name" error={form.formState.errors.firstName?.message}>
+          <Input autoComplete="given-name" defaultValue={halves.firstName} {...form.register('firstName')} />
+        </Field>
+        <Field label="Last name" error={form.formState.errors.lastName?.message}>
+          <Input autoComplete="family-name" defaultValue={halves.lastName} {...form.register('lastName')} />
+        </Field>
+      </div>
+      {initialBusinessName === undefined ? null : (
+        <Field
+          label="Your business name"
+          hint="Shown on your public profile and on receipts. Many instructors trade as something other than their own name."
+          error={form.formState.errors.businessName?.message}
+        >
+          <Input autoComplete="organization" defaultValue={initialBusinessName} {...form.register('businessName')} />
+        </Field>
+      )}
       <SubmitButton width="full" size="lg" pending={pending} disabled={working}>
         Continue
       </SubmitButton>

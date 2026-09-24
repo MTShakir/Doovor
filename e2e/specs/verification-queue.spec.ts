@@ -14,7 +14,9 @@ async function submitBadge(page: Page, email: string, name: string): Promise<voi
   );
   await page.goto(await linkFromEmail(email, 'Confirm your email'));
   await page.getByRole('link', { name: 'Do this later' }).click();
-  await page.getByLabel('Your name').fill(name);
+  const [first, ...rest] = name.split(' ');
+  await page.getByLabel('First name').fill(first ?? name);
+  await page.getByLabel('Last name').fill(rest.join(' '));
   await page.getByRole('button', { name: 'Continue' }).click();
   // The name step has a file input of its own, so wait for the badge step before using one.
   await expect(page).toHaveURL(/\/onboarding\/badge$/);

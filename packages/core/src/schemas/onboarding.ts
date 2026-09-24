@@ -10,11 +10,26 @@ import { parsePoundsToPence } from '../money.ts';
 import { isPostcode, normalisePostcode } from '../postcode.ts';
 import { isValidLocalDate, isValidLocalTime, localTimeToMinutes } from '../time/calendar.ts';
 import { todayInZone } from '../time/zone.ts';
-import { fullNameSchema } from './auth.ts';
 
-/** Step 1: the name learners see, and the photo shown beside it (INS-01). */
+/** Half a person's name. Two of these make the one name that is stored and shown (D-196). */
+const nameHalfSchema = z.string().trim().max(60, { error: 'Use 60 characters or fewer' });
+
+/**
+ * What an instructor trades as, which is usually not their own name (INS-01, D-196). It is what
+ * learners see on the public profile and on every receipt.
+ */
+export const businessNameSchema = z
+  .string()
+  .trim()
+  .min(1, { error: 'Enter your business name' })
+  .max(120, { error: 'Use 120 characters or fewer' });
+
+/** Step 1: the name learners see, what the business is called, and the photo beside them (INS-01). */
 export const onboardingNameSchema = z.object({
-  fullName: fullNameSchema,
+  firstName: nameHalfSchema.min(1, { error: 'Enter your first name' }),
+  lastName: nameHalfSchema,
+  /** Asked of somebody running their own business. An instructor at a school never sees it. */
+  businessName: businessNameSchema.optional(),
   /**
    * Where the prepared picture was stored. Absent means the photo is unchanged, null removes
    * it. The server checks the path belongs to the caller before saving it.
