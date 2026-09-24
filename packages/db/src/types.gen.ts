@@ -935,6 +935,66 @@ export type Database = {
           },
         ]
       }
+      expenses: {
+        Row: {
+          amount_pence: number
+          business_id: string
+          category: Database["public"]["Enums"]["expense_category"]
+          created_at: string
+          created_by: string | null
+          id: string
+          note: string | null
+          receipt_path: string | null
+          spent_on: string
+          updated_at: string
+          vat_pence: number
+          vehicle_id: string | null
+        }
+        Insert: {
+          amount_pence: number
+          business_id: string
+          category: Database["public"]["Enums"]["expense_category"]
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          note?: string | null
+          receipt_path?: string | null
+          spent_on: string
+          updated_at?: string
+          vat_pence?: number
+          vehicle_id?: string | null
+        }
+        Update: {
+          amount_pence?: number
+          business_id?: string
+          category?: Database["public"]["Enums"]["expense_category"]
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          note?: string | null
+          receipt_path?: string | null
+          spent_on?: string
+          updated_at?: string
+          vat_pence?: number
+          vehicle_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "expenses_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "businesses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "expenses_vehicle_id_fkey"
+            columns: ["vehicle_id"]
+            isOneToOne: false
+            referencedRelation: "vehicles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       impersonation_sessions: {
         Row: {
           ended_at: string | null
@@ -2724,6 +2784,47 @@ export type Database = {
         }
         Relationships: []
       }
+      vehicles: {
+        Row: {
+          business_id: string
+          claim_method: Database["public"]["Enums"]["claim_method"] | null
+          created_at: string
+          id: string
+          method_settled_at: string | null
+          name: string
+          retired_at: string | null
+          updated_at: string
+        }
+        Insert: {
+          business_id: string
+          claim_method?: Database["public"]["Enums"]["claim_method"] | null
+          created_at?: string
+          id?: string
+          method_settled_at?: string | null
+          name: string
+          retired_at?: string | null
+          updated_at?: string
+        }
+        Update: {
+          business_id?: string
+          claim_method?: Database["public"]["Enums"]["claim_method"] | null
+          created_at?: string
+          id?: string
+          method_settled_at?: string | null
+          name?: string
+          retired_at?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "vehicles_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "businesses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       working_hours: {
         Row: {
           business_id: string
@@ -2890,6 +2991,10 @@ export type Database = {
           p_transmission?: string
           p_usual_minutes?: number
         }
+        Returns: string
+      }
+      add_vehicle: {
+        Args: { p_business_id: string; p_name: string }
         Returns: string
       }
       admin_audit_log: {
@@ -3287,6 +3392,19 @@ export type Database = {
         Args: { p_count: number; p_filters: Json }
         Returns: undefined
       }
+      record_expense: {
+        Args: {
+          p_amount_pence: number
+          p_business_id: string
+          p_category: string
+          p_note?: string
+          p_receipt_path?: string
+          p_spent_on: string
+          p_vat_pence?: number
+          p_vehicle_id?: string
+        }
+        Returns: string
+      }
       record_offline_package: {
         Args: { p_learner_id: string; p_method: string; p_package_id: string }
         Returns: string
@@ -3296,6 +3414,7 @@ export type Database = {
         Returns: string
       }
       refund_options: { Args: { p_payment_id: string }; Returns: Json }
+      remove_expense: { Args: { p_expense_id: string }; Returns: Json }
       request_account_deletion: { Args: { p_reason?: string }; Returns: string }
       request_lesson_reminder: {
         Args: { p_booking_id: string; p_channel: string }
@@ -3416,6 +3535,10 @@ export type Database = {
       set_supervisor: {
         Args: { p_instructor_id: string; p_supervised: boolean }
         Returns: boolean
+      }
+      set_vehicle_method: {
+        Args: { p_method: string; p_vehicle_id: string }
+        Returns: string
       }
       set_working_hours: {
         Args: {
@@ -3747,6 +3870,7 @@ export type Database = {
         | "expired"
       business_status: "pending" | "active" | "suspended"
       business_type: "independent" | "school"
+      claim_method: "mileage" | "actual_costs"
       coverage_rule: "include" | "exclude"
       credit_entry_kind:
         | "purchase"
@@ -3757,6 +3881,19 @@ export type Database = {
         | "adjustment"
         | "refund"
       exception_kind: "open" | "blocked"
+      expense_category:
+        | "fuel"
+        | "vehicle_finance"
+        | "vehicle_insurance"
+        | "servicing"
+        | "franchise_fee"
+        | "adi_registration"
+        | "training"
+        | "phone"
+        | "advertising"
+        | "accountancy"
+        | "bank_charges"
+        | "other"
       experience_level: "none" | "some" | "test_booked"
       instructor_qualification: "adi" | "pdi"
       intended_role: "learner" | "instructor" | "school"
@@ -3970,6 +4107,7 @@ export const Constants = {
       ],
       business_status: ["pending", "active", "suspended"],
       business_type: ["independent", "school"],
+      claim_method: ["mileage", "actual_costs"],
       coverage_rule: ["include", "exclude"],
       credit_entry_kind: [
         "purchase",
@@ -3981,6 +4119,20 @@ export const Constants = {
         "refund",
       ],
       exception_kind: ["open", "blocked"],
+      expense_category: [
+        "fuel",
+        "vehicle_finance",
+        "vehicle_insurance",
+        "servicing",
+        "franchise_fee",
+        "adi_registration",
+        "training",
+        "phone",
+        "advertising",
+        "accountancy",
+        "bank_charges",
+        "other",
+      ],
       experience_level: ["none", "some", "test_booked"],
       instructor_qualification: ["adi", "pdi"],
       intended_role: ["learner", "instructor", "school"],
