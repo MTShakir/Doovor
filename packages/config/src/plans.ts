@@ -133,8 +133,13 @@ export function monthlyPricePence(plan: PlanKey, instructorCount: number): numbe
 /** The text message limits a super admin may set per plan, as the platform settings keep them (ADM-05). */
 export type PlanLimits = Partial<Record<PlanKey, { smsRemindersPerMonth: number }>>;
 
-function isPlan(value: string | null): value is PlanKey {
+/** Whether something is one of the plans. Exported: the books read a plan back from the database. */
+export function isPlanKey(value: unknown): value is PlanKey {
   return value === 'free' || value === 'pro' || value === 'school';
+}
+
+function isPlan(value: string | null): value is PlanKey {
+  return isPlanKey(value);
 }
 
 /** The limits as the platform settings keep them (ADM-05), leaving out anything that is not a whole number. */
