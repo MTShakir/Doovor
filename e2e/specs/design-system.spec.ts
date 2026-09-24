@@ -13,6 +13,10 @@ test.describe('design system page (M0-15)', () => {
       await expect(page.getByRole('heading', { level: 2, name: section })).toBeVisible();
     }
     await expect(page.getByText(brand.name).first()).toBeVisible();
+    // A scrolling tab strip is reached by its list, which Radix makes the tab stop once it has
+    // mounted. Scanned before that, the strip is a scrollable region with no way into it, and
+    // axe is right to say so. This page holds every component, so mounting lags the first paint.
+    await expect(page.getByRole('tablist', { name: 'About this learner' })).toHaveAttribute('tabindex', '0');
     await expectAccessible(page);
     await snap(page, testInfo, 'design-system');
     // One image per section, small enough to review properly.
