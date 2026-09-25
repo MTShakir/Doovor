@@ -280,6 +280,7 @@ export function LessonDetailsSheet({ lesson, onClose }: { lesson: LessonAtAGlanc
       <LessonSheets
         lesson={{
           bookingId: details.id,
+          learnerId: details.learner.id,
           learnerName: details.learner.name,
           startsAt: details.startsAt,
           durationMinutes: Math.round((new Date(details.endsAt).getTime() - new Date(details.startsAt).getTime()) / 60_000),

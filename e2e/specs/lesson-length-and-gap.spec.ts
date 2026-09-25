@@ -41,6 +41,8 @@ test.describe('a lesson an instructor can lengthen, and a gap they can skip (BOK
       // The same time, now twice as long: the lesson being moved is not in its own way.
       await moving.getByRole('button', { name: time, exact: true }).click();
       await moving.getByRole('button', { name: new RegExp(`^Move to ${time}$`) }).click();
+      // Moving one asks whether the learner has been told (D-200).
+      await page.getByRole('button', { name: 'Yes, I have told them' }).click();
       await expect(page.getByText(/^Moved to /)).toBeVisible();
       await expect(page.getByRole('article', { name: `${time} ${learner.name}` })).toContainText(after);
 

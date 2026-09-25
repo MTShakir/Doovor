@@ -181,6 +181,7 @@ export function DayLessons({ lessons, gaps, now, showInstructor = false, canAnsw
         <LessonSheets
           lesson={{
             bookingId: chosen.id,
+            learnerId: chosen.learnerId,
             learnerName: chosen.learnerName,
             startsAt: chosen.startsAt.toISOString(),
             durationMinutes: Math.round((chosen.endsAt.getTime() - chosen.startsAt.getTime()) / 60_000),
