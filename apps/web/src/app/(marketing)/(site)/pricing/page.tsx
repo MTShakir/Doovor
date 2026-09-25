@@ -1,6 +1,7 @@
 import { brand } from '@repo/config/brand';
 import { foundingOffer, freeTrial, plans, standardCardFee } from '@repo/config/plans';
 import { loyaltyEveryMonths, loyaltyMonthsToMost, loyaltyMostPercent, loyaltyStepPercent } from '@repo/core/loyalty';
+import { getEntitlements } from '@repo/config/plans';
 import { referralRewardMonths } from '@repo/core/referral';
 import { formatPence } from '@repo/core/money';
 import { siteShareCard } from '@repo/core/share-card';
@@ -31,6 +32,10 @@ export default function PricingPage() {
   const appUrl = getAppUrl();
   const summaries = planSummaries();
   const questions = [
+    {
+      question: 'How many learners does Free carry?',
+      answer: `${String(getEntitlements('free').activeLearners ?? 0)} at a time: the ones you are teaching, waiting or with a test booked. An enquiry that went nowhere, somebody who has passed and somebody who has left are not counted, and nobody is ever taken off your books. Pro carries as many as you like.`,
+    },
     {
       question: 'What does the founding offer include?',
       answer: `The paid plan for your business, free for ${String(foundingOffer.months)} months: Pro for independent instructors, and the School plan for driving schools. It is open to the first ${String(foundingOffer.instructorLimit)} instructors and the first ${String(foundingOffer.schoolLimit)} schools.`,

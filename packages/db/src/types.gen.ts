@@ -3478,6 +3478,7 @@ export type Database = {
         Args: { p_business_id: string; p_learner_id: string }
         Returns: Json
       }
+      learner_allowance: { Args: { p_business_id: string }; Returns: Json }
       learner_balance: {
         Args: { p_business_id: string; p_learner_id: string }
         Returns: Json

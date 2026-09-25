@@ -56,12 +56,18 @@ export async function businessPlan(now = new Date()): Promise<BusinessPlan | nul
   };
 }
 
-/** What the paid plan adds, in the words the pricing page uses. */
-export const paidPlanIncludes = [
-  'Text message reminders for your learners',
-  'Charging the saved card the day before a lesson',
-  'Gap Fill offers when somebody cancels',
-  'The waiting list, filled in for you',
-  'Bookkeeping: expenses, mileage and your tax year',
-  'Calendar sync, and your own booking colours',
-] as const;
+/**
+ * Which plan a Business is on, and nothing else (D-209).
+ *
+ * The full reader counts the days left, which means reading the clock, which a prerendered shell
+ * may not do. The More menu only wants to know whether to grey a row, so it asks this instead.
+ */
+export async function businessPlanKey(): Promise<PlanKey | null> {
+  const { access } = await requireAccess();
+  const membership = access.memberships.find((one) => one.role === 'owner');
+  if (!membership) return null;
+
+  const supabase = await createSupabaseServerClient();
+  const { data } = await supabase.rpc('business_billing', { p_business_id: membership.businessId }).maybeSingle();
+  return isPlanKey(data?.plan) ? data.plan : 'free';
+}

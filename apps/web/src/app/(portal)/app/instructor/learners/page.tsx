@@ -7,7 +7,9 @@ import { ListDivider } from '@repo/ui/list-row';
 import { SkeletonRow } from '@repo/ui/skeleton';
 import { Users } from 'lucide-react';
 import { Fragment, Suspense } from 'react';
+import { LearnerAllowanceNote } from '@/components/learner-allowance-note';
 import { requirePortal } from '@/lib/auth/session';
+import { learnerAllowance } from '@/lib/learners/allowance';
 import { listLearners } from '@/lib/learners/list';
 import { LearnerBrowser } from './learner-browser';
 import { LearnerListRow } from './learner-row';
@@ -41,16 +43,21 @@ async function Learners({ searchParams }: LearnersPageProps) {
   const membership = access.memberships.find((one) => one.instructorProfileId !== null);
   if (!membership?.instructorProfileId) return null;
 
-  const learners = await listLearners({
-    businessId: membership.businessId,
-    instructorProfileId: membership.instructorProfileId,
-    filter,
-    search,
-  });
+  const [learners, allowance] = await Promise.all([
+    listLearners({
+      businessId: membership.businessId,
+      instructorProfileId: membership.instructorProfileId,
+      filter,
+      search,
+    }),
+    learnerAllowance(membership.businessId),
+  ]);
   const searching = search.trim() !== '' || filter !== 'all';
 
   return (
     <LearnerBrowser search={search} filter={filter} total={learners.length} startAdding={params.add === '1'}>
+      {/* Only Free has a number, so this is nothing at all on a paid plan (D-208). */}
+      {allowance ? <LearnerAllowanceNote allowance={allowance} /> : null}
       {learners.length === 0 ? (
         <Card padding="none">
           <EmptyState

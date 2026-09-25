@@ -9,6 +9,12 @@ export type PlanKey = 'free' | 'pro' | 'school';
 export interface Entitlements {
   /** SMS reminders included each calendar month (NTF-01). */
   smsRemindersPerMonth: number;
+  /**
+   * How many learners may be on the books at once, or null for no limit (D-208). Counted as the
+   * learners somebody is teaching or lined up to teach: active, waiting and test booked. An
+   * enquiry that went nowhere, somebody who has passed and somebody who has left are not counted.
+   */
+  activeLearners: number | null;
   /** Auto-charge the saved card 24 hours before the lesson (PAY-03). */
   autoChargeBeforeLesson: boolean;
   gapFill: boolean;
@@ -34,6 +40,7 @@ export interface Plan {
 
 const freeEntitlements: Entitlements = {
   smsRemindersPerMonth: 0,
+  activeLearners: 10,
   autoChargeBeforeLesson: false,
   gapFill: false,
   waitingListAutomation: false,
@@ -48,6 +55,7 @@ const freeEntitlements: Entitlements = {
 const proEntitlements: Entitlements = {
   ...freeEntitlements,
   smsRemindersPerMonth: 200,
+  activeLearners: null,
   autoChargeBeforeLesson: true,
   gapFill: true,
   waitingListAutomation: true,
