@@ -1326,6 +1326,46 @@ export async function makeLeaver(label: string, reason: string): Promise<MadeLea
   };
 }
 
+export interface MadeReport {
+  /** What the card on the admin screen is called. */
+  name: string;
+  email: string;
+  message: string;
+  remove: () => Promise<void>;
+}
+
+/**
+ * Somebody has told us something (D-202), made for one test and removed after it, so staff reading
+ * the list never depend on what another test at another width happened to send.
+ */
+export async function makeReport(
+  label: string,
+  kind: 'feature' | 'feedback' | 'issue' | 'other',
+  message: string,
+): Promise<MadeReport> {
+  const userId = crypto.randomUUID();
+  const name = `${label} Teller`;
+  const email = `${label.toLowerCase()}.teller.${userId.slice(0, 8)}@example.com`;
+  await withDatabase(async (sql) => {
+    await sql`select tests.create_user_with_id(${userId}::uuid, ${email}, ${name})`;
+    await sql`
+      insert into public.feedback_submissions (user_id, kind, message, page)
+      values (${userId}, ${kind}::public.feedback_kind, ${message}, '/app/instructor/diary')`;
+  });
+
+  return {
+    name,
+    email,
+    message,
+    remove: async () => {
+      await withDatabase(async (sql) => {
+        await sql`delete from public.feedback_submissions where user_id = ${userId}`;
+        await sql`delete from auth.users where id = ${userId}`;
+      });
+    },
+  };
+}
+
 export interface MadeSchoolInstructor {
   name: string;
   /** Signs in with the seed's password (supabase/seeds/test_helpers.sql). */

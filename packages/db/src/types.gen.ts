@@ -1001,6 +1001,53 @@ export type Database = {
           },
         ]
       }
+      feedback_submissions: {
+        Row: {
+          business_id: string | null
+          created_at: string
+          handled_at: string | null
+          handled_by: string | null
+          id: string
+          images: string[]
+          kind: Database["public"]["Enums"]["feedback_kind"]
+          message: string
+          page: string | null
+          user_id: string
+        }
+        Insert: {
+          business_id?: string | null
+          created_at?: string
+          handled_at?: string | null
+          handled_by?: string | null
+          id?: string
+          images?: string[]
+          kind: Database["public"]["Enums"]["feedback_kind"]
+          message: string
+          page?: string | null
+          user_id: string
+        }
+        Update: {
+          business_id?: string | null
+          created_at?: string
+          handled_at?: string | null
+          handled_by?: string | null
+          id?: string
+          images?: string[]
+          kind?: Database["public"]["Enums"]["feedback_kind"]
+          message?: string
+          page?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "feedback_submissions_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "businesses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       impersonation_sessions: {
         Row: {
           ended_at: string | null
@@ -3144,6 +3191,19 @@ export type Database = {
           user_id: string
         }[]
       }
+      admin_feedback: {
+        Args: {
+          p_kind?: string
+          p_limit?: number
+          p_offset?: number
+          p_only_new?: boolean
+        }
+        Returns: Json
+      }
+      admin_handle_feedback: {
+        Args: { p_feedback_id: string; p_handled: boolean }
+        Returns: boolean
+      }
       admin_instructors: {
         Args: { p_limit?: number; p_query?: string }
         Returns: {
@@ -3675,6 +3735,15 @@ export type Database = {
         Returns: string
       }
       stop_recurrence: { Args: { p_recurrence_id: string }; Returns: undefined }
+      submit_feedback: {
+        Args: {
+          p_images?: string[]
+          p_kind: string
+          p_message: string
+          p_page?: string
+        }
+        Returns: string
+      }
       submit_verification: {
         Args: {
           p_badge_expiry: string
@@ -4010,6 +4079,7 @@ export type Database = {
         | "bank_charges"
         | "other"
       experience_level: "none" | "some" | "test_booked"
+      feedback_kind: "feature" | "feedback" | "issue" | "other"
       instructor_qualification: "adi" | "pdi"
       intended_role: "learner" | "instructor" | "school"
       learner_source: "invite" | "marketplace" | "import" | "manual"
@@ -4249,6 +4319,7 @@ export const Constants = {
         "other",
       ],
       experience_level: ["none", "some", "test_booked"],
+      feedback_kind: ["feature", "feedback", "issue", "other"],
       instructor_qualification: ["adi", "pdi"],
       intended_role: ["learner", "instructor", "school"],
       learner_source: ["invite", "marketplace", "import", "manual"],

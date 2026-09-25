@@ -35,6 +35,7 @@
     "./sitemap": "./src/sitemap.ts",
     "./schemas/auth": "./src/schemas/auth.ts",
     "./schemas/books": "./src/schemas/books.ts",
+    "./schemas/feedback": "./src/schemas/feedback.ts",
     "./schemas/onboarding": "./src/schemas/onboarding.ts",
     "./schemas/profile": "./src/schemas/profile.ts",
     "./badge-expiry": "./src/badge-expiry.ts",

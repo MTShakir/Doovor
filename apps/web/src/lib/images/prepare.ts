@@ -1,6 +1,6 @@
 'use client';
 
-import { avatarImage, badgeImage, receiptImage, centreCrop, fitWithin, isAcceptedImageType } from '@repo/core/images';
+import { avatarImage, badgeImage, feedbackImage, receiptImage, centreCrop, fitWithin, isAcceptedImageType } from '@repo/core/images';
 
 /** Why a picture was refused. The pickers turn these into copy. */
 export type ImageProblem = 'WRONG_TYPE' | 'TOO_BIG' | 'UNREADABLE';
@@ -67,6 +67,17 @@ export function prepareAvatar(file: File): Promise<PreparedImage> {
         context.drawImage(picture, crop.x, crop.y, crop.side, crop.side, 0, 0, crop.size, crop.size);
       },
     };
+  });
+}
+
+/** A picture attached to a report: the whole picture, scaled only far enough to stay readable. */
+export function prepareFeedbackImage(file: File): Promise<PreparedImage> {
+  return prepare(file, feedbackImage, (picture) => {
+    const size = fitWithin(picture.width, picture.height);
+    const canvas = document.createElement('canvas');
+    canvas.width = size.width;
+    canvas.height = size.height;
+    return { canvas, draw: (context) => { context.drawImage(picture, 0, 0, size.width, size.height); } };
   });
 }
 
