@@ -1,7 +1,8 @@
 import { foundingOffer } from '@repo/config/plans';
+import { loyaltyEveryMonths, loyaltyMonthsToMost, loyaltyMostPercent, loyaltyStepPercent } from '@repo/core/loyalty';
 import { Card, CardDescription, CardTitle } from '@repo/ui/card';
 import { StatusPill } from '@repo/ui/status-pill';
-import { Check, Sparkles } from 'lucide-react';
+import { Check, Sparkles, TrendingDown } from 'lucide-react';
 import type { BusinessPlan } from '@/lib/billing/plan';
 import { paidPlanIncludes } from '@/lib/billing/plan';
 
@@ -64,6 +65,21 @@ export function PlanScreen({ plan }: { plan: BusinessPlan }) {
               : 'Nothing is charged before then, and we will tell you well before it ends.'}
           </p>
         )}
+      </Card>
+
+      {/* D-206: the promise, in the same numbers billing will use when it arrives. */}
+      <Card className="flex flex-col gap-3" role="region" aria-labelledby="loyalty-title">
+        <div className="flex items-start gap-3">
+          <TrendingDown className="mt-0.5 size-5 shrink-0 text-ink" aria-hidden />
+          <div className="flex flex-col gap-1">
+            <CardTitle id="loyalty-title">Staying costs less</CardTitle>
+            <CardDescription>
+              Once you are paying, every {String(loyaltyEveryMonths)} months takes another {String(loyaltyStepPercent)}% off
+              your price, up to {String(loyaltyMostPercent)}% after {String(loyaltyMonthsToMost)} months. Leaving puts it back
+              to nothing.
+            </CardDescription>
+          </div>
+        </div>
       </Card>
 
       {paid ? (

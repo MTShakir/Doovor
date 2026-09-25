@@ -525,6 +525,7 @@ export type Database = {
           onboarding_completed_at: string | null
           plan: Database["public"]["Enums"]["plan_key"]
           plan_expires_at: string | null
+          referral_code: string
           settings: Json
           slug: string
           status: Database["public"]["Enums"]["business_status"]
@@ -558,6 +559,7 @@ export type Database = {
           onboarding_completed_at?: string | null
           plan?: Database["public"]["Enums"]["plan_key"]
           plan_expires_at?: string | null
+          referral_code: string
           settings?: Json
           slug: string
           status?: Database["public"]["Enums"]["business_status"]
@@ -591,6 +593,7 @@ export type Database = {
           onboarding_completed_at?: string | null
           plan?: Database["public"]["Enums"]["plan_key"]
           plan_expires_at?: string | null
+          referral_code?: string
           settings?: Json
           slug?: string
           status?: Database["public"]["Enums"]["business_status"]
@@ -2596,6 +2599,51 @@ export type Database = {
           },
         ]
       }
+      referrals: {
+        Row: {
+          code: string
+          created_at: string
+          id: string
+          referred_business_id: string
+          referrer_business_id: string
+          reward_applied_at: string | null
+          reward_months: number
+        }
+        Insert: {
+          code: string
+          created_at?: string
+          id?: string
+          referred_business_id: string
+          referrer_business_id: string
+          reward_applied_at?: string | null
+          reward_months?: number
+        }
+        Update: {
+          code?: string
+          created_at?: string
+          id?: string
+          referred_business_id?: string
+          referrer_business_id?: string
+          reward_applied_at?: string | null
+          reward_months?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "referrals_referred_business_id_fkey"
+            columns: ["referred_business_id"]
+            isOneToOne: true
+            referencedRelation: "businesses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "referrals_referrer_business_id_fkey"
+            columns: ["referrer_business_id"]
+            isOneToOne: false
+            referencedRelation: "businesses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       refunds: {
         Row: {
           amount_pence: number
@@ -3330,6 +3378,7 @@ export type Database = {
       create_business: {
         Args: {
           p_name: string
+          p_referral_code?: string
           p_type: Database["public"]["Enums"]["business_type"]
         }
         Returns: string
@@ -3470,6 +3519,7 @@ export type Database = {
         Args: { p_business_id: string; p_limit: number; p_offset: number }
         Returns: Json
       }
+      my_referrals: { Args: { p_business_id: string }; Returns: Json }
       next_open_slots: {
         Args: {
           p_duration_minutes: number

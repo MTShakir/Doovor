@@ -1,5 +1,6 @@
 import { NextResponse, type NextRequest } from 'next/server';
 import { rememberInvitation } from '@/lib/auth/invitation-proxy';
+import { REFERRAL_COOKIE, rememberReferral } from '@/lib/auth/referral-proxy';
 import { hostRedirect } from '@/lib/hosts';
 import { refreshSession, withSessionCookies } from '@/lib/supabase/proxy';
 
@@ -38,6 +39,12 @@ export async function proxy(request: NextRequest) {
   // An invitation link opened by someone who has no account yet is kept until they have one
   // (AUTH-07). Signed in, there is nothing to remember: the page asks them there and then.
   if (!userId) rememberInvitation(response, request.nextUrl.pathname);
+
+  // A referral link, the same way (D-205). Somebody who already has an account cannot be
+  // referred, and the first link somebody arrives on is the one that counts.
+  if (!userId) {
+    rememberReferral(response, request.nextUrl, request.cookies.has(REFERRAL_COOKIE));
+  }
 
   response.headers.set('x-request-id', requestId);
   return response;

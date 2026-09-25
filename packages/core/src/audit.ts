@@ -94,6 +94,7 @@ export const auditActionWords: Readonly<Record<string, string>> = {
   'no_show.dispute_decided': 'No-show dispute decided',
   'business.created': 'Business started',
   'business.renamed': 'Business name changed',
+  'referral.recorded': 'Came from a referral link',
   'vehicle.added': 'Vehicle added',
   'vehicle.method_set': 'How a vehicle is claimed settled',
   'vehicle.retired': 'Vehicle retired',
@@ -214,6 +215,7 @@ export const auditCategories: readonly AuditCategory[] = [
     actions: [
       'business.created',
       'business.renamed',
+      'referral.recorded',
       'vehicle.added',
       'vehicle.method_set',
       'vehicle.retired',
