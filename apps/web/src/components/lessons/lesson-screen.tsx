@@ -65,9 +65,15 @@ export function LessonScreen({ lesson, startOnRecord }: LessonScreenProps) {
 
   useEffect(() => {
     if (step !== 'lesson') return;
-    const timer = setInterval(() => { setNow(Date.now()); }, 1000);
+    const ends = Date.parse(lesson.endsAt);
+    const timer = setInterval(() => {
+      const at = Date.now();
+      setNow(at);
+      // The booked time is up, so the clock stops rather than counting the overrun (D-201).
+      if (at >= ends) clearInterval(timer);
+    }, 1000);
     return () => { clearInterval(timer); };
-  }, [step]);
+  }, [step, lesson.endsAt]);
 
   const startsAt = new Date(lesson.startsAt);
   const endsAt = new Date(lesson.endsAt);
@@ -82,17 +88,12 @@ export function LessonScreen({ lesson, startOnRecord }: LessonScreenProps) {
   const save = async () => {
     const current = parseDraft(draftSnapshot(lesson.id));
     if (current === null) return;
+    // Nothing in a record is compulsory (D-201): a record that refuses to save is one nobody
+    // writes. The one thing still asked for is a rating on a skill that was tapped, because a
+    // skill with no rating says nothing at all and is a slip rather than a choice.
     const unrated = current.skills.filter((code) => current.ratings[code] === undefined);
-    const missing =
-      current.skills.length === 0
-        ? 'Tap at least one skill you covered.'
-        : unrated.length > 0
-          ? `Rate ${unrated.map((code) => skillArea(code).name).join(', ')} from 1 to 5.`
-          : current.summary.trim() === ''
-            ? 'Write a line about the lesson.'
-            : null;
-    if (missing !== null) {
-      setError(missing);
+    if (unrated.length > 0) {
+      setError(`Rate ${unrated.map((code) => skillArea(code).name).join(', ')} from 1 to 5, or take them off.`);
       return;
     }
 
@@ -188,9 +189,13 @@ export function LessonScreen({ lesson, startOnRecord }: LessonScreenProps) {
         <section aria-label="Lesson time" className="flex flex-col items-center gap-1 rounded-card bg-grey-100 px-4 py-6">
           <p className="text-caption font-semibold text-grey-700">Lesson time</p>
           <p role="timer" className="text-display font-bold text-black tabular-nums">
-            {formatElapsed((now - startedAt) / 1000)}
+            {formatElapsed((Math.min(now, endsAt.getTime()) - startedAt) / 1000)}
           </p>
-          <p className="text-small text-grey-700">Booked until {formatTime(endsAt)}</p>
+          <p className="text-small text-grey-700">
+            {now >= endsAt.getTime()
+              ? `The booked time was up at ${formatTime(endsAt)}.`
+              : `Booked until ${formatTime(endsAt)}`}
+          </p>
         </section>
         <section className="flex flex-col gap-3" aria-labelledby="skills-covered">
           <div className="flex items-baseline justify-between gap-2">

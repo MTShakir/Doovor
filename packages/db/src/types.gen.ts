@@ -525,6 +525,7 @@ export type Database = {
           onboarding_completed_at: string | null
           plan: Database["public"]["Enums"]["plan_key"]
           plan_expires_at: string | null
+          referral_code: string
           settings: Json
           slug: string
           status: Database["public"]["Enums"]["business_status"]
@@ -537,6 +538,7 @@ export type Database = {
           suspended_by: string | null
           suspension_reason: string | null
           timezone: string
+          trial_given: boolean
           type: Database["public"]["Enums"]["business_type"]
           updated_at: string
           vat_number: string | null
@@ -557,6 +559,7 @@ export type Database = {
           onboarding_completed_at?: string | null
           plan?: Database["public"]["Enums"]["plan_key"]
           plan_expires_at?: string | null
+          referral_code: string
           settings?: Json
           slug: string
           status?: Database["public"]["Enums"]["business_status"]
@@ -569,6 +572,7 @@ export type Database = {
           suspended_by?: string | null
           suspension_reason?: string | null
           timezone?: string
+          trial_given?: boolean
           type: Database["public"]["Enums"]["business_type"]
           updated_at?: string
           vat_number?: string | null
@@ -589,6 +593,7 @@ export type Database = {
           onboarding_completed_at?: string | null
           plan?: Database["public"]["Enums"]["plan_key"]
           plan_expires_at?: string | null
+          referral_code?: string
           settings?: Json
           slug?: string
           status?: Database["public"]["Enums"]["business_status"]
@@ -601,6 +606,7 @@ export type Database = {
           suspended_by?: string | null
           suspension_reason?: string | null
           timezone?: string
+          trial_given?: boolean
           type?: Database["public"]["Enums"]["business_type"]
           updated_at?: string
           vat_number?: string | null
@@ -997,6 +1003,53 @@ export type Database = {
             columns: ["vehicle_id"]
             isOneToOne: false
             referencedRelation: "vehicles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      feedback_submissions: {
+        Row: {
+          business_id: string | null
+          created_at: string
+          handled_at: string | null
+          handled_by: string | null
+          id: string
+          images: string[]
+          kind: Database["public"]["Enums"]["feedback_kind"]
+          message: string
+          page: string | null
+          user_id: string
+        }
+        Insert: {
+          business_id?: string | null
+          created_at?: string
+          handled_at?: string | null
+          handled_by?: string | null
+          id?: string
+          images?: string[]
+          kind: Database["public"]["Enums"]["feedback_kind"]
+          message: string
+          page?: string | null
+          user_id: string
+        }
+        Update: {
+          business_id?: string | null
+          created_at?: string
+          handled_at?: string | null
+          handled_by?: string | null
+          id?: string
+          images?: string[]
+          kind?: Database["public"]["Enums"]["feedback_kind"]
+          message?: string
+          page?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "feedback_submissions_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "businesses"
             referencedColumns: ["id"]
           },
         ]
@@ -1571,7 +1624,7 @@ export type Database = {
           lesson_starts_at: string
           next_focus: string | null
           seconds_taken: number | null
-          summary: string
+          summary: string | null
           visibility: Database["public"]["Enums"]["lesson_record_visibility"]
         }
         Insert: {
@@ -1585,7 +1638,7 @@ export type Database = {
           lesson_starts_at: string
           next_focus?: string | null
           seconds_taken?: number | null
-          summary: string
+          summary?: string | null
           visibility?: Database["public"]["Enums"]["lesson_record_visibility"]
         }
         Update: {
@@ -1599,7 +1652,7 @@ export type Database = {
           lesson_starts_at?: string
           next_focus?: string | null
           seconds_taken?: number | null
-          summary?: string
+          summary?: string | null
           visibility?: Database["public"]["Enums"]["lesson_record_visibility"]
         }
         Relationships: [
@@ -2546,6 +2599,51 @@ export type Database = {
           },
         ]
       }
+      referrals: {
+        Row: {
+          code: string
+          created_at: string
+          id: string
+          referred_business_id: string
+          referrer_business_id: string
+          reward_applied_at: string | null
+          reward_months: number
+        }
+        Insert: {
+          code: string
+          created_at?: string
+          id?: string
+          referred_business_id: string
+          referrer_business_id: string
+          reward_applied_at?: string | null
+          reward_months?: number
+        }
+        Update: {
+          code?: string
+          created_at?: string
+          id?: string
+          referred_business_id?: string
+          referrer_business_id?: string
+          reward_applied_at?: string | null
+          reward_months?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "referrals_referred_business_id_fkey"
+            columns: ["referred_business_id"]
+            isOneToOne: true
+            referencedRelation: "businesses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "referrals_referrer_business_id_fkey"
+            columns: ["referrer_business_id"]
+            isOneToOne: false
+            referencedRelation: "businesses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       refunds: {
         Row: {
           amount_pence: number
@@ -2857,30 +2955,42 @@ export type Database = {
           claim_method: Database["public"]["Enums"]["claim_method"] | null
           created_at: string
           id: string
+          make: string | null
           method_settled_at: string | null
-          name: string
+          model: string | null
+          name: string | null
+          registration: string | null
           retired_at: string | null
           updated_at: string
+          year: number | null
         }
         Insert: {
           business_id: string
           claim_method?: Database["public"]["Enums"]["claim_method"] | null
           created_at?: string
           id?: string
+          make?: string | null
           method_settled_at?: string | null
-          name: string
+          model?: string | null
+          name?: string | null
+          registration?: string | null
           retired_at?: string | null
           updated_at?: string
+          year?: number | null
         }
         Update: {
           business_id?: string
           claim_method?: Database["public"]["Enums"]["claim_method"] | null
           created_at?: string
           id?: string
+          make?: string | null
           method_settled_at?: string | null
-          name?: string
+          model?: string | null
+          name?: string | null
+          registration?: string | null
           retired_at?: string | null
           updated_at?: string
+          year?: number | null
         }
         Relationships: [
           {
@@ -3061,7 +3171,13 @@ export type Database = {
         Returns: string
       }
       add_vehicle: {
-        Args: { p_business_id: string; p_name: string }
+        Args: {
+          p_business_id: string
+          p_make: string
+          p_model?: string
+          p_registration?: string
+          p_year?: number
+        }
         Returns: string
       }
       admin_audit_log: {
@@ -3125,6 +3241,19 @@ export type Database = {
           status: string
           user_id: string
         }[]
+      }
+      admin_feedback: {
+        Args: {
+          p_kind?: string
+          p_limit?: number
+          p_offset?: number
+          p_only_new?: boolean
+        }
+        Returns: Json
+      }
+      admin_handle_feedback: {
+        Args: { p_feedback_id: string; p_handled: boolean }
+        Returns: boolean
       }
       admin_instructors: {
         Args: { p_limit?: number; p_query?: string }
@@ -3205,6 +3334,7 @@ export type Database = {
           founding_offer: boolean
           plan: Database["public"]["Enums"]["plan_key"]
           plan_expires_at: string
+          trial_given: boolean
         }[]
       }
       cache_postcode: {
@@ -3248,6 +3378,7 @@ export type Database = {
       create_business: {
         Args: {
           p_name: string
+          p_referral_code?: string
           p_type: Database["public"]["Enums"]["business_type"]
         }
         Returns: string
@@ -3388,6 +3519,7 @@ export type Database = {
         Args: { p_business_id: string; p_limit: number; p_offset: number }
         Returns: Json
       }
+      my_referrals: { Args: { p_business_id: string }; Returns: Json }
       next_open_slots: {
         Args: {
           p_duration_minutes: number
@@ -3512,6 +3644,7 @@ export type Database = {
         }
         Returns: string
       }
+      retire_vehicle: { Args: { p_vehicle_id: string }; Returns: undefined }
       revoke_member_invitation: {
         Args: { p_invitation_id: string }
         Returns: undefined
@@ -3656,6 +3789,15 @@ export type Database = {
         Returns: string
       }
       stop_recurrence: { Args: { p_recurrence_id: string }; Returns: undefined }
+      submit_feedback: {
+        Args: {
+          p_images?: string[]
+          p_kind: string
+          p_message: string
+          p_page?: string
+        }
+        Returns: string
+      }
       submit_verification: {
         Args: {
           p_badge_expiry: string
@@ -3991,6 +4133,7 @@ export type Database = {
         | "bank_charges"
         | "other"
       experience_level: "none" | "some" | "test_booked"
+      feedback_kind: "feature" | "feedback" | "issue" | "other"
       instructor_qualification: "adi" | "pdi"
       intended_role: "learner" | "instructor" | "school"
       learner_source: "invite" | "marketplace" | "import" | "manual"
@@ -4230,6 +4373,7 @@ export const Constants = {
         "other",
       ],
       experience_level: ["none", "some", "test_booked"],
+      feedback_kind: ["feature", "feedback", "issue", "other"],
       instructor_qualification: ["adi", "pdi"],
       intended_role: ["learner", "instructor", "school"],
       learner_source: ["invite", "marketplace", "import", "manual"],

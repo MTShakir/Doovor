@@ -1,4 +1,13 @@
-import { avatarImage, badgeImage, businessObjectPath, profileObjectPath, receiptImage, receiptObjectPath } from '@repo/core/images';
+import {
+  avatarImage,
+  badgeImage,
+  businessObjectPath,
+  feedbackImage,
+  feedbackObjectPath,
+  profileObjectPath,
+  receiptImage,
+  receiptObjectPath,
+} from '@repo/core/images';
 import type { Database } from '@repo/db/types';
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { clientEnv } from '@/env/client';
@@ -11,7 +20,10 @@ export const badgesBucket = 'badges';
 /** Photographed receipts: private, readable only by the Business whose books they are (MNY-02). */
 export const receiptsBucket = 'receipts';
 
-export type ImageBucket = typeof avatarsBucket | typeof badgesBucket | typeof receiptsBucket;
+/** Pictures attached to a report: private, readable by the sender and by staff (D-202). */
+export const feedbackBucket = 'feedback';
+
+export type ImageBucket = typeof avatarsBucket | typeof badgesBucket | typeof receiptsBucket | typeof feedbackBucket;
 
 /**
  * Public address of a stored photo (M1-03). The database keeps the path only, so the address
@@ -36,6 +48,7 @@ const contentType = {
   [avatarsBucket]: avatarImage.outputType,
   [badgesBucket]: badgeImage.outputType,
   [receiptsBucket]: receiptImage.outputType,
+  [feedbackBucket]: feedbackImage.outputType,
 };
 
 /**
@@ -86,6 +99,20 @@ export async function uploadReceipt(supabase: SupabaseClient<Database>, business
   const path = receiptObjectPath(businessId, crypto.randomUUID());
   const { error } = await supabase.storage.from(receiptsBucket).upload(path, blob, {
     contentType: receiptImage.outputType,
+    cacheControl: '31536000',
+  });
+  return error ? null : path;
+}
+
+/** Uploads a picture attached to a report, into the sender's own folder (D-202). */
+export async function uploadFeedbackImage(
+  supabase: SupabaseClient<Database>,
+  userId: string,
+  blob: Blob,
+): Promise<string | null> {
+  const path = feedbackObjectPath(userId, crypto.randomUUID());
+  const { error } = await supabase.storage.from(feedbackBucket).upload(path, blob, {
+    contentType: feedbackImage.outputType,
     cacheControl: '31536000',
   });
   return error ? null : path;

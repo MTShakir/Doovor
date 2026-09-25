@@ -18,8 +18,8 @@ values (:'asha_business', 'a1000000-0000-0000-0000-000000000001', 'c0000000-0000
 returning id as lesson \gset
 
 select tests.authenticate_as(:'asha');
-select public.add_vehicle(:'asha_business', 'LS06 ADI') as corsa \gset
-select public.add_vehicle(:'asha_business', 'The van') as van \gset
+select public.add_vehicle(:'asha_business', 'Vauxhall', 'Corsa', 2019, 'LS06ADI') as corsa \gset
+select public.add_vehicle(:'asha_business', 'Ford', 'Transit', 2021, 'VN21VAN') as van \gset
 
 -- ---------------------------------------------------------------------------------------
 -- The first claim decides how a car is claimed from then on.

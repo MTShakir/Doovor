@@ -19,11 +19,11 @@ select has_table('public', 'vehicles', 'and one of vehicles');
 -- A solo instructor keeps their own books.
 -- ---------------------------------------------------------------------------------------
 select tests.authenticate_as(:'asha');
-select public.add_vehicle(:'asha_business', '  LS06 ADI  ') as corsa \gset
-select is(
-  (select name from public.vehicles where id = :'corsa'),
-  'LS06 ADI',
-  'a vehicle is added under the name it was given, trimmed'
+select public.add_vehicle(:'asha_business', '  Vauxhall  ', 'Corsa', 2019, 'ls06 adi') as corsa \gset
+select results_eq(
+  format($$ select make, model, year, registration from public.vehicles where id = %L $$, :'corsa'),
+  $$ values ('Vauxhall', 'Corsa', 2019, 'LS06ADI') $$,
+  'a car is added as what it is, trimmed, and its plate is stored without its space'
 );
 select is(
   (select claim_method::text from public.vehicles where id = :'corsa'),
@@ -103,7 +103,7 @@ select is((select count(*)::int from public.expenses where id = :'fuel'), 0, 'an
 -- ---------------------------------------------------------------------------------------
 select tests.authenticate_as(:'ben');
 select throws_ok(
-  format($$ select public.add_vehicle(%L, 'School car') $$, :'school'),
+  format($$ select public.add_vehicle(%L, 'Ford', 'Focus') $$, :'school'),
   '42501', null,
   'a school owner cannot keep books yet: it is coming soon, and not only on screen'
 );

@@ -61,15 +61,16 @@ select is_empty(
   'a school owner does not become an instructor automatically'
 );
 
--- Founding offer runs out
+-- Founding offer runs out: the free trial takes over (D-204), covered fully in 110.
 update public.platform_settings set value = jsonb_set(value, '{instructor_limit}', '1') where key = 'founding_offer';
 select tests.authenticate_as(:'cara');
 select public.create_business('independent', 'Cara Driving');
 select tests.clear_authentication();
-select is(
-  (select b.plan::text from public.businesses b join public.memberships m on m.business_id = b.id where m.user_id = :'cara'),
-  'free',
-  'after the founding places are used, new businesses start on Free'
+select results_eq(
+  format($$ select b.plan::text, b.founding_offer, b.trial_given from public.businesses b
+             join public.memberships m on m.business_id = b.id where m.user_id = %L $$, :'cara'),
+  $$ values ('pro', false, true) $$,
+  'after the founding places are used, new businesses start on a trial rather than on Free'
 );
 
 select tests.authenticate_as_anon();

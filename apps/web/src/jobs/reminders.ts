@@ -4,9 +4,11 @@ import { getSupabaseServiceClient } from '@/lib/supabase/service';
 import { readPlanLimits, smsAllowance } from './plan-limits';
 import { mutedChannels, writeNotifications } from './notify';
 import {
+  instructorsToNudge,
   peopleToRemind,
   planReminderByHand,
   planReminders,
+  planStartingNudges,
   reminderRows,
   type ReminderNotice,
 } from './reminder-notices';
@@ -16,6 +18,8 @@ export interface ReminderSweepResult {
   looked: number;
   /** Reminders written. A reminder already written writes nothing (ARCHITECTURE 10). */
   written: number;
+  /** Instructors nudged that a lesson is about to start (NTF-03, D-201). */
+  nudged: number;
 }
 
 /**
@@ -28,10 +32,11 @@ export async function sendDueReminders(now: Date = new Date()): Promise<Reminder
   if (error) throw new Error(`Could not read the lessons to remind about: ${error.message}`);
 
   const notices = (data ?? []) as unknown as ReminderNotice[];
-  if (notices.length === 0) return { looked: 0, written: 0 };
+  if (notices.length === 0) return { looked: 0, written: 0, nudged: 0 };
 
   const mutes = await supabase.rpc('system_notification_mutes', {
-    p_user_ids: peopleToRemind(notices),
+    // The instructors too: the five minute nudge is theirs, and is muted the same way (D-201).
+    p_user_ids: [...new Set([...peopleToRemind(notices), ...instructorsToNudge(notices)])],
     p_category: 'reminders',
   });
   if (mutes.error) throw new Error(`Could not read notification settings: ${mutes.error.message}`);
@@ -49,11 +54,15 @@ export async function sendDueReminders(now: Date = new Date()): Promise<Reminder
     // Text messages are for plans that include some (NTF-01, ADM-05). The cap is counted when one is sent.
     textingAllowed: (notice) => smsAllowance(notice.business_plan, limits) > 0,
   });
-  if (reminders.length === 0) return { looked: notices.length, written: 0 };
+  // The instructor's nudge rides the same sweep: it runs every few minutes, which is exactly the
+  // resolution five minutes before a lesson needs (D-201).
+  const nudges = planStartingNudges({ notices, now, muted });
+  const rows = [...reminderRows(reminders), ...reminderRows(nudges)];
+  if (rows.length === 0) return { looked: notices.length, written: 0, nudged: 0 };
 
-  const written = await supabase.rpc('system_notify', { p_rows: reminderRows(reminders) });
+  const written = await supabase.rpc('system_notify', { p_rows: rows });
   if (written.error) throw new Error(`Could not write reminders: ${written.error.message}`);
-  return { looked: notices.length, written: written.data };
+  return { looked: notices.length, written: written.data, nudged: nudges.length };
 }
 
 /**

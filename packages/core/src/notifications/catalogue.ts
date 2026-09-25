@@ -37,6 +37,8 @@ export const notificationKinds = [
   'booking.requested',
   'booking.answered',
   'booking.reminder',
+  // Five minutes to go: the one an instructor acts on rather than reads (NTF-03, D-201).
+  'booking.starting',
   'booking.rescheduled',
   'booking.cancelled',
   // Nobody came (R-09). Appendix B has no row of its own: a no-show counts as a late
@@ -91,6 +93,14 @@ export const notificationCatalogue: Record<NotificationKind, NotificationSpec> =
     audiences: ['learner', 'instructor'],
     // The only kind that may text, and only on Pro (NTF-01, M2-30).
     channels: ['in_app', 'push', 'email', 'sms'],
+    essential: false,
+  },
+  'booking.starting': {
+    kind: 'booking.starting',
+    category: 'reminders',
+    // The instructor's own nudge. A learner already had one two hours ago (NTF-02).
+    audiences: ['instructor'],
+    channels: PUSH_AND_EMAIL,
     essential: false,
   },
   'booking.rescheduled': {

@@ -12,7 +12,7 @@ select tests.create_fixture();
 \set asha_business 'aaaa0000-0000-0000-0000-000000000000'
 
 select tests.authenticate_as(:'asha');
-select public.add_vehicle(:'asha_business', 'LS06 ADI') as corsa \gset
+select public.add_vehicle(:'asha_business', 'Vauxhall', 'Corsa', 2019, 'LS06ADI') as corsa \gset
 select public.record_expense(:'asha_business', 'franchise_fee', private.today() - 10, 30000) as spend \gset
 select public.record_mileage(:'asha_business', :'corsa', private.today() - 10, 250) as trip \gset
 select tests.clear_authentication();

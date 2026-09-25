@@ -12,6 +12,7 @@ import { Select } from '@repo/ui/select';
 import { Skeleton } from '@repo/ui/skeleton';
 import { TimeSlotGrid } from '@repo/ui/time-slot-grid';
 import { toast } from '@repo/ui/toast';
+import Link from 'next/link';
 import { useEffect, useState, useTransition } from 'react';
 import { FormAlert } from '@/components/form-alert';
 import { MarkPaidSheet } from '@/components/money/mark-paid';
@@ -19,6 +20,8 @@ import { cancelLesson, moveLesson, priceForLength, slotsForDay } from '@/app/(po
 
 export interface ChosenLesson {
   bookingId: string;
+  /** So the instructor can go and speak to them before moving it (D-200). */
+  learnerId?: string;
   learnerName: string;
   startsAt: string;
   durationMinutes: number;
@@ -77,7 +80,7 @@ function priceWords(
 
 /** BOK-08, BOK-09, PAY-05: what an instructor does to a lesson that is already in. */
 export function LessonSheets({ lesson, rules, action, onClose }: LessonSheetsProps) {
-  const { bookingId, learnerName, startsAt, durationMinutes, pricePence, paymentStatus } = lesson;
+  const { bookingId, learnerId, learnerName, startsAt, durationMinutes, pricePence, paymentStatus } = lesson;
   const { cancellationWindowHours, lateFeePercent } = rules;
   const [pending, startTransition] = useTransition();
   const cancelling = action === 'cancel';
@@ -94,6 +97,11 @@ export function LessonSheets({ lesson, rules, action, onClose }: LessonSheetsPro
   const [ignoreGap, setIgnoreGap] = useState(false);
   const [times, setTimes] = useState<{ asked: string; open: string[]; outOfHours: string[] } | null>(null);
   const [slot, setSlot] = useState<string | null>(null);
+  // Between choosing a new time and it happening: a lesson is an appointment with a person, and
+  // moving one nobody has been told about is how a learner turns up to an empty street (D-200).
+  const [telling, setTelling] = useState(false);
+
+  const sameAsNow = slot !== null && minutes === durationMinutes && new Date(slot).getTime() === new Date(startsAt).getTime();
 
   const askedFor = `${day}:${String(minutes)}:${String(ignoreGap)}`;
   const loading = moving && times?.asked !== askedFor;
@@ -108,11 +116,16 @@ export function LessonSheets({ lesson, rules, action, onClose }: LessonSheetsPro
         return;
       }
       setTimes({ asked: askedFor, ...result.data });
+      // Start from where the lesson already is, so the instructor sees it before they move it
+      // (D-200). A choice made on another day is dropped rather than quietly carried over.
+      const offered = [...result.data.open, ...result.data.outOfHours];
+      const itsOwn = offered.find((one) => new Date(one).getTime() === new Date(startsAt).getTime()) ?? null;
+      setSlot((chosen) => (chosen !== null && offered.includes(chosen) ? chosen : itsOwn));
     });
     return () => {
       current = false;
     };
-  }, [moving, day, bookingId, minutes, ignoreGap, askedFor, times?.asked]);
+  }, [moving, day, bookingId, minutes, ignoreGap, askedFor, times?.asked, startsAt]);
 
   // What the new length costs is the database's answer, not this screen's arithmetic (R-05).
   useEffect(() => {
@@ -154,6 +167,7 @@ export function LessonSheets({ lesson, rules, action, onClose }: LessonSheetsPro
 
   const move = () => {
     if (slot === null) return;
+    setTelling(false);
     setError(null);
     startTransition(async () => {
       const result = await moveLesson({ bookingId, startsAt: slot, durationMinutes: minutes, ignoreGap });
@@ -211,8 +225,14 @@ export function LessonSheets({ lesson, rules, action, onClose }: LessonSheetsPro
         title={`Edit ${learnerName}'s lesson`}
         description="Change when it is, how long it runs, or both. A different length is priced like a lesson of that length."
         footer={
-          <Button width="full" size="lg" pending={pending} disabled={slot === null} onClick={move}>
-            {slot === null ? 'Choose a time' : `Move to ${formatTime(new Date(slot))}`}
+          <Button
+            width="full"
+            size="lg"
+            pending={pending}
+            disabled={slot === null || sameAsNow}
+            onClick={() => { setTelling(true); }}
+          >
+            {slot === null ? 'Choose a time' : sameAsNow ? 'Pick a different time' : `Move to ${formatTime(new Date(slot))}`}
           </Button>
         }
       >
@@ -265,6 +285,36 @@ export function LessonSheets({ lesson, rules, action, onClose }: LessonSheetsPro
               ) : null}
             </div>
           )}
+        </div>
+      </Sheet>
+
+      {/* One more tap, because the lesson is an appointment with a person (D-200). */}
+      <Sheet
+        open={telling && slot !== null}
+        onOpenChange={() => { setTelling(false); }}
+        title={`Have you told ${learnerName} about the change?`}
+        description={
+          slot === null
+            ? undefined
+            : `It would move to ${formatDate(new Date(slot))} at ${formatTime(new Date(slot))}.`
+        }
+      >
+        <div className="flex flex-col gap-3">
+          {error ? <FormAlert>{error}</FormAlert> : null}
+          <p className="text-small text-grey-700">
+            They are told the lesson moved either way. This is about whether they are expecting it.
+          </p>
+          <Button width="full" size="lg" pending={pending} onClick={move}>
+            Yes, I have told them
+          </Button>
+          {learnerId === undefined ? null : (
+            <Button variant="secondary" width="full" asChild>
+              <Link href={`/app/instructor/learners/${learnerId}`}>Contact them now</Link>
+            </Button>
+          )}
+          <Button variant="tertiary" width="full" onClick={() => { setTelling(false); }}>
+            Discard
+          </Button>
         </div>
       </Sheet>
     </>

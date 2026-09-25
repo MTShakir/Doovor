@@ -201,8 +201,21 @@ test.describe('booking a lesson (BOK-01, M2-16)', () => {
     const actions = await openDiaryLesson(page, '09:00', 'Jack Taylor');
     await actions.getByRole('button', { name: 'Edit lesson' }).click();
     await expect(page.getByRole('dialog', { name: /^Edit Jack/ })).toBeVisible();
+
+    // It opens on where the lesson already is, so the instructor can see what they are moving,
+    // and will not let them move it to the time it is already at (D-200).
+    await expect(page.getByRole('button', { name: 'Pick a different time' })).toBeDisabled();
+
     await page.getByRole('button', { name: '15:00' }).click();
     await page.getByRole('button', { name: 'Move to 15:00' }).click();
+
+    // Discarding leaves it exactly where it was.
+    await page.getByRole('button', { name: 'Discard' }).click();
+    await expect(page.getByRole('button', { name: 'Move to 15:00' })).toBeVisible();
+
+    await page.getByRole('button', { name: 'Move to 15:00' }).click();
+    // Moving one asks whether the learner has been told (D-200).
+    await page.getByRole('button', { name: 'Yes, I have told them' }).click();
 
     await expect(page.getByText('Moved to')).toBeVisible();
     await expect(page.getByRole('article').filter({ hasText: 'Jack Taylor' })).toContainText('15:00', {
@@ -276,6 +289,8 @@ test.describe('booking a lesson (BOK-01, M2-16)', () => {
 
     await page.getByRole('button', { name: '13:00' }).click();
     await page.getByRole('button', { name: 'Move to 13:00' }).click();
+    // Moving one asks whether the learner has been told (D-200).
+    await page.getByRole('button', { name: 'Yes, I have told them' }).click();
     await expect(page.getByText('Moved to')).toBeVisible();
   });
 

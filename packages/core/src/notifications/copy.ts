@@ -81,6 +81,9 @@ export function notificationCopy(
         ? { title: `Lesson ${facts.detail ?? 'soon'}`, body: line }
         : { title: `Lesson ${facts.detail ?? 'soon'} with ${them}`, body: line };
 
+    case 'booking.starting':
+      return { title: `Start your lesson with ${them}`, body: line };
+
     case 'booking.rescheduled':
       return audience === 'learner'
         ? { title: 'Lesson moved', body: sentence('Now', line) }

@@ -22,12 +22,11 @@ describe('a lesson record as the phone sends it (PRG-01, M4-05)', () => {
     });
   });
 
-  it('says what is missing in words the form can show', () => {
+  it('takes a record with nothing in it, because a refused record is one nobody writes (D-201)', () => {
     const empty = lessonRecordSchema.safeParse({ ...record, ratings: [], summary: ' ' });
-    expect(empty.success).toBe(false);
-    const messages = empty.error?.issues.map((issue) => issue.message);
-    expect(messages).toContain('Tap at least one skill you covered');
-    expect(messages).toContain('Write a line about the lesson');
+    expect(empty.success).toBe(true);
+    expect(empty.data?.summary).toBe('');
+    expect(empty.data?.ratings).toEqual([]);
   });
 
   it('refuses a skill that is not on the map, a rating off the scale, and a skill rated twice', () => {

@@ -8,12 +8,15 @@ const getUser = vi.fn();
 const getAccessContext = vi.fn<() => Promise<AccessContext>>();
 const readInvitation = vi.fn<() => Promise<string | null>>();
 const forgetInvitation = vi.fn<() => Promise<void>>();
+const readReferral = vi.fn<() => Promise<string | null>>();
+const forgetReferral = vi.fn<() => Promise<void>>();
 const takePendingBooking = vi.fn<() => Promise<unknown>>();
 
 const from = vi.fn(() => ({ select: () => ({ eq: () => ({ single }) }), upsert }));
 vi.mock('@/lib/supabase/server', () => ({ createSupabaseServerClient: () => Promise.resolve({ auth: { getUser }, rpc, from }) }));
 vi.mock('@repo/db', () => ({ getAccessContext: () => getAccessContext() }));
 vi.mock('./invitation-cookie', () => ({ readInvitation: () => readInvitation(), forgetInvitation: () => forgetInvitation() }));
+vi.mock('./referral-cookie', () => ({ readReferral: () => readReferral(), forgetReferral: () => forgetReferral() }));
 vi.mock('@/lib/booking/pending', () => ({ takePendingBooking: () => takePendingBooking() }));
 
 const { completeSignIn } = await import('./complete-sign-in');
@@ -43,6 +46,7 @@ beforeEach(() => {
   getUser.mockResolvedValue({ data: { user: { id: 'user-1', user_metadata: {}, phone_confirmed_at: '2026-09-16T09:00:00Z' } } });
   single.mockResolvedValue({ data: { intended_role: 'instructor', full_name: 'Nia Newcomer' } });
   readInvitation.mockResolvedValue(null);
+  readReferral.mockResolvedValue(null);
   takePendingBooking.mockResolvedValue(null);
   invitationIs(null);
 });
@@ -109,7 +113,44 @@ describe('finishing sign-up with a learner invitation (AUTH-07)', () => {
     getAccessContext.mockResolvedValueOnce(nobody).mockResolvedValue({ ...nobody, memberships: [independent] });
 
     expect(await completeSignIn()).toBe('/onboarding');
-    expect(rpc).toHaveBeenCalledWith('create_business', { p_type: 'independent', p_name: 'Nia Newcomer' });
+    expect(rpc).toHaveBeenCalledWith('create_business', {
+      p_type: 'independent',
+      p_name: 'Nia Newcomer',
+      p_referral_code: undefined,
+    });
     expect(forgetInvitation).not.toHaveBeenCalled();
+  });
+});
+
+describe('the referral link they arrived from (D-205)', () => {
+  it('passes the code on when the Business is made, and lets the link go', async () => {
+    readReferral.mockResolvedValue('K7F2WQ9B');
+    getAccessContext.mockResolvedValue(nobody);
+
+    await completeSignIn();
+
+    expect(rpc).toHaveBeenCalledWith('create_business', {
+      p_type: 'independent',
+      p_name: 'Nia Newcomer',
+      p_referral_code: 'K7F2WQ9B',
+    });
+    expect(forgetReferral).toHaveBeenCalled();
+  });
+
+  it('keeps nothing and lets nothing go when there was no link', async () => {
+    getAccessContext.mockResolvedValue(nobody);
+
+    await completeSignIn();
+
+    expect(forgetReferral).not.toHaveBeenCalled();
+  });
+
+  it('does not ask about one for somebody who already has a Business', async () => {
+    getAccessContext.mockResolvedValue({ ...nobody, memberships: [schoolInstructor] });
+
+    await completeSignIn();
+
+    expect(rpc).not.toHaveBeenCalledWith('create_business', expect.anything());
+    expect(forgetReferral).not.toHaveBeenCalled();
   });
 });

@@ -1,5 +1,14 @@
 import { describe, expect, it } from 'vitest';
-import { peopleToRemind, planReminderByHand, planReminders, reminderRows, type ReminderNotice } from './reminder-notices';
+import {
+  instructorsToNudge,
+  peopleToRemind,
+  planReminderByHand,
+  planReminders,
+  planStartingNudges,
+  reminderRows,
+  startingNudgeMinutes,
+  type ReminderNotice,
+} from './reminder-notices';
 
 /** 09:00 London, in British Summer Time. */
 const lesson = new Date('2026-09-16T08:00:00Z');
@@ -161,5 +170,44 @@ describe('a reminder sent by hand (NTF-02, D-166)', () => {
   it('says how soon the lesson is when it is asked for', () => {
     expect(byHand({ now: before(3) })?.planned[0]?.title).toBe('Lesson in 3 hours');
     expect(byHand({ now: before(80) })?.planned[0]?.title).toBe('Lesson in 3 days');
+  });
+});
+
+
+/** The instructor's own nudge, five minutes out (NTF-03, D-201). */
+describe('the nudge that a lesson is about to start (NTF-03, D-201)', () => {
+  const minutesBefore = (minutes: number): Date => new Date(lesson.getTime() - minutes * 60_000);
+
+  it('nudges the instructor, not the learner, and says who the lesson is with', () => {
+    const [nudge] = planStartingNudges({ notices: [notice], now: minutesBefore(startingNudgeMinutes) });
+
+    expect(nudge?.planned).toHaveLength(1);
+    expect(nudge?.planned[0]?.userId).toBe('instructor-1');
+    expect(nudge?.planned[0]?.kind).toBe('booking.starting');
+    expect(nudge?.planned[0]?.title).toBe('Start your lesson with Jack Taylor');
+  });
+
+  it('takes them straight to the lesson', () => {
+    const [nudge] = planStartingNudges({ notices: [notice], now: minutesBefore(1) });
+    expect(nudge?.planned[0]?.link).toBe('/app/instructor/lessons/booking-1');
+  });
+
+  it('says nothing earlier than five minutes out', () => {
+    expect(planStartingNudges({ notices: [notice], now: minutesBefore(startingNudgeMinutes + 1) })).toEqual([]);
+    expect(planStartingNudges({ notices: [notice], now: minutesBefore(60) })).toEqual([]);
+  });
+
+  it('says nothing once the lesson has begun, because they are already there', () => {
+    expect(planStartingNudges({ notices: [notice], now: lesson })).toHaveLength(1);
+    expect(planStartingNudges({ notices: [notice], now: new Date(lesson.getTime() + 60_000) })).toEqual([]);
+  });
+
+  it('says nothing to an instructor who has turned reminders off', () => {
+    const muted = new Map([['instructor-1', ['in_app' as const, 'push' as const, 'email' as const]]]);
+    expect(planStartingNudges({ notices: [notice], now: minutesBefore(2), muted })).toEqual([]);
+  });
+
+  it('looks up the instructors it might nudge in one go', () => {
+    expect(instructorsToNudge([notice, { ...notice, booking_id: 'booking-2' }])).toEqual(['instructor-1']);
   });
 });

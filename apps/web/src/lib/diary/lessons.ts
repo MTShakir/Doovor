@@ -3,6 +3,8 @@ import type { DiaryLesson } from '@repo/core/diary';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
 
 export interface DiaryEntry extends DiaryLesson {
+  /** So a sheet can send the instructor to the learner's card to speak to them (D-200). */
+  learnerId: string;
   learnerName: string;
   lessonType: string;
   instructorId: string;
@@ -22,7 +24,7 @@ export async function lessonsBetween(from: Date, to: Date, instructorIds?: strin
   let query = supabase
     .from('bookings')
     .select(
-      'id, instructor_id, starts_at, ends_at, status, payment_status, source, price_pence, users!bookings_learner_id_fkey(full_name), lesson_types(name, kind), instructor_profiles(display_name), pickup_points(label)',
+      'id, instructor_id, learner_id, starts_at, ends_at, status, payment_status, source, price_pence, users!bookings_learner_id_fkey(full_name), lesson_types(name, kind), instructor_profiles(display_name), pickup_points(label)',
     )
     .gte('starts_at', from.toISOString())
     .lt('starts_at', to.toISOString())
@@ -36,6 +38,7 @@ export async function lessonsBetween(from: Date, to: Date, instructorIds?: strin
     instructorName: row.instructor_profiles.display_name,
     startsAt: new Date(row.starts_at),
     endsAt: new Date(row.ends_at),
+    learnerId: row.learner_id,
     learnerName: learnerName(row.users),
     lessonType: row.lesson_types.name,
     pickup: row.pickup_points?.label ?? null,

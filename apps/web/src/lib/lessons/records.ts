@@ -18,6 +18,7 @@ export interface RecordedLesson {
   instructorName: string;
   /** The school the lesson was with. An independent instructor's Business is the instructor. */
   schoolName: string | null;
+  /** Empty when the instructor wrote nothing, which is allowed (D-201). */
   summary: string;
   nextFocus: string | null;
   homework: string | null;
@@ -65,7 +66,7 @@ export async function lessonRecordPage(learnerId: string, before?: LessonRecordC
       lessonStartsAt: row.lesson_starts_at,
       instructorName: row.instructor_profiles.display_name,
       schoolName: row.businesses.type === 'school' ? row.businesses.name : null,
-      summary: row.summary,
+      summary: row.summary ?? '',
       nextFocus: row.next_focus,
       homework: row.homework,
       ratings: inReportOrder(

@@ -26,6 +26,21 @@ export const avatarImage = {
  * its shape and far more detail than an avatar. It is re-encoded all the same: a badge is
  * usually photographed at home (INS-02, M1-04).
  */
+/** A picture attached to a report: a screenshot, usually. Read by a person, so a badge's size does. */
+export const feedbackImage = {
+  outputType: 'image/webp',
+  outputQuality: 0.92,
+  maxSide: 1600,
+  acceptedTypes: avatarImage.acceptedTypes,
+  maxInputBytes: 15 * 1024 * 1024,
+  maxOutputBytes: 5 * 1024 * 1024,
+} as const;
+
+/** Where a report's picture is kept: the sender's own folder, which is what storage checks. */
+export function feedbackObjectPath(userId: string, token: string): string {
+  return `${userId}/${token}.webp`;
+}
+
 /** A photographed receipt. Read by a person, so the same size as a badge is plenty. */
 export const receiptImage = {
   outputType: 'image/webp',

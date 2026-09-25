@@ -1,5 +1,7 @@
 import { brand } from '@repo/config/brand';
-import { foundingOffer, plans, standardCardFee } from '@repo/config/plans';
+import { foundingOffer, freeTrial, plans, standardCardFee } from '@repo/config/plans';
+import { loyaltyEveryMonths, loyaltyMonthsToMost, loyaltyMostPercent, loyaltyStepPercent } from '@repo/core/loyalty';
+import { referralRewardMonths } from '@repo/core/referral';
 import { formatPence } from '@repo/core/money';
 import { siteShareCard } from '@repo/core/share-card';
 import type { Metadata } from 'next';
@@ -32,6 +34,18 @@ export default function PricingPage() {
     {
       question: 'What does the founding offer include?',
       answer: `The paid plan for your business, free for ${String(foundingOffer.months)} months: Pro for independent instructors, and the School plan for driving schools. It is open to the first ${String(foundingOffer.instructorLimit)} instructors and the first ${String(foundingOffer.schoolLimit)} schools.`,
+    },
+    {
+      question: 'What if the founding places have gone?',
+      answer: `You still start on the paid plan free, with no card needed: ${String(freeTrial.longDays)} days for the next ${String(freeTrial.first)} businesses, and ${String(freeTrial.shortDays)} days after that. We will tell you well before it ends.`,
+    },
+    {
+      question: 'Does the price come down if I stay?',
+      answer: `Yes. Every ${String(loyaltyEveryMonths)} months you keep paying takes another ${String(loyaltyStepPercent)}% off your price, up to ${String(loyaltyMostPercent)}% after ${String(loyaltyMonthsToMost)} months. If you leave and come back, it starts again.`,
+    },
+    {
+      question: 'What do I get for telling another instructor?',
+      answer: `${String(referralRewardMonths)} month of the paid plan free for every instructor who starts their business from your link, with nothing to claim: your link is in the app, under More.`,
     },
     {
       question: 'Do learners pay anything to use it?',

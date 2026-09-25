@@ -153,6 +153,64 @@ export function peopleToRemind(notices: ReminderNotice[]): string[] {
   return [...new Set(notices.map((notice) => notice.learner_user_id))];
 }
 
+/** Every instructor who might be nudged, for the same reason. */
+export function instructorsToNudge(notices: ReminderNotice[]): string[] {
+  return [...new Set(notices.map((notice) => notice.instructor_user_id))];
+}
+
+/** How long before a lesson its instructor is nudged to start it (NTF-03, D-201). */
+export const startingNudgeMinutes = 5;
+
+/**
+ * The nudge an instructor gets when a lesson is about to begin (NTF-03, D-201).
+ *
+ * The learner was reminded hours ago; this is the other thing entirely, a tap away from the
+ * lesson starting. It goes out once per lesson at its current time: a lesson that moved is a new
+ * version and so is nudged again, and one that has already begun is not, because an instructor
+ * standing at the door does not need telling.
+ */
+export function planStartingNudges(input: {
+  notices: ReminderNotice[];
+  now: Date;
+  muted?: Map<string, NotificationChannel[]>;
+}): PlannedReminder[] {
+  const muted = input.muted ?? new Map<string, NotificationChannel[]>();
+  const nudges: PlannedReminder[] = [];
+  const soonest = input.now.getTime();
+  const latest = soonest + startingNudgeMinutes * 60_000;
+
+  for (const notice of input.notices) {
+    const startsAt = new Date(notice.starts_at);
+    const at = startsAt.getTime();
+    // Inside the window, and not already under way.
+    if (at < soonest || at > latest) continue;
+
+    const planned = planNotifications({
+      kind: 'booking.starting',
+      entityId: notice.booking_id,
+      // The lesson's own version, so one that moved is nudged about again and nothing twice.
+      version: notice.version,
+      facts: {
+        learnerName: notice.learner_name,
+        instructorName: notice.instructor_name,
+        when: `${formatDate(startsAt)} at ${formatTime(startsAt)}`,
+      },
+      recipients: [
+        {
+          userId: notice.instructor_user_id,
+          audience: 'instructor',
+          muted: muted.get(notice.instructor_user_id),
+        },
+      ],
+      linkFor: () => `/app/instructor/lessons/${notice.booking_id}`,
+    });
+
+    if (planned.length > 0) nudges.push({ notice, hoursBefore: 0, planned });
+  }
+
+  return nudges;
+}
+
 /** The rows `system_notify` takes. */
 export function reminderRows(reminders: PlannedReminder[]): NotificationRow[] {
   return reminders.flatMap((reminder) =>

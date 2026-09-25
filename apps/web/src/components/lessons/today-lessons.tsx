@@ -100,7 +100,9 @@ export function TodayLessons({ lessons, now, plainLinks = false, waiting = new S
                 </OpenLesson>
                 {!off && (toDrive || toRecord || toStart) ? (
                   <div className="flex flex-wrap justify-end gap-2">
-                    {toStart ? <StartLessonButton bookingId={lesson.id} plainLinks={plainLinks} /> : null}
+                    {toStart ? (
+                      <StartLessonButton bookingId={lesson.id} endsAt={lesson.endsAt.toISOString()} plainLinks={plainLinks} />
+                    ) : null}
                     {toRecord ? (
                       <Button asChild variant="secondary">
                         <Go href={`/app/instructor/lessons/${lesson.id}?record=1`}>

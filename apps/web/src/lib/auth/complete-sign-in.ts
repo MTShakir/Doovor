@@ -3,6 +3,7 @@ import { getAccessContext } from '@repo/db';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
 import { takePendingBooking } from '@/lib/booking/pending';
 import { forgetInvitation, readInvitation } from './invitation-cookie';
+import { forgetReferral, readReferral } from './referral-cookie';
 import { availablePortals, landingPath, safeNextPath } from './portals';
 
 type ServerClient = Awaited<ReturnType<typeof createSupabaseServerClient>>;
@@ -49,13 +50,22 @@ export async function completeSignIn(next?: string | null): Promise<string> {
     const metadata = user.user_metadata as Record<string, unknown>;
     const schoolName = typeof metadata.school_name === 'string' ? metadata.school_name.trim() : '';
 
+    // The code on the link they arrived from, if any (D-205). The database decides whether it is
+    // worth anything; a code nobody has simply earns nobody anything.
+    const referral = await readReferral();
+
     if (profile?.intended_role === 'learner') {
       await supabase.from('learner_profiles').upsert({ user_id: user.id }, { onConflict: 'user_id', ignoreDuplicates: true });
     } else if (profile?.intended_role === 'instructor' && invitation?.kind !== 'member') {
-      await supabase.rpc('create_business', { p_type: 'independent', p_name: profile.full_name || 'My driving business' });
+      await supabase.rpc('create_business', {
+        p_type: 'independent',
+        p_name: profile.full_name || 'My driving business',
+        p_referral_code: referral ?? undefined,
+      });
     } else if (profile?.intended_role === 'school' && schoolName) {
-      await supabase.rpc('create_business', { p_type: 'school', p_name: schoolName });
+      await supabase.rpc('create_business', { p_type: 'school', p_name: schoolName, p_referral_code: referral ?? undefined });
     }
+    if (referral !== null) await forgetReferral();
     access = await getAccessContext(supabase, user.id);
   }
 

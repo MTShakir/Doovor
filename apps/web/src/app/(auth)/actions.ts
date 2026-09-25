@@ -17,6 +17,7 @@ import { z } from '@repo/core/zod';
 import { getAppUrl } from '@/lib/app-url';
 import { authErrorCopy } from '@/lib/auth/auth-errors';
 import { completeSignIn } from '@/lib/auth/complete-sign-in';
+import { forgetReferral, readReferral } from '@/lib/auth/referral-cookie';
 import { safeNextPath } from '@/lib/auth/portals';
 import { VIEW_AS_COOKIE } from '@/lib/auth/view-as';
 import { fieldErrors } from '@/lib/forms';
@@ -128,11 +129,16 @@ export async function chooseRole(input: unknown): Promise<Result<null>> {
     if (error) return err('UNKNOWN');
   } else {
     const { data: profile } = await supabase.from('users').select('full_name').eq('id', user.id).single();
+    // The link they arrived from, if any (D-205): this path is how somebody who signed in with
+    // Google gets their Business, so the referral has to be honoured here too.
+    const referral = await readReferral();
     const { error } = await supabase.rpc('create_business', {
       p_type: role === 'school' ? 'school' : 'independent',
       p_name: role === 'school' ? (schoolName ?? '') : profile?.full_name || 'My driving business',
+      p_referral_code: referral ?? undefined,
     });
     if (error) return err('UNKNOWN');
+    if (referral !== null) await forgetReferral();
   }
   redirectTo(await completeSignIn());
 }

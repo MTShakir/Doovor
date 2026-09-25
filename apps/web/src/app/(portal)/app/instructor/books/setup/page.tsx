@@ -8,7 +8,9 @@ import Link from 'next/link';
 import { connection } from 'next/server';
 import { Suspense } from 'react';
 import { booksAccess, vehiclesFor } from '@/lib/books/books';
+import { formatRegistration } from '@repo/core/vehicle';
 import { AddVehicle } from './add-vehicle';
+import { RetireVehicle } from './retire-vehicle';
 import { VatQuestion } from './vat-question';
 
 export const metadata: Metadata = { title: 'Bookkeeping setup' };
@@ -71,13 +73,21 @@ async function Setup() {
         {vehicles.length > 0 ? (
           <ul className="flex flex-col divide-y divide-grey-200" aria-label="Your cars">
             {vehicles.map((one) => (
-              <li key={one.id} className="flex items-center justify-between gap-3 py-3">
-                <span className="text-body text-ink">{one.name}</span>
+              <li key={one.id} className="flex items-center gap-3 py-3">
+                <span className="flex min-w-0 flex-1 flex-col">
+                  <span className="text-body text-ink">{one.name}</span>
+                  <span className="text-small text-grey-700">
+                    {[one.year === null ? null : String(one.year), one.registration === null ? null : formatRegistration(one.registration)]
+                      .filter((part) => part !== null)
+                      .join(' · ')}
+                  </span>
+                </span>
                 {one.claimMethod === null ? (
                   <StatusPill status="pending">Not settled yet</StatusPill>
                 ) : (
                   <StatusPill status="confirmed">{methodWords[one.claimMethod]}</StatusPill>
                 )}
+                <RetireVehicle id={one.id} name={one.name} claimed={one.claimMethod !== null} />
               </li>
             ))}
           </ul>

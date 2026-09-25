@@ -87,13 +87,29 @@ export const plans: Record<PlanKey, Plan> = {
 };
 
 /**
- * Founding offer: the paid plan free for 12 months for the first 500 instructors and the
- * first 50 schools. Independents get Pro, schools get the School plan (D-027).
+ * Founding offer: the paid plan free for 12 months for the first 100 instructors and the
+ * first 50 schools. Independents get Pro, schools get the School plan (D-027, D-203).
+ *
+ * These are the words on the pricing page. The database keeps the same numbers in a setting a
+ * super admin can change (D-128), so both move together when the promise does.
  */
 export const foundingOffer = {
   months: 12,
-  instructorLimit: 500,
+  instructorLimit: 100,
   schoolLimit: 50,
+} as const;
+
+/**
+ * The free trial for everybody who misses a founding place (D-204): ninety days on the paid plan
+ * for the first five hundred Businesses without one, thirty days for everybody after.
+ *
+ * These are the words on the pricing page. The database keeps the same numbers in a `free_trial`
+ * setting, so both move together when the promise does.
+ */
+export const freeTrial = {
+  first: 500,
+  longDays: 90,
+  shortDays: 30,
 } as const;
 
 /**

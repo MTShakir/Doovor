@@ -99,6 +99,18 @@ export async function fillUntil(field: Locator, value: string): Promise<void> {
 }
 
 /**
+ * Picks an option in a select that a component is listening to, until it has been noticed. A choice
+ * made before the page is interactive is put back by the first render after it (D-043), and unlike
+ * a text field the proof is not the value the select holds but what the choice changed on screen.
+ */
+export async function pickUntil(field: Locator, value: string, appears: Locator): Promise<void> {
+  await expect(async () => {
+    await field.selectOption(value);
+    await expect(appears).toBeVisible({ timeout: 1000 });
+  }).toPass({ timeout: 15_000 });
+}
+
+/**
  * Picks a date in a date field that a component is listening to.
  *
  * Typing it in cannot work everywhere: the order of the day, month and year boxes comes from
