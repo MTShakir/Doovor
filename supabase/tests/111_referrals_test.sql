@@ -1,6 +1,6 @@
 -- Telling another instructor about it (D-205).
 begin;
-select plan(13);
+select plan(14);
 
 select tests.create_user('rita.ref@test.local', 'Rita Referrer') as rita \gset
 select tests.create_user('sam.ref@test.local', 'Sam Sent') as sam \gset
@@ -109,6 +109,10 @@ select is(
   (select count(*)::int from public.referrals),
   0,
   'the Business that arrived does not read who sent them'
+);
+select throws_ok(
+  $$ select referral_code from public.businesses $$,
+  '42501', null, 'and a code is read through my_referrals, never off the table'
 );
 select throws_ok(
   format($$ select public.my_referrals(%L) $$, :'rita_business'),

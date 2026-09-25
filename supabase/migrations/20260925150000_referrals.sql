@@ -70,8 +70,9 @@ alter table public.businesses
 
 create unique index businesses_referral_code_idx on public.businesses (referral_code);
 
--- The owner shares it, so the owner reads it. Not billing, but not everybody's either (D-123).
-grant select (referral_code) on public.businesses to authenticated;
+-- Not granted on the table. A Business row is readable by its members, by staff and by a linked
+-- learner (businesses_select_linked_learner), and the code has no business being in the third of
+-- those. The owner reads it through my_referrals, which is the only thing that needs it (D-123).
 
 -- ---------------------------------------------------------------------------------------
 -- referrals: who came from whose link, and what it earned.
