@@ -51,6 +51,30 @@ test.describe('telling us something (D-202)', () => {
     }
   });
 
+  test('a learner reaches it too, which is the point of it not being in a portal', async ({ browser }) => {
+    const message = `My instructor cannot see my pickup point (${Date.now().toString(36)})`;
+    const context = await browser.newContext({ storageState: authFile('learner') });
+    try {
+      const page = await context.newPage();
+      await page.goto('/feedback');
+      await expect(page.getByRole('heading', { level: 1, name: 'Tell us something' })).toBeVisible();
+      await page.getByLabel('Tell us about it').fill(message);
+      await page.getByRole('button', { name: 'Send it' }).click();
+      await expect(page.getByRole('region', { name: 'That has reached us' })).toBeVisible();
+
+      const rows = await withDatabase(
+        async (sql) => sql<{ kind: string; email: string }[]>`
+          select f.kind, u.email
+            from public.feedback_submissions f join public.users u on u.id = f.user_id
+           where f.message = ${message}`,
+      );
+      expect(rows).toEqual([{ kind: 'feedback', email: roles.learner.email }]);
+    } finally {
+      await context.close();
+      await withDatabase(async (sql) => sql`delete from public.feedback_submissions where message = ${message}`);
+    }
+  });
+
   // The admin portal is a desktop screen, and says so on a phone (PRD 8.2, portal-shells.spec.ts).
   test.describe('what staff do with it', { tag: '@desktop-only' }, () => {
     test.use({ storageState: authFile('admin') });
