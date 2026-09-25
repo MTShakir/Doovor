@@ -9,18 +9,25 @@ import { expectAccessible, settled, snap } from '../support/helpers';
  * The seeded instructor keeps these, so each run clears what it added rather than what was there.
  * The two widths run together, so each gets its own car and its own amounts.
  */
-function ownFor(project: string): { car: string; amount: string; pence: number; miles: string } {
+function ownFor(project: string): { make: string; model: string; car: string; plate: string; amount: string; pence: number; miles: string } {
   return project === 'mobile'
-    ? { car: 'MOB01 ADI', amount: '31.41', pence: 3141, miles: '12' }
-    : { car: 'DSK01 ADI', amount: '41.41', pence: 4141, miles: '24' };
+    ? { make: 'Vauxhall', model: 'Corsa', car: 'Vauxhall Corsa', plate: 'MO24 BIL', amount: '31.41', pence: 3141, miles: '12' }
+    : { make: 'Toyota', model: 'Yaris', car: 'Toyota Yaris', plate: 'DE24 SKT', amount: '41.41', pence: 4141, miles: '24' };
+}
+
+/** The car the retiring test adds, which is its own so the others are left alone. */
+function spareFor(project: string): string {
+  return project === 'mobile' ? 'MO24 OLD' : 'DE24 OLD';
 }
 
 async function clearUp(project: string): Promise<void> {
-  const { car, pence } = ownFor(project);
+  const { plate, pence } = ownFor(project);
+  const spare = spareFor(project).replace(/[^A-Za-z0-9]/g, '').toUpperCase();
+  const registration = plate.replace(/[^A-Za-z0-9]/g, '').toUpperCase();
   await withDatabase(async (sql) => {
-    await sql`delete from public.mileage_log where vehicle_id in (select id from public.vehicles where name = ${car})`;
+    await sql`delete from public.mileage_log where vehicle_id in (select id from public.vehicles where registration = ${registration})`;
     await sql`delete from public.expenses where amount_pence = ${pence}`;
-    await sql`delete from public.vehicles where name = ${car}`;
+    await sql`delete from public.vehicles where registration in (${registration}, ${spare})`;
   });
 }
 
@@ -72,7 +79,10 @@ test.describe('bookkeeping (MNY-02, MNY-03, MNY-04, D-198)', () => {
 
     await page.goto('/app/instructor/books/setup');
     await page.getByRole('button', { name: 'Add a car' }).click();
-    await page.getByLabel('What do you call it?').fill(own.car);
+    await page.getByLabel('Make').fill(own.make);
+    await page.getByLabel('Model (optional)').fill(own.model);
+    await page.getByLabel('Year (optional)').fill('2020');
+    await page.getByLabel('Registration (optional)').fill(own.plate);
     await page.getByRole('button', { name: 'Add it' }).click();
     await expect(page.getByText(own.car)).toBeVisible();
     await expect(page.getByRole('region', { name: 'Your cars' }).or(page.getByText('Not settled yet')).first()).toBeVisible();
@@ -120,6 +130,33 @@ test.describe('bookkeeping (MNY-02, MNY-03, MNY-04, D-198)', () => {
     // It is still offered for something that is not a running cost.
     await page.getByLabel('What was it for?').selectOption('training');
     await expect(page.getByRole('option', { name: own.car })).toHaveCount(1);
+  });
+
+  test('retires a car without taking its history with it', async ({ page }, testInfo) => {
+    const spare = spareFor(testInfo.project.name);
+
+    await page.goto('/app/instructor/books/setup');
+    await page.getByRole('button', { name: 'Add a car' }).click();
+    await page.getByLabel('Make').fill('Skoda');
+    await page.getByLabel('Model (optional)').fill('Fabia');
+    await page.getByLabel('Registration (optional)').fill(spare);
+    await page.getByRole('button', { name: 'Add it' }).click();
+
+    const cars = page.getByRole('list', { name: 'Your cars' });
+    const row = cars.getByRole('listitem').filter({ hasText: spare });
+    await expect(row).toBeVisible();
+
+    // The same plate again is the same car, and is refused rather than doubled.
+    await page.getByRole('button', { name: 'Add a car' }).click();
+    await page.getByLabel('Make').fill('Skoda');
+    await page.getByLabel('Registration (optional)').fill(spare.toLowerCase());
+    await page.getByRole('button', { name: 'Add it' }).click();
+    await expect(page.getByText('That registration is already one of your cars.')).toBeVisible();
+    await page.keyboard.press('Escape');
+
+    await row.getByRole('button', { name: /^Retire / }).click();
+    await page.getByRole('button', { name: 'Retire it' }).click();
+    await expect(row).toHaveCount(0);
   });
 
   test('exports a year and a quarter as a file an accountant can open', async ({ page }, testInfo) => {

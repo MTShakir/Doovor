@@ -2,6 +2,7 @@ import 'server-only';
 import { summariseBooks, type BooksFacts, type BooksSummary } from '@repo/core/books';
 import { isExpenseCategory, type ExpenseCategory } from '@repo/core/expenses';
 import { taxYear, taxYearsUpTo, type TaxYear } from '@repo/core/tax-year';
+import { vehicleName } from '@repo/core/vehicle';
 import { todayInZone } from '@repo/core/time';
 import { z } from '@repo/core/zod';
 import { hasEntitlement, isPlanKey, type PlanKey } from '@repo/config/plans';
@@ -126,7 +127,7 @@ export async function expensesFor(businessId: string, year: TaxYear): Promise<Ex
   const supabase = await createSupabaseServerClient();
   const { data, error } = await supabase
     .from('expenses')
-    .select('id, category, spent_on, amount_pence, vat_pence, note, receipt_path, vehicles(name)')
+    .select('id, category, spent_on, amount_pence, vat_pence, note, receipt_path, vehicles(name, make, model, registration)')
     .eq('business_id', businessId)
     .gte('spent_on', year.from)
     .lte('spent_on', year.to)
@@ -143,13 +144,16 @@ export async function expensesFor(businessId: string, year: TaxYear): Promise<Ex
       vatPence: row.vat_pence,
       note: row.note,
       receiptPath: row.receipt_path,
-      vehicleName: row.vehicles === null ? null : row.vehicles.name,
+      vehicleName: row.vehicles === null ? null : vehicleName(row.vehicles),
     }));
 }
 
 export interface VehicleRow {
   id: string;
+  /** What to call it: make and model, else the name it was given before those were asked for. */
   name: string;
+  registration: string | null;
+  year: number | null;
   claimMethod: 'mileage' | 'actual_costs' | null;
 }
 
@@ -157,11 +161,17 @@ export async function vehiclesFor(businessId: string): Promise<VehicleRow[]> {
   const supabase = await createSupabaseServerClient();
   const { data } = await supabase
     .from('vehicles')
-    .select('id, name, claim_method')
+    .select('id, name, make, model, year, registration, claim_method')
     .eq('business_id', businessId)
     .is('retired_at', null)
     .order('created_at');
-  return (data ?? []).map((row) => ({ id: row.id, name: row.name, claimMethod: row.claim_method }));
+  return (data ?? []).map((row) => ({
+    id: row.id,
+    name: vehicleName(row),
+    registration: row.registration,
+    year: row.year,
+    claimMethod: row.claim_method,
+  }));
 }
 
 export interface MileageRow {
@@ -177,7 +187,7 @@ export async function mileageFor(businessId: string, year: TaxYear): Promise<Mil
   const supabase = await createSupabaseServerClient();
   const { data } = await supabase
     .from('mileage_log')
-    .select('id, travelled_on, miles_tenths, note, vehicles(name)')
+    .select('id, travelled_on, miles_tenths, note, vehicles(name, make, model, registration)')
     .eq('business_id', businessId)
     .gte('travelled_on', year.from)
     .lte('travelled_on', year.to)
@@ -188,6 +198,6 @@ export async function mileageFor(businessId: string, year: TaxYear): Promise<Mil
     travelledOn: row.travelled_on,
     milesTenths: row.miles_tenths,
     note: row.note,
-    vehicleName: row.vehicles.name,
+    vehicleName: vehicleName(row.vehicles),
   }));
 }

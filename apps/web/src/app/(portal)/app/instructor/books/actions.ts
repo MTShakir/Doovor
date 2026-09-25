@@ -103,11 +103,46 @@ export async function addVehicle(input: unknown): Promise<Result<{ id: string }>
   if ('problem' in who) return who.problem;
 
   const supabase = await createSupabaseServerClient();
-  const { data, error } = await supabase.rpc('add_vehicle', { p_business_id: who.businessId, p_name: parsed.data.name });
-  if (error) return err(parsePostgresError(error).code);
+  const { data, error } = await supabase.rpc('add_vehicle', {
+    p_business_id: who.businessId,
+    p_make: parsed.data.make,
+    p_model: parsed.data.model === '' ? undefined : parsed.data.model,
+    p_year: parsed.data.year ?? undefined,
+    p_registration: parsed.data.registration ?? undefined,
+  });
+  if (error) {
+    const problem = parsePostgresError(error);
+    if (problem.code === 'DUPLICATE_VEHICLE') {
+      return err('DUPLICATE_VEHICLE', undefined, { registration: 'That registration is already one of your cars.' });
+    }
+    return err(problem.code);
+  }
 
   revalidateBooks();
   return ok({ id: data });
+}
+
+/**
+ * MNY-03: a car that has gone, without taking its history with it (D-199).
+ *
+ * Retired rather than deleted: what was claimed against it is part of a financial record, and a
+ * record with a hole in it is worse than one with a car nobody drives any more.
+ */
+export async function retireVehicle(input: unknown): Promise<Result<null>> {
+  const refused = await refuseWhileViewing();
+  if (refused) return refused;
+  const parsed = removeSchema.safeParse(input);
+  if (!parsed.success) return err('VALIDATION_FAILED');
+
+  const who = await keeper();
+  if ('problem' in who) return who.problem;
+
+  const supabase = await createSupabaseServerClient();
+  const { error } = await supabase.rpc('retire_vehicle', { p_vehicle_id: parsed.data.id });
+  if (error) return err(parsePostgresError(error).code);
+
+  revalidateBooks();
+  return ok(null);
 }
 
 /** MNY-03: a trip, against the car that made it. */

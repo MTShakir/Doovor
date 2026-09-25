@@ -8,6 +8,7 @@
 
 import { expenseCategories } from '../expenses.ts';
 import { tenthsFromMiles } from '../mileage.ts';
+import { isUkRegistration, isVehicleYear, normaliseRegistration } from '../vehicle.ts';
 import { z } from '../zod';
 
 /** Pounds as typed, into pence. Rejects anything that is not an amount of money. */
@@ -67,14 +68,31 @@ export type MileageInput = z.input<typeof mileageInputSchema>;
 export type Mileage = z.output<typeof mileageInputSchema>;
 
 export const vehicleInputSchema = z.object({
-  name: z
+  make: z
     .string()
     .trim()
-    .min(1, { error: 'Give the car a name' })
-    .max(60, { error: 'Use 60 characters or fewer' }),
+    .min(1, { error: 'Enter the make, like Toyota' })
+    .max(40, { error: 'Use 40 characters or fewer' }),
+  model: z.string().trim().max(40, { error: 'Use 40 characters or fewer' }).default(''),
+  /** Typed as a year, kept as a number. Blank is allowed: an instructor may not remember. */
+  year: z
+    .string()
+    .trim()
+    .default('')
+    .refine((value) => value === '' || /^[0-9]{4}$/.test(value), { error: 'Enter a year like 2020' })
+    .transform((value) => (value === '' ? null : Number(value)))
+    .refine((year) => year === null || isVehicleYear(year), { error: 'Enter a year like 2020' }),
+  /** Checked against the shapes the DVLA has issued, not the current one alone (D-199). */
+  registration: z
+    .string()
+    .trim()
+    .default('')
+    .refine((value) => value === '' || isUkRegistration(value), { error: 'Enter a registration like AB12 CDE' })
+    .transform((value) => (value === '' ? null : normaliseRegistration(value))),
 });
 
-export type VehicleInput = z.infer<typeof vehicleInputSchema>;
+export type VehicleInput = z.input<typeof vehicleInputSchema>;
+export type Vehicle = z.output<typeof vehicleInputSchema>;
 
 export const vatInputSchema = z
   .object({

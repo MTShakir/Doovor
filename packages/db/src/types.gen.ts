@@ -2857,30 +2857,42 @@ export type Database = {
           claim_method: Database["public"]["Enums"]["claim_method"] | null
           created_at: string
           id: string
+          make: string | null
           method_settled_at: string | null
-          name: string
+          model: string | null
+          name: string | null
+          registration: string | null
           retired_at: string | null
           updated_at: string
+          year: number | null
         }
         Insert: {
           business_id: string
           claim_method?: Database["public"]["Enums"]["claim_method"] | null
           created_at?: string
           id?: string
+          make?: string | null
           method_settled_at?: string | null
-          name: string
+          model?: string | null
+          name?: string | null
+          registration?: string | null
           retired_at?: string | null
           updated_at?: string
+          year?: number | null
         }
         Update: {
           business_id?: string
           claim_method?: Database["public"]["Enums"]["claim_method"] | null
           created_at?: string
           id?: string
+          make?: string | null
           method_settled_at?: string | null
-          name?: string
+          model?: string | null
+          name?: string | null
+          registration?: string | null
           retired_at?: string | null
           updated_at?: string
+          year?: number | null
         }
         Relationships: [
           {
@@ -3061,7 +3073,13 @@ export type Database = {
         Returns: string
       }
       add_vehicle: {
-        Args: { p_business_id: string; p_name: string }
+        Args: {
+          p_business_id: string
+          p_make: string
+          p_model?: string
+          p_registration?: string
+          p_year?: number
+        }
         Returns: string
       }
       admin_audit_log: {
@@ -3512,6 +3530,7 @@ export type Database = {
         }
         Returns: string
       }
+      retire_vehicle: { Args: { p_vehicle_id: string }; Returns: undefined }
       revoke_member_invitation: {
         Args: { p_invitation_id: string }
         Returns: undefined

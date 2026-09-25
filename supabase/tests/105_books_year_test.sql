@@ -19,7 +19,7 @@ insert into public.refunds (business_id, learner_id, kind, provider, amount_penc
 values (:'asha_business', :'lee', 'card', 'stripe', 1200, 'Lesson cut short', 'succeeded', '2026-08-01T10:00:00Z');
 
 select tests.authenticate_as(:'asha');
-select public.add_vehicle(:'asha_business', 'LS06 ADI') as corsa \gset
+select public.add_vehicle(:'asha_business', 'Vauxhall', 'Corsa', 2019, 'LS06ADI') as corsa \gset
 select public.record_mileage(:'asha_business', :'corsa', '2026-09-01', 1200);
 select public.record_expense(:'asha_business', 'franchise_fee', '2026-05-01', 30000, 5000);
 select public.record_expense(:'asha_business', 'phone', '2026-05-02', 2400, 400);

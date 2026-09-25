@@ -25,6 +25,7 @@
     "./mileage": "./src/mileage.ts",
     "./person-name": "./src/person-name.ts",
     "./phone": "./src/phone.ts",
+    "./vehicle": "./src/vehicle.ts",
     "./postcode": "./src/postcode.ts",
     "./places": "./src/places.ts",
     "./public-profile": "./src/public-profile.ts",
