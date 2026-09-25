@@ -6,9 +6,9 @@ import { expectAccessible, pickUntil, snap } from '../support/helpers';
 /**
  * Telling us something, and the people who read it (D-202).
  *
- * The form is in the instructor portal, so it is checked at both widths. The list staff read is a
- * desktop screen like the rest of the admin portal, and each test brings its own report so the two
- * widths never read each other's.
+ * The form sits beside the account rather than in a portal, so anybody signed in reaches it; it is
+ * checked at both widths. The list staff read is a desktop screen like the rest of the admin
+ * portal, and each test brings its own report so the two widths never read each other's.
  */
 test.describe('telling us something (D-202)', () => {
   test.use({ storageState: authFile('instructor') });
@@ -17,7 +17,7 @@ test.describe('telling us something (D-202)', () => {
     // Its own words per width, so the row this test makes is the row this test cleans up.
     const message = `The diary will not scroll on my phone (${testInfo.project.name})`;
     try {
-      await page.goto('/app/instructor/feedback');
+      await page.goto('/feedback');
       await expect(page.getByRole('heading', { level: 1, name: 'Tell us something' })).toBeVisible();
 
       await pickUntil(
@@ -45,7 +45,7 @@ test.describe('telling us something (D-202)', () => {
             from public.feedback_submissions f join public.users u on u.id = f.user_id
            where f.message = ${message}`,
       );
-      expect(rows).toEqual([{ kind: 'issue', page: '/app/instructor/feedback', email: roles.instructor.email }]);
+      expect(rows).toEqual([{ kind: 'issue', page: '/feedback', email: roles.instructor.email }]);
     } finally {
       await withDatabase(async (sql) => sql`delete from public.feedback_submissions where message = ${message}`);
     }
@@ -92,5 +92,26 @@ test.describe('telling us something (D-202)', () => {
         await report.remove();
       }
     });
+  });
+});
+
+/**
+ * What a Business is on, and until when (D-203, D-204). The trial is the reason this screen
+ * exists: somebody given ninety days has no other way to find out when they end.
+ */
+test.describe('your plan (D-203, D-204)', () => {
+  test.use({ storageState: authFile('instructor') });
+
+  test('an instructor reads their plan, their founding place and the day it runs to', async ({ page }, testInfo) => {
+    await page.goto('/app/instructor/plan');
+    await expect(page.getByRole('heading', { level: 1, name: 'Your plan' })).toBeVisible();
+
+    const card = page.getByRole('region', { name: 'Pro' });
+    await expect(card).toContainText('Founding member');
+    await expect(card).toContainText('That stays yours for good');
+    await expect(card).toContainText(/Free until \w{3} \d{1,2} \w{3} \d{4}/);
+    await expect(page.getByRole('region', { name: 'What you have' })).toContainText('Bookkeeping');
+    await expectAccessible(page);
+    await snap(page, testInfo, 'your-plan');
   });
 });

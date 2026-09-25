@@ -537,6 +537,7 @@ export type Database = {
           suspended_by: string | null
           suspension_reason: string | null
           timezone: string
+          trial_given: boolean
           type: Database["public"]["Enums"]["business_type"]
           updated_at: string
           vat_number: string | null
@@ -569,6 +570,7 @@ export type Database = {
           suspended_by?: string | null
           suspension_reason?: string | null
           timezone?: string
+          trial_given?: boolean
           type: Database["public"]["Enums"]["business_type"]
           updated_at?: string
           vat_number?: string | null
@@ -601,6 +603,7 @@ export type Database = {
           suspended_by?: string | null
           suspension_reason?: string | null
           timezone?: string
+          trial_given?: boolean
           type?: Database["public"]["Enums"]["business_type"]
           updated_at?: string
           vat_number?: string | null
@@ -3283,6 +3286,7 @@ export type Database = {
           founding_offer: boolean
           plan: Database["public"]["Enums"]["plan_key"]
           plan_expires_at: string
+          trial_given: boolean
         }[]
       }
       cache_postcode: {
