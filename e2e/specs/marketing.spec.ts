@@ -1,6 +1,6 @@
 import { brand } from '@repo/config/brand';
 import { sitePagePaths } from '@repo/core/sitemap';
-import { foundingOffer, plans } from '@repo/config/plans';
+import { foundingOffer, freeTrial, plans } from '@repo/config/plans';
 import { expect, test, type Page, type TestInfo } from '@playwright/test';
 import { expectAccessible, settled, snap } from '../support/helpers';
 
@@ -72,6 +72,12 @@ test.describe('the public site (PRD 8.3, 9.18, M5-09)', () => {
     await expect(school).toContainText(pounds(plans.school.monthlyPricePence));
     await expect(school).toContainText(`for at least ${String(plans.school.minimumInstructors)} instructors`);
     await expect(school.getByRole('link', { name: 'Set up your school on School' })).toHaveAttribute('href', /\/sign-up\?role=school$/);
+
+    // Everybody who misses a founding place is told what they get instead (D-204).
+    const questions = page.getByRole('region', { name: 'Questions' });
+    await expect(questions).toContainText('What if the founding places have gone?');
+    await expect(questions).toContainText(`${String(freeTrial.longDays)} days for the next ${String(freeTrial.first)} businesses`);
+    await expect(questions).toContainText(`${String(freeTrial.shortDays)} days after that`);
 
     await expect(page.getByRole('region', { name: 'Card payments' })).toContainText('about 1.5% plus 20p');
     await expectAccessible(page);

@@ -100,6 +100,19 @@ export const foundingOffer = {
 } as const;
 
 /**
+ * The free trial for everybody who misses a founding place (D-204): ninety days on the paid plan
+ * for the first five hundred Businesses without one, thirty days for everybody after.
+ *
+ * These are the words on the pricing page. The database keeps the same numbers in a `free_trial`
+ * setting, so both move together when the promise does.
+ */
+export const freeTrial = {
+  first: 500,
+  longDays: 90,
+  shortDays: 30,
+} as const;
+
+/**
  * Stripe's standard fee for a UK card, as PRD 9.18 quotes it for the pricing page. It is the
  * Business's cost, taken by Stripe from each payment, never added to a learner's price (D-078).
  * Stripe sets it, so this is what we say about it, not what anybody is charged.

@@ -1,5 +1,5 @@
 import { brand } from '@repo/config/brand';
-import { foundingOffer, plans, standardCardFee } from '@repo/config/plans';
+import { foundingOffer, freeTrial, plans, standardCardFee } from '@repo/config/plans';
 import { formatPence } from '@repo/core/money';
 import { siteShareCard } from '@repo/core/share-card';
 import type { Metadata } from 'next';
@@ -32,6 +32,10 @@ export default function PricingPage() {
     {
       question: 'What does the founding offer include?',
       answer: `The paid plan for your business, free for ${String(foundingOffer.months)} months: Pro for independent instructors, and the School plan for driving schools. It is open to the first ${String(foundingOffer.instructorLimit)} instructors and the first ${String(foundingOffer.schoolLimit)} schools.`,
+    },
+    {
+      question: 'What if the founding places have gone?',
+      answer: `You still start on the paid plan free, with no card needed: ${String(freeTrial.longDays)} days for the next ${String(freeTrial.first)} businesses, and ${String(freeTrial.shortDays)} days after that. We will tell you well before it ends.`,
     },
     {
       question: 'Do learners pay anything to use it?',
