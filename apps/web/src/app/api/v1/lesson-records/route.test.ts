@@ -92,10 +92,17 @@ describe('saving a lesson record from the phone (PRG-01, PRG-09, M4-05)', () => 
     }
   });
 
+  it('takes a record with no skills tapped, because nothing in one is compulsory (D-201)', async () => {
+    const answer = await send({ ...record, ratings: [], summary: '' });
+    expect(answer.status).toBe(201);
+    expect(rpc).toHaveBeenCalled();
+  });
+
   it('says what is wrong with a record before asking the database anything', async () => {
-    const answer = await send({ ...record, ratings: [] });
+    // A rating off the scale is still wrong, even though an empty record is not.
+    const answer = await send({ ...record, ratings: [{ skillCode: 'CTRL', rating: 9 }] });
     expect(answer.status).toBe(422);
-    expect(await answer.json()).toEqual({ ok: false, code: 'VALIDATION_FAILED', message: 'Tap at least one skill you covered' });
+    expect(await answer.json()).toMatchObject({ ok: false, code: 'VALIDATION_FAILED' });
     expect((await send('not json')).status).toBe(422);
     expect(rpc).not.toHaveBeenCalled();
   });

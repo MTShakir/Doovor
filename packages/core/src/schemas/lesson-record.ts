@@ -15,14 +15,18 @@ export const lessonRecordSchema = z.object({
   /** Made on the phone when the record is started, so sending it twice saves it once. */
   id: z.uuid(),
   bookingId: z.uuid(),
+  /**
+   * Nothing here is required (D-201). A record that refuses to save is a record that does not get
+   * written: the line that was demanded arrives as a full stop, and the skill that was demanded is
+   * whichever one was nearest the thumb.
+   */
   ratings: z
     .array(skillRatingSchema)
-    .min(1, { error: 'Tap at least one skill you covered' })
     .max(23)
     .refine((ratings) => new Set(ratings.map((one) => one.skillCode)).size === ratings.length, {
       error: 'Rate each skill once',
     }),
-  summary: z.string().trim().min(1, { error: 'Write a line about the lesson' }).max(500, { error: 'Keep it to 500 characters' }),
+  summary: z.string().trim().max(500, { error: 'Keep it to 500 characters' }).default(''),
   nextFocus: z.string().trim().max(300, { error: 'Keep it to 300 characters' }).default(''),
   homework: z.string().trim().max(500, { error: 'Keep it to 500 characters' }).default(''),
   /** From opening the form to saving it: PRG-01 promises under a minute. */

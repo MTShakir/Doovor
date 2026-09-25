@@ -83,9 +83,12 @@ test.describe('a lesson and its record (PRG-01, M4-04, M4-05)', () => {
     await form.getByRole('radiogroup', { name: 'Roundabouts, from 1 to 5' }).getByRole('radio', { name: '2, Under full instruction' }).click();
     await expect(form.getByText('Seldom prompted')).toBeVisible();
 
-    // Nothing is sent until every skill tapped is rated and there is a line about it.
+    // Nothing in a record is compulsory, except rating a skill that was tapped: a skill with no
+    // rating says nothing at all, and is a slip rather than a choice (D-201).
+    await skills.getByRole('button', { name: 'Manoeuvres' }).click();
     await form.getByRole('button', { name: 'Save record' }).click();
-    await expect(form.getByRole('alert')).toHaveText('Write a line about the lesson.');
+    await expect(form.getByRole('alert')).toContainText('Manoeuvres');
+    await skills.getByRole('button', { name: 'Manoeuvres' }).click();
 
     await fillUntil(form.getByLabel('How did it go?'), 'Good junctions, mirrors checked early.');
     await fillUntil(form.getByLabel('Focus for next time'), 'Lane choice on roundabouts');

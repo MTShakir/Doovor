@@ -1571,7 +1571,7 @@ export type Database = {
           lesson_starts_at: string
           next_focus: string | null
           seconds_taken: number | null
-          summary: string
+          summary: string | null
           visibility: Database["public"]["Enums"]["lesson_record_visibility"]
         }
         Insert: {
@@ -1585,7 +1585,7 @@ export type Database = {
           lesson_starts_at: string
           next_focus?: string | null
           seconds_taken?: number | null
-          summary: string
+          summary?: string | null
           visibility?: Database["public"]["Enums"]["lesson_record_visibility"]
         }
         Update: {
@@ -1599,7 +1599,7 @@ export type Database = {
           lesson_starts_at?: string
           next_focus?: string | null
           seconds_taken?: number | null
-          summary?: string
+          summary?: string | null
           visibility?: Database["public"]["Enums"]["lesson_record_visibility"]
         }
         Relationships: [

@@ -102,7 +102,7 @@ export function LessonDetailsBody({
         <span className="text-body font-semibold text-black tabular-nums">{formatPence(details.pricePence)}</span>
       </div>
 
-      {startable ? <StartLessonButton bookingId={details.id} /> : null}
+      {startable ? <StartLessonButton bookingId={details.id} endsAt={details.endsAt} /> : null}
 
       <Section title="Pickup">
         {details.pickup ? (

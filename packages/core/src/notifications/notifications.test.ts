@@ -18,7 +18,7 @@ const lesson = { learnerName: 'Jack Taylor', instructorName: 'Sarah Khan', when:
 
 describe('the catalogue (PRD Appendix B, NTF-03)', () => {
   it('has every kind of notification Phase 1 sends', () => {
-    expect(notificationKinds).toHaveLength(19);
+    expect(notificationKinds).toHaveLength(20);
     for (const kind of notificationKinds) expect(notificationCatalogue[kind].kind).toBe(kind);
   });
 
