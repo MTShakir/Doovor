@@ -1,5 +1,6 @@
 import { paymentModeCopy, type PaymentMode } from '@repo/core/payment-modes';
 import { PageHeader } from '@repo/ui/app-shell';
+import { BackLink } from '@/components/back-link';
 import { Card, CardDescription, CardTitle } from '@repo/ui/card';
 import { EmptyState } from '@repo/ui/empty-state';
 import { SkeletonRow } from '@repo/ui/skeleton';
@@ -24,6 +25,7 @@ import { ReceiptDetailsForm } from '@/app/(portal)/app/instructor/money/receipt-
 export function PaymentSetupScreen({ screen }: { screen: 'instructor' | 'school' }) {
   return (
     <main className="flex flex-col gap-4 pb-8">
+      <BackLink href={screen === 'school' ? '/app/school/money' : '/app/instructor/money'}>Money</BackLink>
       <PageHeader title="Payment setup" subtitle="How learners pay you, and what goes on their receipts." />
       <div className="flex flex-col gap-4 px-4 md:max-w-2xl md:px-8">
         <Suspense fallback={<SkeletonRow />}>

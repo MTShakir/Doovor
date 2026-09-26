@@ -64,7 +64,7 @@ const navigation: Record<Portal, PortalNavItem[]> = {
     { section: 'waiting-list', label: 'Waiting list', icon: ListChecks, mobile: false, desktop: true, phase: 2 },
     { section: 'profile', label: 'Profile', icon: UserRound, mobile: false, desktop: true, phase: 1 },
     { section: 'settings', label: 'Settings', icon: Settings, mobile: false, desktop: true, phase: 1 },
-    { section: 'more', label: 'More', icon: Menu, mobile: true, desktop: false, phase: 1 },
+    { section: 'more', label: 'More', icon: Menu, mobile: true, desktop: true, phase: 1 },
   ],
   school: [
     { section: '', label: 'Overview', icon: LayoutDashboard, mobile: true, desktop: true, phase: 1 },
@@ -75,7 +75,7 @@ const navigation: Record<Portal, PortalNavItem[]> = {
     { section: 'fleet', label: 'Fleet', icon: Car, mobile: false, desktop: true, phase: 2 },
     { section: 'reports', label: 'Reports', icon: BarChart3, mobile: false, desktop: true, phase: 2 },
     { section: 'settings', label: 'Settings', icon: Settings, mobile: false, desktop: true, phase: 1 },
-    { section: 'more', label: 'More', icon: Menu, mobile: true, desktop: false, phase: 1 },
+    { section: 'more', label: 'More', icon: Menu, mobile: true, desktop: true, phase: 1 },
   ],
   admin: [
     { section: '', label: 'Dashboard', icon: LayoutDashboard, mobile: false, desktop: true, phase: 1 },

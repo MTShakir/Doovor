@@ -1,5 +1,6 @@
 import { PageHeader } from '@repo/ui/app-shell';
 import type { Metadata } from 'next';
+import { BackLink } from '@/components/back-link';
 import { ComingSoonFeature } from '@/components/coming-soon-feature';
 
 export const metadata: Metadata = { title: 'Calendar sync' };
@@ -8,6 +9,7 @@ export const metadata: Metadata = { title: 'Calendar sync' };
 export default function CalendarSyncPage() {
   return (
     <main className="flex flex-col gap-4 pb-8">
+      <BackLink href="/app/instructor/more">More</BackLink>
       <PageHeader title="Calendar sync" subtitle="Your lessons in the calendar you already live in." />
       <div className="flex flex-col gap-4 px-4 md:max-w-2xl md:px-8">
         <ComingSoonFeature

@@ -2,6 +2,7 @@ import { PageHeader } from '@repo/ui/app-shell';
 import { SkeletonRow } from '@repo/ui/skeleton';
 import type { Metadata } from 'next';
 import { Suspense } from 'react';
+import { BackLink } from '@/components/back-link';
 import { requirePortal } from '@/lib/auth/session';
 import { learnerHealth } from '@/lib/learner/health';
 import { learnerDriving } from '@/lib/learner/setup';
@@ -13,6 +14,7 @@ export const metadata: Metadata = { title: 'About you', robots: { index: false }
 export default function AboutYouPage() {
   return (
     <main className="flex flex-col gap-4 pb-8">
+      <BackLink href="/app/learner/account">Account</BackLink>
       <PageHeader title="About you" subtitle="What you tell us here helps your instructor plan your lessons." />
       <div className="flex flex-col gap-4 px-4 md:max-w-2xl md:px-8">
         <Suspense fallback={<SkeletonRow />}>

@@ -3,6 +3,7 @@ import { Card } from '@repo/ui/card';
 import { EmptyState } from '@repo/ui/empty-state';
 import { BookOpen } from 'lucide-react';
 import type { Metadata } from 'next';
+import { BackLink } from '@/components/back-link';
 
 export const metadata: Metadata = { title: 'Bookkeeping' };
 
@@ -13,6 +14,7 @@ export const metadata: Metadata = { title: 'Bookkeeping' };
 export default function SchoolBooksPage() {
   return (
     <main className="flex flex-col gap-4 pb-8">
+      <BackLink href="/app/school/more">More</BackLink>
       <PageHeader title="Bookkeeping" subtitle="Expenses, mileage and a year your accountant can file from." />
       <div className="flex flex-col gap-4 px-4 md:max-w-2xl md:px-8">
         <Card padding="none">

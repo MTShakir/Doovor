@@ -5,6 +5,7 @@ import { Layers } from 'lucide-react';
 import type { Metadata } from 'next';
 import { connection } from 'next/server';
 import { Suspense } from 'react';
+import { BackLink } from '@/components/back-link';
 import { PlanScreen } from '@/components/plan-screen';
 import { businessPlan } from '@/lib/billing/plan';
 import { requirePortal } from '@/lib/auth/session';
@@ -15,6 +16,7 @@ export const metadata: Metadata = { title: 'Your plan' };
 export default function SchoolPlanPage() {
   return (
     <main className="flex flex-col gap-4 pb-8">
+      <BackLink href="/app/school/more">More</BackLink>
       <PageHeader title="Your plan" subtitle="What you are on, and until when." />
       <div className="flex flex-col gap-4 px-4 md:max-w-2xl md:px-8">
         <Suspense fallback={<SkeletonRow />}>

@@ -137,8 +137,9 @@ export function MyLessonRow({ lesson, rules, now, canChange }: MyLessonRowProps)
           <Button variant="secondary" onClick={() => { setSheet('move'); }}>
             Move
           </Button>
+          {/* UX: a learner reads "Cancel" beside "Move" as backing out, not as calling it off. */}
           <Button variant="tertiary" onClick={() => { setSheet('cancel'); }}>
-            Cancel
+            Cancel lesson
           </Button>
         </div>
       ) : null}

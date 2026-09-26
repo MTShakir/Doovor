@@ -1,4 +1,4 @@
-import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { CalendarDays, ChevronLeft, ChevronRight } from 'lucide-react';
 import { NavLink } from '@/components/nav-link';
 import { containsToday, type ChosenView, type DiaryView } from '@/lib/diary/range';
 
@@ -83,10 +83,17 @@ export function DiaryNav({ view, date, previous, next, today }: {
         </ul>
       </div>
       {backToToday ? (
+        /*
+          UX: this is a control, so it looks like one. As bold black text on white it read as a
+          heading for the day on screen, which is the very thing the wording was changed to avoid.
+          It now wears the same grey pill as the arrows and the Day/Week/Month toggle beside it, so
+          the whole row is recognisably one set of controls.
+        */
         <NavLink
           href={href(view, today)}
-          className={`${backToToday} h-12 w-fit items-center rounded-full px-4 text-body font-semibold text-black underline-offset-4 hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-black`}
+          className={`${backToToday} h-12 w-fit items-center gap-2 rounded-full bg-grey-100 px-4 text-body font-semibold text-black hover:bg-grey-200 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-black`}
         >
+          <CalendarDays className="size-5 shrink-0" aria-hidden />
           Back to today
         </NavLink>
       ) : null}

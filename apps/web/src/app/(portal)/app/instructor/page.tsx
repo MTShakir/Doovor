@@ -36,12 +36,22 @@ export default function InstructorHomePage({ searchParams }: TodayProps) {
         <Suspense fallback={<SkeletonRow />}>
           <Setup />
         </Suspense>
-        <Suspense fallback={<SkeletonRow />}>
-          <Stats searchParams={searchParams} />
-        </Suspense>
-        <Suspense fallback={<SkeletonRow />}>
-          <Lessons />
-        </Suspense>
+        {/*
+          UX: today's lessons come before the week's takings.
+          PRD 7.5 calls this screen "a vertical timeline of today's lessons" and does not mention
+          the takings at all. An instructor opens this between lessons, standing by the car, and
+          wants who is next; what the week earned is a sit-down-on-Sunday question. It also used to
+          be the only block on the screen with no heading, while the less urgent one below it had
+          one, so the most important thing was the hardest to find.
+        */}
+        <section aria-labelledby="today-title" className="flex flex-col gap-2">
+          <h2 id="today-title" className="text-h3 text-black">
+            Today&rsquo;s lessons
+          </h2>
+          <Suspense fallback={<SkeletonRow />}>
+            <Lessons />
+          </Suspense>
+        </section>
         <section aria-labelledby="upcoming-title" className="flex flex-col gap-2">
           <h2 id="upcoming-title" className="text-h3 text-black">
             Upcoming lessons
@@ -50,6 +60,9 @@ export default function InstructorHomePage({ searchParams }: TodayProps) {
             <Upcoming searchParams={searchParams} />
           </Suspense>
         </section>
+        <Suspense fallback={<SkeletonRow />}>
+          <Stats searchParams={searchParams} />
+        </Suspense>
         <InstallPrompt why="It opens in one tap, and Today still opens where there is no signal." />
       </div>
     </main>

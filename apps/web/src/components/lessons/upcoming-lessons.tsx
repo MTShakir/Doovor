@@ -1,5 +1,6 @@
 import { lessonState, lessonStateLabel } from '@repo/core/diary';
 import { formatDate, formatTime } from '@repo/core/time';
+import { Button } from '@repo/ui/button';
 import { StatusPill } from '@repo/ui/status-pill';
 import { MapPin } from 'lucide-react';
 import type { Route } from 'next';
@@ -54,14 +55,17 @@ export function UpcomingLessons({ lessons, more, shown }: { lessons: TeachingLes
           );
         })}
       </ol>
+      {/*
+        UX: a control that looks like one. Bold black text on white reads as a heading until you
+        try tapping it, and the Money screen's own "Load more" was already a grey pill, so the same
+        action had two different looks in one product.
+      */}
       {more ? (
-        <Link
-          href={`/app/instructor?upcoming=${String(shown + upcomingStep)}` as Route}
-          scroll={false}
-          className="flex h-12 w-fit items-center rounded-full px-4 text-body font-semibold text-black underline-offset-4 hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-black"
-        >
-          Show more
-        </Link>
+        <Button variant="secondary" width="full" asChild>
+          <Link href={`/app/instructor?upcoming=${String(shown + upcomingStep)}` as Route} scroll={false}>
+            Show more
+          </Link>
+        </Button>
       ) : null}
     </div>
   );
