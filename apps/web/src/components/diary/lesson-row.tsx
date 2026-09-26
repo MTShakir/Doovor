@@ -146,9 +146,10 @@ export function LessonRow({
                 <CalendarClock className="size-5" aria-hidden />
                 Edit lesson
               </Button>
+              {/* UX: "Cancel lesson" rather than "Cancel", which reads as closing the row. */}
               <Button variant="tertiary" onClick={onCancel}>
                 <X className="size-5" aria-hidden />
-                Cancel
+                Cancel lesson
               </Button>
             </>
           ) : null}

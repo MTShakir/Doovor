@@ -2,6 +2,7 @@
 
 import { Switch } from '@repo/ui/switch';
 import { toast } from '@repo/ui/toast';
+import { TriangleAlert } from 'lucide-react';
 import { useState, useTransition } from 'react';
 import { FormAlert } from '@/components/form-alert';
 import { setPaymentMode } from './actions';
@@ -46,8 +47,15 @@ export function AcceptPayments({ on, ready }: { on: boolean; ready: boolean }) {
         disabled={pending}
         onCheckedChange={change}
       />
+      {/*
+        UX: this says a learner cannot pay yet, which is the most consequential sentence on the
+        screen, and it was grey body text among more grey body text. It now sits on the palest
+        yellow with the attention icon, the same treatment money owed gets on the Money screen,
+        so the one thing standing between an instructor and getting paid is the thing they see.
+      */}
       {accepting && !ready ? (
-        <p className="text-small text-grey-700">
+        <p className="flex items-start gap-2 rounded-card bg-yellow-100 px-3 py-2 text-small text-ink">
+          <TriangleAlert className="mt-0.5 size-4 shrink-0" aria-hidden />
           There is one thing left: set up card payments below, and learners can start paying.
         </p>
       ) : null}

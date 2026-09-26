@@ -2,6 +2,7 @@ import { PageHeader } from '@repo/ui/app-shell';
 import { SkeletonRow } from '@repo/ui/skeleton';
 import type { Metadata } from 'next';
 import { Suspense } from 'react';
+import { BackLink } from '@/components/back-link';
 import { PickupPoints } from '@/components/learners/pickup-points';
 import { requirePortal } from '@/lib/auth/session';
 import { myPickupPoints } from '@/lib/pickup/list';
@@ -13,6 +14,7 @@ export const metadata: Metadata = { title: 'Pickup points', robots: { index: fal
 export default function LearnerPickupPointsPage() {
   return (
     <main className="flex flex-col gap-4 pb-8">
+      <BackLink href="/app/learner/account">Account</BackLink>
       <PageHeader title="Pickup points" subtitle="Where your lessons start. The one you tick is the one your instructor uses." />
       <div className="flex flex-col gap-4 px-4 md:max-w-2xl md:px-8">
         <Suspense fallback={<SkeletonRow />}>

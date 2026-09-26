@@ -207,9 +207,14 @@ export function LessonDetailsBody({
                   <CalendarClock className="size-5" aria-hidden />
                   Edit lesson
                 </Button>
+                {/*
+                  UX: "Cancel lesson", not "Cancel". In a sheet, next to an X, "Cancel" is the
+                  word for closing what is open, so this read as the way out of the sheet while
+                  it actually calls the lesson off, tells the learner and can charge a late fee.
+                */}
                 <Button variant="tertiary" onClick={() => { onAction('cancel'); }}>
                   <X className="size-5" aria-hidden />
-                  Cancel
+                  Cancel lesson
                 </Button>
               </>
             ) : null}

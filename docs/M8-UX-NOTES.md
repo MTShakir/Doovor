@@ -85,6 +85,44 @@ More was marked `desktop: false`, so the sidebar on a laptop had no route to You
 instructor, Payment setup, Bookkeeping, Your booking colours or Tell us something. They were
 reachable only by typing the address. One flag fixes it.
 
+## The deeper pass
+
+### 7. Getting paid is blocked, and the screen now says so
+
+`apps/web/src/app/(portal)/app/instructor/money/accept-payments.tsx`
+
+With online payments switched on but card payments not yet set up, no learner can actually pay.
+The screen said so in one line of grey text among more grey text. It now sits on the palest yellow
+with an alert icon, the same treatment money owed gets on the Money screen. Yellow is still used
+in exactly two places in the product, and both are "you cannot get paid until you do this".
+
+### 8. Payment setup, school Bookkeeping and two learner screens have a way back
+
+`apps/web/src/components/payment-setup-screen.tsx` and three pages
+
+The rule applied throughout: a screen that is a destination in its own right, in the tab bar or the
+sidebar, gets no back link; a screen reached from another screen gets one. Payment setup is reached
+from Money, so it goes back to Money.
+
+Profile and Settings deliberately did **not** get one. They are sidebar items on a desktop, where a
+link back to More would be odd, and they are one tap from the tab bar on a phone.
+
+### 9. "Cancel" says which thing it cancels
+
+`lesson-details.tsx`, `lesson-row.tsx`, `my-lesson.tsx`
+
+Three buttons that call a lesson off were labelled "Cancel". They now read "Cancel lesson", so the
+three actions on a lesson share one grammar: Mark paid, Edit lesson, Cancel lesson.
+
+This is a readability change and nothing more. The product owner's point stands that a cross beside
+"Cancel" in a lesson row is understood as cancelling the lesson, and the confirmation behind it was
+already thorough: a sheet naming the learner and the time, a warning with the fee where the lesson
+is inside the cancellation window, and a reason that must be typed before the button will work. No
+behaviour was touched; three strings changed.
+
+"Cancel" is left alone where it genuinely means "close this without doing anything", as on the
+verification decision form.
+
 ## What was deliberately left alone
 
 - **The four money tiles stay in one column on a phone.** Two columns would halve the height, but
