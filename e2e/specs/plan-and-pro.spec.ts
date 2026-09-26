@@ -17,6 +17,13 @@ test.describe('your plan and what is Pro (D-208, D-209)', () => {
     await page.goto('/app/instructor/plan');
     await expect(page.getByRole('heading', { level: 1, name: 'Your plan' })).toBeVisible();
 
+    // The founding place is for good, and the day the plan runs to is the thing somebody on a
+    // trial cannot otherwise find out (D-203, D-204).
+    const card = page.getByRole('region', { name: 'Pro' });
+    await expect(card).toContainText('Founding member');
+    await expect(card).toContainText('That stays yours for good');
+    await expect(card).toContainText(/Free until \w{3} \d{1,2} \w{3} \d{4}/);
+
     // What is built is ticked. Pro leads with everything the plan below carries.
     const have = page.getByRole('region', { name: 'What you have' });
     await expect(have).toContainText('Everything in Free');

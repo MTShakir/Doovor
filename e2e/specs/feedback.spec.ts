@@ -118,24 +118,3 @@ test.describe('telling us something (D-202)', () => {
     });
   });
 });
-
-/**
- * What a Business is on, and until when (D-203, D-204). The trial is the reason this screen
- * exists: somebody given ninety days has no other way to find out when they end.
- */
-test.describe('your plan (D-203, D-204)', () => {
-  test.use({ storageState: authFile('instructor') });
-
-  test('an instructor reads their plan, their founding place and the day it runs to', async ({ page }, testInfo) => {
-    await page.goto('/app/instructor/plan');
-    await expect(page.getByRole('heading', { level: 1, name: 'Your plan' })).toBeVisible();
-
-    const card = page.getByRole('region', { name: 'Pro' });
-    await expect(card).toContainText('Founding member');
-    await expect(card).toContainText('That stays yours for good');
-    await expect(card).toContainText(/Free until \w{3} \d{1,2} \w{3} \d{4}/);
-    await expect(page.getByRole('region', { name: 'What you have' })).toContainText('Bookkeeping');
-    await expectAccessible(page);
-    await snap(page, testInfo, 'your-plan');
-  });
-});
