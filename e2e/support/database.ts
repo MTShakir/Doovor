@@ -268,17 +268,53 @@ export async function bookLesson(
          where p.display_name = ${instructorName}
         on conflict do nothing`;
     }
-    await sql`
-      insert into public.bookings (business_id, instructor_id, learner_id, lesson_type_id, starts_at, ends_at,
-                                   buffer_minutes, status, payment_mode, price_pence, source)
-      select p.business_id, p.id, u.id, t.id,
-             (${date}::date + ${time}::time) at time zone 'Europe/London',
-             (${date}::date + ${time}::time + make_interval(mins => ${durationMinutes})) at time zone 'Europe/London',
-             30, 'confirmed', ${paymentMode}::public.booking_payment_mode, 4200, 'instructor'
-        from public.instructor_profiles p
-        join public.lesson_types t on t.business_id = p.business_id and t.name = 'Standard lesson'
-        join public.users u on lower(u.email) = lower(${learnerEmail})
-       where p.display_name = ${instructorName}`;
+    try {
+      await sql`
+        insert into public.bookings (business_id, instructor_id, learner_id, lesson_type_id, starts_at, ends_at,
+                                     buffer_minutes, status, payment_mode, price_pence, source)
+        select p.business_id, p.id, u.id, t.id,
+               (${date}::date + ${time}::time) at time zone 'Europe/London',
+               (${date}::date + ${time}::time + make_interval(mins => ${durationMinutes})) at time zone 'Europe/London',
+               30, 'confirmed', ${paymentMode}::public.booking_payment_mode, 4200, 'instructor'
+          from public.instructor_profiles p
+          join public.lesson_types t on t.business_id = p.business_id and t.name = 'Standard lesson'
+          join public.users u on lower(u.email) = lower(${learnerEmail})
+         where p.display_name = ${instructorName}`;
+    } catch (error) {
+      // An exclusion constraint here means somebody is already in that slot, which in a test run
+      // is almost always another spec or the seed rather than anything the product did wrong. The
+      // raw error names neither the slot nor what is in it, and finding out has cost a morning
+      // three times now, so the clash is read back and put in the message.
+      const code = (error as { code?: string }).code;
+      if (code !== '23P01') throw error;
+      const clash = await sql<{ who: string; learner: string; starts: string; ends: string }[]>`
+        select p.display_name as who, u.full_name as learner,
+               to_char(b.starts_at at time zone 'Europe/London', 'YYYY-MM-DD HH24:MI') as starts,
+               to_char(b.ends_at at time zone 'Europe/London', 'HH24:MI') as ends
+          from public.bookings b
+          join public.instructor_profiles p on p.id = b.instructor_id
+          join public.users u on u.id = b.learner_id
+         where b.status <> 'cancelled'
+           and (p.display_name = ${instructorName}
+                or b.learner_id = (select id from public.users where lower(email) = lower(${learnerEmail})))
+           -- The constraint excludes on blocked_range, the lesson plus its buffer, so comparing
+           -- the lesson times alone finds nothing when the clash is buffer against buffer.
+           and b.blocked_range && tstzrange(
+                 ((${date}::date + ${time}::time) at time zone 'Europe/London') - make_interval(mins => 30),
+                 ((${date}::date + ${time}::time + make_interval(mins => ${durationMinutes})) at time zone 'Europe/London')
+                   + make_interval(mins => 30))
+         order by b.starts_at`;
+      const already = clash.map((one) => `${one.who} with ${one.learner} ${one.starts} to ${one.ends}`).join('; ');
+      throw new Error(
+        `Could not book ${instructorName} with ${learnerEmail} at ${date} ${time} for ${String(durationMinutes)} minutes: ` +
+          `that slot is taken by ${already || 'something already gone'}. ` +
+          'A lesson blocks its own time plus a 30 minute buffer either side, so two lessons need ' +
+          'more than back to back. ' +
+          'Another spec or the seed is in it. Give this test its own day and hour per width, at least two days ' +
+          'apart, or its own instructor and learner (see e2e/support/database.ts makeSchoolInstructor).',
+        { cause: error },
+      );
+    }
   });
 }
 

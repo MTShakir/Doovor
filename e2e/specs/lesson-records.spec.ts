@@ -22,13 +22,28 @@ test.describe('a lesson and its record (PRG-01, M4-04, M4-05)', () => {
 
   test('Today lists the day, and a lesson opens with a timer and the skills to tap', async ({ page }, testInfo) => {
     const mobile = testInfo.project.name === 'mobile';
-    // Today, before the seed's first lesson and two hours apart for the two widths, and a day ahead
-    // for the lesson to teach, which has not ended.
+    // Today, before the seed's first lesson and two hours apart for the two widths, and a day
+    // ahead for the lesson to teach, which has not ended.
+    //
+    // The day ahead is three apart between the widths rather than one. Both widths run at once and
+    // a run can cross midnight in London, at which point they disagree about what "today" is by a
+    // day: on 26 September a run from 23:45 to 00:14 had the mobile project's "tomorrow" and the
+    // desktop project's "day after" land on the same date, at the same hour, on the same
+    // instructor, and Postgres refused the second booking. Three apart absorbs that.
+    //
+    // The hour stays 07:00 for both. It cannot move: bookings are excluded on their blocked range,
+    // which is the lesson plus its 30 minute buffer, so an 08:00 lesson reaches into the seeded
+    // 09:00 one. 07:00 ends exactly where that buffer begins.
+    //
+    // Today is read once and passed around, so the two lines below cannot straddle midnight
+    // between themselves either.
+    const now = today();
     const hour = mobile ? '04:00' : '06:00';
-    await bookLesson('Sarah Khan', learner, today(), hour);
-    const tomorrow = addDays(today(), mobile ? 1 : 2);
-    await bookLesson('Sarah Khan', learner, tomorrow, '07:00');
-    const lessonId = await lessonIdAt('Sarah Khan', tomorrow, '07:00');
+    await bookLesson('Sarah Khan', learner, now, hour);
+    const ahead = addDays(now, mobile ? 1 : 4);
+    const aheadHour = '07:00';
+    await bookLesson('Sarah Khan', learner, ahead, aheadHour);
+    const lessonId = await lessonIdAt('Sarah Khan', ahead, aheadHour);
 
     await page.goto('/app/instructor');
     const day = page.getByRole('list', { name: "Today's lessons" });
