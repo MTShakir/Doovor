@@ -14,23 +14,43 @@ describe('what each plan says it includes (PRD 9.18, M5-09)', () => {
     const [free, pro, school] = planSummaries();
     expect(free?.features).toEqual([
       'Diary and bookings',
-      'Unlimited learners',
       'Lesson records and progress',
       'Card, cash and bank transfer payments',
       'Public profile and booking link',
       'Email and push reminders',
+      'Up to 10 learners at once',
     ]);
-    expect(free?.later).toEqual([]);
-    expect(pro?.features).toEqual(['Everything in Free', 'Text message reminders, up to 200 a month', 'Charge the saved card before each lesson']);
+    expect(free?.later).toEqual(['In-app chat with your learners']);
+    expect(pro?.features).toEqual([
+      'Everything in Free',
+      'Unlimited learners',
+      'Text message reminders, up to 200 a month',
+      'Charge the saved card before each lesson',
+      'Expenses, mileage and exports ready for Making Tax Digital',
+      'Your own colours on your booking page',
+    ]);
     expect(pro?.later).toEqual([
       'Gap Fill: cancelled lessons offered to your waiting list',
       'Waiting list automation',
-      'Expenses, and exports ready for Making Tax Digital',
       'Google and Outlook calendar sync',
-      'Your own colours on your booking page',
+      'AI Assistant',
     ]);
     expect(school?.features).toEqual(['Everything in Pro', 'School overview, instructors, learner allocation and school prices']);
     expect(school?.later).toEqual(['Reports by instructor', 'Fleet: cars, MOT and insurance dates']);
+  });
+
+  it('turns a limit into what the plan above it gives, rather than dropping it (D-208)', () => {
+    const [free, pro] = planSummaries();
+    expect(free?.features).toContain('Up to 10 learners at once');
+    expect(pro?.features).toContain('Unlimited learners');
+  });
+
+  it('never sells something that is not built (D-116)', () => {
+    for (const plan of planSummaries()) {
+      for (const later of plan.later) {
+        expect(plan.features).not.toContain(later);
+      }
+    }
   });
 
   it('sends instructors and schools to their own sign-up', () => {

@@ -15,22 +15,36 @@ interface FeatureWords {
 }
 
 const entitlementWords: Record<keyof Entitlements, FeatureWords> = {
+  activeLearners: {
+    words: (e) => (e.activeLearners === null ? 'Unlimited learners' : `Up to ${String(e.activeLearners)} learners at once`),
+    available: true,
+  },
   smsRemindersPerMonth: { words: (e) => `Text message reminders, up to ${String(e.smsRemindersPerMonth)} a month`, available: true },
   autoChargeBeforeLesson: { words: () => 'Charge the saved card before each lesson', available: true },
   gapFill: { words: () => 'Gap Fill: cancelled lessons offered to your waiting list', available: false },
   waitingListAutomation: { words: () => 'Waiting list automation', available: false },
-  expensesAndExports: { words: () => 'Expenses, and exports ready for Making Tax Digital', available: false },
+  expensesAndExports: { words: () => 'Expenses, mileage and exports ready for Making Tax Digital', available: true },
   calendarSync: { words: () => 'Google and Outlook calendar sync', available: false },
-  customBookingColours: { words: () => 'Your own colours on your booking page', available: false },
+  customBookingColours: { words: () => 'Your own colours on your booking page', available: true },
   schoolPortal: { words: () => 'School overview, instructors, learner allocation and school prices', available: true },
   reports: { words: () => 'Reports by instructor', available: false },
   fleet: { words: () => 'Fleet: cars, MOT and insurance dates', available: false },
 };
 
-/** What every plan has, the Free plan's list in PRD 9.18. */
+/**
+ * What is coming to a plan and is not an entitlement, because there is nothing yet to entitle
+ * (D-116: sold as coming, never as there). Entitlements that exist but are not built yet carry
+ * `available: false` above and are added to these.
+ */
+const alsoComing: Record<PlanKey, string[]> = {
+  free: ['In-app chat with your learners'],
+  pro: ['AI Assistant'],
+  school: [],
+};
+
+/** What every plan has, the Free plan's list in PRD 9.18. How many learners is an entitlement. */
 const everyPlan = [
   'Diary and bookings',
-  'Unlimited learners',
   'Lesson records and progress',
   'Card, cash and bank transfer payments',
   'Public profile and booking link',
@@ -55,13 +69,19 @@ export interface PlanSummary {
 function enabled(plan: Plan): (keyof Entitlements)[] {
   return (Object.keys(entitlementWords) as (keyof Entitlements)[]).filter((key) => {
     const value = plan.entitlements[key];
+    // A limit is not a switch: null is no limit at all, which is the most a plan can give.
+    if (key === 'activeLearners') return true;
     return typeof value === 'number' ? value > 0 : value;
   });
 }
 
 /** Each plan's features, as what the plan below it does not have. */
 function summary(plan: Plan, below: Plan | null, audience: string, signUpRole: PlanSummary['signUpRole']): PlanSummary {
-  const added = enabled(plan).filter((key) => below === null || !enabled(below).includes(key));
+  // What this plan adds: something the plan below does not have, or has less of. Comparing the
+  // values rather than the keys is what makes "up to 10 learners" become "unlimited" one plan up.
+  const added = enabled(plan).filter(
+    (key) => below === null || !enabled(below).includes(key) || plan.entitlements[key] !== below.entitlements[key],
+  );
   const lead = below === null ? [...everyPlan] : [`Everything in ${below.label}`];
   const cadence = plan.perInstructor
     ? `per instructor per month, for at least ${String(plan.minimumInstructors)} instructors`
@@ -75,7 +95,10 @@ function summary(plan: Plan, below: Plan | null, audience: string, signUpRole: P
     cadence,
     audience,
     features: [...lead, ...added.filter((key) => entitlementWords[key].available).map((key) => entitlementWords[key].words(plan.entitlements))],
-    later: added.filter((key) => !entitlementWords[key].available).map((key) => entitlementWords[key].words(plan.entitlements)),
+    later: [
+      ...added.filter((key) => !entitlementWords[key].available).map((key) => entitlementWords[key].words(plan.entitlements)),
+      ...alsoComing[plan.key],
+    ],
     signUpRole,
   };
 }

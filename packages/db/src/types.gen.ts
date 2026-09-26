@@ -515,6 +515,7 @@ export type Database = {
           address: Json | null
           base_location: unknown
           base_postcode: string | null
+          brand_colour: string | null
           created_at: string
           created_by: string | null
           expected_instructors: number | null
@@ -549,6 +550,7 @@ export type Database = {
           address?: Json | null
           base_location?: unknown
           base_postcode?: string | null
+          brand_colour?: string | null
           created_at?: string
           created_by?: string | null
           expected_instructors?: number | null
@@ -583,6 +585,7 @@ export type Database = {
           address?: Json | null
           base_location?: unknown
           base_postcode?: string | null
+          brand_colour?: string | null
           created_at?: string
           created_by?: string | null
           expected_instructors?: number | null
@@ -3478,6 +3481,7 @@ export type Database = {
         Args: { p_business_id: string; p_learner_id: string }
         Returns: Json
       }
+      learner_allowance: { Args: { p_business_id: string }; Returns: Json }
       learner_balance: {
         Args: { p_business_id: string; p_learner_id: string }
         Returns: Json
@@ -3686,6 +3690,10 @@ export type Database = {
       set_booking_rules: {
         Args: { p_business_id: string; p_rules: Json }
         Returns: Json
+      }
+      set_brand_colour: {
+        Args: { p_business_id: string; p_colour: string }
+        Returns: string
       }
       set_business_name: {
         Args: { p_business_id: string; p_name: string }

@@ -1,10 +1,13 @@
 import { foundingOffer } from '@repo/config/plans';
 import { loyaltyEveryMonths, loyaltyMonthsToMost, loyaltyMostPercent, loyaltyStepPercent } from '@repo/core/loyalty';
+import { Button } from '@repo/ui/button';
 import { Card, CardDescription, CardTitle } from '@repo/ui/card';
 import { StatusPill } from '@repo/ui/status-pill';
-import { Check, Sparkles, TrendingDown } from 'lucide-react';
+import { Check, Clock, MessageSquarePlus, Sparkles, TrendingDown } from 'lucide-react';
+import Link from 'next/link';
 import type { BusinessPlan } from '@/lib/billing/plan';
-import { paidPlanIncludes } from '@/lib/billing/plan';
+import { planSummaries } from '@/lib/site/plan-features';
+import { ProTag } from './pro';
 
 /** How long is left, as somebody would say it. */
 function leftToRun(daysLeft: number): string {
@@ -19,14 +22,50 @@ function leftToRun(daysLeft: number): string {
  */
 const countdownWithin = 90;
 
+function Ticked({ items }: { items: readonly string[] }) {
+  return (
+    <ul className="flex flex-col gap-2">
+      {items.map((one) => (
+        <li key={one} className="flex items-start gap-3">
+          <Check className="mt-0.5 size-5 shrink-0 text-green" aria-hidden />
+          <span className="text-body text-ink">{one}</span>
+        </li>
+      ))}
+    </ul>
+  );
+}
+
+/** What is coming, in grey with a clock, so nothing here reads as something they have (D-116). */
+function Waiting({ items }: { items: readonly string[] }) {
+  return (
+    <ul className="flex flex-col gap-2">
+      {items.map((one) => (
+        <li key={one} className="flex items-start gap-3">
+          <Clock className="mt-0.5 size-5 shrink-0 text-grey-400" aria-hidden />
+          <span className="text-body text-grey-700">{one}</span>
+        </li>
+      ))}
+    </ul>
+  );
+}
+
 /**
- * What a Business is on, for the owner (D-203, D-204): the plan, the founding place if they have
- * one, and the day it runs to. Billing itself arrives in Phase 2 (D-022), so nothing here charges
- * anybody or changes a plan; it says what they have and until when, which is the thing somebody on
- * a trial cannot otherwise find out.
+ * What a Business is on, for the owner (D-203, D-204, D-209): the plan, the founding place if they
+ * have one, what it carries, and what is still on its way.
+ *
+ * Both lists come from the same catalogue the pricing page reads, so the app and the site can
+ * never disagree about what is built. That mattered: this screen used to carry a hand written list
+ * claiming Gap Fill and the waiting list as things a Pro instructor had, and neither exists.
+ *
+ * Billing arrives in Phase 2 (D-022), so nothing here charges anybody or changes a plan.
  */
 export function PlanScreen({ plan }: { plan: BusinessPlan }) {
+  const summaries = planSummaries();
+  const mine = summaries.find((one) => one.key === plan.plan);
+  const pro = summaries.find((one) => one.key === 'pro');
   const paid = plan.plan !== 'free';
+  if (!mine) return null;
+
   return (
     <div className="flex flex-col gap-4">
       <Card className="flex flex-col gap-4" role="region" aria-labelledby="plan-title">
@@ -67,6 +106,32 @@ export function PlanScreen({ plan }: { plan: BusinessPlan }) {
         )}
       </Card>
 
+      <Card className="flex flex-col gap-3" role="region" aria-labelledby="included-title">
+        <CardTitle id="included-title">What you have</CardTitle>
+        <Ticked items={mine.features} />
+      </Card>
+
+      {/* On Free, what the plan above carries, so the choice is a list rather than a price. */}
+      {!paid && pro ? (
+        <Card className="flex flex-col gap-3 bg-yellow-100" role="region" aria-labelledby="pro-adds-title">
+          <span className="flex flex-wrap items-center gap-2">
+            <CardTitle id="pro-adds-title">What Pro adds</CardTitle>
+            <ProTag />
+          </span>
+          <Ticked items={pro.features} />
+        </Card>
+      ) : null}
+
+      {mine.later.length > 0 ? (
+        <Card className="flex flex-col gap-3" role="region" aria-labelledby="later-title">
+          <div className="flex flex-col gap-1">
+            <CardTitle id="later-title">On the way</CardTitle>
+            <CardDescription>Being built now. Nothing here is switched on yet.</CardDescription>
+          </div>
+          <Waiting items={mine.later} />
+        </Card>
+      ) : null}
+
       {/* D-206: the promise, in the same numbers billing will use when it arrives. */}
       <Card className="flex flex-col gap-3" role="region" aria-labelledby="loyalty-title">
         <div className="flex items-start gap-3">
@@ -82,31 +147,20 @@ export function PlanScreen({ plan }: { plan: BusinessPlan }) {
         </div>
       </Card>
 
-      {paid ? (
-        <Card className="flex flex-col gap-3" role="region" aria-labelledby="included-title">
-          <CardTitle id="included-title">What you have</CardTitle>
-          <ul className="flex flex-col gap-2">
-            {paidPlanIncludes.map((one) => (
-              <li key={one} className="flex items-start gap-3">
-                <Check className="mt-0.5 size-5 shrink-0 text-green" aria-hidden />
-                <span className="text-body text-ink">{one}</span>
-              </li>
-            ))}
-          </ul>
-        </Card>
-      ) : (
-        <Card className="flex flex-col gap-3" role="region" aria-labelledby="pro-title">
-          <CardTitle id="pro-title">What the paid plan adds</CardTitle>
-          <ul className="flex flex-col gap-2">
-            {paidPlanIncludes.map((one) => (
-              <li key={one} className="flex items-start gap-3">
-                <Check className="mt-0.5 size-5 shrink-0 text-grey-700" aria-hidden />
-                <span className="text-body text-ink">{one}</span>
-              </li>
-            ))}
-          </ul>
-        </Card>
-      )}
+      <Card className="flex flex-col gap-3" role="region" aria-labelledby="request-title">
+        <div className="flex flex-col gap-1">
+          <CardTitle id="request-title">Something missing?</CardTitle>
+          <CardDescription>
+            Tell us what would make this work better for you. What people ask for most is what gets built next.
+          </CardDescription>
+        </div>
+        <Button asChild variant="secondary" width="full">
+          <Link href="/feedback">
+            <MessageSquarePlus className="size-5" aria-hidden />
+            Request a feature
+          </Link>
+        </Button>
+      </Card>
     </div>
   );
 }

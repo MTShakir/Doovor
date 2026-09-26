@@ -2,7 +2,6 @@ import { formatPence } from '@repo/core/money';
 import { formatMiles } from '@repo/core/mileage';
 import { sa103Summary } from '@repo/core/expenses';
 import { PageHeader } from '@repo/ui/app-shell';
-import { Button } from '@repo/ui/button';
 import { Card, CardDescription, CardTitle } from '@repo/ui/card';
 import { EmptyState } from '@repo/ui/empty-state';
 import { ListDivider, ListRow } from '@repo/ui/list-row';
@@ -12,6 +11,7 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { connection } from 'next/server';
 import { Fragment, Suspense } from 'react';
+import { ProUpsell } from '@/components/pro';
 import { booksAccess, booksFor, booksYearFrom, booksYears } from '@/lib/books/books';
 
 export const metadata: Metadata = { title: 'Bookkeeping' };
@@ -57,17 +57,10 @@ async function Books({ searchParams }: { searchParams: Promise<{ year?: string |
 
   if (!access.included) {
     return (
-      <Card className="flex flex-col gap-3" role="region" aria-labelledby="books-plan-title">
-        <div className="flex flex-col gap-1">
-          <CardTitle id="books-plan-title">Bookkeeping is part of Pro</CardTitle>
-          <CardDescription>
-            Keep your expenses and mileage here, and hand your accountant a year in one file.
-          </CardDescription>
-        </div>
-        <Button asChild>
-          <Link href="/app/instructor/settings">See what Pro includes</Link>
-        </Button>
-      </Card>
+      <ProUpsell
+        feature="Bookkeeping"
+        description="Keep your expenses and mileage here, and hand your accountant a year in one file."
+      />
     );
   }
 

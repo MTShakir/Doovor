@@ -133,7 +133,10 @@ export function BookWithInstructor({ page, slug, chosen, learner, signedIn, prof
         {/* A booking link only takes bookings for an instructor the platform has checked (INS-02). */}
         <Avatar name={page.name} src={avatarUrl(page.photoPath)} verified size="lg" decorative />
         <div className="flex min-w-0 flex-col">
-          <h1 className="text-h1 text-black">{page.name}</h1>
+          {/* D-210: the instructor's own colour, where they are on a plan that carries it. */}
+          <h1 className="text-h1 text-black" style={page.brandColour === null ? undefined : { color: page.brandColour }}>
+            {page.name}
+          </h1>
           <p className="text-small text-grey-700">
             {page.businessName}
             {page.car === null ? '' : ` · ${page.car}`} ·{' '}
@@ -192,6 +195,7 @@ export function BookWithInstructor({ page, slug, chosen, learner, signedIn, prof
         pending={pending}
         disabled={slot === null || !lesson || (signedIn && learner === null)}
         onClick={confirm}
+        style={page.brandColour === null ? undefined : { backgroundColor: page.brandColour }}
       >
         {slot === null || !lesson
           ? 'Choose a time'

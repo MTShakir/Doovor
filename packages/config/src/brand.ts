@@ -51,6 +51,8 @@ export const brand = {
     'grey-100': '#F3F3F3',
     white: '#FFFFFF',
     yellow: '#FFD400',
+    /** The palest wash of the brand yellow, to mark a Pro surface without shouting (D-209). */
+    'yellow-100': '#FFF8DB',
     red: '#E11900',
     blue: '#276EF1',
     green: '#05A357',

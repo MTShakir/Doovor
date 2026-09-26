@@ -34,6 +34,7 @@ export const domainErrorCodes = [
   'BUSINESS_SUSPENDED',
   'VIEW_AS_ENDED',
   'PLAN_REQUIRED',
+  'LEARNER_LIMIT',
   'UNKNOWN',
 ] as const;
 
@@ -77,6 +78,7 @@ export const defaultErrorCopy: Record<DomainErrorCode, string> = {
   BUSINESS_SUSPENDED: 'This Business is not taking bookings or payments at the moment.',
   VIEW_AS_ENDED: 'Viewing as somebody else has ended.',
   PLAN_REQUIRED: 'That is not part of your plan.',
+  LEARNER_LIMIT: 'Free carries ten learners at a time. Move one to passed or left, or go Pro for as many as you like.',
   UNKNOWN: 'Something went wrong. Try again.',
 };
 
