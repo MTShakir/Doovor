@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test';
-import { bookLesson, makeSchoolInstructor, removeLesson } from '../support/database';
+import { bookLesson, makeSchoolInstructor, makeSchoolLearner, removeLesson } from '../support/database';
 import { expectAccessible, snap } from '../support/helpers';
 import { signInThroughForm } from '../support/sign-in';
 
@@ -21,7 +21,14 @@ function inMinutes(minutes: number): { day: string; time: string } {
 
 /**
  * Starting a lesson (PRD 7.5, D-178). A lesson minutes from now can only be in one diary at a
- * time, and both widths run at once, so each makes an instructor of its own to teach it.
+ * time, and both widths run at once, so each makes an instructor of its own to teach it, and a
+ * learner of its own to teach.
+ *
+ * The learner used to be a seeded one, and that was a bug waiting for the right hour: these two
+ * lessons are booked at the wall clock rather than at a chosen time, so they land wherever the run
+ * happens to start. On 26 September a run at 06:34 put the later one at 08:34, across a seeded
+ * 09:00 lesson the shared learner already had, and the whole suite went red on `main`. A learner
+ * made for the test has an empty diary at every hour of the day.
  */
 test.describe('the lesson about to be taught (PRD 7.5, D-178)', () => {
   test('carries Start lesson on its own card, and only once it is close', async ({ page }, testInfo) => {
@@ -31,9 +38,13 @@ test.describe('the lesson about to be taught (PRD 7.5, D-178)', () => {
     const soonest = inMinutes(10);
     test.skip(soonest.day !== inMinutes(0).day, 'Ten minutes from now is tomorrow, so Today has nothing to start');
 
-    const mobile = testInfo.project.name === 'mobile';
-    const learner = mobile ? 'harry.thomas@example.com' : 'tom.walsh@example.com';
     const instructor = await makeSchoolInstructor(`Starter ${testInfo.project.name}`);
+    const taught = await makeSchoolLearner(`Starter Learner ${testInfo.project.name}`, {
+      postcode: 'M1 2QF',
+      transmission: 'manual',
+      instructorName: instructor.name,
+    });
+    const learner = taught.email;
     const soon = soonest;
     const later = inMinutes(120);
     await bookLesson(instructor.name, learner, soon.day, soon.time);
@@ -76,6 +87,7 @@ test.describe('the lesson about to be taught (PRD 7.5, D-178)', () => {
     } finally {
       await removeLesson(instructor.name, learner, soon.day, soon.time);
       await removeLesson(instructor.name, learner, later.day, later.time);
+      await taught.remove();
       await instructor.remove();
     }
   });
