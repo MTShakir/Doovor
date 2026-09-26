@@ -54,14 +54,31 @@ function showFrom(value: string | string[] | undefined): number {
   return Math.min(asked, MOST);
 }
 
-/** One figure on the dashboard, with what makes it up underneath. */
-function Figure({ label, amount, detail }: { label: string; amount: string; detail: string }) {
+/**
+ * One figure on the dashboard, with what makes it up underneath.
+ *
+ * UX: `needsAttention` puts the palest yellow behind one of them, and only where there is really
+ * something to do about it. Four identical grey tiles give a number somebody must chase the same
+ * weight as two that are zero, so the one thing worth acting on is the hardest to spot. Yellow is
+ * the brand's attention colour and is kept for exactly this; the text stays black on it (D-009).
+ */
+function Figure({
+  label,
+  amount,
+  detail,
+  needsAttention = false,
+}: {
+  label: string;
+  amount: string;
+  detail: string;
+  needsAttention?: boolean;
+}) {
   return (
-    <div className="flex flex-col gap-0.5 rounded-card bg-grey-100 px-4 py-3">
-      <dt className="text-small text-grey-700">{label}</dt>
+    <div className={`flex flex-col gap-0.5 rounded-card px-4 py-3 ${needsAttention ? 'bg-yellow-100' : 'bg-grey-100'}`}>
+      <dt className={needsAttention ? 'text-small text-ink' : 'text-small text-grey-700'}>{label}</dt>
       <dd className="flex flex-col">
         <span className="text-h2 text-black tabular-nums">{amount}</span>
-        <span className="text-small text-grey-700">{detail}</span>
+        <span className={needsAttention ? 'text-small text-ink' : 'text-small text-grey-700'}>{detail}</span>
       </dd>
     </div>
   );
@@ -108,7 +125,13 @@ async function MoneyDashboard({ businessId, screen, period }: { businessId: stri
             detail={`Card ${formatPence(summary.paid.cardPence)}, cash ${formatPence(summary.paid.cashPence)}, bank ${formatPence(summary.paid.bankPence)}`}
           />
         ) : null}
-        <Figure label="Unpaid" amount={formatPence(summary.unpaid.totalPence)} detail={`${lessons(summary.unpaid.count)} not paid for`} />
+        {/* Money owed is the one figure here somebody has to act on, and only when there is some. */}
+        <Figure
+          label="Unpaid"
+          amount={formatPence(summary.unpaid.totalPence)}
+          detail={`${lessons(summary.unpaid.count)} not paid for`}
+          needsAttention={summary.unpaid.totalPence > 0}
+        />
         {summary.creditSold ? (
           <Figure
             label="Credit sold"
