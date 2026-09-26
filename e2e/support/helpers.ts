@@ -65,12 +65,24 @@ export async function settled(page: Page): Promise<void> {
  * Taps a control that does nothing until the page is interactive, and keeps tapping until it
  * does something. A button whose only job is to open a sheet has no disabled state to wait on
  * the way a form does (D-043), so the proof that it worked is what it opened.
+ *
+ * The first tap is given long enough for a loaded runner to draw the sheet, because a second tap
+ * that lands before the first sheet is painted opens a second one: on 2026-09-26 that put two
+ * "Book a lesson" dialogs in the page, `getByLabel('Hours')` inside them matched two controls, and
+ * the suite failed on `main`. Once a sheet is up its overlay covers the trigger, so only that gap
+ * is dangerous, and waiting through it is enough.
+ *
+ * Skipping the tap when the sheet is already visible is not the answer: a test that books and then
+ * reopens the sheet for the next time would be handed the one still closing, with yesterday's
+ * times in it.
  */
 export async function tapUntil(control: Locator, appears: Locator): Promise<void> {
+  let attempt = 0;
   await expect(async () => {
+    attempt += 1;
     await control.click();
-    await expect(appears).toBeVisible({ timeout: 1000 });
-  }).toPass({ timeout: 15_000 });
+    await expect(appears.first()).toBeVisible({ timeout: attempt === 1 ? 8000 : 1000 });
+  }).toPass({ timeout: 30_000 });
 }
 
 /**
