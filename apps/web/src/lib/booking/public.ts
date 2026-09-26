@@ -17,6 +17,9 @@ const pageSchema = z.object({
   car: z.string().nullable(),
   businessName: z.string(),
   instantBook: z.boolean(),
+  /** The Business's own colour, where the plan carries it (D-210). Null is the default black. */
+  brandColour: z.string().nullable().default(null),
+  logoUrl: z.string().nullable().default(null),
   lessons: z.array(lessonSchema),
 });
 

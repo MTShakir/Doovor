@@ -27,12 +27,12 @@ describe('what each plan says it includes (PRD 9.18, M5-09)', () => {
       'Text message reminders, up to 200 a month',
       'Charge the saved card before each lesson',
       'Expenses, mileage and exports ready for Making Tax Digital',
+      'Your own colours on your booking page',
     ]);
     expect(pro?.later).toEqual([
       'Gap Fill: cancelled lessons offered to your waiting list',
       'Waiting list automation',
       'Google and Outlook calendar sync',
-      'Your own colours on your booking page',
       'AI Assistant',
     ]);
     expect(school?.features).toEqual(['Everything in Pro', 'School overview, instructors, learner allocation and school prices']);

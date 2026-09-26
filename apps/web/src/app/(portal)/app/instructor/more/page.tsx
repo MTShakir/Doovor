@@ -32,7 +32,7 @@ export default async function InstructorMorePage() {
           locked,
         },
         { href: '/app/instructor/calendar', title: 'Calendar sync', subtitle: 'On the way', pro: true, locked },
-        { href: '/app/instructor/colours', title: 'Your booking colours', subtitle: 'On the way', pro: true, locked },
+        { href: '/app/instructor/colours', title: 'Your booking colours', subtitle: 'Your colour on your booking page', pro: true, locked },
         { href: '/app/instructor/plan', title: 'Your plan', subtitle: 'What you are on, and until when' },
         { href: '/app/instructor/refer', title: 'Refer an instructor', subtitle: 'A month free for every one who joins' },
         { href: '/feedback', title: 'Tell us something', subtitle: 'A request, a problem, or anything else' },

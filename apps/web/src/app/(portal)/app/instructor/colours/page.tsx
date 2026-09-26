@@ -1,25 +1,42 @@
+import { hasEntitlement } from '@repo/config/plans';
 import { PageHeader } from '@repo/ui/app-shell';
+import { SkeletonRow } from '@repo/ui/skeleton';
 import type { Metadata } from 'next';
-import { ComingSoonFeature } from '@/components/coming-soon-feature';
+import { Suspense } from 'react';
+import { ProUpsell } from '@/components/pro';
+import { requirePortal } from '@/lib/auth/session';
+import { brandColour } from '@/lib/branding/colour';
+import { ColourPicker } from './colour-picker';
 
 export const metadata: Metadata = { title: 'Your booking colours' };
 
-/** D-116, D-209: on the way, and said so rather than sold. */
+/** D-210: the colour a learner sees on the booking page, picked by the owner. */
 export default function BookingColoursPage() {
   return (
     <main className="flex flex-col gap-4 pb-8">
-      <PageHeader title="Your booking colours" subtitle="Your booking page in your own colours." />
+      <PageHeader title="Your booking colours" subtitle="Your booking page in your own colour." />
       <div className="flex flex-col gap-4 px-4 md:max-w-2xl md:px-8">
-        <ComingSoonFeature
-          feature="Your own colours"
-          description="Your booking page and your public profile in the colours of your own business, rather than ours."
-          willDo={[
-            'Your colour on the buttons and the headings a learner sees',
-            'Your logo at the top of your booking page',
-            'Checked for contrast before it goes live, so your page stays readable',
-          ]}
-        />
+        <Suspense fallback={<SkeletonRow />}>
+          <Colours />
+        </Suspense>
       </div>
     </main>
   );
+}
+
+async function Colours() {
+  await requirePortal('instructor');
+  const current = await brandColour();
+  if (!current) return null;
+
+  if (!hasEntitlement(current.plan, 'customBookingColours')) {
+    return (
+      <ProUpsell
+        feature="Your own colours"
+        description="Your booking page and the buttons a learner taps, in the colour of your own business rather than ours."
+      />
+    );
+  }
+
+  return <ColourPicker businessId={current.businessId} colour={current.colour} />;
 }
