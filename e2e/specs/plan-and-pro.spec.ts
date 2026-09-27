@@ -34,6 +34,8 @@ test.describe('your plan and what is Pro (D-208, D-209)', () => {
     const coming = page.getByRole('region', { name: 'On the way' });
     await expect(coming).toContainText('Google and Outlook calendar sync');
     await expect(coming).toContainText('AI Assistant');
+    // Coming to Free is coming to Pro as well, so a Pro instructor hears about it too (D-212).
+    await expect(coming).toContainText('Messages: in-app chat with your learners');
     await expect(have).not.toContainText('AI Assistant');
     await expect(have).not.toContainText('Google and Outlook calendar sync');
 
@@ -51,6 +53,7 @@ test.describe('your plan and what is Pro (D-208, D-209)', () => {
     const menu = page.getByRole('main');
     await expect(menu.getByRole('link', { name: /^Notifications/ })).toHaveCount(0);
 
+    await expect(menu.getByRole('link', { name: 'Messages' })).toBeVisible();
     await expect(menu.getByRole('link', { name: 'Bookkeeping' })).toBeVisible();
     await expect(menu.getByRole('link', { name: 'Calendar sync' })).toBeVisible();
     await expect(menu.getByRole('link', { name: 'Your booking colours' })).toBeVisible();
@@ -64,6 +67,18 @@ test.describe('your plan and what is Pro (D-208, D-209)', () => {
     // D-116: nothing here offers a plan on the strength of a screen that does not exist.
     await expect(page.getByRole('link', { name: 'See what Pro includes' })).toHaveCount(0);
     await expect(page.getByRole('link', { name: 'Tell us about it' })).toHaveAttribute('href', '/feedback');
+  });
+
+  test('the thing coming to Free says it is coming to everybody (D-212)', async ({ page }, testInfo) => {
+    await page.goto('/app/instructor/messages');
+    const card = page.getByRole('region', { name: 'Messages is on the way' });
+    await expect(card).toContainText('One thread per learner');
+    // Not marked Pro, because it is not: it sits between two Pro rows in the menu.
+    await expect(card).toContainText('Every plan');
+    await expect(card.getByText('Pro', { exact: true })).toHaveCount(0);
+    await expect(page.getByRole('link', { name: 'See what Pro includes' })).toHaveCount(0);
+    await expectAccessible(page);
+    await snap(page, testInfo, 'messages-coming');
   });
 });
 

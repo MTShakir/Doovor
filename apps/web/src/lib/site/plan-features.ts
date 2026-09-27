@@ -34,10 +34,11 @@ const entitlementWords: Record<keyof Entitlements, FeatureWords> = {
 /**
  * What is coming to a plan and is not an entitlement, because there is nothing yet to entitle
  * (D-116: sold as coming, never as there). Entitlements that exist but are not built yet carry
- * `available: false` above and are added to these.
+ * `available: false` above and are added to these. Each plan above inherits these, the same way it
+ * inherits the features (D-212).
  */
 const alsoComing: Record<PlanKey, string[]> = {
-  free: ['In-app chat with your learners'],
+  free: ['Messages: in-app chat with your learners'],
   pro: ['AI Assistant'],
   school: [],
 };
@@ -104,9 +105,19 @@ function summary(plan: Plan, below: Plan | null, audience: string, signUpRole: P
 }
 
 export function planSummaries(): PlanSummary[] {
-  return [
+  const list = [
     summary(plans.free, null, 'For independent instructors', 'instructor'),
     summary(plans.pro, plans.free, 'For independent instructors who want more', 'instructor'),
     summary(plans.school, plans.pro, 'For driving schools', 'school'),
   ];
+  // A plan carries everything the plan below it carries, so whatever is coming to that plan is
+  // coming to this one too, oldest promise first. Without this, Messages appeared as coming on
+  // Free alone while every Pro instructor had the menu row saying the same thing, and School never
+  // heard about calendar sync at all (D-212).
+  let inherited: string[] = [];
+  return list.map((plan) => {
+    const later = [...new Set([...inherited, ...plan.later])];
+    inherited = later;
+    return { ...plan, later };
+  });
 }

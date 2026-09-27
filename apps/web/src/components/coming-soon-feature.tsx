@@ -32,7 +32,15 @@ export function ComingSoonFeature({ feature, description, willDo, plan = 'Pro' }
           <div className="flex flex-col gap-1">
             <span className="flex flex-wrap items-center gap-2">
               <CardTitle id="coming-title">{feature} is on the way</CardTitle>
-              {plan === 'Pro' ? <ProTag /> : null}
+              {plan === 'Pro' ? (
+                <ProTag />
+              ) : (
+                // Something coming to Free is coming to everybody, and saying so is the point:
+                // without it, a feature sitting next to two Pro rows reads as a third one.
+                <span className="inline-flex min-h-6 items-center rounded-full border border-grey-400 px-2.5 py-0.5 text-caption font-semibold text-grey-700">
+                  Every plan
+                </span>
+              )}
             </span>
             <CardDescription>{description}</CardDescription>
           </div>

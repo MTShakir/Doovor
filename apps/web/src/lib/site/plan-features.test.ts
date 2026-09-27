@@ -20,7 +20,7 @@ describe('what each plan says it includes (PRD 9.18, M5-09)', () => {
       'Email and push reminders',
       'Up to 10 learners at once',
     ]);
-    expect(free?.later).toEqual(['In-app chat with your learners']);
+    expect(free?.later).toEqual(['Messages: in-app chat with your learners']);
     expect(pro?.features).toEqual([
       'Everything in Free',
       'Unlimited learners',
@@ -30,13 +30,22 @@ describe('what each plan says it includes (PRD 9.18, M5-09)', () => {
       'Your own colours on your booking page',
     ]);
     expect(pro?.later).toEqual([
+      'Messages: in-app chat with your learners',
       'Gap Fill: cancelled lessons offered to your waiting list',
       'Waiting list automation',
       'Google and Outlook calendar sync',
       'AI Assistant',
     ]);
     expect(school?.features).toEqual(['Everything in Pro', 'School overview, instructors, learner allocation and school prices']);
-    expect(school?.later).toEqual(['Reports by instructor', 'Fleet: cars, MOT and insurance dates']);
+    expect(school?.later).toEqual([
+      'Messages: in-app chat with your learners',
+      'Gap Fill: cancelled lessons offered to your waiting list',
+      'Waiting list automation',
+      'Google and Outlook calendar sync',
+      'AI Assistant',
+      'Reports by instructor',
+      'Fleet: cars, MOT and insurance dates',
+    ]);
   });
 
   it('turns a limit into what the plan above it gives, rather than dropping it (D-208)', () => {
@@ -51,6 +60,16 @@ describe('what each plan says it includes (PRD 9.18, M5-09)', () => {
         expect(plan.features).not.toContain(later);
       }
     }
+  });
+
+  it('carries what is coming to a plan up to the plans above it (D-212)', () => {
+    const [free, pro, school] = planSummaries();
+    // Messages is coming to everybody, so nobody reads their own plan and concludes otherwise.
+    for (const plan of [free, pro, school]) {
+      expect(plan?.later).toContain('Messages: in-app chat with your learners');
+    }
+    // And School hears about the Pro thing it carries.
+    expect(school?.later).toContain('Google and Outlook calendar sync');
   });
 
   it('sends instructors and schools to their own sign-up', () => {
