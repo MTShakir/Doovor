@@ -111,7 +111,6 @@ async function Learner({ params }: LearnerPageProps) {
             learners={[{ id: card.learnerId, name: card.fullName, usualDurationMinutes: card.usualDurationMinutes }]}
             learnerId={card.learnerId}
             label={`Book a lesson for ${card.fullName.split(' ')[0] ?? card.fullName}`}
-            variant="secondary"
           />
         ) : null}
         <LearnerTabs

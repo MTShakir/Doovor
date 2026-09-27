@@ -1,6 +1,7 @@
 import { byDay, isOff, lessonState, teachingMinutes } from '@repo/core/diary';
 import { addDaysToLocalDate, formatTime, parseLocalDate, type LocalDate } from '@repo/core/time';
 import { StatusPill } from '@repo/ui/status-pill';
+import { LessonLength } from '@/components/lessons/lesson-length';
 import type { DiaryEntry } from '@/lib/diary/lessons';
 import { OpenLesson } from '@/components/lessons/lesson-details';
 import { NavLink } from '@/components/nav-link';
@@ -51,8 +52,9 @@ export function WeekView({ from, lessons, dayOf, today, showInstructor = false, 
                 const state = lessonState(lesson.facts);
                 const says = (
                   <>
-                    <span className="text-small font-semibold text-ink tabular-nums">
+                    <span className="flex flex-wrap items-center gap-1 text-small font-semibold text-ink tabular-nums">
                       {formatTime(lesson.startsAt)}
+                      <LessonLength startsAt={lesson.startsAt} endsAt={lesson.endsAt} />
                     </span>
                     <span
                       className={`truncate text-small ${

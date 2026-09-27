@@ -2,6 +2,7 @@ import { lessonState, lessonStateLabel } from '@repo/core/diary';
 import { formatDate, formatTime } from '@repo/core/time';
 import { Button } from '@repo/ui/button';
 import { StatusPill } from '@repo/ui/status-pill';
+import { LessonLength } from './lesson-length';
 import { MapPin } from 'lucide-react';
 import type { Route } from 'next';
 import Link from 'next/link';
@@ -35,9 +36,12 @@ export function UpcomingLessons({ lessons, more, shown }: { lessons: TeachingLes
                 }}
                 className="flex flex-wrap items-start gap-3 rounded-none px-4 py-3 hover:bg-grey-100"
               >
-                <span className="w-24 shrink-0 text-small font-semibold text-ink tabular-nums">
-                  {formatDate(startsAt)}
-                  <span className="block font-normal text-grey-700">{formatTime(startsAt)}</span>
+                <span className="flex w-24 shrink-0 flex-col gap-1 text-small font-semibold text-ink tabular-nums">
+                  <span>
+                    {formatDate(startsAt)}
+                    <span className="block font-normal text-grey-700">{formatTime(startsAt)}</span>
+                  </span>
+                  <LessonLength startsAt={startsAt} endsAt={new Date(lesson.endsAt)} />
                 </span>
                 <span className="flex min-w-0 flex-1 flex-col gap-1">
                   <span className="text-body font-semibold text-black">{lesson.learnerName}</span>

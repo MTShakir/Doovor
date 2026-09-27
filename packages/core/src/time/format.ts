@@ -34,6 +34,23 @@ export function formatDateTime(instant: Date, timeZone: string = DEFAULT_TIME_ZO
 }
 
 /** A length of time in words: "45 minutes", "1 hour", "12 hours 30 minutes". */
+/**
+ * A lesson's length, short enough for a badge on a card: 1h, 1.5h, 2h, 45m (D-211).
+ *
+ * `formatMinutes` spells it out ("1 hour 30 minutes"), which is right in a sentence and far too
+ * long beside a time on a phone. Halves are written as a decimal because that is how a lesson is
+ * sold and how an instructor says it; anything else keeps its minutes.
+ */
+export function formatLessonLength(minutes: number): string {
+  const whole = Math.max(0, Math.round(minutes));
+  if (whole === 0) return '0m';
+  if (whole < 60) return `${String(whole)}m`;
+  const hours = whole / 60;
+  if (Number.isInteger(hours)) return `${String(hours)}h`;
+  if (whole % 30 === 0) return `${hours.toFixed(1)}h`;
+  return `${String(Math.floor(hours))}h ${String(whole % 60)}m`;
+}
+
 export function formatMinutes(minutes: number): string {
   const whole = Math.max(0, Math.round(minutes));
   const hours = Math.floor(whole / 60);

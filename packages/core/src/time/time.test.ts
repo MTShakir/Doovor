@@ -7,6 +7,7 @@ import {
   formatDate,
   formatDateTime,
   formatDateWithYear,
+  formatLessonLength,
   formatMinutes,
   formatTime,
   isoWeekday,
@@ -155,5 +156,33 @@ describe('formatMinutes', () => {
 
   it('never counts backwards', () => {
     expect(formatMinutes(-30)).toBe('0 minutes');
+  });
+});
+
+describe('formatLessonLength (D-211)', () => {
+  it('writes whole hours as hours', () => {
+    expect(formatLessonLength(60)).toBe('1h');
+    expect(formatLessonLength(120)).toBe('2h');
+    expect(formatLessonLength(180)).toBe('3h');
+  });
+
+  it('writes a half hour as a decimal, the way a lesson is sold', () => {
+    expect(formatLessonLength(90)).toBe('1.5h');
+    expect(formatLessonLength(150)).toBe('2.5h');
+  });
+
+  it('keeps minutes under the hour', () => {
+    expect(formatLessonLength(45)).toBe('45m');
+    expect(formatLessonLength(30)).toBe('30m');
+  });
+
+  it('falls back to hours and minutes for anything that is not a half', () => {
+    expect(formatLessonLength(75)).toBe('1h 15m');
+    expect(formatLessonLength(100)).toBe('1h 40m');
+  });
+
+  it('is not tripped up by nothing', () => {
+    expect(formatLessonLength(0)).toBe('0m');
+    expect(formatLessonLength(-30)).toBe('0m');
   });
 });

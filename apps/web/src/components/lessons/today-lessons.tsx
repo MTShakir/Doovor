@@ -5,6 +5,7 @@ import { lessonToStart, needsRecord, nextLesson } from '@repo/core/lesson-record
 import { formatTime } from '@repo/core/time';
 import { Button } from '@repo/ui/button';
 import { StatusPill } from '@repo/ui/status-pill';
+import { LessonLength } from './lesson-length';
 import { Check, CloudUpload, MapPin, Navigation, NotebookPen } from 'lucide-react';
 import Link from 'next/link';
 import { directionsTo, OpenLesson } from '@/components/lessons/lesson-details';
@@ -68,9 +69,12 @@ export function TodayLessons({ lessons, now, plainLinks = false, waiting = new S
                   }}
                 >
                   <span className="flex flex-wrap items-start gap-3">
-                    <span className="w-14 shrink-0 text-small font-semibold text-ink tabular-nums">
-                      {formatTime(lesson.startsAt)}
-                      <span className="block font-normal text-grey-700">{formatTime(lesson.endsAt)}</span>
+                    <span className="flex w-14 shrink-0 flex-col gap-1 text-small font-semibold text-ink tabular-nums">
+                      <span>
+                        {formatTime(lesson.startsAt)}
+                        <span className="block font-normal text-grey-700">{formatTime(lesson.endsAt)}</span>
+                      </span>
+                      <LessonLength startsAt={lesson.startsAt} endsAt={lesson.endsAt} />
                     </span>
                     <span className="flex min-w-0 flex-1 flex-col gap-1">
                       <span className={`text-body font-semibold ${off ? 'text-grey-700 line-through' : 'text-black'}`}>{lesson.learnerName}</span>

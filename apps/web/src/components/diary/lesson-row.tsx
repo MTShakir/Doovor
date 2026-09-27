@@ -4,6 +4,7 @@ import { lessonState, lessonStateLabel } from '@repo/core/diary';
 import { formatPence } from '@repo/core/money';
 import { formatTime } from '@repo/core/time';
 import { StatusPill } from '@repo/ui/status-pill';
+import { LessonLength } from '@/components/lessons/lesson-length';
 import { Button } from '@repo/ui/button';
 import { Banknote, CalendarClock, Check, MapPin, X } from 'lucide-react';
 import type { DiaryEntry } from '@/lib/diary/lessons';
@@ -67,6 +68,7 @@ export function LessonRow({
       <span className="w-14 shrink-0 text-small font-semibold text-ink tabular-nums">
         {formatTime(lesson.startsAt)}
         <span className="block font-normal text-grey-700">{formatTime(lesson.endsAt)}</span>
+        <LessonLength startsAt={lesson.startsAt} endsAt={lesson.endsAt} />
       </span>
       <span className="flex min-w-0 flex-1 flex-col gap-1">
         {/* A cancelled lesson is struck through and muted rather than faded: text behind an
