@@ -31,10 +31,20 @@ test.describe('what a learner has and owes (PAY-06, M3-16)', () => {
       ? { email: 'isla.roberts@example.com', name: 'Isla Roberts' }
       : { email: 'amelia.evans@example.com', name: 'Amelia Evans' };
 
-  /** Some days back for each width, so the lesson has been owed long enough to be overdue. */
+  /**
+   * Some days back for each width, so the lesson has been owed long enough to be overdue.
+   *
+   * Two apart, not one. Both widths run at once and a run crossing midnight in London has them
+   * disagree about today by a day, which turns a gap of one into a gap of none: on 26 September
+   * this put both widths on 23 September at 07:00 with Emma Clarke and the second booking was
+   * refused. Two is enough, because a shift of one day cannot close it.
+   *
+   * It stays inside the five days the seed covers. Six days back took the lesson out of the window
+   * the balance counts and the owed total dropped by one lesson.
+   */
   const pastDay = (project: string): string => {
     const day = new Date();
-    day.setDate(day.getDate() - (project === 'mobile' ? 3 : 4));
+    day.setDate(day.getDate() - (project === 'mobile' ? 3 : 5));
     return day.toISOString().slice(0, 10);
   };
 

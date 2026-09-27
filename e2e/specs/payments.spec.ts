@@ -889,7 +889,8 @@ test.describe('fees for lessons nobody came to (PAY-09, R-09, M3-19)', () => {
   /** A day in the past in London, one for each width, early, before the seed's first lesson. */
   const pastDay = (project: string): string =>
     new Intl.DateTimeFormat('en-CA', { timeZone: 'Europe/London' }).format(
-      new Date(Date.now() - (project === 'mobile' ? 1 : 2) * 24 * 3_600_000),
+      // Three apart, not one: a run crossing midnight closes a gap of one between the widths.
+      new Date(Date.now() - (project === 'mobile' ? 1 : 3) * 24 * 3_600_000),
     );
 
   /** Emma Clarke marks a lesson as a no-show from her diary, once the diary is listening. */
