@@ -889,8 +889,16 @@ test.describe('fees for lessons nobody came to (PAY-09, R-09, M3-19)', () => {
   /** A day in the past in London, one for each width, early, before the seed's first lesson. */
   const pastDay = (project: string): string =>
     new Intl.DateTimeFormat('en-CA', { timeZone: 'Europe/London' }).format(
-      // Three apart, not one: a run crossing midnight closes a gap of one between the widths.
-      new Date(Date.now() - (project === 'mobile' ? 1 : 3) * 24 * 3_600_000),
+      // One day apart, which is knowingly tight: a run crossing midnight in London can put both
+      // widths on the same date, and then the 05:00 booking below is made twice on Emma Clarke.
+      //
+      // It is left alone on purpose. Widening it is not free, because the days here are threaded
+      // between other specs that also book Emma Clarke: three and five days back belong to
+      // balances.spec.ts at 07:00, and seven to thirteen to offline-records.spec.ts at 08:00, so
+      // the nearest free offset is about a fortnight back. Moving it to three days back is exactly
+      // what broke this file on 27 September, landing it on balances' own day. Fixing it properly
+      // means giving these two tests an instructor of their own rather than shuffling numbers.
+      new Date(Date.now() - (project === 'mobile' ? 1 : 2) * 24 * 3_600_000),
     );
 
   /** Emma Clarke marks a lesson as a no-show from her diary, once the diary is listening. */
