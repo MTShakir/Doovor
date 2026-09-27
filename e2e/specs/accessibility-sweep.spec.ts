@@ -26,11 +26,21 @@ async function textAtDoubleSize(page: Page): Promise<void> {
   });
 }
 
-/** What the page would need scrolled sideways to read, if anything. */
+/**
+ * What the page would need scrolled sideways to read, if anything.
+ *
+ * The scrollbar is taken off. A page long enough to scroll down gets a classic scrollbar in a
+ * headless browser, and anything fixed across the width of the screen, which here is the bottom
+ * tab bar, is drawn to the width of the window rather than to the width of the content. That put
+ * the tab bar nine pixels past the edge on whichever screen happened to be long enough at the
+ * time, which is a measurement of the scrollbar and not of anything a person could scroll to
+ * (D-219).
+ */
 async function sidewaysOverflow(page: Page): Promise<number> {
   return page.evaluate(() => {
     const root = document.documentElement;
-    return Math.max(0, Math.max(root.scrollWidth, document.body.scrollWidth) - root.clientWidth);
+    const scrollbar = Math.max(0, window.innerWidth - root.clientWidth);
+    return Math.max(0, Math.max(root.scrollWidth, document.body.scrollWidth) - root.clientWidth - scrollbar);
   });
 }
 

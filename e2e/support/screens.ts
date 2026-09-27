@@ -19,7 +19,11 @@ export const publicPages = [
   '/driving-lessons/london/city-of-london',
   '/driving-lessons/manchester/automatic',
   '/instructors/leeds/sarah-khan',
-  '/schools/leeds/quayside-driving-school',
+  // Manchester, not Leeds: the school is based there, and the Leeds address is a redirect. It is
+  // sent as an instruction after the shell has streamed rather than as a 308, so a scan that
+  // starts on the shell is still running when the document is swapped, and axe walks frames and
+  // dies on the one that has gone (D-219). public-profile.spec.ts covers the redirect itself.
+  '/schools/manchester/quayside-driving-school',
   '/book/sarah-khan',
   '/sign-in',
   '/sign-up',

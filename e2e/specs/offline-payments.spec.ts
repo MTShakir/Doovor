@@ -70,8 +70,10 @@ test.describe('lessons paid in person (PAY-05, M3-15)', () => {
     // Sarah runs her own Business, so she can hand the money back, from the learner card (PAY-07, M3-17).
     await page.goto(`/app/instructor/learners/${await userIdOf(roles.learner.email)}`);
     await openLearnerTab(page, 'Payments');
-    const money = page.getByRole('region', { name: 'Payments' });
-    const entry = money.getByRole('list', { name: 'Recent payments and credit' }).getByRole('listitem').filter({ hasText: `Lesson on ${dayLabel(day)}` });
+    // The history is its own card with its own heading now, beside Payments rather than inside
+    // it (D-211).
+    const recent = page.getByRole('region', { name: 'Recent' });
+    const entry = recent.getByRole('list', { name: 'Recent payments and credit' }).getByRole('listitem').filter({ hasText: `Lesson on ${dayLabel(day)}` });
     const refund = page.getByRole('dialog', { name: 'Refund Jack Taylor' });
     await expect(async () => {
       await entry.getByRole('button', { name: 'Refund' }).click();
@@ -89,7 +91,7 @@ test.describe('lessons paid in person (PAY-05, M3-15)', () => {
     await expect(page.getByText('£42 refunded', { exact: true })).toBeVisible();
     await expect(entry).toContainText('Cash, refunded');
     await expect(entry.getByRole('button', { name: 'Refund' })).toHaveCount(0);
-    await expect(money.getByRole('list', { name: 'Recent payments and credit' })).toContainText('Paid back');
+    await expect(recent.getByRole('list', { name: 'Recent payments and credit' })).toContainText('Paid back');
     expect(await offlinePaymentOn('Sarah Khan', day, '10:00')).toEqual({ method: 'cash', status: 'refunded', amountPence: 4200 });
     await settled(page);
     await snap(page, testInfo, 'refunded');
@@ -150,7 +152,11 @@ test.describe('lessons paid in person (PAY-05, M3-15)', () => {
     const owedBack = money.getByRole('list', { name: 'Owed back' }).getByRole('listitem').filter({ hasText: `For the lesson on ${feeDay}` });
     await expect(owedBack).toContainText('£42 owed back');
     // Nothing is left to refund on the payment: all of it is already owed back.
-    const cashEntry = money.getByRole('list', { name: 'Recent payments and credit' }).getByRole('listitem').filter({ hasText: `Lesson on ${feeDay}` });
+    const cashEntry = page
+      .getByRole('region', { name: 'Recent' })
+      .getByRole('list', { name: 'Recent payments and credit' })
+      .getByRole('listitem')
+      .filter({ hasText: `Lesson on ${feeDay}` });
     await expect(cashEntry).toContainText('Cash');
     await expect(cashEntry.getByRole('button', { name: 'Refund' })).toHaveCount(0);
     const handBack = page.getByRole('dialog', { name: 'Hand back £42 to Jack Taylor?' });
