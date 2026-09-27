@@ -77,6 +77,43 @@ export function isOff(status: BookingStatus): boolean {
   return status === 'cancelled' || status === 'declined' || status === 'expired' || status === 'no_show';
 }
 
+/** R-09: the earliest a no-show may be recorded, counted from when the lesson was due to start. */
+export const noShowAfterMinutes = 15;
+
+/** What an instructor may say about a lesson right now. */
+export interface LessonAnswers {
+  /** It has not started: it can be moved or called off. */
+  move: boolean;
+  /** Its time is up: it can be marked as taught, or as nobody came. */
+  mark: boolean;
+  /** And long enough has passed since it was due to start to call it a no-show (R-09). */
+  noShow: boolean;
+}
+
+const nothingToSay: LessonAnswers = { move: false, mark: false, noShow: false };
+
+/**
+ * What a lesson can be marked as at a given moment (BOK-10, R-09, D-213).
+ *
+ * The clock decides, not the card. A lesson that is running is one an instructor is in the
+ * middle of teaching: asking how it went while they are still teaching it is how a lesson gets
+ * marked done an hour early, so the answers only appear once its time is up. The same clock takes
+ * moving and calling off away the moment it starts, because neither means anything by then.
+ *
+ * A lesson that is off, already marked, or still only asked for has nothing to say either way.
+ */
+export function lessonAnswers(lesson: { startsAt: Date; endsAt: Date; facts: LessonFacts }, now: Date): LessonAnswers {
+  const { status } = lesson.facts;
+  if (isOff(status) || status === 'completed' || status === 'requested') return nothingToSay;
+  const at = now.getTime();
+  const mark = lesson.endsAt.getTime() <= at;
+  return {
+    move: at < lesson.startsAt.getTime(),
+    mark,
+    noShow: mark && at >= lesson.startsAt.getTime() + noShowAfterMinutes * 60_000,
+  };
+}
+
 export interface DiaryLesson {
   id: string;
   startsAt: Date;

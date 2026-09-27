@@ -1,6 +1,6 @@
 'use client';
 
-import { lessonState, lessonStateLabel } from '@repo/core/diary';
+import { lessonState, lessonStateLabel, type LessonAnswers } from '@repo/core/diary';
 import { formatPence } from '@repo/core/money';
 import { formatTime } from '@repo/core/time';
 import { StatusPill } from '@repo/ui/status-pill';
@@ -10,6 +10,9 @@ import { Banknote, CalendarClock, Check, MapPin, X } from 'lucide-react';
 import type { DiaryEntry } from '@/lib/diary/lessons';
 import { OpenLesson } from '@/components/lessons/lesson-details';
 import { RequestActions } from './request-actions';
+
+/** A lesson nobody is being asked anything about: the school diary, which only reads. */
+const nothingToSay: LessonAnswers = { move: false, mark: false, noShow: false };
 
 /**
  * One lesson, as it appears in the day and week views (DIA-03, DIA-04). The time is the
@@ -21,8 +24,7 @@ export function LessonRow({
   canAnswer = false,
   onMove,
   onCancel,
-  started = false,
-  canMarkNoShow = false,
+  answers = nothingToSay,
   onComplete,
   onNoShow,
   onMarkPaid,
@@ -36,9 +38,8 @@ export function LessonRow({
   /** BOK-08, BOK-09: opening the sheets the day holds for the whole list. */
   onMove?: () => void;
   onCancel?: () => void;
-  /** BOK-10, R-09: a lesson that has already happened has different answers. */
-  started?: boolean;
-  canMarkNoShow?: boolean;
+  /** BOK-10, R-09: what the clock says can be done with it, from `lessonAnswers` (D-213). */
+  answers?: LessonAnswers;
   onComplete?: () => void;
   onNoShow?: () => void;
   /** PAY-05: a lesson somebody paid for in person, in cash or by bank transfer. */
@@ -124,13 +125,13 @@ export function LessonRow({
           <RequestActions bookingId={lesson.id} learnerName={lesson.learnerName} />
         </div>
       ) : null}
-      {canAnswer && !asked && !off && !done && started && onComplete ? (
+      {canAnswer && !asked && !off && !done && answers.mark && onComplete ? (
         <div className="flex flex-wrap justify-end gap-2">
           <Button onClick={onComplete}>
             <Check className="size-5" aria-hidden />
             Done
           </Button>
-          {canMarkNoShow && onNoShow ? (
+          {answers.noShow && onNoShow ? (
             <Button variant="secondary" onClick={onNoShow}>
               No show
             </Button>
@@ -140,7 +141,7 @@ export function LessonRow({
       ) : null}
       {/* Paying is its own thing: a card that leaves moving and calling off to the sheet behind
           it still offers Mark paid here (D-194). */}
-      {canAnswer && !asked && !off && !done && !started && (markPaid !== null || (onMove && onCancel)) ? (
+      {canAnswer && !asked && !off && !done && answers.move && (markPaid !== null || (onMove && onCancel)) ? (
         <div className="flex flex-wrap justify-end gap-2">
           {onMove && onCancel ? (
             <>
@@ -157,6 +158,11 @@ export function LessonRow({
           ) : null}
           {markPaid}
         </div>
+      ) : null}
+      {/* Running right now: too late to move it, too early to say how it went (D-213). Paying is
+          the one thing that still makes sense. */}
+      {canAnswer && !asked && !off && !done && !answers.move && !answers.mark && markPaid ? (
+        <div className="flex flex-wrap justify-end gap-2">{markPaid}</div>
       ) : null}
       {/* Taught, and still to be paid: paying is the one thing left to do about it. */}
       {done && markPaid ? <div className="flex flex-wrap justify-end gap-2">{markPaid}</div> : null}

@@ -3,6 +3,7 @@ import {
   byDay,
   gapsBetween,
   isOff,
+  lessonAnswers,
   lessonState,
   lessonStateLabel,
   teachingMinutes,
@@ -122,5 +123,44 @@ describe('the shape of a day (DIA-03, M1-19)', () => {
     expect([...days.keys()]).toEqual(['2026-09-15', '2026-09-16']);
     expect(days.get('2026-09-15')).toHaveLength(2);
     expect(days.get('2026-09-15')?.[0]?.startsAt.getUTCHours()).toBe(9);
+  });
+});
+
+describe('what a lesson can be marked as, and when (BOK-10, R-09, D-213)', () => {
+  // An hour's lesson, two in the afternoon.
+  const at = (time: string) => new Date(`2026-09-15T${time}:00Z`);
+  const hour = lesson('2026-09-15T14:00:00Z', '2026-09-15T15:00:00Z');
+
+  it('offers moving it and nothing else before it starts', () => {
+    expect(lessonAnswers(hour, at('13:59'))).toEqual({ move: true, mark: false, noShow: false });
+  });
+
+  it('says nothing at all while it is being taught', () => {
+    // The fault this fixes: Done appeared the minute a lesson began, so an instructor could mark
+    // it taught an hour before it was, from the card, by accident.
+    for (const time of ['14:00', '14:15', '14:59']) {
+      expect(lessonAnswers(hour, at(time))).toEqual({ move: false, mark: false, noShow: false });
+    }
+  });
+
+  it('offers Done and No show the moment its time is up', () => {
+    expect(lessonAnswers(hour, at('15:00'))).toEqual({ move: false, mark: true, noShow: true });
+    expect(lessonAnswers(hour, at('18:00'))).toEqual({ move: false, mark: true, noShow: true });
+  });
+
+  it('keeps R-09 for a lesson short enough to end inside the quarter of an hour', () => {
+    const short = lesson('2026-09-15T14:00:00Z', '2026-09-15T14:10:00Z');
+    expect(lessonAnswers(short, at('14:10'))).toEqual({ move: false, mark: true, noShow: false });
+    expect(lessonAnswers(short, at('14:15'))).toEqual({ move: false, mark: true, noShow: true });
+  });
+
+  it('has nothing to say about one that is off, already marked, or only asked for', () => {
+    for (const status of ['cancelled', 'no_show', 'completed', 'declined', 'expired', 'requested'] as const) {
+      expect(lessonAnswers(lesson('2026-09-15T14:00:00Z', '2026-09-15T15:00:00Z', { status }), at('18:00'))).toEqual({
+        move: false,
+        mark: false,
+        noShow: false,
+      });
+    }
   });
 });

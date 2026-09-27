@@ -1,9 +1,10 @@
 'use client';
 
+import { lessonAnswers } from '@repo/core/diary';
 import { formatMinutes, formatTime } from '@repo/core/time';
 import { toast } from '@repo/ui/toast';
 import { useRouter } from 'next/navigation';
-import { useRef, useState, useTransition } from 'react';
+import { useEffect, useRef, useState, useTransition } from 'react';
 import { completeLesson, markNoShow, moveLesson } from '@/app/(portal)/app/instructor/booking-actions';
 import type { DiaryEntry } from '@/lib/diary/lessons';
 import { LessonRow } from './lesson-row';
@@ -31,6 +32,13 @@ export interface DayLessonsProps {
 const HOLD_MS = 500;
 
 /**
+ * How often the day re-reads the clock. What a lesson may be marked as depends on the time, and a
+ * diary left open through the end of a lesson would otherwise keep offering yesterday's answers
+ * until somebody reloaded it (D-213). Half a minute is under the smallest step that matters.
+ */
+const TICK_MS = 30_000;
+
+/**
  * The lessons of one day, and the two ways to move one (DIA-03, BOK-08, M2-24): drag it
  * into a gap with a mouse, or hold it on a phone and pick a time.
  *
@@ -45,8 +53,16 @@ export function DayLessons({ lessons, gaps, now, showInstructor = false, canAnsw
   const [over, setOver] = useState<number | null>(null);
   const [sheet, setSheet] = useState<{ id: string; action: 'move' | 'cancel' | 'paid' } | null>(null);
   const holding = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // Starts at the moment the server put the page together, so the first paint matches what was
+  // sent, and moves on from there.
+  const [moment, setMoment] = useState(now);
   // The lesson a hold has just opened Move for, so letting go does not open it as well.
   const held = useRef<string | null>(null);
+
+  useEffect(() => {
+    const ticking = setInterval(() => { setMoment(new Date()); }, TICK_MS);
+    return () => { clearInterval(ticking); };
+  }, []);
 
   const shown = lessons.map((lesson) => {
     const to = moved[lesson.id];
@@ -136,8 +152,7 @@ export function DayLessons({ lessons, gaps, now, showInstructor = false, canAnsw
                   // it does not open, the card is the only way to either, so they stay.
                   onMove={rules && !openable ? () => { setSheet({ id: lesson.id, action: 'move' }); } : undefined}
                   onCancel={rules && !openable ? () => { setSheet({ id: lesson.id, action: 'cancel' }); } : undefined}
-                  started={lesson.startsAt.getTime() <= now.getTime()}
-                  canMarkNoShow={now.getTime() >= lesson.startsAt.getTime() + 15 * 60_000}
+                  answers={lessonAnswers(lesson, moment)}
                   onComplete={() => { done(lesson.id); }}
                   onNoShow={() => { after('no show', () => markNoShow({ bookingId: lesson.id })); }}
                   onMarkPaid={rules ? () => { setSheet({ id: lesson.id, action: 'paid' }); } : undefined}
