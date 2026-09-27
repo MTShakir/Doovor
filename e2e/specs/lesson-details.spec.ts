@@ -60,6 +60,43 @@ test.describe('a lesson opened from its card (DIA-04, D-166)', () => {
     await removeLesson('Sarah Khan', learner, day, '10:00');
   });
 
+  test('starts where their lessons start, and goes somewhere else for one lesson (COV-04, D-215)', async ({ page }, testInfo) => {
+    const day = sunday(testInfo.project.name, 2);
+    await clearDiary('Sarah Khan', day);
+    // Booked naming nowhere, the way the seed and the public booking page both do it.
+    await bookLesson('Sarah Khan', learner, day, '11:00');
+
+    await page.goto(`/app/instructor/diary?view=day&date=${day}`);
+    const sheet = page.getByRole('dialog', { name: 'Jack Taylor' });
+    await tapUntil(page.getByRole('button', { name: 'Open 11:00 with Jack Taylor' }), sheet);
+
+    // D-215: nobody chose, so it starts where Jack's lessons start.
+    const pickup = sheet.getByRole('region', { name: 'Pickup' });
+    await expect(pickup).toContainText('Home');
+    await expect(pickup).toContainText('LS2 9JT');
+
+    // One lesson somewhere else, without touching where the rest of them start.
+    const choice = pickup.getByLabel('Collect them from');
+    await expect(choice).toHaveValue(/[0-9a-f-]{36}/);
+    await choice.selectOption('No pickup point');
+    await expect(page.getByText('Pickup point taken off this lesson')).toBeVisible();
+    await expect(pickup).toContainText('No pickup point on this lesson');
+    await expectAccessible(page);
+    await snap(page, testInfo, 'lesson-pickup');
+
+    await choice.selectOption({ label: 'Home, Little London & Woodhouse, Leeds, LS2 9JT' });
+    await expect(page.getByText('Collecting them from there')).toBeVisible();
+    await expect(pickup).toContainText('LS2 9JT');
+
+    // And where Jack's lessons start is untouched: the next one still starts at home.
+    await removeLesson('Sarah Khan', learner, day, '11:00');
+    await bookLesson('Sarah Khan', learner, day, '14:00');
+    await page.goto(`/app/instructor/diary?view=day&date=${day}`);
+    await tapUntil(page.getByRole('button', { name: 'Open 14:00 with Jack Taylor' }), sheet);
+    await expect(sheet.getByRole('region', { name: 'Pickup' })).toContainText('LS2 9JT');
+    await removeLesson('Sarah Khan', learner, day, '14:00');
+  });
+
   test('opens from the week too', { tag: '@desktop-only' }, async ({ page }, testInfo) => {
     const day = sunday(testInfo.project.name, 1);
     await clearDiary('Sarah Khan', day);

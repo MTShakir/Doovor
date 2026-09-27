@@ -11,6 +11,16 @@ select tests.create_fixture();
 \set asha_user 'a0000000-0000-0000-0000-000000000001'
 \set other_user 'b0000000-0000-0000-0000-000000000003'
 
+-- A lesson of theirs with Asha, still to come. Booked before either of them has an address
+-- saved, so it starts with no pickup point: a learner who has one gets it filled in by
+-- `bookings_default_pickup` (D-215), and this test is about setting it afterwards.
+\set lesson 'e0000000-0000-0000-0000-000000000009'
+insert into public.bookings (id, business_id, instructor_id, learner_id, lesson_type_id, starts_at, ends_at, buffer_minutes,
+                             status, price_pence, source)
+values (:'lesson', 'aaaa0000-0000-0000-0000-000000000000', 'a1000000-0000-0000-0000-000000000001', :'learner',
+        'a2000000-0000-0000-0000-000000000001', now() + interval '2 days', now() + interval '2 days 2 hours', 30,
+        'confirmed', 6200, 'instructor');
+
 -- A place of the learner's own, and one of somebody else's. The id is the table's to give: a
 -- learner is not granted the column, which is the point of asking the RPC for the change.
 select tests.authenticate_as(:'learner');
@@ -24,14 +34,6 @@ insert into public.pickup_points (learner_id, kind, label, address, postcode)
 values (:'other_learner', 'home', 'Their home', '3 Otley Road, Leeds', 'LS6 2AA');
 select id as theirs from public.pickup_points where learner_id = :'other_learner' and label = 'Their home' \gset
 select tests.clear_authentication();
-
--- A lesson of theirs with Asha, still to come.
-\set lesson 'e0000000-0000-0000-0000-000000000009'
-insert into public.bookings (id, business_id, instructor_id, learner_id, lesson_type_id, starts_at, ends_at, buffer_minutes,
-                             status, price_pence, source)
-values (:'lesson', 'aaaa0000-0000-0000-0000-000000000000', 'a1000000-0000-0000-0000-000000000001', :'learner',
-        'a2000000-0000-0000-0000-000000000001', now() + interval '2 days', now() + interval '2 days 2 hours', 30,
-        'confirmed', 6200, 'instructor');
 
 -- The learner says where they are collected.
 select tests.authenticate_as(:'learner');

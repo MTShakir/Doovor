@@ -12,7 +12,7 @@ import { isValidLocalDate, isValidLocalTime, localTimeToMinutes } from '../time/
 import { todayInZone } from '../time/zone.ts';
 
 /** Half a person's name. Two of these make the one name that is stored and shown (D-196). */
-const nameHalfSchema = z.string().trim().max(60, { error: 'Use 60 characters or fewer' });
+export const nameHalfSchema = z.string().trim().max(60, { error: 'Use 60 characters or fewer' });
 
 /**
  * What an instructor trades as, which is usually not their own name (INS-01, D-196). It is what

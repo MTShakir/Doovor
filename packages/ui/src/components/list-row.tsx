@@ -42,7 +42,9 @@ export function ListRow({
       {asChild ? <Slot.Slottable>{children}</Slot.Slottable> : null}
       <span className="flex min-w-0 flex-1 flex-col">
         <span className="truncate text-body font-medium text-ink">{title}</span>
-        {subtitle ? <span className="truncate text-small text-grey-700">{subtitle}</span> : null}
+        {/* Two lines rather than one, cut off: an icon beside the label takes the width a
+            sentence needs on a phone, and half a sentence is worse than a second line (D-216). */}
+        {subtitle ? <span className="line-clamp-2 text-small text-grey-700">{subtitle}</span> : null}
       </span>
       {trailing ? (
         <span className="flex shrink-0 items-center gap-2 text-body text-ink tabular-nums">{trailing}</span>

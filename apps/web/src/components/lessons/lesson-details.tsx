@@ -6,7 +6,9 @@ import { formatPence } from '@repo/core/money';
 import { whatsAppTo } from '@repo/core/phone';
 import { formatDate, formatTime } from '@repo/core/time';
 import { Button } from '@repo/ui/button';
+import { Field } from '@repo/ui/field';
 import { cn } from '@repo/ui/lib/cn';
+import { Select } from '@repo/ui/select';
 import { Sheet } from '@repo/ui/sheet';
 import { Skeleton } from '@repo/ui/skeleton';
 import { StatusPill } from '@repo/ui/status-pill';
@@ -14,8 +16,9 @@ import { toast } from '@repo/ui/toast';
 import { Banknote, CalendarClock, Mail, MapPin, MessageCircle, MessageSquare, Navigation, Phone, UserRound, X } from 'lucide-react';
 import type { Route } from 'next';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { useEffect, useState, useTransition, type ReactNode } from 'react';
-import { lessonDetailsFor, sendReminder } from '@/app/(portal)/app/instructor/booking-actions';
+import { lessonDetailsFor, sendReminder, setLessonPickup } from '@/app/(portal)/app/instructor/booking-actions';
 import { LessonSheets } from '@/components/diary/lesson-sheets';
 import { StartLessonButton } from '@/components/lessons/start-lesson';
 import type { LessonDetails } from '@/lib/lessons/details';
@@ -64,6 +67,8 @@ export function LessonDetailsBody({
   sending,
   onRemind,
   onAction,
+  onPickup,
+  movingPickup = false,
   onCard = false,
 }: {
   state: LessonDetailsState;
@@ -71,6 +76,12 @@ export function LessonDetailsBody({
   sending: Channel | null;
   onRemind: (channel: Channel) => void;
   onAction: (action: Action) => void;
+  /**
+   * COV-04, D-215: where the lesson is collected from, moved from here. Left out where nothing
+   * can be saved, which is the design page.
+   */
+  onPickup?: (pickupPointId: string) => void;
+  movingPickup?: boolean;
   /** Opened from the learner's own card, where the way to it is a link to this page (D-214). */
   onCard?: boolean;
 }) {
@@ -108,31 +119,58 @@ export function LessonDetailsBody({
       {startable ? <StartLessonButton bookingId={details.id} endsAt={details.endsAt} /> : null}
 
       <Section title="Pickup">
-        {details.pickup ? (
-          <div className="flex flex-col gap-2">
-            <p className="flex items-start gap-2 text-body text-ink">
-              <MapPin className="mt-0.5 size-5 shrink-0" aria-hidden />
-              <span>
-                {details.pickup.label}
-                {details.pickup.address || details.pickup.postcode ? (
-                  <span className="block text-small text-grey-700">
-                    {[details.pickup.address, details.pickup.postcode].filter(Boolean).join(', ')}
-                  </span>
-                ) : null}
-              </span>
-            </p>
-            {route ? (
-              <Button asChild variant="secondary" className="self-start">
-                <a href={route} target="_blank" rel="noreferrer">
-                  <Navigation className="size-5" aria-hidden />
-                  Navigate
-                </a>
-              </Button>
-            ) : null}
-          </div>
-        ) : (
-          <p className="text-small text-grey-700">No pickup point on this lesson.</p>
-        )}
+        <div className="flex flex-col gap-3">
+          {details.pickup ? (
+            <div className="flex flex-col gap-2">
+              <p className="flex items-start gap-2 text-body text-ink">
+                <MapPin className="mt-0.5 size-5 shrink-0" aria-hidden />
+                <span>
+                  {details.pickup.label}
+                  {details.pickup.address || details.pickup.postcode ? (
+                    <span className="block text-small text-grey-700">
+                      {[details.pickup.address, details.pickup.postcode].filter(Boolean).join(', ')}
+                    </span>
+                  ) : null}
+                </span>
+              </p>
+              {route ? (
+                <Button asChild variant="secondary" className="self-start">
+                  <a href={route} target="_blank" rel="noreferrer">
+                    <Navigation className="size-5" aria-hidden />
+                    Navigate
+                  </a>
+                </Button>
+              ) : null}
+            </div>
+          ) : (
+            <p className="text-small text-grey-700">No pickup point on this lesson.</p>
+          )}
+          {/* COV-04, D-215: one lesson collected from somewhere else, without changing where the
+              rest of them start. Both sides can do it, and the database checks the place is
+              theirs. */}
+          {onPickup && changeable ? (
+            details.pickupChoices.length === 0 ? (
+              <p className="text-small text-grey-700">
+                {details.learner.name} has no pickup points saved. Add one on their card and it can be used here.
+              </p>
+            ) : (
+              <Field label="Collect them from" hint="One of the places saved on this learner. This lesson only.">
+                <Select
+                  options={[
+                    { value: '', label: 'No pickup point' },
+                    ...details.pickupChoices.map((place) => ({
+                      value: place.id,
+                      label: place.where === '' ? place.label : `${place.label}, ${place.where}`,
+                    })),
+                  ]}
+                  value={details.pickupPointId ?? ''}
+                  disabled={movingPickup}
+                  onChange={(event) => { onPickup(event.target.value); }}
+                />
+              </Field>
+            )
+          ) : null}
+        </div>
       </Section>
 
       <Section title={`Get in touch with ${details.learner.name}`}>
@@ -253,9 +291,11 @@ export function LessonDetailsSheet({
   /** Opened from the learner's own card (D-214). */
   onCard?: boolean;
 }) {
+  const router = useRouter();
   const [state, setState] = useState<LessonDetailsState>({ kind: 'loading' });
   const [action, setAction] = useState<Action | null>(null);
   const [sending, setSending] = useState<Channel | null>(null);
+  const [movingPickup, setMovingPickup] = useState(false);
   const [, startTransition] = useTransition();
 
   useEffect(() => {
@@ -327,6 +367,35 @@ export function LessonDetailsSheet({
     });
   };
 
+  // COV-04, D-215: this one lesson collected from somewhere else. The sheet reads the lesson
+  // once when it opens, so what was saved is put back into what it is showing rather than read
+  // again, and the page behind it is asked for afresh.
+  const movePickup = (pickupPointId: string) => {
+    setMovingPickup(true);
+    startTransition(async () => {
+      const result = await setLessonPickup({ bookingId: lesson.id, pickupPointId });
+      setMovingPickup(false);
+      if (!result.ok) {
+        toast(result.message);
+        return;
+      }
+      setState((current) => {
+        if (current.kind !== 'ready') return current;
+        const place = current.details.pickupChoices.find((one) => one.id === pickupPointId);
+        return {
+          ...current,
+          details: {
+            ...current.details,
+            pickupPointId: pickupPointId === '' ? null : pickupPointId,
+            pickup: place === undefined ? null : { label: place.label, address: place.where, postcode: null },
+          },
+        };
+      });
+      router.refresh();
+      toast(pickupPointId === '' ? 'Pickup point taken off this lesson' : 'Collecting them from there');
+    });
+  };
+
   const startsAt = new Date(lesson.startsAt);
   return (
     <Sheet
@@ -335,7 +404,15 @@ export function LessonDetailsSheet({
       title={lesson.learnerName}
       description={`${formatDate(startsAt)}, ${formatTime(startsAt)} to ${formatTime(new Date(lesson.endsAt))}. ${lesson.lessonType}.`}
     >
-      <LessonDetailsBody state={state} sending={sending} onRemind={remind} onAction={setAction} onCard={onCard} />
+      <LessonDetailsBody
+        state={state}
+        sending={sending}
+        onRemind={remind}
+        onAction={setAction}
+        onPickup={movePickup}
+        movingPickup={movingPickup}
+        onCard={onCard}
+      />
     </Sheet>
   );
 }

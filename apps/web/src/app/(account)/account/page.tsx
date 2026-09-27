@@ -6,11 +6,12 @@ import { Card, CardDescription, CardTitle } from '@repo/ui/card';
 import { ListDivider, ListRow } from '@repo/ui/list-row';
 import { SkeletonRow } from '@repo/ui/skeleton';
 import { StatusPill } from '@repo/ui/status-pill';
-import { ChevronLeft } from 'lucide-react';
+import { Building2, ChevronLeft, IdCard, KeyRound, Mail, MonitorSmartphone, Phone, ShieldCheck, UserRound } from 'lucide-react';
 import type { Metadata, Route } from 'next';
 import Link from 'next/link';
 import { Suspense } from 'react';
 import { landingPath, requiresMfa } from '@/lib/auth/portals';
+import { businessNameLabel, myBusiness, ownBusiness } from '@/lib/auth/own-business';
 import { requireAccess } from '@/lib/auth/session';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
 import { describeUserAgent } from '@/lib/user-agent';
@@ -19,6 +20,11 @@ import { signOutEverywhere } from './actions';
 import { DeleteAccount, KeepMyAccount, RevokeDeviceButton } from './account-client';
 
 export const metadata: Metadata = { title: 'Account and security', robots: { index: false } };
+
+/** The glyph beside a row's label, the same size and weight everywhere on this screen (D-216). */
+function rowIcon(Icon: typeof UserRound) {
+  return <Icon className="text-grey-700" size={24} strokeWidth={1.5} aria-hidden />;
+}
 
 export default function AccountPage() {
   return (
@@ -48,6 +54,9 @@ async function AccountContent() {
   // listFactors().totp only ever contains verified factors.
   const totpOn = (factors?.totp.length ?? 0) > 0;
   const mfaRequired = requiresMfa(access);
+  // Who they work for, and whether that name is theirs to change (D-196, D-217).
+  const business = myBusiness(access);
+  const mine = ownBusiness(access);
 
   return (
     <div className="flex flex-col gap-6">
@@ -64,18 +73,40 @@ async function AccountContent() {
         <div className="px-4 pt-4">
           <CardTitle id="details-title">Your details</CardTitle>
         </div>
-        <ListRow title="Name" subtitle={profile?.full_name || 'Not set'} />
+        <ListRow asChild leading={rowIcon(UserRound)} title="Name" subtitle={profile?.full_name || 'Not set'} chevron>
+          <Link href="/account/name" aria-label="Change your name" />
+        </ListRow>
         <ListDivider />
-        {/* Their own number on the platform, to quote when they get in touch (D-176). */}
-        {profile ? (
+        {/* D-217: the school or business somebody belongs to, named on the screen that is about
+            who they are. Theirs to change when it is their own; a school's is the school's. */}
+        {business ? (
           <>
-            <ListRow title="Your ID" subtitle={platformId(profile.platform_number)} />
+            {mine ? (
+              <ListRow asChild leading={rowIcon(Building2)} title={businessNameLabel(mine)} subtitle={mine.businessName} chevron>
+                <Link href="/account/name" aria-label={`Change ${businessNameLabel(mine).toLowerCase()}`} />
+              </ListRow>
+            ) : (
+              <ListRow
+                leading={rowIcon(Building2)}
+                title="Your school"
+                subtitle={business.businessName}
+                trailing={<span className="text-small text-grey-700">Your school looks after this</span>}
+              />
+            )}
             <ListDivider />
           </>
         ) : null}
-        <ListRow title="Email" subtitle={profile?.email ?? session.email ?? 'Not set'} />
+        {/* Their own number on the platform, to quote when they get in touch (D-176). */}
+        {profile ? (
+          <>
+            <ListRow leading={rowIcon(IdCard)} title="Your ID" subtitle={platformId(profile.platform_number)} />
+            <ListDivider />
+          </>
+        ) : null}
+        <ListRow leading={rowIcon(Mail)} title="Email" subtitle={profile?.email ?? session.email ?? 'Not set'} />
         <ListDivider />
         <ListRow
+          leading={rowIcon(Phone)}
           title="Mobile"
           subtitle={profile?.phone ? formatUkMobile(`+${profile.phone.replace(/^\+/, '')}`) : 'Not added'}
           trailing={
@@ -94,11 +125,12 @@ async function AccountContent() {
         <div className="px-4 pt-4">
           <CardTitle id="signing-in-title">Signing in</CardTitle>
         </div>
-        <ListRow asChild title="Password" subtitle="Change your password" chevron>
+        <ListRow asChild leading={rowIcon(KeyRound)} title="Password" subtitle="Change your password" chevron>
           <Link href="/account/password" aria-label="Change your password" />
         </ListRow>
         <ListDivider />
         <ListRow
+          leading={rowIcon(ShieldCheck)}
           title="Two-step verification"
           subtitle={mfaRequired ? 'Required for your role' : 'An extra step with an authenticator app'}
           trailing={
@@ -125,6 +157,7 @@ async function AccountContent() {
             <div key={device.id}>
               {index > 0 ? <ListDivider /> : null}
               <ListRow
+                leading={rowIcon(MonitorSmartphone)}
                 title={name}
                 subtitle={`Last active ${lastActive}`}
                 trailing={

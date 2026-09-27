@@ -3,6 +3,7 @@ import { ListDivider, ListRow } from '@repo/ui/list-row';
 import { PageHeader } from '@repo/ui/app-shell';
 import { Card } from '@repo/ui/card';
 import { Button } from '@repo/ui/button';
+import { Smartphone, type LucideIcon } from 'lucide-react';
 import type { Route } from 'next';
 import Link from 'next/link';
 import { signOut } from '@/app/(auth)/actions';
@@ -13,6 +14,12 @@ export interface MoreLink {
   href: string;
   title: string;
   subtitle?: string;
+  /**
+   * The picture beside the label (D-216). Every row in these menus has one: a list of ten lines
+   * of grey text is read word by word, and an icon is what somebody finds the row by on the
+   * second visit.
+   */
+  icon?: LucideIcon;
   /** Part of Pro, so it carries the tag (D-209). */
   pro?: boolean;
   /**
@@ -31,6 +38,7 @@ export interface MoreLink {
  */
 export const installAppLink: MoreLink = {
   href: '/account/install',
+  icon: Smartphone,
   title: 'Install the app',
   subtitle: `Put ${brand.shortName} on your home screen`,
   browserOnly: true,
@@ -49,6 +57,9 @@ export function MoreMenu({ title, links }: { title: string; links: MoreLink[] })
                 {index > 0 ? <ListDivider /> : null}
                 <ListRow
                   asChild
+                  // Grey-700 whether the row is locked or not: the tag says what is Pro, and a
+                  // grey-400 glyph is the thing D-009 exists to stop.
+                  leading={link.icon ? <link.icon className="text-grey-700" size={24} strokeWidth={1.5} aria-hidden /> : undefined}
                   // Greyed with grey-700 rather than dimmed: a faded row is a row somebody with
                   // ordinary eyesight cannot read (D-009).
                   title={link.locked ? <span className="text-grey-700">{link.title}</span> : link.title}

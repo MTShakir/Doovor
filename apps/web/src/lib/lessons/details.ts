@@ -22,6 +22,10 @@ export interface LessonDetails {
   pricePence: number;
   learner: { id: string; name: string; phone: string | null; email: string | null };
   pickup: { label: string; address: string | null; postcode: string | null } | null;
+  /** Everywhere this learner is collected from, so the sheet can move the lesson (COV-04, D-215). */
+  pickupChoices: { id: string; label: string; where: string }[];
+  /** The one chosen for this lesson, which is not always one the learner still keeps. */
+  pickupPointId: string | null;
   rules: CancellationRules;
   /** A reminder may go by text: the Business's plan has texts, and the learner has a number (NTF-01). */
   textReminders: boolean;
@@ -37,6 +41,7 @@ interface Row {
   price_pence: number;
   learner_id: string;
   instructor_id: string;
+  pickup_point_id: string | null;
   lesson_types: { name: string; kind: string };
   pickup_points: { label: string; address: string | null; postcode: string | null } | null;
 }
@@ -47,7 +52,7 @@ export async function lessonDetails(bookingId: string): Promise<LessonDetails | 
   const { data, error } = await supabase
     .from('bookings')
     .select(
-      'id, starts_at, ends_at, status, payment_status, source, price_pence, learner_id, instructor_id, lesson_types(name, kind), pickup_points(label, address, postcode)',
+      'id, starts_at, ends_at, status, payment_status, source, price_pence, learner_id, instructor_id, pickup_point_id, lesson_types(name, kind), pickup_points(label, address, postcode)',
     )
     .eq('id', bookingId)
     .maybeSingle();
@@ -79,6 +84,12 @@ export async function lessonDetails(bookingId: string): Promise<LessonDetails | 
       email: card?.email ?? null,
     },
     pickup: row.pickup_points,
+    pickupChoices: (card?.pickups ?? []).map((place) => ({
+      id: place.id,
+      label: place.label,
+      where: [place.address, place.postcode].filter((part) => part !== null && part.trim() !== '').join(', '),
+    })),
+    pickupPointId: row.pickup_point_id,
     rules,
     textReminders: phone !== null && (options.data as { texts?: boolean } | null)?.texts === true,
   };

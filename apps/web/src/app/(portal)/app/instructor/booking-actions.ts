@@ -9,7 +9,6 @@ import { requirePortal } from '@/lib/auth/session';
 import { fieldErrors } from '@/lib/forms';
 import { bookingDay, lessonOptions, type BookingDay, type LessonOption } from '@/lib/booking/day';
 import { lessonDetails, type LessonDetails } from '@/lib/lessons/details';
-import { defaultPickupFor } from '@/lib/pickup/list';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
 
 /** Where the caller teaches. Every booking screen in this portal is about one instructor. */
@@ -81,8 +80,9 @@ export async function bookLesson(input: unknown): Promise<Result<{ bookingId: st
     p_lesson_type_id: parsed.data.lessonTypeId,
     p_starts_at: parsed.data.startsAt,
     p_duration_minutes: parsed.data.durationMinutes,
-    // Where the learner's lessons start, unless another place was chosen (D-168).
-    p_pickup_point_id: parsed.data.pickupPointId ?? (await defaultPickupFor(parsed.data.learnerId)) ?? undefined,
+    // Nothing chosen means where the learner's lessons start, which the database fills in for
+    // every way a lesson is booked rather than only this one (D-168, D-215).
+    p_pickup_point_id: parsed.data.pickupPointId ?? undefined,
     p_ignore_gap: parsed.data.ignoreGap,
   });
   if (error) return err(parsePostgresError(error).code);
@@ -146,8 +146,9 @@ export async function bookWeekly(input: unknown): Promise<Result<WeeklyOutcome>>
     p_duration_minutes: parsed.data.durationMinutes,
     p_weeks: parsed.data.weeks,
     p_open_ended: parsed.data.openEnded,
-    // Where the learner's lessons start, unless another place was chosen (D-168).
-    p_pickup_point_id: parsed.data.pickupPointId ?? (await defaultPickupFor(parsed.data.learnerId)) ?? undefined,
+    // Nothing chosen means where the learner's lessons start, which the database fills in for
+    // every way a lesson is booked rather than only this one (D-168, D-215).
+    p_pickup_point_id: parsed.data.pickupPointId ?? undefined,
     p_ignore_gap: parsed.data.ignoreGap,
   });
   if (error) return err(parsePostgresError(error).code);
@@ -344,4 +345,33 @@ export async function priceForLength(input: unknown): Promise<Result<number | nu
   });
   if (error) return err(parsePostgresError(error).code);
   return ok(data);
+}
+
+const lessonPickupSchema = z.object({
+  bookingId: z.uuid(),
+  pickupPointId: z.union([z.literal('').transform(() => null), z.uuid()]).nullable().default(null),
+});
+
+/**
+ * Where this lesson is collected from, moved by the instructor (COV-04, D-185, D-215). The same
+ * RPC the learner's own screen calls: it checks the place belongs to that learner and that the
+ * lesson has not been and gone, so neither side can point a lesson at a stranger's front door.
+ */
+export async function setLessonPickup(input: unknown): Promise<Result<null>> {
+  const parsed = lessonPickupSchema.safeParse(input);
+  if (!parsed.success) return err('VALIDATION_FAILED');
+
+  await requirePortal('instructor');
+  const supabase = await createSupabaseServerClient();
+  const { error } = await supabase.rpc('set_booking_pickup', {
+    p_booking_id: parsed.data.bookingId,
+    // The RPC takes no argument at all for "nowhere", which is its own default.
+    p_pickup_point_id: parsed.data.pickupPointId ?? undefined,
+  });
+  if (error) return err(parsePostgresError(error).code);
+
+  revalidatePath('/app/instructor/diary');
+  revalidatePath('/app/instructor');
+  revalidatePath('/app/instructor/learners', 'layout');
+  return ok(null);
 }

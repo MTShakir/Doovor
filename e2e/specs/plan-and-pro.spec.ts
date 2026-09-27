@@ -57,6 +57,11 @@ test.describe('your plan and what is Pro (D-208, D-209)', () => {
     await expect(menu.getByRole('link', { name: 'Bookkeeping' })).toBeVisible();
     await expect(menu.getByRole('link', { name: 'Calendar sync' })).toBeVisible();
     await expect(menu.getByRole('link', { name: 'Your booking colours' })).toBeVisible();
+
+    // D-216: every row carries a picture beside its label, and a chevron: two drawings per row.
+    // Ten lines of grey text is a list somebody reads word by word every time.
+    const rows = menu.getByRole('link');
+    await expect(menu.locator('a svg')).toHaveCount((await rows.count()) * 2);
     await snap(page, testInfo, 'instructor-more');
   });
 

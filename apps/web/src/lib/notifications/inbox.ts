@@ -1,4 +1,6 @@
 import 'server-only';
+import { Bell } from 'lucide-react';
+import type { MoreLink } from '@/components/more-menu';
 import type { NotificationCategory, NotificationChannel } from '@repo/core/notifications';
 import { cache } from 'react';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
@@ -65,10 +67,11 @@ export async function myNotificationPreferences(): Promise<Map<NotificationCateg
 }
 
 /** The row that takes somebody to their notifications, with how many are waiting. */
-export async function notificationsMenuLink(): Promise<{ href: string; title: string; subtitle: string }> {
+export async function notificationsMenuLink(): Promise<MoreLink> {
   const unread = await unreadCount();
   return {
     href: '/notifications',
+    icon: Bell,
     title: 'Notifications',
     subtitle: unread === 0 ? 'What you have been told, and what you hear about' : `${String(unread)} waiting`,
   };

@@ -57,18 +57,3 @@ export async function myPickupPoints(learnerId: string): Promise<LearnerPickupPo
   }));
 }
 
-/**
- * Where a learner's lessons start unless another place is chosen: their default pickup point
- * (COV-04, D-168). A lesson the instructor books takes it, so it shows on Today, in the lesson's
- * sheet and in Navigate.
- */
-export async function defaultPickupFor(learnerId: string): Promise<string | null> {
-  const supabase = await createSupabaseServerClient();
-  const { data } = await supabase
-    .from('pickup_points')
-    .select('id')
-    .eq('learner_id', learnerId)
-    .eq('is_default', true)
-    .maybeSingle();
-  return data?.id ?? null;
-}

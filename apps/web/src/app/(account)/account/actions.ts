@@ -1,10 +1,49 @@
 'use server';
 
+import { parsePostgresError } from '@repo/core/errors';
+import { wholeName } from '@repo/core/person-name';
 import { err, ok, type Result } from '@repo/core/result';
+import { accountNameSchema } from '@repo/core/schemas/account';
 import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
 import { z } from '@repo/core/zod';
+import { requireAccess } from '@/lib/auth/session';
+import { fieldErrors } from '@/lib/forms';
+import { ownBusiness } from '@/lib/auth/own-business';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
+
+/**
+ * AUTH-09, D-217: the name on the account, and what the Business is called for somebody whose
+ * Business is their own.
+ *
+ * The name learners see is a different thing and lives on the profile (D-196). This one is who
+ * the account belongs to, which is what a receipt, an export and a support conversation use.
+ */
+export async function saveAccountName(input: unknown): Promise<Result<null>> {
+  const parsed = accountNameSchema.safeParse(input);
+  if (!parsed.success) return err('VALIDATION_FAILED', undefined, fieldErrors(parsed.error));
+
+  const { session, access } = await requireAccess();
+  const supabase = await createSupabaseServerClient();
+
+  const mine = ownBusiness(access);
+  if (parsed.data.businessName !== undefined) {
+    // At a school the name is not theirs to change, so a form that sent one anyway is refused
+    // here as well as by the RPC.
+    if (mine === null) return err('NOT_ALLOWED', 'Your school looks after that name.');
+    const named = await supabase.rpc('set_business_name', { p_business_id: mine.businessId, p_name: parsed.data.businessName });
+    if (named.error) return err(parsePostgresError(named.error).code, 'We could not save your business name. Try again.');
+  }
+
+  const { error } = await supabase
+    .from('users')
+    .update({ full_name: wholeName({ firstName: parsed.data.firstName, lastName: parsed.data.lastName }) })
+    .eq('id', session.userId);
+  if (error) return err('UNKNOWN', 'We could not save your name. Try again.');
+
+  revalidatePath('/account');
+  return ok(null);
+}
 
 const sessionIdSchema = z.uuid();
 

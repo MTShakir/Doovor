@@ -1,3 +1,4 @@
+import { ClipboardList, CreditCard, MapPin, MessageSquarePlus, ShieldCheck } from 'lucide-react';
 import { installAppLink, MoreMenu } from '@/components/more-menu';
 import { notificationsMenuLink } from '@/lib/notifications/inbox';
 
@@ -7,11 +8,11 @@ export default async function LearnerAccountPage() {
       title="Account"
       links={[
         await notificationsMenuLink(),
-        { href: '/app/learner/account/pickup-points', title: 'Pickup points', subtitle: 'Where your lessons start, and which one is usual' },
-        { href: '/app/learner/account/about-you', title: 'About you', subtitle: 'What helps your instructor plan your lessons' },
-        { href: '/app/learner/payments', title: 'Payments', subtitle: 'Lesson credit, packages and saved cards' },
-        { href: '/feedback', title: 'Tell us something', subtitle: 'A request, a problem, or anything else' },
-        { href: '/account', title: 'Account and security', subtitle: 'Password, devices, two-step verification' },
+        { href: '/app/learner/account/pickup-points', icon: MapPin, title: 'Pickup points', subtitle: 'Where your lessons start, and which one is usual' },
+        { href: '/app/learner/account/about-you', icon: ClipboardList, title: 'About you', subtitle: 'What helps your instructor plan your lessons' },
+        { href: '/app/learner/payments', icon: CreditCard, title: 'Payments', subtitle: 'Lesson credit, packages and saved cards' },
+        { href: '/feedback', icon: MessageSquarePlus, title: 'Tell us something', subtitle: 'A request, a problem, or anything else' },
+        { href: '/account', icon: ShieldCheck, title: 'Account and security', subtitle: 'Password, devices, two-step verification' },
         installAppLink,
       ]}
     />

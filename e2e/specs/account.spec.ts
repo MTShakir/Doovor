@@ -1,5 +1,5 @@
 import { expect, test, type Browser, type BrowserContext, type Page } from '@playwright/test';
-import { platformIdOf } from '../support/database';
+import { makeInstructor, platformIdOf } from '../support/database';
 import { expectAccessible, snap } from '../support/helpers';
 import { signInThroughForm } from '../support/sign-in';
 
@@ -63,5 +63,44 @@ test.describe('account and security (AUTH-09)', () => {
     await expect(page).toHaveURL(/\/sign-in$/);
     await expectSignedOut(laptop.page);
     await laptop.context.close();
+  });
+});
+
+/**
+ * The name on the account, and the name of the Business it belongs to (AUTH-09, D-217).
+ *
+ * An instructor of its own at each width: this test renames somebody, and every other spec that
+ * reads a seeded instructor's name would have to be told.
+ */
+test.describe('your name on your account (AUTH-09, D-217)', () => {
+  test('shows the name and the business, and changes both', async ({ page }, testInfo) => {
+    const instructor = await makeInstructor(`Namer ${testInfo.project.name}`, '2030-01-01', { listed: false });
+
+    try {
+      await signInThroughForm(page, instructor.email);
+      await page.goto('/account');
+      const details = page.getByRole('region', { name: 'Your details' });
+      await expect(details).toContainText(instructor.name);
+      await expect(details).toContainText(`${instructor.name} Driving`);
+
+      await details.getByRole('link', { name: 'Change your name' }).click();
+      await expect(page.getByRole('heading', { level: 1, name: 'Your name' })).toBeVisible();
+      // Two halves, because that is what a person and a browser both understand (D-196).
+      // By role: the row that opened this form is called "Change your business name", which is
+      // the same words, and both are on the page while the navigation settles.
+      await expect(page.getByRole('textbox', { name: 'First name' })).toHaveValue('Namer');
+      await page.getByRole('textbox', { name: 'First name' }).fill('Robin');
+      await page.getByRole('textbox', { name: 'Last name' }).fill('Shah');
+      await page.getByRole('textbox', { name: 'Your business name' }).fill('Robin Shah School of Motoring');
+      await expectAccessible(page);
+      await snap(page, testInfo, 'account-name');
+      await page.getByRole('button', { name: 'Save name' }).click();
+
+      await expect(page.getByRole('heading', { level: 1, name: 'Account and security' })).toBeVisible();
+      await expect(details).toContainText('Robin Shah');
+      await expect(details).toContainText('Robin Shah School of Motoring');
+    } finally {
+      await instructor.remove();
+    }
   });
 });

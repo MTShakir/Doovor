@@ -459,6 +459,11 @@ const exampleLesson: LessonDetails = {
   pricePence: 6300,
   learner: { id: 'learner-1', name: 'Olivia Brown', phone: '+447700900123', email: 'olivia@example.com' },
   pickup: { label: 'Home', address: '12 Hyde Park Road, Leeds', postcode: 'LS6 1AB' },
+  pickupChoices: [
+    { id: 'pickup-1', label: 'Home', where: '12 Hyde Park Road, Leeds, LS6 1AB' },
+    { id: 'pickup-2', label: 'Work', where: '1 Wellington Place, Leeds, LS1 4AP' },
+  ],
+  pickupPointId: 'pickup-1',
   rules: { cancellationWindowHours: 24, lateFeePercent: 100 },
   textReminders: true,
 };
