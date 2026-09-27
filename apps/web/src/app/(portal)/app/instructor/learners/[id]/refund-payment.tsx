@@ -119,7 +119,8 @@ export function RefundPayment({ paymentId, learnerId, learnerName }: { paymentId
 
   return (
     <>
-      <Button variant="tertiary" onClick={show}>
+      {/* Beside Receipt on a transaction row, so it wears the same grey (D-211). */}
+      <Button variant="secondary" onClick={show}>
         <Undo2 className="size-5" aria-hidden />
         Refund
       </Button>

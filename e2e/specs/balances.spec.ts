@@ -86,13 +86,15 @@ test.describe('what a learner has and owes (PAY-06, M3-16)', () => {
     const cardOwed = money.getByRole('list', { name: 'Lessons owed for' }).getByRole('listitem');
     await expect(cardOwed).toHaveCount(owedCount);
     // A school instructor sees the money, and is never offered a refund (PAY-07, PRD 6.2).
-    await expect(money.getByRole('button', { name: 'Refund' })).toHaveCount(0);
+    // Scoped to the page rather than the Payments card: recording a package and refunding sit in
+    // their own blocks beside it now, so that the three do not read as one (D-211).
+    await expect(card.getByRole('button', { name: 'Refund' })).toHaveCount(0);
     await expectAccessible(card);
 
     // A package paid for in cash, recorded from the card.
     const sale = card.getByRole('dialog', { name: 'Package paid in person' });
     await expect(async () => {
-      await money.getByRole('button', { name: 'Record a package paid in person' }).click();
+      await card.getByRole('button', { name: 'Record a package paid in person' }).click();
       await expect(sale).toBeVisible({ timeout: 5000 });
     }).toPass({ timeout: 20_000 });
     await sale.getByLabel('Package').selectOption({ label: '5 hours, £195' });
@@ -107,7 +109,9 @@ test.describe('what a learner has and owes (PAY-06, M3-16)', () => {
     await card.getByRole('dialog', { name: `How did ${learner.name} pay?` }).getByRole('button', { name: 'Cash' }).click();
     await expect(lesson).toHaveCount(0);
     await expect(cardOwed).toHaveCount(owedCount - 1);
-    await expect(money).toContainText('5 hours of credit bought');
+    // The history is its own block now, with its own heading, rather than the tail of the
+    // Payments card (D-211).
+    await expect(card.getByRole('region', { name: 'Recent' })).toContainText('5 hours of credit bought');
     const instructorSees = await cardLines.allTextContents();
     await settled(card);
     await snap(card, testInfo, 'instructor-balance');

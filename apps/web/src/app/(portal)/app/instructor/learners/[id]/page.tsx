@@ -348,58 +348,72 @@ async function Money({
   const mine = new Set(here.map((one) => one.instructorProfileId).filter((id): id is string => id !== null));
 
   return (
-    <Card padding="none" role="region" aria-labelledby="money-title">
-      <div className="flex flex-col gap-2 px-4 pt-4 pb-3">
-        <CardTitle id="money-title">Payments</CardTitle>
-        <BalanceLines balance={balance} />
-      </div>
-      <OwedLessons
-        balance={balance}
-        action={(owed, instructor) =>
-          runsIt || (instructor !== null && mine.has(instructor.id)) ? (
-            <MarkPaidButton
-              lesson={{
-                bookingId: owed.lesson.id,
-                learnerName: card.fullName,
-                startsAt: owed.lesson.startsAt.toISOString(),
-                pricePence: owed.amountPence,
-                fee: owed.fee ?? undefined,
-              }}
-            />
-          ) : null
-        }
-      />
-      <OwedBackList
-        balance={balance}
-        action={(owed) =>
-          runsIt || (owed.instructorId !== null && mine.has(owed.instructorId)) ? (
-            <HandBack refundId={owed.refundId} learnerId={card.learnerId} learnerName={card.fullName} amountPence={owed.amountPence} />
-          ) : null
-        }
-      />
-      <NoShowDisputes disputes={disputes} learnerId={card.learnerId} learnerName={card.fullName} canDecide={runsIt} />
-      {packages.length === 0 ? null : (
-        <div className="flex border-t border-grey-200 px-4 py-3">
-          <SellPackage learnerId={card.learnerId} learnerName={card.fullName} packages={packages} />
+    /*
+      UX (D-211): three cards, not one. What is owed, recording a package and the recent
+      transactions sat inside a single outline separated by hairlines, so three unrelated things
+      read as one block and none of them carried a heading of its own.
+    */
+    <div className="flex flex-col gap-4">
+      <Card padding="none" role="region" aria-labelledby="money-title">
+        <div className="flex flex-col gap-2 px-4 pt-4 pb-3">
+          <CardTitle id="money-title">Payments</CardTitle>
+          <BalanceLines balance={balance} />
         </div>
+        <OwedLessons
+          balance={balance}
+          action={(owed, instructor) =>
+            runsIt || (instructor !== null && mine.has(instructor.id)) ? (
+              <MarkPaidButton
+                lesson={{
+                  bookingId: owed.lesson.id,
+                  learnerName: card.fullName,
+                  startsAt: owed.lesson.startsAt.toISOString(),
+                  pricePence: owed.amountPence,
+                  fee: owed.fee ?? undefined,
+                }}
+              />
+            ) : null
+          }
+        />
+        <OwedBackList
+          balance={balance}
+          action={(owed) =>
+            runsIt || (owed.instructorId !== null && mine.has(owed.instructorId)) ? (
+              <HandBack refundId={owed.refundId} learnerId={card.learnerId} learnerName={card.fullName} amountPence={owed.amountPence} />
+            ) : null
+          }
+        />
+        <NoShowDisputes disputes={disputes} learnerId={card.learnerId} learnerName={card.fullName} canDecide={runsIt} />
+      </Card>
+
+      {packages.length === 0 ? null : (
+        <Card className="flex">
+          <SellPackage learnerId={card.learnerId} learnerName={card.fullName} packages={packages} />
+        </Card>
       )}
-      <BalanceHistory
-        history={balance.history}
-        limit={100}
-        action={
-          // Money goes back only by the people who run the Business (PAY-07, PRD 6.2), and only
-          // while some of it is not already on its way back or owed back (M3-18).
-          runsIt
-            ? (entry) =>
-                entry.kind === 'payment' &&
-                entry.method !== 'credit' &&
-                entry.refundedPence + entry.pendingRefundPence < entry.amountPence ? (
-                  <RefundPayment paymentId={entry.id} learnerId={card.learnerId} learnerName={card.fullName} />
-                ) : null
-            : undefined
-        }
-      />
-    </Card>
+
+      {/* Its own card now, so it is only drawn when there is something in it. */}
+      {balance.history.length === 0 ? null : (
+      <Card padding="none" role="region" aria-labelledby="recent-title">
+        <BalanceHistory
+          history={balance.history}
+          limit={100}
+          action={
+            // Money goes back only by the people who run the Business (PAY-07, PRD 6.2), and only
+            // while some of it is not already on its way back or owed back (M3-18).
+            runsIt
+              ? (entry) =>
+                  entry.kind === 'payment' &&
+                  entry.method !== 'credit' &&
+                  entry.refundedPence + entry.pendingRefundPence < entry.amountPence ? (
+                    <RefundPayment paymentId={entry.id} learnerId={card.learnerId} learnerName={card.fullName} />
+                  ) : null
+              : undefined
+          }
+        />
+      </Card>
+      )}
+    </div>
   );
 }
 

@@ -1,6 +1,8 @@
 import { historyLine, type OwedLesson } from '@repo/core/balance';
 import { formatPence } from '@repo/core/money';
 import { formatDate, formatMinutes, formatTime } from '@repo/core/time';
+import { Button } from '@repo/ui/button';
+import { CardTitle } from '@repo/ui/card';
 import { StatusPill } from '@repo/ui/status-pill';
 import Link from 'next/link';
 import type { ReactNode } from 'react';
@@ -130,14 +132,22 @@ export function BalanceHistory({
   if (shown.length === 0) return null;
 
   return (
-    <div className="flex flex-col border-t border-grey-200">
-      <p className="px-4 pt-3 text-small font-semibold text-grey-700">Recent</p>
-      <ul className="flex flex-col" aria-label="Recent payments and credit">
+    <div className="flex flex-col">
+      {/*
+        UX (D-211): its own heading and its own dividers. This used to be the tail of one long card
+        that also held the balance and the package button, under a small grey label, so three
+        different things read as one. Rows are separated the way the Money screen separates its
+        transactions, which is the same list of the same things.
+      */}
+      <div className="px-4 pt-4 pb-2">
+        <CardTitle id="recent-title">Recent</CardTitle>
+      </div>
+      <ul className="flex flex-col divide-y divide-grey-200" aria-label="Recent payments and credit">
         {shown.map((entry) => {
           const line = historyLine(entry);
           const control = action?.(entry);
           return (
-            <li key={entry.id} className="flex flex-col gap-1 px-4 py-2">
+            <li key={entry.id} className="flex flex-col gap-1 px-4 py-3">
               <div className="flex items-start gap-3">
                 <span className="flex min-w-0 flex-1 flex-col">
                   <span className="text-body text-ink">{line.title}</span>
@@ -151,12 +161,9 @@ export function BalanceHistory({
                 <div className="flex flex-wrap items-center justify-end gap-2">
                   {/* The receipt the learner was sent, for either of them to open (PAY-08). */}
                   {entry.kind === 'payment' && entry.hasReceipt ? (
-                    <Link
-                      href={`/receipts/${entry.id}`}
-                      className="flex h-12 items-center rounded-full px-4 text-body font-semibold text-black underline-offset-4 hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-black"
-                    >
-                      Receipt
-                    </Link>
+                    <Button asChild variant="secondary">
+                      <Link href={`/receipts/${entry.id}`}>Receipt</Link>
+                    </Button>
                   ) : null}
                   {control}
                 </div>
