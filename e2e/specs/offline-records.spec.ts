@@ -42,7 +42,9 @@ test.describe('lesson records saved with no signal (PRG-09, M4-11)', () => {
 
   test('waits on the phone, and is sent once when the signal is back', async ({ page, context }, testInfo) => {
     // Two days clear of the five the seed fills, so a run that crosses midnight does not land on one.
-    const day = addDays(today(), testInfo.project.name === 'mobile' ? -7 : -8);
+    // Two apart at least, across all four of this file's Emma Clarke days at 08:00, because a
+    // run crossing midnight moves one width by a day.
+    const day = addDays(today(), testInfo.project.name === 'mobile' ? -7 : -9);
     await bookLesson('Emma Clarke', learner.email, day, '08:00');
     const lessonId = await lessonIdAt('Emma Clarke', day, '08:00');
     const summary = `Moving off on a hill, with no signal, ${testInfo.project.name}.`;
@@ -93,7 +95,7 @@ test.describe('lesson records saved with no signal (PRG-09, M4-11)', () => {
   });
 
   test('says so when another phone recorded the lesson meanwhile, until it is read', async ({ page, context, browser }, testInfo) => {
-    const day = addDays(today(), testInfo.project.name === 'mobile' ? -10 : -12);
+    const day = addDays(today(), testInfo.project.name === 'mobile' ? -11 : -13);
     await bookLesson('Emma Clarke', learner.email, day, '08:00');
     const lessonId = await lessonIdAt('Emma Clarke', day, '08:00');
 
