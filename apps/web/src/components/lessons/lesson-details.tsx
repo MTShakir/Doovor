@@ -64,12 +64,15 @@ export function LessonDetailsBody({
   sending,
   onRemind,
   onAction,
+  onCard = false,
 }: {
   state: LessonDetailsState;
   /** The reminder on its way, if one is. */
   sending: Channel | null;
   onRemind: (channel: Channel) => void;
   onAction: (action: Action) => void;
+  /** Opened from the learner's own card, where the way to it is a link to this page (D-214). */
+  onCard?: boolean;
 }) {
   if (state.kind === 'failed') {
     return <p className="text-body text-ink">Open this lesson again once you have signal to see everything about it.</p>;
@@ -222,13 +225,15 @@ export function LessonDetailsBody({
         </Section>
       ) : null}
 
-      <Link
-        href={`/app/instructor/learners/${details.learner.id}` as Route}
-        className="flex h-12 w-fit items-center gap-2 rounded-full text-body font-semibold text-black underline-offset-4 hover:underline"
-      >
-        <UserRound className="size-5" aria-hidden />
-        Open {details.learner.name}&apos;s card
-      </Link>
+      {onCard ? null : (
+        <Link
+          href={`/app/instructor/learners/${details.learner.id}` as Route}
+          className="flex h-12 w-fit items-center gap-2 rounded-full text-body font-semibold text-black underline-offset-4 hover:underline"
+        >
+          <UserRound className="size-5" aria-hidden />
+          Open {details.learner.name}&apos;s card
+        </Link>
+      )}
     </div>
   );
 }
@@ -238,7 +243,16 @@ export function LessonDetailsBody({
  * lesson when it opens, sends a reminder when asked, and hands Mark paid, Move and Cancel to the
  * sheets that already do them.
  */
-export function LessonDetailsSheet({ lesson, onClose }: { lesson: LessonAtAGlance; onClose: () => void }) {
+export function LessonDetailsSheet({
+  lesson,
+  onClose,
+  onCard = false,
+}: {
+  lesson: LessonAtAGlance;
+  onClose: () => void;
+  /** Opened from the learner's own card (D-214). */
+  onCard?: boolean;
+}) {
   const [state, setState] = useState<LessonDetailsState>({ kind: 'loading' });
   const [action, setAction] = useState<Action | null>(null);
   const [sending, setSending] = useState<Channel | null>(null);
@@ -321,7 +335,7 @@ export function LessonDetailsSheet({ lesson, onClose }: { lesson: LessonAtAGlanc
       title={lesson.learnerName}
       description={`${formatDate(startsAt)}, ${formatTime(startsAt)} to ${formatTime(new Date(lesson.endsAt))}. ${lesson.lessonType}.`}
     >
-      <LessonDetailsBody state={state} sending={sending} onRemind={remind} onAction={setAction} />
+      <LessonDetailsBody state={state} sending={sending} onRemind={remind} onAction={setAction} onCard={onCard} />
     </Sheet>
   );
 }

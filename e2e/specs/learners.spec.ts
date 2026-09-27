@@ -127,6 +127,19 @@ test.describe('the learner list (LRN-01, M2-04)', () => {
     const tabs = page.getByRole('tablist', { name: 'About this learner' });
     await tabs.getByRole('tab', { name: 'Lessons' }).click();
     await expect(page.getByRole('tablist', { name: 'Which lessons' })).toBeVisible();
+
+    // D-214: every lesson here opens its own sheet, the same one the diary and Today open. The
+    // list used to be the one place in the product where tapping a lesson did nothing.
+    const toCome = page.getByRole('region', { name: 'Lessons to come' });
+    await toCome.getByRole('button', { name: /^Open / }).first().click();
+    const sheet = page.getByRole('dialog').first();
+    await expect(sheet.getByRole('heading', { name: 'Pickup' })).toBeVisible();
+    await expect(sheet.getByRole('heading', { name: 'Get in touch with Jack Taylor' })).toBeVisible();
+    // And it does not offer the card they are already on.
+    await expect(sheet.getByRole('link', { name: /card$/ })).toHaveCount(0);
+    await snap(page, testInfo, 'learner-card-lesson');
+    await page.keyboard.press('Escape');
+
     await tabs.getByRole('tab', { name: 'Payments' }).click();
     await expect(page.getByRole('region', { name: 'Payments' })).toBeVisible();
     await tabs.getByRole('tab', { name: 'Progress' }).click();

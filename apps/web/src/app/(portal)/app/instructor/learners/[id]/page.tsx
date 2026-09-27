@@ -1,5 +1,4 @@
 import type { Metadata } from 'next';
-import { lessonState, lessonStateLabel } from '@repo/core/diary';
 import { skillMapSummary } from '@repo/core/skill-map';
 import { formatPence } from '@repo/core/money';
 import { whatsAppTo } from '@repo/core/phone';
@@ -13,15 +12,14 @@ import { SkeletonRow } from '@repo/ui/skeleton';
 import { ChevronLeft, Mail, MessageCircle, MessageSquare, Phone, TrendingUp } from 'lucide-react';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
-import { Fragment, Suspense } from 'react';
+import { Suspense } from 'react';
 import { PickupPoints } from '@/components/learners/pickup-points';
 import { BalanceHistory, BalanceLines, OwedBackList, OwedLessons } from '@/components/money/balance';
 import { MarkPaidButton } from '@/components/money/mark-paid';
 import { lessonWhen } from '@/components/progress/lesson-record-card';
-import { StatusPill } from '@repo/ui/status-pill';
 import { requirePortal } from '@/lib/auth/session';
 import { learnerCard, type LearnerCard } from '@/lib/learners/card';
-import { learnerLessons, learnerTotals, type LearnerLesson, type LearnerTotals } from '@/lib/learners/totals';
+import { learnerLessons, learnerTotals, type LearnerTotals } from '@/lib/learners/totals';
 import { learnerHistory, type LearnerHistoryEntry } from '@/lib/learners/history';
 import { learnerHealth, type LearnerHealth } from '@/lib/learner/health';
 import { learnerDriving, type LearnerDriving } from '@/lib/learner/setup';
@@ -35,6 +33,7 @@ import { BookLesson } from '../../book-lesson';
 import { addLearnerPickup, removeLearnerPickup, updateLearnerPickup } from './actions';
 import { HandBack } from './hand-back';
 import { LearnerTabs, LessonHistoryTabs } from './learner-tabs';
+import { LessonRows } from './lesson-rows';
 import { NoShowDisputes } from './no-show-disputes';
 import { Notes } from './notes';
 import { RefundPayment } from './refund-payment';
@@ -139,8 +138,22 @@ async function Learner({ params }: LearnerPageProps) {
               label: 'Lessons',
               panel: (
                 <LessonHistoryTabs
-                  upcoming={<LessonList lessons={lessons.upcoming} label="Lessons to come" empty="Nothing booked yet." />}
-                  past={<LessonList lessons={lessons.past} label="Lessons that have been" empty="No lessons yet." />}
+                  upcoming={
+                    <LessonRows
+                      lessons={lessons.upcoming}
+                      label="Lessons to come"
+                      empty="Nothing booked yet."
+                      learnerName={card.fullName}
+                    />
+                  }
+                  past={
+                    <LessonRows
+                      lessons={lessons.past}
+                      label="Lessons that have been"
+                      empty="No lessons yet."
+                      learnerName={card.fullName}
+                    />
+                  }
                 />
               ),
             },
@@ -262,30 +275,6 @@ function Summary({ card, totals, creditMinutes }: { card: LearnerCard; totals: L
         title="Last lesson"
         trailing={card.lastLessonAt === null ? 'None yet' : formatDateTime(new Date(card.lastLessonAt))}
       />
-    </Card>
-  );
-}
-
-/** This learner's lessons with this Business, as a list under the Lessons tab (LRN-02, D-189). */
-function LessonList({ lessons, label, empty }: { lessons: LearnerLesson[]; label: string; empty: string }) {
-  if (lessons.length === 0) return <p className="px-1 text-small text-grey-700">{empty}</p>;
-
-  return (
-    <Card padding="none" role="region" aria-label={label}>
-      {lessons.map((lesson, index) => {
-        const facts = { status: lesson.status as never, paymentStatus: lesson.paymentStatus as never, kind: 'standard' as const };
-        const minutes = Math.round((new Date(lesson.endsAt).getTime() - new Date(lesson.startsAt).getTime()) / 60_000);
-        return (
-          <Fragment key={lesson.id}>
-            {index === 0 ? null : <ListDivider />}
-            <ListRow
-              title={formatDateTime(new Date(lesson.startsAt))}
-              subtitle={`${lesson.lessonType}, ${formatMinutes(minutes)}, with ${lesson.instructorName}`}
-              trailing={<StatusPill status={lessonState(facts)}>{lessonStateLabel(facts)}</StatusPill>}
-            />
-          </Fragment>
-        );
-      })}
     </Card>
   );
 }
