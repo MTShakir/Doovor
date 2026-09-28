@@ -23,7 +23,7 @@
     "@types/node": "catalog:",
     "eslint": "catalog:",
     "postgres": "^3.4.9",
-    "tsx": "^4.23.13",
+    "tsx": "^4.23.15",
     "typescript": "catalog:",
     "vitest": "catalog:"
   }
