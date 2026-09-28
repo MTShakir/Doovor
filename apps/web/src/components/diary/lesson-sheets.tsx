@@ -13,6 +13,7 @@ import { Skeleton } from '@repo/ui/skeleton';
 import { TimeSlotGrid } from '@repo/ui/time-slot-grid';
 import { toast } from '@repo/ui/toast';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { useEffect, useState, useTransition } from 'react';
 import { FormAlert } from '@/components/form-alert';
 import { MarkPaidSheet } from '@/components/money/mark-paid';
@@ -82,6 +83,7 @@ function priceWords(
 export function LessonSheets({ lesson, rules, action, onClose }: LessonSheetsProps) {
   const { bookingId, learnerId, learnerName, startsAt, durationMinutes, pricePence, paymentStatus } = lesson;
   const { cancellationWindowHours, lateFeePercent } = rules;
+  const router = useRouter();
   const [pending, startTransition] = useTransition();
   const cancelling = action === 'cancel';
   const moving = action === 'move';
@@ -162,6 +164,9 @@ export function LessonSheets({ lesson, rules, action, onClose }: LessonSheetsPro
       setReason('');
       toast(`Lesson with ${learnerName} cancelled`);
       onClose();
+      // The diary listens for changes as well, and that is for changes made somewhere else
+      // (D-220). Whoever just did this should not be waiting on a websocket to see it.
+      router.refresh();
     });
   };
 
@@ -180,6 +185,7 @@ export function LessonSheets({ lesson, rules, action, onClose }: LessonSheetsPro
       setSlot(null);
       toast(`Moved to ${formatDate(new Date(slot))} at ${formatTime(new Date(slot))}`);
       onClose();
+      router.refresh();
     });
   };
 

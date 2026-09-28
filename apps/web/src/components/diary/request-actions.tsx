@@ -5,12 +5,14 @@ import { Field } from '@repo/ui/field';
 import { Textarea } from '@repo/ui/input';
 import { Sheet } from '@repo/ui/sheet';
 import { toast } from '@repo/ui/toast';
+import { useRouter } from 'next/navigation';
 import { useState, useTransition } from 'react';
 import { FormAlert } from '@/components/form-alert';
 import { decideRequest } from '@/app/(portal)/app/instructor/booking-actions';
 
 /** BOK-06: a lesson somebody asked for, and the two answers to it. */
 export function RequestActions({ bookingId, learnerName }: { bookingId: string; learnerName: string }) {
+  const router = useRouter();
   const [pending, startTransition] = useTransition();
   const [declining, setDeclining] = useState(false);
   const [reason, setReason] = useState('');
@@ -27,6 +29,9 @@ export function RequestActions({ bookingId, learnerName }: { bookingId: string; 
       setDeclining(false);
       setReason('');
       toast(accept ? `Lesson with ${learnerName} confirmed` : `Lesson with ${learnerName} declined`);
+      // The diary listens for changes as well, and that is for changes made somewhere else
+      // (D-220). Whoever just answered should not be waiting on a websocket to see it.
+      router.refresh();
     });
   };
 

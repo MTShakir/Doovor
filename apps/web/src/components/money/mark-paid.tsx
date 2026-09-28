@@ -6,6 +6,7 @@ import { Button } from '@repo/ui/button';
 import { Sheet } from '@repo/ui/sheet';
 import { toast, toastWithUndo } from '@repo/ui/toast';
 import { Banknote, Landmark } from 'lucide-react';
+import { useRouter } from 'next/navigation';
 import { useState, useTransition } from 'react';
 import { FormAlert } from '@/components/form-alert';
 import { recordOfflinePayment, undoOfflinePayment } from '@/app/(portal)/app/instructor/booking-actions';
@@ -27,6 +28,7 @@ export interface MarkPaidLesson {
 export function MarkPaidSheet({ lesson, open, onClose }: { lesson: MarkPaidLesson; open: boolean; onClose: () => void }) {
   const { bookingId, learnerName, startsAt, pricePence, fee } = lesson;
   const feeName = fee === undefined ? '' : fee === 'no_show' ? ' no-show fee' : ' late cancellation fee';
+  const router = useRouter();
   const [pending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
 
@@ -40,9 +42,13 @@ export function MarkPaidSheet({ lesson, open, onClose }: { lesson: MarkPaidLesso
       }
       onClose();
       const { paymentId } = result.data;
+      // The screen behind this asks the server for itself again, here and after an undo, rather
+      // than waiting on the websocket the diary listens on (D-220).
+      router.refresh();
       toastWithUndo(`Marked paid (${method})`, () => {
         void undoOfflinePayment({ paymentId }).then((undone) => {
           toast(undone.ok ? `${learnerName}'s ${fee === undefined ? 'lesson' : 'fee'} is unpaid again` : undone.message);
+          router.refresh();
         });
       });
     });

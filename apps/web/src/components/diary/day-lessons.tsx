@@ -82,6 +82,7 @@ export function DayLessons({ lessons, gaps, now, showInstructor = false, canAnsw
       const result = await moveLesson({ bookingId: lessonId, startsAt: at.toISOString() });
       if (result.ok) {
         toast(`Moved to ${formatTime(at)}`);
+        router.refresh();
         return;
       }
       // Back where it was: the server would not have it there.
@@ -94,6 +95,9 @@ export function DayLessons({ lessons, gaps, now, showInstructor = false, canAnsw
     startTransition(async () => {
       const result = await run();
       toast(result.ok ? `Marked as ${what}` : (result.message ?? 'That did not work'));
+      // The diary listens for changes as well, and that is for changes made somewhere else
+      // (D-220). Whoever just marked it should not be waiting on a websocket to see it.
+      if (result.ok) router.refresh();
     });
   };
 

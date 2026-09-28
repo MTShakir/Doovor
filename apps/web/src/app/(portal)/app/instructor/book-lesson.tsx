@@ -173,6 +173,10 @@ export function BookLesson({ learners, learnerId, date, label = 'Book a lesson',
         setOpen(false);
         setChosenSlot(null);
         setTimes(null);
+        // The page the booking landed on asks the server for itself again (D-220). The diary
+        // listens for changes as well, and that is for changes made somewhere else: an
+        // instructor who has just booked a lesson should not be waiting on a websocket to see it.
+        router.refresh();
         return;
       }
 
@@ -195,6 +199,7 @@ export function BookLesson({ learners, learnerId, date, label = 'Book a lesson',
         setOpen(false);
         setChosenSlot(null);
       }
+      router.refresh();
     });
   };
 
