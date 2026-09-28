@@ -117,6 +117,36 @@ test.describe('checking a pass photo (D-218)', { tag: '@desktop-only' }, () => {
   });
 });
 
+/**
+ * A school looks after the same wall from its own portal (D-218). It is one wall: a school owner
+ * should not have to ask somebody who teaches to take a photo down.
+ */
+test.describe('a school keeps its own wall (D-218)', () => {
+  test.use({ storageState: authFile('schoolOwner') });
+
+  test('the school portal has the gallery, with what its instructors put there', async ({ page }, testInfo) => {
+    const who = `School Pass ${testInfo.project.name}`;
+    await removeGalleryPhotos(who);
+    // Put there by one of the school's own instructors, which is whose photo a school sees.
+    await addGalleryPhoto('Emma Clarke', who, new Date(Date.now() - 6 * 24 * 3_600_000).toISOString().slice(0, 10));
+
+    try {
+      await page.goto('/app/school/gallery');
+      await expect(page.getByRole('heading', { level: 1, name: 'Gallery' })).toBeVisible();
+      await expect(page.getByRole('region', { name: 'Your gallery' })).toContainText(`${who} became a driver on`);
+      await expect(page.getByRole('region', { name: 'Add a pass' })).toBeVisible();
+
+      // And the school's own public page carries it.
+      await page.goto('/schools/manchester/quayside-driving-school');
+      await expect(page.getByRole('region', { name: 'Learners who passed' })).toContainText(`${who} became a driver on`);
+      await expectAccessible(page);
+      await snap(page, testInfo, 'gallery-school');
+    } finally {
+      await removeGalleryPhotos(who);
+    }
+  });
+});
+
 /** What somebody on Free sees where the gallery would be (D-209, D-218). */
 test.describe('the gallery on Free (D-218)', () => {
   test('is offered rather than hidden, and the public page shows no wall', async ({ page }, testInfo) => {

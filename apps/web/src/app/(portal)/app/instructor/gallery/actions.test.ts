@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-const requirePortal = vi.fn<() => Promise<unknown>>();
+const requireAccess = vi.fn<() => Promise<unknown>>();
 const refuseWhileViewing = vi.fn<() => Promise<unknown>>();
 const rpc = vi.fn<(...args: unknown[]) => Promise<unknown>>();
 const removeProfileImage = vi.fn<(...args: unknown[]) => Promise<void>>();
@@ -8,7 +8,7 @@ const removeProfileImage = vi.fn<(...args: unknown[]) => Promise<void>>();
 vi.mock('@/lib/supabase/server', () => ({
   createSupabaseServerClient: () => Promise.resolve({ rpc: (...args: unknown[]) => rpc(...args) }),
 }));
-vi.mock('@/lib/auth/session', () => ({ requirePortal: () => requirePortal() }));
+vi.mock('@/lib/auth/session', () => ({ requireAccess: () => requireAccess() }));
 vi.mock('@/lib/auth/view-as', () => ({ refuseWhileViewing: () => refuseWhileViewing() }));
 vi.mock('@/lib/storage/images', () => ({
   galleryBucket: 'gallery',
@@ -25,7 +25,7 @@ const good = { imagePath: `${business}/passed.webp`, passedOn: '2026-01-05', lea
 
 beforeEach(() => {
   vi.clearAllMocks();
-  requirePortal.mockResolvedValue(undefined);
+  requireAccess.mockResolvedValue(undefined);
   refuseWhileViewing.mockResolvedValue(null);
   rpc.mockResolvedValue({ data: photoId, error: null });
 });

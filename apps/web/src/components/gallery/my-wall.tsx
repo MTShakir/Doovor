@@ -7,7 +7,7 @@ import { EyeOff, Trash2 } from 'lucide-react';
 import { useState, useTransition } from 'react';
 import { PassPhotoCard } from '@/components/gallery/pass-photo';
 import type { OwnGalleryPhoto } from '@/lib/gallery/read';
-import { removeGalleryPhoto } from './actions';
+import { removeGalleryPhoto } from '@/app/(portal)/app/instructor/gallery/actions';
 
 /**
  * The Business own wall (D-218), as the public page draws it, with the two things that are only

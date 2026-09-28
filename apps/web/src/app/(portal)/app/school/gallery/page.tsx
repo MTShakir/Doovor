@@ -6,21 +6,24 @@ import { Images } from 'lucide-react';
 import type { Metadata } from 'next';
 import { Suspense } from 'react';
 import { BackLink } from '@/components/back-link';
-import { ProUpsell } from '@/components/pro';
+import { AddPassPhoto } from '@/components/gallery/add-photo';
+import { MyWall } from '@/components/gallery/my-wall';
 import { requirePortal } from '@/lib/auth/session';
 import { galleryContext } from '@/lib/gallery/mine';
 import { myGallery } from '@/lib/gallery/read';
-import { AddPassPhoto } from '@/components/gallery/add-photo';
-import { MyWall } from '@/components/gallery/my-wall';
 
 export const metadata: Metadata = { title: 'Gallery' };
 
-/** D-218: the wall of passes a Business shows on its public profile. */
-export default function GalleryPage() {
+/**
+ * D-218: the school's wall, which is every instructor's. The same screen the instructor portal
+ * has, because it is the same wall: a school owner should not have to ask somebody who teaches to
+ * take a photo down.
+ */
+export default function SchoolGalleryPage() {
   return (
     <main className="flex flex-col gap-4 pb-8">
-      <BackLink href="/app/instructor/more">More</BackLink>
-      <PageHeader title="Gallery" subtitle="The photo you take on the day somebody passes." />
+      <BackLink href="/app/school/more">More</BackLink>
+      <PageHeader title="Gallery" subtitle="The photos your instructors take when somebody passes." />
       <div className="flex flex-col gap-4 px-4 md:max-w-2xl md:px-8">
         <Suspense fallback={<SkeletonRow />}>
           <Wall />
@@ -31,23 +34,17 @@ export default function GalleryPage() {
 }
 
 async function Wall() {
-  await requirePortal('instructor');
+  await requirePortal('school');
   const where = await galleryContext();
   if (!where) {
+    return <EmptyState icon={Images} title="Nothing to show" description="The gallery belongs to a Business." />;
+  }
+  if (!hasEntitlement(where.plan, 'gallery')) {
     return (
       <EmptyState
         icon={Images}
-        title="Your school looks after this"
-        description="The gallery belongs to the Business, so whoever owns it adds to it."
-      />
-    );
-  }
-
-  if (!hasEntitlement(where.plan, 'gallery')) {
-    return (
-      <ProUpsell
-        feature="The gallery"
-        description="The photo you take on the day somebody passes, on your own profile, with their name and the date on it."
+        title="The gallery is not on this plan"
+        description="The photos your instructors take on the day somebody passes, on your school's profile."
       />
     );
   }

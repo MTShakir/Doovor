@@ -5,7 +5,7 @@ import { err, ok, type Result } from '@repo/core/result';
 import { galleryPhotoSchema } from '@repo/core/schemas/gallery';
 import { revalidatePath } from 'next/cache';
 import { z } from '@repo/core/zod';
-import { requirePortal } from '@/lib/auth/session';
+import { requireAccess } from '@/lib/auth/session';
 import { refuseWhileViewing } from '@/lib/auth/view-as';
 import { fieldErrors } from '@/lib/forms';
 import { galleryBucket, removeProfileImage } from '@/lib/storage/images';
@@ -26,7 +26,9 @@ export async function addGalleryPhoto(input: unknown): Promise<Result<{ photoId:
   const parsed = galleryPhotoSchema.safeParse(input);
   if (!parsed.success) return err('VALIDATION_FAILED', undefined, fieldErrors(parsed.error));
 
-  await requirePortal('instructor');
+  // Any portal: an instructor at a school posts to the school's wall, and a school owner looks
+  // after the same wall from theirs. Who may is the database's to decide, and it does (D-218).
+  await requireAccess();
   const supabase = await createSupabaseServerClient();
   const { data, error } = await supabase.rpc('add_gallery_photo', {
     p_image_path: parsed.data.imagePath,
@@ -41,6 +43,7 @@ export async function addGalleryPhoto(input: unknown): Promise<Result<{ photoId:
   }
 
   revalidatePath('/app/instructor/gallery');
+  revalidatePath('/app/school/gallery');
   return ok({ photoId: data });
 }
 
@@ -54,7 +57,7 @@ export async function removeGalleryPhoto(input: unknown): Promise<Result<null>> 
   const parsed = photoSchema.safeParse(input);
   if (!parsed.success) return err('VALIDATION_FAILED');
 
-  await requirePortal('instructor');
+  await requireAccess();
   const supabase = await createSupabaseServerClient();
   const { data, error } = await supabase.rpc('remove_gallery_photo', { p_photo_id: parsed.data.photoId });
   if (error) return err(parsePostgresError(error).code);
@@ -64,5 +67,6 @@ export async function removeGalleryPhoto(input: unknown): Promise<Result<null>> 
   await removeProfileImage(supabase, galleryBucket, data);
 
   revalidatePath('/app/instructor/gallery');
+  revalidatePath('/app/school/gallery');
   return ok(null);
 }

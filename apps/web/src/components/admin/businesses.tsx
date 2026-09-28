@@ -10,7 +10,9 @@ import { Textarea } from '@repo/ui/input';
 import { ListDivider, ListRow } from '@repo/ui/list-row';
 import { Sheet } from '@repo/ui/sheet';
 import { StatusPill } from '@repo/ui/status-pill';
-import { SearchX } from 'lucide-react';
+import { Images, SearchX } from 'lucide-react';
+import type { Route } from 'next';
+import Link from 'next/link';
 import { useState } from 'react';
 import type { AdminBusiness, AdminBusinessRow, AdminMember } from '@/lib/admin/businesses';
 
@@ -140,6 +142,14 @@ export function BusinessDetails({
           ))}
         </ul>
       </section>
+
+      {/* D-218: this Business's wall of pass photos, which is what staff check. */}
+      <Button asChild variant="secondary" className="self-start">
+        <Link href={`/admin/gallery?business=${business.businessId}` as Route}>
+          <Images className="size-5" aria-hidden />
+          Pass photos
+        </Link>
+      </Button>
 
       {canSuspend ? null : (
         <p className="text-small text-grey-700">Only a super admin can suspend or reactivate a Business.</p>

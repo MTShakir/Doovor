@@ -19,7 +19,7 @@ import { FormAlert } from '@/components/form-alert';
 import { prepareGalleryPhoto, type ImageProblem } from '@/lib/images/prepare';
 import { uploadGalleryPhoto } from '@/lib/storage/images';
 import { getSupabaseBrowserClient } from '@/lib/supabase/browser';
-import { addGalleryPhoto } from './actions';
+import { addGalleryPhoto } from '@/app/(portal)/app/instructor/gallery/actions';
 
 const photoProblem: Record<ImageProblem, string> = {
   WRONG_TYPE: 'Choose a JPEG, PNG, GIF or WebP picture.',
@@ -88,6 +88,9 @@ export function AddPassPhoto({ businessId, learners }: { businessId: string; lea
         return;
       }
       toast('Added to your gallery');
+      // Clear what was said about the last attempt as well as the fields: a red line about
+      // permission under an empty form that has just been accepted reads as a refusal.
+      form.clearErrors();
       form.reset();
       setImagePath('');
       setPreview(undefined);
