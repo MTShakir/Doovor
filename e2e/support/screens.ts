@@ -48,7 +48,9 @@ export const portals: [RoleKey, string[]][] = [
       '/app/instructor/profile',
       '/app/instructor/settings',
       '/app/instructor/more',
+      '/app/instructor/gallery',
       '/account',
+      '/account/name',
       '/notifications',
       '/notifications/settings',
     ],
@@ -66,5 +68,5 @@ export const portals: [RoleKey, string[]][] = [
     ],
   ],
   ['schoolOwner', ['/app/school', '/app/school/diary', '/app/school/instructors', '/app/school/learners', '/app/school/money', '/app/school/settings', '/app/school/more']],
-  ['admin', ['/admin', '/admin/businesses', '/admin/instructors', '/admin/learners', '/admin/payments', '/admin/deletions', '/admin/regions', '/admin/settings', '/admin/verification', '/admin/audit-log']],
+  ['admin', ['/admin', '/admin/businesses', '/admin/instructors', '/admin/learners', '/admin/payments', '/admin/deletions', '/admin/regions', '/admin/settings', '/admin/verification', '/admin/gallery', '/admin/audit-log']],
 ];

@@ -58,6 +58,9 @@ test.describe('every screen passes the scan (M6-06)', () => {
 
   for (const [role, paths] of portals) {
     test(`the ${role} screens`, async ({ browser }) => {
+      // Same reason as the public pages: a development server compiles each screen the first time
+      // it is asked for, and the default minute does not cover a portal's worth of them.
+      test.slow();
       const context = await browser.newContext({ storageState: authFile(role) });
       try {
         const page = await context.newPage();
@@ -76,6 +79,9 @@ test.describe('text at twice the size (WCAG 1.4.4, M6-06)', () => {
   /** Nothing may have to be scrolled sideways to read, and the screen still says what it is. */
   /** Every screen, and every one that does not fit, rather than only the first. */
   async function allFit(page: Page, paths: string[]): Promise<void> {
+    // A screen at a time on a development server, each compiled the first time it is asked for:
+    // the default minute does not cover a portal's worth of them. CI builds first.
+    test.slow();
     await textAtDoubleSize(page);
     const sideways: string[] = [];
     for (const path of paths) {

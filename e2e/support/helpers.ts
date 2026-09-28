@@ -157,7 +157,13 @@ export async function expectAccessible(page: Page, options: { exclude?: string[]
   await page.emulateMedia({ reducedMotion: 'reduce' });
   try {
     await settled(page);
-    let builder = new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'wcag22aa']);
+    // The development overlay is not ours and is not in a build. It mounts and unmounts as the
+    // server compiles, and axe walks frames: scanning it crashed the sweep on whichever page
+    // happened to be compiling, with "Cannot read properties of null" rather than a violation
+    // (D-219).
+    let builder = new AxeBuilder({ page })
+      .withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'wcag22aa'])
+      .exclude('nextjs-portal');
     for (const selector of options.exclude ?? []) builder = builder.exclude(selector);
     const results = await builder.analyze();
     const blocking = results.violations
