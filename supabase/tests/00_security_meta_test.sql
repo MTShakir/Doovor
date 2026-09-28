@@ -75,7 +75,7 @@ select is_empty(
                                  'instructor_profile_page', 'next_open_slots', 'school_profile_page',
                                  'city_page', 'sitemap_entries', 'coming_soon_area', 'join_area_waiting_list',
                                  'post_lesson_request', 'learner_capture_by_token', 'leave_learner_capture',
-                                 'feature_flags') $$,
+                                 'feature_flags', 'instructor_gallery', 'school_gallery') $$,
   'no public function is executable by anon unless allowlisted'
 );
 

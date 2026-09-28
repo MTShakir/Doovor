@@ -4,6 +4,8 @@ import {
   businessObjectPath,
   feedbackImage,
   feedbackObjectPath,
+  galleryImage,
+  galleryObjectPath,
   profileObjectPath,
   receiptImage,
   receiptObjectPath,
@@ -23,7 +25,15 @@ export const receiptsBucket = 'receipts';
 /** Pictures attached to a report: private, readable by the sender and by staff (D-202). */
 export const feedbackBucket = 'feedback';
 
-export type ImageBucket = typeof avatarsBucket | typeof badgesBucket | typeof receiptsBucket | typeof feedbackBucket;
+/** Pass photos: public, because the wall they are on is a public profile (D-218). */
+export const galleryBucket = 'gallery';
+
+export type ImageBucket =
+  | typeof avatarsBucket
+  | typeof badgesBucket
+  | typeof receiptsBucket
+  | typeof feedbackBucket
+  | typeof galleryBucket;
 
 /**
  * Public address of a stored photo (M1-03). The database keeps the path only, so the address
@@ -49,6 +59,7 @@ const contentType = {
   [badgesBucket]: badgeImage.outputType,
   [receiptsBucket]: receiptImage.outputType,
   [feedbackBucket]: feedbackImage.outputType,
+  [galleryBucket]: galleryImage.outputType,
 };
 
 /**
@@ -99,6 +110,28 @@ export async function uploadReceipt(supabase: SupabaseClient<Database>, business
   const path = receiptObjectPath(businessId, crypto.randomUUID());
   const { error } = await supabase.storage.from(receiptsBucket).upload(path, blob, {
     contentType: receiptImage.outputType,
+    cacheControl: '31536000',
+  });
+  return error ? null : path;
+}
+
+/**
+ * Public address of a pass photo (D-218). The bucket is public, like avatars, because the wall is
+ * on a page anybody can open.
+ */
+export function galleryUrl(path: string): string {
+  return `${clientEnv.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/${galleryBucket}/${path}`;
+}
+
+/** Uploads a pass photo into its Business's folder (D-218), which is what storage checks. */
+export async function uploadGalleryPhoto(
+  supabase: SupabaseClient<Database>,
+  businessId: string,
+  blob: Blob,
+): Promise<string | null> {
+  const path = galleryObjectPath(businessId, crypto.randomUUID());
+  const { error } = await supabase.storage.from(galleryBucket).upload(path, blob, {
+    contentType: galleryImage.outputType,
     cacheControl: '31536000',
   });
   return error ? null : path;

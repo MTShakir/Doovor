@@ -26,6 +26,7 @@ const entitlementWords: Record<keyof Entitlements, FeatureWords> = {
   expensesAndExports: { words: () => 'Expenses, mileage and exports ready for Making Tax Digital', available: true },
   calendarSync: { words: () => 'Google and Outlook calendar sync', available: false },
   customBookingColours: { words: () => 'Your own colours on your booking page', available: true },
+  gallery: { words: () => 'A gallery of learners who passed, on your profile', available: true },
   schoolPortal: { words: () => 'School overview, instructors, learner allocation and school prices', available: true },
   reports: { words: () => 'Reports by instructor', available: false },
   fleet: { words: () => 'Fleet: cars, MOT and insurance dates', available: false },

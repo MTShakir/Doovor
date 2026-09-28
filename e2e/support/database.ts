@@ -2014,3 +2014,34 @@ export async function giveLearnerPickup(learnerId: string, label: string, addres
       values (${learnerId}, 'home', ${label}, ${address}, ${postcode})`;
   });
 }
+
+/**
+ * A pass photo on a Business wall, put straight in (D-218). The picture is not uploaded: nothing
+ * that reads the wall fetches it, and a test about the tick does not need bytes in storage.
+ */
+export async function addGalleryPhoto(
+  instructorName: string,
+  learnerName: string,
+  passedOn: string,
+  options: { verified?: boolean } = {},
+): Promise<string> {
+  return withDatabase(async (sql) => {
+    const [row] = await sql<{ id: string }[]>`
+      insert into public.gallery_photos (business_id, instructor_id, learner_name, passed_on, image_path, created_by, verified_at)
+      select p.business_id, p.id, ${learnerName}, ${passedOn}::date,
+             p.business_id::text || '/' || gen_random_uuid()::text || '.webp', p.user_id,
+             ${options.verified === true ? new Date().toISOString() : null}::timestamptz
+        from public.instructor_profiles p
+       where p.display_name = ${instructorName}
+       returning id`;
+    if (!row) throw new Error(`No instructor called ${instructorName}`);
+    return row.id;
+  });
+}
+
+/** Clears up after a gallery test, whatever it left behind. */
+export async function removeGalleryPhotos(learnerName: string): Promise<void> {
+  await withDatabase(async (sql) => {
+    await sql`delete from public.gallery_photos where learner_name = ${learnerName}`;
+  });
+}

@@ -1057,6 +1057,79 @@ export type Database = {
           },
         ]
       }
+      gallery_photos: {
+        Row: {
+          business_id: string
+          consent_confirmed_at: string
+          created_at: string
+          created_by: string
+          hidden_at: string | null
+          hidden_by: string | null
+          id: string
+          image_path: string
+          instructor_id: string | null
+          learner_id: string | null
+          learner_name: string
+          passed_on: string
+          verified_at: string | null
+          verified_by: string | null
+        }
+        Insert: {
+          business_id: string
+          consent_confirmed_at?: string
+          created_at?: string
+          created_by: string
+          hidden_at?: string | null
+          hidden_by?: string | null
+          id?: string
+          image_path: string
+          instructor_id?: string | null
+          learner_id?: string | null
+          learner_name: string
+          passed_on: string
+          verified_at?: string | null
+          verified_by?: string | null
+        }
+        Update: {
+          business_id?: string
+          consent_confirmed_at?: string
+          created_at?: string
+          created_by?: string
+          hidden_at?: string | null
+          hidden_by?: string | null
+          id?: string
+          image_path?: string
+          instructor_id?: string | null
+          learner_id?: string | null
+          learner_name?: string
+          passed_on?: string
+          verified_at?: string | null
+          verified_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "gallery_photos_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "businesses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "gallery_photos_instructor_id_fkey"
+            columns: ["instructor_id"]
+            isOneToOne: false
+            referencedRelation: "instructor_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "gallery_photos_learner_id_fkey"
+            columns: ["learner_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       impersonation_sessions: {
         Row: {
           ended_at: string | null
@@ -3162,6 +3235,15 @@ export type Database = {
     Functions: {
       accept_invitation: { Args: { p_token: string }; Returns: string }
       accept_member_invitation: { Args: { p_token: string }; Returns: string }
+      add_gallery_photo: {
+        Args: {
+          p_image_path: string
+          p_learner_id?: string
+          p_learner_name?: string
+          p_passed_on: string
+        }
+        Returns: string
+      }
       add_learner: {
         Args: {
           p_instructor_id: string
@@ -3228,6 +3310,10 @@ export type Database = {
         Args: { p_note: string; p_request_id: string }
         Returns: undefined
       }
+      admin_check_gallery_photo: {
+        Args: { p_photo_id: string; p_verified: boolean }
+        Returns: boolean
+      }
       admin_deletion_requests: {
         Args: { p_settled?: boolean }
         Returns: {
@@ -3254,8 +3340,21 @@ export type Database = {
         }
         Returns: Json
       }
+      admin_gallery: {
+        Args: {
+          p_business_id?: string
+          p_limit?: number
+          p_offset?: number
+          p_only_unchecked?: boolean
+        }
+        Returns: Json
+      }
       admin_handle_feedback: {
         Args: { p_feedback_id: string; p_handled: boolean }
+        Returns: boolean
+      }
+      admin_hide_gallery_photo: {
+        Args: { p_hidden: boolean; p_photo_id: string }
         Returns: boolean
       }
       admin_instructors: {
@@ -3414,6 +3513,7 @@ export type Database = {
         Args: { p_from: string; p_to: string }
         Returns: Json
       }
+      instructor_gallery: { Args: { p_slug: string }; Returns: Json }
       instructor_profile_page: { Args: { p_slug: string }; Returns: Json }
       invitation_details: {
         Args: { p_token: string }
@@ -3633,6 +3733,7 @@ export type Database = {
       }
       refund_options: { Args: { p_payment_id: string }; Returns: Json }
       remove_expense: { Args: { p_expense_id: string }; Returns: Json }
+      remove_gallery_photo: { Args: { p_photo_id: string }; Returns: string }
       remove_mileage: { Args: { p_mileage_id: string }; Returns: undefined }
       request_account_deletion: { Args: { p_reason?: string }; Returns: string }
       request_lesson_reminder: {
@@ -3666,6 +3767,7 @@ export type Database = {
         }
         Returns: Json
       }
+      school_gallery: { Args: { p_slug: string }; Returns: Json }
       school_overview: { Args: { p_business_id: string }; Returns: Json }
       school_profile_page: { Args: { p_slug: string }; Returns: Json }
       school_team: { Args: { p_business_id: string }; Returns: Json }

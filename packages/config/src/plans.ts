@@ -22,6 +22,8 @@ export interface Entitlements {
   expensesAndExports: boolean;
   calendarSync: boolean;
   customBookingColours: boolean;
+  /** A wall of pass photos on the public profile (D-218). */
+  gallery: boolean;
   schoolPortal: boolean;
   reports: boolean;
   fleet: boolean;
@@ -47,6 +49,7 @@ const freeEntitlements: Entitlements = {
   expensesAndExports: false,
   calendarSync: false,
   customBookingColours: false,
+  gallery: false,
   schoolPortal: false,
   reports: false,
   fleet: false,
@@ -62,6 +65,7 @@ const proEntitlements: Entitlements = {
   expensesAndExports: true,
   calendarSync: true,
   customBookingColours: true,
+  gallery: true,
 };
 
 export const plans: Record<PlanKey, Plan> = {

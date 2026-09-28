@@ -41,6 +41,31 @@ export function feedbackObjectPath(userId: string, token: string): string {
   return `${userId}/${token}.webp`;
 }
 
+/**
+ * A pass photo on a public profile (D-218). Wider than a receipt because it is looked at rather
+ * than read, and re-encoded like every other picture here: a photo taken at a test centre carries
+ * the position of that test centre, and this one is public.
+ */
+export const galleryImage = {
+  outputType: 'image/webp',
+  outputQuality: 0.86,
+  /** Longest side. Twice the widest the wall draws one, for a high-density screen. */
+  maxSide: 1400,
+  acceptedTypes: avatarImage.acceptedTypes,
+  maxInputBytes: 15 * 1024 * 1024,
+  maxOutputBytes: 2 * 1024 * 1024,
+} as const;
+
+/** Where a pass photo is kept: the Business's own folder, which is what storage checks. */
+export function galleryObjectPath(businessId: string, token: string): string {
+  return `${businessId}/${token}.webp`;
+}
+
+export function isGalleryObjectPath(path: string, businessId: string): boolean {
+  const parts = path.split('/');
+  return parts.length === 2 && parts[0] === businessId && objectFileName.test(parts[1] ?? '');
+}
+
 /** A photographed receipt. Read by a person, so the same size as a badge is plenty. */
 export const receiptImage = {
   outputType: 'image/webp',

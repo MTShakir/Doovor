@@ -1,6 +1,15 @@
 'use client';
 
-import { avatarImage, badgeImage, feedbackImage, receiptImage, centreCrop, fitWithin, isAcceptedImageType } from '@repo/core/images';
+import {
+  avatarImage,
+  badgeImage,
+  feedbackImage,
+  galleryImage,
+  receiptImage,
+  centreCrop,
+  fitWithin,
+  isAcceptedImageType,
+} from '@repo/core/images';
 
 /** Why a picture was refused. The pickers turn these into copy. */
 export type ImageProblem = 'WRONG_TYPE' | 'TOO_BIG' | 'UNREADABLE';
@@ -85,6 +94,20 @@ export function prepareFeedbackImage(file: File): Promise<PreparedImage> {
 export function prepareReceipt(file: File): Promise<PreparedImage> {
   return prepare(file, receiptImage, (picture) => {
     const size = fitWithin(picture.width, picture.height);
+    const canvas = document.createElement('canvas');
+    canvas.width = size.width;
+    canvas.height = size.height;
+    return { canvas, draw: (context) => { context.drawImage(picture, 0, 0, size.width, size.height); } };
+  });
+}
+
+/**
+ * A pass photo: the whole picture, scaled to the width the wall draws it at (D-218). The whole
+ * picture rather than a square crop, because somebody holding a certificate does not fit in one.
+ */
+export function prepareGalleryPhoto(file: File): Promise<PreparedImage> {
+  return prepare(file, galleryImage, (picture) => {
+    const size = fitWithin(picture.width, picture.height, galleryImage.maxSide);
     const canvas = document.createElement('canvas');
     canvas.width = size.width;
     canvas.height = size.height;

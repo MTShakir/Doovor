@@ -21,6 +21,8 @@ import { PlaceLinks } from '@/components/public/place-links';
 import { getAppUrl } from '@/lib/app-url';
 import { instructorProfile, nextOpenTimes, type InstructorProfilePage } from '@/lib/public/instructor-profile';
 import { publicPageMetadata } from '@/lib/public/metadata';
+import { PassWall } from '@/components/gallery/pass-wall';
+import { instructorGallery } from '@/lib/gallery/read';
 import { instructorCard } from '@/lib/public/share-cards';
 import { getSiteUrl } from '@/lib/site-url';
 import { avatarUrl } from '@/lib/storage/images';
@@ -120,6 +122,12 @@ async function InstructorProfile({ params }: Pick<Props, 'params'>) {
           languages={profile.languages}
           specialisms={profile.specialisms}
         />
+        {/* D-218: below what they say about themselves, because a wall of faces above the words
+            is a page that sells before it explains. Its own boundary, so a slow read of the
+            photos never holds the rest of the page up. */}
+        <Suspense fallback={null}>
+          <Passes slug={profile.slug} />
+        </Suspense>
         <WhereLessonsStart
           radiusMiles={profile.radiusMiles}
           outcode={profile.outcode}
@@ -145,6 +153,21 @@ async function InstructorProfile({ params }: Pick<Props, 'params'>) {
         </div>
       </aside>
     </div>
+  );
+}
+
+/** The wall of passes, where the plan carries one and there is anything on it (D-218). */
+async function Passes({ slug }: { slug: string }) {
+  const gallery = await instructorGallery(slug);
+  if (!gallery) return null;
+  return (
+    <PassWall
+      photos={gallery.photos}
+      businessName={gallery.businessName}
+      colour={gallery.colour}
+      title="Learners who passed"
+      description="Photos from the day, shared with their permission."
+    />
   );
 }
 

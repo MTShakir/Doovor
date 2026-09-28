@@ -2,6 +2,7 @@ import { hasEntitlement } from '@repo/config/plans';
 import {
   CalendarSync,
   Gift,
+  Images,
   Layers,
   MessageCircle,
   MessageSquarePlus,
@@ -47,6 +48,14 @@ export default async function InstructorMorePage() {
           locked,
         },
         { href: '/app/instructor/calendar', icon: CalendarSync, title: 'Calendar sync', subtitle: 'On the way', pro: true, locked },
+        {
+          href: '/app/instructor/gallery',
+          icon: Images,
+          title: 'Gallery',
+          subtitle: 'The photo you take when somebody passes',
+          pro: true,
+          locked,
+        },
         { href: '/app/instructor/colours', icon: Palette, title: 'Your booking colours', subtitle: 'Your colour on your booking page', pro: true, locked },
         { href: '/app/instructor/plan', icon: Layers, title: 'Your plan', subtitle: 'What you are on, and until when' },
         { href: '/app/instructor/refer', icon: Gift, title: 'Refer an instructor', subtitle: 'A month free for every one who joins' },

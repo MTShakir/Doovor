@@ -6,6 +6,8 @@ import { schoolStructuredData } from '@repo/core/structured-data';
 import { Skeleton } from '@repo/ui/skeleton';
 import { notFound, permanentRedirect } from 'next/navigation';
 import { Suspense } from 'react';
+import { PassWall } from '@/components/gallery/pass-wall';
+import { schoolGallery } from '@/lib/gallery/read';
 import { Counted } from '@/components/analytics/counted';
 import { PriceList } from '@/components/public/instructor-profile';
 import { JsonLdScript } from '@/components/public/json-ld';
@@ -112,6 +114,10 @@ async function SchoolProfile({ params }: Pick<Props, 'params'>) {
             hourlyFromPence: instructor.hourlyFromPence,
           }))}
         />
+        {/* D-218: the school's wall is every instructor's, because it is the school's page. */}
+        <Suspense fallback={null}>
+          <Passes slug={school.slug} />
+        </Suspense>
         {place?.hasHub ? (
           <PlaceLinks
             title={`More in ${place.cityName}`}
@@ -128,5 +134,20 @@ async function SchoolProfile({ params }: Pick<Props, 'params'>) {
         <PriceList lessons={school.lessons} packages={school.packages} />
       </aside>
     </div>
+  );
+}
+
+/** The wall of passes, where the plan carries one and there is anything on it (D-218). */
+async function Passes({ slug }: { slug: string }) {
+  const gallery = await schoolGallery(slug);
+  if (!gallery) return null;
+  return (
+    <PassWall
+      photos={gallery.photos}
+      businessName={gallery.businessName}
+      colour={gallery.colour}
+      title="Learners who passed"
+      description="Photos from the day, shared with their permission."
+    />
   );
 }

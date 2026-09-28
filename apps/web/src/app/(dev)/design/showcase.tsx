@@ -107,6 +107,7 @@ import { LearnerTabs, LessonHistoryTabs } from '@/app/(portal)/app/instructor/le
 import { TimeSlotGrid } from '@repo/ui/time-slot-grid';
 import { toast, toastWithUndo } from '@repo/ui/toast';
 import { BadgeCheck, CalendarX, Car, CreditCard, WifiOff } from 'lucide-react';
+import { PassPhotoCard } from '@/components/gallery/pass-photo';
 import Image from 'next/image';
 import Link from 'next/link';
 import { Suspense, useState, type ReactNode } from 'react';
@@ -445,6 +446,16 @@ const examplePickups: LearnerPickupPoint[] = [
   { id: 'pickup-1', kind: 'home', label: 'Home', address: '12 Hyde Park Road, Leeds', postcode: 'LS6 1AB', isDefault: true, ours: true },
   { id: 'pickup-2', kind: 'work', label: 'Work', address: '1 Wellington Place, Leeds', postcode: 'LS1 4AP', isDefault: false, ours: false },
 ];
+
+/** Two pass photos, one checked and one not (D-218). */
+const examplePass = { id: 'pass-1', learnerName: 'Priya Sharma', passedOn: '2026-09-15', imagePath: 'design/example.webp', verified: false };
+const exampleCheckedPass = { ...examplePass, id: 'pass-2', learnerName: 'Daniel Okafor', passedOn: '2026-08-04', verified: true };
+
+/**
+ * A colour a Business might have picked. Not a token and not the brand's: what this example is
+ * showing is that the banner is drawn in whatever the Business chose (D-210, D-218).
+ */
+const exampleBusinessColour = '#1D4ED8';
 
 /** A lesson as its sheet shows it (D-166), with a number from the range kept for drama. */
 const exampleLesson: LessonDetails = {
@@ -1119,6 +1130,15 @@ export function DesignShowcase() {
       </Section>
 
       <Section title="Public profile">
+        <Label>
+          Pass photos: not checked, checked, and a Business with a colour of its own. The banner carries white writing, which
+          is what D-210 lets a colour be picked for in the first place (D-218)
+        </Label>
+        <div className="grid max-w-3xl items-start gap-4 sm:grid-cols-3">
+          <PassPhotoCard photo={examplePass} businessName="Khan Driving" colour={null} />
+          <PassPhotoCard photo={exampleCheckedPass} businessName="Khan Driving" colour={null} />
+          <PassPhotoCard photo={exampleCheckedPass} businessName="Quayside Driving School" colour={exampleBusinessColour} />
+        </div>
         <Label>Header: an independent instructor with prices, and a trainee at a school with no car or prices yet (PUB-01, M5-02)</Label>
         <div className="grid items-start gap-6 md:grid-cols-2">
           <ProfileHeader

@@ -8,6 +8,7 @@ import {
   Gavel,
   HeartHandshake,
   Home,
+  Images,
   Layers,
   LayoutDashboard,
   ListChecks,
@@ -21,10 +22,10 @@ import {
   Star,
   Sun,
   TrendingUp,
+  type LucideIcon,
   User,
   UserRound,
   Users,
-  type LucideIcon,
 } from 'lucide-react';
 
 export type Portal = 'learner' | 'instructor' | 'school' | 'admin';
@@ -90,6 +91,7 @@ const navigation: Record<Portal, PortalNavItem[]> = {
     { section: 'regions', label: 'Regions', icon: MapPinned, mobile: false, desktop: true, phase: 1 },
     { section: 'plans', label: 'Plans', icon: Layers, mobile: false, desktop: true, phase: 2 },
     { section: 'content', label: 'Content', icon: FileText, mobile: false, desktop: true, phase: 2 },
+    { section: 'gallery', label: 'Galleries', icon: Images, mobile: false, desktop: true, phase: 1 },
     { section: 'feedback', label: 'Feedback', icon: MessageSquare, mobile: false, desktop: true, phase: 1 },
     { section: 'settings', label: 'Settings', icon: Settings, mobile: false, desktop: true, phase: 1 },
     { section: 'audit-log', label: 'Audit log', icon: ScrollText, mobile: false, desktop: true, phase: 1 },

@@ -28,6 +28,7 @@ describe('what each plan says it includes (PRD 9.18, M5-09)', () => {
       'Charge the saved card before each lesson',
       'Expenses, mileage and exports ready for Making Tax Digital',
       'Your own colours on your booking page',
+      'A gallery of learners who passed, on your profile',
     ]);
     expect(pro?.later).toEqual([
       'Messages: in-app chat with your learners',
