@@ -1,4 +1,5 @@
 import 'server-only';
+import { splitByCredit } from '@repo/core/credit';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
 
 export interface CheckoutLesson {
@@ -11,6 +12,8 @@ export interface CheckoutLesson {
   startsAt: string;
   durationMinutes: number;
   pricePence: number;
+  /** Minutes of it already paid for from credit (D-225). */
+  creditMinutes: number;
   /** What the learner still owes: nothing, once it is paid. */
   paid: boolean;
   status: string;
@@ -48,7 +51,7 @@ export async function checkoutLesson(bookingId: string): Promise<CheckoutLesson 
   const { data } = await supabase
     .from('bookings')
     .select(
-      'id, business_id, starts_at, ends_at, price_pence, fee_pence, status, payment_status, payment_mode, hold_expires_at, expires_at, instructor_profiles(display_name), lesson_types(name), businesses!bookings_business_id_fkey(name, stripe_account_id)',
+      'id, business_id, starts_at, ends_at, price_pence, credit_minutes, fee_pence, status, payment_status, payment_mode, hold_expires_at, expires_at, instructor_profiles(display_name), lesson_types(name), businesses!bookings_business_id_fkey(name, stripe_account_id)',
     )
     .eq('id', bookingId)
     .maybeSingle();
@@ -84,6 +87,7 @@ export async function checkoutLesson(bookingId: string): Promise<CheckoutLesson 
       (new Date(data.ends_at).getTime() - new Date(data.starts_at).getTime()) / 60_000,
     ),
     pricePence: data.price_pence,
+    creditMinutes: data.credit_minutes,
     paid: paidStatuses.includes(data.payment_status),
     status: data.status,
     holdExpiresAt: data.hold_expires_at,
@@ -91,7 +95,17 @@ export async function checkoutLesson(bookingId: string): Promise<CheckoutLesson 
     authorised: (payments.data ?? []).some((one) => one.status === 'authorised'),
     feePence,
     feeOwed,
-    amountPence: feeOwed === null ? data.price_pence : feePence,
+    // What the card is for: the fee where one is owed, and otherwise the price less whatever
+    // credit has already covered (D-225). The database works the same sum out for cash and bank
+    // in `private.booking_owed_pence`, so the two cannot ask for different money.
+    amountPence:
+      feeOwed === null
+        ? splitByCredit({
+            minutes: Math.round((new Date(data.ends_at).getTime() - new Date(data.starts_at).getTime()) / 60_000),
+            pricePence: data.price_pence,
+            availableMinutes: data.credit_minutes,
+          }).owedPence
+        : feePence,
     paidPence: taken.reduce((sum, one) => sum + one.amount_pence, 0),
     paidBy: taken.length === 0 ? null : taken.some((one) => one.method === 'card') ? 'card' : 'in_person',
     refundPence: back.reduce((sum, one) => sum + one.amount_pence, 0),

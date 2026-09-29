@@ -15,6 +15,7 @@ export interface LessonRow {
   endsAt: string;
   status: string;
   paymentStatus: string;
+  creditMinutes: number;
   lessonType: string;
   instructorName: string;
 }
@@ -44,7 +45,12 @@ export function LessonRows({
     <>
       <Card padding="none" role="region" aria-label={label}>
         {lessons.map((lesson, index) => {
-          const facts = { status: lesson.status as never, paymentStatus: lesson.paymentStatus as never, kind: 'standard' as const };
+          const facts = {
+            status: lesson.status as never,
+            paymentStatus: lesson.paymentStatus as never,
+            kind: 'standard' as const,
+            creditMinutes: lesson.creditMinutes,
+          };
           const minutes = Math.round((new Date(lesson.endsAt).getTime() - new Date(lesson.startsAt).getTime()) / 60_000);
           const when = formatDateTime(new Date(lesson.startsAt));
           return (

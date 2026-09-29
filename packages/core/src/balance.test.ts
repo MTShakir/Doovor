@@ -192,3 +192,43 @@ describe('a line of history', () => {
     expect(historyLine({ kind: 'credit', at: day, move: 'adjustment', minutes: -60, lessonAt: null }).title).toBe('1 hour of credit taken off');
   });
 });
+
+describe('what is owed for a lesson part paid by credit (D-225)', () => {
+  const twoHours = {
+    id: 'b1',
+    startsAt: new Date('2026-09-15T09:00:00Z'),
+    endsAt: new Date('2026-09-15T11:00:00Z'),
+    status: 'confirmed' as const,
+    paymentStatus: 'unpaid' as const,
+    paymentMode: 'offline' as const,
+    pricePence: 8200,
+    feePence: 0,
+    cancelledAt: null,
+  };
+
+  it('asks for the price less what the credit covered', () => {
+    expect(amountOwedPence({ ...twoHours, creditMinutes: 60 })).toBe(4100);
+  });
+
+  it('asks for the whole price when no credit went near it', () => {
+    expect(amountOwedPence(twoHours)).toBe(8200);
+    expect(amountOwedPence({ ...twoHours, creditMinutes: 0 })).toBe(8200);
+  });
+
+  it('asks for nothing when credit covered all of it', () => {
+    expect(amountOwedPence({ ...twoHours, creditMinutes: 120 })).toBe(0);
+  });
+
+  it('asks for a fee whole, however much credit the lesson had on it', () => {
+    // A fee is what the Business keeps for the time it lost, not a share of the lesson. The
+    // credit comes back separately, less whatever the fee keeps of it (R-06, R-07).
+    const late = {
+      ...twoHours,
+      status: 'cancelled' as const,
+      cancelledAt: new Date('2026-09-15T08:00:00Z'),
+      feePence: 4100,
+      creditMinutes: 60,
+    };
+    expect(amountOwedPence(late)).toBe(4100);
+  });
+});

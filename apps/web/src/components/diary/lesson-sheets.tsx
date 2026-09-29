@@ -1,6 +1,7 @@
 'use client';
 
 import { cancellationOutcome, cancellationWarning } from '@repo/core/cancellation';
+import { splitByCredit } from '@repo/core/credit';
 import { formatPence } from '@repo/core/money';
 import { formatDate, formatMinutes, formatTime, todayInZone, utcToLocal } from '@repo/core/time';
 import { Button } from '@repo/ui/button';
@@ -27,6 +28,8 @@ export interface ChosenLesson {
   startsAt: string;
   durationMinutes: number;
   pricePence: number;
+  /** Minutes of it paid from credit, so the sheet asks for the rest and not the price (D-225). */
+  creditMinutes?: number;
   /** Where its money stands, so the sheet can say what goes back when it is called off (R-08). */
   paymentStatus?: string;
 }
@@ -39,19 +42,22 @@ export interface LessonSheetsProps {
   onClose: () => void;
 }
 
-/** Everything a learner paid goes back when the instructor calls the lesson off (R-08, M3-18). */
-function paidBack(paymentStatus: string | undefined, price: string): string | null {
-  switch (paymentStatus) {
-    case 'paid_card':
-      return `The ${price} they paid goes back to their card.`;
-    case 'paid_cash':
-    case 'paid_bank':
-      return `The ${price} they paid is owed back to them: mark it handed back on their learner card once it is.`;
-    case 'paid_credit':
-      return 'The credit it used goes back to them.';
-    default:
-      return null;
-  }
+/**
+ * Everything a learner paid goes back when the instructor calls the lesson off (R-08, M3-18).
+ *
+ * A lesson can have been paid two ways, an hour of credit and the rest in cash, so the sheet says
+ * what happens to each part: the money as money and the minutes as minutes (D-225).
+ */
+function paidBack(paymentStatus: string | undefined, paid: string, creditMinutes = 0): string | null {
+  const money =
+    paymentStatus === 'paid_card'
+      ? `The ${paid} they paid goes back to their card.`
+      : paymentStatus === 'paid_cash' || paymentStatus === 'paid_bank'
+        ? `The ${paid} they paid is owed back to them: mark it handed back on their learner card once it is.`
+        : null;
+  const credit = creditMinutes > 0 || paymentStatus === 'paid_credit' ? 'The credit it used goes back to them.' : null;
+  const both = [money, credit].filter((one) => one !== null);
+  return both.length === 0 ? null : both.join(' ');
 }
 
 /**
@@ -81,8 +87,12 @@ function priceWords(
 
 /** BOK-08, BOK-09, PAY-05: what an instructor does to a lesson that is already in. */
 export function LessonSheets({ lesson, rules, action, onClose }: LessonSheetsProps) {
-  const { bookingId, learnerId, learnerName, startsAt, durationMinutes, pricePence, paymentStatus } = lesson;
+  const { bookingId, learnerId, learnerName, startsAt, durationMinutes, pricePence, creditMinutes, paymentStatus } = lesson;
   const { cancellationWindowHours, lateFeePercent } = rules;
+  // Credit pays for what it covers and the rest is paid the usual way, so what is owed in money is
+  // the price less what those minutes were worth (D-225). The sheets ask for that, not the price.
+  const fromCredit = creditMinutes ?? 0;
+  const owedPence = splitByCredit({ minutes: durationMinutes, pricePence, availableMinutes: fromCredit }).owedPence;
   const router = useRouter();
   const [pending, startTransition] = useTransition();
   const cancelling = action === 'cancel';
@@ -192,7 +202,11 @@ export function LessonSheets({ lesson, rules, action, onClose }: LessonSheetsPro
   return (
     <>
       {/* Two taps: the lesson's Mark paid, then how (PAY-05). */}
-      <MarkPaidSheet lesson={{ bookingId, learnerName, startsAt, pricePence }} open={paying} onClose={onClose} />
+      <MarkPaidSheet
+        lesson={{ bookingId, learnerName, startsAt, pricePence: owedPence, creditMinutes: fromCredit }}
+        open={paying}
+        onClose={onClose}
+      />
 
       <Sheet
         open={cancelling}
@@ -212,11 +226,11 @@ export function LessonSheets({ lesson, rules, action, onClose }: LessonSheetsPro
               This is inside the {cancellationWindowHours} hour window, so the learner would have been charged
               {' '}
               {formatPence(Math.round((pricePence * lateFeePercent) / 100))} had they cancelled. Because you are, they
-              are charged nothing. {paidBack(paymentStatus, formatPence(pricePence))}
+              are charged nothing. {paidBack(paymentStatus, formatPence(owedPence), fromCredit)}
             </FormAlert>
           ) : (
             <p className="text-small text-grey-700">
-              {paidBack(paymentStatus, formatPence(pricePence)) ?? cancellationWarning(outcome, formatPence)}
+              {paidBack(paymentStatus, formatPence(owedPence), fromCredit) ?? cancellationWarning(outcome, formatPence)}
             </p>
           )}
           <Field label="Why?" hint="The learner is told, so a few words help.">

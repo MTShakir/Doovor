@@ -44,6 +44,8 @@ export interface LearnerLesson {
   endsAt: string;
   status: string;
   paymentStatus: string;
+  /** Minutes of it paid from credit, so a pill can say it was paid two ways (D-225). */
+  creditMinutes: number;
   pricePence: number;
   lessonType: string;
   instructorName: string;
@@ -60,7 +62,7 @@ export async function learnerLessons(
   const supabase = await createSupabaseServerClient();
   const { data } = await supabase
     .from('bookings')
-    .select('id, starts_at, ends_at, status, payment_status, price_pence, lesson_types(name), instructor_profiles(display_name)')
+    .select('id, starts_at, ends_at, status, payment_status, price_pence, credit_minutes, lesson_types(name), instructor_profiles(display_name)')
     .eq('business_id', businessId)
     .eq('learner_id', learnerId)
     .order('starts_at', { ascending: false })
@@ -74,6 +76,7 @@ export async function learnerLessons(
     endsAt: row.ends_at,
     status: row.status,
     paymentStatus: row.payment_status,
+    creditMinutes: row.credit_minutes,
     pricePence: row.price_pence,
     lessonType: row.lesson_types.name,
     instructorName: row.instructor_profiles.display_name,

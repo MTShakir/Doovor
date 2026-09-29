@@ -27,7 +27,7 @@ export function teachingProfiles(access: AccessContext): string[] {
 }
 
 const columns =
-  'id, starts_at, ends_at, status, payment_status, source, users!bookings_learner_id_fkey(full_name), lesson_types(name, kind), pickup_points(label, address, postcode), lesson_records(id)';
+  'id, starts_at, ends_at, status, payment_status, source, credit_minutes, users!bookings_learner_id_fkey(full_name), lesson_types(name, kind), pickup_points(label, address, postcode), lesson_records(id)';
 
 interface Row {
   id: string;
@@ -36,6 +36,7 @@ interface Row {
   status: BookingStatus;
   payment_status: PaymentStatus;
   source: string;
+  credit_minutes: number;
   users: { full_name: string } | null;
   lesson_types: { name: string; kind: string };
   pickup_points: { label: string; address: string | null; postcode: string | null } | null;
@@ -51,7 +52,14 @@ function teachingLesson(row: Row): TeachingLesson {
     learnerName: row.users?.full_name || 'Unnamed learner',
     lessonType: row.lesson_types.name,
     pickup: row.pickup_points,
-    facts: { status: row.status, paymentStatus: row.payment_status, kind: row.lesson_types.kind, source: row.source },
+    // So a pill can say a lesson was paid two ways (D-225).
+    facts: {
+      status: row.status,
+      paymentStatus: row.payment_status,
+      kind: row.lesson_types.kind,
+      source: row.source,
+      creditMinutes: row.credit_minutes,
+    },
     recorded: row.lesson_records !== null,
   };
 }

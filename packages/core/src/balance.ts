@@ -8,6 +8,7 @@
  */
 
 import type { LedgerKind } from './credit.ts';
+import { splitByCredit } from './credit.ts';
 import type { BookingStatus, PaymentStatus } from './diary.ts';
 import { formatPence } from './money.ts';
 import { formatDate, formatMinutes } from './time/format.ts';
@@ -24,6 +25,8 @@ export interface MoneyLesson {
   pricePence: number;
   /** The fee for calling it off late (R-06). Zero for a lesson that was not. */
   feePence: number;
+  /** Minutes of it already paid for from credit (D-225). Zero for a lesson that used none. */
+  creditMinutes?: number;
   /** When it was called off, for a lesson that was. */
   cancelledAt: Date | null;
 }
@@ -70,9 +73,22 @@ function feeFor(lesson: MoneyLesson): OwedFee | null {
   return lesson.status === 'no_show' ? 'no_show' : null;
 }
 
-/** What is owed for a lesson: the fee, for one called off late or nobody came to, and the price otherwise. */
+/**
+ * What is owed for a lesson: the fee, for one called off late or nobody came to, and otherwise the
+ * price less whatever credit has already covered (D-225).
+ *
+ * A fee is owed whole. It is what the Business keeps for the time it lost, not a share of a
+ * lesson, so credit already spent on the lesson does not reduce it; that credit comes back
+ * separately, less whatever the fee keeps of it.
+ */
 export function amountOwedPence(lesson: MoneyLesson): number {
-  return feeFor(lesson) === null ? lesson.pricePence : lesson.feePence;
+  if (feeFor(lesson) !== null) return lesson.feePence;
+  const minutes = Math.round((lesson.endsAt.getTime() - lesson.startsAt.getTime()) / 60_000);
+  return splitByCredit({
+    minutes: Math.max(0, minutes),
+    pricePence: lesson.pricePence,
+    availableMinutes: lesson.creditMinutes ?? 0,
+  }).owedPence;
 }
 
 export interface OwedLesson {

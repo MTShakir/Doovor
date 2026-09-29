@@ -45,7 +45,13 @@ async function Lesson({ params }: LessonPageProps) {
 
   const startsAt = new Date(lesson.startsAt);
   // The loader reads the status back as text; the words for it are the diary's, as the card's are.
-  const facts = { status: lesson.status as never, paymentStatus: lesson.paymentStatus as never, kind: 'standard' as const };
+  const facts = {
+    status: lesson.status as never,
+    paymentStatus: lesson.paymentStatus as never,
+    kind: 'standard' as const,
+    // So the pill can say a lesson was paid two ways (D-225).
+    creditMinutes: lesson.creditMinutes,
+  };
 
   return (
     <>

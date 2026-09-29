@@ -27,6 +27,8 @@ const factsSchema = z.object({
       payment_status: z.string(),
       payment_mode: z.string(),
       price_pence: z.number().int(),
+      /** What credit already covered of it (D-225). Older rows are simply none. */
+      credit_minutes: z.number().int().catch(0),
       fee_pence: z.number().int(),
       cancelled_at: iso.nullable(),
       instructor_id: z.string(),
@@ -118,6 +120,7 @@ export async function learnerBalance(businessId: string, learnerId: string, now 
       paymentStatus: lesson.payment_status as PaymentStatus,
       paymentMode: lesson.payment_mode as PaymentMode,
       pricePence: lesson.price_pence,
+      creditMinutes: lesson.credit_minutes,
       feePence: lesson.fee_pence,
       cancelledAt: lesson.cancelled_at,
     })),

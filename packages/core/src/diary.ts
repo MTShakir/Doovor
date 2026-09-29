@@ -40,6 +40,8 @@ export interface LessonFacts {
   /** The kind of lesson, from the catalogue. */
   kind: string;
   source?: string;
+  /** Minutes of it paid for from credit (D-225). Zero or absent for a lesson that used none. */
+  creditMinutes?: number;
 }
 
 /**
@@ -67,8 +69,12 @@ export function lessonStateLabel(facts: LessonFacts): string | undefined {
   // Off like a cancellation, but nobody called it off: nobody came (R-09).
   if (facts.status === 'no_show') return 'No-show';
   if (lessonState(facts) !== 'paid') return undefined;
-  if (facts.paymentStatus === 'paid_cash') return 'Paid (cash)';
-  if (facts.paymentStatus === 'paid_bank') return 'Paid (bank)';
+  // Part of it came from credit and the rest was paid, so the pill says both. "Paid (cash)" on a
+  // lesson an hour of credit went into is not what happened (D-225).
+  const alsoCredit = (facts.creditMinutes ?? 0) > 0;
+  if (facts.paymentStatus === 'paid_cash') return alsoCredit ? 'Paid (credit + cash)' : 'Paid (cash)';
+  if (facts.paymentStatus === 'paid_bank') return alsoCredit ? 'Paid (credit + bank)' : 'Paid (bank)';
+  if (facts.paymentStatus === 'paid_card' && alsoCredit) return 'Paid (credit + card)';
   return undefined;
 }
 

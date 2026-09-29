@@ -164,3 +164,28 @@ describe('what a lesson can be marked as, and when (BOK-10, R-09, D-213)', () =>
     }
   });
 });
+
+describe('a lesson paid two ways says both (D-225)', () => {
+  it('names the credit and what paid the rest', () => {
+    expect(lessonStateLabel({ ...standard, paymentStatus: 'paid_cash', creditMinutes: 60 })).toBe('Paid (credit + cash)');
+    expect(lessonStateLabel({ ...standard, paymentStatus: 'paid_bank', creditMinutes: 30 })).toBe('Paid (credit + bank)');
+    expect(lessonStateLabel({ ...standard, paymentStatus: 'paid_card', creditMinutes: 45 })).toBe('Paid (credit + card)');
+  });
+
+  it('says what it always said when no credit went near it', () => {
+    expect(lessonStateLabel({ ...standard, paymentStatus: 'paid_cash' })).toBe('Paid (cash)');
+    expect(lessonStateLabel({ ...standard, paymentStatus: 'paid_cash', creditMinutes: 0 })).toBe('Paid (cash)');
+    expect(lessonStateLabel({ ...standard, paymentStatus: 'paid_bank' })).toBe('Paid (bank)');
+    // A card on its own is the ordinary case and the pill just says Paid.
+    expect(lessonStateLabel({ ...standard, paymentStatus: 'paid_card' })).toBeUndefined();
+  });
+
+  it('still says no-show whatever paid for it', () => {
+    expect(lessonStateLabel({ ...standard, status: 'no_show', paymentStatus: 'paid_cash', creditMinutes: 60 })).toBe('No-show');
+  });
+
+  it('is one word while the rest is still owed, because it is not paid yet', () => {
+    expect(lessonState({ ...standard, paymentStatus: 'unpaid', creditMinutes: 60 })).toBe('unpaid');
+    expect(lessonStateLabel({ ...standard, paymentStatus: 'unpaid', creditMinutes: 60 })).toBeUndefined();
+  });
+});

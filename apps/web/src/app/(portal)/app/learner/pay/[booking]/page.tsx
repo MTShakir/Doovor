@@ -166,6 +166,18 @@ async function Checkout({ params }: { params: Promise<{ booking: string }> }) {
 
       {stage === 'gone' ? null : <p className="text-h2 text-black tabular-nums">{price}</p>}
 
+      {/*
+        Credit paid for the hours it covered and the rest is paid here, so the figure above is
+        less than the lesson costs and the learner is told why (PAY-04, D-225). Not on a fee,
+        which is owed whole whatever credit went into the lesson.
+      */}
+      {(stage === 'due' || stage === 'request' || stage === 'before') && lesson.creditMinutes > 0 ? (
+        <p className="text-small text-grey-700">
+          {formatMinutes(lesson.creditMinutes)} of it was paid with your credit, so {price} of the{' '}
+          {formatPence(lesson.pricePence)} is left.
+        </p>
+      ) : null}
+
       {heldUntil === null ? null : (
         <p className="text-small text-grey-700">This slot is held for you until {formatTime(heldUntil)}.</p>
       )}

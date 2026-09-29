@@ -16,6 +16,8 @@ export interface LessonDetails {
   endsAt: string;
   status: BookingStatus;
   paymentStatus: PaymentStatus;
+  /** Minutes of it already paid for from credit (D-225). */
+  creditMinutes: number;
   kind: string;
   source: string;
   lessonType: string;
@@ -37,6 +39,7 @@ interface Row {
   ends_at: string;
   status: BookingStatus;
   payment_status: PaymentStatus;
+  credit_minutes: number;
   source: string;
   price_pence: number;
   learner_id: string;
@@ -52,7 +55,7 @@ export async function lessonDetails(bookingId: string): Promise<LessonDetails | 
   const { data, error } = await supabase
     .from('bookings')
     .select(
-      'id, starts_at, ends_at, status, payment_status, source, price_pence, learner_id, instructor_id, pickup_point_id, lesson_types(name, kind), pickup_points(label, address, postcode)',
+      'id, starts_at, ends_at, status, payment_status, source, price_pence, credit_minutes, learner_id, instructor_id, pickup_point_id, lesson_types(name, kind), pickup_points(label, address, postcode)',
     )
     .eq('id', bookingId)
     .maybeSingle();
@@ -73,6 +76,7 @@ export async function lessonDetails(bookingId: string): Promise<LessonDetails | 
     endsAt: new Date(row.ends_at).toISOString(),
     status: row.status,
     paymentStatus: row.payment_status,
+    creditMinutes: row.credit_minutes,
     kind: row.lesson_types.kind,
     source: row.source,
     lessonType: row.lesson_types.name,

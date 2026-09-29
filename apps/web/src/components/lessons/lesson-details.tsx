@@ -109,7 +109,13 @@ export function LessonDetailsBody({
   }
 
   const { details, ahead, startable, editable } = state;
-  const lessonFacts = { status: details.status, paymentStatus: details.paymentStatus, kind: details.kind, source: details.source };
+  const lessonFacts = {
+    status: details.status,
+    paymentStatus: details.paymentStatus,
+    kind: details.kind,
+    source: details.source,
+    creditMinutes: details.creditMinutes,
+  };
   const off = details.status === 'cancelled' || details.status === 'declined' || details.status === 'expired';
   const asked = details.status === 'requested';
   const done = details.status === 'completed' || details.status === 'no_show';
@@ -369,6 +375,7 @@ export function LessonDetailsSheet({
           startsAt: details.startsAt,
           durationMinutes: Math.round((new Date(details.endsAt).getTime() - new Date(details.startsAt).getTime()) / 60_000),
           pricePence: details.pricePence,
+          creditMinutes: details.creditMinutes,
           paymentStatus: details.paymentStatus,
         }}
         rules={details.rules}

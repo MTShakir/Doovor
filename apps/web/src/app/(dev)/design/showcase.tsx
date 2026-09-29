@@ -464,6 +464,7 @@ const exampleLesson: LessonDetails = {
   endsAt: '2026-09-22T15:00:00Z',
   status: 'confirmed',
   paymentStatus: 'unpaid',
+  creditMinutes: 0,
   kind: 'standard',
   source: 'instructor',
   lessonType: 'Standard lesson',
@@ -495,6 +496,7 @@ const exampleMyLesson: MyLesson = {
   endsAt: '2026-09-22T15:00:00Z',
   status: 'confirmed',
   paymentStatus: 'unpaid',
+  creditMinutes: 0,
   instructorId: 'instructor-1',
   instructorName: 'Sarah Khan',
   lessonType: 'Standard lesson',
@@ -841,6 +843,10 @@ export function DesignShowcase() {
           ))}
           <StatusPill status="paid">Paid (cash)</StatusPill>
           <StatusPill status="paid">Paid (bank)</StatusPill>
+          {/* Paid two ways: credit for the hours it covered and money for the rest (D-225). */}
+          <StatusPill status="paid">Paid (credit + cash)</StatusPill>
+          <StatusPill status="paid">Paid (credit + bank)</StatusPill>
+          <StatusPill status="paid">Paid (credit + card)</StatusPill>
         </div>
       </Section>
 

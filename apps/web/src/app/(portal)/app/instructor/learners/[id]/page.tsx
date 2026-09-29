@@ -365,6 +365,7 @@ async function Money({
                   learnerName: card.fullName,
                   startsAt: owed.lesson.startsAt.toISOString(),
                   pricePence: owed.amountPence,
+                  creditMinutes: owed.lesson.creditMinutes,
                   fee: owed.fee ?? undefined,
                 }}
               />

@@ -4,15 +4,17 @@ import {
   balanceMinutes,
   expireCredit,
   isLotExpired,
+  isPartCredit,
   lotFromPurchase,
   refundCredit,
   refundValuePence,
   remainingValuePence,
   settleCancelledCredit,
-  useCredit,
-  usableLots,
-  usesFrom,
+  splitByCredit,
   type CreditLot,
+  usableLots,
+  useCredit,
+  usesFrom,
 } from './credit.ts';
 
 const day = (n: number) => new Date(Date.UTC(2026, 8, n, 9));
@@ -188,5 +190,69 @@ describe('moves that do not fit a lot', () => {
     expect(() => applyMoves(one, [{ lotId: 'a', kind: 'use', minutes: -20 }])).toThrow(RangeError);
     expect(() => applyMoves(one, [{ lotId: 'a', kind: 'return', minutes: 51 }])).toThrow(RangeError);
     expect(applyMoves(one, [{ lotId: 'z', kind: 'return', minutes: 5 }])).toEqual(one);
+  });
+});
+
+describe('what credit covers of one lesson, and what is left to pay (PAY-04, D-225)', () => {
+  it('takes what is there and leaves the rest to pay', () => {
+    // An hour of credit against a two hour lesson: the hour is used, the hour is owed.
+    expect(splitByCredit({ minutes: 120, pricePence: 8200, availableMinutes: 60 })).toEqual({
+      creditMinutes: 60,
+      creditPence: 4100,
+      owedPence: 4100,
+    });
+  });
+
+  it('covers the whole lesson when there is enough, which is what it always did', () => {
+    expect(splitByCredit({ minutes: 60, pricePence: 4200, availableMinutes: 600 })).toEqual({
+      creditMinutes: 60,
+      creditPence: 4200,
+      owedPence: 0,
+    });
+  });
+
+  it('takes nothing when there is nothing', () => {
+    expect(splitByCredit({ minutes: 60, pricePence: 4200, availableMinutes: 0 })).toEqual({
+      creditMinutes: 0,
+      creditPence: 0,
+      owedPence: 4200,
+    });
+  });
+
+  it('gives the pennies of a price that will not divide to the part paid in money', () => {
+    // 4201 over 3 is not whole: credit is worth 1400, not 1400.33, and 2801 is owed.
+    const split = splitByCredit({ minutes: 90, pricePence: 4201, availableMinutes: 30 });
+    expect(split).toEqual({ creditMinutes: 30, creditPence: 1400, owedPence: 2801 });
+    // Whatever the split, the two halves come to the price. No penny is made or lost.
+    expect(split.creditPence + split.owedPence).toBe(4201);
+  });
+
+  it('never makes or loses a penny, at any amount of credit', () => {
+    for (let available = 0; available <= 120; available += 1) {
+      const split = splitByCredit({ minutes: 120, pricePence: 8237, availableMinutes: available });
+      expect(split.creditPence + split.owedPence).toBe(8237);
+      expect(split.creditMinutes).toBeLessThanOrEqual(120);
+      expect(split.creditPence).toBeLessThanOrEqual(8237);
+    }
+  });
+
+  it('takes no credit for a lesson that costs nothing', () => {
+    expect(splitByCredit({ minutes: 60, pricePence: 0, availableMinutes: 600 })).toEqual({
+      creditMinutes: 0,
+      creditPence: 0,
+      owedPence: 0,
+    });
+  });
+
+  it('says when a lesson is paid two ways', () => {
+    expect(isPartCredit(splitByCredit({ minutes: 120, pricePence: 8200, availableMinutes: 60 }))).toBe(true);
+    expect(isPartCredit(splitByCredit({ minutes: 60, pricePence: 4200, availableMinutes: 600 }))).toBe(false);
+    expect(isPartCredit(splitByCredit({ minutes: 60, pricePence: 4200, availableMinutes: 0 }))).toBe(false);
+  });
+
+  it('refuses anything that is not whole minutes or whole pence', () => {
+    expect(() => splitByCredit({ minutes: 60.5, pricePence: 4200, availableMinutes: 60 })).toThrow(RangeError);
+    expect(() => splitByCredit({ minutes: 60, pricePence: 42.5, availableMinutes: 60 })).toThrow(RangeError);
+    expect(() => splitByCredit({ minutes: 60, pricePence: -1, availableMinutes: 60 })).toThrow(RangeError);
   });
 });

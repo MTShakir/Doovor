@@ -1,6 +1,7 @@
 'use client';
 
 import { cancellationOutcome, cancellationWarning, type PaidWith } from '@repo/core/cancellation';
+import { splitByCredit } from '@repo/core/credit';
 import { lessonState, lessonStateLabel } from '@repo/core/diary';
 import { formatPence } from '@repo/core/money';
 import { formatDate, formatMinutes, formatTime } from '@repo/core/time';
@@ -52,6 +53,13 @@ export function MyLessonRow({ lesson, rules, now, canChange }: MyLessonRowProps)
     paymentStatus: lesson.paymentStatus as never,
     kind: 'standard',
   });
+  // Credit paid for what it covered, so what is left to pay is the price less that (D-225). The
+  // price still shows beside the pill: it is what the lesson costs, whoever the money came from.
+  const owedPence = splitByCredit({
+    minutes: lesson.durationMinutes,
+    pricePence: lesson.pricePence,
+    availableMinutes: lesson.creditMinutes,
+  }).owedPence;
   const outcome = cancellationOutcome({
     startsAt: new Date(lesson.startsAt),
     now: new Date(now),
@@ -103,7 +111,12 @@ export function MyLessonRow({ lesson, rules, now, canChange }: MyLessonRowProps)
         </span>
         <span className="flex shrink-0 flex-col items-end gap-1">
           <StatusPill status={state}>
-            {lessonStateLabel({ status: lesson.status as never, paymentStatus: lesson.paymentStatus as never, kind: 'standard' })}
+            {lessonStateLabel({
+              status: lesson.status as never,
+              paymentStatus: lesson.paymentStatus as never,
+              kind: 'standard',
+              creditMinutes: lesson.creditMinutes,
+            })}
           </StatusPill>
           <span className="text-small text-grey-700 tabular-nums">{formatPence(lesson.pricePence)}</span>
         </span>
@@ -116,7 +129,7 @@ export function MyLessonRow({ lesson, rules, now, canChange }: MyLessonRowProps)
         // Paid for after it happened, and not yet (PAY-03): the one thing left to do about it.
         <div className="flex flex-wrap justify-end gap-2">
           <Button asChild>
-            <Link href={`/app/learner/pay/${lesson.id}`}>Pay {formatPence(lesson.pricePence)}</Link>
+            <Link href={`/app/learner/pay/${lesson.id}`}>Pay {formatPence(owedPence)}</Link>
           </Button>
         </div>
       ) : null}
@@ -127,10 +140,10 @@ export function MyLessonRow({ lesson, rules, now, canChange }: MyLessonRowProps)
             <Button asChild>
               <Link href={`/app/learner/pay/${lesson.id}`}>
                 {lesson.status === 'requested'
-                  ? `Authorise ${formatPence(lesson.pricePence)}`
+                  ? `Authorise ${formatPence(owedPence)}`
                   : lesson.paymentMode === 'before_lesson' && lesson.paymentStatus === 'unpaid'
                     ? 'Set up payment'
-                    : `Pay ${formatPence(lesson.pricePence)}`}
+                    : `Pay ${formatPence(owedPence)}`}
               </Link>
             </Button>
           ) : null}

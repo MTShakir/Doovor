@@ -205,6 +205,7 @@ export function DayLessons({ lessons, gaps, now, showInstructor = false, canAnsw
             startsAt: chosen.startsAt.toISOString(),
             durationMinutes: Math.round((chosen.endsAt.getTime() - chosen.startsAt.getTime()) / 60_000),
             pricePence: chosen.pricePence,
+            creditMinutes: chosen.facts.creditMinutes,
             paymentStatus: chosen.facts.paymentStatus,
           }}
           rules={rules}

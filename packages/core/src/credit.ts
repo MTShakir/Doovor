@@ -198,3 +198,49 @@ export function refundCredit(
   }
   return needed === 0 ? { moves, valuePence } : null;
 }
+
+/** How a lesson is paid for when there is some credit but not enough for all of it (D-225). */
+export interface CreditSplit {
+  /** Minutes taken from credit. Whole minutes, never more than the lesson is long. */
+  creditMinutes: number;
+  /** What those minutes are worth against this lesson's price. */
+  creditPence: number;
+  /** What is left to pay with money. */
+  owedPence: number;
+}
+
+/**
+ * What credit covers of one lesson, and what is left to pay (PAY-04, D-225).
+ *
+ * Credit used to be all or nothing: a lesson was paid from credit only when there was enough for
+ * the whole of it, and an hour of credit sitting against a two hour lesson bought nothing. It now
+ * takes whatever is there and the rest is paid the way anything else is.
+ *
+ * The minutes are worth their share of the price, rounded down, so credit is never worth more than
+ * its share and the pennies of a price that does not divide go to the part being paid in money.
+ * That is the same direction `refundValuePence` rounds, and for the same reason: the learner is
+ * never handed value that was not bought.
+ *
+ * A lesson that costs nothing takes no credit. Giving somebody a free lesson and quietly spending
+ * their minutes on it would be taking something for nothing.
+ */
+export function splitByCredit(input: { minutes: number; pricePence: number; availableMinutes: number }): CreditSplit {
+  assertMinutes(input.minutes, 'minutes');
+  assertMinutes(input.availableMinutes, 'availableMinutes');
+  if (!Number.isSafeInteger(input.pricePence) || input.pricePence < 0) {
+    throw new RangeError(`pricePence must be whole pence, got ${String(input.pricePence)}`);
+  }
+
+  if (input.minutes === 0 || input.pricePence === 0) {
+    return { creditMinutes: 0, creditPence: 0, owedPence: input.pricePence };
+  }
+
+  const creditMinutes = Math.min(input.minutes, input.availableMinutes);
+  const creditPence = Math.floor((input.pricePence * creditMinutes) / input.minutes);
+  return { creditMinutes, creditPence, owedPence: input.pricePence - creditPence };
+}
+
+/** Whether a lesson was paid for by credit and something else together (D-225). */
+export function isPartCredit(split: CreditSplit): boolean {
+  return split.creditMinutes > 0 && split.owedPence > 0;
+}

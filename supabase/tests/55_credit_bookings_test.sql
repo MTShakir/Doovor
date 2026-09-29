@@ -4,7 +4,7 @@
 -- Each booking, cancellation or answer is made in a statement of its own, and what it did is
 -- read in the next one.
 begin;
-select plan(19);
+select plan(21);
 
 select tests.create_fixture();
 
@@ -198,7 +198,7 @@ select results_eq(
 );
 
 -- ---------------------------------------------------------------------------------------
--- Not enough credit is no credit (PAY-04, PAY-12).
+-- Not enough credit is still credit: it pays for what it covers (PAY-04, PAY-12, D-225).
 -- ---------------------------------------------------------------------------------------
 insert into public.learner_relationships (business_id, learner_id, instructor_id)
 values (:'asha_biz', :'lou', 'a1000000-0000-0000-0000-000000000001');
@@ -210,12 +210,28 @@ select tests.authenticate_as(:'lou');
 select public.create_booking(:'ivy', :'lou', :'lesson_type', pg_temp.local_at(6, '10:00'), 60) as no_credit \gset
 select tests.clear_authentication();
 
+-- Half an hour left here, an hour that has run out, and credit with another Business that is not
+-- hers to spend here. The half hour pays for half the lesson and the rest waits for a card.
 select results_eq(
-  format($$ select status::text, payment_status::text,
-                   (select count(*)::int from public.credit_ledger where booking_id = %L)
+  format($$ select status::text, payment_status::text, credit_minutes, pg_temp.held(%L)
               from public.bookings where id = %L $$, :'no_credit', :'no_credit'),
-  $$ values ('pending_payment', 'unpaid', 0) $$,
-  'half an hour left, an hour that has run out and credit with another Business pay for nothing: the lesson waits for a card'
+  $$ values ('pending_payment', 'unpaid', 30, 30) $$,
+  'half an hour left pays for half the lesson, and the rest still waits for a card (D-225)'
+);
+
+-- And what is owed is the price less what those minutes were worth, not the whole price.
+select results_eq(
+  format($$ select price_pence, private.booking_owed_pence(b) from public.bookings b where id = %L $$, :'no_credit'),
+  format($$ select price_pence, price_pence - (price_pence / 2) from public.bookings where id = %L $$, :'no_credit'),
+  'and half an hour of a one hour lesson leaves half the price owed'
+);
+
+-- Credit with another Business is untouched: it is a prepaid package with one Business (PAY-12).
+select is(
+  (select coalesce(sum(minutes_remaining), 0)::int from public.credit_lots
+    where business_id = :'asha_biz' and learner_id = :'lou'),
+  600,
+  'and credit with another Business is not spent here'
 );
 
 -- ---------------------------------------------------------------------------------------
@@ -282,8 +298,8 @@ select tests.clear_authentication();
 select results_eq(
   format($$ select payment_status::text, payment_mode::text, pg_temp.held(%L) from public.bookings where id = %L $$,
          :'stretched', :'stretched'),
-  $$ values ('unpaid', 'offline', 0) $$,
-  'made longer than the credit left, it is not part paid: the credit goes back and the lesson is paid the usual way'
+  $$ values ('unpaid', 'offline', 120) $$,
+  'made longer than the credit left, what there is comes back and pays for what it covers (D-225)'
 );
 
 -- ---------------------------------------------------------------------------------------
