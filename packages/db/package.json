@@ -12,7 +12,8 @@
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
-    "seed": "tsx seed/index.ts"
+    "seed": "tsx seed/index.ts",
+    "fresh": "tsx seed/fresh-start.ts"
   },
   "dependencies": {
     "@repo/core": "workspace:*",

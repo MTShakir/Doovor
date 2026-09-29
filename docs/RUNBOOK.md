@@ -235,6 +235,42 @@ from `pnpm test:e2e:stripe`; every other run stays on the fake.
 4. Preview deployments do not register while Deployment Protection is on. They need no jobs today; if they ever do, add Vercel's Protection Bypass for Automation secret in the same settings.
 5. `/api/inngest` answers a plain request with 401 Unauthorized once the signing key is set: it only talks to Inngest.
 
+### 3.9 Emptying a database for a launch
+
+A database that has been demonstrated on is not a database to open to the public: it holds demo
+Businesses, seeded learners, their lessons and payments, and an audit trail of all of it. This
+empties one and leaves a single super admin behind. **There is no undo.**
+
+Everything people made goes: accounts, Businesses, lessons, payments, notes, pictures, receipts,
+notifications, logs, and the files in all five buckets. What stays is the reference data the app
+cannot work without, `cities`, `city_districts`, `marketplace_regions`, `skills`,
+`platform_settings` and the `postcodes` cache, and the one admin the command creates.
+
+1. **You:** put the admin's email and a real password in the environment for the one command.
+   They never go in git, in a file, or in chat. Use your own password manager to generate the
+   password and keep it there:
+   ```bash
+   export ADMIN_EMAIL='you@yourdomain.com'
+   export ADMIN_PASSWORD='...'
+   ```
+2. Point `.env.local` at the project being emptied and check it twice. The command refuses unless
+   the project you name matches the one the environment points at, which is what stops a leftover
+   `.env.local` emptying the wrong database.
+3. Run it, naming the project reference from its Supabase URL:
+   ```bash
+   pnpm db:fresh --project=yvxuarrrvgnfcjfyqfyi --yes
+   ```
+   It prints what it removed: the files per bucket, the number of tables emptied and which were
+   kept, the accounts removed, and the admin it created.
+4. **You:** sign in at `/sign-in` as that admin and set up two-step verification straight away
+   (AUTH-06). An account that can see every Business on the platform should not rest on a
+   password alone.
+5. The public pages will show their empty states until the first Business signs up: no profiles,
+   and city pages with nothing on them. That is correct for a launch, not a fault.
+
+To rehearse it, run the same command against the local stack with `--project=local`, then
+`pnpm db:reset` to get the demo data back.
+
 ## 4. Routine operations
 
 ### Database changes
