@@ -88,10 +88,21 @@ describe('what everybody is told about a lesson (PRD Appendix B)', () => {
 
   it('says the fee was kept from credit, not charged, for a lesson paid with credit (R-07)', () => {
     const planned = planBookingNotifications({
-      event: { name: 'booking.cancelled', payload: { by: 'learner', late: true, fee_pence: 4200, credit_kept_minutes: 60, credit_returned_minutes: 0 } },
-      notice: { ...notice, late_cancellation: true, fee_pence: 4200, payment_status: 'paid_credit' },
+      // Credit paid for the whole lesson, so it pays the whole fee and no money is owed (D-225).
+      event: { name: 'booking.cancelled', payload: { by: 'learner', late: true, fee_pence: 0, credit_kept_minutes: 60, credit_returned_minutes: 0 } },
+      notice: { ...notice, late_cancellation: true, fee_pence: 0, payment_status: 'paid_credit' },
     });
     expect(planned[0]?.body).toBe('Wed 16 Sep at 09:00 with Sarah Khan. 1 hour of your credit is kept as the fee.');
+  });
+
+  it('says what the credit paid of the fee and what is left, for a lesson credit paid part of (D-225)', () => {
+    const planned = planBookingNotifications({
+      event: { name: 'booking.cancelled', payload: { by: 'learner', late: true, fee_pence: 4100, credit_kept_minutes: 60, credit_returned_minutes: 0 } },
+      notice: { ...notice, late_cancellation: true, fee_pence: 4100 },
+    });
+    expect(planned[0]?.body).toBe(
+      'Wed 16 Sep at 09:00 with Sarah Khan. 1 hour of your credit is kept as the fee, and £41 of it is still to pay.',
+    );
   });
 
   it('takes each of them to the screen that answers it', () => {

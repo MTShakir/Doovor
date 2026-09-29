@@ -312,6 +312,14 @@ begin
       case when v_late and v_by = 'learner' then v_percent else 0 end,
       v_user
     );
+    -- The fee is one fee however it is paid for (D-225). The minutes it keeps pay what they are
+    -- worth against the lesson, so what is left to pay in money is the rest of it: without this a
+    -- lesson an hour of credit paid half of would keep the hour and charge the whole fee as well.
+    v_fee := greatest(v_fee - private.credit_value_pence(
+                        v_booking.price_pence,
+                        (extract(epoch from (v_booking.ends_at - v_booking.starts_at)) / 60)::integer,
+                        (v_credit ->> 'kept')::integer), 0);
+    update public.bookings set fee_pence = v_fee where id = p_booking_id;
     if v_booking.payment_status = 'paid_credit' then
       update public.bookings
          set payment_status = case
@@ -420,6 +428,13 @@ begin
   -- part paid by credit holds minutes too, and its money status is settled below (D-225).
   if v_booking.credit_minutes > 0 then
     v_credit := private.give_back_credit(p_booking_id, v_percent, v_user);
+    -- What the fee keeps in minutes pays its share of the fee, and the rest of it is money
+    -- (D-225), the same sum `cancellationOutcome` works out for the screen.
+    v_fee := greatest(v_fee - private.credit_value_pence(
+                        v_booking.price_pence,
+                        (extract(epoch from (v_booking.ends_at - v_booking.starts_at)) / 60)::integer,
+                        (v_credit ->> 'kept')::integer), 0);
+    update public.bookings set fee_pence = v_fee where id = p_booking_id;
     if v_booking.payment_status = 'paid_credit' then
       update public.bookings
          set payment_status = case

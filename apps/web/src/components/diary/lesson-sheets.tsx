@@ -160,7 +160,9 @@ export function LessonSheets({ lesson, rules, action, onClose }: LessonSheetsPro
     windowHours: cancellationWindowHours,
     lateFeePercent,
     pricePence,
+    durationMinutes,
     paidWith: 'none',
+    creditMinutes: fromCredit,
   });
 
   const cancel = () => {

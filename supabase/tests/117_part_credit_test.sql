@@ -3,7 +3,7 @@
 -- The money is what matters here: what the learner is charged for the rest, and that cancelling
 -- gives each part back the way it came, the minutes as minutes and the money as money.
 begin;
-select plan(12);
+select plan(18);
 
 select tests.create_fixture();
 
@@ -27,6 +27,12 @@ values (:'school', :'lesson_type', 60, 4200), (:'school', :'lesson_type', 120, 8
 create or replace function pg_temp.at(p_days integer, p_time text)
 returns timestamptz language sql stable as $$
   select ((private.today() + p_days)::text || ' ' || p_time)::timestamp at time zone 'Europe/London';
+$$;
+
+create or replace function pg_temp.kept(p_booking uuid)
+returns integer language sql as $$
+  select coalesce(-sum(minutes), 0)::int from public.credit_ledger
+   where booking_id = p_booking and kind = 'fee';
 $$;
 
 create or replace function pg_temp.held(p_booking uuid)
@@ -117,6 +123,49 @@ select is(
   60,
   'and what the lesson was paid with is still on the record'
 );
+
+-- ---------------------------------------------------------------------------------------
+-- Called off late: the fee is one fee, paid partly in minutes and partly in money (R-06, D-225).
+-- ---------------------------------------------------------------------------------------
+update public.businesses
+   set settings = settings || '{"cancellation_window_hours": 48, "late_fee_percent": 100}'
+ where id = :'school';
+
+select tests.authenticate_as(:'ivy_user');
+select public.create_booking(:'ivy', :'lou', :'lesson_type', pg_temp.at(1, '10:00'), 120) as late_lesson \gset
+select tests.clear_authentication();
+
+select is((select credit_minutes from public.bookings where id = :'late_lesson'), 60, 'the hour of credit goes on this one too');
+
+select tests.authenticate_as(:'lou');
+select public.cancel_booking(:'late_lesson', 'Overslept');
+select tests.clear_authentication();
+
+select is(
+  (select fee_pence from public.bookings where id = :'late_lesson'),
+  4100,
+  'the fee owed in money is the half the credit did not pay, not the whole 8200'
+);
+select is(pg_temp.kept(:'late_lesson'), 60, 'the hour is kept as the other half of the fee');
+select is(
+  (select balance_minutes from public.credit_accounts where business_id = :'school' and learner_id = :'lou'),
+  0,
+  'so none of it comes back'
+);
+-- What the Business keeps altogether is the fee on the whole price and not a penny more: 4100
+-- in money and an hour of credit, which against this lesson is worth the other 4100.
+select is(
+  (select fee_pence + private.credit_value_pence(price_pence, 120, 60) from public.bookings where id = :'late_lesson'),
+  8200,
+  'and the two halves of the fee come to the fee on the whole price'
+);
+
+-- A lesson credit paid for in full owes nothing in money, which is the rule this one extends.
+select tests.authenticate_as(:'ivy_user');
+select public.record_offline_payment(:'late_lesson', 'cash') as fee_paid \gset
+select tests.clear_authentication();
+
+select is((select amount_pence from public.payments where id = :'fee_paid'), 4100, 'and the fee taken in cash is that half');
 
 select * from finish();
 rollback;

@@ -21,6 +21,7 @@ const base = {
   windowHours: 48,
   lateFeePercent: 100,
   pricePence: 4200,
+  durationMinutes: 60,
   paidWith: 'card' as PaidWith,
 };
 
@@ -49,7 +50,7 @@ describe('the cancellation policy, row by row (R-06, R-07, R-08)', () => {
     lateFeePercent?: number;
     creditMinutes?: number;
     status?: BookingStatus;
-    expect: { late: boolean; feePence: number; refundPence: number; creditReturnedMinutes: number };
+    expect: { late: boolean; feePence: number; refundPence: number; creditReturnedMinutes: number; creditKeptMinutes?: number };
   }[] = [
     {
       name: 'a learner cancelling in time, paid by card, is refunded in full',
@@ -90,12 +91,13 @@ describe('the cancellation policy, row by row (R-06, R-07, R-08)', () => {
       expect: { late: false, feePence: 0, refundPence: 0, creditReturnedMinutes: 60 },
     },
     {
+      // The fee is paid in minutes, so there is none of it left to pay in money (D-225).
       name: 'credit cancelled late is used as the fee (R-07)',
       by: 'learner',
       hoursBefore: 2,
       paidWith: 'credit',
       creditMinutes: 60,
-      expect: { late: true, feePence: 4200, refundPence: 0, creditReturnedMinutes: 0 },
+      expect: { late: true, feePence: 0, refundPence: 0, creditReturnedMinutes: 0, creditKeptMinutes: 60 },
     },
     {
       name: 'credit cancelled late where the fee is half gives half the minutes back',
@@ -104,7 +106,7 @@ describe('the cancellation policy, row by row (R-06, R-07, R-08)', () => {
       paidWith: 'credit',
       creditMinutes: 60,
       lateFeePercent: 50,
-      expect: { late: true, feePence: 2100, refundPence: 0, creditReturnedMinutes: 30 },
+      expect: { late: true, feePence: 0, refundPence: 0, creditReturnedMinutes: 30, creditKeptMinutes: 30 },
     },
     {
       name: 'a lesson nobody has paid for owes nothing back, but the fee still stands',
@@ -176,6 +178,64 @@ describe('the cancellation policy, row by row (R-06, R-07, R-08)', () => {
       expect(outcome).toMatchObject(row.expect);
     });
   }
+
+  /**
+   * An hour of credit against a two hour lesson at £82 (D-225). The fee is one fee: the minutes
+   * the fee keeps pay what they are worth, and what is left of it is money. Whatever the
+   * percentage, the credit kept and the money fee come to the fee on the whole price.
+   */
+  describe('a lesson credit paid part of (D-225)', () => {
+    const part = { ...base, by: 'learner' as const, now: before(2), pricePence: 8200, durationMinutes: 120, creditMinutes: 60 };
+
+    it('splits the fee between the minutes and the money', () => {
+      expect(cancellationOutcome({ ...part, paidWith: 'none' })).toMatchObject({
+        late: true,
+        feePence: 4100,
+        creditKeptMinutes: 60,
+        creditReturnedMinutes: 0,
+        refundPence: 0,
+      });
+    });
+
+    it('keeps what the learner paid towards it, and gives back the rest', () => {
+      // They paid the other half in cash, and half the lesson's fee is already paid in minutes.
+      expect(cancellationOutcome({ ...part, paidWith: 'cash', lateFeePercent: 50 })).toMatchObject({
+        feePence: 2050,
+        creditKeptMinutes: 30,
+        creditReturnedMinutes: 30,
+        refundPence: 2050,
+      });
+    });
+
+    it('never charges money for a fee the credit has already paid', () => {
+      const covered = cancellationOutcome({ ...part, creditMinutes: 120, paidWith: 'credit' });
+
+      expect(covered.feePence).toBe(0);
+      expect(covered.creditKeptMinutes).toBe(120);
+    });
+
+    it('counts a no-show the same way', () => {
+      const missed = noShowOutcome({ ...part, now: new Date(lesson.getTime() + 20 * 60_000), paidWith: 'none' });
+
+      expect(missed.feePence).toBe(4100);
+      expect(missed.creditKeptMinutes).toBe(60);
+    });
+  });
+
+  it('warns that a fee is paid both ways when credit covered part of it (D-225)', () => {
+    const part = { ...base, by: 'learner' as const, now: before(2), pricePence: 8200, durationMinutes: 120, creditMinutes: 60 };
+
+    expect(cancellationWarning(cancellationOutcome({ ...part, paidWith: 'none' }), formatPence)).toBe(
+      'This is a late cancellation, so 1 hour of your credit is kept as the fee and £41 is charged.',
+    );
+    expect(cancellationWarning(cancellationOutcome({ ...part, paidWith: 'cash', lateFeePercent: 50 }), formatPence)).toBe(
+      'This is a late cancellation, so 30 minutes of your credit is kept as the fee and £20.50 of what you paid is kept too, and £20.50 is owed back to you.',
+    );
+    // Credit paid for the whole lesson, so the fee is paid in minutes and the sentence says only that.
+    expect(cancellationWarning(cancellationOutcome({ ...part, creditMinutes: 120, paidWith: 'credit' }), formatPence)).toBe(
+      'This is a late cancellation, so 2 hours of your credit is kept as the fee.',
+    );
+  });
 
   it('asks an instructor why, and never a learner (R-08)', () => {
     const byInstructor = cancellationOutcome({ ...base, by: 'instructor', now: before(1) });
@@ -302,8 +362,18 @@ describe('what the people told about a cancellation read afterwards (acceptance-
     expect(words({ late: true, feePence: 4200, policy: { ...policy, minutesBefore: 45 } })).toBe(
       'You cancelled 45 minutes before it started. Cancelling less than 48 hours before a lesson costs the full price, so a fee of £42 is owed.',
     );
-    expect(words({ late: true, feePence: 2100, creditKeptMinutes: 30, creditReturnedMinutes: 30 })).toBe(
+    expect(words({ late: true, feePence: 0, creditKeptMinutes: 30, creditReturnedMinutes: 30 })).toBe(
       '30 minutes of your credit is kept as the fee and 30 minutes is back.',
+    );
+    // Credit paid for part of the lesson, so it pays part of the fee and the rest is money (D-225).
+    expect(words({ late: true, feePence: 4100, creditKeptMinutes: 60 })).toBe(
+      '1 hour of your credit is kept as the fee, and £41 of it is still to pay.',
+    );
+    expect(words({ late: true, feePence: 4100, creditKeptMinutes: 60, keptPence: 4100 })).toBe(
+      '1 hour of your credit is kept as the fee, and £41 of what you paid is kept as well.',
+    );
+    expect(words({ late: true, feePence: 4100, creditKeptMinutes: 60, charging: true })).toBe(
+      '1 hour of your credit is kept as the fee, and the £41 left of it is being charged to your saved card.',
     );
     expect(words({ late: true, feePence: 4200, policy: { ...policy, minutesBefore: -5 } })).toContain('You cancelled after it had started.');
     expect(words({ late: true, feePence: 4200, policy: { ...policy, minutesBefore: 0, lateFeePercent: 30 } })).toBe(
@@ -357,7 +427,10 @@ describe('the fee charged to a kept card, and lessons nobody came to (PAY-09, R-
     expect(words({ feePence: 2100, keptPence: 2100, cardRefundPence: 2100, lateFeePercent: 50 })).toBe(
       'Missing a lesson costs half the price, as cancelling late does, so £21 of what you paid is kept as the fee and £21 is going back to your card.',
     );
-    expect(words({ feePence: 4200, creditKeptMinutes: 60 })).toBe('Missing a lesson costs the full price, as cancelling late does, so 1 hour of your credit is kept as the fee.');
+    expect(words({ feePence: 0, creditKeptMinutes: 60 })).toBe('Missing a lesson costs the full price, as cancelling late does, so 1 hour of your credit is kept as the fee.');
+    expect(words({ feePence: 4100, creditKeptMinutes: 60 })).toBe(
+      'Missing a lesson costs the full price, as cancelling late does, so 1 hour of your credit is kept as the fee, and £41 of it is still to pay.',
+    );
     expect(words({ feePence: 4200, charging: true })).toBe('Missing a lesson costs the full price, as cancelling late does, so the £42 fee is being charged to your saved card.');
     expect(words({ feePence: 4200 })).toBe('Missing a lesson costs the full price, as cancelling late does, so a fee of £42 is owed.');
     expect(words({ feePence: 4200, lateFeePercent: null })).toBe('A fee of £42 is owed.');

@@ -67,9 +67,10 @@ export function MyLessonRow({ lesson, rules, now, canChange }: MyLessonRowProps)
     windowHours: rules.cancellationWindowHours,
     lateFeePercent: rules.lateFeePercent,
     pricePence: lesson.pricePence,
+    durationMinutes: lesson.durationMinutes,
     paidWith: paidWith(lesson.paymentStatus),
-    // A lesson is paid with credit all or nothing, so the credit it used is its length (PAY-04).
-    creditMinutes: lesson.durationMinutes,
+    // Credit pays for what it covers, which may be all of the lesson or part of it (D-225).
+    creditMinutes: lesson.creditMinutes,
     // A request or a held slot is never a late cancellation (M3-18).
     status: lesson.status as never,
   });

@@ -7,6 +7,7 @@
  */
 
 import type { BookingStatus } from './diary.ts';
+import { splitByCredit } from './credit.ts';
 import { formatMinutes } from './time/format.ts';
 
 export type CancelActor = 'learner' | 'instructor' | 'business' | 'system';
@@ -22,8 +23,10 @@ export interface CancellationInput {
   /** What a late cancellation costs, as a percentage of the lesson (0, 50 or 100). */
   lateFeePercent: number;
   pricePence: number;
+  /** How long the lesson runs, which is what its credit minutes are measured against (D-225). */
+  durationMinutes: number;
   paidWith: PaidWith;
-  /** Minutes of credit the lesson was paid with, when it was (R-07). */
+  /** Minutes of credit the lesson was paid with, whether they paid for all of it or part (R-07, D-225). */
   creditMinutes?: number;
   /**
    * Where the lesson stands. Only a lesson that is on can be cancelled late: a request nobody
@@ -36,6 +39,7 @@ export interface CancellationInput {
 export interface CancellationOutcome {
   /** Inside the window the Business set, so the fee applies. */
   late: boolean;
+  /** The fee in money: what the credit kept does not already pay of it (D-225). */
   feePence: number;
   /** What goes back to the card, or is owed back for cash and bank transfers. */
   refundPence: number;
@@ -51,9 +55,23 @@ export interface CancellationOutcome {
 
 const HOUR = 3_600_000;
 
-/** Money the learner has actually handed over, which is the only money there is to keep. */
+/** Minutes of credit the lesson used, whether they covered all of it or part (D-225). */
+function creditUsed(input: { creditMinutes?: number }): number {
+  return Math.max(0, input.creditMinutes ?? 0);
+}
+
+/** What credit minutes are worth against this lesson: its share of the price, rounded down. */
+function creditValue(input: CancellationInput, minutes: number): number {
+  return splitByCredit({ minutes: input.durationMinutes, pricePence: input.pricePence, availableMinutes: minutes }).creditPence;
+}
+
+/**
+ * Money the learner has actually handed over, which is the only money there is to keep. Credit
+ * paid for what it covered, so what was handed over is the rest of the price (D-225).
+ */
 function paidPence(input: CancellationInput): number {
-  return input.paidWith === 'card' || input.paidWith === 'cash' || input.paidWith === 'bank' ? input.pricePence : 0;
+  const inMoney = input.paidWith === 'card' || input.paidWith === 'cash' || input.paidWith === 'bank';
+  return inMoney ? input.pricePence - creditValue(input, creditUsed(input)) : 0;
 }
 
 /** True when the lesson is inside the free cancellation window (R-06). */
@@ -69,7 +87,7 @@ export function cancellationOutcome(input: CancellationInput): CancellationOutco
   const byThem = input.by === 'instructor' || input.by === 'business' || input.by === 'system';
   const on = input.status === undefined || input.status === 'confirmed' || input.status === 'in_progress';
   const late = on && isLateCancellation(input.startsAt, input.now, input.windowHours);
-  const credit = input.paidWith === 'credit' ? Math.max(0, input.creditMinutes ?? 0) : 0;
+  const credit = creditUsed(input);
 
   if (byThem || !late) {
     return {
@@ -84,9 +102,9 @@ export function cancellationOutcome(input: CancellationInput): CancellationOutco
   }
 
   const percent = Math.min(100, Math.max(0, input.lateFeePercent));
-  const feePence = Math.round((input.pricePence * percent) / 100);
   // The credit pays the fee, so what comes back is the part the fee did not take (R-07).
   const returned = Math.round((credit * (100 - percent)) / 100);
+  const feePence = feeInMoney(input, percent, credit - returned);
 
   return {
     late: true,
@@ -99,12 +117,21 @@ export function cancellationOutcome(input: CancellationInput): CancellationOutco
   };
 }
 
+/**
+ * The fee is one fee however it is paid for (D-225). The minutes the fee keeps pay what they are
+ * worth against the lesson, and what is left of the fee is money. A lesson that used no credit
+ * owes the whole fee in money, as it always did; one credit paid for in full owes none of it.
+ */
+function feeInMoney(input: CancellationInput, percent: number, keptMinutes: number): number {
+  return Math.max(0, Math.round((input.pricePence * percent) / 100) - creditValue(input, keptMinutes));
+}
+
 /** A lesson nobody turned up for counts as a late cancellation by the learner (R-09). */
 export function noShowOutcome(input: Omit<CancellationInput, 'by'>): CancellationOutcome {
   const percent = Math.min(100, Math.max(0, input.lateFeePercent));
-  const credit = input.paidWith === 'credit' ? Math.max(0, input.creditMinutes ?? 0) : 0;
-  const feePence = Math.round((input.pricePence * percent) / 100);
+  const credit = creditUsed(input);
   const returned = Math.round((credit * (100 - percent)) / 100);
+  const feePence = feeInMoney({ ...input, by: 'learner' }, percent, credit - returned);
 
   return {
     late: true,
@@ -143,9 +170,15 @@ export function cancellationWarning(outcome: CancellationOutcome, formatMoney: M
     if (back !== null) return `No charge: ${back}.`;
     return 'No charge: this is inside the free cancellation window.';
   }
-  // A lesson paid with credit pays its fee with credit, never with money (R-07).
+  // Credit pays the fee first (R-07), and where it covered only part of the lesson the rest of
+  // the fee is money, like any other (D-225).
   if (outcome.creditKeptMinutes > 0) {
-    return `This is a late cancellation, so ${formatMinutes(outcome.creditKeptMinutes)} of your credit is kept as the fee.`;
+    const credit = `${formatMinutes(outcome.creditKeptMinutes)} of your credit is kept as the fee`;
+    if (outcome.feePence === 0) return `This is a late cancellation, so ${credit}.`;
+    const paid = outcome.paidWith === 'card' || outcome.paidWith === 'cash' || outcome.paidWith === 'bank';
+    const rest = paid ? `${formatMoney(outcome.feePence)} of what you paid is kept too` : `${formatMoney(outcome.feePence)} is charged`;
+    const over = outcome.refundPence > 0 ? `, and ${formatMoney(outcome.refundPence)} ${goesBack(outcome.paidWith)}` : '';
+    return `This is a late cancellation, so ${credit} and ${rest}${over}.`;
   }
   if (outcome.feePence === 0) {
     return back === null
@@ -223,7 +256,12 @@ function feePhrase(money: FeeMoney, learner: boolean, formatMoney: Money): strin
   const your = learner ? 'your' : 'their';
   if (money.creditKeptMinutes > 0) {
     const back = money.creditReturnedMinutes > 0 ? ` and ${formatMinutes(money.creditReturnedMinutes)} is back` : '';
-    return `${formatMinutes(money.creditKeptMinutes)} of ${your} credit is kept as the fee${back}`;
+    const credit = `${formatMinutes(money.creditKeptMinutes)} of ${your} credit is kept as the fee${back}`;
+    // Credit paid for part of the lesson, so it pays part of the fee and the rest is money (D-225).
+    if (money.keptPence > 0) return `${credit}, and ${formatMoney(money.keptPence)} of what ${learner ? 'you' : 'they'} paid is kept as well`;
+    if (money.charging) return `${credit}, and the ${formatMoney(money.feePence)} left of it is being charged to ${your} saved card`;
+    if (money.feePence > 0) return `${credit}, and ${formatMoney(money.feePence)} of it is still to pay`;
+    return credit;
   }
   if (money.keptPence > 0) {
     const backToCard = money.cardRefundPence > 0 ? ` and ${formatMoney(money.cardRefundPence)} is going back to ${your} card` : '';
