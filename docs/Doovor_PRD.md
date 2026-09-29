@@ -1,8 +1,15 @@
 # Doovor Product Requirements Document
 
-Version 1.0 | 10 September 2026 | Owner: Talha, Maxterz LTD | Status: Approved for build
+Version 1.1 | 29 September 2026 | Owner: Talha, Maxterz LTD | Status: Phase 1 built, preparing to launch
 
 Doovor is a working name. The final brand name is set in one configuration file so a rename takes minutes.
+
+**How this document is kept.** Version 1.0 said what to build. This version says what was built, which
+is not quite the same thing, and section 21 lists where they differ and why. Every decision taken
+while building carries a number, `D-nnn`, and lives in `docs/DECISIONS.md` with the options that
+were weighed; requirements here cite those numbers rather than repeat the reasoning. What is done,
+milestone by milestone, is in `docs/PROGRESS.md`. Where this document and the code disagree, this
+document is the one to change, on the owner's word.
 
 ## 1. Executive summary
 
@@ -172,16 +179,28 @@ Black and white carry 95% of the interface. Yellow highlights. Red and blue appe
 | Token | Hex | Use |
 |---|---|---|
 | `black` | #000000 | Primary buttons, headings, active tab, map pins |
-| `ink` | #1A1A1A | Body text on white |
-| `grey-700` | #545454 | Secondary text |
-| `grey-400` | #AFAFAF | Placeholder text, disabled |
+| `ink` | #1A1A1A | Body text |
+| `grey-700` | #545454 | Secondary text and placeholders |
+| `grey-400` | #AFAFAF | Disabled only. Never text: it fails contrast on every ground (D-009) |
 | `grey-200` | #E2E2E2 | Borders, dividers |
-| `grey-100` | #F3F3F3 | Input fills, card backgrounds, chips |
-| `white` | #FFFFFF | Page background |
-| `yellow` | #FFD400 | Highlights only: selected slot, "Available today" badge, Gap Fill offers, key stats. Always with black text. Never as body text on white. |
-| `red` | #E11900 | Errors, destructive actions, overdue payments only |
-| `blue` | #276EF1 | Links in long text and the "Verified" tick only |
-| `green` | #05A357 | Success confirmations and "Paid" status only |
+| `grey-100` | #F3F3F3 | Input fills, and the quiet fill on a white surface: chips, secondary buttons, hovers |
+| `white` | #FFFFFF | Cards, bars and sheets, and the quiet fill on the canvas |
+| `canvas` | #F5F5F7 | What the app is painted on, so a screen reads as things on a surface (D-226) |
+| `yellow` | #FFD400 | Highlights only: selected slot, "Available today" badge, Gap Fill offers, key stats. Always with black text. Never as body text. |
+| `red` | #D81700 | Errors, destructive actions, overdue payments only |
+| `blue` | #2166E0 | Links in long text and the "Verified" tick only |
+| `green` | #05A357 | Fills behind white text, for Paid and Completed. Never small text: 3.0 against every ground |
+
+**Two grounds, and the quiet fill.** The app is painted on the canvas and the things on it are white
+(D-226). That gives two grounds, so a tint that marks a chip, a secondary button or a hover cannot
+name one grey: grey-100 on the canvas is a contrast of 1.01 and would have no shape at all. Each
+surface says what quiet means on it and everything inside inherits, white on the canvas and
+grey-100 on a card. The public marketing site keeps its white ground.
+
+**The palette clears 4.5:1 on all three grounds.** `blue` and `red` were #276EF1 and #E11900 until
+the canvas arrived, each a tenth of a point above the floor on pure white, which put links at 4.21
+and a field's error at 4.44 the moment the ground changed (D-226). Every pairing the system uses is
+checked by `packages/ui/src/lib/contrast.test.ts`, and a new pairing means a new line there.
 
 Dark mode inverts black and white and keeps yellow. Ship light mode first; build tokens so dark mode is a switch.
 
@@ -195,8 +214,9 @@ Dark mode inverts black and white and keeps yellow. Ship light mode first; build
 ### 7.4 Layout and components
 
 - 8-point spacing grid. Corner radius 12 pixels for cards and sheets, 8 for inputs, full pill for chips and primary buttons.
-- Components: Button (primary black, secondary grey-100, tertiary text), Input, Search bar with postcode, Chip filter, Bottom sheet, Card, List row with chevron, Avatar with Verified tick, Time slot grid, Calendar (day, week, month), Map with pins and radius circle, Stepper, Toast, Empty state, Skeleton, Status pill, Rating stars, Progress ring, Skill bar (1 to 5).
-- Status pills: Confirmed (black), Pending (grey), Completed (green), Cancelled (grey, struck through), Unpaid (red outline), Gap Fill offer (yellow).
+- Components: Button (primary black, secondary on the quiet fill, tertiary text), Input, Search bar with postcode, Chip filter, Bottom sheet, Card, List row with chevron, Avatar with Verified tick, Time slot grid, Calendar (day, week, month), Map with pins and radius circle, Stepper, Toast, Empty state, Skeleton, Status pill, Rating stars, Progress ring, Skill bar (1 to 5).
+- Status pills: Confirmed (black), Pending (grey), Completed (green), Cancelled (grey, struck through), Unpaid (red outline), Gap Fill offer (yellow). A lesson paid two ways says both: "Paid (credit + cash)" (D-225).
+- Cards sit on the canvas and are white, with a hairline. Bars and sheets are white too. Nothing else is a surface.
 - Icons: Lucide, 24 pixel, 1.5 stroke.
 - Motion: 200 millisecond ease-out for sheets and toasts. Respect reduced motion settings.
 
@@ -325,9 +345,9 @@ Priority key: **P1** = Phase 1 (MVP), **P2** = Phase 2, **P3** = Phase 3, **P4**
 | ID | Requirement | Phase |
 |---|---|---|
 | LRN-01 | Learner list with search, filters (active, waiting, passed, inactive) and quick actions (call, message, book). | P1 |
-| LRN-02 | Learner card: contact details, pickup points, transmission, lessons taken, hours driven, balance, next lesson, test date, notes. | P1 |
+| LRN-02 | Learner card: contact details, pickup points, transmission, lessons taken, hours driven, balance, next lesson, test date, notes. One subject at a time behind tabs, Summary, Lessons, Payments and Progress, with the history at the foot of Summary (D-189, D-211, D-222). Call, Text, WhatsApp and Email in one row (D-194). A lesson on the card opens the same sheet the diary opens (D-214). | P1 |
 | LRN-03 | Add learner manually or by invite link. Import from CSV (name, phone, email, postcode). | P1 |
-| LRN-04 | Private instructor notes per learner, never visible to the learner. | P1 |
+| LRN-04 | Private instructor notes per learner, never visible to the learner. They live in their own table with no learner policy, not a column somebody might select. | P1 |
 | LRN-05 | Learner status workflow: Enquiry, Waiting, Active, Test booked, Passed, Left. | P1 |
 | LRN-06 | School can assign or reassign a learner to an instructor. History stays with the learner. | P1 |
 | LRN-07 | Learner transfer between Businesses with learner consent. The Passport moves; private notes do not. | P2 |
@@ -362,12 +382,12 @@ Priority key: **P1** = Phase 1 (MVP), **P2** = Phase 2, **P3** = Phase 3, **P4**
 | PAY-01 | Each Business connects a Stripe Connect Express account in onboarding (2 minutes, identity handled by Stripe). Card payments go to the Business; Doovor takes an application fee where applicable. | P1 |
 | PAY-02 | Learner pays by card, Apple Pay or Google Pay. Card can be saved for future lessons. | P1 |
 | PAY-03 | Payment options per Business: pay at booking, pay before lesson (auto-charge saved card 24 hours before), or pay after lesson (payment link sent on completion). | P1 |
-| PAY-04 | Lesson packages (for example 10 hours for £380). Purchased hours become lesson credit held against that Business only. Bookings use credit first. | P1 |
-| PAY-05 | Offline payments: instructor records cash or bank transfer against a learner in 2 taps. Shows as "Paid (cash)" or "Paid (bank)". | P1 |
+| PAY-04 | Lesson packages (for example 10 hours for £380). Purchased hours become lesson credit held against that Business only. A booking takes whatever credit there is, up to the length of the lesson, and what is left is paid the usual way: an hour of credit against a two hour lesson leaves half the price to pay (D-225). The minutes are worth their share of the lesson's price, rounded down. | P1 |
+| PAY-05 | Offline payments: instructor records cash or bank transfer against a learner in 2 taps. Shows as "Paid (cash)" or "Paid (bank)", and "Paid (credit + cash)" where credit paid part of it. What is asked for is what is left after credit, never the price. | P1 |
 | PAY-06 | Learner balance per Business: credit hours, amount owed, payment history. Overdue lessons flagged in red. | P1 |
 | PAY-07 | Refunds: full or partial, to card or back to credit. Always logged with reason and actor. | P1 |
 | PAY-08 | Automatic receipts by email with Business name, address and lesson details. VAT shown only if the Business is VAT registered. | P1 |
-| PAY-09 | Late cancellation and no-show fees charged per the Business policy (to saved card or deducted from credit). | P1 |
+| PAY-09 | Late cancellation and no-show fees charged per the Business policy. A fee is one fee however it is paid for: the credit minutes it keeps pay what they are worth against the lesson, and only the rest is money, to the saved card or in person (D-225). Each part of a refund goes back the way it came. | P1 |
 | PAY-10 | Payer (guardian) can pay for a linked learner. | P2 |
 | PAY-11 | Gift cards for lessons. | P5 |
 | PAY-12 | Doovor never holds learner money in a platform wallet. Credit is always a prepaid package with a specific Business. This avoids e-money regulation. | P1 |
@@ -377,9 +397,9 @@ Priority key: **P1** = Phase 1 (MVP), **P2** = Phase 2, **P3** = Phase 3, **P4**
 | ID | Requirement | Phase |
 |---|---|---|
 | MNY-01 | Money dashboard: this week, this month, this tax year (6 April to 5 April). Paid, unpaid, credit sold, refunds. | P1 |
-| MNY-02 | Expenses: fuel, car finance, insurance, servicing, franchise fee, ADI registration, training. Photo of receipt. | P2 |
-| MNY-03 | Mileage log per lesson (manual entry in P2, automatic from trip in P4). | P2 |
-| MNY-04 | Export income and expenses as CSV and PDF by tax year and by quarter, in a format ready for MTD software or an accountant. | P2 |
+| MNY-02 | Expenses: fuel, car finance, insurance, servicing, franchise fee, ADI registration, training. Photo of receipt, held in a private bucket. | P1 (D-198) |
+| MNY-03 | Mileage log at HMRC's approved rates, with the bands shown (manual entry; automatic from trip in P4). The first claim against a car settles whether it is claimed by mileage or by actual cost, which is HMRC's rule, and each method then refuses the other. | P1 (D-198) |
+| MNY-04 | Export income and expenses as CSV and PDF by tax year and by quarter, in a format ready for MTD software or an accountant. A Business is asked whether it charges VAT and the figures follow the answer. Solo instructors on Pro; a school is told it is coming. Every screen says it is in beta. | P1 (D-198) |
 | MNY-05 | Direct MTD submission through HMRC-recognised software partner or API. | P5 |
 | MNY-06 | School: revenue by instructor, instructor earnings statements, commission or franchise fee settings. | P2 |
 
@@ -387,10 +407,11 @@ Priority key: **P1** = Phase 1 (MVP), **P2** = Phase 2, **P3** = Phase 3, **P4**
 
 | ID | Requirement | Phase |
 |---|---|---|
-| NTF-01 | Notification channels: in-app, email and web push (PWA). SMS for reminders only, on Pro plan or as paid add-on. | P1 |
+| NTF-01 | Notification channels: in-app, email and web push (PWA). SMS for reminders only, on Pro plan or as paid add-on. A bell on every screen: top right on a phone, beside the name at the top of the menu on a larger screen, with an unread count (D-159). | P1 |
 | NTF-02 | Automatic reminders to learners 24 hours and 2 hours before each lesson. Configurable per Business. | P1 |
 | NTF-03 | Event notifications: booking made, changed, cancelled, payment received, payment failed, lesson record added, badge expiry, new review, new learner request. Full list in Appendix B. | P1 |
-| NTF-04 | Users control non-essential notifications per channel in settings. | P1 |
+| NTF-04 | Users control non-essential notifications per channel in settings. A reminder sent by hand from a lesson still obeys what that learner switched off (D-166). | P1 |
+| NTF-05 | Anybody signed in can tell us something from the menu, with a screenshot if they want, and staff read it all in one place (D-202). | P1 |
 | MSG-01 | In-app chat between learner and instructor, tied to the learner relationship. Text and images. | P2 |
 | MSG-02 | Chat is logged and can be reported. Contact details are shared only after a first booking (marketplace leads) to protect both sides. | P2 |
 | MSG-03 | Quick replies and templates for instructors ("Running 10 minutes late"). | P2 |
@@ -414,6 +435,7 @@ Priority key: **P1** = Phase 1 (MVP), **P2** = Phase 2, **P3** = Phase 3, **P4**
 | PUB-03 | Shareable booking link and QR code. Share buttons for WhatsApp, Instagram and copy link. | P1 |
 | PUB-04 | Instructor can hide their profile from search while keeping the booking link. | P1 |
 | PUB-05 | Embeddable "Book with me" button for instructors' own websites. | P2 |
+| PUB-06 | Pass gallery: a wall of pass-day photos on the public profile, one picture each, with a banner in the Business's own colour saying who passed, when and with whom. The instructor confirms they have permission and the moment is recorded. Staff see every wall, tick the ones they have checked, and can take any photo down. Not a review: nothing is written by a learner, nothing is scored, and none of it touches the pass rate (R-17). On the plans that carry it. | P1 (D-218) |
 
 ### 9.14 Learner marketplace
 
@@ -464,7 +486,11 @@ Priority key: **P1** = Phase 1 (MVP), **P2** = Phase 2, **P3** = Phase 3, **P4**
 | ADM-04 | Regions: enable marketplace per postcode area; view supply and demand per area against switch-on thresholds. | P1 |
 | ADM-05 | Platform settings: fees, plan limits, feature flags, default booking rules. | P1 |
 | ADM-06 | Read-only impersonation for support, with banner and audit entry. | P1 |
-| ADM-07 | Audit log of all sensitive actions (see NFR-SEC-06). | P1 |
+| ADM-07 | Audit log of all sensitive actions (see NFR-SEC-06). It comes away as a file, and what that file holds is written down (D-173). | P1 |
+| ADM-08a | Everybody on the platform carries a number of their own, so somebody can be found and talked about without an email address (D-176). | P1 |
+| ADM-08b | Who has asked to leave, with the reason if they gave one, and the week before it happens (D-149, D-175). | P1 |
+| ADM-08c | What people have told us, in one place, with the screenshot if they sent one (D-202). | P1 |
+| ADM-08d | Every pass gallery, with each photo tickable as checked and removable (PUB-06, D-218). | P1 |
 | ADM-08 | Reviews moderation and disputes handling. | P2 |
 | ADM-09 | Content management for city pages, guides and FAQs. | P2 |
 | ADM-10 | Plans and subscriptions management. | P2 |
@@ -475,10 +501,17 @@ All prices live in configuration. The values below are recommended launch defaul
 
 | Plan | Price | Includes |
 |---|---|---|
-| Free (independent instructor) | £0 | Diary, unlimited learners, lesson records, offline payments, card payments, public profile and booking link, email and push reminders. |
-| Pro (independent instructor) | £12 per month or £120 per year | Everything in Free plus SMS reminders (up to 200 per month), auto-charge before lesson, Gap Fill, waiting list automation, expenses and MTD-ready exports, calendar sync, custom booking page colours. |
+| Free (independent instructor) | £0 | Diary, ten learners at a time, lesson records, offline payments, card payments, public profile and booking link, email and push reminders. |
+| Pro (independent instructor) | £12 per month or £120 per year | Everything in Free plus SMS reminders (up to 200 per month), auto-charge before lesson, Gap Fill, waiting list automation, bookkeeping and MTD-ready exports, calendar sync, the Business's own colour, the pass gallery. |
 | School | £9 per instructor per month (minimum 2) | All Pro features plus school portal, allocation, reports, fleet. |
-| Founding offer | Pro free for 12 months | First 500 instructors and first 50 schools. |
+| Founding offer | Pro free for 12 months | First 100 instructors and first 50 schools (D-203). The badge outlasts the plan. |
+| Free trial | Pro for a while | A Business created after the founding places run out starts on the paid plan rather than Free: 90 days for the first 500, 30 days for everybody after (D-204). |
+| Referrals | A month of Pro | Every Business has an eight character referral code, from an alphabet with no I, O, 0 or 1 so it can be read off a phone. Recorded now, applied when billing is live (D-205). |
+| Staying | Up to 30% off | Every three months of paying takes another 5% off, capped at 30% after eighteen months. Leaving puts it back to nothing (D-206). |
+
+Ten learners is what Free carries at a time: the ones being taught or lined up to be, which is
+active, waiting and test booked. An enquiry that went nowhere does not count (D-208). What is not
+built yet is marked with one tag rather than hidden, so nobody pays for a promise (D-209).
 
 Card fees: standard Stripe UK rates (about 1.5% plus 20p for UK cards) are passed through to the Business on the Free plan. Doovor takes no fee on lessons between an instructor and their own learners.
 
@@ -545,12 +578,12 @@ Marketplace fee (Phase 3): learner booking fee on the first booking with a new i
 | R-01 | A booking occupies the instructor from start time minus buffer to end time plus buffer. Buffer comes from the instructor setting (default 30 minutes). |
 | R-02 | Two bookings for the same instructor may never overlap once buffers are applied. Enforce in the database with an exclusion constraint on a time range, not only in application code. Statuses CONFIRMED, REQUESTED (while unexpired) and IN_PROGRESS block time. CANCELLED, NO_SHOW and EXPIRED do not. |
 | R-03 | A learner may not hold two overlapping lessons with any instructor. |
-| R-04 | Self-booked lessons must sit inside an open availability window and respect minimum notice (default 24 hours) and horizon (default 8 weeks). Instructor-created bookings may sit outside availability after a warning. |
-| R-05 | Allowed durations are set per Business (default 60, 90, 120). Price is per lesson type and duration. |
+| R-04 | Self-booked lessons must sit inside an open availability window and respect minimum notice (default 24 hours) and horizon (default 8 weeks). Instructor-created bookings may sit outside availability after a warning. Only the instructor moves a lesson; a learner asks them (D-164), and moving one asks whether the learner has been told (D-200). |
+| R-05 | Allowed durations are set per Business (default 60, 90, 120). Price is per lesson type and duration. An instructor may also set a length of their own on a lesson, every half hour from one to four and a half, priced at the Business's hourly rate (D-179, D-187). Changing the length re-prices the lesson and starts its money again (D-188). |
 | R-06 | Default cancellation policy: free cancellation up to 48 hours before start. Inside 48 hours the full lesson fee is charged. Business can set the window (0 to 72 hours) and the fee (0%, 50% or 100%). |
-| R-07 | If a lesson was paid by credit and cancelled in time, the credit returns in full. If cancelled late, the credit is used as the fee. |
+| R-07 | If a lesson was paid by credit and cancelled in time, the credit returns in full. If cancelled late, the credit is used as the fee. Where credit paid for only part of the lesson, the minutes the fee keeps pay what they are worth against it and the rest of the fee is money (D-225): the two together come to the fee on the whole price, never more. |
 | R-08 | If the instructor cancels, the learner always gets a full refund or credit back, and a reason is required. |
-| R-09 | No-show: instructor marks no-show after 15 minutes. Treated as a late cancellation. The learner can dispute within 7 days. |
+| R-09 | No-show: instructor marks no-show after 15 minutes. Treated as a late cancellation. The learner can dispute within 7 days. Marking a lesson done, and marking nobody came, both wait until the lesson's booked time is up, so a lesson is asked about once it is over rather than once it has started (D-213). |
 | R-10 | Booking and payment, or booking and credit deduction, happen in one database transaction. If either fails, both roll back. |
 | R-11 | Payment webhooks are idempotent. Every provider event ID is stored and processed once. |
 | R-12 | Request-to-book bookings expire if not accepted in time (default 12 hours or 2 hours before start, whichever comes first). Any payment hold is released. |
@@ -718,15 +751,22 @@ Dashboards: activation funnel, weekly active instructors, lessons per week, paym
 
 ### 17.1 Phase 1 milestones
 
-| Milestone | Scope | Exit criteria |
-|---|---|---|
-| M0 Foundation | Repo, CI, environments, design system tokens and components, auth, roles, Business tenancy, RLS, audit log, seed data. | Sign up as each role. Tenancy tests pass. Storybook or component page shows all components. |
-| M1 Instructor core | Onboarding, profile, verification upload, coverage, working hours, diary views. | Instructor completes onboarding in under 5 minutes in a usability test. |
-| M2 Learners and bookings | Learner CRM, invites, CSV import, bookings, recurring, reschedule, cancel, overlap protection, reminders. | All booking acceptance tests (17.2) pass. |
-| M3 Payments | Stripe Connect onboarding, card payments, packages and credit ledger, offline payments, refunds, receipts, cancellation fees. | All payment acceptance tests pass in Stripe test mode. |
-| M4 Progress | Lesson records, skill map, learner timeline, offline mode. | Lesson record saves in under 60 seconds with no signal and syncs later. |
-| M5 Public and school | Public profiles, booking link, SEO, school portal basics, Super Admin, region flags. | Lighthouse 90 plus on profile pages. School can invite instructors and allocate learners. |
-| M6 Hardening | Security review, load test, accessibility audit, legal pages, analytics, monitoring, beta with 20 instructors. | No P1 bugs open. Beta instructors run their week on the app. |
+| Milestone | Scope | Exit criteria | State |
+|---|---|---|---|
+| M0 Foundation | Repo, CI, environments, design system tokens and components, auth, roles, Business tenancy, RLS, audit log, seed data. | Sign up as each role. Tenancy tests pass. Storybook or component page shows all components. | Done |
+| M1 Instructor core | Onboarding, profile, verification upload, coverage, working hours, diary views. | Instructor completes onboarding in under 5 minutes in a usability test. | Done |
+| M2 Learners and bookings | Learner CRM, invites, CSV import, bookings, recurring, reschedule, cancel, overlap protection, reminders. | All booking acceptance tests (17.2) pass. | Done |
+| M3 Payments | Stripe Connect onboarding, card payments, packages and credit ledger, offline payments, refunds, receipts, cancellation fees. | All payment acceptance tests pass in Stripe test mode. | Done |
+| M4 Progress | Lesson records, skill map, learner timeline, offline mode. | Lesson record saves in under 60 seconds with no signal and syncs later. | Done |
+| M5 Public and school | Public profiles, booking link, SEO, school portal basics, Super Admin, region flags. | Lighthouse 90 plus on profile pages. School can invite instructors and allocate learners. | Done |
+| M6 Hardening | Security review, load test, accessibility audit, legal pages, analytics, monitoring, beta with 20 instructors. | No P1 bugs open. Beta instructors run their week on the app. | Done, less the beta itself |
+| M7 Bookkeeping | Expenses with receipts, mileage at HMRC's rates, a year or a quarter an accountant can file from, VAT answered per Business. | An instructor's year exports in a form an accountant accepts. Solo instructors on Pro. | Done, pulled forward from Phase 2 (D-198) |
+| Beta preparation | The product owner's own list, run after Phase 1 closed: what they found using it, and what a launch needs. See `docs/PROGRESS.md`. | Each item done, CI green, and the owner's go to merge. | Running |
+
+Phase 1 closed with M6. Everything since is either the product owner's list or a launch task, and
+each one is a row in `docs/PROGRESS.md` with the decision behind it in `docs/DECISIONS.md`. What
+only the product owner can finish is in `docs/BETA.md`: a solicitor through the legal pages, Stripe
+live mode, and Supabase Pro with its restore drill when the first real user arrives (D-154).
 
 ### 17.2 Phase 1 acceptance tests (must pass)
 
@@ -750,7 +790,11 @@ Dashboards: activation funnel, weekly active instructors, lessons per week, paym
 
 ## 18. Out of scope for Phase 1
 
-Native apps, in-app chat, reviews, waiting list automation and Gap Fill, marketplace search, lesson requests, calendar sync, expenses and tax exports, fleet, multi-branch, AI features, theory test content, gift cards, partner offers, international markets.
+Native apps, in-app chat, reviews, waiting list automation and Gap Fill, marketplace search, lesson requests, calendar sync, fleet, multi-branch, AI features, theory test content, gift cards, partner offers, international markets.
+
+Bookkeeping left this list and came into Phase 1 as M7, at the product owner's asking (D-198).
+Messaging is the next thing the Free plan is short of, and what is coming says so rather than
+being hidden (D-212).
 
 ## 19. Risks and mitigations
 
@@ -766,12 +810,50 @@ Native apps, in-app chat, reviews, waiting list automation and Gap Fill, marketp
 
 ## 20. Open decisions
 
-| Decision | Owner | Due |
+| Decision | Owner | Due | Where it stands |
+|---|---|---|---|
+| Final brand name, trademark and domains | Talha | Before public launch | `doovor.com` and `app.doovor.com` are live. Trademark still to do. |
+| Final pricing values (section 9.18) | Talha | After beta with 20 instructors | Values are in configuration and the plans are built. Nothing is charged yet: billing goes live with Stripe live mode. |
+| Merchant of record model sign-off with Stripe and solicitor | Talha and solicitor | Before M3 goes live | M3 passed in Stripe test mode. Live mode is in `docs/BETA.md` and still to do. |
+| First launch region | Talha | Before M6 beta | Still to choose. The region switch-on rule is built and the marketplace is Phase 3. |
+| When a no-show may be recorded | Talha | Before the beta | Both "done" and "nobody came" wait until the lesson's booked time is up (D-213). R-09 permits from 15 minutes after the start, so an instructor who waits a quarter of an hour and drives off cannot record it until the hour is up. Raised twice; the answer changes one line. |
+| The two darkened palette values | Talha | Done | `blue` #2166E0 and `red` #D81700, written into 7.2 on the owner's instruction to record what was decided along the way. The old values fell below the contrast floor once the app moved onto the canvas (D-226). |
+
+## 21. What changed while it was built
+
+The product owner used the app as it was made and asked for changes; some rules turned out to be
+wrong once there was something to press. These are the changes that alter what the product does.
+Engineering decisions, of which there are many more, are in `docs/DECISIONS.md` under the same
+numbers.
+
+| Change | Where | Decision |
 |---|---|---|
-| Final brand name, trademark and domains | Talha | Before public launch |
-| Final pricing values (section 9.18) | Talha | After beta with 20 instructors |
-| Merchant of record model sign-off with Stripe and solicitor | Talha and solicitor | Before M3 goes live |
-| First launch region | Talha | Before M6 beta |
+| Bookkeeping came forward from Phase 2 into Phase 1 as M7 | 9.10, 17.1 | D-198 |
+| Credit pays for what it covers and the rest is paid the usual way, instead of all or nothing | PAY-04, PAY-05 | D-225 |
+| A late fee is one fee however it is paid for: the credit it keeps pays its share, the rest is money | R-07, PAY-09 | D-225 |
+| Only the instructor moves a lesson; a learner asks them | R-04, BOK-08 | D-164 |
+| An instructor sets a lesson's length, every half hour to four and a half, priced at the hourly rate | R-05 | D-179, D-187, D-188 |
+| A lesson is asked about once it is over, not once it has started | R-09 | D-213 |
+| The pass gallery on the public profile, which is not a review | PUB-06 | D-218 |
+| Anybody signed in can tell us something, and staff read it in one place | NTF-05, ADM-08c | D-202 |
+| The founding offer is the first hundred, not five hundred | 9.18 | D-203 |
+| A free trial for everybody who misses a founding place | 9.18 | D-204 |
+| Referral codes, and a discount for staying, recorded now and charged later | 9.18 | D-205, D-206 |
+| Free carries ten learners at a time, rather than everybody | 9.18 | D-208 |
+| What is not built yet carries one tag rather than being hidden | 9.18 | D-209 |
+| The Business's own colour, with one rule deciding whether it can be read | 9.18 | D-210 |
+| The learner's card is one subject at a time, with the history under the summary | LRN-02 | D-189, D-211, D-222 |
+| A learner keeps their own pickup points, and a lesson starts where that learner's lessons start | LRN-02, BOK-05 | D-182, D-215 |
+| A learner may tell us about a disability, and chooses who it helps | AUTH-06 | D-180 |
+| A learner is asked a few things to start with, and may skip any of them | AUTH-06 | D-183 |
+| A notification bell on every screen, and installing the app always in the menu | NTF-01 | D-159, D-160 |
+| Your own data as a file and a page you can print, and deletion that waits a week | NFR-PRV-03 | D-148, D-149 |
+| Sign-in codes are sent by the app, so somebody can travel and still get in | AUTH-02 | D-192, D-193 |
+| The shortest password is ten characters, with no leaked-password check on the free plan | AUTH-01 | B-09, D-161 |
+| Our own encrypted weekly backups until Supabase Pro | NFR-SEC-07 | D-154, D-161 |
+| The app is painted on a canvas, and two palette values darkened to stay legible on it | 7.2, 7.4 | D-226 |
+| Messaging is the next thing the Free plan is short of, and says so | 18 | D-212 |
+| A database is emptied for a launch by a command that asks for the target twice | RUNBOOK 3.9 | D-227 |
 
 ## Appendix A. Skill map (DVSA test report aligned)
 
