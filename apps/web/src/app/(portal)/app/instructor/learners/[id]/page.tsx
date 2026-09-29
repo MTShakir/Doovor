@@ -44,21 +44,24 @@ export const metadata: Metadata = { title: 'Learner' };
 
 interface LearnerPageProps {
   params: Promise<{ id: string }>;
+  /** `?add=pickup` opens the add form straight away, for somebody sent here from a lesson (D-222). */
+  searchParams?: Promise<Record<string, string | string[] | undefined>>;
 }
 
-export default function LearnerPage({ params }: LearnerPageProps) {
+export default function LearnerPage({ params, searchParams }: LearnerPageProps) {
   return (
     <main className="flex flex-col gap-4 pb-8">
       <Suspense fallback={<SkeletonRow />}>
-        <Learner params={params} />
+        <Learner params={params} searchParams={searchParams} />
       </Suspense>
     </main>
   );
 }
 
 /** LRN-02: one learner, everything about them an instructor needs before a lesson. */
-async function Learner({ params }: LearnerPageProps) {
+async function Learner({ params, searchParams }: LearnerPageProps) {
   const { id } = await params;
+  const addPickup = (await searchParams)?.add === 'pickup';
   const { access, session } = await requirePortal('instructor');
 
   const card = await learnerCard(id);
@@ -123,6 +126,7 @@ async function Learner({ params }: LearnerPageProps) {
                   <PickupPoints
                     learnerId={card.learnerId}
                     pickups={pickups}
+                    openAdd={addPickup}
                     actions={{ add: addLearnerPickup, update: updateLearnerPickup, remove: removeLearnerPickup }}
                     addedByOthers={`added by ${card.fullName}`}
                     empty={`None saved yet. Add where ${card.fullName} is collected, or they can add their own.`}
@@ -130,6 +134,10 @@ async function Learner({ params }: LearnerPageProps) {
                   />
                   <WhatTheyToldUs card={card} health={health} driving={driving} />
                   <Notes learnerId={card.learnerId} notes={notes} viewerId={session.userId} />
+                  {/* D-222: at the foot of the summary rather than behind a tab of its own. It is
+                      read after everything else about somebody, and a tab nobody opens is a tab
+                      that hides what it holds. */}
+                  <History entries={history} />
                 </>
               ),
             },
@@ -159,7 +167,6 @@ async function Learner({ params }: LearnerPageProps) {
             },
             { value: 'payments', label: 'Payments', panel: <Money card={card} access={access} balance={balance} /> },
             { value: 'progress', label: 'Progress', panel: <Progress card={card} /> },
-            { value: 'history', label: 'History', panel: <History entries={history} /> },
           ]}
         />
       </div>

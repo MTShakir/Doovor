@@ -9,7 +9,7 @@ import { Sheet } from '@repo/ui/sheet';
 import { StatusPill } from '@repo/ui/status-pill';
 import { toast } from '@repo/ui/toast';
 import { Plus } from 'lucide-react';
-import { Fragment, useId, useState, useTransition } from 'react';
+import { Fragment, useEffect, useId, useRef, useState, useTransition } from 'react';
 import { FormAlert } from '@/components/form-alert';
 import { PickupForm, type PickupDraft } from '@/components/learners/pickup-form';
 import type { LearnerPickupPoint } from '@/lib/pickup/list';
@@ -38,6 +38,7 @@ export function PickupPoints({
   addedByOthers,
   empty,
   note,
+  openAdd = false,
 }: {
   learnerId: string;
   pickups: LearnerPickupPoint[];
@@ -48,8 +49,14 @@ export function PickupPoints({
   empty: string;
   /** Under the sheet's title: who else sees what is saved. */
   note: string;
+  /**
+   * Opens the add form as soon as the card is on screen, for somebody sent here from a lesson to
+   * add a place it can be collected from (D-222).
+   */
+  openAdd?: boolean;
 }) {
   const titleId = useId();
+  const asked = useRef(false);
   const [editing, setEditing] = useState<{ id: string | null; draft: PickupDraft } | null>(null);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [formError, setFormError] = useState<string | null>(null);
@@ -66,6 +73,16 @@ export function PickupPoints({
           { kind: 'home', label: '', address: '', postcode: '', isDefault: pickups.length === 0 },
     });
   };
+
+  // Once, and only on the way in: reopening it every time the card redraws would trap somebody
+  // who has just closed it.
+  useEffect(() => {
+    if (!openAdd || asked.current) return;
+    asked.current = true;
+    open(null);
+    // `open` is rebuilt on every render and asking for it here would run this again.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [openAdd]);
 
   const change = (next: Partial<PickupDraft>) => {
     setEditing((current) => (current ? { ...current, draft: { ...current.draft, ...next } } : current));

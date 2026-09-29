@@ -75,7 +75,9 @@ test.describe('a lesson opened from its card (DIA-04, D-166)', () => {
     await expect(pickup).toContainText('Home');
     await expect(pickup).toContainText('LS2 9JT');
 
-    // One lesson somewhere else, without touching where the rest of them start.
+    // One lesson somewhere else, without touching where the rest of them start. The list is
+    // behind Change while the lesson already has somewhere to start from (D-222).
+    await pickup.getByRole('button', { name: 'Change' }).click();
     const choice = pickup.getByLabel('Collect them from');
     await expect(choice).toHaveValue(/[0-9a-f-]{36}/);
     await choice.selectOption('No pickup point');
@@ -84,9 +86,30 @@ test.describe('a lesson opened from its card (DIA-04, D-166)', () => {
     await expectAccessible(page);
     await snap(page, testInfo, 'lesson-pickup');
 
+    // With nowhere to be collected from, the list stands open: it is the only thing to do here.
     await choice.selectOption({ label: 'Home, Little London & Woodhouse, Leeds, LS2 9JT' });
     await expect(page.getByText('Collecting them from there')).toBeVisible();
     await expect(pickup).toContainText('LS2 9JT');
+
+    // Nowhere to collect them from is the one case where the list opens itself, and it carries a
+    // way out to the learner's own form (D-222). Choosing a place closes the list again, so it
+    // takes another Change to get back to it.
+    await pickup.getByRole('button', { name: 'Change' }).click();
+    await pickup.getByLabel('Collect them from').selectOption('No pickup point');
+    await expect(page.getByText('Pickup point taken off this lesson')).toBeVisible();
+    await pickup.getByLabel('Collect them from').selectOption({ label: 'Add an address for Jack Taylor' });
+    await expect(page).toHaveURL(/\/app\/instructor\/learners\/[0-9a-f-]{36}\?add=pickup$/);
+    await expect(page.getByRole('dialog', { name: 'Add a pickup point' })).toBeVisible();
+    await page.keyboard.press('Escape');
+
+    // Put it back where it was, for the rest of the test.
+    await page.goto(`/app/instructor/diary?view=day&date=${day}`);
+    await tapUntil(page.getByRole('button', { name: 'Open 11:00 with Jack Taylor' }), sheet);
+    await sheet
+      .getByRole('region', { name: 'Pickup' })
+      .getByLabel('Collect them from')
+      .selectOption({ label: 'Home, Little London & Woodhouse, Leeds, LS2 9JT' });
+    await expect(page.getByText('Collecting them from there')).toBeVisible();
 
     // And where Jack's lessons start is untouched: the next one still starts at home.
     await removeLesson('Sarah Khan', learner, day, '11:00');

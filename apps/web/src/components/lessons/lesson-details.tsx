@@ -13,7 +13,7 @@ import { Sheet } from '@repo/ui/sheet';
 import { Skeleton } from '@repo/ui/skeleton';
 import { StatusPill } from '@repo/ui/status-pill';
 import { toast } from '@repo/ui/toast';
-import { Banknote, CalendarClock, Mail, MapPin, MessageCircle, MessageSquare, Navigation, Phone, UserRound, X } from 'lucide-react';
+import { Banknote, CalendarClock, Mail, MapPin, MessageCircle, MessageSquare, Navigation, Pencil, Phone, UserRound, X } from 'lucide-react';
 import type { Route } from 'next';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
@@ -48,6 +48,9 @@ function Section({ title, children }: { title: string; children: ReactNode }) {
   );
 }
 
+/** The one option in the list that is not a place: it opens the learner's own form (D-222). */
+const addPickupValue = '__add__';
+
 type Action = 'move' | 'cancel' | 'paid';
 type Channel = 'email' | 'sms';
 
@@ -69,6 +72,7 @@ export function LessonDetailsBody({
   onAction,
   onPickup,
   movingPickup = false,
+  onAddPickup,
   onCard = false,
 }: {
   state: LessonDetailsState;
@@ -82,9 +86,15 @@ export function LessonDetailsBody({
    */
   onPickup?: (pickupPointId: string) => void;
   movingPickup?: boolean;
+  /** Sends them to this learner's own pickup points, with the add form already open (D-222). */
+  onAddPickup?: () => void;
   /** Opened from the learner's own card, where the way to it is a link to this page (D-214). */
   onCard?: boolean;
 }) {
+  // Whether the list of places is open. Before any of the returns below, because a hook has to
+  // run on every render.
+  const [picking, setPicking] = useState(false);
+
   if (state.kind === 'failed') {
     return <p className="text-body text-ink">Open this lesson again once you have signal to see everything about it.</p>;
   }
@@ -133,42 +143,57 @@ export function LessonDetailsBody({
                   ) : null}
                 </span>
               </p>
-              {route ? (
-                <Button asChild variant="secondary" className="self-start">
-                  <a href={route} target="_blank" rel="noreferrer">
-                    <Navigation className="size-5" aria-hidden />
-                    Navigate
-                  </a>
-                </Button>
-              ) : null}
+              {/* D-222: where the lesson already starts from, changing it is the rarer thing, so
+                  it is a button beside Navigate rather than a dropdown standing open under the
+                  address somebody came here to read. Change first, because it is the one that
+                  belongs to the line above it. */}
+              <div className="flex flex-wrap gap-2">
+                {onPickup && changeable && !picking ? (
+                  <Button variant="secondary" onClick={() => { setPicking(true); }}>
+                    <Pencil className="size-5" aria-hidden />
+                    Change
+                  </Button>
+                ) : null}
+                {route ? (
+                  <Button asChild variant="secondary">
+                    <a href={route} target="_blank" rel="noreferrer">
+                      <Navigation className="size-5" aria-hidden />
+                      Navigate
+                    </a>
+                  </Button>
+                ) : null}
+              </div>
             </div>
           ) : (
             <p className="text-small text-grey-700">No pickup point on this lesson.</p>
           )}
           {/* COV-04, D-215: one lesson collected from somewhere else, without changing where the
               rest of them start. Both sides can do it, and the database checks the place is
-              theirs. */}
-          {onPickup && changeable ? (
-            details.pickupChoices.length === 0 ? (
-              <p className="text-small text-grey-700">
-                {details.learner.name} has no pickup points saved. Add one on their card and it can be used here.
-              </p>
-            ) : (
-              <Field label="Collect them from" hint="One of the places saved on this learner. This lesson only.">
-                <Select
-                  options={[
-                    { value: '', label: 'No pickup point' },
-                    ...details.pickupChoices.map((place) => ({
-                      value: place.id,
-                      label: place.where === '' ? place.label : `${place.label}, ${place.where}`,
-                    })),
-                  ]}
-                  value={details.pickupPointId ?? ''}
-                  disabled={movingPickup}
-                  onChange={(event) => { onPickup(event.target.value); }}
-                />
-              </Field>
-            )
+              theirs. Open already when there is nowhere to be collected from, because then it is
+              the only thing to do here. */}
+          {onPickup && changeable && (picking || details.pickup === null) ? (
+            <Field label="Collect them from" hint="One of the places saved on this learner. This lesson only.">
+              <Select
+                options={[
+                  { value: '', label: 'No pickup point' },
+                  ...details.pickupChoices.map((place) => ({
+                    value: place.id,
+                    label: place.where === '' ? place.label : `${place.label}, ${place.where}`,
+                  })),
+                  ...(onAddPickup ? [{ value: addPickupValue, label: `Add an address for ${details.learner.name}` }] : []),
+                ]}
+                value={details.pickupPointId ?? ''}
+                disabled={movingPickup}
+                onChange={(event) => {
+                  if (event.target.value === addPickupValue) {
+                    onAddPickup?.();
+                    return;
+                  }
+                  setPicking(false);
+                  onPickup(event.target.value);
+                }}
+              />
+            </Field>
           ) : null}
         </div>
       </Section>
@@ -411,6 +436,15 @@ export function LessonDetailsSheet({
         onAction={setAction}
         onPickup={movePickup}
         movingPickup={movingPickup}
+        onAddPickup={
+          state.kind === 'ready'
+            ? () => {
+                // Their own pickup points, with the add form already open, because somebody who
+                // picked "add an address" has already said what they came to do (D-222).
+                router.push(`/app/instructor/learners/${state.details.learner.id}?add=pickup` as Route);
+              }
+            : undefined
+        }
         onCard={onCard}
       />
     </Sheet>

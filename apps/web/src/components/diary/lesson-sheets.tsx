@@ -318,7 +318,20 @@ export function LessonSheets({ lesson, rules, action, onClose }: LessonSheetsPro
               <Link href={`/app/instructor/learners/${learnerId}`}>Contact them now</Link>
             </Button>
           )}
-          <Button variant="tertiary" width="full" onClick={() => { setTelling(false); }}>
+          {/* Discard is discarding the change, so it puts the whole thing away rather than
+              dropping the person back on the form they were trying to leave (D-222). Closing this
+              sheet another way, with the cross or Escape, goes back to the form, which is what
+              somebody who wants a different time wants. */}
+          <Button
+            variant="tertiary"
+            width="full"
+            onClick={() => {
+              setTelling(false);
+              setSlot(null);
+              setTimes(null);
+              onClose();
+            }}
+          >
             Discard
           </Button>
         </div>

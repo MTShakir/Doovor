@@ -209,10 +209,16 @@ test.describe('booking a lesson (BOK-01, M2-16)', () => {
     await page.getByRole('button', { name: '15:00' }).click();
     await page.getByRole('button', { name: 'Move to 15:00' }).click();
 
-    // Discarding leaves it exactly where it was.
+    // Discard is discarding the change, so it puts the whole edit away rather than dropping
+    // somebody back on the form they were trying to leave (D-222). The lesson does not move.
     await page.getByRole('button', { name: 'Discard' }).click();
-    await expect(page.getByRole('button', { name: 'Move to 15:00' })).toBeVisible();
+    await expect(page.getByRole('dialog', { name: /^Edit Jack/ })).toHaveCount(0);
+    await expect(lesson).toContainText('09:00');
 
+    // Again, and through this time.
+    const again = await openDiaryLesson(page, '09:00', 'Jack Taylor');
+    await again.getByRole('button', { name: 'Edit lesson' }).click();
+    await page.getByRole('button', { name: '15:00' }).click();
     await page.getByRole('button', { name: 'Move to 15:00' }).click();
     // Moving one asks whether the learner has been told (D-200).
     await page.getByRole('button', { name: 'Yes, I have told them' }).click();

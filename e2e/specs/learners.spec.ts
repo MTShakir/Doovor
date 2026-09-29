@@ -144,7 +144,9 @@ test.describe('the learner list (LRN-01, M2-04)', () => {
     await expect(page.getByRole('region', { name: 'Payments' })).toBeVisible();
     await tabs.getByRole('tab', { name: 'Progress' }).click();
     await expect(page.getByRole('region', { name: 'Progress' })).toBeVisible();
-    await tabs.getByRole('tab', { name: 'History' }).click();
+    // History is at the foot of the summary now, not behind a tab of its own (D-222).
+    await expect(tabs.getByRole('tab', { name: 'History' })).toHaveCount(0);
+    await tabs.getByRole('tab', { name: 'Summary' }).click();
     await expect(page.getByRole('region', { name: 'History' })).toBeVisible();
     await expectAccessible(page);
 
