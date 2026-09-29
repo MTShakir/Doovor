@@ -27,10 +27,17 @@ test.describe('the gallery (D-218)', () => {
 
       // The picture is prepared and uploaded from the browser before anything is saved, which is
       // what takes the camera's position out of it (D-218).
+      //
+      // Tried until it takes. A file put straight on the input before the form has hydrated is a
+      // change event React never hears, and the picker sits there saying "No photo yet" with no
+      // error, because nothing ran. Nobody using the app can do that: the button that opens the
+      // chooser is not wired before hydration either, so their click does nothing and they click
+      // again. Only a test can reach past the button (D-043).
       const photo = await jpegWithGps(page);
-      const upload = page.waitForRequest((one) => one.url().includes('/storage/v1/object/gallery/') && one.method() === 'POST');
-      await page.setInputFiles('input[type="file"]', { name: 'passed.jpg', mimeType: 'image/jpeg', buffer: photo });
-      await upload;
+      await expect(async () => {
+        await page.setInputFiles('input[type="file"]', { name: 'passed.jpg', mimeType: 'image/jpeg', buffer: photo });
+        await expect(page.getByRole('button', { name: 'Replace photo' })).toBeVisible({ timeout: 5_000 });
+      }).toPass({ timeout: 30_000 });
 
       const passedOn = new Date(Date.now() - 2 * 24 * 3_600_000).toISOString().slice(0, 10);
       await page.getByLabel('The day they passed').fill(passedOn);
