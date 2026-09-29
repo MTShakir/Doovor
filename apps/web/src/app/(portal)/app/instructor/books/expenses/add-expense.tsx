@@ -81,12 +81,14 @@ export function AddExpense({
         setWorking(false);
         return;
       }
-      const path = await uploadReceipt(getSupabaseBrowserClient(), businessId, prepared.blob);
-      if (!path) {
-        setPhotoError('We could not upload that picture. Try again.');
+      const upload = await uploadReceipt(getSupabaseBrowserClient(), businessId, prepared.blob);
+      if (!upload.ok) {
+        // What the server said, rather than "try again" whatever happened (D-223).
+        setPhotoError(upload.problem);
         setWorking(false);
         return;
       }
+      const path = upload.path;
       setReceiptPath(path);
       setWorking(false);
     })();

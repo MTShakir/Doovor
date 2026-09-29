@@ -62,6 +62,29 @@ const contentType = {
   [galleryBucket]: galleryImage.outputType,
 };
 
+
+/** What came back from an upload: where it went, or why it did not go (D-223). */
+export type UploadOutcome = { ok: true; path: string } | { ok: false; problem: string };
+
+/**
+ * Why an upload failed, in words somebody can act on (D-223).
+ *
+ * It used to say "We could not upload that picture. Try again." whatever had happened, which is a
+ * dead end: a phone that cannot reach the server at all, a bucket that is not there yet and a
+ * policy that refused the folder all looked the same, to the person and to us. What the server
+ * said is included, because that is the sentence that makes a report worth having. None of it is
+ * secret: it is one of "Bucket not found", a policy refusal, or the browser saying it could not
+ * reach anything.
+ */
+function uploadProblem(error: { message?: string } | null): string {
+  const said = (error?.message ?? '').trim();
+  if (said === '') return 'We could not upload that picture. Try again.';
+  if (/failed to fetch|networkerror|load failed|network request failed/i.test(said)) {
+    return 'We could not reach the server to upload that picture. Check your connection and try again.';
+  }
+  return `We could not upload that picture: ${said}`;
+}
+
 /**
  * Uploads a prepared picture as the signed-in instructor. Storage checks the folder against
  * their own profiles, so a path outside it is refused whatever the app sends.
@@ -71,26 +94,26 @@ export async function uploadProfileImage(
   bucket: ImageBucket,
   profileId: string,
   blob: Blob,
-): Promise<string | null> {
+): Promise<UploadOutcome> {
   const path = profileObjectPath(profileId, crypto.randomUUID());
   const { error } = await supabase.storage.from(bucket).upload(path, blob, {
     contentType: contentType[bucket],
     cacheControl: '31536000',
   });
-  return error ? null : path;
+  return error ? { ok: false, problem: uploadProblem(error) } : { ok: true, path };
 }
 
 /**
  * Uploads a school's prepared logo as its owner or manager (AUTH-05). Storage checks the folder
  * against who may change the school's profile, whatever the app sends.
  */
-export async function uploadBusinessLogo(supabase: SupabaseClient<Database>, businessId: string, blob: Blob): Promise<string | null> {
+export async function uploadBusinessLogo(supabase: SupabaseClient<Database>, businessId: string, blob: Blob): Promise<UploadOutcome> {
   const path = businessObjectPath(businessId, crypto.randomUUID());
   const { error } = await supabase.storage.from(avatarsBucket).upload(path, blob, {
     contentType: avatarImage.outputType,
     cacheControl: '31536000',
   });
-  return error ? null : path;
+  return error ? { ok: false, problem: uploadProblem(error) } : { ok: true, path };
 }
 
 /** Removes the picture a new one replaced. A failure here is not worth telling anyone about. */
@@ -106,13 +129,13 @@ export async function removeProfileImage(
  * Uploads a photographed receipt into its Business's folder (MNY-02). Storage checks that folder
  * against who keeps those books, whatever the app sends.
  */
-export async function uploadReceipt(supabase: SupabaseClient<Database>, businessId: string, blob: Blob): Promise<string | null> {
+export async function uploadReceipt(supabase: SupabaseClient<Database>, businessId: string, blob: Blob): Promise<UploadOutcome> {
   const path = receiptObjectPath(businessId, crypto.randomUUID());
   const { error } = await supabase.storage.from(receiptsBucket).upload(path, blob, {
     contentType: receiptImage.outputType,
     cacheControl: '31536000',
   });
-  return error ? null : path;
+  return error ? { ok: false, problem: uploadProblem(error) } : { ok: true, path };
 }
 
 /**
@@ -128,13 +151,13 @@ export async function uploadGalleryPhoto(
   supabase: SupabaseClient<Database>,
   businessId: string,
   blob: Blob,
-): Promise<string | null> {
+): Promise<UploadOutcome> {
   const path = galleryObjectPath(businessId, crypto.randomUUID());
   const { error } = await supabase.storage.from(galleryBucket).upload(path, blob, {
     contentType: galleryImage.outputType,
     cacheControl: '31536000',
   });
-  return error ? null : path;
+  return error ? { ok: false, problem: uploadProblem(error) } : { ok: true, path };
 }
 
 /** Uploads a picture attached to a report, into the sender's own folder (D-202). */
@@ -142,13 +165,13 @@ export async function uploadFeedbackImage(
   supabase: SupabaseClient<Database>,
   userId: string,
   blob: Blob,
-): Promise<string | null> {
+): Promise<UploadOutcome> {
   const path = feedbackObjectPath(userId, crypto.randomUUID());
   const { error } = await supabase.storage.from(feedbackBucket).upload(path, blob, {
     contentType: feedbackImage.outputType,
     cacheControl: '31536000',
   });
-  return error ? null : path;
+  return error ? { ok: false, problem: uploadProblem(error) } : { ok: true, path };
 }
 
 /** A receipt is private, so it is shown through a short-lived address, as a badge is. */

@@ -63,12 +63,14 @@ export function AddPassPhoto({ businessId, learners }: { businessId: string; lea
         setWorking(false);
         return;
       }
-      const path = await uploadGalleryPhoto(getSupabaseBrowserClient(), businessId, prepared.blob);
-      if (!path) {
-        setPhotoError('We could not upload that picture. Try again.');
+      const upload = await uploadGalleryPhoto(getSupabaseBrowserClient(), businessId, prepared.blob);
+      if (!upload.ok) {
+        // What the server said, rather than "try again" whatever happened (D-223).
+        setPhotoError(upload.problem);
         setWorking(false);
         return;
       }
+      const path = upload.path;
       setImagePath(path);
       form.setValue('imagePath', path);
       setPreview(URL.createObjectURL(prepared.blob));

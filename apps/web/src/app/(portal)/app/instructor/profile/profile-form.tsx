@@ -71,12 +71,14 @@ export function ProfileForm({ profileId, photoPath, values }: ProfileFormProps) 
         return;
       }
       const supabase = getSupabaseBrowserClient();
-      const path = await uploadProfileImage(supabase, avatarsBucket, profileId, prepared.blob);
-      if (!path) {
-        setPhotoError('We could not upload that picture. Try again.');
+      const upload = await uploadProfileImage(supabase, avatarsBucket, profileId, prepared.blob);
+      if (!upload.ok) {
+        // What the server said, rather than "try again" whatever happened (D-223).
+        setPhotoError(upload.problem);
         setWorking(false);
         return;
       }
+      const path = upload.path;
       await removeProfileImage(supabase, avatarsBucket, unsaved.current);
       unsaved.current = path;
       setPhoto(path);

@@ -67,12 +67,12 @@ export function FeedbackForm({ userId }: { userId: string }) {
           setPhotoError(photoProblem[prepared.problem]);
           continue;
         }
-        const path = await uploadFeedbackImage(getSupabaseBrowserClient(), userId, prepared.blob);
-        if (path === null) {
-          setPhotoError('We could not upload that picture. Try again.');
+        const upload = await uploadFeedbackImage(getSupabaseBrowserClient(), userId, prepared.blob);
+        if (!upload.ok) {
+          setPhotoError(upload.problem);
           continue;
         }
-        added.push(path);
+        added.push(upload.path);
       }
       if (added.length > 0) setImages((had) => [...had, ...added].slice(0, mostFeedbackImages));
       setWorking(false);

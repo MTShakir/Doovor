@@ -68,12 +68,14 @@ export function SchoolDetailsForm({
         return;
       }
       const supabase = getSupabaseBrowserClient();
-      const path = await uploadBusinessLogo(supabase, businessId, prepared.blob);
-      if (!path) {
-        setLogoError('We could not upload that picture. Try again.');
+      const upload = await uploadBusinessLogo(supabase, businessId, prepared.blob);
+      if (!upload.ok) {
+        // What the server said, rather than "try again" whatever happened (D-223).
+        setLogoError(upload.problem);
         setWorking(false);
         return;
       }
+      const path = upload.path;
       await removeProfileImage(supabase, avatarsBucket, unsaved.current);
       unsaved.current = path;
       setLogoPath(path);
