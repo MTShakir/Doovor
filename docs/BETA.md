@@ -1,8 +1,8 @@
 # Beta readiness
 
-Written 18 September 2026, at the end of M6 (PRD 17.1, M6-15). It says what the product does, what
-proves it, and what is not ready. It is meant to be read before letting twenty instructors run
-their working week on this.
+Written 18 September 2026, at the end of M6 (PRD 17.1, M6-15), and kept up to date as the
+beta-prep work lands. It says what the product does, what proves it, and what is not ready. It is
+meant to be read before letting twenty instructors run their working week on this.
 
 ## The short answer
 
@@ -21,6 +21,13 @@ record cash and bank transfers, refund, and issue receipts. Write a lesson recor
 with no signal and have it send itself later. See the money they are owed and what they have taken.
 A school can do all of that across several instructors, allocate learners, and keep its own rules.
 
+Since then: a Business on a plan that carries it keeps a wall of pass photos on its public profile,
+with the name and the date on each and a tick on the ones we have checked (D-218). A new lesson
+starts from where that learner's lessons start, and either side can move one lesson somewhere else
+(D-215). Free carries ten learners at a time, and what is coming to a plan says so rather than
+being sold (D-208, D-209, D-212). And a name and a business name can be changed from Account and
+security (D-217).
+
 A learner can find an instructor, book from a link, pay, see their lessons, their credit and their
 progress against the DVSA syllabus, and take their data or close their account.
 
@@ -28,17 +35,21 @@ progress against the DVSA syllabus, and take their data or close their account.
 
 | | |
 |---|---|
-| Unit tests | 1,220 across the packages (core 525, web 506, providers 108, db 31, ui 23, config 20, emails 7), core at 90% line coverage |
-| Database tests | 1,466 pgTAP assertions across 96 files: every RLS policy, constraint and RPC, including the failure paths |
-| End to end | 471 tests at 390 px and 1440 px against a production build, with an accessibility scan on every screen |
+| Unit tests | 1,525 across the packages (core 688, web 631, providers 110, db 41, ui 26, config 22, emails 7), core at 95.8% line coverage against a 90% gate |
+| Database tests | 1,809 pgTAP assertions across 126 files: every RLS policy, constraint and RPC, including the failure paths. Run twice, the second time with the database's clock set away from the United Kingdom's (D-156) |
+| End to end | 573 tests at 390 px and 1440 px against a production build, with an accessibility scan on every screen |
 | The twelve acceptance tests | All present and passing in CI, each named `acceptance-01` to `acceptance-12`, with a roll call that fails the build if one is renamed, deleted or skipped |
 | Public pages | Lighthouse 91 to 96 on performance and 100 on accessibility, best practices and SEO, largest paint 2.6 to 3.3 seconds |
 | Load | Reads p95 56 to 104 ms, a booking p95 32 ms, against the 300 ms and 600 ms the PRD asks for |
 | Security | The OWASP Top 10 reviewed with its three findings fixed, the content security policy enforced and proved by an end to end sweep, and no dependency advisory above low |
 | Accessibility | Zero serious or critical issues on every screen, at both widths, with the keyboard able to reach everything and text at 200% not pushing any page sideways |
 
-Every one of those runs in CI on every push, and CI has been green on the last commit of this
-milestone.
+Every one of those runs in CI on every push. CI is green on 9707c32 (29 September), all five jobs.
+
+A note on reading CI: the runs on `beta-prep` from 24 to 27 September were red and meant nothing.
+No job started. Each ended in two seconds with no runner and the annotation "The job was not
+started because recent account payments have failed or your spending limit needs to be increased".
+That cleared on 28 September.
 
 ## What is not ready, and who holds it
 
