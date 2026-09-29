@@ -15,6 +15,15 @@ const textPairs: [ColourToken, ColourToken, string][] = [
   ['grey-700', 'grey-100', 'placeholders in filled inputs'],
   ['ink', 'grey-100', 'text on cards and chips'],
   ['black', 'grey-100', 'secondary button label'],
+  // The canvas the app is painted on (D-226), which is a ground for everything a card is not.
+  ['ink', 'canvas', 'body text on the canvas'],
+  ['black', 'canvas', 'headings on the canvas'],
+  ['grey-700', 'canvas', 'secondary text on the canvas'],
+  ['blue', 'canvas', 'links on a page rather than a card'],
+  ['red', 'canvas', 'a field error on a page rather than a card'],
+  // Both of these were forbidden until the two colours were darkened for the canvas (D-226).
+  ['red', 'grey-100', 'error text on a tinted block'],
+  ['blue', 'grey-100', 'a link on a tinted block'],
   ['black', 'yellow', 'highlights and selected slots'],
   ['red', 'white', 'error text'],
   ['white', 'red', 'destructive button label'],
@@ -28,6 +37,11 @@ const uiPairs: [ColourToken, ColourToken, string][] = [
   ['black', 'white', 'focus ring, selected slot border'],
   ['red', 'white', 'error border'],
   ['green', 'white', 'status pill fill'],
+  ['green', 'canvas', 'status pill fill on the canvas'],
+  // A card's outline is not in this list on purpose: grey-200 on the canvas is 1.19, and 1.4.11
+  // asks this of a boundary somebody needs to perceive a component by. A card is read by what is
+  // written in it and by its white against the canvas; the hairline only tidies the edge. The
+  // boundaries that do have to be seen are an input's and the focus ring, which are above.
 ];
 
 describe('design token contrast (WCAG 2.2 AA)', () => {
@@ -43,8 +57,8 @@ describe('design token contrast (WCAG 2.2 AA)', () => {
     expect(contrastRatio(c('grey-400'), c('white'))).toBeLessThan(AA_TEXT); // no grey-400 text
     expect(contrastRatio(c('green'), c('white'))).toBeLessThan(AA_TEXT); // no green small text
     expect(contrastRatio(c('yellow'), c('white'))).toBeLessThan(AA_NON_TEXT); // yellow needs a black border
-    expect(contrastRatio(c('red'), c('grey-100'))).toBeLessThan(AA_TEXT); // errors sit on white
-    expect(contrastRatio(c('blue'), c('grey-100'))).toBeLessThan(AA_TEXT); // links sit on white
+    expect(contrastRatio(c('green'), c('canvas'))).toBeLessThan(AA_TEXT); // no green small text there either
+    expect(contrastRatio(c('yellow'), c('canvas'))).toBeLessThan(AA_NON_TEXT); // yellow still needs its black border
   });
 
   it('gives placeholders grey-700 in the theme (D-009)', () => {
