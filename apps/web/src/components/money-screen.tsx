@@ -74,7 +74,7 @@ function Figure({
   needsAttention?: boolean;
 }) {
   return (
-    <div className={`flex flex-col gap-0.5 rounded-card px-4 py-3 ${needsAttention ? 'bg-yellow-100' : 'bg-grey-100'}`}>
+    <div className={`flex flex-col gap-0.5 rounded-card px-4 py-3 ${needsAttention ? 'bg-yellow-100' : 'bg-quiet'}`}>
       <dt className={needsAttention ? 'text-small text-ink' : 'text-small text-grey-700'}>{label}</dt>
       <dd className="flex flex-col">
         <span className="text-h2 text-black tabular-nums">{amount}</span>
@@ -110,7 +110,7 @@ async function MoneyDashboard({ businessId, screen, period }: { businessId: stri
             href={key === 'week' ? base : `${base}?period=${key}`}
             aria-current={key === period ? 'page' : undefined}
             className={`flex h-12 items-center justify-center rounded-full px-2 text-center text-small font-semibold focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-black md:text-body ${
-              key === period ? 'bg-black text-white' : 'bg-grey-100 text-black hover:bg-grey-200'
+              key === period ? 'bg-black text-white' : 'bg-quiet text-black hover:bg-quiet-strong'
             }`}
           >
             {periodTabs[key]}

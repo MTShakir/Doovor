@@ -6,7 +6,7 @@ const cardVariants = cva('rounded-card', {
   variants: {
     variant: {
       outline: 'border border-grey-200 bg-white',
-      filled: 'bg-grey-100',
+      filled: 'bg-white',
       raised: 'bg-white shadow-raised',
     },
     padding: { none: 'p-0', md: 'p-4', lg: 'p-6' },

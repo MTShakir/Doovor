@@ -17,7 +17,7 @@ export const buttonVariants = cva(
       variant: {
         /** One per screen (PRD 7.1). */
         primary: 'rounded-full bg-black text-white hover:bg-ink disabled:bg-grey-200 disabled:text-grey-400',
-        secondary: 'rounded-full bg-grey-100 text-black hover:bg-grey-200 disabled:text-grey-400',
+        secondary: 'rounded-full bg-quiet text-black hover:bg-quiet-strong disabled:text-grey-400',
         tertiary: 'rounded-full bg-transparent text-black underline-offset-4 hover:underline disabled:text-grey-400',
         /** Darker on hover, never lighter: white on red is 4.8:1, and faded to 90% it drops under 4.5:1. */
         destructive: 'rounded-full bg-red text-white hover:brightness-90 disabled:bg-grey-200 disabled:text-grey-400',

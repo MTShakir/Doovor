@@ -6,7 +6,7 @@ export const instant = false;
 
 export default function OnboardingLayout({ children }: { children: ReactNode }) {
   return (
-    <div className="min-h-dvh bg-white">
+    <div className="min-h-dvh bg-canvas">
       <header className="px-4 py-4 md:px-8">
         <span className="text-h3 text-black">{brand.name}</span>
       </header>

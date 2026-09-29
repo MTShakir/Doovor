@@ -12,6 +12,7 @@
   --color-grey-200: var(--brand-grey-200);
   --color-grey-100: var(--brand-grey-100);
   --color-white: var(--brand-white);
+  --color-canvas: var(--brand-canvas);
   --color-yellow: var(--brand-yellow);
   --color-yellow-100: var(--brand-yellow-100);
   --color-red: var(--brand-red);
@@ -88,13 +89,45 @@
   }
 }
 
+/*
+ * The quiet fill (D-226): what a secondary button, a chip, a tile or a hover is tinted with.
+ *
+ * A tint only reads if it differs from what it sits on, and since the app is painted on the
+ * canvas there are now two grounds. Grey-100 against the canvas is a contrast of 1.01, so a
+ * secondary button on a page would have no shape at all. Each surface therefore says what quiet
+ * means on it, and everything inside inherits: white on the canvas, grey on a white card. One
+ * rule instead of every control having to know where it has been put.
+ */
+:root {
+  --quiet: var(--color-grey-100);
+  --quiet-strong: var(--color-grey-200);
+}
+.bg-canvas {
+  --quiet: var(--color-white);
+  --quiet-strong: var(--color-grey-100);
+}
+.bg-white {
+  --quiet: var(--color-grey-100);
+  --quiet-strong: var(--color-grey-200);
+}
+
+@utility bg-quiet {
+  background-color: var(--quiet);
+}
+
+@utility bg-quiet-strong {
+  background-color: var(--quiet-strong);
+}
+
 @layer base {
   html {
     -webkit-text-size-adjust: 100%;
     text-size-adjust: 100%;
   }
   body {
-    background-color: var(--color-white);
+    /* The app is painted on the canvas and white is for what sits on it (D-226). The public site
+       keeps its own white ground, which its layout sets. */
+    background-color: var(--color-canvas);
     color: var(--color-ink);
     font-family: var(--font-sans);
     font-size: var(--text-body);

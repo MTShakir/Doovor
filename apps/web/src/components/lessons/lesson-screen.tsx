@@ -186,7 +186,7 @@ export function LessonScreen({ lesson, startOnRecord }: LessonScreenProps) {
     return (
       <div className="flex flex-col gap-6 px-4 pt-4 pb-8 md:max-w-2xl md:px-8 md:pt-8" data-lesson-ready={draft === null ? undefined : 'yes'}>
         {heading}
-        <section aria-label="Lesson time" className="flex flex-col items-center gap-1 rounded-card bg-grey-100 px-4 py-6">
+        <section aria-label="Lesson time" className="flex flex-col items-center gap-1 rounded-card bg-quiet px-4 py-6">
           <p className="text-caption font-semibold text-grey-700">Lesson time</p>
           <p role="timer" className="text-display font-bold text-black tabular-nums">
             {formatElapsed((Math.min(now, endsAt.getTime()) - startedAt) / 1000)}

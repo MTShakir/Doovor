@@ -28,7 +28,7 @@ export function DateRangePicker({ today, chosen, base }: { today: LocalDate; cho
             href={key === 'last_30_days' ? base : (`${base}?range=${key}` as Route)}
             aria-current={key === chosen.key ? 'page' : undefined}
             className={`flex h-12 items-center justify-center rounded-full px-4 text-small font-semibold focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-black md:text-body ${
-              key === chosen.key ? 'bg-black text-white' : 'bg-grey-100 text-black hover:bg-grey-200'
+              key === chosen.key ? 'bg-black text-white' : 'bg-quiet text-black hover:bg-quiet-strong'
             }`}
           >
             {statsRange(key, today).label}

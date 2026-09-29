@@ -3,7 +3,7 @@ import { NavLink } from '@/components/nav-link';
 import { containsToday, type ChosenView, type DiaryView } from '@/lib/diary/range';
 
 const chosen = 'bg-black text-white';
-const notChosen = 'text-black hover:bg-grey-200';
+const notChosen = 'text-black hover:bg-quiet-strong';
 
 const views: { value: DiaryView; label: string; whenResponsive: string }[] = [
   // Nothing chosen means the day on a phone and the week on a desktop, so the highlight
@@ -11,7 +11,7 @@ const views: { value: DiaryView; label: string; whenResponsive: string }[] = [
   // Each gets one set of colours per width and never two at once: which of two clashing
   // utilities wins is decided by the stylesheet's order, not the order they are written in,
   // and it once left Week white on grey on a phone (D-009).
-  { value: 'day', label: 'Day', whenResponsive: `${chosen} md:bg-transparent md:text-black md:hover:bg-grey-200` },
+  { value: 'day', label: 'Day', whenResponsive: `${chosen} md:bg-transparent md:text-black md:hover:bg-quiet-strong` },
   { value: 'week', label: 'Week', whenResponsive: `${notChosen} md:bg-black md:text-white md:hover:bg-black` },
   { value: 'month', label: 'Month', whenResponsive: notChosen },
 ];
@@ -50,7 +50,7 @@ export function DiaryNav({ view, date, previous, next, today }: {
 }) {
   const backToToday = backToTodayClasses(view, date, today);
   const arrow =
-    'flex size-12 shrink-0 items-center justify-center rounded-full bg-grey-100 text-black hover:bg-grey-200 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-black';
+    'flex size-12 shrink-0 items-center justify-center rounded-full bg-quiet text-black hover:bg-quiet-strong focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-black';
 
   return (
     <nav className="flex flex-col gap-2" aria-label="Diary">
@@ -66,7 +66,7 @@ export function DiaryNav({ view, date, previous, next, today }: {
             <ChevronRight className="size-5" aria-hidden />
           </NavLink>
         </div>
-        <ul className="inline-flex min-h-12 flex-wrap items-center gap-1 rounded-full bg-grey-100 p-1">
+        <ul className="inline-flex min-h-12 flex-wrap items-center gap-1 rounded-full bg-quiet p-1">
           {views.map((option) => (
             <li key={option.value}>
               <NavLink
@@ -91,7 +91,7 @@ export function DiaryNav({ view, date, previous, next, today }: {
         */
         <NavLink
           href={href(view, today)}
-          className={`${backToToday} h-12 w-fit items-center gap-2 rounded-full bg-grey-100 px-4 text-body font-semibold text-black hover:bg-grey-200 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-black`}
+          className={`${backToToday} h-12 w-fit items-center gap-2 rounded-full bg-quiet px-4 text-body font-semibold text-black hover:bg-quiet-strong focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-black`}
         >
           <CalendarDays className="size-5 shrink-0" aria-hidden />
           Back to today

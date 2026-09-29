@@ -39,7 +39,7 @@ export function SchoolDiaryNav({
   // quickly would otherwise build the second address from the state before the first.
   const [chosen, setChosen] = useState({ instructor, transmission });
   const arrow =
-    'flex size-12 shrink-0 items-center justify-center rounded-full bg-grey-100 text-black hover:bg-grey-200 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-black';
+    'flex size-12 shrink-0 items-center justify-center rounded-full bg-quiet text-black hover:bg-quiet-strong focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-black';
 
   const address = (patch: { date?: string; instructor?: string; transmission?: string }): string => {
     const query = new URLSearchParams({ date: patch.date ?? date });

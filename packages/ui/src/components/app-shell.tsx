@@ -112,7 +112,7 @@ export function AppShell({
   children: ReactNode;
 }) {
   return (
-    <div className="min-h-dvh bg-white">
+    <div className="min-h-dvh bg-canvas">
       {banner}
       {/* Past the navigation in one press, for somebody on a keyboard or a screen reader (M6-06).
           The target is focusable, so the keyboard lands there too and the next press carries on

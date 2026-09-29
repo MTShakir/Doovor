@@ -4,7 +4,7 @@ import type { ReactNode } from 'react';
 
 export default function AuthLayout({ children }: { children: ReactNode }) {
   return (
-    <div className="flex min-h-dvh flex-col bg-white">
+    <div className="flex min-h-dvh flex-col bg-canvas">
       <header className="px-4 py-4 md:px-8">
         <Link href="/" className="text-h3 text-black">
           {brand.name}

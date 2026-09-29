@@ -15,7 +15,7 @@ export const Tabs = TabsPrimitive.Root;
  * what "chosen" looks like.
  */
 export function TabsList({ className, ...props }: ComponentProps<typeof TabsPrimitive.List>) {
-  return <TabsPrimitive.List className={cn('inline-flex h-12 items-center gap-1 rounded-full bg-grey-100 p-1', className)} {...props} />;
+  return <TabsPrimitive.List className={cn('inline-flex h-12 items-center gap-1 rounded-full bg-quiet p-1', className)} {...props} />;
 }
 
 export function TabsTrigger({ className, ...props }: ComponentProps<typeof TabsPrimitive.Trigger>) {

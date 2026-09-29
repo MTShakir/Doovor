@@ -79,7 +79,7 @@ async function Books({ searchParams }: { searchParams: Promise<{ year?: string |
             href={one.starts === years[0]?.starts ? '/app/instructor/books' : `/app/instructor/books?year=${String(one.starts)}`}
             aria-current={one.starts === year.starts ? 'page' : undefined}
             className={`flex h-12 items-center justify-center rounded-full px-2 text-center text-small font-semibold focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-black ${
-              one.starts === year.starts ? 'bg-black text-white' : 'bg-grey-100 text-black hover:bg-grey-200'
+              one.starts === year.starts ? 'bg-black text-white' : 'bg-quiet text-black hover:bg-quiet-strong'
             }`}
           >
             {one.label}

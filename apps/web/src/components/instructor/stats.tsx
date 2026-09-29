@@ -64,7 +64,7 @@ export function InstructorStatsCard({ stats }: { stats: InstructorStats }) {
             scroll={false}
             aria-current={span === stats.span ? 'page' : undefined}
             className={`flex h-12 items-center justify-center rounded-full px-2 text-center text-small font-semibold focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-black md:text-body ${
-              span === stats.span ? 'bg-black text-white' : 'bg-grey-100 text-black hover:bg-grey-200'
+              span === stats.span ? 'bg-black text-white' : 'bg-quiet text-black hover:bg-quiet-strong'
             }`}
           >
             {tabs[span]}

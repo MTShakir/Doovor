@@ -114,6 +114,7 @@ import { Suspense, useState, type ReactNode } from 'react';
 
 const sections = [
   'Colour',
+  'Surfaces',
   'Type',
   'Buttons',
   'Inputs',
@@ -750,7 +751,7 @@ export function DesignShowcase() {
           </Field>
         </div>
         <Label>Postcode search card (PRD 7.5)</Label>
-        <div className="rounded-card bg-grey-100 p-4">
+        <div className="rounded-card bg-quiet p-4">
           <PostcodeSearch
             aria-label="Where do you want lessons?"
             placeholder="Where do you want lessons?"
@@ -922,6 +923,36 @@ export function DesignShowcase() {
         </div>
       </Section>
 
+      <Section title="Surfaces">
+        <p className="text-small text-grey-700">
+          The app is painted on the canvas and cards are white. A quiet fill is what a secondary button, a chip or a
+          tile is tinted with, and it follows what it sits on: white on the canvas, grey on a card. Grey on the canvas
+          is a contrast of 1.01, so a control tinted that way would have no shape at all.
+        </p>
+        <div className="grid gap-4 md:grid-cols-2">
+          <div className="flex flex-col gap-3 rounded-card bg-canvas p-4">
+            <Label>On the canvas</Label>
+            <div className="flex flex-wrap items-center gap-2">
+              <Button variant="secondary">Secondary</Button>
+              <span className="rounded-full bg-quiet px-3 py-1 text-small font-semibold text-black">Quiet</span>
+              <span className="rounded-full bg-quiet-strong px-3 py-1 text-small font-semibold text-black">Hovered</span>
+            </div>
+            <Card>
+              <CardTitle>A card on it</CardTitle>
+              <CardDescription>White, whatever is behind it.</CardDescription>
+            </Card>
+          </div>
+          <div className="flex flex-col gap-3 rounded-card border border-grey-200 bg-white p-4">
+            <Label>On a card</Label>
+            <div className="flex flex-wrap items-center gap-2">
+              <Button variant="secondary">Secondary</Button>
+              <span className="rounded-full bg-quiet px-3 py-1 text-small font-semibold text-black">Quiet</span>
+              <span className="rounded-full bg-quiet-strong px-3 py-1 text-small font-semibold text-black">Hovered</span>
+            </div>
+          </div>
+        </div>
+      </Section>
+
       <Section title="Cards and lists">
         <div className="grid gap-4 md:grid-cols-3">
           <Card>
@@ -930,7 +961,7 @@ export function DesignShowcase() {
           </Card>
           <Card variant="filled">
             <CardTitle>Filled card</CardTitle>
-            <CardDescription>Grey-100 background.</CardDescription>
+            <CardDescription>White, with no outline. A card is white wherever it sits (D-226).</CardDescription>
           </Card>
           <Card variant="raised">
             <CardTitle>Raised card</CardTitle>

@@ -50,11 +50,30 @@ export const brand = {
     'grey-200': '#E2E2E2',
     'grey-100': '#F3F3F3',
     white: '#FFFFFF',
+    /**
+     * What the app is painted on (D-226). Cards, bars and sheets are white and sit on this, so a
+     * screen reads as things on a surface rather than one flat sheet. Lighter than grey-100 on
+     * purpose: grey-100 stays what it always was, the tint for a chip, a hover or a picture that
+     * has not loaded, and those still have to show against this.
+     */
+    canvas: '#F5F5F7',
     yellow: '#FFD400',
     /** The palest wash of the brand yellow, to mark a Pro surface without shouting (D-209). */
     'yellow-100': '#FFF8DB',
-    red: '#E11900',
-    blue: '#276EF1',
+    /**
+     * Errors, and what a destructive button is painted with. Darkened from #E11900 with the blue
+     * (D-226): the old value was 4.44:1 on the canvas, under the 4.5 text has to clear, so a
+     * field's error message failed the moment the ground stopped being white. This clears it on
+     * white, on the canvas and on grey-100, and white on it reads better than it did.
+     */
+    red: '#D81700',
+    /**
+     * Links, and the one blue in the palette. Darkened from #276EF1 when the app moved onto the
+     * canvas (D-226): the old value was 4.58:1 on white, a tenth above the 4.5 it has to clear,
+     * and 4.21:1 on the canvas, which is below it. This is 5.19:1 on white and 4.77:1 on the
+     * canvas, so it passes on both and has somewhere to go.
+     */
+    blue: '#2166E0',
     green: '#05A357',
   },
 } as const;
