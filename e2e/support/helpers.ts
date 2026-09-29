@@ -157,6 +157,12 @@ export async function expectAccessible(page: Page, options: { exclude?: string[]
   await page.emulateMedia({ reducedMotion: 'reduce' });
   try {
     await settled(page);
+    // The title arrives with the streamed metadata, after the shell. A scan that starts between
+    // the two reports a page with no title, which is a race and not a fault (D-221). A page that
+    // really has none still fails: this waits a moment and then lets axe say so.
+    await page
+      .waitForFunction(() => document.title.trim() !== '', null, { timeout: 5_000 })
+      .catch(() => undefined);
     // The development overlay is not ours and is not in a build. It mounts and unmounts as the
     // server compiles, and axe walks frames: scanning it crashed the sweep on whichever page
     // happened to be compiling, with "Cannot read properties of null" rather than a violation
