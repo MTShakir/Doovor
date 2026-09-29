@@ -325,7 +325,8 @@ Decisions D-036 to D-050 were logged during this stretch. Two were security fixe
 
 ## In progress
 
-- `beta-prep`, 15 commits ahead of `main` and green in CI on 9707c32: B-60 to B-68, the product owner's list from 26 to 29 September. Ready to merge; the two migrations go to staging first (RUNBOOK 3.1 step 2), because the new screens call functions that are not there yet.
+- `beta-prep`, 5 commits ahead of `main` and green in CI on a7c1531, all five jobs: B-69 to B-72, the rest of the product owner's list of 29 September. Ready to merge.
+- **Staging is four migrations behind and that is why the gallery upload failed there.** `20260927120000_lessons_start_where_lessons_start`, `20260927140000_gallery`, `20260929120000_pictures_a_browser_can_write` and `20260929140000_credit_first_then_the_rest`. The first two are already on `main`; the gallery bucket does not exist on that database, so every upload to it is refused whatever the app does. They go before the app redeploys from `main` (RUNBOOK 3.1 step 2), because the new screens call functions that are not there yet.
 
 ## Next
 
