@@ -240,7 +240,7 @@ export function dayLabel(date: string): string {
  */
 export async function openLearnerTab(
   page: Page,
-  name: 'Summary' | 'Lessons' | 'Payments' | 'Progress' | 'History',
+  name: 'Summary' | 'Lessons' | 'Payments' | 'Progress',
 ): Promise<void> {
   const tab = page.getByRole('tablist', { name: 'About this learner' }).getByRole('tab', { name });
   await expect(tab).toBeVisible();

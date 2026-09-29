@@ -52,7 +52,8 @@ test.describe('the school learner list (LRN-06, M2-10)', () => {
       await page.goto('/app/instructor/learners');
       await page.getByRole('link', { name: 'Amelia Evans', exact: true }).click();
 
-      await openLearnerTab(page, 'History');
+      // At the foot of the summary now, rather than behind a tab of its own (D-222).
+      await openLearnerTab(page, 'Summary');
       const history = page.getByRole('region', { name: 'History' });
       await expect(history.getByText(/Added by|Imported by/)).toBeVisible();
     });
