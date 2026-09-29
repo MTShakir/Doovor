@@ -1,6 +1,7 @@
 'use client';
 
 import {
+  fallbackOutputType,
   avatarImage,
   badgeImage,
   feedbackImage,
@@ -10,6 +11,22 @@ import {
   fitWithin,
   isAcceptedImageType,
 } from '@repo/core/images';
+
+/**
+ * Whether this browser can write a type from a canvas. A canvas that cannot falls back to PNG
+ * without saying so, and the shortest way to find out is to ask it for one pixel (D-224).
+ */
+const encodes = new Map<string, boolean>();
+function canEncode(type: string): boolean {
+  const known = encodes.get(type);
+  if (known !== undefined) return known;
+  const canvas = document.createElement('canvas');
+  canvas.width = 1;
+  canvas.height = 1;
+  const can = canvas.toDataURL(type).startsWith(`data:${type}`);
+  encodes.set(type, can);
+  return can;
+}
 
 /** Why a picture was refused. The pickers turn these into copy. */
 export type ImageProblem = 'WRONG_TYPE' | 'TOO_BIG' | 'UNREADABLE';
@@ -52,8 +69,13 @@ async function prepare(
     if (!context) return { ok: false, problem: 'UNREADABLE' };
     draw(context);
 
+    // A canvas asked for a type it cannot write quietly writes something else (D-224): Safari
+    // could not encode WebP until 16.4, so an iPhone a year or two old returns PNG, which is
+    // larger than the picture we asked for and is not what we then tell the bucket it is. Ask for
+    // what this browser can actually write.
+    const type = canEncode(target.outputType) ? target.outputType : fallbackOutputType;
     const blob = await new Promise<Blob | null>((resolve) => {
-      canvas.toBlob(resolve, target.outputType, target.outputQuality);
+      canvas.toBlob(resolve, type, target.outputQuality);
     });
     if (!blob) return { ok: false, problem: 'UNREADABLE' };
     if (blob.size > target.maxOutputBytes) return { ok: false, problem: 'TOO_BIG' };

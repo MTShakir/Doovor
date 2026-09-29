@@ -18,8 +18,8 @@ insert into public.platform_staff (user_id, role) values (:'staff', 'support_adm
 select is((select public from storage.buckets where id = 'badges'), false, 'badge photos are not public');
 select is(
   (select allowed_mime_types from storage.buckets where id = 'badges'),
-  array['image/webp'],
-  'and only the type the browser produces is stored'
+  array['image/webp', 'image/png'],
+  'and only the types a canvas produces are stored, never one a camera writes (D-224)'
 );
 
 -- Nobody sets their own verification status.

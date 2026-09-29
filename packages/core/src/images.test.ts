@@ -83,6 +83,9 @@ describe('avatar images (INS-01, M1-03)', () => {
     expect(isBusinessObjectPath(businessObjectPath(profile, token), school)).toBe(false);
     expect(isBusinessObjectPath(`businesses/${school}/../${profile}/${token}.webp`, school)).toBe(false);
     expect(isBusinessObjectPath(profileObjectPath(school, token), school)).toBe(false);
-    expect(isBusinessObjectPath(`businesses/${school}/${token}.png`, school)).toBe(false);
+    // PNG is what a canvas writes where it cannot write WebP, so it is a name we give out
+    // (D-224). A camera's own type is still refused.
+    expect(isBusinessObjectPath(`businesses/${school}/${token}.png`, school)).toBe(true);
+    expect(isBusinessObjectPath(`businesses/${school}/${token}.jpg`, school)).toBe(false);
   });
 });

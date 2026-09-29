@@ -1,6 +1,6 @@
 -- Profile photos: public to look at, private to change (INS-01, AUTH-04, M1-03).
 begin;
-select plan(10);
+select plan(11);
 
 select tests.create_fixture();
 
@@ -17,11 +17,17 @@ select hasnt_column('public', 'instructor_profiles', 'photo_url', 'and no longer
 select is((select public from storage.buckets where id = 'avatars'), true, 'profile photos are public to read');
 select is(
   (select allowed_mime_types from storage.buckets where id = 'avatars'),
-  array['image/webp'],
-  'the bucket takes only what the browser produces, so an original with camera metadata cannot be stored'
+  array['image/webp', 'image/png'],
+  'the bucket takes only what a canvas produces, so an original with camera metadata cannot be stored'
+);
+-- The two a canvas writes and a camera does not. PNG joined the list when it turned out Safari
+-- could not encode WebP until 16.4 and was quietly writing PNG instead (D-224).
+select ok(
+  (select not ('image/jpeg' = any (allowed_mime_types)) from storage.buckets where id = 'avatars'),
+  'and never what a camera writes'
 );
 select ok(
-  (select file_size_limit from storage.buckets where id = 'avatars') <= 2097152,
+  (select file_size_limit from storage.buckets where id = 'avatars') <= 5242880,
   'and only a small file'
 );
 

@@ -6,6 +6,7 @@ import {
   feedbackObjectPath,
   galleryImage,
   galleryObjectPath,
+  preparedImageExtension,
   profileObjectPath,
   receiptImage,
   receiptObjectPath,
@@ -95,9 +96,10 @@ export async function uploadProfileImage(
   profileId: string,
   blob: Blob,
 ): Promise<UploadOutcome> {
-  const path = profileObjectPath(profileId, crypto.randomUUID());
+  // What the browser actually produced, in the name and in what we tell the bucket (D-224).
+  const path = profileObjectPath(profileId, crypto.randomUUID(), preparedImageExtension(blob.type));
   const { error } = await supabase.storage.from(bucket).upload(path, blob, {
-    contentType: contentType[bucket],
+    contentType: blob.type || contentType[bucket],
     cacheControl: '31536000',
   });
   return error ? { ok: false, problem: uploadProblem(error) } : { ok: true, path };
@@ -108,9 +110,9 @@ export async function uploadProfileImage(
  * against who may change the school's profile, whatever the app sends.
  */
 export async function uploadBusinessLogo(supabase: SupabaseClient<Database>, businessId: string, blob: Blob): Promise<UploadOutcome> {
-  const path = businessObjectPath(businessId, crypto.randomUUID());
+  const path = businessObjectPath(businessId, crypto.randomUUID(), preparedImageExtension(blob.type));
   const { error } = await supabase.storage.from(avatarsBucket).upload(path, blob, {
-    contentType: avatarImage.outputType,
+    contentType: blob.type || avatarImage.outputType,
     cacheControl: '31536000',
   });
   return error ? { ok: false, problem: uploadProblem(error) } : { ok: true, path };
@@ -130,9 +132,9 @@ export async function removeProfileImage(
  * against who keeps those books, whatever the app sends.
  */
 export async function uploadReceipt(supabase: SupabaseClient<Database>, businessId: string, blob: Blob): Promise<UploadOutcome> {
-  const path = receiptObjectPath(businessId, crypto.randomUUID());
+  const path = receiptObjectPath(businessId, crypto.randomUUID(), preparedImageExtension(blob.type));
   const { error } = await supabase.storage.from(receiptsBucket).upload(path, blob, {
-    contentType: receiptImage.outputType,
+    contentType: blob.type || receiptImage.outputType,
     cacheControl: '31536000',
   });
   return error ? { ok: false, problem: uploadProblem(error) } : { ok: true, path };
@@ -152,9 +154,9 @@ export async function uploadGalleryPhoto(
   businessId: string,
   blob: Blob,
 ): Promise<UploadOutcome> {
-  const path = galleryObjectPath(businessId, crypto.randomUUID());
+  const path = galleryObjectPath(businessId, crypto.randomUUID(), preparedImageExtension(blob.type));
   const { error } = await supabase.storage.from(galleryBucket).upload(path, blob, {
-    contentType: galleryImage.outputType,
+    contentType: blob.type || galleryImage.outputType,
     cacheControl: '31536000',
   });
   return error ? { ok: false, problem: uploadProblem(error) } : { ok: true, path };
@@ -166,9 +168,9 @@ export async function uploadFeedbackImage(
   userId: string,
   blob: Blob,
 ): Promise<UploadOutcome> {
-  const path = feedbackObjectPath(userId, crypto.randomUUID());
+  const path = feedbackObjectPath(userId, crypto.randomUUID(), preparedImageExtension(blob.type));
   const { error } = await supabase.storage.from(feedbackBucket).upload(path, blob, {
-    contentType: feedbackImage.outputType,
+    contentType: blob.type || feedbackImage.outputType,
     cacheControl: '31536000',
   });
   return error ? { ok: false, problem: uploadProblem(error) } : { ok: true, path };

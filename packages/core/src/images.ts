@@ -17,8 +17,8 @@ export const avatarImage = {
   acceptedTypes: ['image/jpeg', 'image/png', 'image/webp', 'image/gif'],
   /** Before processing, so a photo straight off a phone is accepted. */
   maxInputBytes: 15 * 1024 * 1024,
-  /** After processing. A 512 px WebP is far below this; the bucket enforces it as well. */
-  maxOutputBytes: 2 * 1024 * 1024,
+  /** After processing. A 512 px WebP is far below this, and a PNG of one fits too (D-224). */
+  maxOutputBytes: 5 * 1024 * 1024,
 } as const;
 
 /**
@@ -37,8 +37,8 @@ export const feedbackImage = {
 } as const;
 
 /** Where a report's picture is kept: the sender's own folder, which is what storage checks. */
-export function feedbackObjectPath(userId: string, token: string): string {
-  return `${userId}/${token}.webp`;
+export function feedbackObjectPath(userId: string, token: string, extension: 'webp' | 'png' = 'webp'): string {
+  return `${userId}/${token}.${extension}`;
 }
 
 /**
@@ -53,12 +53,13 @@ export const galleryImage = {
   maxSide: 1400,
   acceptedTypes: avatarImage.acceptedTypes,
   maxInputBytes: 15 * 1024 * 1024,
-  maxOutputBytes: 2 * 1024 * 1024,
+  // Room for a PNG of the same picture, which is what a browser that cannot write WebP produces.
+  maxOutputBytes: 5 * 1024 * 1024,
 } as const;
 
 /** Where a pass photo is kept: the Business's own folder, which is what storage checks. */
-export function galleryObjectPath(businessId: string, token: string): string {
-  return `${businessId}/${token}.webp`;
+export function galleryObjectPath(businessId: string, token: string, extension: 'webp' | 'png' = 'webp'): string {
+  return `${businessId}/${token}.${extension}`;
 }
 
 export function isGalleryObjectPath(path: string, businessId: string): boolean {
@@ -85,6 +86,30 @@ export const badgeImage = {
   maxInputBytes: 15 * 1024 * 1024,
   maxOutputBytes: 5 * 1024 * 1024,
 } as const;
+
+/**
+ * What a prepared picture may be (D-224).
+ *
+ * WebP is what we ask a canvas for, because it is the smallest. Safari could not encode it until
+ * 16.4, and a canvas asked for a type it cannot write quietly produces something else, so a phone
+ * a year or two old sends PNG. Both are fine: what matters is that the picture went through a
+ * canvas, which is what leaves the camera's metadata behind, and that we say which one it is
+ * rather than declaring WebP over other bytes and being refused by the bucket.
+ */
+export const preparedImageTypes = ['image/webp', 'image/png'] as const;
+
+/**
+ * The type a canvas is asked for where WebP cannot be written. PNG rather than JPEG on purpose:
+ * a camera writes HEIC or JPEG and never PNG, so refusing everything but WebP and PNG keeps the
+ * rule the avatars bucket was built on, that an untouched original cannot be stored even by a
+ * caller that skips the app. PNG is larger, which the buckets allow for.
+ */
+export const fallbackOutputType = 'image/png';
+
+/** What a prepared picture is called, by what it turned out to be. */
+export function preparedImageExtension(type: string): 'webp' | 'png' {
+  return type === 'image/webp' ? 'webp' : 'png';
+}
 
 export function isAcceptedImageType(type: string): boolean {
   return (avatarImage.acceptedTypes as readonly string[]).includes(type);
@@ -130,11 +155,11 @@ export function centreCrop(width: number, height: number, target: number = avata
  * a cache, and the old one is deleted afterwards. Avatars and badges share the shape; they
  * differ only in which bucket they are in.
  */
-export function profileObjectPath(profileId: string, token: string): string {
-  return `${profileId}/${token}.webp`;
+export function profileObjectPath(profileId: string, token: string, extension: 'webp' | 'png' = 'webp'): string {
+  return `${profileId}/${token}.${extension}`;
 }
 
-const objectFileName = /^[a-z0-9-]{8,64}\.webp$/;
+const objectFileName = /^[a-z0-9-]{8,64}\.(webp|png)$/;
 
 /** Guards the Server Action: a path may only name a folder the caller owns. */
 export function isProfileObjectPath(path: string, profileId: string): boolean {
@@ -146,16 +171,16 @@ export function isProfileObjectPath(path: string, profileId: string): boolean {
  * A school's logo sits in the avatars bucket in a folder of the school's own, which storage
  * lets only those who may change the school's profile write (AUTH-05, M5-11).
  */
-export function businessObjectPath(businessId: string, token: string): string {
-  return `businesses/${businessId}/${token}.webp`;
+export function businessObjectPath(businessId: string, token: string, extension: 'webp' | 'png' = 'webp'): string {
+  return `businesses/${businessId}/${token}.${extension}`;
 }
 
 /**
  * Where a photographed receipt is kept: the Business's own folder, so storage can be told who
  * may read it without knowing anything about expenses (MNY-02, D-198).
  */
-export function receiptObjectPath(businessId: string, token: string): string {
-  return `${businessId}/${token}.webp`;
+export function receiptObjectPath(businessId: string, token: string, extension: 'webp' | 'png' = 'webp'): string {
+  return `${businessId}/${token}.${extension}`;
 }
 
 export function isReceiptObjectPath(path: string, businessId: string): boolean {
