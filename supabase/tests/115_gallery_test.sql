@@ -17,6 +17,11 @@ select tests.create_fixture();
 select tests.create_user_with_id(:'staff', 'staff.gallery@test.local', 'Sue Staff');
 insert into public.platform_staff (user_id, role) values (:'staff', 'super_admin');
 
+-- Days are counted from `private.today()`, the day in the United Kingdom, because that is what
+-- the rule inside `add_gallery_photo` compares against (D-141). The database's own `current_date`
+-- is a different day whenever the server is set elsewhere, which is what `pnpm db:test:another-day`
+-- proves every run (D-156), and it made "a pass that has not happened yet" happen already.
+
 -- Both Businesses are on a plan that carries it, except where a test says otherwise.
 update public.businesses set plan = 'pro' where id = :'business_a';
 update public.businesses set plan = 'school' where id = :'business_b';
@@ -32,7 +37,7 @@ select tests.authenticate_as(:'asha');
 
 select lives_ok(
   format($$ select public.add_gallery_photo(%L, %L, %L, null) $$,
-         :'business_a' || '/passed-1.webp', (current_date - 3)::text, :'learner_1'),
+         :'business_a' || '/passed-1.webp', (private.today() - 3)::text, :'learner_1'),
   'an instructor adds a photo for a learner of theirs'
 );
 select id as first_photo from public.gallery_photos where image_path = :'business_a' || '/passed-1.webp' \gset
@@ -56,7 +61,7 @@ select ok(
 -- the day and the learner may already have left.
 select lives_ok(
   format($$ select public.add_gallery_photo(%L, %L, null, %L) $$,
-         :'business_a' || '/passed-2.webp', (current_date - 1)::text, '  Jaz Hall  '),
+         :'business_a' || '/passed-2.webp', (private.today() - 1)::text, '  Jaz Hall  '),
   'a name typed by hand is taken'
 );
 select is(
@@ -70,28 +75,28 @@ select is(
 -- ---------------------------------------------------------------------------------------
 select throws_ok(
   format($$ select public.add_gallery_photo(%L, %L, %L, null) $$,
-         :'business_a' || '/passed-3.webp', (current_date - 1)::text, :'learner_2'),
+         :'business_a' || '/passed-3.webp', (private.today() - 1)::text, :'learner_2'),
   'NOT_ALLOWED',
   'a learner they have never taught is not theirs to put on a wall'
 );
 
 select throws_ok(
   format($$ select public.add_gallery_photo(%L, %L, null, %L) $$,
-         :'business_b' || '/passed-4.webp', (current_date - 1)::text, 'Someone Else'),
+         :'business_b' || '/passed-4.webp', (private.today() - 1)::text, 'Someone Else'),
   'VALIDATION_FAILED',
   'a picture in another Business folder is refused'
 );
 
 select throws_ok(
   format($$ select public.add_gallery_photo(%L, %L, null, %L) $$,
-         :'business_a' || '/passed-5.webp', (current_date + 1)::text, 'Tomorrow Person'),
+         :'business_a' || '/passed-5.webp', (private.today() + 1)::text, 'Tomorrow Person'),
   'VALIDATION_FAILED',
   'a pass that has not happened yet is refused'
 );
 
 select throws_ok(
   format($$ select public.add_gallery_photo(%L, %L, null, %L) $$,
-         :'business_a' || '/passed-6.webp', (current_date - 1)::text, '   '),
+         :'business_a' || '/passed-6.webp', (private.today() - 1)::text, '   '),
   'VALIDATION_FAILED',
   'a photo with nobody on it is refused'
 );
@@ -100,7 +105,7 @@ select tests.clear_authentication();
 select tests.authenticate_as(:'outsider');
 select throws_ok(
   format($$ select public.add_gallery_photo(%L, %L, null, %L) $$,
-         :'business_a' || '/passed-7.webp', (current_date - 1)::text, 'Nobody At All'),
+         :'business_a' || '/passed-7.webp', (private.today() - 1)::text, 'Nobody At All'),
   'NOT_ALLOWED',
   'somebody who works nowhere cannot add one'
 );
@@ -111,7 +116,7 @@ update public.businesses set plan = 'free' where id = :'business_a';
 select tests.authenticate_as(:'asha');
 select throws_ok(
   format($$ select public.add_gallery_photo(%L, %L, null, %L) $$,
-         :'business_a' || '/passed-8.webp', (current_date - 1)::text, 'Free Plan'),
+         :'business_a' || '/passed-8.webp', (private.today() - 1)::text, 'Free Plan'),
   'PLAN_REQUIRED',
   'a Business on Free cannot add one'
 );
