@@ -6,6 +6,7 @@
   "exports": {
     "./email": "./src/email/index.ts",
     "./geo": "./src/geo/index.ts",
+    "./billing": "./src/billing/index.ts",
     "./payments": "./src/payments/index.ts",
     "./map": "./src/map/index.ts",
     "./rate-limit": "./src/rate-limit/index.ts",

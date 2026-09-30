@@ -24,6 +24,7 @@
     "./csv-write": "./src/csv-write.ts",
     "./colour": "./src/colour.ts",
     "./loyalty": "./src/loyalty.ts",
+    "./subscription": "./src/subscription.ts",
     "./mileage": "./src/mileage.ts",
     "./person-name": "./src/person-name.ts",
     "./phone": "./src/phone.ts",
