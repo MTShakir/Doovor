@@ -37,6 +37,17 @@ overrides:
   tmp: '>=0.2.6'
   # Missing bounds check when given a buffer, under Lighthouse CI.
   uuid: '>=11.1.1'
+  # Stack exhaustion from nested brace groups and from parseCommaParts. It reaches us three times
+  # over, once per major, all of it under the eslint and Lighthouse toolchains, which read our own
+  # files at development time and never a visitor's input. Fixed in each line, so each line is
+  # pinned rather than collapsed onto one: brace-expansion 1 and 2 are what minimatch's older
+  # majors ask for.
+  # Each line is bounded at both ends on purpose. An open ">=1.1.20" is satisfied by 5.0.9, so it
+  # lifted minimatch 3 four majors and left it vulnerable anyway.
+  brace-expansion@1: '>=1.1.20 <2'
+  brace-expansion@2: '>=2.1.6 <3'
+  brace-expansion@4: '>=5.0.11'
+  brace-expansion@5: '>=5.0.11'
 
 # An advisory with no fixed version, read and accepted (M6-02, D-136). extract-zip reaches us only
 # through Lighthouse CI's browser downloader, which never runs: the Lighthouse job measures with the
