@@ -37,7 +37,7 @@ export function NotificationBell({
       href={href}
       aria-label={unreadLabel(unread)}
       className={cn(
-        'relative flex size-12 shrink-0 items-center justify-center rounded-full text-black transition-colors duration-200 hover:bg-grey-100',
+        'relative flex size-12 shrink-0 items-center justify-center rounded-full text-black transition-colors duration-200 hover:bg-quiet',
         'focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-black',
       )}
     >

@@ -52,7 +52,7 @@ export function RatingScale({ label, value, onChange, className }: RatingScalePr
               className={cn(
                 'h-12 rounded-input text-body font-semibold tabular-nums transition-colors duration-200 ease-out',
                 'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-black',
-                chosen ? 'bg-black text-white' : 'bg-grey-100 text-black hover:bg-grey-200',
+                chosen ? 'bg-black text-white' : 'bg-quiet text-black hover:bg-quiet-strong',
               )}
             >
               {rating}

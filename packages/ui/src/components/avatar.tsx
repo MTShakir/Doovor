@@ -30,7 +30,7 @@ export function Avatar({ name, src, verified = false, decorative = false, size, 
   const key = size ?? 'md';
   return (
     <span className={cn(avatarVariants({ size }), className)} aria-hidden={decorative || undefined}>
-      <AvatarPrimitive.Root className="flex size-full overflow-hidden rounded-full bg-grey-100">
+      <AvatarPrimitive.Root className="flex size-full overflow-hidden rounded-full bg-quiet">
         {src ? <AvatarPrimitive.Image src={src} alt={name} className="size-full object-cover" /> : null}
         <AvatarPrimitive.Fallback
           className={cn('flex size-full items-center justify-center font-semibold text-ink', initialsSize[key])}

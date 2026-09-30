@@ -18,7 +18,9 @@ export function Chip({ selected = false, className, type, children, ...props }: 
         'relative inline-flex min-h-10 items-center gap-1.5 rounded-full px-4 py-1.5 text-small font-semibold',
         'transition-colors duration-200 ease-out after:absolute after:-inset-1 after:content-[""]',
         'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-black',
-        selected ? 'bg-black text-white' : 'bg-grey-100 text-black hover:bg-grey-200',
+        // Unchosen, a chip is tinted with whatever it is sitting on: white on the canvas, grey on
+        // a card (D-226). Naming one grey put the learner filters on the canvas out of sight.
+        selected ? 'bg-black text-white' : 'bg-quiet text-black hover:bg-quiet-strong',
         'disabled:pointer-events-none disabled:text-grey-400',
         className,
       )}

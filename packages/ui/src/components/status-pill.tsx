@@ -14,10 +14,10 @@ export const statusPillVariants = cva(
     variants: {
       status: {
         confirmed: 'bg-black text-white',
-        pending: 'bg-grey-100 text-grey-700',
+        pending: 'bg-quiet text-grey-700',
         completed: 'bg-green text-black',
         paid: 'bg-green text-black',
-        cancelled: 'bg-grey-100 text-grey-700 line-through',
+        cancelled: 'bg-quiet text-grey-700 line-through',
         /** Something a person has to finish, such as payments that are nearly set up. */
         attention: 'bg-yellow text-black',
         unpaid: 'border border-red bg-white text-red',

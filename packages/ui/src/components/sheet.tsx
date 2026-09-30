@@ -41,7 +41,7 @@ export function Sheet({ open, onOpenChange, title, description, children, footer
                 ) : null}
               </div>
               <DialogPrimitive.Close
-                className="-mt-2 -mr-3 flex size-12 items-center justify-center rounded-full hover:bg-grey-100 focus-visible:outline-2 focus-visible:outline-black"
+                className="-mt-2 -mr-3 flex size-12 items-center justify-center rounded-full hover:bg-quiet focus-visible:outline-2 focus-visible:outline-black"
                 aria-label="Close"
               >
                 <X size={24} strokeWidth={1.5} aria-hidden />

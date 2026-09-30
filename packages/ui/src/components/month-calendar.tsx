@@ -49,7 +49,7 @@ export function MonthCalendar({
   while (cells.length % 7 !== 0) cells.push(null);
 
   const navButton =
-    'flex size-12 items-center justify-center rounded-full hover:bg-grey-100 focus-visible:outline-2 focus-visible:outline-black';
+    'flex size-12 items-center justify-center rounded-full hover:bg-quiet focus-visible:outline-2 focus-visible:outline-black';
 
   return (
     <div className={cn('flex flex-col gap-2', className)}>
@@ -98,7 +98,7 @@ export function MonthCalendar({
                         // Fills the column up to the 48 px touch target (PRD 7.1).
                         'relative mx-auto flex aspect-square w-full max-w-12 flex-col items-center justify-center rounded-full text-body tabular-nums transition-colors duration-200',
                         'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-black',
-                        isSelected ? 'bg-black font-semibold text-white' : 'text-ink hover:bg-grey-100',
+                        isSelected ? 'bg-black font-semibold text-white' : 'text-ink hover:bg-quiet',
                         isToday && !isSelected && 'font-semibold ring-1 ring-black',
                         'disabled:text-grey-400 disabled:hover:bg-transparent',
                       )}

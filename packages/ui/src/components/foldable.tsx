@@ -22,7 +22,7 @@ export function Foldable({ title, subtitle, open = false, className, children }:
       <summary
         className={cn(
           'flex cursor-pointer list-none items-center justify-between gap-3 rounded-card p-4',
-          'hover:bg-grey-100 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-black',
+          'hover:bg-quiet focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-black',
           // The arrow is the only marker: the browser's own triangle would sit beside it.
           '[&::-webkit-details-marker]:hidden',
         )}

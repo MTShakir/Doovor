@@ -42,7 +42,7 @@ export function TimeSlotGrid({ slots, value, onChange, label, className }: TimeS
               'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-black',
               selected
                 ? 'border-2 border-black bg-yellow font-semibold text-black'
-                : 'border border-grey-200 bg-grey-100 text-ink hover:border-black',
+                : 'border border-grey-200 bg-quiet text-ink hover:border-black',
               'disabled:border-transparent disabled:bg-white disabled:text-grey-400 disabled:line-through',
             )}
           >

@@ -123,25 +123,36 @@ async function Profile() {
         <CoverageForm postcode={profile.base_postcode} radiusMiles={profile.radius_miles} centre={centre} />
         <CoverageEditor districts={districts ?? []} />
       </Card>
-      <ProfileForm
-        profileId={membership.instructorProfileId}
-        photoPath={profile.photo_path}
-        values={{
-          displayName: profile.display_name,
-          // Their own business is theirs to name; a school's is not (D-196).
-          ...(membership.businessType === 'independent' && membership.role === 'owner'
-            ? { businessName: membership.businessName }
-            : {}),
-          bio: profile.bio ?? '',
-          languages: profile.languages,
-          yearsTeaching: profile.years_teaching === null ? '' : String(profile.years_teaching),
-          transmission: profile.transmission,
-          carMake: profile.car_make ?? '',
-          carModel: profile.car_model ?? '',
-          dualControls: profile.dual_controls,
-          specialisms: profile.specialisms as Specialism[],
-        }}
-      />
+      {/*
+        Everything a learner reads about them, on a surface of its own (D-226). It sat straight on
+        the canvas while the three sections above it were cards, so the page stopped looking like a
+        page half way down and the chips and fields had nothing behind them.
+      */}
+      <Card className="flex flex-col gap-4">
+        <div className="flex flex-col gap-1">
+          <CardTitle>About you</CardTitle>
+          <CardDescription>What a learner reads before they book.</CardDescription>
+        </div>
+        <ProfileForm
+          profileId={membership.instructorProfileId}
+          photoPath={profile.photo_path}
+          values={{
+            displayName: profile.display_name,
+            // Their own business is theirs to name; a school's is not (D-196).
+            ...(membership.businessType === 'independent' && membership.role === 'owner'
+              ? { businessName: membership.businessName }
+              : {}),
+            bio: profile.bio ?? '',
+            languages: profile.languages,
+            yearsTeaching: profile.years_teaching === null ? '' : String(profile.years_teaching),
+            transmission: profile.transmission,
+            carMake: profile.car_make ?? '',
+            carModel: profile.car_model ?? '',
+            dualControls: profile.dual_controls,
+            specialisms: profile.specialisms as Specialism[],
+          }}
+        />
+      </Card>
     </>
   );
 }

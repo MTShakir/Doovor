@@ -67,7 +67,7 @@ export function Sidebar({ items, header, footer, linkComponent: Link = 'a' }: Si
                 className={cn(
                   'flex h-12 items-center gap-3 rounded-full px-3 text-body transition-colors duration-200',
                   'focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-black',
-                  active ? 'bg-grey-100 font-semibold text-black' : 'text-ink hover:bg-grey-100',
+                  active ? 'bg-quiet font-semibold text-black' : 'text-ink hover:bg-quiet',
                 )}
               >
                 <Icon size={24} strokeWidth={1.5} aria-hidden />

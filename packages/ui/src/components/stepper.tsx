@@ -31,7 +31,7 @@ export function NumberStepper({
     onChange(Math.min(max, Math.max(min, next)));
   };
   const buttonClasses =
-    'flex size-12 items-center justify-center rounded-full bg-grey-100 text-black hover:bg-grey-200 disabled:text-grey-400 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-black';
+    'flex size-12 items-center justify-center rounded-full bg-quiet text-black hover:bg-quiet-strong disabled:text-grey-400 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-black';
   return (
     <div className={cn('inline-flex items-center gap-4', className)} role="group" aria-label={label}>
       <button type="button" className={buttonClasses} onClick={() => { set(value - step); }} disabled={value <= min} aria-label={`Decrease ${label.toLowerCase()}`}>

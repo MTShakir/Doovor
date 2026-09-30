@@ -30,7 +30,7 @@ export function PostcodeSearch({ className, onUseLocation, onChange, ...props }:
         <button
           type="button"
           onClick={onUseLocation}
-          className="-mr-2 flex size-12 shrink-0 items-center justify-center rounded-full hover:bg-grey-100 focus-visible:outline-2 focus-visible:outline-black"
+          className="-mr-2 flex size-12 shrink-0 items-center justify-center rounded-full hover:bg-quiet focus-visible:outline-2 focus-visible:outline-black"
           aria-label="Use my location"
         >
           <MapPin size={24} strokeWidth={1.5} aria-hidden />

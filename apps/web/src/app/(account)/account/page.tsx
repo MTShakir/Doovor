@@ -6,7 +6,7 @@ import { Card, CardDescription, CardTitle } from '@repo/ui/card';
 import { ListDivider, ListRow } from '@repo/ui/list-row';
 import { SkeletonRow } from '@repo/ui/skeleton';
 import { StatusPill } from '@repo/ui/status-pill';
-import { Building2, ChevronLeft, IdCard, KeyRound, Mail, MonitorSmartphone, Phone, ShieldCheck, UserRound } from 'lucide-react';
+import { Building2, ChevronLeft, IdCard, KeyRound, LogOut, Mail, MonitorSmartphone, Phone, ShieldCheck, UserRound } from 'lucide-react';
 import type { Metadata, Route } from 'next';
 import Link from 'next/link';
 import { Suspense } from 'react';
@@ -219,8 +219,14 @@ async function AccountContent() {
         </div>
       </Card>
 
+      {/*
+        A button, not a line of text. As tertiary with the padding taken off it read as a heading
+        sitting under the last card, which on the canvas is nothing at all (D-226): the one control
+        on the screen that ends a session looked like a label.
+      */}
       <form action={signOut.bind(null, 'local')}>
-        <Button type="submit" variant="tertiary" className="px-0">
+        <Button type="submit" variant="secondary" width="full">
+          <LogOut className="size-5" aria-hidden />
           Sign out
         </Button>
       </form>
