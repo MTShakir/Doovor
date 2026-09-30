@@ -182,7 +182,7 @@ importers:
         specifier: ^3.9.0
         version: 3.9.6
       supabase:
-        specifier: ^2.117.0
+        specifier: 2.117.0
         version: 2.117.0
       turbo:
         specifier: ^2.10.0
