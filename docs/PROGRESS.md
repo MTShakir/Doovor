@@ -331,7 +331,8 @@ Decisions D-036 to D-050 were logged during this stretch. Two were security fixe
 ## In progress
 
 - `beta-prep`, 5 commits ahead of `main` and green in CI on a7c1531, all five jobs: B-69 to B-72, the rest of the product owner's list of 29 September. Ready to merge.
-- **Staging is four migrations behind and that is why the gallery upload failed there.** `20260927120000_lessons_start_where_lessons_start`, `20260927140000_gallery`, `20260929120000_pictures_a_browser_can_write` and `20260929140000_credit_first_then_the_rest`. The first two are already on `main`; the gallery bucket does not exist on that database, so every upload to it is refused whatever the app does. They go before the app redeploys from `main` (RUNBOOK 3.1 step 2), because the new screens call functions that are not there yet.
+- **Staging is up to date, checked on 30 September 2026.** `pnpm supabase migration list` matches every local migration to a remote one, the last two being `20260930072353_no_show_after_thirty_minutes` and `20260930073252_instructor_colour_on_the_public_profile`, and `db push --dry-run` answers "Remote database is up to date". `20260927140000_gallery` is among them, so the bucket the gallery uploads to exists there now.
+- This entry said for two days that staging was four migrations behind, which was an inference from the gallery upload failing on a phone and was never re-checked. Ask the CLI rather than the notes: `pnpm supabase db push --dry-run` is read-only and answers in seconds. Every merge carrying a migration still needs the push afterwards, because nothing in CI touches the hosted database.
 
 ## Next
 
