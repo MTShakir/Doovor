@@ -1,12 +1,15 @@
 import { expect, test, type Page } from '@playwright/test';
 import { authFile } from '../support/accounts';
-import { expectAccessible, snap } from '../support/helpers';
+import { aBadgeNumber, expectAccessible, snap } from '../support/helpers';
 import { jpegWithGps } from '../support/images';
 import { linkFromEmail } from '../support/mailpit';
 import { chooseRoleAndCreateAccount, uniqueEmail } from '../support/sign-up';
 
 /** A new instructor who has sent their badge in, waiting to be checked (INS-02). */
-async function submitBadge(page: Page, email: string, name: string): Promise<void> {
+/** Signs somebody up and sends their badge in. Answers with the number it used, which is its own
+ *  so that both widths can run at once against a platform where a badge belongs to one account. */
+async function submitBadge(page: Page, email: string, name: string): Promise<string> {
+  const badgeNumber = aBadgeNumber();
   await chooseRoleAndCreateAccount(
     page,
     { card: "I'm an instructor", heading: 'Create your instructor account' },
@@ -30,7 +33,7 @@ async function submitBadge(page: Page, email: string, name: string): Promise<voi
   // The path is only sent once the upload has finished.
   await upload;
   await expect(page.getByRole('button', { name: 'Replace photo' })).toBeVisible();
-  await page.getByLabel('Badge number').fill('654321');
+  await page.getByLabel('Badge number').fill(badgeNumber);
   await page.getByLabel('Badge expiry date').fill('2029-06-30');
   await page.getByRole('checkbox', { name: 'I have a current enhanced DBS check' }).click();
   await page.getByRole('button', { name: 'Continue' }).click();
@@ -43,6 +46,7 @@ async function submitBadge(page: Page, email: string, name: string): Promise<voi
   }
   await page.getByRole('button', { name: 'Skip for now' }).click();
   await expect(page).toHaveURL(/\/app\/instructor$/);
+  return badgeNumber;
 }
 
 // The queue is a desktop screen: the admin portal says so itself (PRD 8.2).
@@ -50,7 +54,7 @@ test.describe('verification queue (INS-02, ADM-03, M1-12)', { tag: '@desktop-onl
   test('a badge sent in is checked by a person, and the tick follows', async ({ page, browser }, testInfo) => {
     const email = uniqueEmail(testInfo, 'queue-approve');
     const name = `Nina Queue ${testInfo.project.name}`;
-    await submitBadge(page, email, name);
+    const badgeNumber = await submitBadge(page, email, name);
 
     // Support staff, on their own session.
     const staff = await browser.newContext({ storageState: authFile('support') });
@@ -60,7 +64,7 @@ test.describe('verification queue (INS-02, ADM-03, M1-12)', { tag: '@desktop-onl
 
     // Scoped to the page, because a toast is a list item too.
     const waiting = admin.getByRole('main').locator('li', { hasText: name });
-    await expect(waiting).toContainText('Badge 654321');
+    await expect(waiting).toContainText(`Badge ${badgeNumber}`);
     await expect(waiting).toContainText('expires Sat 30 Jun 2029');
     // The badge photo is private, so it is shown through a signed address.
     await expect(waiting.getByRole('img', { name: `The badge ${name} sent in` })).toHaveAttribute('src', /token=/);

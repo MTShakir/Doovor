@@ -1,7 +1,7 @@
 -- Badge photos are private, and verification is decided by staff, not the applicant
 -- (INS-02, AUTH-04, M1-04).
 begin;
-select plan(14);
+select plan(18);
 
 select tests.create_fixture();
 
@@ -9,6 +9,7 @@ select tests.create_fixture();
 \set asha_user 'a0000000-0000-0000-0000-000000000001'
 \set ian 'b1000000-0000-0000-0000-000000000001'
 \set ian_user 'b0000000-0000-0000-0000-000000000003'
+\set ivy 'b1000000-0000-0000-0000-000000000002'
 \set ivy_user 'b0000000-0000-0000-0000-000000000004'
 
 select tests.create_user('staff.badge@test.local', 'Sam Support') as staff \gset
@@ -86,6 +87,37 @@ select throws_ok(
   '42501',
   'NOT_ALLOWED',
   'one instructor cannot submit for another'
+);
+
+-- ---------------------------------------------------------------------------------------
+-- One badge number, one account (INS-02, D-230).
+-- ---------------------------------------------------------------------------------------
+select tests.authenticate_as(:'asha_user');
+select lives_ok(
+  format($$ select public.submit_verification(%L, 'adi', 'ADI778899', (private.today() + 400)::date, true, null) $$, :'asha'),
+  'a badge number nobody else has is accepted'
+);
+select tests.clear_authentication();
+select tests.authenticate_as(:'ivy_user');
+select throws_ok(
+  format($$ select public.submit_verification(%L, 'adi', 'ADI778899', (private.today() + 400)::date, true, null) $$, :'ivy'),
+  'P0001',
+  'BADGE_TAKEN',
+  'a second account cannot claim the same badge number'
+);
+-- Folded and trimmed, because that is what a person means by the same number.
+select throws_ok(
+  format($$ select public.submit_verification(%L, 'adi', '  adi778899 ', (private.today() + 400)::date, true, null) $$, :'ivy'),
+  'P0001',
+  'BADGE_TAKEN',
+  'nor the same one in different letters with a space on the end'
+);
+-- Sending the same one again is somebody correcting their own record, not a clash.
+select tests.clear_authentication();
+select tests.authenticate_as(:'asha_user');
+select lives_ok(
+  format($$ select public.submit_verification(%L, 'pdi', 'ADI778899', (private.today() + 500)::date, true, null) $$, :'asha'),
+  'and the instructor who has it can send it again'
 );
 
 -- Badge photos

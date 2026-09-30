@@ -293,7 +293,7 @@ Priority key: **P1** = Phase 1 (MVP), **P2** = Phase 2, **P3** = Phase 3, **P4**
 | ID | Requirement | Phase |
 |---|---|---|
 | INS-01 | Profile fields: display name, photo, bio (300 characters), languages spoken, years teaching, ADI or PDI status, badge number, badge expiry date, car make and model, transmission (manual, automatic or both), dual controls (yes), lesson types, specialisms (nervous drivers, intensive courses, Pass Plus, motorway, refresher, test prep). | P1 |
-| INS-02 | Verification: instructor uploads a photo of their ADI (green) or PDI (pink) badge and confirms DBS status. Support Admin reviews and approves. Approved profiles show a blue Verified tick. | P1 |
+| INS-02 | Verification: instructor uploads a photo of their ADI (green) or PDI (pink) badge and confirms DBS status. Support Admin reviews and approves. Approved profiles show a blue Verified tick. A badge number belongs to one account: a second one is refused, and told to email support if the badge is theirs (D-230). | P1 |
 | INS-03 | Badge expiry tracking with reminders at 60, 30 and 7 days. Profile hides from search when expired. | P1 |
 | INS-04 | PDI profiles show "Trainee instructor" clearly. Trainees must link to a supervising school or ADI. | P1 |
 | INS-05 | Public profile page and booking link generated on approval (see 9.13). | P1 |
@@ -837,6 +837,7 @@ numbers.
 | A lesson is asked about once it is over, not once it has started | R-09 | D-213 |
 | Nobody came is recorded half an hour after the start, not a quarter, and does not wait for the end | R-09 | D-228 |
 | The Business's own colour draws its public profile, not only its booking link | PUB-04a | D-229 |
+| A badge number belongs to one account, refused at onboarding with what to do about it | INS-02 | D-230 |
 | A name is typed on a pass photo only for somebody who is not on the instructor's list | PUB-06 | D-229 |
 | The pass gallery on the public profile, which is not a review | PUB-06 | D-218 |
 | Anybody signed in can tell us something, and staff read it in one place | NTF-05, ADM-08c | D-202 |

@@ -214,6 +214,16 @@ export function nextWeekday(weekday: number, now = new Date()): string {
   return day;
 }
 
+/**
+ * A badge number nobody else is using (INS-02). A badge belongs to one person, so the platform
+ * refuses a second account with the same one, and both widths run the same spec at the same
+ * moment: a number written into a test collides with itself.
+ */
+export function aBadgeNumber(): string {
+  const alphabet = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+  return Array.from({ length: 10 }, () => alphabet[Math.floor(Math.random() * alphabet.length)] ?? 'A').join('');
+}
+
 /** A local day in British words, with the parts asked for: "Tuesday 22 September", "September 2026". */
 export function dayWords(date: string, parts: Intl.DateTimeFormatOptions): string {
   return new Intl.DateTimeFormat('en-GB', { ...parts, timeZone: 'UTC' }).format(new Date(`${date}T12:00:00Z`));

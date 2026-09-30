@@ -1,5 +1,6 @@
+import { brand } from '@repo/config/brand';
 import { expect, test } from '@playwright/test';
-import { expectAccessible, snap } from '../support/helpers';
+import { aBadgeNumber, expectAccessible, snap } from '../support/helpers';
 import { hasExif, hasGpsTag, jpegWithGps, publicAvatarUrl, publicBadgeUrl, webpSize } from '../support/images';
 import { linkFromEmail } from '../support/mailpit';
 import { testNumber } from '../support/phone-numbers';
@@ -135,9 +136,18 @@ test.describe('instructor onboarding (AUTH-04, M1-02)', () => {
     const stored = new URL((await upload).url()).pathname.split('/object/badges/').at(-1) ?? '';
     expect(stored).toMatch(/\.webp$/);
 
-    await page.getByLabel('Badge number').fill('123456');
+    // A badge belongs to one instructor, so one already here is refused with what to do about it
+    // (INS-02, D-230). Sarah Khan's, from the seed, which nothing else changes.
+    await page.getByLabel('Badge number').fill('416234');
     await page.getByLabel('Badge expiry date').fill('2029-03-31');
     await page.getByRole('checkbox', { name: 'I have a current enhanced DBS check' }).click();
+    await page.getByRole('button', { name: 'Continue' }).click();
+    await expect(page.getByText('There is already an account with this badge number')).toBeVisible();
+    await expect(page.getByText(`email ${brand.supportEmail} with your badge number`)).toBeVisible();
+    await expect(page).toHaveURL(/\/onboarding\/badge$/);
+    await snap(page, testInfo, 'onboarding-badge-taken');
+
+    await page.getByLabel('Badge number').fill(aBadgeNumber());
     await expectAccessible(page);
     await snap(page, testInfo, 'onboarding-badge');
 
@@ -162,7 +172,7 @@ test.describe('instructor onboarding (AUTH-04, M1-02)', () => {
     await page.getByLabel('Last name').fill('Newstart');
     await page.getByRole('button', { name: 'Continue' }).click();
 
-    await page.getByLabel('Badge number').fill('123456');
+    await page.getByLabel('Badge number').fill(aBadgeNumber());
     await page.getByLabel('Badge expiry date').fill('2020-01-31');
     await page.getByRole('checkbox', { name: 'I have a current enhanced DBS check' }).click();
     await page.getByRole('button', { name: 'Continue' }).click();

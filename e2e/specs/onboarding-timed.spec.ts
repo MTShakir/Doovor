@@ -1,4 +1,5 @@
 import { expect, test } from '@playwright/test';
+import { aBadgeNumber } from '../support/helpers';
 import { jpegWithGps } from '../support/images';
 import { linkFromEmail } from '../support/mailpit';
 import { testNumber } from '../support/phone-numbers';
@@ -42,7 +43,7 @@ test.describe('an instructor sets up in five minutes (AUTH-04, M1-24)', { tag: '
     const badge = page.waitForRequest((r) => r.url().includes('/storage/v1/object/badges/') && r.method() === 'POST');
     await page.setInputFiles('input[type="file"]', { name: 'badge.jpg', mimeType: 'image/jpeg', buffer: photo });
     await badge;
-    await page.getByLabel('Badge number').fill('729481');
+    await page.getByLabel('Badge number').fill(aBadgeNumber());
     await page.getByLabel('Badge expiry date').fill('2029-08-31');
     await page.getByRole('checkbox', { name: 'I have a current enhanced DBS check' }).click();
     await page.getByRole('button', { name: 'Continue' }).click();

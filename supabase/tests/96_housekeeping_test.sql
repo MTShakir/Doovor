@@ -62,7 +62,7 @@ select tests.create_user('staff.housekeeping@test.local', 'Sam Support') as staf
 insert into public.platform_staff (user_id, role) values (:'staff', 'support_admin');
 
 select tests.authenticate_as(:'asha_user');
-select public.submit_verification(:'asha', 'adi', '416234', (private.today() + 400)::date, true, :'asha' || '/badge-photo-one.webp');
+select public.submit_verification(:'asha', 'adi', 'ADI900096', (private.today() + 400)::date, true, :'asha' || '/badge-photo-one.webp');
 select tests.clear_authentication();
 select is(
   (select badge_path from public.instructor_profiles where id = :'asha'),

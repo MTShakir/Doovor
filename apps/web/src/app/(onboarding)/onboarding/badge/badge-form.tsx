@@ -1,5 +1,6 @@
 'use client';
 
+import { brand } from '@repo/config/brand';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { badgeImage } from '@repo/core/images';
 import { onboardingBadgeSchema } from '@repo/core/schemas/onboarding';
@@ -115,7 +116,14 @@ export function BadgeForm({
       // Submitting redirects, so this only resolves when something needs fixing.
       const result = await saveBadge({ ...values, badgePath });
       if (!result.ok) {
-        setFormError(result.message);
+        // A badge belongs to one instructor, so a second account with the same number is either a
+        // typo or somebody else's badge. The person reading this can only be one of the two, and
+        // whichever they are, the next step is the same: tell us (INS-02, D-230).
+        setFormError(
+          result.code === 'BADGE_TAKEN'
+            ? `There is already an account with this badge number. If that is not you, email ${brand.supportEmail} with your badge number and photos of your badge.`
+            : result.message,
+        );
         for (const [field, message] of Object.entries(result.fields ?? {})) {
           form.setError(field as keyof Values, { message });
         }
