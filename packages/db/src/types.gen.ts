@@ -2679,6 +2679,7 @@ export type Database = {
         Row: {
           code: string
           created_at: string
+          earned_at: string | null
           id: string
           referred_business_id: string
           referrer_business_id: string
@@ -2688,6 +2689,7 @@ export type Database = {
         Insert: {
           code: string
           created_at?: string
+          earned_at?: string | null
           id?: string
           referred_business_id: string
           referrer_business_id: string
@@ -2697,6 +2699,7 @@ export type Database = {
         Update: {
           code?: string
           created_at?: string
+          earned_at?: string | null
           id?: string
           referred_business_id?: string
           referrer_business_id?: string
@@ -2960,6 +2963,62 @@ export type Database = {
             foreignKeyName: "sms_usage_business_id_fkey"
             columns: ["business_id"]
             isOneToOne: false
+            referencedRelation: "businesses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      subscriptions: {
+        Row: {
+          billing_interval: Database["public"]["Enums"]["billing_interval"]
+          business_id: string
+          cancel_at_period_end: boolean
+          created_at: string
+          current_period_end: string | null
+          id: string
+          last_paid_at: string | null
+          last_paid_pence: number | null
+          months_paid: number
+          status: Database["public"]["Enums"]["subscription_status"]
+          stripe_customer_id: string
+          stripe_subscription_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          billing_interval: Database["public"]["Enums"]["billing_interval"]
+          business_id: string
+          cancel_at_period_end?: boolean
+          created_at?: string
+          current_period_end?: string | null
+          id?: string
+          last_paid_at?: string | null
+          last_paid_pence?: number | null
+          months_paid?: number
+          status?: Database["public"]["Enums"]["subscription_status"]
+          stripe_customer_id: string
+          stripe_subscription_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          billing_interval?: Database["public"]["Enums"]["billing_interval"]
+          business_id?: string
+          cancel_at_period_end?: boolean
+          created_at?: string
+          current_period_end?: string | null
+          id?: string
+          last_paid_at?: string | null
+          last_paid_pence?: number | null
+          months_paid?: number
+          status?: Database["public"]["Enums"]["subscription_status"]
+          stripe_customer_id?: string
+          stripe_subscription_id?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "subscriptions_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: true
             referencedRelation: "businesses"
             referencedColumns: ["id"]
           },
@@ -3624,6 +3683,7 @@ export type Database = {
         Returns: Json
       }
       my_referrals: { Args: { p_business_id: string }; Returns: Json }
+      my_subscription: { Args: { p_business_id: string }; Returns: Json }
       next_open_slots: {
         Args: {
           p_duration_minutes: number
@@ -4142,6 +4202,27 @@ export type Database = {
         Args: { p_account_id: string; p_refund: Json }
         Returns: Json
       }
+      system_record_subscription: {
+        Args: {
+          p_cancel_at_period_end: boolean
+          p_customer_id: string
+          p_interval: Database["public"]["Enums"]["billing_interval"]
+          p_period_end: string
+          p_status: Database["public"]["Enums"]["subscription_status"]
+          p_subscription_id: string
+        }
+        Returns: string
+      }
+      system_record_subscription_payment: {
+        Args: {
+          p_months_covered: number
+          p_months_credited?: number
+          p_paid_at: string
+          p_paid_pence: number
+          p_subscription_id: string
+        }
+        Returns: string
+      }
       system_refund_to_send: { Args: { p_refund_id: string }; Returns: Json }
       system_region_opened_recipients: {
         Args: { p_area: string }
@@ -4169,6 +4250,14 @@ export type Database = {
         Args: { p_provider_ref: string; p_refund_id: string; p_status?: string }
         Returns: Json
       }
+      system_start_subscription: {
+        Args: {
+          p_business_id: string
+          p_customer_id: string
+          p_interval: Database["public"]["Enums"]["billing_interval"]
+        }
+        Returns: string
+      }
       system_touch_push_target: { Args: { p_id: string }; Returns: undefined }
       system_unlist_expired_badges: {
         Args: { p_today?: string }
@@ -4184,6 +4273,7 @@ export type Database = {
       undo_offline_payment: { Args: { p_payment_id: string }; Returns: string }
     }
     Enums: {
+      billing_interval: "month" | "year"
       booking_payment_mode:
         | "at_booking"
         | "before_lesson"
@@ -4289,6 +4379,13 @@ export type Database = {
         | "other"
       refund_kind: "card" | "credit" | "offline"
       refund_status: "pending" | "succeeded" | "failed" | "cancelled"
+      subscription_status:
+        | "incomplete"
+        | "trialing"
+        | "active"
+        | "past_due"
+        | "canceled"
+        | "unpaid"
       transmission: "manual" | "automatic" | "both"
       verification_status: "unsubmitted" | "pending" | "approved" | "rejected"
     }
@@ -4418,6 +4515,7 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
+      billing_interval: ["month", "year"],
       booking_payment_mode: [
         "at_booking",
         "before_lesson",
@@ -4533,6 +4631,14 @@ export const Constants = {
       ],
       refund_kind: ["card", "credit", "offline"],
       refund_status: ["pending", "succeeded", "failed", "cancelled"],
+      subscription_status: [
+        "incomplete",
+        "trialing",
+        "active",
+        "past_due",
+        "canceled",
+        "unpaid",
+      ],
       transmission: ["manual", "automatic", "both"],
       verification_status: ["unsubmitted", "pending", "approved", "rejected"],
     },
