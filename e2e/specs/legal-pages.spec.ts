@@ -9,9 +9,11 @@ import { expectAccessible, robotsOf, settled, snap } from '../support/helpers';
  * solicitor may fill says so where it stands.
  */
 const pages = [
-  { path: '/privacy', title: 'Privacy notice', gaps: 5 },
+  // Six: the sixth is who can see what, added when the notice caught up with the product (B-77).
+  { path: '/privacy', title: 'Privacy notice', gaps: 6 },
   { path: '/cookies', title: 'Cookies', gaps: 1 },
-  { path: '/terms', title: 'Terms for learners', gaps: 3 },
+  // Four: the fourth is the pass photograph and the consent behind it (B-77, D-218).
+  { path: '/terms', title: 'Terms for learners', gaps: 4 },
   { path: '/business-terms', title: 'Terms for instructors and schools', gaps: 3 },
 ];
 

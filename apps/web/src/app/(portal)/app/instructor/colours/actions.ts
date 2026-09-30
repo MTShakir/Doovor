@@ -3,6 +3,7 @@
 import { parsePostgresError } from '@repo/core/errors';
 import { err, ok, type Result } from '@repo/core/result';
 import { brandColourInputSchema, contrastMessage } from '@repo/core/schemas/brand-colour';
+import { expireAllInstructorProfiles } from '@/lib/public/instructor-profile';
 import { revalidatePath } from 'next/cache';
 import { requirePortal } from '@/lib/auth/session';
 import { refuseWhileViewing } from '@/lib/auth/view-as';
@@ -38,5 +39,9 @@ export async function setBookingColour(input: unknown): Promise<Result<{ colour:
   }
 
   revalidatePath('/app/instructor/colours');
+  // The colour is on the public profile now, not only the booking link (D-229), and a profile is
+  // kept for hours. Every profile of the Business is read fresh, because the colour belongs to
+  // the Business and a school has more than one instructor on it.
+  expireAllInstructorProfiles();
   return ok({ colour: typeof data === 'string' ? data : '' });
 }

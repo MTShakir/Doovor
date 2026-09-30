@@ -18,7 +18,7 @@ export default function PrivacyPage() {
     <LegalPage
       title="Privacy notice"
       summary={`What ${brand.name} holds about you, why we hold it, where it is kept and what you can ask us to do with it.`}
-      updated="19 September 2026"
+      updated="30 September 2026"
     >
       <LegalSection title="Who is responsible">
         <LegalText>
@@ -64,6 +64,18 @@ export default function PrivacyPage() {
             ['Notes', 'An instructor can write private notes about a learner. Those are theirs, and no learner sees them.'],
             ['What the app did', 'An audit trail of the things that matter: who signed in, who changed a role, who saw a learner, who took a payment, and where a lesson was changed.'],
             ['Asking us to close your account', 'If you ask us to close your account we record that you asked, when, and the reason you gave, so we can deal with it and so you can change your mind before it happens.'],
+            [
+              'A photograph of the day you passed',
+              'If your instructor puts your pass photo on their public profile, we hold the picture, your first name, the date you passed and who taught you. It is on a page anybody can read. Your instructor has to confirm they asked you first, and we record that they said so and when. It is not a review and nothing is scored: it is a photograph. Ask your instructor to take it down and they can, at any time, and so can we if you ask us instead.',
+            ],
+            [
+              'Anything you tell us about the product',
+              'If you send us feedback, we hold what you wrote, the screen you were on, and a screenshot if you chose to attach one. A screenshot shows whatever was on your screen at the time, so it may hold somebody else’s name: only the people who run the platform read these.',
+            ],
+            [
+              'How you found us',
+              'Every Business has a referral code. If a Business joined through somebody else’s code we record which code, so the reward can be applied. It says one Business introduced another and nothing else.',
+            ],
           ]}
         />
       </LegalSection>
@@ -126,10 +138,54 @@ export default function PrivacyPage() {
             'What you told us about your health: for as long as you choose to leave it there. It is yours to take off your record at any moment, and it goes when your account does.',
             'Where your lessons start: while your account is open, and they are yours to remove sooner.',
             'A request to close your account: until the account is closed or you change your mind.',
+            'A pass photograph: while it is on the profile. It goes when it is taken down, when the instructor’s account is closed, or when you ask, and the file itself is removed within a day.',
+            'Feedback you send us, and any screenshot with it: two years, the same as the audit trail.',
           ]}
         />
         <ForTheSolicitor>
           <p>Please confirm each period, and whether anything else must be kept for a set time.</p>
+        </ForTheSolicitor>
+      </LegalSection>
+
+      <LegalSection title="Who can see it, and why">
+        <LegalText>
+          Not everybody who works on {brand.name} can see everything, and nobody browses for the sake of it. This is
+          what each person can reach.
+        </LegalText>
+        <LegalTable
+          caption="What each person can see."
+          rows={[
+            [
+              'Your instructor',
+              'The learners they teach, and for each one: the lessons, what is paid and owed, where lessons start, progress against the syllabus, and anything you chose to tell them about your health. They cannot see a learner who is not theirs, and they cannot see another instructor’s learners even at the same school.',
+            ],
+            [
+              'The people who run a school',
+              'Everything above, for the learners of the instructors who teach for that school, because they are responsible for the teaching. An owner sees the school’s money; a manager does not see payouts or billing.',
+            ],
+            [
+              'Other learners',
+              'Nothing. A learner sees their own lessons, their own money and their own progress, and the public part of an instructor’s profile.',
+            ],
+            [
+              'The people who run the platform',
+              'Accounts, Businesses and the state of things: who signed up, whether a badge was approved, whether a payment succeeded, and what the audit trail says. They do not read private notes, and they do not read what you told us about your health.',
+            ],
+            [
+              'Support looking through your eyes',
+              'To help with a problem, platform staff can open the app as you and read what you would read, without being able to change anything. A banner says it is happening, and every time it starts it is written to the audit trail with who did it and when.',
+            ],
+          ]}
+        />
+        <LegalText>
+          The database enforces this rather than the screens: every table carries the rule about who may read each row,
+          so an answer that should not be given is not given, whatever asks for it.
+        </LegalText>
+        <ForTheSolicitor>
+          <p>
+            Please confirm this is the right level of detail here, and whether the support access described in the last
+            row needs its own wording about the lawful basis and the record kept.
+          </p>
         </ForTheSolicitor>
       </LegalSection>
 

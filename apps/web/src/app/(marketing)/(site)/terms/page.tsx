@@ -18,7 +18,7 @@ export default function LearnerTermsPage() {
     <LegalPage
       title="Terms for learners"
       summary="What you agree to when you book and pay for lessons through the app, and what we agree to."
-      updated="18 September 2026"
+      updated="30 September 2026"
     >
       <LegalSection title="Who your lesson is with">
         <LegalText>
@@ -35,7 +35,8 @@ export default function LearnerTermsPage() {
             'Each Business sets how long before a lesson you may cancel without paying for it. The app shows you that window before you confirm, and again when you cancel.',
             'If your instructor cancels, you pay nothing and anything you have paid for that lesson comes back to you.',
             'Your instructor may change when a lesson is, or how long it runs. If the length changes, what you paid for the old length comes back to you and the new length is charged at the price that Business has set for it, so you never pay for time you did not have.',
-            'If you do not turn up, the Business may charge you for the lesson, and the app will say so before it does.',
+            'If you do not turn up, your instructor may record it half an hour after the lesson was due to start, and the Business may charge you for it under the same rule as a late cancellation. You can dispute it for seven days afterwards, from your own lessons, and the app will say so before it charges you.',
+            'Where you have credit with a Business, a booking uses what it covers and you pay the rest the usual way. If the lesson is called off, each part comes back the way it came: the minutes to your balance and the money to you.',
           ]}
         />
       </LegalSection>
@@ -81,6 +82,21 @@ export default function LearnerTermsPage() {
             'Do not use the app to book a driving test. We never book a DVSA test, and neither may anybody else on your behalf through us.',
           ]}
         />
+      </LegalSection>
+
+      <LegalSection title="A photograph of the day you passed">
+        <LegalText>
+          Your instructor may ask to put a photograph of you on their public profile after you pass, with your first
+          name and the date. It is up to you, and nobody may publish it without asking: your instructor has to confirm
+          to us that they have your permission. You can change your mind at any time. Ask your instructor to take it
+          down, or ask us at {brand.supportEmail} and we will, whatever they say.
+        </LegalText>
+        <ForTheSolicitor>
+          <p>
+            Please confirm that consent recorded by the instructor is enough here, or whether the learner must give it
+            to us directly, and say what wording the instructor should be required to use when they ask.
+          </p>
+        </ForTheSolicitor>
       </LegalSection>
 
       <LegalSection title="Reviews">

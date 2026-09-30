@@ -1,6 +1,6 @@
 -- The public instructor profile, and nothing private on it (PUB-01, INS-05, M5-02).
 begin;
-select plan(20);
+select plan(22);
 
 select tests.create_fixture();
 
@@ -78,8 +78,8 @@ select results_eq(
 );
 select is(
   (select array_agg(k order by k) from jsonb_object_keys(public.instructor_profile_page('ian-one') -> 'business') as k),
-  array['citySlug', 'name', 'slug', 'type'],
-  'the Business is named with where its own profile lives, and nothing more'
+  array['citySlug', 'colour', 'name', 'slug', 'type'],
+  'the Business is named with where its own profile lives and the colour it is drawn in, and nothing more'
 );
 select is(public.instructor_profile_page('ivy-two'), null, 'an instructor not yet checked has no profile');
 select is(public.instructor_profile_page('nobody-at-all'), null, 'and a slug that is nobody''s has none either');
@@ -125,5 +125,21 @@ select tests.authenticate_as_anon();
 select is(public.instructor_profile_page('ian-one'), null, 'the profile of a suspended Business''s instructor is gone');
 select is((select count(*)::int from public.next_open_slots(:'ian', 60)), 0, 'with its times');
 select tests.clear_authentication();
+
+-- The Business's own colour reaches the page that a learner is sent to (D-229). The Business is
+-- put back first, because the block above suspended it and a suspended Business has no public
+-- page at all to carry a colour.
+update public.businesses set status = 'active', brand_colour = '#0F6E4C' where slug = 'bee-school';
+select is(
+  (public.instructor_profile_page('ian-one') #>> '{business,colour}'),
+  '#0F6E4C',
+  'the colour the profile is drawn in comes with it'
+);
+update public.businesses set brand_colour = null where slug = 'bee-school';
+select is(
+  (public.instructor_profile_page('ian-one') #>> '{business,colour}'),
+  null,
+  'and it is nothing at all where no colour was chosen'
+);
 
 select * from finish();

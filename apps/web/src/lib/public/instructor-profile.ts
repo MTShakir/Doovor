@@ -60,6 +60,8 @@ const profileSchema = z.object({
     name: z.string(),
     type: z.enum(['independent', 'school']),
     slug: z.string(),
+    /** The Business's own colour, which the page draws its edges and its button with (D-229). */
+    colour: z.string().nullable().default(null),
     citySlug: z.string().nullable(),
   }),
   lessons: z.array(lessonSchema),

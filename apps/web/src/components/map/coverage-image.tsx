@@ -10,6 +10,8 @@ export interface CoverageImageProps {
   radiusMiles: number;
   place: string | null;
   description: string;
+  /** The Business's own colour, for the edge of the picture (D-229). Grey where none was chosen. */
+  colour?: string | null;
 }
 
 /** CSS pixels. The image is as wide as a profile's column gets, and as tall as the panel is on a wide screen. */
@@ -21,10 +23,10 @@ const HEIGHT = 288;
  * Mapbox rather than the interactive map, whose library public pages cannot afford (NFR-PERF-04,
  * ARCHITECTURE 13, D-132). Without a map key, or a middle to draw around, it is the drawn circle.
  */
-export function CoverageImage({ centre, radiusMiles, place, description }: CoverageImageProps) {
+export function CoverageImage({ centre, radiusMiles, place, description, colour = null }: CoverageImageProps) {
   const settings = mapSettings(clientEnv.NEXT_PUBLIC_MAPBOX_TOKEN);
   if (settings.kind === 'static' || settings.token === undefined || centre === null) {
-    return <StaticMap radiusMiles={radiusMiles} place={place} description={description} audience="public" />;
+    return <StaticMap radiusMiles={radiusMiles} place={place} description={description} audience="public" colour={colour} />;
   }
   const src = staticMapImageUrl({
     token: settings.token,
@@ -47,6 +49,7 @@ export function CoverageImage({ centre, radiusMiles, place, description }: Cover
       // On a wide screen it can be the largest thing in view, which lazy loading would hold back.
       loading="eager"
       className="h-56 w-full rounded-card border border-grey-200 bg-grey-100 object-cover md:h-72"
+      style={colour === null ? undefined : { borderColor: colour }}
     />
   );
 }

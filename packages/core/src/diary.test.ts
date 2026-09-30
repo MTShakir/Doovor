@@ -135,11 +135,19 @@ describe('what a lesson can be marked as, and when (BOK-10, R-09, D-213)', () =>
     expect(lessonAnswers(hour, at('13:59'))).toEqual({ move: true, mark: false, noShow: false });
   });
 
-  it('says nothing at all while it is being taught', () => {
+  it('says nothing at all for the first half hour it is being taught', () => {
     // The fault this fixes: Done appeared the minute a lesson began, so an instructor could mark
     // it taught an hour before it was, from the card, by accident.
-    for (const time of ['14:00', '14:15', '14:59']) {
+    for (const time of ['14:00', '14:15', '14:29']) {
       expect(lessonAnswers(hour, at(time))).toEqual({ move: false, mark: false, noShow: false });
+    }
+  });
+
+  it('offers No show at half past, while Done still waits for the end (R-09, D-228)', () => {
+    // An instructor stood on a doorstep for half an hour says so there and then; how the lesson
+    // went is still not a question, because it has not happened.
+    for (const time of ['14:30', '14:59']) {
+      expect(lessonAnswers(hour, at(time))).toEqual({ move: false, mark: false, noShow: true });
     }
   });
 
@@ -148,10 +156,11 @@ describe('what a lesson can be marked as, and when (BOK-10, R-09, D-213)', () =>
     expect(lessonAnswers(hour, at('18:00'))).toEqual({ move: false, mark: true, noShow: true });
   });
 
-  it('keeps R-09 for a lesson short enough to end inside the quarter of an hour', () => {
+  it('keeps R-09 for a lesson short enough to end inside the half hour', () => {
     const short = lesson('2026-09-15T14:00:00Z', '2026-09-15T14:10:00Z');
     expect(lessonAnswers(short, at('14:10'))).toEqual({ move: false, mark: true, noShow: false });
-    expect(lessonAnswers(short, at('14:15'))).toEqual({ move: false, mark: true, noShow: true });
+    expect(lessonAnswers(short, at('14:29'))).toEqual({ move: false, mark: true, noShow: false });
+    expect(lessonAnswers(short, at('14:30'))).toEqual({ move: false, mark: true, noShow: true });
   });
 
   it('has nothing to say about one that is off, already marked, or only asked for', () => {

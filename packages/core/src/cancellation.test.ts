@@ -247,9 +247,9 @@ describe('the cancellation policy, row by row (R-06, R-07, R-08)', () => {
 });
 
 describe('no-show (R-09)', () => {
-  it('cannot be marked before the quarter of an hour is up', () => {
-    expect(canMarkNoShow(lesson, new Date(lesson.getTime() + 14 * 60_000))).toBe(false);
-    expect(canMarkNoShow(lesson, new Date(lesson.getTime() + 15 * 60_000))).toBe(true);
+  it('cannot be marked before the half hour is up (D-228)', () => {
+    expect(canMarkNoShow(lesson, new Date(lesson.getTime() + 29 * 60_000))).toBe(false);
+    expect(canMarkNoShow(lesson, new Date(lesson.getTime() + 30 * 60_000))).toBe(true);
   });
 
   it('is treated as a late cancellation by the learner', () => {

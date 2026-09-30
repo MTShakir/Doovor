@@ -43,6 +43,16 @@ test.describe('the gallery (D-218)', () => {
       await page.getByLabel('The day they passed').fill(passedOn);
       await page.getByRole('textbox', { name: 'Their name' }).fill(who);
 
+      // A name is typed only for somebody who is not on the list: picking one of their learners
+      // puts the box away, and takes what was typed with it (D-229).
+      const picker = page.getByLabel('Which learner?');
+      await picker.selectOption({ index: 1 });
+      await expect(page.getByRole('textbox', { name: 'Their name' })).toHaveCount(0);
+      await picker.selectOption('');
+      const name = page.getByRole('textbox', { name: 'Their name' });
+      await expect(name).toHaveValue('');
+      await name.fill(who);
+
       // Nothing goes up without the instructor saying they asked (D-218).
       await page.getByRole('button', { name: 'Add to my gallery' }).click();
       await expect(page.getByText('Confirm you have their permission to show this')).toBeVisible();

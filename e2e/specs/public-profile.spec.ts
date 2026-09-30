@@ -1,3 +1,4 @@
+import { brand } from '@repo/config/brand';
 import { expect, test } from '@playwright/test';
 import { expectAccessible, settled, snap } from '../support/helpers';
 
@@ -11,7 +12,7 @@ test.describe('public instructor profile (PUB-01, M5-02)', () => {
   test('a visitor reads a checked instructor, nothing private, and books from a free time', async ({ page }, testInfo) => {
     await page.goto('/instructors/leeds/sarah-khan');
     await expect(page.getByRole('heading', { level: 1, name: 'Sarah Khan' })).toBeVisible();
-    await expect(page.getByText('Approved driving instructor, checked by us')).toBeVisible();
+    await expect(page.getByText(`Approved driving instructor, checked by ${brand.name}`)).toBeVisible();
     await expect(page.getByRole('list', { name: 'At a glance' })).toContainText('Manual');
     await expect(page.getByRole('region', { name: 'Where lessons start' })).toContainText(/Lessons within \d+ miles? of LS6/);
     await expect(page.getByRole('region', { name: 'Prices' }).getByRole('listitem').first()).toContainText(/£\d+/);

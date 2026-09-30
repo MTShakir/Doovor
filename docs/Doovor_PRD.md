@@ -434,6 +434,7 @@ Priority key: **P1** = Phase 1 (MVP), **P2** = Phase 2, **P3** = Phase 3, **P4**
 | PUB-02 | Server-rendered, fast, with schema.org markup (LocalBusiness for schools, Person plus Service for instructors, AggregateRating when reviews exist, Offer for prices). | P1 |
 | PUB-03 | Shareable booking link and QR code. Share buttons for WhatsApp, Instagram and copy link. | P1 |
 | PUB-04 | Instructor can hide their profile from search while keeping the booking link. | P1 |
+| PUB-04a | The Business's own colour draws the profile's edges and its one button: the free times, the map, the prices card and Book a lesson (D-229). The line under the name says who checked the instructor. | P1 |
 | PUB-05 | Embeddable "Book with me" button for instructors' own websites. | P2 |
 | PUB-06 | Pass gallery: a wall of pass-day photos on the public profile, one picture each, with a banner in the Business's own colour saying who passed, when and with whom. The instructor confirms they have permission and the moment is recorded. Staff see every wall, tick the ones they have checked, and can take any photo down. Not a review: nothing is written by a learner, nothing is scored, and none of it touches the pass rate (R-17). On the plans that carry it. | P1 (D-218) |
 
@@ -583,7 +584,7 @@ Marketplace fee (Phase 3): learner booking fee on the first booking with a new i
 | R-06 | Default cancellation policy: free cancellation up to 48 hours before start. Inside 48 hours the full lesson fee is charged. Business can set the window (0 to 72 hours) and the fee (0%, 50% or 100%). |
 | R-07 | If a lesson was paid by credit and cancelled in time, the credit returns in full. If cancelled late, the credit is used as the fee. Where credit paid for only part of the lesson, the minutes the fee keeps pay what they are worth against it and the rest of the fee is money (D-225): the two together come to the fee on the whole price, never more. |
 | R-08 | If the instructor cancels, the learner always gets a full refund or credit back, and a reason is required. |
-| R-09 | No-show: instructor marks no-show after 15 minutes. Treated as a late cancellation. The learner can dispute within 7 days. Marking a lesson done, and marking nobody came, both wait until the lesson's booked time is up, so a lesson is asked about once it is over rather than once it has started (D-213). |
+| R-09 | No-show: instructor marks no-show half an hour after the start (D-228). Treated as a late cancellation. The learner can dispute within 7 days. Marking a lesson done waits until its booked time is up, so a lesson is asked about once it is over (D-213); nobody came does not wait, because half an hour on a doorstep is the whole of the evidence. |
 | R-10 | Booking and payment, or booking and credit deduction, happen in one database transaction. If either fails, both roll back. |
 | R-11 | Payment webhooks are idempotent. Every provider event ID is stored and processed once. |
 | R-12 | Request-to-book bookings expire if not accepted in time (default 12 hours or 2 hours before start, whichever comes first). Any payment hold is released. |
@@ -816,7 +817,7 @@ being hidden (D-212).
 | Final pricing values (section 9.18) | Talha | After beta with 20 instructors | Values are in configuration and the plans are built. Nothing is charged yet: billing goes live with Stripe live mode. |
 | Merchant of record model sign-off with Stripe and solicitor | Talha and solicitor | Before M3 goes live | M3 passed in Stripe test mode. Live mode is in `docs/BETA.md` and still to do. |
 | First launch region | Talha | Before M6 beta | Still to choose. The region switch-on rule is built and the marketplace is Phase 3. |
-| When a no-show may be recorded | Talha | Before the beta | Both "done" and "nobody came" wait until the lesson's booked time is up (D-213). R-09 permits from 15 minutes after the start, so an instructor who waits a quarter of an hour and drives off cannot record it until the hour is up. Raised twice; the answer changes one line. |
+| When a no-show may be recorded | Talha | Done | Half an hour after the start, and the button appears then rather than at the end (D-228). The owner moved it from the fifteen minutes R-09 allowed. |
 | The two darkened palette values | Talha | Done | `blue` #2166E0 and `red` #D81700, written into 7.2 on the owner's instruction to record what was decided along the way. The old values fell below the contrast floor once the app moved onto the canvas (D-226). |
 
 ## 21. What changed while it was built
@@ -834,6 +835,9 @@ numbers.
 | Only the instructor moves a lesson; a learner asks them | R-04, BOK-08 | D-164 |
 | An instructor sets a lesson's length, every half hour to four and a half, priced at the hourly rate | R-05 | D-179, D-187, D-188 |
 | A lesson is asked about once it is over, not once it has started | R-09 | D-213 |
+| Nobody came is recorded half an hour after the start, not a quarter, and does not wait for the end | R-09 | D-228 |
+| The Business's own colour draws its public profile, not only its booking link | PUB-04a | D-229 |
+| A name is typed on a pass photo only for somebody who is not on the instructor's list | PUB-06 | D-229 |
 | The pass gallery on the public profile, which is not a review | PUB-06 | D-218 |
 | Anybody signed in can tell us something, and staff read it in one place | NTF-05, ADM-08c | D-202 |
 | The founding offer is the first hundred, not five hundred | 9.18 | D-203 |

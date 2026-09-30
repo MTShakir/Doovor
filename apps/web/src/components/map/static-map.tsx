@@ -7,6 +7,8 @@ export interface StaticMapProps {
   description: string;
   /** "around you" for the instructor's own area, "around" for a visitor reading about it. */
   audience?: 'self' | 'public';
+  /** The Business's own colour, for the edge (D-229). */
+  colour?: string | null;
 }
 
 /**
@@ -16,12 +18,13 @@ export interface StaticMapProps {
  * fetched, so it needs no account, no network and no consent, and it still answers the only
  * question the step asks: how far out does this reach.
  */
-export function StaticMap({ radiusMiles, place, description, audience = 'self' }: StaticMapProps) {
+export function StaticMap({ radiusMiles, place, description, audience = 'self', colour = null }: StaticMapProps) {
   return (
     <div
       role="img"
       aria-label={description}
       className="relative flex h-56 w-full items-center justify-center overflow-hidden rounded-card border border-grey-200 bg-grey-100 md:h-72"
+      style={colour === null ? undefined : { borderColor: colour }}
     >
       <svg viewBox="0 0 200 200" className="absolute h-[90%]" aria-hidden focusable="false">
         <circle cx="100" cy="100" r="78" className="fill-blue/10 stroke-blue" strokeWidth="2" />

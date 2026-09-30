@@ -83,8 +83,8 @@ export function isOff(status: BookingStatus): boolean {
   return status === 'cancelled' || status === 'declined' || status === 'expired' || status === 'no_show';
 }
 
-/** R-09: the earliest a no-show may be recorded, counted from when the lesson was due to start. */
-export const noShowAfterMinutes = 15;
+/** R-09: the earliest a no-show may be recorded, counted from when the lesson was due to start (D-228). */
+export const noShowAfterMinutes = 30;
 
 /** What an instructor may say about a lesson right now. */
 export interface LessonAnswers {
@@ -116,7 +116,11 @@ export function lessonAnswers(lesson: { startsAt: Date; endsAt: Date; facts: Les
   return {
     move: at < lesson.startsAt.getTime(),
     mark,
-    noShow: mark && at >= lesson.startsAt.getTime() + noShowAfterMinutes * 60_000,
+    // Nobody came is not a verdict on how the lesson went, so it does not wait for the end the way
+    // Done does (D-213): half an hour of standing on a doorstep is the whole of the evidence, and
+    // an instructor who waits that long and drives off should be able to say so there and then
+    // (R-09, D-228).
+    noShow: at >= lesson.startsAt.getTime() + noShowAfterMinutes * 60_000,
   };
 }
 

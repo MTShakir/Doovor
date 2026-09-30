@@ -4,6 +4,7 @@ import { specialisms as specialismLabels, transmissions } from '@repo/core/schem
 import type { Qualification } from '@repo/core/schemas/onboarding';
 import { formatDateTime, formatMinutes } from '@repo/core/time';
 import { Avatar } from '@repo/ui/avatar';
+import { brand } from '@repo/config/brand';
 import { buttonVariants } from '@repo/ui/button';
 import { Skeleton } from '@repo/ui/skeleton';
 import { CalendarClock, Car, Clock, Languages, MapPin } from 'lucide-react';
@@ -42,7 +43,9 @@ export function ProfileHeader({ name, photoUrl, qualification, school, transmiss
         <Avatar name={name} src={photoUrl} verified size="xl" decorative />
         <div className="flex min-w-0 flex-col gap-1">
           <h1 className="text-h1 text-black">{name}</h1>
-          <p className="text-small text-grey-700">{qualificationWords(qualification)}, checked by us</p>
+          <p className="text-small text-grey-700">
+            {qualificationWords(qualification)}, checked by {brand.name}
+          </p>
           {school === null ? null : (
             <p className="text-small text-grey-700">
               Teaches with{' '}
@@ -132,10 +135,12 @@ export interface NextTimesProps extends Prefixed {
   /** Where a time opens, already chosen, on the booking link. */
   bookingUrl: string;
   times: readonly string[];
+  /** The Business's own colour, for the edge of each time (D-229). Grey where none was chosen. */
+  colour?: string | null;
 }
 
 /** The soonest free times, each one tap from being booked (PUB-01). */
-export function NextTimes({ bookingUrl, times, idPrefix = '' }: NextTimesProps) {
+export function NextTimes({ bookingUrl, times, colour = null, idPrefix = '' }: NextTimesProps) {
   return (
     <ProfileSection id={`${idPrefix}times-heading`} title="Next free times">
       {times.length === 0 ? (
@@ -150,6 +155,7 @@ export function NextTimes({ bookingUrl, times, idPrefix = '' }: NextTimesProps) 
               <a
                 href={`${bookingUrl}?slot=${encodeURIComponent(time)}`}
                 className="inline-flex min-h-12 items-center rounded-full border border-grey-200 px-4 text-small font-semibold text-black hover:border-black"
+                style={colour === null ? undefined : { borderColor: colour }}
               >
                 {formatDateTime(new Date(time))}
               </a>
@@ -188,10 +194,12 @@ export interface WhereLessonsStartProps extends Prefixed {
   outcode: string | null;
   alsoCovers: readonly string[];
   areaCentre: { latitude: number; longitude: number } | null;
+  /** The Business's own colour, for the edge of the map (D-229). */
+  colour?: string | null;
 }
 
 /** The area covered, drawn and said (PUB-01). The middle is rounded, never the instructor's home. */
-export function WhereLessonsStart({ radiusMiles, outcode, alsoCovers, areaCentre, idPrefix = '' }: WhereLessonsStartProps) {
+export function WhereLessonsStart({ radiusMiles, outcode, alsoCovers, areaCentre, colour = null, idPrefix = '' }: WhereLessonsStartProps) {
   return (
     <ProfileSection id={`${idPrefix}area-heading`} title="Where lessons start">
       <CoverageImage
@@ -199,6 +207,7 @@ export function WhereLessonsStart({ radiusMiles, outcode, alsoCovers, areaCentre
         radiusMiles={radiusMiles}
         place={outcode}
         description={`Where lessons start: within ${String(radiusMiles)} ${radiusMiles === 1 ? 'mile' : 'miles'} of ${outcode ?? "the instructor's base"}`}
+        colour={colour}
       />
       <p className="flex items-start gap-2 text-body text-ink">
         <MapPin className="mt-0.5 size-5 shrink-0 text-grey-700" aria-hidden />
@@ -266,10 +275,16 @@ export interface BookActionProps {
   bookingUrl: string;
   /** False when the badge is out of date (INS-03), or nothing is priced to book. */
   canBook: boolean;
+  /**
+   * The Business's own colour (D-229). It is safe behind the white label: a colour is not allowed
+   * to be somebody's own unless it clears 4.5:1 against white (D-210), and white on it is the
+   * same sum. Black where none was chosen.
+   */
+  colour?: string | null;
 }
 
 /** The one thing to do on the page: book, or be told why not. */
-export function BookAction({ bookingUrl, canBook }: BookActionProps) {
+export function BookAction({ bookingUrl, canBook, colour = null }: BookActionProps) {
   if (!canBook) {
     return (
       <div className="flex flex-col items-center gap-2">
@@ -285,7 +300,11 @@ export function BookAction({ bookingUrl, canBook }: BookActionProps) {
     );
   }
   return (
-    <a href={bookingUrl} className={buttonVariants({ className: 'w-full' })}>
+    <a
+      href={bookingUrl}
+      className={buttonVariants({ className: 'w-full' })}
+      style={colour === null ? undefined : { backgroundColor: colour }}
+    >
       Book a lesson
     </a>
   );

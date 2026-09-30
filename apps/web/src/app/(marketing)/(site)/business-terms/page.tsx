@@ -21,7 +21,7 @@ export default function BusinessTermsPage() {
     <LegalPage
       title="Terms for instructors and schools"
       summary="The agreement between your driving business and us, and how we handle the data of the learners you teach."
-      updated="18 September 2026"
+      updated="30 September 2026"
     >
       <LegalSection title="What you are buying">
         <LegalText>
@@ -39,6 +39,7 @@ export default function BusinessTermsPage() {
             'Keep what you tell learners true, including your prices, your hours and what you say on your profile.',
             'Never ask for or leave a false review, and never pay anybody for one.',
             'Never book a DVSA test for a learner through an automated service.',
+            'Ask a learner before you put their pass photograph on your profile, and take it down when they ask. The app records that you confirmed you asked; the asking itself is yours to do, and the photograph is published with their name on a page anybody can read.',
           ]}
         />
       </LegalSection>

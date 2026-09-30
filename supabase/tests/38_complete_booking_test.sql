@@ -1,6 +1,6 @@
 -- After the lesson (BOK-10, R-09, M2-25).
 begin;
-select plan(9);
+select plan(11);
 
 select tests.create_fixture();
 
@@ -59,6 +59,30 @@ select throws_ok(
   format($$ select public.mark_no_show(%L) $$, :'waiting'),
   'P0001', 'TOO_CLOSE', 'ten minutes in is too early to call it a no-show'
 );
+
+-- The wait was a quarter of an hour until the product owner made it half (R-09, D-228), so the
+-- boundary is worth pinning from both sides: twenty minutes in used to be allowed. Each lesson is
+-- cleared before the next, because they are all this hour and a lesson blocks half an hour either
+-- side of itself (R-01).
+select tests.clear_authentication();
+delete from public.bookings where id = :'waiting';
+select pg_temp.lesson(interval '20 minutes') as twenty \gset
+select tests.authenticate_as(:'ian_user');
+select throws_ok(
+  format($$ select public.mark_no_show(%L) $$, :'twenty'),
+  'P0001', 'TOO_CLOSE', 'twenty minutes in is too early now the wait is half an hour'
+);
+
+select tests.clear_authentication();
+delete from public.bookings where id = :'twenty';
+select pg_temp.lesson(interval '31 minutes') as waited \gset
+select tests.authenticate_as(:'ian_user');
+select lives_ok(
+  format($$ select public.mark_no_show(%L, 'Waited half an hour') $$, :'waited'),
+  'half an hour in, an instructor can say nobody came'
+);
+select tests.clear_authentication();
+delete from public.bookings where id = :'waited';
 
 select tests.clear_authentication();
 select pg_temp.lesson(interval '50 hours') as absent \gset

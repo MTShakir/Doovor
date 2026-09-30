@@ -144,8 +144,8 @@ export function noShowOutcome(input: Omit<CancellationInput, 'by'>): Cancellatio
   };
 }
 
-/** Fifteen minutes after the start, and not before (R-09). */
-export const NO_SHOW_AFTER_MINUTES = 15;
+/** Half an hour after the start, and not before (R-09, D-228). */
+export const NO_SHOW_AFTER_MINUTES = 30;
 
 export function canMarkNoShow(startsAt: Date, now: Date): boolean {
   return now.getTime() >= startsAt.getTime() + NO_SHOW_AFTER_MINUTES * 60_000;

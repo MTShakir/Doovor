@@ -12,7 +12,7 @@ import { Input } from '@repo/ui/input';
 import { PhotoUpload } from '@repo/ui/photo-upload';
 import { Select } from '@repo/ui/select';
 import { toast } from '@repo/ui/toast';
-import { useState, useTransition } from 'react';
+import { type ChangeEvent, useState, useTransition } from 'react';
 import { Controller, useForm } from 'react-hook-form';
 import { ClientForm, SubmitButton } from '@/components/client-form';
 import { FormAlert } from '@/components/form-alert';
@@ -52,6 +52,9 @@ export function AddPassPhoto({ businessId, learners }: { businessId: string; lea
     resolver: zodResolver(galleryPhotoSchema),
     defaultValues: { consent: false },
   });
+  // A name is typed only for somebody who is not on the list, which is what the picker's first
+  // option means. With nobody on the list there is no picker, so it is the only way to say who.
+  const typedName = learners.length === 0 || (form.watch('learnerId') ?? '') === '';
 
   const choose = (file: File) => {
     setPhotoError(undefined);
@@ -132,17 +135,27 @@ export function AddPassPhoto({ businessId, learners }: { businessId: string; lea
         </Field>
 
         {learners.length === 0 ? null : (
-          <Field label="Which learner?" hint="Or leave this and type a name below." error={form.formState.errors.learnerId?.message}>
+          <Field label="Which learner?" error={form.formState.errors.learnerId?.message}>
             <Select
               options={[{ value: '', label: 'Someone not on my list' }, ...learners.map((one) => ({ value: one.id, label: one.name }))]}
-              {...form.register('learnerId')}
+              {...form.register('learnerId', {
+                // Picking somebody puts the box away, so a name typed first cannot be left behind
+                // to disagree with the learner chosen after it.
+                onChange: (event: ChangeEvent<HTMLSelectElement>) => {
+                  if (event.target.value !== '') form.setValue('learnerName', '', { shouldValidate: true });
+                },
+              })}
             />
           </Field>
         )}
 
-        <Field label="Their name" hint="Only needed for somebody who is not on your list." error={form.formState.errors.learnerName?.message}>
-          <Input autoComplete="off" {...form.register('learnerName')} />
-        </Field>
+        {/* Only for somebody who is not on the list: with a learner chosen there is nothing to
+            type, and a box asking for a name they have already given reads as a second question. */}
+        {typedName ? (
+          <Field label="Their name" error={form.formState.errors.learnerName?.message}>
+            <Input autoComplete="off" {...form.register('learnerName')} />
+          </Field>
+        ) : null}
 
         {/* The whole of the consent (D-218): a named photograph of a person on a public page is
             theirs, and this is the instructor saying they asked. */}

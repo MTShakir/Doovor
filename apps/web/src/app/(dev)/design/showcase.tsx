@@ -1197,10 +1197,11 @@ export function DesignShowcase() {
             lessons={[]}
           />
         </div>
-        <Label>Booking: open, and a badge out of date (INS-03)</Label>
+        <Label>Booking: open, a badge out of date (INS-03), and in a Business's own colour (D-229)</Label>
         <div className="grid max-w-xl gap-4 md:grid-cols-2">
           <BookAction bookingUrl="#book" canBook />
           <BookAction bookingUrl="#book" canBook={false} />
+          <BookAction bookingUrl="#book" canBook colour="#0F6E4C" />
         </div>
         <Label>Next free times: three to choose from, and none in the next two weeks</Label>
         {/* Formatting a time reads the clock, which a page built ahead of time must leave to the visit. */}
@@ -1208,6 +1209,12 @@ export function DesignShowcase() {
           <div className="grid items-start gap-6 md:grid-cols-2">
             <NextTimes idPrefix="free-" bookingUrl="#book" times={['2026-09-17T12:30:00.000Z', '2026-09-17T13:00:00.000Z', '2026-09-18T08:00:00.000Z']} />
             <NextTimes idPrefix="full-" bookingUrl="#book" times={[]} />
+            <NextTimes
+              idPrefix="colour-"
+              bookingUrl="#book"
+              times={['2026-09-17T12:30:00.000Z', '2026-09-17T13:00:00.000Z']}
+              colour="#0F6E4C"
+            />
             <NextTimesSkeleton idPrefix="loading-" />
           </div>
         </Suspense>

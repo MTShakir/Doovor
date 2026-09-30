@@ -125,18 +125,25 @@ export function LessonRow({
           <RequestActions bookingId={lesson.id} learnerName={lesson.learnerName} />
         </div>
       ) : null}
-      {canAnswer && !asked && !off && !done && answers.mark && onComplete ? (
+      {/*
+        Done waits for the lesson's time to be up (D-213). Nobody came does not: half an hour on a
+        doorstep is the whole of the evidence, so it stands on its own from then (R-09, D-228),
+        which means this row can hold one button, the other, or both.
+      */}
+      {canAnswer && !asked && !off && !done && ((answers.mark && onComplete) || (answers.noShow && onNoShow)) ? (
         <div className="flex flex-wrap justify-end gap-2">
-          <Button onClick={onComplete}>
-            <Check className="size-5" aria-hidden />
-            Done
-          </Button>
+          {answers.mark && onComplete ? (
+            <Button onClick={onComplete}>
+              <Check className="size-5" aria-hidden />
+              Done
+            </Button>
+          ) : null}
           {answers.noShow && onNoShow ? (
             <Button variant="secondary" onClick={onNoShow}>
               No show
             </Button>
           ) : null}
-          {markPaid}
+          {answers.mark ? markPaid : null}
         </div>
       ) : null}
       {/* Paying is its own thing: a card that leaves moving and calling off to the sheet behind

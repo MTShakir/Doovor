@@ -72,6 +72,8 @@ async function InstructorProfile({ params }: Pick<Props, 'params'>) {
 
   const bookingUrl = `${getAppUrl()}/book/${profile.slug}`;
   const canBook = profile.takingBookings && profile.lessons.length > 0;
+  // What the page is drawn with: the Business's own colour where they chose one (D-229).
+  const colour = profile.business.colour;
   const site = getSiteUrl();
   const photoUrl = avatarUrl(profile.photoPath);
   const schoolUrl = profile.business.type === 'school' ? schoolProfilePath(profile.business.citySlug, profile.business.slug) : null;
@@ -109,7 +111,7 @@ async function InstructorProfile({ params }: Pick<Props, 'params'>) {
           lessons={profile.lessons}
         />
         <div className="md:hidden">
-          <BookAction bookingUrl={bookingUrl} canBook={canBook} />
+          <BookAction bookingUrl={bookingUrl} canBook={canBook} colour={colour} />
         </div>
         {canBook ? (
           <Suspense fallback={<NextTimesSkeleton />}>
@@ -133,6 +135,7 @@ async function InstructorProfile({ params }: Pick<Props, 'params'>) {
           outcode={profile.outcode}
           alsoCovers={profile.alsoCovers}
           areaCentre={profile.areaCentre}
+          colour={colour}
         />
         {place?.hasHub ? (
           <PlaceLinks
@@ -146,10 +149,15 @@ async function InstructorProfile({ params }: Pick<Props, 'params'>) {
           />
         ) : null}
       </div>
-      <aside aria-label="Prices and booking" className="flex flex-col gap-6 md:sticky md:top-8 md:rounded-card md:border md:border-grey-200 md:p-6">
+      {/* The Business's own colour draws this card's edge and the button inside it (D-229). */}
+      <aside
+        aria-label="Prices and booking"
+        className="flex flex-col gap-6 md:sticky md:top-8 md:rounded-card md:border md:border-grey-200 md:p-6"
+        style={colour === null ? undefined : { borderColor: colour }}
+      >
         <PriceList lessons={profile.lessons} packages={profile.packages} />
         <div className="hidden md:block">
-          <BookAction bookingUrl={bookingUrl} canBook={canBook} />
+          <BookAction bookingUrl={bookingUrl} canBook={canBook} colour={colour} />
         </div>
       </aside>
     </div>
@@ -175,7 +183,7 @@ async function Passes({ slug }: { slug: string }) {
 async function FreeTimes({ profile, bookingUrl }: { profile: InstructorProfilePage; bookingUrl: string }) {
   const shortest = Math.min(...profile.lessons.map((lesson) => lesson.durationMinutes));
   const times = await nextOpenTimes(profile.instructorId, shortest);
-  return <NextTimes bookingUrl={bookingUrl} times={times} />;
+  return <NextTimes bookingUrl={bookingUrl} times={times} colour={profile.business.colour} />;
 }
 
 /**
