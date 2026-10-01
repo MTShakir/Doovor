@@ -70,11 +70,13 @@ export function lessonStateLabel(facts: LessonFacts): string | undefined {
   if (facts.status === 'no_show') return 'No-show';
   if (lessonState(facts) !== 'paid') return undefined;
   // Part of it came from credit and the rest was paid, so the pill says both. "Paid (cash)" on a
-  // lesson an hour of credit went into is not what happened (D-225).
+  // lesson an hour of credit went into is not what happened (D-225). Every method names itself,
+  // card included: a bare "Paid" next to "Paid (cash)" only told you what it was not (D-233).
   const alsoCredit = (facts.creditMinutes ?? 0) > 0;
   if (facts.paymentStatus === 'paid_cash') return alsoCredit ? 'Paid (credit + cash)' : 'Paid (cash)';
   if (facts.paymentStatus === 'paid_bank') return alsoCredit ? 'Paid (credit + bank)' : 'Paid (bank)';
-  if (facts.paymentStatus === 'paid_card' && alsoCredit) return 'Paid (credit + card)';
+  if (facts.paymentStatus === 'paid_card') return alsoCredit ? 'Paid (credit + card)' : 'Paid (card)';
+  // Credit alone never gets here: `lessonState` calls it 'credit' and that pill says so itself.
   return undefined;
 }
 

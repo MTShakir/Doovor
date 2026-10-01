@@ -1082,6 +1082,11 @@ test.describe('receipts (PAY-08, M3-20)', () => {
     // A lesson paid by card, at a Business not registered for VAT.
     await bookLesson('Tom Walsh', learner, day, '11:00');
     await payFromLessons(page, 'Tom Walsh', day, '11:00');
+    // The pill names the method. A card used to fall through to a bare "Paid" beside the cash and
+    // bank ones, which told you only what it was not (D-233).
+    await page.goto('/app/learner/lessons');
+    const byCard = page.getByRole('article').filter({ hasText: `${dayLabel(day)} at 11:00` });
+    await expect(byCard.getByText('Paid (card)', { exact: true })).toBeVisible();
     const first = await paymentIdFor(await lessonIdAt('Tom Walsh', day, '11:00'));
     const sent = await page.request.post('/dev/events', { data: { name: 'payment.received', payload: { payment_id: first } } });
     expect(await sent.json()).toMatchObject({ receipt: { sent: true }, notices: { written: 2 } });

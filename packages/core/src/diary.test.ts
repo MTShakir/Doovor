@@ -59,11 +59,11 @@ describe('one word for a lesson (DIA-04, M1-19)', () => {
     expect(lessonState({ ...standard, status: 'completed' })).toBe('completed');
   });
 
-  it('says how a lesson paid in person was paid (PAY-05)', () => {
+  it('says how a lesson was paid for, whichever way that was (PAY-05, D-233)', () => {
     expect(lessonStateLabel({ ...standard, paymentStatus: 'paid_cash' })).toBe('Paid (cash)');
     expect(lessonStateLabel({ ...standard, status: 'completed', paymentStatus: 'paid_bank' })).toBe('Paid (bank)');
-    // A card, credit, or anything that is not paid keeps the pill's usual word.
-    expect(lessonStateLabel({ ...standard, paymentStatus: 'paid_card' })).toBeUndefined();
+    expect(lessonStateLabel({ ...standard, paymentStatus: 'paid_card' })).toBe('Paid (card)');
+    // Credit on its own is not a payment method: that pill says Credit and comes from the state.
     expect(lessonStateLabel({ ...standard, paymentStatus: 'paid_credit' })).toBeUndefined();
     expect(lessonStateLabel(standard)).toBeUndefined();
     // A cancelled lesson is cancelled, whatever paid for it.
@@ -185,8 +185,7 @@ describe('a lesson paid two ways says both (D-225)', () => {
     expect(lessonStateLabel({ ...standard, paymentStatus: 'paid_cash' })).toBe('Paid (cash)');
     expect(lessonStateLabel({ ...standard, paymentStatus: 'paid_cash', creditMinutes: 0 })).toBe('Paid (cash)');
     expect(lessonStateLabel({ ...standard, paymentStatus: 'paid_bank' })).toBe('Paid (bank)');
-    // A card on its own is the ordinary case and the pill just says Paid.
-    expect(lessonStateLabel({ ...standard, paymentStatus: 'paid_card' })).toBeUndefined();
+    expect(lessonStateLabel({ ...standard, paymentStatus: 'paid_card' })).toBe('Paid (card)');
   });
 
   it('still says no-show whatever paid for it', () => {
