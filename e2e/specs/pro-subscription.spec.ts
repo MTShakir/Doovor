@@ -114,7 +114,7 @@ test.describe('Pro, paid for through the platform (9.18, D-231)', { tag: '@deskt
     await expect(page.getByRole('region', { name: 'Go Pro' })).toHaveCount(0);
     // The plan card must not call a plan somebody is paying for "Free until", on the very day
     // they are next charged (D-231).
-    const plan = page.getByRole('region', { name: 'Pro' }).first();
+    const plan = page.getByRole('region', { name: 'Pro', exact: true });
     await expect(plan).toContainText('Paid up to');
     await expect(plan.getByText(/Free until/)).toHaveCount(0);
 
@@ -200,6 +200,27 @@ test.describe('Pro, paid for through the platform (9.18, D-231)', { tag: '@deskt
     expect(spent, 'the month was spent by the invoice that used it').not.toBeNull();
 
     await withDatabase(async (sql) => sql`delete from public.referrals where id = ${referral}`);
+  });
+
+  test('back from the card page before the event lands, nobody is asked to pay twice', async ({ page }, testInfo) => {
+    const business = await businessId();
+    await onFree(business);
+
+    // The address Stripe sends somebody back to, reached before the event that grants Pro. With
+    // the fake that gap is nothing, so it is walked into directly: this is the state, not the way
+    // it is usually arrived at.
+    await page.goto('/app/instructor/plan?subscribed=1');
+
+    const waiting = page.getByRole('region', { name: 'Setting up your subscription' });
+    await expect(waiting).toBeVisible();
+    await expect(waiting).toContainText('You do not need to pay again.');
+    // The button that would take a second payment is not on the page at all.
+    await expect(page.getByRole('button', { name: 'Go Pro' })).toHaveCount(0);
+    await expect(waiting.getByRole('button', { name: 'Check again' })).toBeVisible();
+
+    await expectAccessible(page);
+    await settled(page);
+    await snap(page, testInfo, 'subscription-waiting');
   });
 
   test('a school owner is offered nothing, because a school pays per instructor', async ({ browser }) => {

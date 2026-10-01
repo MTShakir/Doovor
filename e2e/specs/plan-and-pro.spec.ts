@@ -19,7 +19,8 @@ test.describe('your plan and what is Pro (D-208, D-209)', () => {
 
     // The founding place is for good, and the day the plan runs to is the thing somebody on a
     // trial cannot otherwise find out (D-203, D-204).
-    const card = page.getByRole('region', { name: 'Pro' });
+    // Exact: the Go Pro and Keep Pro cards are regions whose names contain this one (D-231).
+    const card = page.getByRole('region', { name: 'Pro', exact: true });
     await expect(card).toContainText('Founding member');
     await expect(card).toContainText('That stays yours for good');
     await expect(card).toContainText(/Free until \w{3} \d{1,2} \w{3} \d{4}/);

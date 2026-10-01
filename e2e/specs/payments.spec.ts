@@ -1082,11 +1082,6 @@ test.describe('receipts (PAY-08, M3-20)', () => {
     // A lesson paid by card, at a Business not registered for VAT.
     await bookLesson('Tom Walsh', learner, day, '11:00');
     await payFromLessons(page, 'Tom Walsh', day, '11:00');
-    // The pill names the method. A card used to fall through to a bare "Paid" beside the cash and
-    // bank ones, which told you only what it was not (D-233).
-    await page.goto('/app/learner/lessons');
-    const byCard = page.getByRole('article').filter({ hasText: `${dayLabel(day)} at 11:00` });
-    await expect(byCard.getByText('Paid (card)', { exact: true })).toBeVisible();
     const first = await paymentIdFor(await lessonIdAt('Tom Walsh', day, '11:00'));
     const sent = await page.request.post('/dev/events', { data: { name: 'payment.received', payload: { payment_id: first } } });
     expect(await sent.json()).toMatchObject({ receipt: { sent: true }, notices: { written: 2 } });
@@ -1145,6 +1140,15 @@ test.describe('receipts (PAY-08, M3-20)', () => {
     // The first receipt still says what it said.
     await page.goto(`/receipts/${first}`);
     await expect(page.getByRole('region', { name: /^Receipt \d+$/ })).not.toContainText('VAT');
+
+    // And the pill names the method. A card used to fall through to a bare "Paid" beside the cash
+    // and bank ones, which told you only what it was not (D-233). Checked here rather than beside
+    // the payment it describes: the two receipts above are numbered one after another only while
+    // nothing else on this Business takes a number in between, and a page load there is long
+    // enough for another spec to.
+    await page.goto('/app/learner/lessons');
+    const byCard = page.getByRole('article').filter({ hasText: `${dayLabel(day)} at 11:00` });
+    await expect(byCard.getByText('Paid (card)', { exact: true })).toBeVisible();
 
     await saveReceiptDetails(browser, '', null);
     await clearPaymentsAccount(owner);

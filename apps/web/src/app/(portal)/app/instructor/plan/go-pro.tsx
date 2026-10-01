@@ -5,7 +5,8 @@ import { Card, CardDescription, CardTitle } from '@repo/ui/card';
 import { StatusPill } from '@repo/ui/status-pill';
 import { toast } from '@repo/ui/toast';
 import { Gift, TrendingDown } from 'lucide-react';
-import { useId, useState, useTransition } from 'react';
+import { useRouter } from 'next/navigation';
+import { useEffect, useId, useState, useTransition } from 'react';
 import type { ProSubscription } from '@/lib/billing/subscription';
 import { ProTag } from '@/components/pro';
 import { setProRenewal, startProCheckout } from './actions';
@@ -226,4 +227,54 @@ function discountWords(subscription: ProSubscription): string {
     return 'Keep going and your price starts coming down.';
   }
   return `${String(offer.discountPercent)}% is coming off each renewal.`;
+}
+
+/**
+ * Back from the card page, before the event that grants Pro has arrived (9.18, D-231).
+ *
+ * The redirect grants nothing: a signed event does, and it can be a moment behind the browser.
+ * Showing "Go Pro" in that moment would invite somebody who has just paid to pay again, so this
+ * stands in its place and checks for itself rather than making them wonder.
+ */
+export function WaitingForStripe() {
+  const [checking, startChecking] = useTransition();
+  const router = useRouter();
+
+  // Stripe is usually ahead of the browser, but not always. One look a few seconds later covers
+  // the gap without a spinner that never ends.
+  useEffect(() => {
+    const again = setTimeout(() => {
+      router.refresh();
+    }, 4000);
+    return () => {
+      clearTimeout(again);
+    };
+  }, [router]);
+
+  return (
+    <Card className="flex flex-col gap-4" role="region" aria-labelledby="waiting-title">
+      <div className="flex flex-col gap-1">
+        <span className="flex flex-wrap items-center gap-2">
+          <CardTitle id="waiting-title">Setting up your subscription</CardTitle>
+          <ProTag />
+        </span>
+        <CardDescription>
+          Your payment went through and we are waiting for the card service to confirm it. This is usually seconds. You do
+          not need to pay again.
+        </CardDescription>
+      </div>
+      <Button
+        variant="secondary"
+        width="full"
+        pending={checking}
+        onClick={() => {
+          startChecking(() => {
+            router.refresh();
+          });
+        }}
+      >
+        Check again
+      </Button>
+    </Card>
+  );
 }
