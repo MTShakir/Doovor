@@ -1,9 +1,20 @@
 'use client';
 
 import { Sheet } from '@repo/ui/sheet';
+import { SkeletonRow } from '@repo/ui/skeleton';
 import { LifeBuoy } from 'lucide-react';
+import dynamic from 'next/dynamic';
 import { useState } from 'react';
-import { FeedbackForm } from '@/app/(account)/feedback/feedback-form';
+
+/**
+ * The form brings a form library, a resolver, the image preparation and a storage client with it,
+ * and this button is on every portal screen while almost nobody presses it. So it is loaded when
+ * the sheet opens and never before, the way the map library is (COV-01).
+ */
+const FeedbackForm = dynamic(
+  () => import('@/app/(account)/feedback/feedback-form').then((module) => module.FeedbackForm),
+  { ssr: false, loading: () => <SkeletonRow /> },
+);
 
 /**
  * Support, from anywhere in a portal (D-241).
