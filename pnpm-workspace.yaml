@@ -38,6 +38,13 @@ overrides:
   '@grpc/grpc-js': '>=1.14.5'
   # Unbounded memory growth and a crash on untrusted data, under Serwist at build time.
   browserslist: '>=4.28.7'
+  # Quadratic-time CPU denial of service in the Unix directory listing parser of Client.list().
+  # It reaches us only through Lighthouse CI's proxy and browser-download paths, which this repo
+  # never walks: the Lighthouse job measures with the runner's own Chrome and resolves no ftp://
+  # URI. Raised rather than ignored because a fixed version exists, which is what separates this
+  # from the two advisories in auditConfig below. 5.3.1 is what resolves without this, and the
+  # fix landed in a new major, so this is a major bump for a tool that never runs in anger.
+  basic-ftp: '>=6.2.1 <7'
   # Path traversal through a prefix, under Lighthouse CI.
   tmp: '>=0.2.6'
   # Missing bounds check when given a buffer, under Lighthouse CI.

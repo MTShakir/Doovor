@@ -165,6 +165,7 @@ catalogs:
 overrides:
   '@grpc/grpc-js': '>=1.14.5'
   browserslist: '>=4.28.7'
+  basic-ftp: '>=6.2.1 <7'
   tmp: '>=0.2.6'
   uuid: '>=11.1.1'
   brace-expansion@1: '>=1.1.20 <2'
@@ -3940,8 +3941,8 @@ packages:
     engines: {node: '>=6.0.0'}
     hasBin: true
 
-  basic-ftp@5.3.1:
-    resolution: {integrity: sha512-bopVNp6ugyA150DDuZfPFdt1KZ5a94ZDiwX4hMgZDzF+GttD80lEy8kj98kbyhLXnPvhtIo93mdnLIjpCAeeOw==}
+  basic-ftp@6.2.1:
+    resolution: {integrity: sha512-bK67isD+lKq46AU8vNtjvMaT2ZqAOAmNCbxUHlFBRD4k15NWxyEjmaKtZPlgce58So4BNTjITGQOVTjL9y0ECA==}
     engines: {node: '>=10.0.0'}
 
   bignumber.js@9.3.1:
@@ -10088,7 +10089,7 @@ snapshots:
 
   baseline-browser-mapping@2.11.21: {}
 
-  basic-ftp@5.3.1: {}
+  basic-ftp@6.2.1: {}
 
   bignumber.js@9.3.1: {}
 
@@ -10972,7 +10973,7 @@ snapshots:
 
   get-uri@6.0.5(supports-color@5.5.0):
     dependencies:
-      basic-ftp: 5.3.1
+      basic-ftp: 6.2.1
       data-uri-to-buffer: 6.0.2
       debug: 4.4.3(supports-color@5.5.0)
     transitivePeerDependencies:
