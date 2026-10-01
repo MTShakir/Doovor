@@ -1,6 +1,6 @@
 import { expect, test } from '@playwright/test';
 import { authFile } from '../support/accounts';
-import { withDatabase } from '../support/database';
+import { holdPlanBusiness, withDatabase } from '../support/database';
 import { expectAccessible, snap } from '../support/helpers';
 
 /**
@@ -92,6 +92,8 @@ test.describe('what Free carries (D-208)', { tag: '@desktop-only' }, () => {
   test.use({ storageState: authFile('instructor') });
 
   test('an instructor on Free sees the number, and Pro rows greyed with the tag', async ({ page }, testInfo) => {
+    // The subscription file moves this same Business, so the two take turns (D-231).
+    const release = await holdPlanBusiness();
     const business = await withDatabase(async (sql) => {
       const [row] = await sql<{ id: string }[]>`
         select b.id from public.businesses b
@@ -125,6 +127,7 @@ test.describe('what Free carries (D-208)', { tag: '@desktop-only' }, () => {
       await expectAccessible(page);
     } finally {
       await withDatabase(async (sql) => sql`update public.businesses set plan = 'pro' where id = ${business}`);
+      await release();
     }
   });
 });

@@ -1,7 +1,7 @@
 import 'server-only';
 import { monthsFromCreditPence } from '@repo/core/subscription';
-import type { BillingWebhookEvent } from '@repo/providers/billing';
-import { billingProvider, billingWebhookSecrets } from '@/lib/billing/provider';
+import type { BillingWebhookEvent, Subscription } from '@repo/providers/billing';
+import { billingProvider, billingWebhookSecrets, signFakeBillingEvent } from '@/lib/billing/provider';
 import { getSupabaseServiceClient } from '@/lib/supabase/service';
 
 export interface BillingWebhookAnswer {
@@ -97,4 +97,32 @@ function payloadFor(event: BillingWebhookEvent): Record<string, unknown> {
   // Recorded and ignored. It still goes to the database, so a second delivery of it is a
   // duplicate rather than something that gets looked at again.
   return { kind: 'other' };
+}
+
+/**
+ * Stands in for Stripe telling us a subscription changed, while the fake is in use (D-231).
+ *
+ * With Stripe, asking for a subscription to stop renewing is answered by an event a moment
+ * later, and that event is what moves the row. The fake has nobody to send one, so the caller
+ * sends it here, through the same handler: same signature check, same exactly-once record, same
+ * function writing the row. Without this the local flow would change Stripe's mind and not ours,
+ * which is the one bug this arrangement is meant to make impossible to miss.
+ *
+ * Answers false with Stripe, where there is nothing to stand in for.
+ */
+export async function deliverFakeSubscriptionEvent(subscription: Subscription, type: string): Promise<boolean> {
+  const signature = signFakeBillingEvent();
+  if (signature === null) return false;
+
+  const body = JSON.stringify({
+    // What changed is part of the id, so stopping and then changing your mind are two events
+    // rather than the second being thrown away as a duplicate of the first.
+    id: `evt_sub_${subscription.id}_${String(subscription.cancelAtPeriodEnd)}_${subscription.status}`,
+    type,
+    subscription,
+    invoice: null,
+  });
+
+  const answer = await handleBillingEvent({ body, signature });
+  return answer.status === 200;
 }

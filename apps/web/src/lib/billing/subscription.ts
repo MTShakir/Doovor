@@ -30,7 +30,7 @@ export interface ProOffer {
   perMonth: string;
   /** Whole percent off, or nought. */
   discountPercent: number;
-  /** "Save £24 a year" on the yearly choice, so the two can be weighed without arithmetic. */
+  /** "Save £24" on the yearly choice, so the two can be weighed without arithmetic. */
   saving: string | null;
 }
 
@@ -105,7 +105,7 @@ export async function proSubscription(): Promise<ProSubscription | null> {
       wasPrice: now === list ? null : formatPence(list),
       perMonth: formatPence(Math.round(now / monthsCovered(interval))),
       discountPercent,
-      saving: savedPence > 0 ? `Save ${formatPence(savedPence)} a year` : null,
+      saving: savedPence > 0 ? `Save ${formatPence(savedPence)}` : null,
     };
   });
 

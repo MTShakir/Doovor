@@ -17,12 +17,27 @@ import { setProRenewal, startProCheckout } from './actions';
  * and arrives as text that has already been formatted: there is no price in this component's
  * state, so there is nothing here to change in a developer console that would change a charge.
  */
-export function GoPro({ subscription }: { subscription: ProSubscription }) {
+export function GoPro({
+  subscription,
+  alreadyPro,
+  runsTo,
+}: {
+  subscription: ProSubscription;
+  /** On Pro already, through a founding place or a trial rather than a payment. */
+  alreadyPro: boolean;
+  /** The day that free run ends, where there is one. */
+  runsTo: string | null;
+}) {
   const [interval, setInterval] = useState<'month' | 'year'>('year');
   const [pending, startTransition] = useTransition();
   const name = useId();
 
   const chosen = subscription.offers.find((offer) => offer.interval === interval);
+  // Somebody given Pro by a founding place or a trial already has it, and has nothing paying for
+  // it. "Go Pro" at them is wrong, and so is hiding the card: what they need is the one that
+  // carries on when the free run ends (D-203, D-204, D-231).
+  const keeping = alreadyPro;
+  const title = keeping ? 'Keep Pro' : 'Go Pro';
 
   const subscribe = () => {
     startTransition(async () => {
@@ -39,10 +54,16 @@ export function GoPro({ subscription }: { subscription: ProSubscription }) {
     <Card className="flex flex-col gap-4" role="region" aria-labelledby="go-pro-title">
       <div className="flex flex-col gap-1">
         <span className="flex flex-wrap items-center gap-2">
-          <CardTitle id="go-pro-title">Go Pro</CardTitle>
+          <CardTitle id="go-pro-title">{title}</CardTitle>
           <ProTag />
         </span>
-        <CardDescription>Pick how often you pay. You can stop whenever you like.</CardDescription>
+        <CardDescription>
+          {!keeping
+            ? 'Pick how often you pay. You can stop whenever you like.'
+            : runsTo === null
+              ? 'You have Pro already. Set up a payment and it carries on whatever happens to the offer that gave it to you.'
+              : `Your Pro is free until ${runsTo}. Set up a payment now and it carries on from there.`}
+        </CardDescription>
       </div>
 
       <fieldset className="flex flex-col gap-2">
@@ -59,7 +80,7 @@ export function GoPro({ subscription }: { subscription: ProSubscription }) {
                 picked ? 'border-black bg-quiet' : 'border-grey-200 hover:bg-quiet',
               ].join(' ')}
             >
-              <span className="flex items-center gap-3">
+              <span className="flex min-w-0 items-center gap-3">
                 <input
                   type="radio"
                   name={name}
@@ -79,7 +100,7 @@ export function GoPro({ subscription }: { subscription: ProSubscription }) {
                   )}
                 </span>
               </span>
-              <span className="flex flex-col items-end gap-1">
+              <span className="flex shrink-0 flex-col items-end gap-1">
                 <span className="text-body font-semibold text-ink">
                   {offer.wasPrice === null ? null : (
                     <span className="mr-1 font-normal text-grey-700 line-through">{offer.wasPrice}</span>
@@ -114,7 +135,7 @@ export function GoPro({ subscription }: { subscription: ProSubscription }) {
       )}
 
       <Button width="full" pending={pending} onClick={subscribe}>
-        Go Pro
+        {title}
       </Button>
       <p className="text-small text-grey-700">
         It renews by itself. We will email you {String(subscription.noticeDays[interval])} days before each renewal
@@ -156,7 +177,9 @@ export function ProSubscriptionCard({ subscription }: { subscription: ProSubscri
           {subscription.words === null ? null : <CardDescription>{subscription.words}</CardDescription>}
         </div>
         {subscription.status === 'past_due' ? <StatusPill status="attention">Payment failed</StatusPill> : null}
-        {stopping ? <StatusPill status="cancelled">Ending</StatusPill> : null}
+        {/* Not 'cancelled': that pill strikes its own text through, and a struck through
+            "Ending" reads as something broken rather than something ending. */}
+        {stopping ? <StatusPill status="attention">Ending</StatusPill> : null}
       </div>
 
       {subscription.monthsPaid > 0 ? (

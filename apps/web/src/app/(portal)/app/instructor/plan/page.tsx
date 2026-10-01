@@ -49,8 +49,8 @@ async function Plan() {
     subscription === null ? undefined : subscription.live ? (
       <ProSubscriptionCard subscription={subscription} />
     ) : (
-      <GoPro subscription={subscription} />
+      <GoPro subscription={subscription} alreadyPro={plan.plan !== 'free'} runsTo={plan.runsTo} />
     );
 
-  return <PlanScreen plan={plan} subscribe={subscribe} />;
+  return <PlanScreen plan={plan} subscribe={subscribe} subscribed={subscription?.live ?? false} />;
 }

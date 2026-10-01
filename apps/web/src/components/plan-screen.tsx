@@ -62,7 +62,16 @@ function Waiting({ items }: { items: readonly string[] }) {
  * than rendered here because this screen is shown to schools too, and a school pays per
  * instructor on the School plan instead (D-231). A school passes nothing and sees no card.
  */
-export function PlanScreen({ plan, subscribe }: { plan: BusinessPlan; subscribe?: ReactNode }) {
+export function PlanScreen({
+  plan,
+  subscribe,
+  subscribed = false,
+}: {
+  plan: BusinessPlan;
+  subscribe?: ReactNode;
+  /** Whether a subscription is paying for this plan, which changes what the date means. */
+  subscribed?: boolean;
+}) {
   const summaries = planSummaries();
   const mine = summaries.find((one) => one.key === plan.plan);
   const pro = summaries.find((one) => one.key === 'pro');
@@ -95,7 +104,15 @@ export function PlanScreen({ plan, subscribe }: { plan: BusinessPlan; subscribe?
           </div>
         ) : null}
 
-        {plan.runsTo === null ? (
+        {/* A subscription writes the day it is paid up to into the same field a founding place or
+            a trial uses, so the date means something different and the sentence has to as well.
+            "Free until" on a plan somebody is paying for, on the day they are next charged, is
+            the worst of the three ways to put it (D-231). */}
+        {subscribed ? (
+          <p className="text-body text-ink">
+            {plan.runsTo === null ? 'This plan runs on.' : `Paid up to ${plan.runsTo}.`} What happens next is just below.
+          </p>
+        ) : plan.runsTo === null ? (
           <p className="text-body text-ink">
             {paid ? 'This plan runs on.' : 'Free has no end date. Go Pro whenever you are ready.'}
           </p>

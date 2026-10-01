@@ -8,6 +8,7 @@ import { revalidatePath } from 'next/cache';
 import { requirePortal } from '@/lib/auth/session';
 import { refuseWhileViewing } from '@/lib/auth/view-as';
 import { billingProvider } from '@/lib/billing/provider';
+import { deliverFakeSubscriptionEvent } from '@/lib/billing/webhook';
 import { proSubscription } from '@/lib/billing/subscription';
 import { getAppUrl } from '@/lib/app-url';
 import { fieldErrors } from '@/lib/forms';
@@ -108,8 +109,10 @@ export async function setProRenewal(input: unknown): Promise<Result<{ cancelAtPe
   const answer = await billingProvider().setCancelAtPeriodEnd({ subscriptionId, cancel: parsed.data.cancel });
   if (!answer.ok) return err('UNKNOWN', couldNot);
 
-  // The row follows from the event Stripe sends about this, not from here. The page is refreshed
-  // so the sentence is right as soon as that lands.
+  // The row follows from the event, not from here: this asked Stripe, and Stripe says what is
+  // true. With the fake nobody sends that event, so it is sent here, through the same handler.
+  await deliverFakeSubscriptionEvent(answer.data, 'customer.subscription.updated');
+
   revalidatePath('/app/instructor/plan');
   return ok({ cancelAtPeriodEnd: parsed.data.cancel });
 }

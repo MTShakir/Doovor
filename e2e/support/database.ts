@@ -42,6 +42,23 @@ export async function holdPaymentsBusiness(): Promise<() => Promise<void>> {
 }
 
 /**
+ * Keeps the seeded instructor's plan to one spec at a time (D-208, D-231).
+ *
+ * Two files move that one Business between Free and Pro: the one that checks what each plan
+ * carries, and the one that subscribes to Pro. Both are `@desktop-only`, so the widths do not
+ * fight, but the files still run beside each other, and one putting the plan back to Pro while
+ * the other is half way through subscribing fails it for a reason that is not the app's.
+ */
+export async function holdPlanBusiness(): Promise<() => Promise<void>> {
+  const sql = postgres(databaseUrl, { max: 1, idle_timeout: 0, max_lifetime: null });
+  await sql`select pg_advisory_lock(hashtext('e2e:plan-business'))`;
+  return async () => {
+    await sql`select pg_advisory_unlock(hashtext('e2e:plan-business'))`;
+    await sql.end();
+  };
+}
+
+/**
  * Keeps whether the books' Business charges VAT to one spec at a time (MNY-02, D-198).
  *
  * The 390 px and 1440 px runs go at the same moment against the same instructor, and the VAT
