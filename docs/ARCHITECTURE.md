@@ -439,6 +439,12 @@ that count months and spend referral months have no `service_role` grant, so the
 that skips the record (D-235). How many months an invoice covered is worked out in SQL from the
 interval on the row, never taken from the event.
 
+**One subscription per Business.** If a second live one arrives for the same customer, the event
+is recorded and refused rather than written over the first, and the app cancels it at Stripe and
+refunds it with the `duplicate` reason, putting back any referral months it spent (D-239). What is
+kept is whatever the row already holds, a rule that needs no clock, because webhook deliveries
+have no order.
+
 **The discount reaches Stripe.** The invoice answer carries the run of months either side, and the
 handler reprices the subscription when those two are worth different figures (D-238). Counting
 stays in SQL; pricing stays where the prices are.

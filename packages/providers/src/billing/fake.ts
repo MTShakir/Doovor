@@ -1,6 +1,7 @@
 import { subscriptionCarriesPro } from '@repo/core/subscription';
 import type {
   BillingCustomer,
+  RefundedSubscription,
   BillingFailure,
   BillingProvider,
   BillingResult,
@@ -65,6 +66,8 @@ export function createFakeBillingProvider(options: FakeBillingOptions = {}): Fak
   const byBusiness = new Map<string, string>();
   const pending = new Map<string, Pending>();
   const subscriptions = new Map<string, Subscription>();
+  /** The last invoice of each subscription, so a duplicate can be given back what it took. */
+  const lastInvoice = new Map<string, { paidPence: number; creditAppliedPence: number }>();
   let counter = 0;
   const next = (prefix: string) => `${prefix}_${String(++counter).padStart(4, '0')}`;
 
@@ -136,6 +139,20 @@ export function createFakeBillingProvider(options: FakeBillingOptions = {}): Fak
       return Promise.resolve(ok(null));
     },
 
+    cancelAndRefund({ subscriptionId, customerId }): Promise<BillingResult<RefundedSubscription>> {
+      const found = subscriptions.get(subscriptionId);
+      if (!found) return Promise.resolve(no('not_found', 'No such subscription.'));
+      const customer = customers.get(customerId);
+      if (!customer) return Promise.resolve(no('not_found', 'No such customer.'));
+
+      subscriptions.set(subscriptionId, { ...found, status: 'canceled', cancelAtPeriodEnd: false });
+      const took = lastInvoice.get(subscriptionId) ?? { paidPence: 0, creditAppliedPence: 0 };
+      // Refunding the same duplicate twice would give the money back twice.
+      lastInvoice.delete(subscriptionId);
+      customer.creditPence += took.creditAppliedPence;
+      return Promise.resolve(ok({ refundedPence: took.paidPence, creditRestoredPence: took.creditAppliedPence }));
+    },
+
     verifyWebhook({ body, signature }): Promise<BillingResult<BillingWebhookEvent>> {
       if (signature !== 'fake-signature') return Promise.resolve(no('invalid', 'The signature does not match.'));
       try {
@@ -169,6 +186,7 @@ export function createFakeBillingProvider(options: FakeBillingOptions = {}): Fak
         metadata: { business_id: input.businessId },
       };
       subscriptions.set(id, subscription);
+      lastInvoice.set(id, { paidPence: taken.paid, creditAppliedPence: taken.credited });
       return {
         subscription,
         invoice: {
@@ -198,6 +216,7 @@ export function createFakeBillingProvider(options: FakeBillingOptions = {}): Fak
         currentPeriodEnd: periodEnd(found.currentPeriodEnd ?? new Date(), found.interval),
       };
       subscriptions.set(subscriptionId, renewed);
+      lastInvoice.set(subscriptionId, { paidPence: taken.paid, creditAppliedPence: taken.credited });
       return {
         subscription: renewed,
         invoice: {
@@ -227,6 +246,7 @@ export function createFakeBillingProvider(options: FakeBillingOptions = {}): Fak
       byBusiness.clear();
       pending.clear();
       subscriptions.clear();
+      lastInvoice.clear();
       counter = 0;
     },
   };

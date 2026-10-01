@@ -136,9 +136,32 @@ export interface BillingProvider {
   /** Credit on the customer's balance, which comes off the next invoice before the card is used. */
   addCredit: (input: { customerId: string; pence: number; reason: string }) => Promise<BillingResult<null>>;
 
+  /**
+   * Undoes a subscription that should never have existed (D-239).
+   *
+   * Two browser tabs can both finish a checkout in the seconds before the first event lands, and
+   * the second one is a second subscription for a Business that can only have one. This ends it
+   * at once rather than at the end of the period, gives the money back, and puts back whatever
+   * came off the customer's balance to pay for it.
+   *
+   * Everything it does is to the duplicate. The one that was kept is not touched.
+   */
+  cancelAndRefund: (input: {
+    subscriptionId: string;
+    customerId: string;
+  }) => Promise<BillingResult<RefundedSubscription>>;
+
   verifyWebhook: (input: {
     body: string;
     signature: string;
     secret: string;
   }) => Promise<BillingResult<BillingWebhookEvent>>;
+}
+
+/** What undoing a duplicate actually gave back. */
+export interface RefundedSubscription {
+  /** Money returned to the card, in pence. Nought when credit had covered the whole of it. */
+  refundedPence: number;
+  /** Balance put back on the customer, in pence, where the duplicate had spent some. */
+  creditRestoredPence: number;
 }

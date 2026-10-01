@@ -226,6 +226,73 @@ export function billingContract(name: string, make: () => FakeBillingProvider): 
       expect(billing.creditOf('cus_nothing')).toBe(0);
     });
 
+    it('undoes a duplicate: ends it now, gives the money back, leaves the first alone (D-239)', async () => {
+      // The one that is kept.
+      const first = await subscribe();
+      const kept = finish(first.sessionId).subscription;
+
+      // The second, from the other tab, which should never have existed.
+      const second = await subscribe();
+      const duplicate = finish(second.sessionId);
+      expect(duplicate.invoice.paidPence).toBe(plans.pro.monthlyPricePence);
+
+      const undone = await billing.cancelAndRefund({
+        subscriptionId: duplicate.subscription.id,
+        customerId: second.customerId,
+      });
+
+      expect(undone.ok).toBe(true);
+      if (!undone.ok) return;
+      expect(undone.data.refundedPence).toBe(plans.pro.monthlyPricePence);
+
+      // Ended now rather than at the end of the period: nobody keeps what they were refunded for.
+      const after = await billing.getSubscription(duplicate.subscription.id);
+      expect(after.ok && after.data.status).toBe('canceled');
+      expect(billing.renew(duplicate.subscription.id)).toBeNull();
+
+      // And the one that was kept is untouched and still renews.
+      const still = await billing.getSubscription(kept.id);
+      expect(still.ok && still.data.status).toBe('active');
+      expect(billing.renew(kept.id)).not.toBeNull();
+    });
+
+    it('puts back the referral months a duplicate spent, rather than refunding nothing (D-239)', async () => {
+      // A month banked covers the whole invoice, so the card paid nought. Refunding nought and
+      // stopping there would quietly cost somebody the month they had earned.
+      const { customerId, sessionId } = await subscribe({ creditPence: plans.pro.monthlyPricePence });
+      const duplicate = finish(sessionId);
+      expect(duplicate.invoice.paidPence).toBe(0);
+      expect(billing.creditOf(customerId)).toBe(0);
+
+      const undone = await billing.cancelAndRefund({ subscriptionId: duplicate.subscription.id, customerId });
+
+      expect(undone.ok).toBe(true);
+      if (!undone.ok) return;
+      expect(undone.data.refundedPence).toBe(0);
+      expect(undone.data.creditRestoredPence).toBe(plans.pro.monthlyPricePence);
+      expect(billing.creditOf(customerId)).toBe(plans.pro.monthlyPricePence);
+    });
+
+    it('gives nothing back twice, however many times the event arrives (D-239)', async () => {
+      const { customerId, sessionId } = await subscribe();
+      const duplicate = finish(sessionId);
+
+      const once = await billing.cancelAndRefund({ subscriptionId: duplicate.subscription.id, customerId });
+      const again = await billing.cancelAndRefund({ subscriptionId: duplicate.subscription.id, customerId });
+
+      expect(once.ok && once.data.refundedPence).toBe(plans.pro.monthlyPricePence);
+      expect(again.ok && again.data.refundedPence).toBe(0);
+      expect(billing.creditOf(customerId)).toBe(0);
+    });
+
+    it('says so rather than throwing when the duplicate is nothing it has heard of', async () => {
+      const { customerId } = await subscribe();
+      const answer = await billing.cancelAndRefund({ subscriptionId: 'sub_nothing', customerId });
+
+      expect(answer.ok).toBe(false);
+      if (!answer.ok) expect(answer.reason).toBe('not_found');
+    });
+
     it('will not take an event that is not an event at all', async () => {
       const answer = await billing.verifyWebhook({ body: 'not json', signature: 'fake-signature', secret: 'whsec' });
 

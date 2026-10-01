@@ -4,7 +4,7 @@
 -- who has Pro, so the browser having no way to write one is the security, and a test that only
 -- proved the happy path would prove nothing about it.
 begin;
-select plan(45);
+select plan(53);
 
 select tests.create_fixture();
 
@@ -358,6 +358,81 @@ select is(pg_temp.renewing('2026-12-30T09:00:00Z'::timestamptz), 0,
 update public.subscriptions set cancel_at_period_end = false, status = 'canceled'
  where stripe_subscription_id = 'sub_asha';
 select is(pg_temp.renewing('2026-12-30T09:00:00Z'::timestamptz), 0, 'nor about one that has ended');
+
+-- ---------------------------------------------------------------------------------------
+-- A second subscription is refused, and the first is left exactly as it was (D-239).
+-- ---------------------------------------------------------------------------------------
+-- Two tabs both finish a checkout. Before this the later event wrote its own id over the first,
+-- which left the first subscription billing a card every month with nothing pointing at it.
+update public.subscriptions
+   set status = 'active', stripe_subscription_id = 'sub_kept', billing_interval = 'month',
+       current_period_end = '2027-01-01T09:00:00Z'::timestamptz, months_paid = 3
+ where business_id = :'asha_business';
+
+select is(
+  public.system_process_billing_event('evt_dup', 'customer.subscription.created', jsonb_build_object(
+    'kind', 'subscription', 'subscriptionId', 'sub_second', 'customerId', 'cus_asha',
+    'status', 'active', 'interval', 'year', 'periodEnd', '2028-01-01T09:00:00Z', 'cancelAtPeriodEnd', false
+  )) ->> 'outcome',
+  'duplicate_subscription',
+  'a second live subscription for the same customer is recognised'
+);
+
+select is(
+  (select stripe_subscription_id from public.subscriptions where business_id = :'asha_business'),
+  'sub_kept',
+  'and the one already recorded is the one that is kept'
+);
+select is(
+  (select billing_interval::text from public.subscriptions where business_id = :'asha_business'),
+  'month',
+  'the duplicate does not change what the kept one is billed as'
+);
+select is(
+  (select months_paid from public.subscriptions where business_id = :'asha_business'),
+  3,
+  'nor what it has paid'
+);
+
+-- The app is told everything it needs to undo it, and nothing it would have to look up.
+select is(
+  public.system_process_billing_event('evt_dup2', 'customer.subscription.created', jsonb_build_object(
+    'kind', 'subscription', 'subscriptionId', 'sub_third', 'customerId', 'cus_asha',
+    'status', 'active', 'interval', 'month', 'periodEnd', '2027-02-01T09:00:00Z', 'cancelAtPeriodEnd', false
+  )) -> 'keptSubscriptionId',
+  '"sub_kept"'::jsonb,
+  'and is told which one to leave alone'
+);
+
+-- An update to the one being kept is not a duplicate, however often it arrives.
+select is(
+  public.system_process_billing_event('evt_same', 'customer.subscription.updated', jsonb_build_object(
+    'kind', 'subscription', 'subscriptionId', 'sub_kept', 'customerId', 'cus_asha',
+    'status', 'active', 'interval', 'month', 'periodEnd', '2027-02-01T09:00:00Z', 'cancelAtPeriodEnd', true
+  )) ->> 'outcome',
+  'subscription_recorded',
+  'an update to the kept subscription is not mistaken for a second one'
+);
+
+-- Nor is a new one for a Business whose subscription has ended: that is somebody coming back.
+update public.subscriptions set status = 'canceled' where business_id = :'asha_business';
+select is(
+  public.system_process_billing_event('evt_return', 'customer.subscription.created', jsonb_build_object(
+    'kind', 'subscription', 'subscriptionId', 'sub_again', 'customerId', 'cus_asha',
+    'status', 'active', 'interval', 'month', 'periodEnd', '2027-03-01T09:00:00Z', 'cancelAtPeriodEnd', false
+  )) ->> 'outcome',
+  'subscription_recorded',
+  'somebody who left and came back is not a duplicate'
+);
+
+select tests.authenticate_as(:'asha_user');
+select throws_ok(
+  format($$ select public.system_record_subscription_refund(%L, 'sub_second', 1200, 0) $$, :'asha_business'),
+  '42501',
+  null,
+  'and an owner cannot write themselves a refund'
+);
+select tests.clear_authentication();
 
 select * from finish();
 rollback;

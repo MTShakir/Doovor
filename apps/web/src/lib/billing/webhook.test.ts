@@ -4,11 +4,12 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 const rpc = vi.fn();
 const verifyWebhook = vi.fn();
 const setSubscriptionPrice = vi.fn();
+const cancelAndRefund = vi.fn();
 const billingWebhookSecrets = vi.fn<() => string[]>();
 
 vi.mock('@/lib/supabase/service', () => ({ getSupabaseServiceClient: () => ({ rpc }) }));
 vi.mock('@/lib/billing/provider', () => ({
-  billingProvider: () => ({ verifyWebhook, setSubscriptionPrice }),
+  billingProvider: () => ({ verifyWebhook, setSubscriptionPrice, cancelAndRefund }),
   billingWebhookSecrets: () => billingWebhookSecrets(),
   signFakeBillingEvent: () => 'fake-signature',
 }));
@@ -176,6 +177,83 @@ describe('events from Stripe Billing (9.18, D-235, D-238)', () => {
     await handleBillingEvent({ body: '{}', signature: 'sig' });
 
     expect(setSubscriptionPrice).not.toHaveBeenCalled();
+  });
+
+  it('ends and refunds a second subscription, and records what came back (D-239)', async () => {
+    verifyWebhook.mockResolvedValue(anEvent({ type: 'customer.subscription.created', subscription: aSubscription() }));
+    rpc.mockResolvedValue({
+      data: {
+        applied: true,
+        outcome: 'duplicate_subscription',
+        duplicateSubscriptionId: 'sub_2',
+        keptSubscriptionId: 'sub_1',
+        customerId: 'cus_1',
+        businessId: 'biz-1',
+      },
+      error: null,
+    });
+    cancelAndRefund.mockResolvedValue({ ok: true, data: { refundedPence: 1_200, creditRestoredPence: 0 } });
+
+    const answer = await handleBillingEvent({ body: '{}', signature: 'sig' });
+
+    expect(answer.status).toBe(200);
+    // The duplicate, never the one that was kept.
+    expect(cancelAndRefund).toHaveBeenCalledWith({ subscriptionId: 'sub_2', customerId: 'cus_1' });
+    expect(rpc).toHaveBeenLastCalledWith('system_record_subscription_refund', {
+      p_business_id: 'biz-1',
+      p_duplicate_subscription_id: 'sub_2',
+      p_refunded_pence: 1_200,
+      p_credit_restored_pence: 0,
+    });
+  });
+
+  it('records nothing when the refund did not happen, so the trail does not claim it did', async () => {
+    verifyWebhook.mockResolvedValue(anEvent({ type: 'customer.subscription.created', subscription: aSubscription() }));
+    rpc.mockResolvedValue({
+      data: {
+        applied: true,
+        outcome: 'duplicate_subscription',
+        duplicateSubscriptionId: 'sub_2',
+        keptSubscriptionId: 'sub_1',
+        customerId: 'cus_1',
+        businessId: 'biz-1',
+      },
+      error: null,
+    });
+    cancelAndRefund.mockResolvedValue({ ok: false, reason: 'unavailable', message: 'down' });
+
+    const answer = await handleBillingEvent({ body: '{}', signature: 'sig' });
+
+    expect(answer.status).toBe(200);
+    expect(rpc).toHaveBeenCalledTimes(1);
+  });
+
+  it('still answers 200 when the refund throws, rather than asking for a second one', async () => {
+    verifyWebhook.mockResolvedValue(anEvent({ type: 'customer.subscription.created', subscription: aSubscription() }));
+    rpc.mockResolvedValue({
+      data: {
+        applied: true,
+        outcome: 'duplicate_subscription',
+        duplicateSubscriptionId: 'sub_2',
+        keptSubscriptionId: 'sub_1',
+        customerId: 'cus_1',
+        businessId: 'biz-1',
+      },
+      error: null,
+    });
+    cancelAndRefund.mockRejectedValue(new Error('Stripe is down'));
+
+    // Anything but 200 would have Stripe send the event again and ask for another refund.
+    expect((await handleBillingEvent({ body: '{}', signature: 'sig' })).status).toBe(200);
+  });
+
+  it('refunds nothing on an ordinary subscription event', async () => {
+    verifyWebhook.mockResolvedValue(anEvent({ type: 'customer.subscription.updated', subscription: aSubscription() }));
+    rpc.mockResolvedValue({ data: { applied: true, outcome: 'subscription_recorded' }, error: null });
+
+    await handleBillingEvent({ body: '{}', signature: 'sig' });
+
+    expect(cancelAndRefund).not.toHaveBeenCalled();
   });
 
   it('still answers 200 when the price could not be moved', async () => {

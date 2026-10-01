@@ -71,6 +71,19 @@ function stubStripe(answers: Record<string, unknown> = {}) {
     subscriptions: {
       retrieve: record('subscriptions.retrieve', aSubscription()),
       update: record('subscriptions.update', aSubscription()),
+      cancel: record('subscriptions.cancel', aSubscription({ status: 'canceled', latest_invoice: 'in_1' })),
+    },
+    invoices: {
+      retrieve: record('invoices.retrieve', {
+        id: 'in_1',
+        amount_paid: 1_200,
+        starting_balance: 0,
+        ending_balance: 0,
+        payments: { data: [{ payment: { payment_intent: 'pi_1' } }] },
+      }),
+    },
+    refunds: {
+      create: record('refunds.create', { id: 're_1', status: 'succeeded' }),
     },
     webhooks: {
       constructEventAsync: record('webhooks.constructEventAsync', {
@@ -363,6 +376,71 @@ describe('Stripe billing (9.18, D-231)', () => {
     expect(answer.ok).toBe(true);
     if (!answer.ok) return;
     expect(answer.data).toMatchObject({ id: 'evt_3', type: 'customer.updated', subscription: null, invoice: null });
+  });
+
+  it('ends a duplicate now and refunds what the card paid, as a duplicate (D-239)', async () => {
+    const { billing, calls } = make();
+    const answer = await billing.cancelAndRefund({ subscriptionId: 'sub_2', customerId: 'cus_1' });
+
+    expect(answer.ok).toBe(true);
+    if (!answer.ok) return;
+    expect(answer.data).toEqual({ refundedPence: 1_200, creditRestoredPence: 0 });
+    // Now, not at the end of the period, and nobody is billed for the change.
+    expect(bodyOf(calls, 'subscriptions.cancel')).toEqual({ prorate: false });
+    expect(bodyOf(calls, 'refunds.create')).toMatchObject({ payment_intent: 'pi_1', reason: 'duplicate' });
+    // Webhooks arrive more than once, so the refund carries a key of its own.
+    expect(calls.find((call) => call.method === 'refunds.create')?.args).toContainEqual({
+      idempotencyKey: 'billing-refund:sub_2',
+    });
+  });
+
+  it('puts back the credit a duplicate spent, and refunds nothing when that was all of it', async () => {
+    const { billing, calls } = make({
+      'invoices.retrieve': {
+        id: 'in_1',
+        amount_paid: 0,
+        starting_balance: -2_400,
+        ending_balance: -1_200,
+        payments: { data: [] },
+      },
+    });
+    const answer = await billing.cancelAndRefund({ subscriptionId: 'sub_2', customerId: 'cus_1' });
+
+    expect(answer.ok).toBe(true);
+    if (!answer.ok) return;
+    expect(answer.data).toEqual({ refundedPence: 0, creditRestoredPence: 1_200 });
+    // Negative, because that is how Stripe holds credit.
+    expect(bodyOf(calls, 'customers.createBalanceTransaction')).toMatchObject({ amount: -1_200 });
+    expect(calls.some((call) => call.method === 'refunds.create')).toBe(false);
+  });
+
+  it('refunds nothing it cannot find a payment for, and still ends the duplicate', async () => {
+    for (const answers of [
+      { 'subscriptions.cancel': aSubscription({ status: 'canceled', latest_invoice: null }) },
+      { 'invoices.retrieve': { id: 'in_1', amount_paid: 1_200, starting_balance: 0, ending_balance: 0, payments: { data: [] } } },
+      { 'invoices.retrieve': { id: 'in_1', amount_paid: 1_200, starting_balance: 0, ending_balance: 0 } },
+    ]) {
+      const { billing, calls } = make(answers);
+      const answer = await billing.cancelAndRefund({ subscriptionId: 'sub_2', customerId: 'cus_1' });
+
+      expect(answer.ok).toBe(true);
+      if (answer.ok) expect(answer.data.refundedPence).toBe(0);
+      expect(calls.some((call) => call.method === 'subscriptions.cancel')).toBe(true);
+      expect(calls.some((call) => call.method === 'refunds.create')).toBe(false);
+    }
+  });
+
+  it('says a duplicate it cannot find is not there, rather than throwing', async () => {
+    const missing = new Stripe.errors.StripeInvalidRequestError({
+      type: 'invalid_request_error',
+      message: 'No such subscription: sub_nothing',
+      code: 'resource_missing',
+    });
+    const { billing } = make({ 'subscriptions.cancel': missing });
+    const answer = await billing.cancelAndRefund({ subscriptionId: 'sub_nothing', customerId: 'cus_1' });
+
+    expect(answer.ok).toBe(false);
+    if (!answer.ok) expect(answer.reason).toBe('not_found');
   });
 
   it('takes no event whose signature is wrong (R-11)', async () => {

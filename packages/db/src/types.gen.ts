@@ -4227,6 +4227,15 @@ export type Database = {
         }
         Returns: string
       }
+      system_record_subscription_refund: {
+        Args: {
+          p_business_id: string
+          p_credit_restored_pence: number
+          p_duplicate_subscription_id: string
+          p_refunded_pence: number
+        }
+        Returns: boolean
+      }
       system_refund_to_send: { Args: { p_refund_id: string }; Returns: Json }
       system_region_opened_recipients: {
         Args: { p_area: string }

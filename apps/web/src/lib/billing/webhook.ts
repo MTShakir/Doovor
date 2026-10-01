@@ -62,8 +62,46 @@ export async function handleBillingEvent(input: {
   }
 
   await moveTheDiscountAlong(data);
+  await undoADuplicate(data);
 
   return { status: 200, body: data };
+}
+
+/**
+ * Gives back a second subscription that should never have existed (D-239).
+ *
+ * Two tabs can both finish a checkout in the seconds before the first event lands. The database
+ * recognises the second and refuses to record it, which leaves it live at Stripe and billing a
+ * card every month for a plan the Business already has. So it is ended now and refunded, and what
+ * came back is written to the audit trail.
+ *
+ * Nothing here may fail the webhook. The event is recorded either way, and answering anything but
+ * 200 would have Stripe send it again and ask for a second refund. A refund that could not be
+ * made leaves an audit row saying it was asked for and not that it happened, which is what
+ * somebody looking into it needs to see.
+ */
+async function undoADuplicate(answer: unknown): Promise<void> {
+  if (answer === null || typeof answer !== 'object') return;
+  const row = answer as Record<string, unknown>;
+  if (row.outcome !== 'duplicate_subscription') return;
+
+  const subscriptionId = typeof row.duplicateSubscriptionId === 'string' ? row.duplicateSubscriptionId : null;
+  const customerId = typeof row.customerId === 'string' ? row.customerId : null;
+  const businessId = typeof row.businessId === 'string' ? row.businessId : null;
+  if (subscriptionId === null || customerId === null || businessId === null) return;
+
+  try {
+    const undone = await billingProvider().cancelAndRefund({ subscriptionId, customerId });
+    if (!undone.ok) return;
+    await getSupabaseServiceClient().rpc('system_record_subscription_refund', {
+      p_business_id: businessId,
+      p_duplicate_subscription_id: subscriptionId,
+      p_refunded_pence: undone.data.refundedPence,
+      p_credit_restored_pence: undone.data.creditRestoredPence,
+    });
+  } catch {
+    // Asked and not answered. The audit row already says a refund was asked for.
+  }
 }
 
 /**

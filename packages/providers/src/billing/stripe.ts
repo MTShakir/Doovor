@@ -7,6 +7,7 @@ import type {
   BillingWebhookEvent,
   CheckoutSession,
   PaidInvoice,
+  RefundedSubscription,
   StartCheckoutInput,
   Subscription,
   SubscriptionStatus,
@@ -152,6 +153,15 @@ function asPaidInvoice(invoice: Stripe.Invoice): PaidInvoice | null {
     creditAppliedPence: Math.max(0, used),
     paidAt: typeof paidAt === 'number' ? new Date(paidAt * 1000) : new Date(),
   };
+}
+
+/** What actually paid an invoice, which is what a refund is made against. */
+function paymentIntentOf(invoice: Stripe.Invoice): string | null {
+  for (const payment of invoice.payments?.data ?? []) {
+    const intent = idOf(payment.payment.payment_intent);
+    if (intent !== null) return intent;
+  }
+  return null;
 }
 
 /**
@@ -322,6 +332,38 @@ export function stripeBillingProvider(options: StripeBillingOptions): BillingPro
       return call(async (stripe) => {
         await credit(stripe, customerId, pence, reason);
         return null;
+      });
+    },
+
+    cancelAndRefund({ subscriptionId, customerId }): Promise<BillingResult<RefundedSubscription>> {
+      return call(async (stripe) => {
+        // Ended now, not at the end of the period: nobody should keep what they are about to be
+        // refunded for. No proration, because the whole invoice is coming back.
+        const cancelled = await stripe.subscriptions.cancel(subscriptionId, { prorate: false });
+
+        const invoiceId = idOf(cancelled.latest_invoice);
+        if (invoiceId === null) return { refundedPence: 0, creditRestoredPence: 0 };
+
+        const invoice = await stripe.invoices.retrieve(invoiceId, { expand: ['payments'] });
+        const used = invoice.ending_balance === null ? 0 : invoice.ending_balance - invoice.starting_balance;
+        const creditRestoredPence = Math.max(0, used);
+        if (creditRestoredPence > 0) {
+          await credit(stripe, customerId, creditRestoredPence, 'A second subscription that was refunded');
+        }
+
+        // Nothing was taken from a card when banked months covered the whole invoice, so there is
+        // nothing to refund and the credit put back above is the whole of it.
+        if (invoice.amount_paid <= 0) return { refundedPence: 0, creditRestoredPence };
+
+        const intent = paymentIntentOf(invoice);
+        if (intent === null) return { refundedPence: 0, creditRestoredPence };
+
+        await stripe.refunds.create(
+          { payment_intent: intent, reason: 'duplicate' },
+          // Asked twice, refunded once: this runs from a webhook, and webhooks arrive twice.
+          { idempotencyKey: `billing-refund:${subscriptionId}` },
+        );
+        return { refundedPence: invoice.amount_paid, creditRestoredPence };
       });
     },
 
