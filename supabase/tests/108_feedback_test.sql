@@ -1,6 +1,6 @@
 -- Telling us something, and the people who read it (D-202).
 begin;
-select plan(12);
+select plan(23);
 
 select tests.create_fixture();
 
@@ -17,7 +17,9 @@ insert into public.platform_staff (user_id, role) values (:'staff', 'super_admin
 -- An instructor sends one.
 -- ---------------------------------------------------------------------------------------
 select tests.authenticate_as(:'asha');
-select public.submit_feedback('issue', '  The diary will not scroll on my phone.  ', array[:'asha' || '/one.webp'], '/app/instructor/diary') as report \gset
+select public.submit_feedback('issue', '  The diary will not scroll on my phone.  ', array[:'asha' || '/one.webp'], '/app/instructor/diary') as answer \gset
+select (:'answer'::jsonb) ->> 'id' as report \gset
+select (:'answer'::jsonb) ->> 'reference' as reference \gset
 
 select is(
   (select message from public.feedback_submissions where id = :'report'),
@@ -80,6 +82,99 @@ select is(
   'and can look at one kind at a time'
 );
 
+-- ---------------------------------------------------------------------------------------
+-- Every report is called something, and both ends of it are written to (D-241).
+-- ---------------------------------------------------------------------------------------
+-- The numbers themselves are not asserted, and that is deliberate: a sequence does not roll back,
+-- so every run of this file leaves it further along and any absolute value here would pass once.
+-- What is asserted is the shape, that each one follows the last, and that no two are the same.
+-- That the very first is R01 is the migration's `setval` and the unit test beside the format.
 select tests.clear_authentication();
+
+select matches(:'reference'::text, '^R[0-9]{2,}$', 'a report is called R and a number, padded to two');
+select is(
+  (select reference from public.feedback_submissions where id = :'report'),
+  :'reference'::text,
+  'and that is what the row says too'
+);
+
+-- From a sequence rather than from counting rows, so two arriving at once cannot collide.
+select tests.authenticate_as(:'ben');
+select public.submit_feedback('feature', 'A dark mode would be nice') ->> 'reference' as second \gset
+select tests.clear_authentication();
+
+select is(
+  (substring(:'second'::text from 2))::int,
+  (substring(:'reference'::text from 2))::int + 1,
+  'the next one carries on from the last'
+);
+select isnt(:'second'::text, :'reference'::text, 'and no two reports are called the same thing');
+
+-- Asking for the confirmation is part of writing the row, so one cannot happen without the other.
+select is(
+  (select count(*)::int from public.outbox_events
+    where name = 'feedback.submitted' and payload ->> 'feedback_id' = :'report'),
+  1,
+  'sending one asks for the email that confirms it'
+);
+
+-- Dealing with it tells them, once.
+select tests.authenticate_as(:'staff', 'aal2');
+select public.admin_handle_feedback(:'report', true);
+select public.admin_handle_feedback(:'report', true);
+select tests.clear_authentication();
+select is(
+  (select count(*)::int from public.outbox_events
+    where name = 'feedback.handled' and payload ->> 'feedback_id' = :'report'),
+  1,
+  'dealing with one asks for the email that says so, and pressing it twice does not'
+);
+
+-- Putting it back is staff correcting themselves, and is not news to anybody.
+select tests.authenticate_as(:'staff', 'aal2');
+select public.admin_handle_feedback(:'report', false);
+select tests.clear_authentication();
+select is(
+  (select count(*)::int from public.outbox_events
+    where name = 'feedback.handled' and payload ->> 'feedback_id' = :'report'),
+  1,
+  'putting one back tells nobody anything'
+);
+
+-- Dealt with again after being put back: that is news again.
+select tests.authenticate_as(:'staff', 'aal2');
+select public.admin_handle_feedback(:'report', true);
+-- Both reports were written in one transaction, so `now()` is the same for them and which is
+-- "newest" is undecidable. What matters is that staff see the reference at all.
+select is(
+  (select count(*)::int
+     from jsonb_array_elements(public.admin_feedback() -> 'rows') as shown
+    where shown ->> 'reference' in (:'reference', :'second')),
+  2,
+  'staff see the reference on every report'
+);
+select tests.clear_authentication();
+select is(
+  (select count(*)::int from public.outbox_events
+    where name = 'feedback.handled' and payload ->> 'feedback_id' = :'report'),
+  2,
+  'but dealing with it again after that does'
+);
+
+-- What the confirmation emails read, which nobody signed in may.
+select is(
+  (public.system_feedback_for_email(:'report') ->> 'reference'),
+  :'reference'::text,
+  'the job can read what to write'
+);
+select tests.authenticate_as(:'asha');
+select throws_ok(
+  format($$ select public.system_feedback_for_email(%L) $$, :'report'),
+  '42501',
+  null,
+  'and nobody signed in can read somebody else off it'
+);
+select tests.clear_authentication();
+
 select * from finish();
 rollback;

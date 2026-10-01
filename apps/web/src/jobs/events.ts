@@ -93,6 +93,19 @@ export const learnerCaptureCreated = eventType('learner_capture.created', {
   schema: staticSchema<{ kind: 'waiting_list' | 'lesson_request'; id: string }>(),
 });
 
+/**
+ * Somebody told us something (D-202, D-241), and is owed an email saying it arrived and what its
+ * reference is. The id and nothing else: an event carries identifiers, never what was written.
+ */
+export const feedbackSubmitted = eventType('feedback.submitted', {
+  schema: staticSchema<{ feedback_id: string }>(),
+});
+
+/** A person dealt with a report (D-241), so whoever sent it is told it is closed. */
+export const feedbackHandled = eventType('feedback.handled', {
+  schema: staticSchema<{ feedback_id: string }>(),
+});
+
 /** A super admin opened the learner marketplace in a postcode area (ADM-04, M5-19): the people waiting there are told. */
 export const marketplaceRegionOpened = eventType('marketplace_region.opened', {
   schema: staticSchema<{ area: string }>(),

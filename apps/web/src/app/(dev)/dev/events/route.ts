@@ -7,6 +7,7 @@ import { notifyAboutPayment, notifyCreditLow } from '@/jobs/payment-notify';
 import { isCaptureKind, sendCaptureConfirmation } from '@/jobs/capture';
 import { tellRegionOpened } from '@/jobs/regions';
 import { sendRefund } from '@/jobs/payments';
+import { sendFeedbackEmail } from '@/jobs/feedback';
 import { sendReceipt } from '@/jobs/receipts';
 import { notifyLessonRecordAdded } from '@/jobs/record-notices';
 import { remindByHand } from '@/jobs/reminders';
@@ -58,6 +59,11 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     const id = typeof payload.id === 'string' ? payload.id : '';
     if (!isCaptureKind(payload.kind)) return NextResponse.json({ error: 'A capture is a waiting list place or a lesson request.' }, { status: 400 });
     return NextResponse.json(await sendCaptureConfirmation(payload.kind, id));
+  }
+  // Both confirmations about a report, which the outbox would start a minute later (D-241).
+  if (name === 'feedback.submitted' || name === 'feedback.handled') {
+    const id = typeof payload.feedback_id === 'string' ? payload.feedback_id : '';
+    return NextResponse.json(await sendFeedbackEmail(name === 'feedback.submitted' ? 'received' : 'handled', id));
   }
   if (name === 'marketplace_region.opened') {
     const area = typeof payload.area === 'string' ? payload.area : '';

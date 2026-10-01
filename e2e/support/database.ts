@@ -1384,6 +1384,9 @@ export interface MadeReport {
   name: string;
   email: string;
   message: string;
+  id: string;
+  /** R01, R100: what the database called it, which staff and the sender both quote (D-241). */
+  reference: string;
   remove: () => Promise<void>;
 }
 
@@ -1399,17 +1402,22 @@ export async function makeReport(
   const userId = crypto.randomUUID();
   const name = `${label} Teller`;
   const email = `${label.toLowerCase()}.teller.${userId.slice(0, 8)}@example.com`;
-  await withDatabase(async (sql) => {
+  const made = await withDatabase(async (sql) => {
     await sql`select tests.create_user_with_id(${userId}::uuid, ${email}, ${name})`;
-    await sql`
+    const [row] = await sql<{ id: string; reference: string }[]>`
       insert into public.feedback_submissions (user_id, kind, message, page)
-      values (${userId}, ${kind}::public.feedback_kind, ${message}, '/app/instructor/diary')`;
+      values (${userId}, ${kind}::public.feedback_kind, ${message}, '/app/instructor/diary')
+      returning id, reference`;
+    if (!row) throw new Error('the report was not written');
+    return row;
   });
 
   return {
     name,
     email,
     message,
+    id: made.id,
+    reference: made.reference,
     remove: async () => {
       await withDatabase(async (sql) => {
         await sql`delete from public.feedback_submissions where user_id = ${userId}`;

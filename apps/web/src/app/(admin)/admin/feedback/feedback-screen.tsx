@@ -42,7 +42,11 @@ function Report({ report }: { report: FeedbackReport }) {
     <Card className="flex flex-col gap-4" role="region" aria-labelledby={`report-${report.id}`}>
       <div className="flex flex-wrap items-start justify-between gap-2">
         <div className="flex flex-col gap-1">
-          <CardTitle id={`report-${report.id}`}>{report.person}</CardTitle>
+          <CardTitle id={`report-${report.id}`}>
+            {/* The reference first: it is what somebody writing in about this will quote, so it is
+                what staff need to find them by (D-241). */}
+            <span className="text-grey-700">{report.reference}</span> {report.person}
+          </CardTitle>
           <Whose report={report} />
         </div>
         <StatusPill status={handled ? 'completed' : report.kind === 'issue' ? 'unpaid' : 'attention'}>
@@ -92,7 +96,7 @@ function Report({ report }: { report: FeedbackReport }) {
         )}
         {report.personEmail === null ? null : (
           <Button asChild variant="tertiary">
-            <a href={`mailto:${report.personEmail}?subject=${encodeURIComponent('About what you told us')}`}>
+            <a href={`mailto:${report.personEmail}?subject=${encodeURIComponent(`${report.reference}: about what you told us`)}`}>
               <Mail className="size-5" aria-hidden />
               Reply
             </a>

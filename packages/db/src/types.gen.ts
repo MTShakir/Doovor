@@ -1021,6 +1021,7 @@ export type Database = {
           kind: Database["public"]["Enums"]["feedback_kind"]
           message: string
           page: string | null
+          reference: string
           user_id: string
         }
         Insert: {
@@ -1033,6 +1034,7 @@ export type Database = {
           kind: Database["public"]["Enums"]["feedback_kind"]
           message: string
           page?: string | null
+          reference?: string
           user_id: string
         }
         Update: {
@@ -1045,6 +1047,7 @@ export type Database = {
           kind?: Database["public"]["Enums"]["feedback_kind"]
           message?: string
           page?: string | null
+          reference?: string
           user_id?: string
         }
         Relationships: [
@@ -3966,7 +3969,7 @@ export type Database = {
           p_message: string
           p_page?: string
         }
-        Returns: string
+        Returns: Json
       }
       submit_verification: {
         Args: {
@@ -4063,6 +4066,10 @@ export type Database = {
       system_expire_requests: { Args: never; Returns: number }
       system_extend_recurrences: { Args: { p_weeks?: number }; Returns: number }
       system_fee_to_charge: { Args: { p_booking_id: string }; Returns: Json }
+      system_feedback_for_email: {
+        Args: { p_feedback_id: string }
+        Returns: Json
+      }
       system_finish_deletion: {
         Args: { p_request_id: string }
         Returns: undefined

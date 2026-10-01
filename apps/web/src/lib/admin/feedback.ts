@@ -7,6 +7,7 @@ import { feedbackBucket } from '@/lib/storage/images';
 
 const rowSchema = z.object({
   id: z.uuid(),
+  reference: z.string(),
   user_id: z.uuid(),
   kind: z.enum(feedbackKinds),
   message: z.string(),
@@ -28,6 +29,8 @@ const resultSchema = z.object({
 
 export interface FeedbackReport {
   id: string;
+  /** R01, R100: what the person who sent it will quote at us. */
+  reference: string;
   userId: string;
   kind: FeedbackKind;
   message: string;
@@ -86,6 +89,7 @@ export async function feedbackReports(
           : ((await supabase.storage.from(feedbackBucket).createSignedUrls(row.images, 300)).data ?? []);
       return {
         id: row.id,
+        reference: row.reference,
         userId: row.user_id,
         kind: row.kind,
         message: row.message,

@@ -1,5 +1,3 @@
-import { brand } from '@repo/config/brand';
-import { MobileTopBar } from '@repo/ui/app-shell';
 import { NotificationBell } from '@repo/ui/notification-bell';
 import { connection } from 'next/server';
 import { Suspense } from 'react';
@@ -26,7 +24,3 @@ export function PortalNotificationBell() {
   );
 }
 
-/** The phone's top bar in a portal: the name, and the bell at the top right (D-159). */
-export function PortalTopBar() {
-  return <MobileTopBar title={brand.name} actions={<PortalNotificationBell />} />;
-}

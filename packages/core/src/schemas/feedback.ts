@@ -32,6 +32,66 @@ export const feedbackKindHints: Record<FeedbackKind, string> = {
 /** Three pictures is enough to show a problem and few enough to send on a phone. */
 export const mostFeedbackImages = 3;
 
+/**
+ * What a report is called when somebody writes to us about it (D-241). The database makes it, from
+ * a sequence; this is here so the shape is written down once and a test can hold it to it.
+ *
+ * "R" and a number, zero padded to two digits. R01 through R09, then R10, R99, R100: the shape the
+ * product owner asked for through the first hundred, with nothing special happening at the end of
+ * it.
+ */
+export function feedbackReference(number: number): string {
+  const whole = Number.isFinite(number) && number > 0 ? Math.floor(number) : 1;
+  return `R${String(whole).padStart(2, '0')}`;
+}
+
+export interface FeedbackEmailWords {
+  title: string;
+  body: string;
+  /** Why they are getting it, for the line at the bottom of the email. */
+  reason: string;
+}
+
+/** What each kind is called in a sentence about it, rather than on a button. */
+const aboutIt: Record<FeedbackKind, string> = {
+  feature: 'a feature you asked for',
+  feedback: 'your feedback',
+  issue: 'a problem you reported',
+  other: 'what you told us',
+};
+
+/**
+ * The email somebody gets the moment their report arrives (D-241).
+ *
+ * It leads with the reference, because that is the one thing they may need to write down, and it
+ * says plainly that a person will come back to them. Nothing in it promises when: a date we might
+ * miss is worse than no date.
+ */
+export function feedbackReceivedWords(reference: string, kind: FeedbackKind): FeedbackEmailWords {
+  return {
+    title: `We have got your message, ${reference}`,
+    body:
+      `Thanks for telling us about ${aboutIt[kind]}. Your reference is ${reference}, so quote that if you ` +
+      'write to us about it again. Somebody will look at it and come back to you. If anything else comes up ' +
+      'in the meantime, tell us again.',
+    reason: 'You are getting this because you sent us a message through the app.',
+  };
+}
+
+/**
+ * The email when a person has dealt with it (D-241). Said once, when it is first dealt with: staff
+ * putting a report back is them correcting themselves, and nobody needs telling about that.
+ */
+export function feedbackHandledWords(reference: string, kind: FeedbackKind): FeedbackEmailWords {
+  return {
+    title: `${reference} has been dealt with`,
+    body:
+      `Somebody has looked at ${aboutIt[kind]}, and your report ${reference} is closed. If it is not sorted, ` +
+      'or anything else comes up, tell us again and we will pick it up from there.',
+    reason: 'You are getting this because you sent us a message through the app.',
+  };
+}
+
 export const feedbackInputSchema = z.object({
   kind: z.enum(feedbackKinds),
   message: z
