@@ -115,8 +115,12 @@ test.describe('booking a lesson (BOK-01, M2-16)', () => {
 
     // A length the catalogue does not sell: two and a half hours at the hourly rate.
     await sheet.getByLabel('How long?').selectOption({ label: 'A length of your own' });
-    await sheet.getByLabel('Hours').selectOption('2');
-    await sheet.getByLabel('Minutes').selectOption('30');
+    // Exactly, because a label is matched as a substring: on a day with free times outside the
+    // instructor's hours the sheet also holds a group called "Times outside your hours", and
+    // "Hours" is in it. Whether that group is there depends on the day the test lands on, so this
+    // was a failure waiting for a date rather than anything either of them did.
+    await sheet.getByLabel('Hours', { exact: true }).selectOption('2');
+    await sheet.getByLabel('Minutes', { exact: true }).selectOption('30');
     await expect(sheet).toContainText('2 hours 30 minutes at £42 an hour is £105.');
     await expectAccessible(page);
 

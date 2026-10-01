@@ -29,8 +29,13 @@ allowBuilds:
   protobufjs: false
 
 # Versions raised above what a dependency asks for, to leave an advisory behind (M6-02, D-136).
-# Each is a build or test tool, none of them in what the app serves.
+# Most are build or test tools. The one that is not says so, with what it reaches.
 overrides:
+  # A certificate that should not have been trusted can be reported as authorised. It arrives
+  # under the job runner, through an OpenTelemetry metrics exporter we do not configure and do
+  # not send anything to, so nothing here speaks gRPC today. Raised anyway: "we do not use that
+  # path" is a statement about this week's configuration, not a property of the dependency.
+  '@grpc/grpc-js': '>=1.14.5'
   # Unbounded memory growth and a crash on untrusted data, under Serwist at build time.
   browserslist: '>=4.28.7'
   # Path traversal through a prefix, under Lighthouse CI.
