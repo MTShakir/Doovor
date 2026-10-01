@@ -4,7 +4,7 @@
 -- who has Pro, so the browser having no way to write one is the security, and a test that only
 -- proved the happy path would prove nothing about it.
 begin;
-select plan(42);
+select plan(45);
 
 select tests.create_fixture();
 
@@ -251,6 +251,7 @@ select is(
   'and it did not count twice'
 );
 
+
 -- A year counts twelve, and the interval comes off the row rather than from the caller.
 select public.system_process_billing_event('evt_year', 'customer.subscription.updated', jsonb_build_object(
   'kind', 'subscription', 'subscriptionId', 'sub_asha', 'customerId', 'cus_asha',
@@ -263,6 +264,28 @@ select is(
   (select months_paid from public.subscriptions where stripe_subscription_id = 'sub_asha'),
   14,
   'a year adds twelve, and the twelve came from the row rather than the event'
+);
+
+-- The answer carries the run of months either side, because what a period costs is worked out
+-- from `plans.ts` and this database has no prices in it (D-238).
+select is(
+  public.system_process_billing_event('evt_paid_2', 'invoice.paid', jsonb_build_object(
+    'kind', 'invoice', 'subscriptionId', 'sub_asha', 'paidPence', 12000, 'paidAt', now()
+  )) ->> 'monthsBefore',
+  '14',
+  'an applied invoice says what the run of months was'
+);
+select is(
+  public.system_process_billing_event('evt_paid_3', 'invoice.paid', jsonb_build_object(
+    'kind', 'invoice', 'subscriptionId', 'sub_asha', 'paidPence', 12000, 'paidAt', now()
+  )) ->> 'monthsAfter',
+  '38',
+  'and what it became, a year at a time'
+);
+select is(
+  public.system_process_billing_event('evt_odd_2', 'customer.discount.created', '{"kind": "other"}'::jsonb) ->> 'monthsAfter',
+  null,
+  'an event that moved no months says nothing about them'
 );
 
 -- An event for a subscription we have never heard of changes nothing and is still recorded, so

@@ -1,5 +1,9 @@
 import 'server-only';
-import { monthsFromCreditPence } from '@repo/core/subscription';
+import {
+  isBillingInterval,
+  monthsFromCreditPence,
+  subscriptionPricePence,
+} from '@repo/core/subscription';
 import type { BillingWebhookEvent, Subscription } from '@repo/providers/billing';
 import { billingProvider, billingWebhookSecrets, signFakeBillingEvent } from '@/lib/billing/provider';
 import { getSupabaseServiceClient } from '@/lib/supabase/service';
@@ -57,7 +61,46 @@ export async function handleBillingEvent(input: {
     return { status: 500, body: { error: 'Could not process the event' } };
   }
 
+  await moveTheDiscountAlong(data);
+
   return { status: 200, body: data };
+}
+
+/**
+ * Tells Stripe the next period costs less, when another three months of paying have earned it
+ * (D-206, D-238).
+ *
+ * A subscription keeps charging whatever it was created with until something changes it. Without
+ * this, somebody who subscribed in their first month would pay full price for ever, and the
+ * promise on the plan screen would be true of a new subscription and of nothing else.
+ *
+ * The answer carries the run of months before this invoice and after it, so what the price was
+ * and what it becomes are both worked out here, from `plans.ts`, and Stripe is only asked when
+ * they differ. Nothing is prorated: a discount is a reduction in a price, not a transaction.
+ *
+ * Nothing here may fail the webhook. The payment is recorded and the plan is granted; a price
+ * that could not be moved is a price that moves on the next invoice instead, and answering
+ * anything but 200 would have Stripe send the whole event again.
+ */
+async function moveTheDiscountAlong(answer: unknown): Promise<void> {
+  if (answer === null || typeof answer !== 'object') return;
+  const row = answer as Record<string, unknown>;
+  if (row.outcome !== 'payment_recorded') return;
+
+  const subscriptionId = typeof row.subscriptionId === 'string' ? row.subscriptionId : null;
+  const before = typeof row.monthsBefore === 'number' ? row.monthsBefore : null;
+  const after = typeof row.monthsAfter === 'number' ? row.monthsAfter : null;
+  if (subscriptionId === null || before === null || after === null || !isBillingInterval(row.interval)) return;
+
+  const was = subscriptionPricePence({ interval: row.interval, monthsPaidInARow: before });
+  const now = subscriptionPricePence({ interval: row.interval, monthsPaidInARow: after });
+  if (was === now) return;
+
+  try {
+    await billingProvider().setSubscriptionPrice({ subscriptionId, unitAmountPence: now });
+  } catch {
+    // Asked and not answered. The payment stands; the price moves on the next invoice.
+  }
 }
 
 /**

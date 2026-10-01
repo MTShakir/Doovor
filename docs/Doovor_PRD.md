@@ -507,8 +507,19 @@ All prices live in configuration. The values below are recommended launch defaul
 | School | £9 per instructor per month (minimum 2) | All Pro features plus school portal, allocation, reports, fleet. |
 | Founding offer | Pro free for 12 months | First 100 instructors and first 50 schools (D-203). The badge outlasts the plan. |
 | Free trial | Pro for a while | A Business created after the founding places run out starts on the paid plan rather than Free: 90 days for the first 500, 30 days for everybody after (D-204). |
-| Referrals | A month of Pro | Every Business has an eight character referral code, from an alphabet with no I, O, 0 or 1 so it can be read off a phone. Recorded now, applied when billing is live (D-205). |
+| Referrals | A month of Pro | Every Business has an eight character referral code, from an alphabet with no I, O, 0 or 1 so it can be read off a phone. Earned when the instructor who was referred is approved by staff, not when they sign up, and spent against the first invoice that uses it (D-205, D-231). |
 | Staying | Up to 30% off | Every three months of paying takes another 5% off, capped at 30% after eighteen months. Leaving puts it back to nothing (D-206). |
+
+**Taking the money (9.18, D-231).** An independent instructor subscribes to Pro through the app,
+monthly or yearly, and it renews by itself. A school does not: a school pays per instructor on the
+School plan, which is Phase 2.
+
+| ID | Requirement | Phase |
+|---|---|---|
+| PAY-13 | An instructor subscribes to Pro from their plan screen, monthly or yearly, and pays by card on Stripe's own page. The browser sends the interval and nothing else: the price is worked out on the server from the plan, the run of months paid and the referral months banked, and no amount a browser could change is ever read back. | P1 |
+| PAY-14 | The plan changes only when a signed webhook event says a subscription exists or an invoice was paid. Coming back from the card page grants nothing. An event delivered more than once counts once. | P1 |
+| PAY-15 | Stopping takes effect at the end of what has been paid for, never immediately, and can be undone until then. | P1 |
+| PAY-16 | Before each renewal: 14 days' notice on a yearly subscription, by email and text; 3 days on a monthly one, by email. The notice names the amount that will actually be taken, after the loyalty discount (D-237). | P1 |
 
 Ten learners is what Free carries at a time: the ones being taught or lined up to be, which is
 active, waiting and test booked. An enquiry that went nowhere does not count (D-208). What is not
@@ -847,6 +858,8 @@ numbers.
 | Free carries ten learners at a time, rather than everybody | 9.18 | D-208 |
 | What is not built yet carries one tag rather than being hidden | 9.18 | D-209 |
 | The Business's own colour, with one rule deciding whether it can be read | 9.18 | D-210 |
+| Pro is paid for through the platform, and only a signed event grants it | 9.18, PAY-13 | D-231, D-235, D-236 |
+| A renewal notice may be a text, which NTF-01 allowed only for lesson reminders | NTF-01, PAY-16 | D-237 |
 | The learner's card is one subject at a time, with the history under the summary | LRN-02 | D-189, D-211, D-222 |
 | A learner keeps their own pickup points, and a lesson starts where that learner's lessons start | LRN-02, BOK-05 | D-182, D-215 |
 | A learner may tell us about a disability, and chooses who it helps | AUTH-06 | D-180 |

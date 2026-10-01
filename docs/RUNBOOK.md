@@ -181,8 +181,25 @@ Sandbox `Doovor sandbox`, account `acct_1UFF4RDP3EG8YZIf`. Settings > Connect:
    `charge.dispute.created`, with "Listen to events on connected accounts" ticked, and its secret goes in
    `STRIPE_CONNECT_WEBHOOK_SECRET`. `charge.refunded` is not needed: newer API versions leave the refunds
    out of it, and the refund events carry them.
-   `STRIPE_WEBHOOK_SECRET` is for platform events, which only Stripe Billing raises. Subscriptions
-   arrive with ADM-10 in Phase 2 (D-022), so it stays empty and the app does not ask for it (D-153).
+   `STRIPE_WEBHOOK_SECRET` is for platform events, which only Stripe Billing raises. That is now
+   Pro subscriptions (9.18, D-231), so it is no longer empty: see step 7a.
+7a. **You, for Pro subscriptions (9.18, D-231):** a *second* endpoint, at
+   `https://app.doovor.com/api/webhooks/stripe/billing`, with **"Listen to events on connected
+   accounts" left unticked**. It listens on `customer.subscription.created`,
+   `customer.subscription.updated`, `customer.subscription.deleted`, `invoice.paid` and
+   `invoice.payment_succeeded`. Its secret goes in `STRIPE_WEBHOOK_SECRET`.
+
+   Two endpoints rather than one because they are two different things: step 7 is Connect, a
+   learner paying a Business on that Business's own account, and this is Billing, a Business
+   paying us on ours. The route here accepts only the platform secret, so an event from somebody
+   else's connected account cannot be presented as a payment for our own plan.
+
+   **Nothing about Pro works until this exists.** The plan is granted by a signed event and never
+   by the browser coming back from Stripe, which is what makes the amount unforgeable, and the
+   consequence is that an environment Stripe cannot reach cannot complete a subscription. Locally
+   there is no endpoint and none is needed: `pnpm stripe:listen` stands in, and with the fake
+   provider `/dev/subscribe` does (D-234).
+
 8. **You:** live mode needs the Connect platform onboarding questionnaire finished (Platform profile >
    View onboarding): company identity, the business model and the loss liability elections.
 9. **You, when going live:** four values in Vercel, scoped to **Production only** and set in the same
@@ -200,6 +217,36 @@ Sandbox `Doovor sandbox`, account `acct_1UFF4RDP3EG8YZIf`. Settings > Connect:
    production (D-153), so a live key set for Preview, or before `APP_ENV` changes, stops the build
    with the key's name rather than taking real money for demo data. Supabase needs nothing from
    Stripe: only the app talks to it.
+
+10. **Taking a payment on staging, in test mode (D-234).** app.doovor.com is a Vercel production
+   deployment carrying `APP_ENV=preview` until launch, and the key guard reads `APP_ENV`, so test
+   keys are not merely allowed there, they are the only ones that will boot. To try a payment or a
+   subscription end to end on staging:
+
+   | Name | Value |
+   |---|---|
+   | `PAYMENTS_PROVIDER` | `stripe` |
+   | `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY` | the sandbox's `pk_test_...` |
+   | `STRIPE_SECRET_KEY` | the sandbox's `sk_test_...` (mark as Sensitive) |
+   | `STRIPE_CONNECT_WEBHOOK_SECRET` | the secret of the endpoint in step 7 (Sensitive) |
+   | `STRIPE_WEBHOOK_SECRET` | the secret of the endpoint in step 7a (Sensitive) |
+
+   Set for **all environments**, not Production only: a variable scoped to Production fails every
+   preview build, because the app checks its settings at build time. Then redeploy, because that
+   is when they are read.
+
+   **Order matters.** The app refuses to start when `PAYMENTS_PROVIDER` is `stripe` and any of the
+   three Stripe values is missing, so the endpoints in steps 7 and 7a are created first and all of
+   the values go in together. Setting the provider first does not degrade staging, it stops the
+   build.
+
+   Two things to know before starting. The connected account made locally carries over, because
+   staging uses the same sandbox. And a test run leaves payments, subscriptions and events in the
+   staging database, which is the database production will be: clear them with `pnpm db:fresh`
+   before launch (D-227).
+
+   At launch, `APP_ENV` becomes `production` and every one of these values becomes invalid in the
+   same breath, which is why step 9 is a single simultaneous swap and not a sequence.
 
 ### 3.7a The Stripe test-mode run (M3-23)
 
