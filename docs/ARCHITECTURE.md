@@ -414,6 +414,41 @@ The friendly pre-check runs inside the RPC for good messages. The constraint is 
 - A card typed in goes into the Payment Element (`apps/web/src/components/payments/card-form.tsx`). It loads Stripe.js for the connected account (`stripeAccount`), draws the fields for the payment's or set-up's client secret, and confirms in the browser; the webhook records what happened. Checkout offers only methods that pay on the screen (card, Apple Pay, Google Pay and Link), with no redirects. The error words come from `apps/web/src/lib/payments/card-errors.ts`. When a kept card needs the bank's check, the charge answers with its client secret and the screen runs `handleNextAction` (D-099). The Permissions-Policy header lets Stripe's frame use the Payment Request API, and the report-only CSP lists Stripe's script and frame origins.
 - Everything goes through `PaymentsProvider` (`createCheckoutIntent`, `captureHold`, `cancelHold`, `chargeSavedMethod`, `refund`, `createAccountLink`, `verifyWebhook`). Tests use an in-memory fake. Acceptance tests 3 to 6 also run against Stripe test mode.
 
+### 8.1a Stripe Billing: Pro subscriptions (9.18, PAY-13 to PAY-16, D-231)
+
+The other direction, and a different Stripe product on the same account. Connect is a learner
+paying a Business and us never holding it; Billing is an instructor paying us for Pro. Different
+money, different failure modes, so a separate `BillingProvider` (`ensureCustomer`,
+`startCheckout`, `getSubscription`, `setSubscriptionPrice`, `setCancelAtPeriodEnd`, `addCredit`,
+`verifyWebhook`) rather than more methods on the other one. An in-memory fake runs local and test
+work, and routes the browser through `/dev/subscribe` so the webhook grants the plan there too.
+
+**No amount crosses a boundary from a browser.** The screen sends `month` or `year` and nothing
+else. The price comes from `plans.ts` by way of `packages/core/src/subscription.ts`, the loyalty
+discount from the run of months the database keeps, the referral credit from the referrals table.
+`authenticated` has `select` only on `public.subscriptions`: there is no statement a signed-in
+person could send that would give them Pro.
+
+**Only a signed event grants it.** Starting a checkout writes an `incomplete` row, which carries
+nothing, and the plan changes when `system_record_subscription` is called from the webhook. Coming
+back from Stripe's page with a forged URL gets a page that says we are still waiting.
+
+**Exactly once, structurally.** Billing events go through `system_process_billing_event`, which
+records the event in `provider_events` and applies it in the same transaction. The two functions
+that count months and spend referral months have no `service_role` grant, so there is no way in
+that skips the record (D-235). How many months an invoice covered is worked out in SQL from the
+interval on the row, never taken from the event.
+
+**The discount reaches Stripe.** The invoice answer carries the run of months either side, and the
+handler reprices the subscription when those two are worth different figures (D-238). Counting
+stays in SQL; pricing stays where the prices are.
+
+Two webhook endpoints, because these are platform events and Connect's are not:
+`/api/webhooks/stripe` takes connected account events with `STRIPE_CONNECT_WEBHOOK_SECRET`, and
+`/api/webhooks/stripe/billing` takes platform events with `STRIPE_WEBHOOK_SECRET`. The billing
+route accepts only the platform secret, so an event from somebody else's connected account cannot
+be presented as a payment for our own plan (RUNBOOK 3.7 steps 7 and 7a).
+
 ### 8.2 Payment modes (PAY-03)
 
 | Business setting | Flow |
@@ -422,7 +457,7 @@ The friendly pre-check runs inside the RPC for good messages. The constraint is 
 | Pay before lesson | Booking confirmed as `unpaid`. An Inngest job charges the saved card off-session 24 hours before the start. If the bank asks for authentication, the learner gets a payment link and the instructor sees "Payment failed" |
 | Pay after lesson | Completing the lesson triggers a payment link (hosted page with the Payment Element) by email and push |
 | Credit | Any mode uses available credit first (PAY-04) |
-| Offline | Instructor records cash or bank transfer in two taps (PAY-05). Shows "Paid (cash)" or "Paid (bank)" |
+| Offline | Instructor records cash or bank transfer in two taps (PAY-05). Shows "Paid (cash)" or "Paid (bank)". A card shows "Paid (card)" (D-233) |
 
 ### 8.3 Credit: lots, ledger and balance (PAY-04, PAY-06, R-07)
 
