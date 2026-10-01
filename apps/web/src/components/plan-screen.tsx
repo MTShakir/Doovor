@@ -8,6 +8,7 @@ import Link from 'next/link';
 import type { BusinessPlan } from '@/lib/billing/plan';
 import { planSummaries } from '@/lib/site/plan-features';
 import { ProTag } from './pro';
+import type { ReactNode } from 'react';
 
 /** How long is left, as somebody would say it. */
 function leftToRun(daysLeft: number): string {
@@ -57,9 +58,11 @@ function Waiting({ items }: { items: readonly string[] }) {
  * never disagree about what is built. That mattered: this screen used to carry a hand written list
  * claiming Gap Fill and the waiting list as things a Pro instructor had, and neither exists.
  *
- * Billing arrives in Phase 2 (D-022), so nothing here charges anybody or changes a plan.
+ * `subscribe` is where Pro is actually taken or stopped (9.18, D-231). It is passed in rather
+ * than rendered here because this screen is shown to schools too, and a school pays per
+ * instructor on the School plan instead (D-231). A school passes nothing and sees no card.
  */
-export function PlanScreen({ plan }: { plan: BusinessPlan }) {
+export function PlanScreen({ plan, subscribe }: { plan: BusinessPlan; subscribe?: ReactNode }) {
   const summaries = planSummaries();
   const mine = summaries.find((one) => one.key === plan.plan);
   const pro = summaries.find((one) => one.key === 'pro');
@@ -94,7 +97,7 @@ export function PlanScreen({ plan }: { plan: BusinessPlan }) {
 
         {plan.runsTo === null ? (
           <p className="text-body text-ink">
-            {paid ? 'This plan runs on.' : 'Free has no end date. Upgrade whenever you are ready.'}
+            {paid ? 'This plan runs on.' : 'Free has no end date. Go Pro whenever you are ready.'}
           </p>
         ) : (
           <p className="text-body text-ink">
@@ -121,6 +124,8 @@ export function PlanScreen({ plan }: { plan: BusinessPlan }) {
           <Ticked items={pro.features} />
         </Card>
       ) : null}
+
+      {subscribe}
 
       {mine.later.length > 0 ? (
         <Card className="flex flex-col gap-3" role="region" aria-labelledby="later-title">

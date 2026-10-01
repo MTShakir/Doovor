@@ -8,7 +8,9 @@ import { Suspense } from 'react';
 import { BackLink } from '@/components/back-link';
 import { PlanScreen } from '@/components/plan-screen';
 import { businessPlan } from '@/lib/billing/plan';
+import { proSubscription } from '@/lib/billing/subscription';
 import { requirePortal } from '@/lib/auth/session';
+import { GoPro, ProSubscriptionCard } from './go-pro';
 
 export const metadata: Metadata = { title: 'Your plan' };
 
@@ -31,7 +33,7 @@ async function Plan() {
   // How many days are left is counted from now, which a prerendered shell cannot know.
   await connection();
   await requirePortal('instructor');
-  const plan = await businessPlan();
+  const [plan, subscription] = await Promise.all([businessPlan(), proSubscription()]);
   if (!plan) {
     return (
       <EmptyState
@@ -41,5 +43,14 @@ async function Plan() {
       />
     );
   }
-  return <PlanScreen plan={plan} />;
+  // Null for a school owner, who pays per instructor instead (D-231), and for anybody whose
+  // plan is not theirs to change.
+  const subscribe =
+    subscription === null ? undefined : subscription.live ? (
+      <ProSubscriptionCard subscription={subscription} />
+    ) : (
+      <GoPro subscription={subscription} />
+    );
+
+  return <PlanScreen plan={plan} subscribe={subscribe} />;
 }

@@ -64,6 +64,18 @@ export function bankedMonthsCreditPence(months: number): number {
 }
 
 /**
+ * How many whole months of Pro a sum of credit was worth (D-205, D-231).
+ *
+ * The other direction from `bankedMonthsCreditPence`, and the reason it has to exist: Stripe
+ * reports what credit an invoice consumed in pence, and what we have to mark spent is referral
+ * months. Rounded down, so a part month of credit left over does not spend a whole month.
+ */
+export function monthsFromCreditPence(pence: number): number {
+  if (!Number.isFinite(pence) || pence <= 0) return 0;
+  return Math.floor(pence / plans.pro.monthlyPricePence);
+}
+
+/**
  * How much notice before a renewal (D-231). A fortnight for a year, three days for a month: notice
  * in proportion to the charge, and enough on the yearly one to cancel before £120 leaves an
  * account, which is what the law expects of an automatic renewal.

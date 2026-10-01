@@ -4119,6 +4119,10 @@ export type Database = {
       system_overdue_lessons: { Args: never; Returns: Json }
       system_payment_notice: { Args: { p_payment_id: string }; Returns: Json }
       system_plan_limits: { Args: never; Returns: Json }
+      system_process_billing_event: {
+        Args: { p_event_id: string; p_event_type: string; p_payload: Json }
+        Returns: Json
+      }
       system_process_stripe_event: {
         Args: {
           p_account_id: string

@@ -51,6 +51,12 @@ export interface PaidInvoice {
   subscriptionId: string;
   /** What was taken after every discount and credit: nought when credit covered it all. */
   paidPence: number;
+  /**
+   * What came off the customer's balance to pay for this one, in pence. This is how many referral
+   * months to mark spent, and it is read from the invoice rather than worked out from the price:
+   * what Stripe actually used is the only number that cannot drift (D-205).
+   */
+  creditAppliedPence: number;
   paidAt: Date;
 }
 

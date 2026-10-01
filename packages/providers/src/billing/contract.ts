@@ -87,8 +87,31 @@ export function billingContract(name: string, make: () => FakeBillingProvider): 
     it('spends a referral month before it asks the card for anything (D-205)', async () => {
       // A month banked is worth a month, so the first invoice on a monthly plan takes nothing.
       const { customerId, sessionId } = await subscribe({ creditPence: plans.pro.monthlyPricePence });
-      expect(finish(sessionId).invoice.paidPence).toBe(0);
+      const invoice = finish(sessionId).invoice;
+      expect(invoice.paidPence).toBe(0);
+      // And it says so, because what marks a referral month spent is what the invoice used, not
+      // what we expected it to use (D-205).
+      expect(invoice.creditAppliedPence).toBe(plans.pro.monthlyPricePence);
       expect(billing.creditOf(customerId)).toBe(0);
+    });
+
+    it('says no credit was used when none was', async () => {
+      const { sessionId } = await subscribe();
+      const invoice = finish(sessionId).invoice;
+
+      expect(invoice.paidPence).toBe(plans.pro.monthlyPricePence);
+      expect(invoice.creditAppliedPence).toBe(0);
+    });
+
+    it('splits an invoice credit paid part of, so only the months it used are spent', async () => {
+      // Half a month of credit against a month: the card pays the rest and half a month is spent,
+      // which is nought whole months.
+      const half = Math.floor(plans.pro.monthlyPricePence / 2);
+      const { sessionId } = await subscribe({ creditPence: half });
+      const invoice = finish(sessionId).invoice;
+
+      expect(invoice.paidPence).toBe(plans.pro.monthlyPricePence - half);
+      expect(invoice.creditAppliedPence).toBe(half);
     });
 
     it('spends what a year does not use up, and keeps the rest for next time', async () => {
@@ -101,7 +124,9 @@ export function billingContract(name: string, make: () => FakeBillingProvider): 
       if (yearly === null) throw new Error('Pro has no yearly price');
 
       // Fourteen months of credit against a year: the year is paid for and two months are left.
-      expect(finish(sessionId).invoice.paidPence).toBe(0);
+      const invoice = finish(sessionId).invoice;
+      expect(invoice.paidPence).toBe(0);
+      expect(invoice.creditAppliedPence).toBe(yearly);
       expect(billing.creditOf(customerId)).toBe(plans.pro.monthlyPricePence * 14 - yearly);
     });
 

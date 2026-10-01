@@ -2,6 +2,7 @@ import { plans } from '@repo/config/plans';
 import { describe, expect, it } from 'vitest';
 import {
   bankedMonthsCreditPence,
+  monthsFromCreditPence,
   billingIntervals,
   isBillingInterval,
   monthsCovered,
@@ -77,6 +78,30 @@ describe('a month earned by referring somebody (D-205, D-231)', () => {
 
   it('counts whole months only', () => {
     expect(bankedMonthsCreditPence(2.9)).toBe(plans.pro.monthlyPricePence * 2);
+  });
+
+  it('turns credit that was used back into the months it was worth', () => {
+    expect(monthsFromCreditPence(plans.pro.monthlyPricePence)).toBe(1);
+    expect(monthsFromCreditPence(plans.pro.monthlyPricePence * 3)).toBe(3);
+    // A year of Pro costs less than twelve months bought one at a time, so a year's invoice paid
+    // entirely from banked months spends more than twelve of them.
+    const yearly = plans.pro.yearlyPricePence;
+    if (yearly === null) throw new Error('Pro has no yearly price');
+    expect(monthsFromCreditPence(yearly)).toBe(Math.floor(yearly / plans.pro.monthlyPricePence));
+  });
+
+  it('spends no month for part of one, and none at all for nothing', () => {
+    expect(monthsFromCreditPence(plans.pro.monthlyPricePence - 1)).toBe(0);
+    expect(monthsFromCreditPence(plans.pro.monthlyPricePence * 2 - 1)).toBe(1);
+    for (const pence of [0, -1, -plans.pro.monthlyPricePence, Number.NaN, Number.POSITIVE_INFINITY]) {
+      expect(monthsFromCreditPence(pence)).toBe(0);
+    }
+  });
+
+  it('is the other side of banking them, for any whole number of months', () => {
+    for (const months of [1, 2, 5, 12, 14]) {
+      expect(monthsFromCreditPence(bankedMonthsCreditPence(months))).toBe(months);
+    }
   });
 });
 

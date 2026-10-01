@@ -51,7 +51,16 @@ export interface FakeBillingProvider extends BillingProvider {
   reset: () => void;
 }
 
-export function createFakeBillingProvider(): FakeBillingProvider {
+export interface FakeBillingOptions {
+  /**
+   * Where the fake sends the browser to subscribe. The default finishes nothing: a test calls
+   * `finishCheckout` itself. The app points it at a page of its own, so the whole flow can be
+   * clicked through without a key, the way the payments fake does for onboarding.
+   */
+  checkoutUrl?: (input: { sessionId: string; successUrl: string }) => string;
+}
+
+export function createFakeBillingProvider(options: FakeBillingOptions = {}): FakeBillingProvider {
   const customers = new Map<string, Customer>();
   const byBusiness = new Map<string, string>();
   const pending = new Map<string, Pending>();
@@ -59,11 +68,11 @@ export function createFakeBillingProvider(): FakeBillingProvider {
   let counter = 0;
   const next = (prefix: string) => `${prefix}_${String(++counter).padStart(4, '0')}`;
 
-  /** Takes what the balance covers and answers what the card was actually asked for. */
-  function charge(customer: Customer, pence: number): number {
+  /** Takes what the balance covers, and answers both halves: what the card paid and what credit did. */
+  function charge(customer: Customer, pence: number): { paid: number; credited: number } {
     const used = Math.min(customer.creditPence, pence);
     customer.creditPence -= used;
-    return pence - used;
+    return { paid: pence - used, credited: used };
   }
 
   return {
@@ -90,7 +99,10 @@ export function createFakeBillingProvider(): FakeBillingProvider {
       }
       const sessionId = next('cs');
       pending.set(sessionId, { sessionId, input });
-      return Promise.resolve(ok({ sessionId, url: `${input.successUrl}?session=${sessionId}` }));
+      const url =
+        options.checkoutUrl?.({ sessionId, successUrl: input.successUrl }) ??
+        `${input.successUrl}?session=${sessionId}`;
+      return Promise.resolve(ok({ sessionId, url }));
     },
 
     getSubscription(subscriptionId): Promise<BillingResult<Subscription>> {
@@ -127,7 +139,9 @@ export function createFakeBillingProvider(): FakeBillingProvider {
     verifyWebhook({ body, signature }): Promise<BillingResult<BillingWebhookEvent>> {
       if (signature !== 'fake-signature') return Promise.resolve(no('invalid', 'The signature does not match.'));
       try {
-        return Promise.resolve(ok(JSON.parse(body) as BillingWebhookEvent));
+        // JSON has no dates, so a body that went over a wire has them as text. The real provider
+        // answers with Date objects, so this one has to as well or the app would only work here.
+        return Promise.resolve(ok(withDates(JSON.parse(body) as BillingWebhookEvent)));
       } catch {
         return Promise.resolve(no('invalid', 'That is not an event.'));
       }
@@ -142,7 +156,7 @@ export function createFakeBillingProvider(): FakeBillingProvider {
       if (!customer) return null;
 
       customer.creditPence += Math.max(0, Math.trunc(input.creditPence));
-      const paid = charge(customer, input.unitAmountPence);
+      const taken = charge(customer, input.unitAmountPence);
       const id = next('sub');
       const subscription: Subscription = {
         id,
@@ -155,7 +169,16 @@ export function createFakeBillingProvider(): FakeBillingProvider {
         metadata: { business_id: input.businessId },
       };
       subscriptions.set(id, subscription);
-      return { subscription, invoice: { id: next('in'), subscriptionId: id, paidPence: paid, paidAt: new Date() } };
+      return {
+        subscription,
+        invoice: {
+          id: next('in'),
+          subscriptionId: id,
+          paidPence: taken.paid,
+          creditAppliedPence: taken.credited,
+          paidAt: new Date(),
+        },
+      };
     },
 
     renew(subscriptionId) {
@@ -168,7 +191,7 @@ export function createFakeBillingProvider(): FakeBillingProvider {
       }
       const customer = customers.get(found.customerId);
       if (!customer) return null;
-      const paid = charge(customer, found.unitAmountPence);
+      const taken = charge(customer, found.unitAmountPence);
       const renewed: Subscription = {
         ...found,
         status: 'active',
@@ -177,7 +200,13 @@ export function createFakeBillingProvider(): FakeBillingProvider {
       subscriptions.set(subscriptionId, renewed);
       return {
         subscription: renewed,
-        invoice: { id: next('in'), subscriptionId, paidPence: paid, paidAt: new Date() },
+        invoice: {
+          id: next('in'),
+          subscriptionId,
+          paidPence: taken.paid,
+          creditAppliedPence: taken.credited,
+          paidAt: new Date(),
+        },
       };
     },
 
@@ -201,6 +230,25 @@ export function createFakeBillingProvider(): FakeBillingProvider {
       counter = 0;
     },
   };
+}
+
+/** A date that may have come back as text, as a date. */
+function asDate(value: unknown): Date | null {
+  if (value instanceof Date) return Number.isNaN(value.getTime()) ? null : value;
+  if (typeof value !== 'string') return null;
+  const parsed = new Date(value);
+  return Number.isNaN(parsed.getTime()) ? null : parsed;
+}
+
+/** The two dates an event carries, whichever way round it arrived. */
+function withDates(event: BillingWebhookEvent): BillingWebhookEvent {
+  if (event.subscription) {
+    event.subscription.currentPeriodEnd = asDate(event.subscription.currentPeriodEnd);
+  }
+  if (event.invoice) {
+    event.invoice.paidAt = asDate(event.invoice.paidAt) ?? new Date();
+  }
+  return event;
 }
 
 /** A month or a year on from a moment, which is what a period is. */

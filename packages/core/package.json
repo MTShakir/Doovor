@@ -42,6 +42,7 @@
     "./schemas/gallery": "./src/schemas/gallery.ts",
     "./schemas/auth": "./src/schemas/auth.ts",
     "./schemas/books": "./src/schemas/books.ts",
+    "./schemas/subscription": "./src/schemas/subscription.ts",
     "./schemas/brand-colour": "./src/schemas/brand-colour.ts",
     "./schemas/feedback": "./src/schemas/feedback.ts",
     "./schemas/onboarding": "./src/schemas/onboarding.ts",

@@ -4,7 +4,7 @@
 -- who has Pro, so the browser having no way to write one is the security, and a test that only
 -- proved the happy path would prove nothing about it.
 begin;
-select plan(23);
+select plan(33);
 
 select tests.create_fixture();
 
@@ -207,6 +207,95 @@ select isnt(
   null,
   'and the referral records when that was'
 );
+
+-- ---------------------------------------------------------------------------------------
+-- An event is applied once, however many times Stripe sends it (D-235).
+-- ---------------------------------------------------------------------------------------
+-- This is the whole reason `system_process_billing_event` exists. The payment function adds to
+-- `months_paid` and spends referral months, so applying it per delivery would hand out a loyalty
+-- discount nobody earned.
+select is(
+  (select months_paid from public.subscriptions where stripe_subscription_id = 'sub_asha'),
+  1,
+  'the invoice above moved the run of months along by one'
+);
+
+select is(
+  public.system_process_billing_event('evt_paid_1', 'invoice.paid', jsonb_build_object(
+    'kind', 'invoice', 'subscriptionId', 'sub_asha', 'paidPence', 1200,
+    'paidAt', now(), 'monthsCredited', 0
+  )) ->> 'outcome',
+  'payment_recorded',
+  'an invoice event is applied'
+);
+
+select is(
+  (select months_paid from public.subscriptions where stripe_subscription_id = 'sub_asha'),
+  2,
+  'and the month it paid for counts'
+);
+
+-- The same delivery again.
+select is(
+  public.system_process_billing_event('evt_paid_1', 'invoice.paid', jsonb_build_object(
+    'kind', 'invoice', 'subscriptionId', 'sub_asha', 'paidPence', 1200,
+    'paidAt', now(), 'monthsCredited', 0
+  )) ->> 'outcome',
+  'duplicate',
+  'the same event again is a duplicate'
+);
+
+select is(
+  (select months_paid from public.subscriptions where stripe_subscription_id = 'sub_asha'),
+  2,
+  'and it did not count twice'
+);
+
+-- A year counts twelve, and the interval comes off the row rather than from the caller.
+select public.system_process_billing_event('evt_year', 'customer.subscription.updated', jsonb_build_object(
+  'kind', 'subscription', 'subscriptionId', 'sub_asha', 'customerId', 'cus_asha',
+  'status', 'active', 'interval', 'year', 'periodEnd', '2027-12-31T09:00:00Z', 'cancelAtPeriodEnd', false
+));
+select public.system_process_billing_event('evt_paid_year', 'invoice.paid', jsonb_build_object(
+  'kind', 'invoice', 'subscriptionId', 'sub_asha', 'paidPence', 12000, 'paidAt', now(), 'monthsCredited', 0
+));
+select is(
+  (select months_paid from public.subscriptions where stripe_subscription_id = 'sub_asha'),
+  14,
+  'a year adds twelve, and the twelve came from the row rather than the event'
+);
+
+-- An event for a subscription we have never heard of changes nothing and is still recorded, so
+-- Stripe is answered and stops sending it.
+select is(
+  public.system_process_billing_event('evt_stranger', 'invoice.paid', jsonb_build_object(
+    'kind', 'invoice', 'subscriptionId', 'sub_nobody', 'paidPence', 1200, 'paidAt', now()
+  )) ->> 'outcome',
+  'subscription_unknown',
+  'an invoice for a subscription that is not ours is not applied'
+);
+
+select is(
+  public.system_process_billing_event('evt_odd', 'customer.discount.created', '{"kind": "other"}'::jsonb) ->> 'outcome',
+  'recorded',
+  'an event nobody taught it is recorded and ignored'
+);
+
+-- Nobody signed in may apply one, which is what keeps Pro out of the browser's reach.
+select tests.authenticate_as(:'asha_user');
+select throws_ok(
+  $$select public.system_process_billing_event('evt_forged', 'invoice.paid', '{"kind": "invoice"}'::jsonb)$$,
+  '42501',
+  null,
+  'an owner cannot apply a billing event'
+);
+select throws_ok(
+  $$select public.system_record_subscription_payment('sub_asha', 0, now(), 12, 12)$$,
+  '42501',
+  null,
+  'nor reach past it for the function that counts the months'
+);
+select tests.clear_authentication();
 
 select * from finish();
 rollback;
