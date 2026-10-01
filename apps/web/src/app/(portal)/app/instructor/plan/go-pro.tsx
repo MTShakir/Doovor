@@ -5,6 +5,7 @@ import { Card, CardDescription, CardTitle } from '@repo/ui/card';
 import { StatusPill } from '@repo/ui/status-pill';
 import { toast } from '@repo/ui/toast';
 import { Gift, TrendingDown } from 'lucide-react';
+import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useEffect, useId, useState, useTransition } from 'react';
 import type { ProSubscription } from '@/lib/billing/subscription';
@@ -259,8 +260,8 @@ export function WaitingForStripe() {
           <ProTag />
         </span>
         <CardDescription>
-          Your payment went through and we are waiting for the card service to confirm it. This is usually seconds. You do
-          not need to pay again.
+          We are waiting for the card service to confirm your payment. This is usually seconds, and you do not need to pay
+          again.
         </CardDescription>
       </div>
       <Button
@@ -275,6 +276,11 @@ export function WaitingForStripe() {
       >
         Check again
       </Button>
+      {/* A way out. Without it, somebody whose payment never arrived would sit on this card with
+          no button to try again, which is a worse place to be stuck than the one this avoids. */}
+      <Link href="/app/instructor/plan" className="text-small text-grey-700 underline hover:text-ink">
+        Nothing happening? Go back to your plan
+      </Link>
     </Card>
   );
 }

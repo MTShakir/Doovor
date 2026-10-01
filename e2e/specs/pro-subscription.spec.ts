@@ -213,7 +213,12 @@ test.describe('Pro, paid for through the platform (9.18, D-231)', { tag: '@deskt
 
     const waiting = page.getByRole('region', { name: 'Setting up your subscription' });
     await expect(waiting).toBeVisible();
-    await expect(waiting).toContainText('You do not need to pay again.');
+    await expect(waiting).toContainText('you do not need to pay again');
+    // And a way out, so a payment that never arrives does not leave somebody stuck on this card.
+    await expect(waiting.getByRole('link', { name: /Go back to your plan/ })).toHaveAttribute(
+      'href',
+      '/app/instructor/plan',
+    );
     // The button that would take a second payment is not on the page at all.
     await expect(page.getByRole('button', { name: 'Go Pro' })).toHaveCount(0);
     await expect(waiting.getByRole('button', { name: 'Check again' })).toBeVisible();
