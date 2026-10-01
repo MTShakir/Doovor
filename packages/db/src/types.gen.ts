@@ -4262,6 +4262,16 @@ export type Database = {
         }
         Returns: string
       }
+      system_subscriptions_renewing: {
+        Args: { p_now?: string }
+        Returns: {
+          billing_interval: Database["public"]["Enums"]["billing_interval"]
+          business_id: string
+          months_paid: number
+          owner_user_id: string
+          renews_at: string
+        }[]
+      }
       system_touch_push_target: { Args: { p_id: string }; Returns: undefined }
       system_unlist_expired_badges: {
         Args: { p_today?: string }

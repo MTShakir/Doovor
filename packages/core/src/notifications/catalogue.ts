@@ -58,6 +58,9 @@ export const notificationKinds = [
   'credit.low',
   'verification.decided',
   'badge.expiring',
+  // Money about to leave an account by itself, which is the one kind of charge somebody has to
+  // be told about before it happens rather than after (9.18, D-231).
+  'subscription.renewing',
   'learner.joined',
 ] as const;
 
@@ -202,6 +205,16 @@ export const notificationCatalogue: Record<NotificationKind, NotificationSpec> =
     category: 'account',
     audiences: ['instructor', 'school'],
     channels: PUSH_AND_EMAIL,
+    essential: true,
+  },
+  'subscription.renewing': {
+    kind: 'subscription.renewing',
+    category: 'money',
+    audiences: ['instructor'],
+    // Every channel is allowed, and the job narrows it: a year's renewal is worth a text and a
+    // month's is not (D-231). Essential, because it warns about money leaving an account and
+    // somebody who switched money notices off would still be charged.
+    channels: ['in_app', 'push', 'email', 'sms'],
     essential: true,
   },
   'learner.joined': {

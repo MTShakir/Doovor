@@ -4,7 +4,7 @@
 -- who has Pro, so the browser having no way to write one is the security, and a test that only
 -- proved the happy path would prove nothing about it.
 begin;
-select plan(33);
+select plan(42);
 
 select tests.create_fixture();
 
@@ -295,7 +295,46 @@ select throws_ok(
   null,
   'nor reach past it for the function that counts the months'
 );
+-- Who is about to be charged, and how much, is the job's to read and nobody else's (D-237).
+select throws_ok(
+  $$select * from public.system_subscriptions_renewing(now())$$,
+  '42501',
+  null,
+  'nor read who is about to be charged'
+);
 select tests.clear_authentication();
+
+-- ---------------------------------------------------------------------------------------
+-- Who is warned before it renews, and who is not (D-237).
+-- ---------------------------------------------------------------------------------------
+-- The window is worked out in the function, not passed to it, so nothing that calls it can
+-- make it warn somebody too late. A fortnight on a year, three days on a month.
+create or replace function pg_temp.renewing(p_at timestamptz) returns integer language sql as $$
+  select count(*)::integer from public.system_subscriptions_renewing(p_at)
+   where business_id = 'aaaa0000-0000-0000-0000-000000000000'::uuid;
+$$;
+
+update public.subscriptions
+   set status = 'active', billing_interval = 'year', cancel_at_period_end = false,
+       current_period_end = '2027-01-01T09:00:00Z'::timestamptz
+ where stripe_subscription_id = 'sub_asha';
+
+select is(pg_temp.renewing('2026-12-25T09:00:00Z'::timestamptz), 1, 'a year renewing in a week is warned');
+select is(pg_temp.renewing('2026-12-18T09:00:00Z'::timestamptz), 1, 'and on the fourteenth day it still is');
+select is(pg_temp.renewing('2026-12-10T09:00:00Z'::timestamptz), 0, 'three weeks out is too early to warn');
+select is(pg_temp.renewing('2027-01-02T09:00:00Z'::timestamptz), 0, 'and once it has renewed there is nothing to warn about');
+
+update public.subscriptions set billing_interval = 'month' where stripe_subscription_id = 'sub_asha';
+select is(pg_temp.renewing('2026-12-30T09:00:00Z'::timestamptz), 1, 'a month renewing in two days is warned');
+select is(pg_temp.renewing('2026-12-25T09:00:00Z'::timestamptz), 0, 'a week out is too early for a monthly one');
+
+update public.subscriptions set cancel_at_period_end = true where stripe_subscription_id = 'sub_asha';
+select is(pg_temp.renewing('2026-12-30T09:00:00Z'::timestamptz), 0,
+          'nobody is warned about a charge that is not coming');
+
+update public.subscriptions set cancel_at_period_end = false, status = 'canceled'
+ where stripe_subscription_id = 'sub_asha';
+select is(pg_temp.renewing('2026-12-30T09:00:00Z'::timestamptz), 0, 'nor about one that has ended');
 
 select * from finish();
 rollback;

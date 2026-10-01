@@ -146,6 +146,9 @@ export function notificationCopy(
     case 'badge.expiring':
       return { title: 'Your badge is running out', body: sentence(facts.detail) };
 
+    case 'subscription.renewing':
+      return { title: 'Your Pro renews soon', body: sentence(facts.detail) };
+
     case 'learner.joined':
       return { title: `${them} joined you`, body: sentence(facts.detail ?? 'They can be booked in now') };
   }

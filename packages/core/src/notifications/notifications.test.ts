@@ -18,7 +18,7 @@ const lesson = { learnerName: 'Jack Taylor', instructorName: 'Sarah Khan', when:
 
 describe('the catalogue (PRD Appendix B, NTF-03)', () => {
   it('has every kind of notification Phase 1 sends', () => {
-    expect(notificationKinds).toHaveLength(20);
+    expect(notificationKinds).toHaveLength(21);
     for (const kind of notificationKinds) expect(notificationCatalogue[kind].kind).toBe(kind);
   });
 
@@ -30,9 +30,12 @@ describe('the catalogue (PRD Appendix B, NTF-03)', () => {
     }
   });
 
-  it('texts about reminders and nothing else (NTF-01)', () => {
+  it('texts about a lesson coming, and about money about to leave (NTF-01, D-237)', () => {
     const texting = Object.values(notificationCatalogue).filter((spec) => spec.channels.includes('sms'));
-    expect(texting.map((spec) => spec.kind)).toEqual(['booking.reminder']);
+    // NTF-01 says texts are for reminders only. The second one is the product owner's, and is a
+    // reminder of the same kind: a thing about to happen that somebody may want to stop first,
+    // except that this one takes £120 if they do not read it (D-237). Nothing else may text.
+    expect(texting.map((spec) => spec.kind)).toEqual(['booking.reminder', 'subscription.renewing']);
   });
 
   it('knows a kind it does not have', () => {
