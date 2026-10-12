@@ -331,7 +331,10 @@ finished while the first hundred arrive.
    code, so this is the one that can stop a sign-up dead. On app.doovor.com, add your own mobile to
    an account and check a code arrives. If not, section 3.3 step 4: Twilio sends nothing until its
    Trust Hub customer profile is approved, and the reason is in Supabase, Logs > Auth, search `sms`.
-2. **Stripe's Connect questionnaire** (section 3.7 step 8): company identity, business model, the
+2. **Done, 12 October 2026:** Stripe approved the platform and live connected accounts can be
+   made. **Do not make one by hand in the Stripe dashboard**: the app makes each instructor's
+   account itself when they press Set up payments, and records which Business it belongs to. One
+   made by hand belongs to nobody. **Stripe's Connect questionnaire** (section 3.7 step 8): company identity, business model, the
    loss liability choices. The three choices have to match what the app builds (D-011, D-077):
    **onboarding hosted by Stripe**, **sellers collect payments directly**, and the **Express
    Dashboard**. Not the full Stripe Dashboard: that is a Standard account, with every setting
