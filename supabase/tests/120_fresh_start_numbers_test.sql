@@ -30,14 +30,18 @@ select is(
 
 -- What the launch wipe does to a report number, done here and rolled back with everything else.
 -- A truncate inside a transaction restarts its sequences inside it too, and puts them back with
--- the rollback.
+-- the rollback. The test brings its own person: CI's database has no seeded accounts, and a
+-- test that borrowed one passed locally and found nobody there.
+\set teller 'f0000000-0000-0000-0000-000000000120'
+select tests.create_user_with_id(:'teller', 'teller.120@test.local', 'Tess Teller');
+
 insert into public.feedback_submissions (user_id, kind, message)
-select id, 'other', 'Before the wipe' from auth.users limit 1;
+values (:'teller', 'other', 'Before the wipe');
 
 truncate public.feedback_submissions restart identity;
 
 insert into public.feedback_submissions (user_id, kind, message)
-select id, 'other', 'The first after it' from auth.users limit 1;
+values (:'teller', 'other', 'The first after it');
 
 select is(
   (select reference from public.feedback_submissions where message = 'The first after it'),
