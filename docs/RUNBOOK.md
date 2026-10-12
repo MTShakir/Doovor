@@ -327,15 +327,18 @@ finished while the first hundred arrive.
 
 **Start these now. Each waits on somebody else.**
 
-1. **Texts reach a real phone.** Onboarding asks for a mobile number and will not go on without the
+1. **Done, 12 October 2026:** codes reach a real phone. **Texts reach a real phone.** Onboarding asks for a mobile number and will not go on without the
    code, so this is the one that can stop a sign-up dead. On app.doovor.com, add your own mobile to
    an account and check a code arrives. If not, section 3.3 step 4: Twilio sends nothing until its
    Trust Hub customer profile is approved, and the reason is in Supabase, Logs > Auth, search `sms`.
 2. **Stripe's Connect questionnaire** (section 3.7 step 8): company identity, business model, the
-   loss liability choices. Stripe reviews it, so it is not same day. Until it is approved an
+   loss liability choices. The three choices have to match what the app builds (D-011, D-077):
+   **onboarding hosted by Stripe**, **sellers collect payments directly**, and the **Express
+   Dashboard**. Not the full Stripe Dashboard: that is a Standard account, with every setting
+   Stripe has and refunds an instructor could give outside the app. Stripe reviews it, so it is not same day. Until it is approved an
    instructor can take cash and bank transfers but not cards, and "Set up payments" will fail; do
    not point the first instructor at it before Stripe has said yes.
-3. **Emails reach an inbox.** Sign up with an address you have not used before and check the
+3. **Done, 12 October 2026:** confirmation emails arrive. **Emails reach an inbox.** Sign up with an address you have not used before and check the
    confirmation arrives within a minute, not in spam. Supabase sends it through Resend (section
    3.2); its own default sender is rate limited to a handful an hour and is not for real people.
 
