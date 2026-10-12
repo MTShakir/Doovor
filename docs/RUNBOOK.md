@@ -293,25 +293,62 @@ notifications, logs, and the files in all five buckets. What stays is the refere
 cannot work without, `cities`, `city_districts`, `marketplace_regions`, `skills`,
 `platform_settings` and the `postcodes` cache, and the one admin the command creates.
 
-1. **You:** put the admin's email and a real password in the environment for the one command.
-   They never go in git, in a file, or in chat. Use your own password manager to generate the
-   password and keep it there:
-   ```bash
-   export ADMIN_EMAIL='you@yourdomain.com'
-   export ADMIN_PASSWORD='...'
+1. **The migrations are on the database first.** The wipe relies on them: until the
+   `numbers_restart_with_a_fresh_start` migration is there, the founder comes out as D0000-something
+   instead of D000001 and the first report is not R01 (D-246). `pnpm supabase db push --dry-run`
+   should say the remote database is up to date.
+2. **You:** open a **new** PowerShell window at the repository, and set the values for this one
+   command. Your `.env.local` stays pointed at the local stack: anything set in the window wins
+   over the file. The three secrets are typed hidden, so they are not on the screen and not in
+   PowerShell's history:
+   ```powershell
+   $env:NEXT_PUBLIC_SUPABASE_URL = 'https://yvxuarrrvgnfcjfyqfyi.supabase.co'
    ```
-2. Point `.env.local` at the project being emptied and check it twice. The command refuses unless
-   the project you name matches the one the environment points at, which is what stops a leftover
-   `.env.local` emptying the wrong database.
-3. Run it, naming the project reference from its Supabase URL:
-   ```bash
+   ```powershell
+   $env:SUPABASE_SECRET_KEY = [Net.NetworkCredential]::new('', (Read-Host 'Supabase secret key' -AsSecureString)).Password
+   ```
+   ```powershell
+   $env:SUPABASE_DB_URL = [Net.NetworkCredential]::new('', (Read-Host 'Database connection string' -AsSecureString)).Password
+   ```
+   ```powershell
+   $env:ADMIN_EMAIL = 'you@yourdomain.com'
+   ```
+   ```powershell
+   $env:ADMIN_PASSWORD = [Net.NetworkCredential]::new('', (Read-Host 'Admin password, 12 or more' -AsSecureString)).Password
+   ```
+   ```powershell
+   $env:ADMIN_NAME = 'Your Name'
+   ```
+   - The secret key: Supabase, Project Settings > API Keys, a secret key (`sb_secret_...`).
+   - The connection string: Supabase, **Connect** at the top, **Session pooler**, with the database
+     password in place of `[YOUR-PASSWORD]`. Not Direct connection, which needs IPv6 that most home
+     connections do not have, and not Transaction pooler, which this command cannot use.
+   - The admin password: make it in your password manager and keep it there. It is the one account
+     that can see every Business.
+3. Run it, naming the project. It refuses unless the name matches where the window points, and
+   unless the database and the API are the same kind of target:
+   ```powershell
    pnpm db:fresh --project=yvxuarrrvgnfcjfyqfyi --yes
    ```
    It prints what it removed: the files per bucket, the number of tables emptied and which were
-   kept, the accounts removed, and the admin it created.
-4. **You:** sign in at `/sign-in` as that admin and set up two-step verification straight away
-   (AUTH-06). An account that can see every Business on the platform should not rest on a
-   password alone.
+   kept, the accounts removed, and the admin it created. Then **close the window**, which takes
+   the secrets with it.
+4. **You, the super admin side, straight after:**
+   - Sign in at `https://app.doovor.com/sign-in` with the admin email and password. The admin
+     portal sends anybody without two-step verification to `/mfa` first (AUTH-08): scan the code
+     with an authenticator app (Google Authenticator, Microsoft Authenticator or your password
+     manager) and enter the six digits. An account that can see every Business should not rest on
+     a password alone.
+   - Open **Account and security** (`/account`): your number there should be **D000001**. A higher
+     one means the migrations were not on the database when the wipe ran (step 1).
+   - **Settings and Regions come through the wipe unchanged**, because they are the platform's own
+     choices rather than anybody's data. Read them once: Settings has the founding offer (100
+     instructors, 50 schools, 12 months), the free trial and the feature flags; Regions has which
+     postcode areas are open to learners, and any opened while demonstrating are still open.
+   - **Verification** is where the first instructor's badge arrives for you to approve, and
+     **Feedback** is where "tell us something" lands. Both are empty, which is right.
+   - Anybody else who should help run the platform is made staff by hand, as below in
+     "Making somebody platform staff". Nobody else is, after the wipe.
 5. The public pages will show their empty states until the first Business signs up: no profiles,
    and city pages with nothing on them. That is correct for a launch, not a fault.
 
