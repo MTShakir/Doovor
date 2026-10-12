@@ -391,7 +391,11 @@ finished while the first hundred arrive.
    account left. **Empty the database** (section 3.9). It removes every demo Business, and with them the one
    founding place the seed holds, so the home page goes from "1/100 joined" to "100 places open".
    Then two-step verification on the admin account straight away.
-7. **Stripe live endpoint for Connect** (section 3.7 step 7), in **live** mode this time, against
+7. **Done, 12 October 2026:** live destination `connect-learner-payments`
+   (`we_1UPoaCDwKu9NNho2XbYRWS03`) on the live account, events from connected accounts, API version
+   2026-08-26.dahlia, the nine events, Active. Its signing secret was not revealed while it was
+   made: it is copied once, by you, from the destination page straight into Vercel.
+   **Stripe live endpoint for Connect** (section 3.7 step 7), in **live** mode this time, against
    `https://app.doovor.com/api/webhooks/stripe`. Its signing secret is the
    `STRIPE_CONNECT_WEBHOOK_SECRET` below. Leave the billing endpoint (step 7a) for later.
 8. **Vercel, Production only, all in one go** (section 3.7 step 9 and section 4's checklist):
