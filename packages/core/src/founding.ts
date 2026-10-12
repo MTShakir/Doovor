@@ -55,3 +55,15 @@ export function foundingCountWords(progress: FoundingProgress): { headline: stri
     detail: progress.left === 1 ? '1 place left' : `${String(progress.left)} places left`,
   };
 }
+
+/**
+ * How long the founding offer lasts, as the site says it (D-251): "1 year", the way people say it,
+ * rather than "12 months". A number of months that is not whole years stays in months.
+ */
+export function foundingTermWords(months: number): string {
+  if (months > 0 && months % 12 === 0) {
+    const years = months / 12;
+    return years === 1 ? '1 year' : `${String(years)} years`;
+  }
+  return months === 1 ? '1 month' : `${String(months)} months`;
+}

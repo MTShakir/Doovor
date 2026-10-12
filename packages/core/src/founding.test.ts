@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { foundingCountWords, foundingProgress } from './founding.ts';
+import { foundingCountWords, foundingProgress, foundingTermWords } from './founding.ts';
 
 describe('how far through the founding places are (D-203, D-243)', () => {
   it('counts what is taken and what is left', () => {
@@ -57,5 +57,18 @@ describe('what the page says about it (D-243)', () => {
       headline: 'All 100 places taken',
       detail: 'The founding offer has closed.',
     });
+  });
+});
+
+describe('how long the founding offer lasts, as the site says it (D-251)', () => {
+  it('says a whole number of years as years, as people say it', () => {
+    expect(foundingTermWords(12)).toBe('1 year');
+    expect(foundingTermWords(24)).toBe('2 years');
+  });
+
+  it('keeps anything else in months', () => {
+    expect(foundingTermWords(6)).toBe('6 months');
+    expect(foundingTermWords(18)).toBe('18 months');
+    expect(foundingTermWords(1)).toBe('1 month');
   });
 });

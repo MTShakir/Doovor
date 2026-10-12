@@ -1,4 +1,5 @@
 import { brand } from '@repo/config/brand';
+import { foundingTermWords } from '@repo/core/founding';
 import { sitePagePaths } from '@repo/core/sitemap';
 import { foundingOffer, freeTrial, plans } from '@repo/config/plans';
 import { expect, test, type Page, type TestInfo } from '@playwright/test';
@@ -34,7 +35,7 @@ test.describe('the public site (PRD 8.3, 9.18, M5-09)', () => {
 
     const pages = [
       { nav: 'Learners', path: '/learners', heading: 'Learn to drive, without the admin', action: 'Create a learner account', role: 'learner', shot: 'site-learners' },
-      { nav: 'Instructors', path: '/instructors-software', heading: 'Run your driving lessons from your phone', action: 'Create your free account', role: 'instructor', shot: 'site-instructors' },
+      { nav: 'Instructors', path: '/instructors-software', heading: 'Less admin. More lessons. Paid on time.', action: /^(Claim your free year|Create your free account)$/, role: 'instructor', shot: 'site-instructors' },
       { nav: 'Schools', path: '/driving-schools-software', heading: 'Your whole driving school in one place', action: 'Set up your school', role: 'school', shot: 'site-schools' },
     ];
     for (const one of pages) {
@@ -120,7 +121,7 @@ test.describe('the public site (PRD 8.3, 9.18, M5-09)', () => {
     await page.goto('/pricing');
     await expect(page.getByRole('heading', { level: 1, name: 'Simple pricing' })).toBeVisible();
 
-    const offer = page.getByRole('region', { name: `The paid plan free for ${String(foundingOffer.months)} months` });
+    const offer = page.getByRole('region', { name: `The paid plan free for ${foundingTermWords(foundingOffer.months)}` });
     await expect(offer).toContainText(`first ${String(foundingOffer.instructorLimit)} independent instructors`);
     await expect(offer).toContainText(`first ${String(foundingOffer.schoolLimit)} driving schools`);
 
@@ -140,6 +141,25 @@ test.describe('the public site (PRD 8.3, 9.18, M5-09)', () => {
     await expect(school).toContainText(pounds(plans.school.monthlyPricePence));
     await expect(school).toContainText(`for at least ${String(plans.school.minimumInstructors)} instructors`);
     await expect(school.getByRole('link', { name: 'Set up your school on School' })).toHaveAttribute('href', /\/sign-up\?role=school$/);
+
+    // While a plan's founding places last it is £0 beside its own price struck through, for as
+    // long as the offer runs, then that price (D-251). Free has nothing to strike through.
+    const open = await withDatabase(async (sql) => {
+      const [row] = await sql<{ places: { instructorLimit: number; instructorsJoined: number; schoolLimit: number; schoolsJoined: number } }[]>`
+        select public.founding_places() as places`;
+      if (!row) throw new Error('no founding places answer');
+      return { pro: row.places.instructorsJoined < row.places.instructorLimit, school: row.places.schoolsJoined < row.places.schoolLimit };
+    });
+    const term = `Free for ${foundingTermWords(foundingOffer.months)}`;
+    await expect(free.locator('s')).toHaveCount(0);
+    if (open.pro) {
+      await expect(pro.getByTestId('founding-price-pro')).toContainText(term);
+      await expect(pro.locator('s')).toHaveText(`Usually ${pounds(plans.pro.monthlyPricePence)}`);
+    }
+    if (open.school) {
+      await expect(school.getByTestId('founding-price-school')).toContainText(term);
+      await expect(school.locator('s')).toHaveText(`Usually ${pounds(plans.school.monthlyPricePence)}`);
+    }
 
     // Everybody who misses a founding place is told what they get instead (D-204).
     const questions = page.getByRole('region', { name: 'Questions' });

@@ -1,5 +1,6 @@
+import { foundingProgress } from '@repo/core/founding';
 import { describe, expect, it } from 'vitest';
-import { planSummaries } from './plan-features';
+import { foundingPrice, planSummaries } from './plan-features';
 
 describe('what each plan says it includes (PRD 9.18, M5-09)', () => {
   it('prices every plan from the configuration', () => {
@@ -75,5 +76,40 @@ describe('what each plan says it includes (PRD 9.18, M5-09)', () => {
 
   it('sends instructors and schools to their own sign-up', () => {
     expect(planSummaries().map((plan) => plan.signUpRole)).toEqual(['instructor', 'instructor', 'school']);
+  });
+});
+
+describe('a paid plan at its founding price (PRD 9.18, D-251)', () => {
+  const [free, pro, school] = planSummaries();
+  const places = (instructorsTaken: number, schoolsTaken: number) => ({
+    months: 12,
+    instructors: foundingProgress({ limit: 100, taken: instructorsTaken }),
+    schools: foundingProgress({ limit: 50, taken: schoolsTaken }),
+  });
+
+  it('is nothing for a year, beside the price it is otherwise, and says what it costs after', () => {
+    expect(pro && foundingPrice(pro, places(46, 3))).toEqual({
+      usual: '£12',
+      free: 'Free for 1 year',
+      then: 'then £12 per month, or £120 a year',
+      left: '54 of 100 places left',
+    });
+    expect(school && foundingPrice(school, places(46, 3))).toEqual({
+      usual: '£9',
+      free: 'Free for 1 year',
+      then: 'then £9 per instructor per month, for at least 2 instructors',
+      left: '47 of 50 places left',
+    });
+  });
+
+  it('counts each plan against its own places, so schools are not told the instructors have gone', () => {
+    expect(pro && foundingPrice(pro, places(100, 3))).toBeNull();
+    expect(school && foundingPrice(school, places(100, 3))).not.toBeNull();
+    expect(school && foundingPrice(school, places(10, 50))).toBeNull();
+  });
+
+  it('shows no offer on Free, and none when the places cannot be counted', () => {
+    expect(free && foundingPrice(free, places(0, 0))).toBeNull();
+    expect(pro && foundingPrice(pro, null)).toBeNull();
   });
 });

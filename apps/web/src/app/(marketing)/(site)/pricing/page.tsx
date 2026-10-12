@@ -6,11 +6,12 @@ import { referralRewardMonths } from '@repo/core/referral';
 import { formatPence } from '@repo/core/money';
 import { siteShareCard } from '@repo/core/share-card';
 import type { Metadata } from 'next';
-import { Band, ClosingCall, FoundingOffer, PlanCard, PrimaryLink } from '@/components/site/marketing';
+import { foundingTermWords } from '@repo/core/founding';
+import { Band, ClosingCall, FoundingOffer, PlanCard, PrimaryLink, QuestionList } from '@/components/site/marketing';
 import { getAppUrl } from '@/lib/app-url';
 import { publicPageMetadata } from '@/lib/public/metadata';
 import { foundingPlaces } from '@/lib/site/founding';
-import { planSummaries } from '@/lib/site/plan-features';
+import { foundingPrice, planSummaries } from '@/lib/site/plan-features';
 
 /** Plans and prices (PRD 9.18, M5-09), every figure from `@repo/config/plans`. */
 export function generateMetadata(): Metadata {
@@ -40,7 +41,7 @@ export default async function PricingPage() {
     },
     {
       question: 'What does the founding offer include?',
-      answer: `The paid plan for your business, free for ${String(foundingOffer.months)} months: Pro for independent instructors, and the School plan for driving schools. It is open to the first ${String(foundingOffer.instructorLimit)} instructors and the first ${String(foundingOffer.schoolLimit)} schools.`,
+      answer: `The paid plan for your business, free for ${foundingTermWords(places?.months ?? foundingOffer.months)}: Pro for independent instructors, and the School plan for driving schools. It is open to the first ${String(foundingOffer.instructorLimit)} instructors and the first ${String(foundingOffer.schoolLimit)} schools.`,
     },
     {
       question: 'What if the founding places have gone?',
@@ -81,7 +82,13 @@ export default async function PricingPage() {
       <Band id="plans" title="Plans">
         <div className="grid grid-cols-[minmax(0,1fr)] gap-4 lg:grid-cols-3">
           {summaries.map((plan) => (
-            <PlanCard key={plan.key} plan={plan} signUpUrl={`${appUrl}/sign-up?role=${plan.signUpRole}`} highlighted={plan.key === 'pro'} />
+            <PlanCard
+              key={plan.key}
+              plan={plan}
+              signUpUrl={`${appUrl}/sign-up?role=${plan.signUpRole}`}
+              highlighted={plan.key === 'pro'}
+              founding={foundingPrice(plan, places)}
+            />
           ))}
         </div>
       </Band>
@@ -96,14 +103,7 @@ export default async function PricingPage() {
       </Band>
 
       <Band id="questions" title="Questions">
-        <dl className="grid grid-cols-[minmax(0,1fr)] gap-8 md:grid-cols-2">
-          {questions.map(({ question, answer }) => (
-            <div key={question} className="flex flex-col gap-2">
-              <dt className="text-h3 text-black">{question}</dt>
-              <dd className="text-body text-pretty text-grey-700">{answer}</dd>
-            </div>
-          ))}
-        </dl>
+        <QuestionList questions={questions} />
       </Band>
 
       <ClosingCall

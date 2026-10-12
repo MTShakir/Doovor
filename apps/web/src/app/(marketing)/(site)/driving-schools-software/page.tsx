@@ -7,7 +7,7 @@ import { Band, ClosingCall, FeatureGrid, FoundingOffer, PageHero, PlanCard, Prim
 import { getAppUrl } from '@/lib/app-url';
 import { publicPageMetadata } from '@/lib/public/metadata';
 import { foundingPlaces } from '@/lib/site/founding';
-import { planSummaries } from '@/lib/site/plan-features';
+import { foundingPrice, planSummaries } from '@/lib/site/plan-features';
 
 /** The page for driving schools (PRD 8.3, M5-09). */
 export function generateMetadata(): Metadata {
@@ -97,7 +97,7 @@ export default async function DrivingSchoolsSoftwarePage() {
       {school ? (
         <Band id="school-plan" title="One price for each instructor" description="Priced by the size of your team, with everything in Pro for every instructor.">
           <div className="max-w-md">
-            <PlanCard plan={school} signUpUrl={signUp} highlighted />
+            <PlanCard plan={school} signUpUrl={signUp} highlighted founding={foundingPrice(school, places)} />
           </div>
         </Band>
       ) : null}

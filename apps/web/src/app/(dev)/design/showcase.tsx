@@ -27,10 +27,11 @@ import { Breadcrumbs, PlaceLinks } from '@/components/public/place-links';
 import { SchoolHeader, SchoolInstructors } from '@/components/public/school-profile';
 import { BookingLinkCard } from '@/components/share/booking-link-card';
 import { AreaPanel, CaptureDone } from '@/components/capture/coming-soon';
-import { BookingGlimpse, GlimpseAlone, GlimpsePair, MoneyGlimpse, ProgressGlimpse, SchoolGlimpse, TodayGlimpse } from '@/components/site/glimpses';
-import { Band, ClosingCall, FeatureGrid, FoundingOffer, PageHero, PlanCard, PrimaryLink, SecondaryLink, Steps } from '@/components/site/marketing';
+import { BookingGlimpse, GlimpseAlone, GlimpsePair, MoneyGlimpse, ProfileGlimpse, ProgressGlimpse, SchoolGlimpse, TaxYearGlimpse, TodayGlimpse } from '@/components/site/glimpses';
+import { Band, ClosingCall, FeatureGrid, FeatureStory, FoundingBadge, FoundingOffer, PageHero, PlanCard, PrimaryLink, QuestionList, SecondaryLink, Steps } from '@/components/site/marketing';
 import { SiteFooter, SiteHeader } from '@/components/site/site-chrome';
-import { planSummaries } from '@/lib/site/plan-features';
+import { foundingPrice, planSummaries } from '@/lib/site/plan-features';
+import { foundingProgress } from '@repo/core/founding';
 import { NoSignalBanner } from '@/components/offline/connection-banner';
 import { KeptRecordsNotice } from '@/components/offline/kept-records-notice';
 import { CardFieldsSkeleton } from '@/components/payments/card-form';
@@ -153,6 +154,13 @@ function Section({ title, children }: { title: (typeof sections)[number]; childr
 function Label({ children }: { children: ReactNode }) {
   return <p className="text-caption font-semibold text-grey-700">{children}</p>;
 }
+
+/** Founding places part taken, as the site shows them while the offer is open (D-243, D-251). */
+const examplePlaces = {
+  months: 12,
+  instructors: foundingProgress({ limit: 100, taken: 46 }),
+  schools: foundingProgress({ limit: 50, taken: 3 }),
+};
 
 const exampleWeek = { key: 'week', from: '2026-10-26', to: '2026-11-01', label: 'This week', range: 'Mon 26 Oct to Sun 1 Nov' } as const;
 const exampleMonth = { key: 'month', from: '2026-10-01', to: '2026-10-31', label: 'October', range: 'Thu 1 Oct to Sat 31 Oct' } as const;
@@ -1399,6 +1407,7 @@ export function DesignShowcase() {
         <Label>Page opening, with two glimpses of the app overlapping</Label>
         <div className="rounded-card border border-grey-200">
           <PageHero
+            badge={<FoundingBadge places={examplePlaces} />}
             eyebrow="For driving instructors"
             title="Run your driving lessons from your phone"
             description="Your diary, learners, payments and lesson records in one simple app."
@@ -1408,10 +1417,17 @@ export function DesignShowcase() {
                 <SecondaryLink href="#pricing">See pricing</SecondaryLink>
               </>
             }
+            note="No card needed. Set up in five short steps."
             visual={<GlimpsePair back={<TodayGlimpse />} front={<MoneyGlimpse />} />}
           />
         </div>
-        <Label>Glimpses of the app: a booking, progress and a school overview, each on its own</Label>
+        <Label>The founding badge over a page's title: with the count, and before the count can be read. It is not shown once the places have gone</Label>
+        <div className="flex flex-wrap gap-3">
+          <FoundingBadge places={examplePlaces} />
+          <FoundingBadge places={null} />
+          <FoundingBadge places={examplePlaces} audience="schools" />
+        </div>
+        <Label>Glimpses of the app: a booking, progress, a school overview, a profile as learners find it, and a tax year</Label>
         <div className="grid items-start gap-6 md:grid-cols-3">
           <GlimpseAlone>
             <BookingGlimpse />
@@ -1422,7 +1438,49 @@ export function DesignShowcase() {
           <GlimpseAlone>
             <SchoolGlimpse />
           </GlimpseAlone>
+          <GlimpseAlone>
+            <ProfileGlimpse />
+          </GlimpseAlone>
+          <GlimpseAlone>
+            <TaxYearGlimpse />
+          </GlimpseAlone>
         </div>
+        <Label>One feature told beside its glimpse, with what is on Pro marked; the next one flips sides</Label>
+        <div className="flex flex-col overflow-hidden rounded-card border border-grey-200">
+          <FeatureStory
+            id="design-story"
+            eyebrow="Payments"
+            title="Paid before the lesson, not chased after it"
+            description="Learners pay by card when they book, or from hours they bought in a package."
+            points={[{ text: 'Cash and bank transfers recorded in two taps' }, { text: 'The saved card charged the day before each lesson', pro: true }]}
+            visual={
+              <GlimpseAlone>
+                <MoneyGlimpse />
+              </GlimpseAlone>
+            }
+            tone="grey"
+          />
+          <FeatureStory
+            id="design-story-flipped"
+            eyebrow="Getting found"
+            title="A profile that wins you learners"
+            description="Your prices, where you teach and your next free times."
+            points={[{ text: 'The Verified tick, once we have checked your badge' }]}
+            visual={
+              <GlimpseAlone>
+                <ProfileGlimpse />
+              </GlimpseAlone>
+            }
+            flip
+          />
+        </div>
+        <Label>Questions and their answers</Label>
+        <QuestionList
+          questions={[
+            { question: 'Is it really free?', answer: 'Yes. The Free plan is free for as long as you use it.' },
+            { question: 'Who holds the money?', answer: 'You do. Card payments go to your own Stripe account.' },
+          ]}
+        />
         <Label>A band with features, on grey, and steps in their order</Label>
         <div className="flex flex-col overflow-hidden rounded-card border border-grey-200">
           <Band id="design-features" title="Built for how driving lessons really work" tone="grey">
@@ -1449,7 +1507,7 @@ export function DesignShowcase() {
         </div>
         <Label>The founding offer, the one yellow block on the site, and the closing call on black</Label>
         <div className="flex flex-col gap-6 overflow-hidden rounded-card border border-grey-200 pt-6">
-          <FoundingOffer action={<PrimaryLink href="#start">Claim the offer</PrimaryLink>} />
+          <FoundingOffer places={examplePlaces} action={<PrimaryLink href="#start">Claim the offer</PrimaryLink>} />
           <ClosingCall
             title="Start in minutes"
             description="Create an account, and you are ready to book, teach or run your school."
@@ -1487,6 +1545,12 @@ export function DesignShowcase() {
         <div className="grid gap-4 lg:grid-cols-3">
           {planSummaries().map((plan) => (
             <PlanCard key={plan.key} plan={plan} signUpUrl="#sign-up" highlighted={plan.key === 'pro'} />
+          ))}
+        </div>
+        <Label>The same plans while founding places last: nothing for a year, beside the price struck through (D-251)</Label>
+        <div className="grid gap-4 lg:grid-cols-3">
+          {planSummaries().map((plan) => (
+            <PlanCard key={plan.key} plan={plan} signUpUrl="#sign-up" highlighted={plan.key === 'pro'} founding={foundingPrice(plan, examplePlaces)} idPrefix="founding-plan" />
           ))}
         </div>
       </Section>

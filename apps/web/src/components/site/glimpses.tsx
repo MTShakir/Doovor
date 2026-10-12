@@ -201,6 +201,65 @@ export function SchoolGlimpse({ className }: { className?: string }) {
   );
 }
 
+/** An instructor as learners searching nearby find them (INS-05, PRD 9.13): checked, priced, free. */
+export function ProfileGlimpse({ className }: { className?: string }) {
+  const times = ['Tue 14:00', 'Wed 09:30', 'Thu 16:00'];
+  return (
+    <Frame title="Instructors near you" className={className}>
+      <div className="flex items-center gap-3">
+        <Initials name="Sarah Khan" verified />
+        <span className="flex min-w-0 flex-1 flex-col">
+          <span className="truncate text-body font-semibold text-black">Sarah Khan</span>
+          <span className="text-small text-grey-700">Approved driving instructor</span>
+        </span>
+        <span className="text-body font-semibold text-black tabular-nums">£42</span>
+      </div>
+      <p className="flex items-center gap-1 text-small text-grey-700">
+        <MapPin size={14} strokeWidth={1.5} />
+        Headingley, and 5 miles around
+      </p>
+      <div className="flex flex-col gap-2">
+        <p className="text-small font-semibold text-black">Next free times</p>
+        <ul className="flex flex-wrap gap-2">
+          {times.map((time) => (
+            <li key={time} className="rounded-full bg-grey-100 px-3 py-1 text-small font-semibold text-black tabular-nums">
+              {time}
+            </li>
+          ))}
+        </ul>
+      </div>
+      <FakeButton>Book a lesson</FakeButton>
+    </Frame>
+  );
+}
+
+/** The instructor's tax year (MNY-01 to MNY-04): what came in, what went out, and the miles. */
+export function TaxYearGlimpse({ className }: { className?: string }) {
+  return (
+    <Frame title="This tax year" className={className}>
+      {/* 4,812 miles at HMRC's 45p a mile for a car's first 10,000 is £2,165. */}
+      <ul className="grid grid-cols-2 gap-2 text-small">
+        {[
+          { label: 'Income', amount: '£18,420' },
+          { label: 'Expenses', amount: '£3,210' },
+          { label: 'Miles logged', amount: '4,812' },
+          { label: 'Mileage claim', amount: '£2,165' },
+        ].map((figure) => (
+          <li key={figure.label} className="flex flex-col rounded-input bg-grey-100 p-3">
+            <span className="text-grey-700">{figure.label}</span>
+            <span className="font-semibold text-black tabular-nums">{figure.amount}</span>
+          </li>
+        ))}
+      </ul>
+      <p className="flex items-center justify-between text-small text-ink">
+        Fuel, Tue 6 Oct
+        <span className="font-semibold tabular-nums">£62</span>
+      </p>
+      <FakeButton>Export for your accountant</FakeButton>
+    </Frame>
+  );
+}
+
 /** Two glimpses, the second over the first one's last corner, as the hero of a page. */
 export function GlimpsePair({ back, front }: { back: ReactNode; front: ReactNode }) {
   return (

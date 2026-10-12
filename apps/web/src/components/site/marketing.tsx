@@ -1,12 +1,13 @@
 import { foundingOffer } from '@repo/config/plans';
-import { foundingCountWords } from '@repo/core/founding';
+import { foundingCountWords, foundingTermWords } from '@repo/core/founding';
+import { formatPence } from '@repo/core/money';
 import { Button } from '@repo/ui/button';
 import { ProgressBar } from '@repo/ui/progress';
 import { cn } from '@repo/ui/lib/cn';
 import { Check, Clock, type LucideIcon } from 'lucide-react';
 import type { ReactNode } from 'react';
 import type { FoundingPlaces } from '@/lib/site/founding';
-import type { PlanSummary } from '@/lib/site/plan-features';
+import type { FoundingPrice, PlanSummary } from '@/lib/site/plan-features';
 
 /**
  * The pieces the site's own pages are made of (PRD 8.3, M5-09), in the product's own look: white,
@@ -15,27 +16,117 @@ import type { PlanSummary } from '@/lib/site/plan-features';
 
 export function PageHero({
   eyebrow,
+  badge,
   title,
   description,
   actions,
+  note,
   visual,
 }: {
   eyebrow?: string;
+  /** Above the title, for the one thing worth seeing first: the founding offer while it lasts. */
+  badge?: ReactNode;
   title: string;
   description: string;
   actions: ReactNode;
+  /** Under the buttons: what somebody wonders before pressing one, answered in a line. */
+  note?: ReactNode;
   visual?: ReactNode;
 }) {
   return (
     <section className="mx-auto grid w-full max-w-6xl grid-cols-[minmax(0,1fr)] items-center gap-12 px-4 pt-10 pb-14 md:grid-cols-[minmax(0,1.1fr)_minmax(0,1fr)] md:px-6 md:pt-20 md:pb-24">
       <div className="flex flex-col gap-5">
+        {badge}
         {eyebrow ? <p className="text-small font-semibold text-grey-700">{eyebrow}</p> : null}
         <h1 className="text-display text-balance text-black md:text-hero">{title}</h1>
         <p className="max-w-xl text-body text-pretty text-grey-700 md:text-h3 md:font-normal">{description}</p>
         <div className="mt-2 flex flex-col gap-3 sm:flex-row">{actions}</div>
+        {note === undefined ? null : <div className="text-small text-grey-700">{note}</div>}
       </div>
       {visual ? <div className="flex justify-center md:justify-end">{visual}</div> : null}
     </section>
+  );
+}
+
+/**
+ * The founding offer as a line above a page's title (D-251): how long the paid plan is free and,
+ * from the database's own count, how many places are left. Nothing at all once they have gone.
+ */
+export function FoundingBadge({ places, audience = 'instructors' }: { places: FoundingPlaces | null; audience?: 'instructors' | 'schools' }) {
+  const counted = places?.[audience] ?? null;
+  if (counted?.full === true) return null;
+  const plan = audience === 'schools' ? 'The School plan' : 'Pro';
+  const term = foundingTermWords(places?.months ?? foundingOffer.months);
+  return (
+    <p className="flex w-fit flex-wrap items-center gap-x-2 rounded-card bg-yellow px-4 py-2 text-small font-semibold text-black">
+      <span>Founding offer: {plan} free for {term}</span>
+      {counted === null ? null : <span className="font-normal tabular-nums">{foundingCountWords(counted).detail}</span>}
+    </p>
+  );
+}
+
+/** One thing the product does, told in a few points beside a glimpse of it, alternating sides. */
+export function FeatureStory({
+  id,
+  eyebrow,
+  title,
+  description,
+  points,
+  visual,
+  flip = false,
+  tone = 'white',
+}: {
+  id: string;
+  eyebrow: string;
+  title: string;
+  description: string;
+  /** What it does, each in a line. Those on Pro say so, rather than being sold as on every plan. */
+  points: readonly { text: string; pro?: boolean }[];
+  visual: ReactNode;
+  /** The glimpse on the left, so a page of these does not read as one long column. */
+  flip?: boolean;
+  tone?: 'white' | 'grey';
+}) {
+  return (
+    <section aria-labelledby={`${id}-heading`} className={tone === 'grey' ? 'bg-grey-100' : 'bg-white'}>
+      <div className="mx-auto grid w-full max-w-6xl grid-cols-[minmax(0,1fr)] items-center gap-10 px-4 py-14 md:grid-cols-2 md:gap-16 md:px-6 md:py-20">
+        <div className={cn('flex flex-col gap-4', flip && 'md:order-2')}>
+          <p className="text-small font-semibold text-grey-700">{eyebrow}</p>
+          <h2 id={`${id}-heading`} className="text-h1 text-balance text-black">
+            {title}
+          </h2>
+          <p className="text-body text-pretty text-grey-700">{description}</p>
+          <ul className="mt-2 flex flex-col gap-3">
+            {points.map((point) => (
+              <li key={point.text} className="flex gap-3 text-body text-ink">
+                <Check size={20} strokeWidth={2} className="mt-0.5 shrink-0 text-black" aria-hidden />
+                <span>
+                  {point.text}
+                  {point.pro ? (
+                    <span className="ml-2 inline-flex rounded-full bg-yellow-100 px-2 align-middle text-caption font-semibold text-black">On Pro</span>
+                  ) : null}
+                </span>
+              </li>
+            ))}
+          </ul>
+        </div>
+        <div className={cn('flex justify-center', flip ? 'md:order-1 md:justify-start' : 'md:justify-end')}>{visual}</div>
+      </div>
+    </section>
+  );
+}
+
+/** Questions somebody asks before signing up, each with its answer. */
+export function QuestionList({ questions }: { questions: readonly { question: string; answer: string }[] }) {
+  return (
+    <dl className="grid grid-cols-[minmax(0,1fr)] gap-8 md:grid-cols-2">
+      {questions.map(({ question, answer }) => (
+        <div key={question} className="flex flex-col gap-2">
+          <dt className="text-h3 text-black">{question}</dt>
+          <dd className="text-body text-pretty text-grey-700">{answer}</dd>
+        </div>
+      ))}
+    </dl>
   );
 }
 
@@ -140,7 +231,7 @@ export function FoundingOffer({
         <div className="flex max-w-2xl flex-col gap-2">
           <p className="text-small font-semibold">Founding offer</p>
           <h2 id="founding-offer-heading" className="text-h1 text-balance">
-            {closed ? 'Start on the paid plan, free' : `The paid plan free for ${String(months)} months`}
+            {closed ? 'Start on the paid plan, free' : `The paid plan free for ${foundingTermWords(months)}`}
           </h2>
           <p className="text-body">
             {closed
@@ -205,23 +296,58 @@ export function SecondaryLink({ href, children }: { href: string; children: Reac
   );
 }
 
-/** One plan, with its price from the configuration, what it has today and what it will have. */
-export function PlanCard({ plan, signUpUrl, highlighted = false }: { plan: PlanSummary; signUpUrl: string; highlighted?: boolean }) {
+/**
+ * One plan, with its price from the configuration, what it has today and what it will have. While
+ * its founding places last, a paid plan shows £0 beside its own price struck through, how long it
+ * is free for and what it costs after (D-251): see foundingPrice for why the comparison is true.
+ */
+export function PlanCard({
+  plan,
+  signUpUrl,
+  highlighted = false,
+  founding = null,
+  idPrefix = 'plan',
+}: {
+  plan: PlanSummary;
+  signUpUrl: string;
+  highlighted?: boolean;
+  founding?: FoundingPrice | null;
+  /** For a page that shows the same plan twice, as the design page does. */
+  idPrefix?: string;
+}) {
   return (
     <article
-      aria-labelledby={`plan-${plan.key}`}
+      aria-labelledby={`${idPrefix}-${plan.key}`}
       className={cn('flex flex-col gap-6 rounded-card bg-white p-6', highlighted ? 'border-2 border-black' : 'border border-grey-200')}
     >
       <div className="flex flex-col gap-1">
-        <h3 id={`plan-${plan.key}`} className="text-h2 text-black">
+        <h3 id={`${idPrefix}-${plan.key}`} className="text-h2 text-black">
           {plan.name}
         </h3>
         <p className="text-small text-grey-700">{plan.audience}</p>
       </div>
-      <p className="flex flex-wrap items-baseline gap-x-2">
-        <span className="text-display text-black tabular-nums">{plan.price}</span>
-        <span className="text-small text-grey-700">{plan.cadence}</span>
-      </p>
+      {founding === null ? (
+        <p className="flex flex-wrap items-baseline gap-x-2">
+          <span className="text-display text-black tabular-nums">{plan.price}</span>
+          <span className="text-small text-grey-700">{plan.cadence}</span>
+        </p>
+      ) : (
+        <div className="flex flex-col gap-3" data-testid={`founding-price-${plan.key}`}>
+          <p className="flex flex-wrap items-baseline gap-x-3">
+            <span className="text-display text-black tabular-nums">{formatPence(0)}</span>
+            {/* A struck price is not read out as struck, so it says what it is in words. */}
+            <s className="text-h2 font-semibold text-grey-700 tabular-nums decoration-2">
+              <span className="sr-only">Usually </span>
+              {founding.usual}
+            </s>
+          </p>
+          <p className="flex flex-wrap items-center gap-x-2 gap-y-1 text-small">
+            <span className="rounded-full bg-yellow px-3 py-1 font-semibold text-black">{founding.free}</span>
+            <span className="text-grey-700">{founding.then}</span>
+          </p>
+          <p className="text-small font-semibold text-black">Founding offer: {founding.left}. No card needed.</p>
+        </div>
+      )}
       <ul aria-label={`In ${plan.name}`} className="flex flex-col gap-3">
         {plan.features.map((feature) => (
           <li key={feature} className="flex gap-3 text-body text-ink">

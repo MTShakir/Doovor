@@ -1,4 +1,5 @@
 import { plans, type Entitlements, type Plan, type PlanKey } from '@repo/config/plans';
+import { foundingTermWords, type FoundingProgress } from '@repo/core/founding';
 import { formatPence } from '@repo/core/money';
 
 /**
@@ -121,4 +122,38 @@ export function planSummaries(): PlanSummary[] {
     inherited = later;
     return { ...plan, later };
   });
+}
+
+export interface FoundingPrice {
+  /** The plan's own price, shown struck through beside £0: "£12". */
+  usual: string;
+  /** "Free for 1 year" */
+  free: string;
+  /** What it costs after the founding term: "then £12 per month, or £120 a year". */
+  then: string;
+  /** "54 of 100 places left", from the database's own count. */
+  left: string;
+}
+
+/**
+ * A paid plan's price while its founding places last (PRD 9.18, D-251): nothing for the founding
+ * term, beside the plan's own price struck through, and what it costs after. The struck price is
+ * the one a founder pays when the term ends and everybody pays once the places have gone, so the
+ * comparison is a true one, as a price shown against another has to be. Each plan is counted
+ * against its own places, Pro the instructors' and School the schools'. When they have gone, or
+ * cannot be counted, there is no offer to show and the card shows the plan's price as it is.
+ */
+export function foundingPrice(
+  plan: PlanSummary,
+  places: { months: number; instructors: FoundingProgress; schools: FoundingProgress } | null,
+): FoundingPrice | null {
+  if (places === null || plan.key === 'free') return null;
+  const progress = plan.key === 'school' ? places.schools : places.instructors;
+  if (progress.full) return null;
+  return {
+    usual: plan.price,
+    free: `Free for ${foundingTermWords(places.months)}`,
+    then: `then ${plan.price} ${plan.cadence}`,
+    left: `${String(progress.left)} of ${String(progress.limit)} places left`,
+  };
 }
