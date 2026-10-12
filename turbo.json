@@ -5,6 +5,7 @@
   "globalEnv": ["APP_ENV", "NEXT_PUBLIC_*", "VERCEL_ENV", "VERCEL_URL", "CI"],
   "globalPassThroughEnv": [
     "SUPABASE_SECRET_KEY",
+    "SUPABASE_SEND_SMS_HOOK_SECRET",
     "SUPABASE_AUTH_*",
     "EMAIL_PROVIDER",
     "RESEND_API_KEY",
