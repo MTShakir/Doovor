@@ -441,7 +441,8 @@ finished while the first hundred arrive.
 
 - Pro billing: section 3.7 steps 7a and 10, then set `STRIPE_WEBHOOK_SECRET`, which opens it.
 - Google sign-in, the last two steps (section 3.4): email and password work without it.
-- The logo: the files go in `assets/brand`, with the list in its README.
+- The logo: the eight files are in `assets/brand` (12 October 2026), described in its README.
+  Wiring them into the app is next.
 
 ## 4. Routine operations
 

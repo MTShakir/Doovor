@@ -1,48 +1,72 @@
 # Logo files
 
-Drop the logo files in this folder with exactly these names. From them, every favicon, app icon,
-email header and share image is made, so nothing else needs exporting.
+The masters for the logo, received 12 October 2026 and exported from Illustrator. Every favicon,
+app icon, email header and share image is made from these, so nothing else needs exporting.
 
-The logo: an icon, and the name, which sits either beside the icon or under it.
-The tagline: **Drive Starts Here**.
+The logo is a steering wheel and the name, **doovor** in lower case, beside the wheel or under
+it. It is black, or white on dark backgrounds, with no other colours. The tagline is
+**Drive Starts Here.**
 
 ## The files
 
-| File | What it is | Format and size |
+| File | What it is | Proportions |
 |---|---|---|
-| `logo-horizontal.svg` | Icon on the left, name on the right, full colour, transparent background | SVG, cropped tight to the artwork |
-| `logo-horizontal-white.svg` | The same, entirely white, for black backgrounds | SVG, cropped tight |
-| `logo-stacked.svg` | Icon above the name, full colour, transparent background | SVG, cropped tight |
-| `icon.svg` | The icon alone, full colour, transparent background | SVG, square artboard, cropped tight |
-| `app-icon.svg` | The icon as it should look on a phone's home screen: on its own background colour, filling the whole square, **no rounded corners** (phones round them), with the icon inside the middle 60% | SVG, **1024 x 1024** square |
-| `logo-tagline.svg` *(optional)* | A lockup with "Drive Starts Here", if the designer has one | SVG, cropped tight |
+| `logo-horizontal.svg` | Wheel on the left, name on the right. Black on a transparent background | 316.7 x 87.4, about 3.6 to 1 |
+| `logo-horizontal-white.svg` | The same in white, for dark backgrounds | 316.7 x 87.4 |
+| `logo-stacked.svg` | Wheel above the name. Black on a transparent background | 253.7 x 174.1, about 1.5 to 1 |
+| `logo-stacked-white.svg` | The same in white | 253.7 x 174.1 |
+| `logo-tagline.svg` | The horizontal logo with "Drive Starts Here." under the name, ranged right, in the same frame | 316.7 x 87.4 |
+| `logo-tagline-white.svg` | The same in white | 316.7 x 87.4 |
+| `icon.svg` | The wheel alone. Black on a transparent background | 110.8 x 110.9, square |
+| `app-icon.svg` | The white wheel on a black square that fills the frame, corners left square | 270.2 x 270.2, square |
 
-**SVG is the one to send.** It stays sharp at every size and weighs a fraction of a picture.
-If the designer can only send pictures, the same names ending `.png` are fine instead: transparent
-background, at least 2000 pixels on the longest side, and `app-icon.png` at exactly 1024 x 1024.
+An SVG has no size in pixels. The numbers are its proportions, and it is drawn sharp at any size.
 
-## Before exporting
+## Checked on arrival
 
-1. **Text turned into outlines.** No fonts and no live text in the file, or the name will be drawn
-   in whatever font the viewer happens to have.
-2. **No pictures inside the SVG.** Shapes only, nothing pasted in as an image.
+All eight passed on 12 October 2026:
+
+- Text is outlines: no fonts and no live text.
+- Shapes only: no pictures inside, no scripts, no links to other files, no editing data.
+- Each is cropped to its artwork, except `app-icon.svg`, which fills its square by design.
+- Each white file is the same artwork as its black one.
+- The wheel in `app-icon.svg` is centred and fills 77% of the square. That is inside the circle,
+  80% across, that stays visible whatever shape Android crops an installed app's icon to, and
+  phones round the square corners themselves.
+
+## Using them
+
+- Black files on light backgrounds; white files on black or on photographs.
+- The tagline is under a tenth of the lockup's height, so `logo-tagline` is for when the logo is
+  at least 380 px wide, where the tagline comes out about 10 px tall. Smaller than that, use
+  `logo-horizontal`.
+- `logo-horizontal` suits headers and `logo-stacked` suits square spaces.
+- The black files set no colour of their own. As an image they are black; placed inline in a
+  page, CSS `fill` can colour them.
+
+## Replacing a file
+
+Export the new one under the same name, keeping to what made these pass:
+
+1. **Text turned into outlines.**
+2. **No pictures inside the SVG.**
 3. **Colours in RGB or hex,** not CMYK.
-4. **The artboard cropped to the artwork,** except `app-icon.svg`, which is the full 1024 square.
-5. **Exported as a plain SVG** from Figma or Illustrator ("SVG", not "Illustrator SVG" with editing
-   data).
+4. **The artboard cropped to the artwork,** except `app-icon.svg`, which is the whole square with
+   the wheel inside the middle 80%.
+5. **Exported as a plain SVG** ("SVG", not "Illustrator SVG" with editing data).
 
-If the logo uses colours other than black, white and the yellow `#FFD400`, send their hex values
-too, so the app's colours can match the logo rather than sit beside it.
+If the logo ever gains a colour beyond black and white, send its hex value too, so the app's
+colours can match it.
 
 ## What gets made from these
 
-Nothing to export for any of this; it is all made from the files above.
+None of this is made yet. It comes next, from the files above, with nothing else to export.
 
-| Made | Size | Where it shows |
-|---|---|---|
-| Favicon | 16, 32 and 48 px, plus an SVG one | The browser tab |
-| App icons | 192 and 512 px, and a 512 px one Android can crop to a circle | Installing the app on Android and a computer |
-| Apple icon | 180 px | Adding the app to an iPhone home screen |
-| Email header | 2x the size it is shown | The top of every email (email clients cannot show SVG) |
-| Share images | 1200 x 630 px | The preview when a page is shared on WhatsApp, Facebook, LinkedIn or X |
-| Headers | from the SVGs | The site, the app on a phone and a computer, sign-in, and onboarding |
+| Made | From | Size | Where it shows |
+|---|---|---|---|
+| Favicon | `app-icon.svg` | 16, 32 and 48 px, plus an SVG one | The browser tab. White on black shows in light and dark tabs alike |
+| App icons | `app-icon.svg` | 192 and 512 px, and a 512 px one Android can crop to a circle | Installing the app on Android and a computer |
+| Apple icon | `app-icon.svg` | 180 px | Adding the app to an iPhone home screen |
+| Email header | `logo-horizontal.svg` | 2x the size it is shown | The top of every email (email clients cannot show SVG) |
+| Share images | `logo-tagline-white.svg` | 1200 x 630 px | The preview when a page is shared on WhatsApp, Facebook, LinkedIn or X |
+| Headers | `logo-horizontal.svg` and its white version | from the SVGs | The site, the app on a phone and a computer, sign-in, and onboarding |
