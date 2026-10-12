@@ -38,7 +38,8 @@ function lessonOffers(lessons: readonly PricedLesson[], bookingUrl: string): Jso
   }));
 }
 
-function breadcrumbList(crumbs: readonly Crumb[]): JsonLd {
+/** A BreadcrumbList node, for a page that gives search a graph of several things. */
+export function breadcrumbList(crumbs: readonly Crumb[]): JsonLd {
   return {
     '@type': 'BreadcrumbList',
     itemListElement: crumbs.map((crumb, index) => ({

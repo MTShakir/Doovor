@@ -455,6 +455,10 @@ finished while the first hundred arrive.
 - A migration is frozen once merged to `main` or applied to a shared database (D-045).
 - Apply it to the hosted database after merging to `main`, by hand: `pnpm supabase db push --dry-run`, then `pnpm supabase db push`. The project the app was built against became production (D-154), so this is production; CI does not push migrations.
 
+### Guides
+- A new guide is a file in `packages/core/src/guides/library`, copying one that is there, and a line in `guides` in `packages/core/src/guides/index.ts`. Check every fact against GOV.UK and list the pages in its sources; date it; run `pnpm check`, whose test says what a guide is missing. It reaches the guides page, its sitemap and search with the next deploy (D-255).
+- After a deploy, Google Search Console reads the sitemap index at `https://doovor.com/sitemap.xml`, which lists the guides' own sitemap.
+
 ### The logo
 - Replace a file in `assets/brand` under the same name, run `pnpm brand:logo`, and commit both. Its README lists what each file is for and the rules an export has to keep to; an export that breaks one is refused by name and nothing is written (D-249).
 

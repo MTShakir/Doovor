@@ -6,6 +6,7 @@ export const siteNav: readonly { href: Route; label: string }[] = [
   { href: '/instructors-software', label: 'Instructors' },
   { href: '/driving-schools-software', label: 'Schools' },
   { href: '/pricing', label: 'Pricing' },
+  { href: '/guides', label: 'Guides' },
 ];
 
 /** The pages the law asks a site to carry (NFR-PRV-02, PRD 15, M6-07). */

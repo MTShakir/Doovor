@@ -48,6 +48,7 @@ test.describe('sitemaps, canonical addresses and share images (PRD 14.6, M5-08)'
       '/sitemaps/instructors.xml',
       '/sitemaps/schools.xml',
       '/sitemaps/places.xml',
+      '/sitemaps/guides.xml',
     ]);
     expect((await request.get('/sitemaps/learners.xml')).status()).toBe(404);
 

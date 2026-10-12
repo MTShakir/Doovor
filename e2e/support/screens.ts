@@ -15,6 +15,8 @@ export const publicPages = [
   '/pricing',
   '/instructors-software',
   '/driving-schools-software',
+  '/guides',
+  '/guides/making-tax-digital-for-driving-instructors',
   '/driving-lessons/leeds',
   '/driving-lessons/london/city-of-london',
   '/driving-lessons/manchester/automatic',

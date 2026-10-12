@@ -113,6 +113,18 @@ export function siteShareCard(tagline: string): ShareCard {
   };
 }
 
+/** A guide (D-255): who it is for, its title, and how long it takes to read. */
+export function guideShareCard(input: { audience: string; title: string; minutes: number; updated: string }): ShareCard {
+  return {
+    eyebrow: `Guide ${input.audience.toLowerCase()}`,
+    title: input.title,
+    facts: [`${String(input.minutes)} minute read`, `Updated ${input.updated}`],
+    picture: null,
+    action: 'Read the guide',
+    paused: false,
+  };
+}
+
 /**
  * A short tag that changes whenever anything the card draws does (FNV-1a over the card). The
  * image's address carries it, so a preview that kept an old picture fetches the new one, and the

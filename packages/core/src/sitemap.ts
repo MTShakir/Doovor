@@ -7,10 +7,11 @@
  * same threshold the pages use (PRD 8.3).
  */
 
+import { guidePath, guides } from './guides/index.ts';
 import { isThinPlace, placePagePath } from './places.ts';
 import { instructorProfilePath, schoolProfilePath } from './public-profile.ts';
 
-export const sitemapKinds = ['pages', 'instructors', 'schools', 'places'] as const;
+export const sitemapKinds = ['pages', 'instructors', 'schools', 'places', 'guides'] as const;
 
 export type SitemapKind = (typeof sitemapKinds)[number];
 
@@ -33,6 +34,7 @@ export const sitePagePaths: readonly string[] = [
   '/instructors-software',
   '/driving-schools-software',
   '/pricing',
+  '/guides',
   '/privacy',
   '/cookies',
   '/terms',
@@ -55,6 +57,9 @@ export function sitemapPaths(kind: SitemapKind, entries: SitemapEntries): string
       return entries.instructors.map((one) => instructorProfilePath(one.citySlug, one.slug));
     case 'schools':
       return entries.schools.map((one) => schoolProfilePath(one.citySlug, one.slug));
+    case 'guides':
+      // Written in the code rather than read from the database, so every one of them is listed.
+      return guides.map((guide) => guidePath(guide.slug));
     case 'places':
       return entries.places
         .filter((one) => !isThinPlace(one.instructorCount))

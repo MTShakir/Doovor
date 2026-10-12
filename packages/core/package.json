@@ -38,6 +38,7 @@
     "./share": "./src/share.ts",
     "./share-card": "./src/share-card.ts",
     "./sitemap": "./src/sitemap.ts",
+    "./guides": "./src/guides/index.ts",
     "./gallery": "./src/gallery.ts",
     "./schemas/account": "./src/schemas/account.ts",
     "./schemas/gallery": "./src/schemas/gallery.ts",

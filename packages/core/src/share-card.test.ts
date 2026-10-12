@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { instructorShareCard, placeShareCard, schoolShareCard, shareCardVersion, siteShareCard } from './share-card';
+import { guideShareCard, instructorShareCard, placeShareCard, schoolShareCard, shareCardVersion, siteShareCard } from './share-card';
 
 const sarah = {
   name: 'Sarah Khan',
@@ -82,6 +82,17 @@ describe('the image a shared page shows (PRD 14.6, M5-08)', () => {
       facts: ['For learners', 'For instructors', 'For driving schools'],
       picture: null,
       action: 'Get started',
+      paused: false,
+    });
+  });
+
+  it('shows a guide by who it is for, its title and how long it takes to read (D-255)', () => {
+    expect(guideShareCard({ audience: 'For instructors', title: 'Driving instructor expenses', minutes: 5, updated: 'Tue 13 Oct 2026' })).toEqual({
+      eyebrow: 'Guide for instructors',
+      title: 'Driving instructor expenses',
+      facts: ['5 minute read', 'Updated Tue 13 Oct 2026'],
+      picture: null,
+      action: 'Read the guide',
       paused: false,
     });
   });

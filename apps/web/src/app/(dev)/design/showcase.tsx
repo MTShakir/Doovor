@@ -32,6 +32,8 @@ import { Band, ClosingCall, FeatureGrid, FeatureStory, FoundingBadge, FoundingOf
 import { SiteFooter, SiteHeader } from '@/components/site/site-chrome';
 import { foundingPrice, planSummaries } from '@/lib/site/plan-features';
 import { foundingProgress } from '@repo/core/founding';
+import { guideOutline, guides, parseGuideMarkdown } from '@repo/core/guides';
+import { GuideBody, GuideByline, GuideCard, GuideOutline, GuideSources } from '@/components/guides/guide-parts';
 import { NoSignalBanner } from '@/components/offline/connection-banner';
 import { KeptRecordsNotice } from '@/components/offline/kept-records-notice';
 import { CardFieldsSkeleton } from '@/components/payments/card-form';
@@ -135,6 +137,7 @@ const sections = [
   'Coverage',
   'Public profile',
   'Site',
+  'Guides',
   'School',
   'Admin',
   'Scheduling',
@@ -154,6 +157,32 @@ function Section({ title, children }: { title: (typeof sections)[number]; childr
 function Label({ children }: { children: ReactNode }) {
   return <p className="text-caption font-semibold text-grey-700">{children}</p>;
 }
+
+/** A real guide, and a body that uses every kind of block a guide can (D-255). */
+const exampleGuide = guides[0] ?? (() => {
+  throw new Error('There is no guide to show');
+})();
+
+const exampleGuideBlocks = parseGuideMarkdown(`
+  ## A main heading
+
+  A paragraph with **bold words**, a [link to pricing](/pricing) and a [link out to GOV.UK](https://www.gov.uk/).
+
+  ### A smaller heading
+
+  - A point
+  - Another point
+
+  1. A first step
+  2. A second step
+
+  | Qualifying income | From |
+  |---|---|
+  | Over £50,000 | 6 April 2026 |
+  | Over £30,000 | 6 April 2027 |
+
+  > A note, such as the line that says a guide is general information.
+`);
 
 /** Founding places part taken, as the site shows them while the offer is open (D-243, D-251). */
 const examplePlaces = {
@@ -1553,6 +1582,25 @@ export function DesignShowcase() {
             <PlanCard key={plan.key} plan={plan} signUpUrl="#sign-up" highlighted={plan.key === 'pro'} founding={foundingPrice(plan, examplePlaces)} idPrefix="founding-plan" />
           ))}
         </div>
+      </Section>
+
+      <Section title="Guides">
+        <p className="text-body text-grey-700">
+          Articles written as typed data in `@repo/core/guides`, in a small Markdown the site reads into its own components (D-255).
+        </p>
+        <Label>A guide as the guides page lists it</Label>
+        <div className="max-w-md">
+          <GuideCard guide={exampleGuide} />
+        </div>
+        <Label>Under the title: who wrote it, when it was checked and how long it takes, then the page&apos;s own contents</Label>
+        <GuideByline guide={exampleGuide} />
+        <GuideOutline outline={guideOutline(exampleGuideBlocks)} />
+        <Label>Every block a guide is written in: headings, paragraphs with bold and links, both lists, a table and a note</Label>
+        <div className="max-w-3xl">
+          <GuideBody blocks={exampleGuideBlocks} />
+        </div>
+        <Label>Where its facts come from, each opening beside the page</Label>
+        <GuideSources sources={exampleGuide.sources.slice(0, 2)} />
       </Section>
 
       <Section title="School">

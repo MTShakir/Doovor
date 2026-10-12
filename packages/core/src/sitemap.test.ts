@@ -10,6 +10,7 @@ import {
   urlSetXml,
   type SitemapEntries,
 } from './sitemap';
+import { guidePath, guides } from './guides/index.ts';
 
 const entries: SitemapEntries = {
   instructors: [
@@ -27,12 +28,13 @@ const entries: SitemapEntries = {
 
 describe('sitemaps by type (PRD 14.6, M5-08)', () => {
   it('has one sitemap for each kind of page, each at its own address', () => {
-    expect(sitemapKinds).toEqual(['pages', 'instructors', 'schools', 'places']);
+    expect(sitemapKinds).toEqual(['pages', 'instructors', 'schools', 'places', 'guides']);
     expect(sitemapKinds.map(sitemapPath)).toEqual([
       '/sitemaps/pages.xml',
       '/sitemaps/instructors.xml',
       '/sitemaps/schools.xml',
       '/sitemaps/places.xml',
+      '/sitemaps/guides.xml',
     ]);
     expect(isSitemapKind('instructors')).toBe(true);
     expect(isSitemapKind('learners')).toBe(false);
@@ -45,6 +47,12 @@ describe('sitemaps by type (PRD 14.6, M5-08)', () => {
     expect(sitemapPaths('schools', entries)).toEqual(['/schools/manchester/quayside-driving-school']);
     // Croydon lists two and the automatic page one: both still out of search (PRD 8.3).
     expect(sitemapPaths('places', entries)).toEqual(['/driving-lessons/london', '/driving-lessons/london/camden']);
+  });
+
+  it('lists the guides page with the site pages, and every guide in a sitemap of its own (D-255)', () => {
+    expect(sitePagePaths).toContain('/guides');
+    expect(sitemapPaths('guides', entries)).toEqual(guides.map((guide) => guidePath(guide.slug)));
+    expect(sitemapPaths('guides', entries).length).toBeGreaterThan(0);
   });
 
   it('writes a sitemap as sitemaps.org sets it out, with anything XML reads as markup escaped', () => {
