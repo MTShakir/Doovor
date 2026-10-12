@@ -21,11 +21,11 @@ export const brand = {
    */
   tagline: 'Book, pay and track driving lessons in one simple app.',
   /**
-   * The line that goes with the logo (D-244). The lockup in assets/brand draws it into the artwork,
-   * where it ends with a full stop. The share images leave it out: they are seen too small for it
+   * The line that goes with the logo (D-244), written with its full stop, as the lockup in
+   * assets/brand draws it (D-253). The share images leave it out: they are seen too small for it
    * to be read (D-249).
    */
-  slogan: 'Drive Starts Here',
+  slogan: 'Drive Starts Here.',
   legalEntity: 'Maxterz LTD',
   /** From Companies House: what the company's website and emails must say about it (see companyDisclosure). */
   company: {

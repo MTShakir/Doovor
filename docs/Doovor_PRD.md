@@ -22,7 +22,7 @@ We launch as a free, simple business tool for instructors and schools. Every ins
 
 **One line:** Everything a driving instructor needs to run their business, and everything a learner needs to pass, in one simple app.
 
-**Slogan:** Drive Starts Here, set under the name in the logo's tagline lockup (D-244).
+**Slogan:** "Drive Starts Here.", with its full stop, set under the name in the logo's tagline lockup (D-244, D-253).
 
 **Core bet:** The UK does not have too few learners. It has too few instructors with visible, bookable availability. The winner is the platform that makes every instructor's free slot visible, bookable and paid.
 
@@ -869,7 +869,6 @@ and the plans say it is coming rather than hiding it (D-212).
 | Final pricing values (section 9.18) | Talha | After the first hundred instructors | The values are in configuration and the plans are built. The first hundred instructors are on Pro free for a year, so nothing is charged to them; paying for Pro opens when its billing webhook is set (D-242). |
 | Merchant of record model sign-off with solicitor | Talha and solicitor | Before card payments at scale | Stripe approved the platform for live payments on 12 October 2026, with connected accounts hosted by Stripe, payments made directly with the Business, and the Express Dashboard (D-011, D-077). The solicitor's review is still to do. |
 | First launch region | Talha | Before the marketplace opens | Still to choose. The region switch-on rule is built and the marketplace is Phase 3. |
-| How the slogan is written | Talha | Before printed material | The logo's lockup draws it with a full stop, "Drive Starts Here."; written out in the app it has none. |
 
 ## Appendix A. Skill map (DVSA test report aligned)
 
