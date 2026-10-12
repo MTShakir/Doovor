@@ -1,15 +1,18 @@
 # Beta readiness
 
 Written 18 September 2026, at the end of M6 (PRD 17.1, M6-15), and kept up to date as the
-beta-prep work lands. It says what the product does, what proves it, and what is not ready. It is
-meant to be read before letting twenty instructors run their working week on this.
+beta-prep work lands; last brought up to date on 12 October 2026. It says what the product does,
+what proves it, and what is not ready. It is meant to be read before letting the first instructors
+run their working week on this.
 
 ## The short answer
 
-The product is ready for a beta **once four things the product owner holds are done**: the Sentry
-DSN and the uptime check (M6-10), production on the Supabase Pro plan, which is what keeps backups, and a restore drill (M6-14), a solicitor through the
-legal pages (M6-07), and Stripe in live mode (RUNBOOK 3.7). Everything else is built, tested and
-green in CI.
+The product is ready for its first instructors **once two things the product owner holds are
+done**: production on the Supabase Pro plan, which is what keeps backups, with a restore drill
+(M6-14), on launch day; and a solicitor through the legal pages (M6-07). Monitoring is live, Stripe
+has approved the platform for live payments, and the database has been emptied for the launch
+with a single super admin left. The order of what remains is `docs/RUNBOOK.md` section 3.10.
+Everything else is built, tested and green in CI.
 
 ## What a beta instructor can do today
 
@@ -28,6 +31,16 @@ starts from where that learner's lessons start, and either side can move one les
 being sold (D-208, D-209, D-212). And a name and a business name can be changed from Account and
 security (D-217).
 
+By 12 October: an instructor can subscribe to Pro by card, monthly or yearly, with the loyalty
+discount charged and a notice before each renewal (D-231, D-237, D-238), though paying for Pro
+stays closed until its billing webhook is set, because the first hundred are on Pro free for a
+year anyway (D-242). A paid lesson says how it was paid, card included (D-233). Anybody can tell
+us something from the support button beside the bell, gets a reference, R01 onwards, and hears
+from us when it arrives and when it has been dealt with (D-241). The public site shows how many
+founding places are left, from the database's own count, and every paid plan's card shows £0
+beside its own price while they last (D-243, D-251). The logo is in, everywhere it shows, from the
+masters in `assets/brand` (D-249, D-250).
+
 A learner can find an instructor, book from a link, pay, see their lessons, their credit and their
 progress against the DVSA syllabus, and take their data or close their account.
 
@@ -44,7 +57,9 @@ progress against the DVSA syllabus, and take their data or close their account.
 | Security | The OWASP Top 10 reviewed with its three findings fixed, the content security policy enforced and proved by an end to end sweep, and no dependency advisory above low |
 | Accessibility | Zero serious or critical issues on every screen, at both widths, with the keyboard able to reach everything and text at 200% not pushing any page sideways |
 
-Every one of those runs in CI on every push. CI is green on 9707c32 (29 September), all five jobs.
+Every one of those runs in CI on every push; the figures in the table were counted on 29
+September and have only grown since. CI is green on 3ccf314 (12 October), all five jobs, and on
+every commit merged to `main` before it.
 
 A note on reading CI: the runs on `beta-prep` from 24 to 27 September were red and meant nothing.
 No job started. Each ended in two seconds with no runner and the annotation "The job was not
@@ -55,21 +70,24 @@ That cleared on 28 September.
 
 | | What is missing | Who |
 |---|---|---|
-| Monitoring | Sentry (EU) is set up with email alerts, and has checked `/api/health` every minute since 19 September. Errors from `app.doovor.com` start arriving when M6 is merged and deployed | Engineering, on approval |
-| Backups | The project is on the free plan, which keeps no backup that can be restored (checked 18 September): there is nothing to go back to. The product owner's decision: stay free until the first real user, then upgrade this project to Pro, clear the demo data and run the restore drill (D-154) | Product owner |
+| Backups | The project is on the free plan, which keeps no backup that can be restored, so our own encrypted backup runs weekly and before every database change (D-161). The demo data is gone (D-246). On launch day the project moves to Pro and the restore drill is run (D-154, RUNBOOK 3.10 step 4) | Product owner |
 | Legal | Five pages written as drafts, with twelve gaps marked for a solicitor. Not in force until one has been through them | Product owner and a solicitor |
-| Payments in live mode | Stripe is proved in test mode. Live mode needs the platform questionnaire answered and a hosted webhook | Product owner |
-| Google sign in | The client is made and Supabase has it (18 September). The button stays off until the consent screen is published and the Vercel switch is set | Product owner |
-| Leaked password check | Supabase can refuse a password known to be breached. The switch is off, and Supabase offers it only on the Pro plan | Product owner |
-| Deploy, rollback, restore | Each is written down step by step; none has been rehearsed on the real project | Product owner |
+| Google sign in | The client is made and Supabase has it (18 September). The button stays off until the consent screen is published and the Vercel switch is set; email and password work without it | Product owner, after the first instructor |
+| Leaked password check | Supabase can refuse a password known to be breached. The switch is off, and Supabase offers it only on the Pro plan, so it goes on with the move to Pro | Product owner, launch day |
+| Paying for Pro | Built and tested; closed until the platform's billing webhook is made and its secret set (D-242, RUNBOOK 3.7 steps 7a and 10). Founders and trials need no payment | Product owner, after the first instructor |
+| Rollback and restore | Each is written down step by step. Production has been deployed for real, many times; a rollback and a restore have not been rehearsed on it | Product owner |
+
+Done since the first version of this list: monitoring, with the Sentry DSN set for production so
+errors from `app.doovor.com` are reported, and `/api/health` checked every minute; Stripe live mode, approved for the platform on 12
+October with the live webhook for connected accounts made; and the job runner, connected to
+production through the Inngest account's Vercel integration (RUNBOOK 3.8).
 
 ## Risks worth naming
 
-- **Outages are watched; errors are one merge away.** An outage emails within two minutes (19
-  September). Errors report to Sentry once M6 is on `main`: until then an error that does not take
-  the site down is noticed by whoever meets it.
-- **There is no backup.** The free plan keeps none that can be restored, and a backup nobody has
-  restored is a hope, not a plan: Pro first, then the drill.
+- **Outages and errors are watched.** An outage emails within two minutes, and errors from the
+  browser, the server and the jobs are reported to Sentry. Check its first live alerts arrive.
+- **The only backup is our own until launch day.** The free plan keeps none that can be restored,
+  and a backup nobody has restored is a hope, not a plan: Pro first, then the drill.
 - **The legal pages are drafts.** They say so on every page, but they are what a beta instructor
   will read.
 - **Twenty instructors is not twenty thousand.** The load tests run against one machine's database
@@ -83,8 +101,8 @@ That cleared on 28 September.
 
 ## What to do in the beta
 
-1. Set the four owner items above, in that order: monitoring first, because everything else is
-   easier to fix when you hear about it.
+1. Work through `docs/RUNBOOK.md` section 3.10 in its order: Supabase Pro and the leaked password
+   check on launch day, then the first instructor.
 2. Run the production deploy checklist (RUNBOOK) for the first deploy, and treat it as the rehearsal
    for the rollback.
 3. Watch the first week's audit log, Sentry issues and the Inngest job runs daily.

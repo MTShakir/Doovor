@@ -95,6 +95,13 @@ scanning: the automated checks named below run on every push (`.github/workflows
   `apps/web/src/lib/security-headers.test.ts`, and the Stripe test-mode run (RUNBOOK 3.7a) watches for
   a refusal while it types into the real card form.
 - Outside production nothing is indexed, and private areas are never indexed (D-047).
+- Production refuses to build or start with a fake provider, a test Stripe key or a missing secret,
+  and says which. Turbo hands the build only the variables `turbo.json` names, so every key the
+  guard reads is named there, and `apps/web/src/env/turbo.test.ts` fails if one is not: a secret
+  Vercel held was once dropped before the build and read as missing (D-248).
+- A preview deployment runs with `APP_ENV=preview`, so payments, emails and texts are fakes, behind
+  Vercel's login. It shares the production database, so nothing is tried on a preview link that
+  would not be tried on the live site (RUNBOOK 3.10 step 8).
 - The Supabase advisor on staging shows no errors; its warnings are the expected `security definer`
   pattern (D-051) and the leaked password switch above.
 - Server action arguments are never logged, since they include passwords and codes (D-036).
@@ -115,6 +122,11 @@ scanning: the automated checks named below run on every push (`.github/workflows
   Lighthouse CI's browser downloader, which never runs, because the Lighthouse job measures with the
   runner's own Chrome. Those two are listed in `pnpm-workspace.yaml` with that reason and a note to drop
   the exception when a fix exists (D-136).
+- 1 to 12 October 2026: five more. `basic-ftp` was raised a whole major (D-240); `source-map-js` and
+  `sharp` were raised past their advisories, and Next to 16.3.8 for a request forgery in image
+  optimisation, the one that reached production; `braces` has no fixed version and is listed with its
+  reason (D-245). The web app's own `sharp` dependency names the version that installs, so Dependabot
+  reads the truth.
 - Updates arrive as weekly pull requests (`.github/dependabot.yml`): minor and patch versions grouped into
   one, a major version on its own with its notes. CI decides whether one lands.
 
@@ -142,6 +154,11 @@ scanning: the automated checks named below run on every push (`.github/workflows
 - The jobs endpoint answers only Inngest: without the signing key it answers 401 (RUNBOOK 3.8 step 5).
 - **Finding, fixed:** the signing key was required in production only, so a hosted environment could in
   principle have run without it. Any hosted environment now requires it (`APP_ENV is hosted`, D-135).
+- Pro is granted only by a signed billing event, applied once (D-235). Paying for it stays closed until
+  that event can arrive, so nobody can pay for a plan the app could never hear about (D-242), and a
+  second subscription for a Business is cancelled and refunded (D-239).
+- The founding count is the one thing about Businesses anybody may read without signing in: five
+  numbers from `founding_places()`, on the anonymous allowlist the security tests hold (D-243).
 - The service worker is served from the app's own origin at the root, and the app's own build files are the
   only ones it keeps.
 - CI builds from the lockfile (`--frozen-lockfile`) and runs the same checks on every push.
@@ -153,7 +170,8 @@ scanning: the automated checks named below run on every push (`.github/workflows
   account deletions and viewing as somebody. Staff read them by kind, person, Business and day (D-130).
 - A test reads the migrations and fails if an action is recorded that the viewer cannot put into words.
 - Reading the log is not itself recorded, and nothing sensitive is written into log messages (D-036).
-- **Carried to M6-10:** Sentry on the client, the server and the jobs, uptime checks and alert routing.
+- Sentry (EU) on the client, the server and the jobs, with the DSN set for production, and an uptime
+  check on `/api/health` every minute with email alerts (M6-10).
 
 ## A10 Server-side request forgery
 

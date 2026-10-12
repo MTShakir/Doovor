@@ -315,14 +315,29 @@ trading produces the SA103 boxes an accountant would write by hand.
 | Learners | LRN-01 to 06 | M2-04 to M2-10 |
 | Progress | PRG-01 to 03, PRG-09 | M4-01 to M4-13 |
 | Payments | PAY-01 to 09, PAY-12 | M3-01 to M3-23 |
+| Pro billing | PAY-13 to 16 | B-80, B-85 (D-231, D-235 to D-239, D-242) |
 | Money | MNY-01 | M3-21 |
+| Bookkeeping | MNY-02 to 04 | M7, B-47 (D-198) |
 | Notifications | NTF-01 to 04 | M2-27 to M2-30, M3-22, M4-12 |
+| Telling us something | NTF-05 | B-51, B-70, B-84 (D-202, D-241) |
 | Public | PUB-01 to 04 | M5-02 to M5-08 |
+| Public, after Phase 1 | PUB-04a, PUB-06 | B-67, B-75, B-76 (D-218, D-229) |
 | Marketplace | MKT-10 | M5-10 |
 | Schools | SCH-01 to 04 | M5-12 to M5-16 |
 | Admin | ADM-01 to 07 | M1-12, M5-17 to M5-22 |
+| Admin, after Phase 1 | ADM-08a to 08d | Beta preparation rows in `PROGRESS.md` (D-149, D-176, D-202, D-218) |
+| Plans, founding offer and the site | 9.18, PRD 7.7, PRD 8.3 | B-85, B-86, B-90 to B-92 (D-242, D-243, D-249 to D-251) |
 | Rules | R-01 to R-14, R-16, R-18 | M0-20, M1-14, M2-11 to M2-25, M3-05 to M3-19 |
 | Rules not live in Phase 1 | R-15 (marketplace search), R-17 (pass rate) | No marketplace search or pass rate is shown in Phase 1. City pages apply the R-15 conditions that exist in Phase 1 (verified, active, badge valid) |
 | Non-functional | NFR-PERF, NFR-SEC, NFR-PRV, 14.4 to 14.6, 16 | M0-02, M0-03, M0-09, M0-18, M0-19, M5-24, M6-01 to M6-15 |
 
 Totals: 163 tasks of half a day or less. M0 33, M1 24, M2 31, M3 23, M4 13, M5 24, M6 15.
+
+## After Phase 1
+
+Phase 1 closed with M6, and M7 followed it (D-198). The work since is not planned here in
+advance: it is the product owner's own list from using the app, and what a launch needs, each a row
+in `docs/PROGRESS.md` under Beta preparation (B-01 onwards) with its decision in `docs/DECISIONS.md`.
+The launch itself is a checklist in `docs/RUNBOOK.md` section 3.10, in the order it has to happen,
+and what only the product owner can do is in `docs/BETA.md`. Phase 2 starts from PRD section 4 once
+the first instructors are running their week on the app.

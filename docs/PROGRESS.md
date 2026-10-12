@@ -1,6 +1,6 @@
 # Progress
 
-Last updated: 17 September 2026
+Last updated: 12 October 2026
 
 ## Status
 
@@ -17,6 +17,15 @@ M4 Progress and offline is approved and merged to `main` (89262cf), with its 4 m
 M5 Public profiles, schools and admin is approved and merged into `main` (48531e9): all 24 tasks, acceptance tests 7, 10 and 11 green, and in CI the public profile and city pages score 96 to 98 on Lighthouse for performance and 100 for accessibility, best practices and SEO. Its 21 migrations are applied to staging, where the request check that ends a signed-out session is still in place and the security advisor shows no errors. The milestone report is at https://claude.ai/artifact/GBCBjsJWqcHDfQzEuyky6E. The product owner answered its questions on 17 September 2026: the admin Bookings and Payments screens stay as they are until Phase 2; inviting managers waits; one account teaches for one Business, and somebody who already teaches elsewhere signs up with a different email; instructors override the school's prices only; and a Largest Contentful Paint of 2.1 to 2.7 seconds in Lighthouse's simulation is accepted (D-118, D-122, D-132, D-133)
 
 M6 Hardening and beta is approved (19 September 2026) and merged into `main`, with its 4 migrations applied to staging the same day, before the merge. It closes Phase 1: security reviewed and the content security policy enforced, load tested, accessible, with legal page drafts, consent-gated analytics, errors and uptime watched by Sentry, data export and account deletion, and the runbook. Found and fixed while the product owner's items were done: M6-06b and M6-13a (D-153 to D-157). What only the product owner can finish is in `docs/BETA.md`: a solicitor through the legal pages, Stripe live mode, and Supabase Pro with its restore drill when the first real user arrives (D-154).
+
+M7 Bookkeeping is done and merged (D-198).
+
+Beta preparation (below) runs on `beta-prep` and reaches `main` when the product owner merges it;
+on 12 October 2026 `main` and production carry every row to B-91, and the launch is under way in
+the order `docs/RUNBOOK.md` section 3.10 sets: texts, emails and Stripe live are done, the
+database is empty with one super admin, and the job runner and every production value are in
+place. What remains before the first instructor is Supabase Pro on launch day and a solicitor
+through the legal pages (`docs/BETA.md`).
 
 ## Beta preparation
 
@@ -116,6 +125,7 @@ On branch `beta-prep`, after Phase 1, merged when the product owner says.
 | B-90 | The logo everywhere it shows | 7.2, 8.1, 14.6, NTF-03, D-249 | Done (D-249). Drawn from the masters' own shapes: the site's header and footer, the app's top bar and menu, sign-in, account, onboarding, the page with no connection, the app icons, a favicon in .ico and SVG, the share images and the top of every email. `pnpm brand:logo` makes the data, a test keeps it the same as `assets/brand`, and `/design` shows every version on light and dark. Checked at 390 and 1440 px against a production build: the accessibility sweep, the design page, the site and the app's offline screens all pass. |
 | B-91 | A round tab icon, a bigger logo, and the founding count on every page with the offer | 9.18, D-243, D-250 | Done (D-250). The tab icon is the product owner's new round one; the logo is twice the size in the footer and bigger in every header; the pages for instructors and for schools show the live founding count, each of its own places, with an end to end test that neither ever says more than the database. |
 | B-92 | The instructors' page sells the product, and founding prices show as £0 | 8.3, 9.18, D-116, D-251 | Done (D-251). Six features told beside glimpses of the app, what else is included, the founding offer with its count over the title and in its band, the plans and the questions instructors ask. Every plan card with founding places left shows £0 beside its own price struck through, free for 1 year and what comes after, on the pricing page and both audience pages. New glimpses of a profile and a tax year, and every new piece on `/design`. |
+| B-93 | The PRD and the documents describe the product as it is | All | Done. The product owner asked for the PRD to say what the product is, not what changed. Every row of its change log is written into the requirement it concerned and the log is gone: lesson lengths and moving a lesson, the password and sign-in texts, a learner's first questions, how a paid lesson names its payment, reports with references, the founding offer as a year with its live count and £0 prices, paying for Pro, the logo and icons (a new section 7.7), backups, data export and deletion, the launch wipe, the menus as built, the open decisions and the release plan. `ARCHITECTURE.md`, `BETA.md`, `PLAN.md`, `RUNBOOK.md`, `SECURITY.md` and `CLAUDE.md` follow what was built since 1 October. |
 
 ## M6 progress
 

@@ -106,6 +106,7 @@ Dependency rules, enforced by ESLint import boundaries:
 - Metadata, the web app manifest, Open Graph images, email templates, SMS copy and the seed script all import `brand`.
 - A CI copy guard (`scripts/check-copy.mjs`) fails the build if the brand name appears in `apps/`, `packages/` or `supabase/` outside `brand.ts`, or if an em dash or en dash appears in UI, email or SMS source.
 - Workspace packages use the neutral `@repo/*` scope.
+- **The logo (D-244, D-249, D-250).** Its masters are SVG files in `assets/brand`, outside the app and the copy guard. `pnpm brand:logo` reads their shapes with `logoArtFromSvg` (`packages/config/src/logo/art.ts`) into one module per logo in `packages/config/src/logo`, so a page that shows one carries only that one, and `masters.test.ts` fails if any has drifted from its master. A square or a circle filling the frame is read as the icon's backdrop, and the white files must be the same artwork as the black. Three ways draw it, and the raw exports are never served: `Logo` in `packages/ui` inline, in the text colour; `DrawnLogo` for the image renderer (the app icons, `/favicon.ico`, the share images and `/brand/email-logo.png`); and `logoSvgMarkup` as SVG text (the offline page and `/favicon.svg`).
 
 ## 4. Web application structure
 
@@ -550,7 +551,11 @@ Jobs are Inngest functions in `apps/web/src/jobs`, served from `/api/inngest`. E
 | `account.deletion` | `account/deletion-requested` | Exports, anonymises and deletes per the retention rules (M6) | NFR-PRV-03 |
 | `maintenance.cleanup` | Cron, daily | Clears old rate-limit buckets, stale holds and expired invitations | NFR-SEC-03 |
 
-Retries use exponential backoff. Each function has an `onFailure` handler that reports to Sentry and records a row in `job_failures`, which admins can see: that is the dead-letter queue (PRD 14.5). The Inngest dev server runs locally with `pnpm dev` and needs no Docker.
+Retries use exponential backoff. Each function has an `onFailure` handler that reports to Sentry and records a row in `job_failures`, which admins can see: that is the dead-letter queue (PRD 14.5). The Inngest dev server runs locally with `pnpm dev:jobs` and needs no Docker.
+
+The table names each job by what it does; the ids Inngest shows are the functions' own, in `apps/web/src/jobs/functions`. Production registers 27 of them under the app `platform-web`, among them `feedback-received-email` and `feedback-handled-email`, which send a report's reference and say when it has been dealt with (NTF-05, D-241), and `subscription-renewal-notices` (PAY-16, D-237).
+
+**Hosting.** Production's functions belong to the Inngest account linked to the Vercel project through Inngest's integration, with access to the `doovor` project only. The integration writes `INNGEST_EVENT_KEY` and `INNGEST_SIGNING_KEY` for Production and Preview, and registers the app on every deploy through `app.doovor.com`, its custom production domain, because Deployment Protection turns away the deployment's own address (RUNBOOK 3.8). `/api/inngest` answers anything not signed by Inngest with 401.
 
 **Transactional outbox:** RPCs never call Inngest directly. They insert into `outbox_events` in the same transaction, and a small dispatcher (called right after the RPC returns, plus a one-minute cron sweep) sends pending rows to Inngest and marks them sent. If the app crashes between the database commit and the send, the event is still delivered.
 
@@ -601,6 +606,8 @@ sequenceDiagram
 - Structured data: `Person` plus `Service` and `Offer` for instructors, `LocalBusiness` (with `DrivingSchool`) for schools, `BreadcrumbList` on city and area pages, `AggregateRating` only when real reviews exist (Phase 2). Sitemaps are split by type (instructors, schools, cities, areas, guides) under one index. Open Graph images are generated per profile with `next/og`.
 - QR codes and share buttons (WhatsApp, Instagram, copy link) on the instructor's "Share your booking link" screen (PUB-03).
 - Lighthouse target 90 or higher (NFR-PERF-04): public pages use a static Mapbox image for the coverage map, not the interactive map, and ship no client JavaScript beyond small islands.
+- **The founding offer's count (D-243, D-251).** `public.founding_places()` counts the places given out, and the site reads it with the anonymous client inside `use cache` with `cacheLife('minutes')` and the tag `founding-places`, so the home page, pricing and both audience pages stay static and move within minutes of somebody joining. A failed read is `null`, which leaves the counter and the struck prices off rather than guessing. `foundingPrice` in `apps/web/src/lib/site/plan-features.ts` decides a plan card's £0 and struck price from the same count, Pro against the instructors' places and School against the schools'.
+- Share images and the site's header and footer draw the logo from its shapes (section 3.1).
 
 ## 13. Maps and geography (COV-01 to 04)
 
@@ -612,7 +619,7 @@ sequenceDiagram
 ## 14. Design system
 
 - Tokens exactly as PRD 7.2 and the brief, generated from `brand.ts` into Tailwind 4 `@theme` variables. Spacing on an 8 point grid, 12 px radius for cards and sheets, 8 px for inputs, pill buttons and chips. Inter via `next/font` (self-hosted, no third-party request). Tabular figures for prices and times.
-- Components are shadcn/ui (Radix primitives) restyled, plus Vaul for bottom sheets and Sonner for toasts. Everything listed in PRD 7.4 appears on `/design` with every state.
+- Components are shadcn/ui (Radix primitives) restyled, plus Vaul for bottom sheets and Sonner for toasts. Everything listed in PRD 7.4 appears on `/design` with every state, and so do the logo in every version on light and dark, and the icons made from it (PRD 7.7).
 - Dark mode is a token switch prepared from the start, shipped later (PRD 7.2).
 - **Contrast decisions (D-009)**, measured against WCAG 2.2 AA:
 
@@ -639,10 +646,12 @@ sequenceDiagram
 |---|---|---|---|---|
 | Local | `next dev` (Turbopack) | Supabase CLI stack in Docker, seeded | Inngest dev server | Provider fakes, Stripe test mode when keys exist, Supabase test OTP |
 | CI | Production build | Supabase CLI in the GitHub runner, migrations and seed | Inngest test helpers | Fakes, plus Stripe test mode for payment acceptance tests |
-| Preview (per PR) | Vercel preview | Shared staging project, or Supabase branching if approved (question 3) | Inngest branch environment | Test and sandbox keys |
-| Production | Vercel, `lhr1` | Supabase production project, London, daily backups plus point-in-time recovery | Inngest production | Live keys |
+| Preview (per push to a branch) | Vercel preview, `APP_ENV=preview`, behind Vercel's login | The production project: the database's keys are set for every environment | Inngest branch environment, which previews do not register with while Deployment Protection is on | Fakes: payments, emails and texts are not sent |
+| Production | Vercel, `lhr1`, `APP_ENV=production` | The Supabase project in London, emptied for launch (D-246). Free plan with weekly encrypted backups of our own until launch day moves it to Pro and daily backups (D-154, D-161) | Inngest production, through the Vercel integration (section 9) | Live keys: Stripe live, Resend, Twilio's Ireland region |
 
-**CI (GitHub Actions, every pull request):** install with a pnpm cache, then run in parallel: `lint` (ESLint and copy guards), `typecheck`, `unit` (Vitest with the 90% core coverage gate), `db` (start Supabase, apply migrations, run pgTAP), `integration` (Server Actions and Route Handlers against local Supabase), `e2e` (build, seed, Playwright at 390 and 1440 px with axe, screenshots uploaded as artefacts). Merges to `main` apply migrations to staging, then production after a manual approval step. Migrations are forward only; a mistake is fixed by a follow-up migration (PRD 14.5).
+**The environment guard.** `apps/web/src/env/schema.ts` reads every setting the app needs and refuses to start, naming each problem, when production runs a fake, a test Stripe key or a missing secret, and when a hosted environment has no job runner signing key. It is checked while the pages are built, and Turbo runs the build with only the variables `turbo.json` names, dropping the rest without a word; so every key the guard reads is named there, and `apps/web/src/env/turbo.test.ts` fails if one is not (D-248). `APP_ENV` is `production` for Production only and `preview` for Preview, so a preview builds with fakes rather than being refused.
+
+**CI (GitHub Actions, every push):** install with a pnpm cache, then run in parallel: `lint` (ESLint and copy guards), `typecheck`, `unit` (Vitest with the 90% core coverage gate), `db` (start Supabase, apply migrations, run pgTAP), `integration` (Server Actions and Route Handlers against local Supabase), `e2e` (build, seed, Playwright at 390 and 1440 px with axe, screenshots uploaded as artefacts), load and Lighthouse. Work lands on `beta-prep`; the product owner merges it to `main`, which Vercel deploys, and applies any migration to the hosted database with `pnpm supabase db push`, a dry run first. Migrations are forward only; a mistake is fixed by a follow-up migration (PRD 14.5).
 
 ## 17. Testing strategy
 

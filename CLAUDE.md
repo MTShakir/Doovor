@@ -28,15 +28,16 @@ The product requirements live in `docs/Doovor_PRD.md`. Every feature must trace 
 
 ```
 apps/web            Next.js app: marketing, learner, instructor, school, admin portals, API routes
-packages/config     brand.ts, feature flags, plan entitlements, shared tsconfig and eslint
+packages/config     brand.ts, the logo's shapes (src/logo), feature flags, plan entitlements, shared tsconfig and eslint
 packages/core       Pure domain logic and Zod schemas. Zero framework imports
 packages/db         Typed query helpers, generated types, seed scripts
 packages/ui         Design system components and tokens
 packages/emails     React Email templates
 packages/providers  Payments, SMS, Email, Map, Geo, Push provider interfaces and implementations
 supabase/           config.toml, migrations/, tests/ (pgTAP), seed.sql
-docs/               PRD, ARCHITECTURE, PLAN, PROGRESS, DECISIONS, RUNBOOK
+docs/               PRD, ARCHITECTURE, PLAN, PROGRESS, DECISIONS, RUNBOOK, BETA, SECURITY
 e2e/                Playwright specs, fixtures and screenshots
+assets/brand/       The logo's SVG masters, read into packages/config by pnpm brand:logo (D-249)
 ```
 
 Workspace packages use the neutral scope `@repo/*` (for example `@repo/core`) so the brand never appears in code.
@@ -65,6 +66,8 @@ Run from the repo root.
 | `pnpm test:e2e` | Playwright at 390 px and 1440 px |
 | `pnpm lighthouse` | Lighthouse on the public profile and city pages, against a production build already running on port 3000; each must score 90 or more (NFR-PERF-04) |
 | `pnpm check` | lint + typecheck + test. Must be green before every commit |
+| `pnpm brand:logo` | Read the logo's masters in `assets/brand` into `packages/config/src/logo`; run after replacing one (D-249) |
+| `pnpm db:fresh` | Empty a hosted database for a launch and leave one super admin; asks for the target twice (RUNBOOK 3.9, D-227, D-246) |
 
 ## Working loop
 

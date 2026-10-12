@@ -398,7 +398,8 @@ finished while the first hundred arrive.
    **Stripe live endpoint for Connect** (section 3.7 step 7), in **live** mode this time, against
    `https://app.doovor.com/api/webhooks/stripe`. Its signing secret is the
    `STRIPE_CONNECT_WEBHOOK_SECRET` below. Leave the billing endpoint (step 7a) for later.
-8. **12 October 2026:** all set except `FIELD_ENCRYPTION_KEYS`, which only you make.
+8. **Done, 12 October 2026:** every value below is set, and the production build that came up
+   with them is the proof (D-248 made sure the build can see them all).
    **Vercel, Production only, all in one go** (section 3.7 step 9 and section 4's checklist):
 
    | Name | Value |
@@ -430,7 +431,9 @@ finished while the first hundred arrive.
    `preview`, so they start with fake payments and no real emails or texts instead of being
    refused. They still use the live database, behind Vercel's login: try nothing on a preview
    link that you would not try on app.doovor.com.
-9. **Redeploy**, then section 4's going to production checklist, item 9.
+9. **Done, 12 October 2026:** deployed by the merge to `main`. Inngest registered `platform-web`
+   with its 27 functions through `app.doovor.com`, and `/api/inngest` refuses an unsigned request
+   with 401. **Redeploy**, then section 4's going to production checklist, item 9.
 10. **Do not test sign-up with a made-up instructor.** Every instructor account takes a founding
     place and the home page counts it, and `/admin` can suspend a Business but not remove one, so a
     suspended test still holds its place. Test as the admin. If a test account does get made, it is
@@ -450,7 +453,10 @@ finished while the first hundred arrive.
 ### Database changes
 - Create: `pnpm db:migration <name>`, write the SQL, add pgTAP tests, then run `pnpm db:reset`, `pnpm db:test`, `pnpm db:lint` and `pnpm db:types`.
 - A migration is frozen once merged to `main` or applied to a shared database (D-045).
-- Deploy to staging after merging: `pnpm supabase db push --dry-run`, then `pnpm supabase db push`. M6 automates this in CI.
+- Apply it to the hosted database after merging to `main`, by hand: `pnpm supabase db push --dry-run`, then `pnpm supabase db push`. The project the app was built against became production (D-154), so this is production; CI does not push migrations.
+
+### The logo
+- Replace a file in `assets/brand` under the same name, run `pnpm brand:logo`, and commit both. Its README lists what each file is for and the rules an export has to keep to; an export that breaks one is refused by name and nothing is written (D-249).
 
 ### Dependencies
 - Weekly pull requests from Dependabot (`.github/dependabot.yml`): minor and patch versions in one
