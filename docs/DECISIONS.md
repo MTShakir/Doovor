@@ -1326,3 +1326,10 @@ Every decision made without the product owner, newest last. Format: date, decisi
 - **Decision:** "Drive Starts Here." everywhere, with the full stop the logo's lockup draws, in `brand.ts` and the PRD.
 - **Options:** With the full stop; without it, leaving the artwork and the text to differ.
 - **Reason:** The product owner left it to us. The artwork is the designer's and is not ours to change, so the text follows it and the slogan reads the same wherever it appears. It stands on its own line wherever it is used, so the full stop never lands mid-sentence.
+
+## D-254 | 2026-10-13 | A car's first 10,000 business miles are 55p each from the 2026 to 2027 tax year | Claude
+- **Decision:** `amapRates` takes the rate of the tax year a claim is for: 45p and 25p from 2011 to 2012, and 55p and 25p from 2026 to 2027, as GOV.UK's table of simplified expenses for vehicles lists them. A year HMRC has not set carries on at the latest rates.
+- **Found by:** checking the facts for the guide to instructors' expenses against GOV.UK. The module had 45p for every year, so the books for 2026 to 2027 claimed £1,000 too little on the first 10,000 miles.
+- **Options:** One rate for every year, changed in place; a rate per tax year from the year it starts.
+- **Reason:** A rate changed in place would rewrite every earlier year's claim along with it, and HMRC still asks for 45p for miles before 6 April 2026. The tests now state each year's rate, which is what made the old assumption visible.
+- **Still to decide:** GOV.UK names "dual control driving instructors' cars" among the cars that cannot use the flat rates at all. The mileage log does not ask whether a car has dual controls. Raised with the product owner (D-254 is the rate alone).

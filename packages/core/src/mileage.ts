@@ -1,10 +1,10 @@
 /**
- * Claiming for business miles at HMRC's approved rates (MNY-03, D-198).
+ * Claiming for business miles at HMRC's approved rates (MNY-03, D-198, D-254).
  *
- * A car is claimed at 45p a mile for the first 10,000 business miles of a tax year and 25p after
- * that. Which band a mile falls in depends on how many came before it in the same year, so a rate
- * cannot be stored against a trip: the claim is worked out over the year as a whole, which is also
- * how a return asks for it.
+ * A car is claimed at a flat rate for the first 10,000 business miles of a tax year, 55p a mile
+ * from the 2026 to 2027 tax year and 45p before it, and 25p after that. Which band a mile falls in
+ * depends on how many came before it in the same year, so a rate cannot be stored against a trip:
+ * the claim is worked out over the year as a whole, which is also how a return asks for it.
  *
  * Distances are tenths of a mile, held as whole numbers, for the same reason money is held in
  * pence: a distance that has been through a float is a distance nobody can add up twice and get
@@ -20,15 +20,24 @@ export interface AmapRates {
 }
 
 /**
- * The rates a tax year uses. 45p and 25p have applied since 2011 to 2012; a year HMRC changes them
- * gets an entry here and nothing else has to move.
+ * The rates from the tax year each one starts in (the year its 6 April falls in), as GOV.UK lists
+ * them under simplified expenses for vehicles: 45p and 25p from 2011 to 2012, and 55p and 25p from
+ * 2026 to 2027 (D-254). A tax year takes the latest change that has started by then, so a year HMRC
+ * has not set yet carries on at the last rates, and a change gets one more line here.
  */
-const ratesByYear: Record<number, AmapRates> = {};
+const firstRates: AmapRates = { firstTenths: 100_000, firstPence: 45, afterPence: 25 };
 
-const standardRates: AmapRates = { firstTenths: 100_000, firstPence: 45, afterPence: 25 };
+const rateChanges: readonly { from: number; rates: AmapRates }[] = [
+  { from: 2011, rates: firstRates },
+  { from: 2026, rates: { firstTenths: 100_000, firstPence: 55, afterPence: 25 } },
+];
 
 export function amapRates(taxYearStarts: number): AmapRates {
-  return ratesByYear[taxYearStarts] ?? standardRates;
+  let rates = firstRates;
+  for (const change of rateChanges) {
+    if (change.from <= taxYearStarts) rates = change.rates;
+  }
+  return rates;
 }
 
 /** Ten tenths to the mile, named so the sums below read as what they are. */

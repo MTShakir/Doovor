@@ -237,13 +237,13 @@ export function ProfileGlimpse({ className }: { className?: string }) {
 export function TaxYearGlimpse({ className }: { className?: string }) {
   return (
     <Frame title="This tax year" className={className}>
-      {/* 4,812 miles at HMRC's 45p a mile for a car's first 10,000 is £2,165. */}
+      {/* 4,812 miles at HMRC's 55p a mile for a car's first 10,000, the 2026 to 2027 rate, is £2,647. */}
       <ul className="grid grid-cols-2 gap-2 text-small">
         {[
           { label: 'Income', amount: '£18,420' },
           { label: 'Expenses', amount: '£3,210' },
           { label: 'Miles logged', amount: '4,812' },
-          { label: 'Mileage claim', amount: '£2,165' },
+          { label: 'Mileage claim', amount: '£2,647' },
         ].map((figure) => (
           <li key={figure.label} className="flex flex-col rounded-input bg-grey-100 p-3">
             <span className="text-grey-700">{figure.label}</span>

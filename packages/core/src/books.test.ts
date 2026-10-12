@@ -84,9 +84,9 @@ describe('what VAT registration changes', () => {
 describe('mileage in the books', () => {
   it('claims the miles of the cars that are claimed by the mile', () => {
     const driven = summariseBooks(aYear({ mileage: { tenths: 120_000, trips: 400 } }), 2026);
-    // Ten thousand miles at 45p, then two thousand at 25p.
-    expect(driven.mileage.claimPence).toBe(450_000 + 50_000);
-    expect(driven.expenseLines.find((line) => line.heading === 'mileage')?.totalPence).toBe(500_000);
+    // Ten thousand miles at 55p, the 2026 to 2027 rate, then two thousand at 25p.
+    expect(driven.mileage.claimPence).toBe(550_000 + 50_000);
+    expect(driven.expenseLines.find((line) => line.heading === 'mileage')?.totalPence).toBe(600_000);
     expect(driven.mileage.bands).toHaveLength(2);
   });
 
