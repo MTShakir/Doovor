@@ -114,15 +114,25 @@ export function Steps({ steps }: { steps: readonly { title: string; description:
  * fixed one would stop being true the day it was typed. When it cannot be read the band says what
  * it said before there was a count, rather than guessing.
  *
- * Once every instructor place has gone the band stops offering one and says what a new business
- * gets instead, which is a free trial: an offer still printed after it has closed is the other way
- * for this number to lie. The page chooses the button's words, since it knows where it leads.
+ * It counts the places of whoever the page is talking to: the instructors' everywhere, as theirs
+ * run out first, and the schools' on the page for driving schools. Once every one of those has
+ * gone the band stops offering one and says what a new business gets instead, which is a free
+ * trial: an offer still printed after it has closed is the other way for this number to lie. The
+ * page chooses the button's words, since it knows where it leads.
  */
-export function FoundingOffer({ action, places }: { action?: ReactNode; places?: FoundingPlaces | null }) {
-  const instructors = places?.instructors ?? null;
-  const closed = instructors?.full === true;
+export function FoundingOffer({
+  action,
+  places,
+  audience = 'instructors',
+}: {
+  action?: ReactNode;
+  places?: FoundingPlaces | null;
+  audience?: 'instructors' | 'schools';
+}) {
+  const counted = places?.[audience] ?? null;
+  const closed = counted?.full === true;
   const months = places?.months ?? foundingOffer.months;
-  const count = instructors === null ? null : foundingCountWords(instructors);
+  const count = counted === null ? null : foundingCountWords(counted);
 
   return (
     <section aria-labelledby="founding-offer-heading" className="mx-auto w-full max-w-6xl px-4 md:px-6">
@@ -139,17 +149,15 @@ export function FoundingOffer({ action, places }: { action?: ReactNode; places?:
                 'The founding places have all gone. Every new business still starts on the paid plan free for a while, with no card needed.'
               : `Pro for the first ${String(foundingOffer.instructorLimit)} independent instructors, and the School plan for the first ${String(foundingOffer.schoolLimit)} driving schools. No card needed.`}
           </p>
-          {count === null || instructors === null ? null : (
-            // The count is the instructors', because the instructor places are the ones running
-            // out first and the ones the page is talking to.
+          {count === null || counted === null ? null : (
             <div className="mt-3 flex max-w-md flex-col gap-2" data-testid="founding-count">
               <div className="flex items-baseline justify-between gap-3">
                 <span className="text-h2 font-semibold tabular-nums">{count.headline}</span>
                 <span className="text-small font-semibold tabular-nums">{count.detail}</span>
               </div>
               <ProgressBar
-                value={instructors.percent}
-                label={`Founding places taken: ${String(instructors.taken)} of ${String(instructors.limit)}`}
+                value={counted.percent}
+                label={`Founding places taken: ${String(counted.taken)} of ${String(counted.limit)}`}
                 // Black on a tint of black, because grey on the brand yellow does not read.
                 className="h-3 bg-black/15"
               />

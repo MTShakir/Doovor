@@ -81,6 +81,41 @@ test.describe('the public site (PRD 8.3, 9.18, M5-09)', () => {
     await snap(page, testInfo, 'home-founding-count');
   });
 
+  test('the pages for instructors and for schools each count their own founding places, never above the truth (D-243)', async ({ page }, testInfo) => {
+    for (const { path, audience } of [
+      { path: '/instructors-software', audience: 'instructor' },
+      { path: '/driving-schools-software', audience: 'school' },
+    ] as const) {
+      await page.goto(path);
+      const count = page.getByTestId('founding-count');
+      await expect(count, path).toBeVisible();
+      await expect(count.getByRole('progressbar', { name: /Founding places taken/ })).toBeVisible();
+      const headline = (await count.locator('span').first().textContent())?.trim() ?? '';
+
+      // Read after the page, as on the home page: the page may be behind the database, never ahead.
+      const truth = await withDatabase(async (sql) => {
+        const [row] = await sql<{ places: { instructorLimit: number; instructorsJoined: number; schoolLimit: number; schoolsJoined: number } }[]>`
+          select public.founding_places() as places`;
+        if (!row) throw new Error('no founding places answer');
+        return row.places;
+      });
+      const limit = audience === 'instructor' ? truth.instructorLimit : truth.schoolLimit;
+      const joined = audience === 'instructor' ? truth.instructorsJoined : truth.schoolsJoined;
+
+      const taken = /^(\d+)\/(\d+) joined$/.exec(headline);
+      if (taken) {
+        expect(Number(taken[2]), path).toBe(limit);
+        expect(Number(taken[1]), path).toBeGreaterThan(0);
+        expect(Number(taken[1]), path).toBeLessThanOrEqual(joined);
+      } else {
+        expect(headline, path).toBe(`${String(limit)} places open`);
+      }
+      await count.scrollIntoViewIfNeeded();
+      await settled(page);
+      await snap(page, testInfo, `${audience}-founding-count`);
+    }
+  });
+
   test('pricing shows each plan at its configured price, what it has now and what comes later, and the founding offer', async ({ page }, testInfo) => {
     await page.goto('/pricing');
     await expect(page.getByRole('heading', { level: 1, name: 'Simple pricing' })).toBeVisible();

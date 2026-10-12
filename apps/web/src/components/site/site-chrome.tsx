@@ -26,7 +26,7 @@ export function SiteHeader({ appUrl }: { appUrl: string }) {
       {/* Wraps rather than pushing the page sideways when the text is set larger (M6-06). */}
       <div className="mx-auto flex min-h-16 w-full max-w-6xl flex-wrap items-center gap-x-6 gap-y-2 px-4 py-2 md:px-6">
         <Link href="/" className="flex min-h-12 items-center text-black">
-          <Logo art={horizontalLogo} label={brand.name} className="h-8" />
+          <Logo art={horizontalLogo} label={brand.name} className="h-10" />
         </Link>
         <Suspense fallback={<SiteNavList current={null} />}>
           <SiteNav />
@@ -96,10 +96,10 @@ function FooterLinks({ title, links }: { title: string; links: readonly FooterLi
 export function SiteFooter({ appUrl, cities }: { appUrl: string; cities: readonly { slug: string; name: string }[] }) {
   return (
     <footer className="border-t border-grey-200 bg-grey-100">
-      <div className="mx-auto grid w-full max-w-6xl grid-cols-[minmax(0,1fr)] gap-8 px-4 py-12 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 md:px-6">
+      <div className="mx-auto grid w-full max-w-6xl grid-cols-[minmax(0,1fr)] gap-8 px-4 py-12 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-[minmax(0,1.5fr)_repeat(4,minmax(0,1fr))] md:px-6">
         <div className="flex flex-col gap-3">
-          <Link href="/" className="flex w-fit items-center text-black">
-            <Logo art={horizontalLogo} label={brand.name} className="h-8" />
+          <Link href="/" className="flex w-fit max-w-full items-center text-black">
+            <Logo art={horizontalLogo} label={brand.name} className="h-16 max-w-full" />
           </Link>
           <p className="text-small text-grey-700">{brand.tagline}</p>
         </div>

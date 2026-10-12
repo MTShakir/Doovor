@@ -6,6 +6,7 @@ import { GlimpseAlone, SchoolGlimpse } from '@/components/site/glimpses';
 import { Band, ClosingCall, FeatureGrid, FoundingOffer, PageHero, PlanCard, PrimaryLink, SecondaryLink } from '@/components/site/marketing';
 import { getAppUrl } from '@/lib/app-url';
 import { publicPageMetadata } from '@/lib/public/metadata';
+import { foundingPlaces } from '@/lib/site/founding';
 import { planSummaries } from '@/lib/site/plan-features';
 
 /** The page for driving schools (PRD 8.3, M5-09). */
@@ -63,8 +64,9 @@ const features = [
   },
 ] as const;
 
-export default function DrivingSchoolsSoftwarePage() {
+export default async function DrivingSchoolsSoftwarePage() {
   const appUrl = getAppUrl();
+  const places = await foundingPlaces();
   const signUp = `${appUrl}/sign-up?role=school`;
   const school = planSummaries().find((plan) => plan.key === 'school');
   return (
@@ -90,7 +92,7 @@ export default function DrivingSchoolsSoftwarePage() {
         <FeatureGrid features={features} tone="grey" />
       </Band>
 
-      <FoundingOffer />
+      <FoundingOffer places={places} audience="schools" />
 
       {school ? (
         <Band id="school-plan" title="One price for each instructor" description="Priced by the size of your team, with everything in Pro for every instructor.">

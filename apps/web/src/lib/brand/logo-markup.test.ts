@@ -26,4 +26,10 @@ describe('logoSvgMarkup (D-249)', () => {
     expect(svg).toContain(' width="128" height="32" role="img" aria-label="A &amp; B">');
     expect(svg).toContain('<rect width="40" height="10" fill="#123456"/><path d="M0,0h10v10H0Z" fill="#ABCDEF"/>');
   });
+
+  it('paints a round backdrop for a logo that has one, leaving the corners clear', () => {
+    const svg = logoSvgMarkup({ ...art, width: 20, height: 20, backdrop: 'circle' }, { colour: '#ABCDEF', background: '#123456' });
+    expect(svg).toContain('<circle cx="10" cy="10" r="10" fill="#123456"/><path');
+    expect(svg).not.toContain('<rect');
+  });
 });

@@ -1,10 +1,10 @@
 import { brand } from '@repo/config/brand';
-import { appIconLogo } from '@repo/config/logo/app-icon';
+import { faviconLogo } from '@repo/config/logo/favicon';
 import { logoSvgMarkup } from '@/lib/brand/logo-markup';
 
-/** The browser tab's icon, sharp on any screen (D-249): the app icon, the white wheel on black. */
+/** The browser tab's icon, sharp on any screen (D-249): the white wheel on a black circle. */
 export function GET(): Response {
-  return new Response(logoSvgMarkup(appIconLogo, { colour: brand.colours.white, background: brand.colours.black }), {
+  return new Response(logoSvgMarkup(faviconLogo, { colour: brand.colours.white, background: brand.colours.black }), {
     headers: { 'Content-Type': 'image/svg+xml' },
   });
 }

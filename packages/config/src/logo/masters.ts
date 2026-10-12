@@ -39,4 +39,11 @@ export const logoMasters = [
     whiteFile: undefined,
     description: "The wheel as the app icon has it: its frame is the icon's square, which is painted black behind it.",
   },
+  {
+    module: 'favicon',
+    name: 'faviconLogo',
+    file: 'favicon-icon.svg',
+    whiteFile: undefined,
+    description: "The browser tab's icon: the wheel on a black circle, with nothing in the corners.",
+  },
 ] as const;

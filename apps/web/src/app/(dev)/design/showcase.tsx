@@ -699,7 +699,7 @@ export function DesignShowcase() {
               >
                 <div className="flex flex-col gap-2">
                   <p className={groundLabel}>Horizontal, in a header</p>
-                  <Logo art={horizontalLogo} label={brand.name} className="h-8 self-start" />
+                  <Logo art={horizontalLogo} label={brand.name} className="h-10 self-start" />
                 </div>
                 <div className="flex flex-wrap items-end gap-8">
                   <div className="flex flex-col gap-2">
@@ -1849,7 +1849,7 @@ export function DesignShowcase() {
         </div>
         <div className="max-w-sm overflow-hidden rounded-2xl border border-grey-200">
           <div className="flex min-h-14 items-center justify-between gap-2 border-b border-grey-200 bg-white pr-2 pl-4">
-            <Logo art={horizontalLogo} label={brand.name} className="block h-7 text-black" />
+            <Logo art={horizontalLogo} label={brand.name} className="block h-8 text-black" />
             <NotificationBell href="/notifications" unread={3} />
           </div>
           <p className="px-4 py-6 text-small text-grey-700">The top bar as it looks on a phone, above the screen&apos;s own title.</p>

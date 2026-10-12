@@ -36,7 +36,7 @@ export function offlinePage(): string {
 </style>
 </head>
 <body>
-<header>${logoSvgMarkup(horizontalLogo, { colour: colours.black, label: brand.name, height: 32 })}</header>
+<header>${logoSvgMarkup(horizontalLogo, { colour: colours.black, label: brand.name, height: 40 })}</header>
 <main>
   <h1>No connection</h1>
   <p>This screen needs a signal to open. Today and the lessons on it open without one, once you have opened them with signal.</p>

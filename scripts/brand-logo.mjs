@@ -43,7 +43,7 @@ import type { LogoArt } from './art.ts';
 /** ${master.description} */
 export const ${master.name}: LogoArt = {
   width: ${String(art.width)},
-  height: ${String(art.height)},
+  height: ${String(art.height)},${art.backdrop === undefined ? '' : `\n  backdrop: '${art.backdrop}',`}
   paths: [
 ${paths}
   ],

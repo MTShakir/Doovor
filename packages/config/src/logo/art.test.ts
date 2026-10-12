@@ -38,9 +38,20 @@ describe('logoArtFromSvg (D-249)', () => {
     expect(logoArtFromSvg(svg).paths).toEqual([{ d: 'M0,0h10v10H0Z', evenOdd: true }]);
   });
 
-  it("leaves out the app icon's background square, which the app paints itself", () => {
-    const svg = '<svg viewBox="0 0 10 10"><rect class="st1" x=".28" y=".28" width="9.4" height="9.4"/><path d="M2,2h6v6H2Z"/></svg>';
-    expect(logoArtFromSvg(svg).paths).toEqual([{ d: 'M2,2h6v6H2Z', evenOdd: false }]);
+  it("takes the app icon's square behind the shapes as its backdrop, which the app paints itself", () => {
+    const svg = '<svg viewBox="0 0 270.15 270.15"><rect class="st1" x=".28" y=".28" width="269.58" height="269.58"/><path d="M2,2h6v6H2Z"/></svg>';
+    expect(logoArtFromSvg(svg)).toEqual({ width: 270.15, height: 270.15, backdrop: 'square', paths: [{ d: 'M2,2h6v6H2Z', evenOdd: false }] });
+  });
+
+  it("takes the favicon's circle behind the shapes as its backdrop", () => {
+    const svg = '<svg viewBox="0 0 270.15 270.15"><circle class="st1" cx="135.21" cy="135.21" r="134.93"/><path d="M2,2h6v6H2Z"/></svg>';
+    expect(logoArtFromSvg(svg).backdrop).toBe('circle');
+  });
+
+  it('refuses a square or a circle that is a shape in the logo rather than the whole frame behind it', () => {
+    expect(() => logoArtFromSvg('<svg viewBox="0 0 100 100"><rect x="10" y="10" width="20" height="20"/><path d="M0,0Z"/></svg>')).toThrow('<rect>');
+    expect(() => logoArtFromSvg('<svg viewBox="0 0 100 100"><circle cx="30" cy="50" r="20"/><path d="M0,0Z"/></svg>')).toThrow('<circle>');
+    expect(() => logoArtFromSvg('<svg viewBox="0 0 100 100"><rect width="100" height="100"/><circle cx="50" cy="50" r="50"/><path d="M0,0Z"/></svg>')).toThrow('more than one backdrop');
   });
 
   it('refuses what it cannot carry across as plain shapes', () => {
@@ -61,8 +72,9 @@ describe('sameArtwork (D-249)', () => {
     expect(sameArtwork(rewritten, black)).toBe(true);
   });
 
-  it('tells a different frame, a missing shape or another fill rule apart', () => {
+  it('tells a different frame, a missing shape, another fill rule or another backdrop apart', () => {
     expect(sameArtwork({ ...black, width: 121 }, black)).toBe(false);
+    expect(sameArtwork({ ...black, backdrop: 'circle' }, black)).toBe(false);
     expect(sameArtwork({ ...black, paths: black.paths.slice(1) }, black)).toBe(false);
     expect(sameArtwork({ ...black, paths: black.paths.map((path) => ({ ...path, evenOdd: !path.evenOdd })) }, black)).toBe(false);
   });

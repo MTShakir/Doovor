@@ -7,7 +7,7 @@ import type { LogoArt } from '@repo/config/logo/art';
  */
 export interface LogoMarkupOptions {
   colour: string;
-  /** Paints the whole frame first: the app icon's black square. */
+  /** Paints the art's backdrop first, its square or its circle; a logo without one gets a square. */
   background?: string;
   /** Names it for a screen reader; without one it is hidden from them as decoration. */
   label?: string;
@@ -22,9 +22,14 @@ function attribute(value: string): string {
 export function logoSvgMarkup(art: LogoArt, { colour, background, label, height }: LogoMarkupOptions): string {
   const size = height === undefined ? '' : ` width="${String(Math.round((height * art.width) / art.height))}" height="${String(height)}"`;
   const name = label === undefined ? ' aria-hidden="true"' : ` role="img" aria-label="${attribute(label)}"`;
-  const square = background === undefined ? '' : `<rect width="${String(art.width)}" height="${String(art.height)}" fill="${attribute(background)}"/>`;
+  const backdrop =
+    background === undefined
+      ? ''
+      : art.backdrop === 'circle'
+        ? `<circle cx="${String(art.width / 2)}" cy="${String(art.height / 2)}" r="${String(Math.min(art.width, art.height) / 2)}" fill="${attribute(background)}"/>`
+        : `<rect width="${String(art.width)}" height="${String(art.height)}" fill="${attribute(background)}"/>`;
   const shapes = art.paths
     .map((path) => `<path d="${attribute(path.d)}" fill="${attribute(colour)}"${path.evenOdd ? ' fill-rule="evenodd"' : ''}/>`)
     .join('');
-  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${String(art.width)} ${String(art.height)}"${size}${name}>${square}${shapes}</svg>`;
+  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${String(art.width)} ${String(art.height)}"${size}${name}>${backdrop}${shapes}</svg>`;
 }

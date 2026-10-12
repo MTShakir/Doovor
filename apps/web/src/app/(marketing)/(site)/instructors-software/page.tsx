@@ -6,6 +6,7 @@ import { GlimpsePair, MoneyGlimpse, TodayGlimpse } from '@/components/site/glimp
 import { Band, ClosingCall, FeatureGrid, FoundingOffer, PageHero, PlanCard, PrimaryLink, SecondaryLink, Steps } from '@/components/site/marketing';
 import { getAppUrl } from '@/lib/app-url';
 import { publicPageMetadata } from '@/lib/public/metadata';
+import { foundingPlaces } from '@/lib/site/founding';
 import { planSummaries } from '@/lib/site/plan-features';
 
 /** The page for driving instructors (PRD 8.3, M5-09). */
@@ -76,8 +77,9 @@ const steps = [
   { title: 'Your hours', description: 'The times you usually teach each week.' },
 ] as const;
 
-export default function InstructorsSoftwarePage() {
+export default async function InstructorsSoftwarePage() {
   const appUrl = getAppUrl();
+  const places = await foundingPlaces();
   const signUp = `${appUrl}/sign-up?role=instructor`;
   const [free, pro] = planSummaries();
   return (
@@ -103,7 +105,7 @@ export default function InstructorsSoftwarePage() {
         <Steps steps={steps} />
       </Band>
 
-      <FoundingOffer />
+      <FoundingOffer places={places} />
 
       {free && pro ? (
         <Band id="instructor-plans" title="Start free, add Pro when you want it">

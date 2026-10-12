@@ -41,5 +41,5 @@ export function PortalHeaderActions() {
 
 /** The phone's top bar in a portal: the logo, then support and the bell (D-159, D-241, D-249). */
 export function PortalTopBar() {
-  return <MobileTopBar title={<Logo art={horizontalLogo} label={brand.name} className="block h-7" />} actions={<PortalHeaderActions />} />;
+  return <MobileTopBar title={<Logo art={horizontalLogo} label={brand.name} className="block h-8" />} actions={<PortalHeaderActions />} />;
 }

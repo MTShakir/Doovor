@@ -31,7 +31,7 @@ function sidebar(portal: Portal, pathname: string | null, { footer, headerAction
       linkComponent={NavLink}
       header={
         <div className="-my-3 -mr-3 flex items-center justify-between gap-2">
-          <Logo art={horizontalLogo} label={brand.name} className="h-7 text-black" />
+          <Logo art={horizontalLogo} label={brand.name} className="h-8 text-black" />
           {headerAction}
         </div>
       }
