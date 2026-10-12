@@ -276,8 +276,8 @@ from `pnpm test:e2e:stripe`; every other run stays on the fake.
 
 ### 3.8 Job runner (Inngest)
 
-1. **You:** sign in to Inngest. From Inngest, Settings, Integrations, Vercel, add the integration to the `Doovor` team for the `doovor` project (done 15 September 2026). It adds `INNGEST_EVENT_KEY` and `INNGEST_SIGNING_KEY` to the project itself and registers the app's functions on each deployment. Nobody types either key.
-2. In the integration's settings for `doovor`, set Custom Production Domain to `app.doovor.com`. Without it, Inngest registers through the deployment's own `vercel.app` address, which Deployment Protection (section 3.5 step 4) turns away, and the sync fails with "We could not reach your URL".
+1. **You:** sign in to Inngest. From Inngest, Settings, Integrations, Vercel, add the integration to the `Doovor` team, choosing Specific Projects and only `doovor`. Done 12 October 2026 from the `Doovor` Inngest account, which replaced the one used since 15 September. A Vercel team links to one Inngest account at a time, so the old account's two installs were removed first, from Vercel, Integrations, Manage, Settings. It adds `INNGEST_EVENT_KEY` and `INNGEST_SIGNING_KEY` to the project itself, for Production and Preview, and registers the app's functions on each deployment. Nobody types either key.
+2. In the integration's settings for `doovor`, set Custom Production Domain to `app.doovor.com` (done 12 October 2026). Without it, Inngest registers through the deployment's own `vercel.app` address, which Deployment Protection (section 3.5 step 4) turns away, and the sync fails with "We could not reach your URL".
 3. To register at once rather than on the next deployment: Inngest, Apps, Sync new app, `https://app.doovor.com/api/inngest`. The app appears as `platform-web` with its functions, and the scheduled ones start within a minute.
 4. Preview deployments do not register while Deployment Protection is on. They need no jobs today; if they ever do, add Vercel's Protection Bypass for Automation secret in the same settings.
 5. `/api/inngest` answers a plain request with 401 Unauthorized once the signing key is set: it only talks to Inngest.
@@ -398,7 +398,8 @@ finished while the first hundred arrive.
    **Stripe live endpoint for Connect** (section 3.7 step 7), in **live** mode this time, against
    `https://app.doovor.com/api/webhooks/stripe`. Its signing secret is the
    `STRIPE_CONNECT_WEBHOOK_SECRET` below. Leave the billing endpoint (step 7a) for later.
-8. **Vercel, Production only, all in one go** (section 3.7 step 9 and section 4's checklist):
+8. **12 October 2026:** all set except `FIELD_ENCRYPTION_KEYS`, which only you make.
+   **Vercel, Production only, all in one go** (section 3.7 step 9 and section 4's checklist):
 
    | Name | Value |
    |---|---|
@@ -411,11 +412,24 @@ finished while the first hundred arrive.
    | `EMAIL_PROVIDER` / `SMS_PROVIDER` | `resend` / `twilio` |
    | `SUPABASE_SEND_SMS_HOOK_SECRET` | section 3.3 step 6 |
    | `INNGEST_EVENT_KEY`, `INNGEST_SIGNING_KEY` | section 3.8 |
-   | `FIELD_ENCRYPTION_KEYS` | generate once, keep in your password manager |
+   | `FIELD_ENCRYPTION_KEYS` | generate once, keep in your password manager (Secret) |
    | `NEXT_PUBLIC_SENTRY_DSN` | section 4, watching for errors and outages |
 
    The app refuses to start in production with any fake provider, a test Stripe key, or any of
    these missing, and says which. That refusal is the check: a build that comes up is configured.
+
+   `FIELD_ENCRYPTION_KEYS` is `v1:` and 32 random bytes. This puts one on the clipboard without
+   showing it on screen; paste it into your password manager first, then into Vercel as a Secret,
+   because Vercel will not show it again:
+
+   ```powershell
+   node -e "process.stdout.write('v1:' + require('crypto').randomBytes(32).toString('base64'))" | Set-Clipboard
+   ```
+
+   `APP_ENV` is `production` for Production only. Preview deployments have their own `APP_ENV`,
+   `preview`, so they start with fake payments and no real emails or texts instead of being
+   refused. They still use the live database, behind Vercel's login: try nothing on a preview
+   link that you would not try on app.doovor.com.
 9. **Redeploy**, then section 4's going to production checklist, item 9.
 10. **Do not test sign-up with a made-up instructor.** Every instructor account takes a founding
     place and the home page counts it, and `/admin` can suspend a Business but not remove one, so a
