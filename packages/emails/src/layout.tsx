@@ -1,6 +1,20 @@
-import { Body, Container, Head, Hr, Html, Link, Preview, Section, Text } from '@react-email/components';
+import { Body, Container, Head, Hr, Html, Img, Link, Preview, Section, Text } from '@react-email/components';
 import { brand, companyDisclosure } from '@repo/config/brand';
+import { horizontalLogo } from '@repo/config/logo/horizontal';
 import type { ReactNode } from 'react';
+
+/**
+ * The logo at the top of every email (D-249). Email cannot show SVG, so it is a picture the app
+ * draws at twice this size from the logo's own shapes, at this address. It sits on the email's
+ * grey with that grey painted in, so a mail app that darkens the background cannot leave a black
+ * logo on black. With pictures turned off, the name shows in its place.
+ */
+export const emailLogo = {
+  path: '/brand/email-logo.png',
+  height: 28,
+  width: Math.round((28 * horizontalLogo.width) / horizontalLogo.height),
+  scale: 2,
+} as const;
 
 /**
  * The shell every email shares (NTF-03, PRD 7.2).
@@ -30,7 +44,8 @@ const body = {
 
 const container = { margin: '0 auto', maxWidth: '560px', padding: '0 16px', width: '100%' };
 
-const wordmark = { color: colours.black, fontSize: '20px', fontWeight: 700, margin: '0 0 16px' };
+// Also how the name looks where a mail app shows it instead of the picture.
+const logo = { display: 'block', border: '0', color: colours.black, fontSize: '20px', fontWeight: 700, margin: '0 0 16px' };
 
 const card = {
   backgroundColor: colours.white,
@@ -52,7 +67,7 @@ export function EmailLayout({ preview, children, settingsUrl, reason }: EmailLay
       <Preview>{preview}</Preview>
       <Body style={body}>
         <Container style={container}>
-          <Text style={wordmark}>{brand.name}</Text>
+          <Img src={`${brand.appUrl}${emailLogo.path}`} width={emailLogo.width} height={emailLogo.height} alt={brand.name} style={logo} />
           <Section style={card}>{children}</Section>
           <Hr style={rule} />
           <Text style={footnote}>

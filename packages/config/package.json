@@ -5,6 +5,7 @@
   "type": "module",
   "exports": {
     "./brand": "./src/brand.ts",
+    "./logo/*": "./src/logo/*.ts",
     "./flags": "./src/flags.ts",
     "./plans": "./src/plans.ts",
     "./eslint/base": "./eslint/base.js",

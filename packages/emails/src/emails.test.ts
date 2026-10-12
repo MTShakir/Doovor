@@ -1,5 +1,8 @@
+import { brand } from '@repo/config/brand';
+import { horizontalLogo } from '@repo/config/logo/horizontal';
 import { notificationCatalogue, notificationCopy } from '@repo/core/notifications';
 import { describe, expect, it } from 'vitest';
+import { emailLogo } from './layout.tsx';
 import { renderNotificationEmail } from './render.ts';
 
 const lesson = {
@@ -38,6 +41,17 @@ describe('the notification email (NTF-03, M2-28)', () => {
     expect(email.html).toContain('https://example.com/notifications/settings');
     expect(email.text).toContain('See your lessons');
     expect(email.text).toContain('Wed 16 Sep at 09:00 with Sarah Khan.');
+  });
+
+  it('opens with the logo the app draws, and the name where pictures are turned off (D-249)', async () => {
+    const email = await renderNotificationEmail({ title: 'Lesson booked', body: 'Wed 16 Sep at 09:00.' });
+
+    expect(email.html).toMatch(new RegExp(`<img[^>]+alt="${brand.name}"[^>]+src="${brand.appUrl}${emailLogo.path}"`));
+    expect(email.html).toContain(`width="${String(emailLogo.width)}"`);
+    expect(email.html).toContain(`height="${String(emailLogo.height)}"`);
+    // Drawn at twice the size it is shown, in the logo's own proportions.
+    expect(emailLogo.scale).toBe(2);
+    expect(Math.abs(emailLogo.width / emailLogo.height - horizontalLogo.width / horizontalLogo.height)).toBeLessThan(0.05);
   });
 
   it('leaves out the parts it was not given', async () => {

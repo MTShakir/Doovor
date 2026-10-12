@@ -1,4 +1,6 @@
 import { brand } from '@repo/config/brand';
+import { horizontalLogo } from '@repo/config/logo/horizontal';
+import { logoSvgMarkup } from '@/lib/brand/logo-markup';
 
 const { colours } = brand;
 
@@ -23,7 +25,8 @@ export function offlinePage(): string {
 <style>
   *{box-sizing:border-box}
   body{margin:0;min-height:100dvh;display:flex;flex-direction:column;background:${colours.white};color:${colours.ink};font:16px/24px Inter,system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
-  header{padding:16px;font-size:18px;line-height:24px;font-weight:600;color:${colours.black}}
+  header{padding:16px}
+  header svg{display:block}
   main{flex:1;display:flex;flex-direction:column;gap:12px;width:100%;max-width:448px;margin:0 auto;padding:40px 16px}
   h1{margin:0;font-size:28px;line-height:34px;font-weight:700;color:${colours.black}}
   p{margin:0;color:${colours['grey-700']}}
@@ -33,7 +36,7 @@ export function offlinePage(): string {
 </style>
 </head>
 <body>
-<header>${brand.name}</header>
+<header>${logoSvgMarkup(horizontalLogo, { colour: colours.black, label: brand.name, height: 32 })}</header>
 <main>
   <h1>No connection</h1>
   <p>This screen needs a signal to open. Today and the lessons on it open without one, once you have opened them with signal.</p>

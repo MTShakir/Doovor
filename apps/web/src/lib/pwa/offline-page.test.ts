@@ -5,8 +5,10 @@ import { offlinePage } from './offline-page';
 describe('the page for a screen with no connection (PRD 8.1, M4-08)', () => {
   const html = offlinePage();
 
-  it('says what happened and what still works, in the brand\'s name and colours', () => {
-    expect(html).toContain(`<header>${brand.name}</header>`);
+  it('says what happened and what still works, under the logo and in the brand\'s colours', () => {
+    // The logo itself, drawn in the page, so it shows with nothing else on the device (D-249).
+    expect(html).toMatch(new RegExp(`<header><svg [^>]*role="img" aria-label="${brand.name}"><path `));
+    expect(html).not.toMatch(/<img|src=/);
     expect(html).toContain('<h1>No connection</h1>');
     expect(html).toContain('Today and the lessons on it open without one');
     expect(html).toContain(`background:${brand.colours.black}`);

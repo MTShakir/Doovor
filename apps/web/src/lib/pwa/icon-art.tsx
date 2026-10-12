@@ -1,16 +1,24 @@
 import { brand } from '@repo/config/brand';
+import { appIconLogo } from '@repo/config/logo/app-icon';
+import { DrawnLogo } from '@/lib/brand/drawn-logo';
 import type { AppIcon } from './icons';
 
-/** A heavy capital D in a 100 by 100 box: a stem, and a bowl with its counter cut out. */
-export const brandMark = 'M22 12 H48 A38 38 0 0 1 48 88 H22 Z M40 30 H48 A20 20 0 0 1 48 70 H40 Z';
+/**
+ * How much of the icon the drawing takes (D-249). The master's own frame is the whole icon, with
+ * the wheel filling 77% of it (assets/brand/app-icon.svg). A maskable icon draws that frame at 80%,
+ * so the wheel comes out at 62%: Android keeps a circle 80% across whatever shape it crops to, and
+ * the wheel keeps a ring of black inside it rather than touching the edge.
+ */
+export function appIconArtScale(purpose: AppIcon['purpose']): number {
+  return purpose === 'maskable' ? 0.8 : 1;
+}
 
 /**
- * An app icon as the image renderer draws it (PRD 8.1, M4-08): the mark in white on black, the
- * brand's own colours. The mark is drawn rather than typed, because the renderer only has a thin
- * font to type with. It is the brand's logo, and changes with it the way a logo file would.
+ * An app icon as the image renderer draws it (PRD 8.1, M4-08, D-249): the white wheel on black,
+ * from the logo's own shapes, so it changes when the logo does.
  */
-export function AppIconArt({ icon }: { icon: AppIcon }) {
-  const markSize = Math.round(icon.size * (icon.purpose === 'maskable' ? 0.5 : 0.62));
+export function AppIconArt({ icon }: { icon: Pick<AppIcon, 'size' | 'purpose'> }) {
+  const artSize = Math.round(icon.size * appIconArtScale(icon.purpose));
   return (
     <div
       style={{
@@ -22,9 +30,7 @@ export function AppIconArt({ icon }: { icon: AppIcon }) {
         background: brand.colours.black,
       }}
     >
-      <svg width={markSize} height={markSize} viewBox="0 0 100 100">
-        <path d={brandMark} fill={brand.colours.white} fillRule="evenodd" />
-      </svg>
+      <DrawnLogo art={appIconLogo} height={artSize} width={artSize} colour={brand.colours.white} />
     </div>
   );
 }

@@ -1,9 +1,10 @@
 import { brand, companyDisclosure } from '@repo/config/brand';
+import { horizontalLogo } from '@repo/config/logo/horizontal';
 import { Button } from '@repo/ui/button';
+import { Logo } from '@repo/ui/logo';
 import { Menu } from 'lucide-react';
 import Link from 'next/link';
 import { Suspense } from 'react';
-import { brandMark } from '@/lib/pwa/icon-art';
 import { SiteNav, SiteNavList } from './site-nav';
 import { legalNav, siteNav } from './site-nav-links';
 
@@ -12,17 +13,6 @@ import { legalNav, siteNav } from './site-nav-links';
  * and the way to everything else at the bottom. Plain values in, so the design page can show them
  * without a database.
  */
-
-/** The brand's mark, drawn as the app icon draws it. */
-export function BrandMark({ size = 'md' }: { size?: 'md' | 'lg' }) {
-  return (
-    <span className={size === 'lg' ? 'flex size-10 items-center justify-center rounded-input bg-black' : 'flex size-8 items-center justify-center rounded-input bg-black'} aria-hidden>
-      <svg viewBox="0 0 100 100" className={size === 'lg' ? 'size-6' : 'size-5'}>
-        <path d={brandMark} className="fill-white" fillRule="evenodd" />
-      </svg>
-    </span>
-  );
-}
 
 export function SiteHeader({ appUrl }: { appUrl: string }) {
   return (
@@ -35,9 +25,8 @@ export function SiteHeader({ appUrl }: { appUrl: string }) {
       </a>
       {/* Wraps rather than pushing the page sideways when the text is set larger (M6-06). */}
       <div className="mx-auto flex min-h-16 w-full max-w-6xl flex-wrap items-center gap-x-6 gap-y-2 px-4 py-2 md:px-6">
-        <Link href="/" className="flex min-w-0 items-center gap-2 text-h3 text-black">
-          <BrandMark />
-          <span className="truncate">{brand.name}</span>
+        <Link href="/" className="flex min-h-12 items-center text-black">
+          <Logo art={horizontalLogo} label={brand.name} className="h-8" />
         </Link>
         <Suspense fallback={<SiteNavList current={null} />}>
           <SiteNav />
@@ -109,9 +98,8 @@ export function SiteFooter({ appUrl, cities }: { appUrl: string; cities: readonl
     <footer className="border-t border-grey-200 bg-grey-100">
       <div className="mx-auto grid w-full max-w-6xl grid-cols-[minmax(0,1fr)] gap-8 px-4 py-12 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 md:px-6">
         <div className="flex flex-col gap-3">
-          <Link href="/" className="flex items-center gap-2 text-h3 text-black">
-            <BrandMark />
-            {brand.name}
+          <Link href="/" className="flex w-fit items-center text-black">
+            <Logo art={horizontalLogo} label={brand.name} className="h-8" />
           </Link>
           <p className="text-small text-grey-700">{brand.tagline}</p>
         </div>

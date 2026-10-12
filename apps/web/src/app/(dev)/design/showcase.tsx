@@ -1,9 +1,14 @@
 'use client';
 
 import { brand, type ColourToken } from '@repo/config/brand';
+import { horizontalLogo } from '@repo/config/logo/horizontal';
+import { stackedLogo } from '@repo/config/logo/stacked';
+import { taglineLogo } from '@repo/config/logo/tagline';
+import { wheelLogo } from '@repo/config/logo/wheel';
 import { formatPence } from '@repo/core/money';
 import { Avatar } from '@repo/ui/avatar';
 import { AvatarPicker } from '@repo/ui/avatar-picker';
+import { Logo } from '@repo/ui/logo';
 import { NotificationBell } from '@repo/ui/notification-bell';
 import { PhotoUpload } from '@repo/ui/photo-upload';
 import { PickupPointPicker } from '@repo/ui/pickup-point-picker';
@@ -114,6 +119,7 @@ import { Suspense, useState, type ReactNode } from 'react';
 
 const sections = [
   'Colour',
+  'Logo',
   'Surfaces',
   'Type',
   'Buttons',
@@ -674,6 +680,56 @@ export function DesignShowcase() {
               </p>
             </div>
           ))}
+        </div>
+      </Section>
+
+      <Section title="Logo">
+        <p className="text-body text-grey-700">
+          Drawn from the files in assets/brand (D-249), in the colour of the text around it: black on light, white on dark. The one with
+          the slogan only where it is at least 380 px wide.
+        </p>
+        <div className="grid grid-cols-[minmax(0,1fr)] gap-3 lg:grid-cols-2">
+          {(['light', 'dark'] as const).map((ground) => {
+            // Grey-700 is too faint on black, so the dark side's labels are grey-200 (D-009).
+            const groundLabel = ground === 'light' ? 'text-caption font-semibold text-grey-700' : 'text-caption font-semibold text-grey-200';
+            return (
+              <div
+                key={ground}
+                className={ground === 'light' ? 'flex flex-col gap-6 rounded-card border border-grey-200 bg-white p-6 text-black' : 'flex flex-col gap-6 rounded-card bg-black p-6 text-white'}
+              >
+                <div className="flex flex-col gap-2">
+                  <p className={groundLabel}>Horizontal, in a header</p>
+                  <Logo art={horizontalLogo} label={brand.name} className="h-8 self-start" />
+                </div>
+                <div className="flex flex-wrap items-end gap-8">
+                  <div className="flex flex-col gap-2">
+                    <p className={groundLabel}>Stacked</p>
+                    <Logo art={stackedLogo} label={brand.name} className="h-24 self-start" />
+                  </div>
+                  <div className="flex flex-col gap-2">
+                    <p className={groundLabel}>The wheel alone</p>
+                    <Logo art={wheelLogo} label={brand.name} className="h-12 self-start" />
+                  </div>
+                </div>
+                <div className="flex flex-col gap-2">
+                  <p className={groundLabel}>With the slogan, 380 px wide</p>
+                  <Logo art={taglineLogo} label={brand.name} className="h-auto w-[380px] max-w-full self-start" />
+                </div>
+              </div>
+            );
+          })}
+        </div>
+        <Label>Made from it: the app icon, the one Android crops, the browser tab and the top of an email</Label>
+        <div className="flex flex-wrap items-end gap-6">
+          {/* Pictures the app draws at these addresses, shown as a browser shows them. */}
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src="/icons/512.png" alt="App icon" width={96} height={96} className="rounded-[22%]" />
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src="/icons/maskable-512.png" alt="App icon cropped to a circle" width={96} height={96} className="rounded-full" />
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src="/favicon.svg" alt="Browser tab icon" width={32} height={32} />
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src="/brand/email-logo.png" alt="Email logo" width={Math.round((28 * horizontalLogo.width) / horizontalLogo.height)} height={28} />
         </div>
       </Section>
 
@@ -1793,7 +1849,7 @@ export function DesignShowcase() {
         </div>
         <div className="max-w-sm overflow-hidden rounded-2xl border border-grey-200">
           <div className="flex min-h-14 items-center justify-between gap-2 border-b border-grey-200 bg-white pr-2 pl-4">
-            <span className="text-h3 text-black">{brand.name}</span>
+            <Logo art={horizontalLogo} label={brand.name} className="block h-7 text-black" />
             <NotificationBell href="/notifications" unread={3} />
           </div>
           <p className="px-4 py-6 text-small text-grey-700">The top bar as it looks on a phone, above the screen&apos;s own title.</p>

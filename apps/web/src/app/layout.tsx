@@ -18,8 +18,14 @@ export const metadata: Metadata = {
   applicationName: brand.name,
   // The manifest itself is app/manifest.ts. Safari on iOS reads these instead (PRD 8.1, M4-08).
   appleWebApp: { capable: true, title: brand.shortName, statusBarStyle: 'default' },
+  // The tab's icon is the app icon (D-249): drawn sharp from the SVG where a browser can, the .ico
+  // where it cannot, and the 192 for search results, which want a multiple of 48.
   icons: {
-    icon: [{ url: '/icons/192.png', sizes: '192x192', type: 'image/png' }],
+    icon: [
+      { url: '/favicon.ico', sizes: '32x32' },
+      { url: '/favicon.svg', type: 'image/svg+xml' },
+      { url: '/icons/192.png', sizes: '192x192', type: 'image/png' },
+    ],
     apple: [{ url: '/icons/apple-touch-180.png', sizes: '180x180', type: 'image/png' }],
   },
 };

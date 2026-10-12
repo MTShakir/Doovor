@@ -21,8 +21,9 @@ export const brand = {
    */
   tagline: 'Book, pay and track driving lessons in one simple app.',
   /**
-   * The line that goes with the logo (D-244). Set beside or under the logo in the lockup, and on
-   * the share images, once the logo files are in assets/brand.
+   * The line that goes with the logo (D-244). The lockup in assets/brand draws it into the artwork,
+   * where it ends with a full stop. The share images leave it out: they are seen too small for it
+   * to be read (D-249).
    */
   slogan: 'Drive Starts Here',
   legalEntity: 'Maxterz LTD',

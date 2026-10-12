@@ -2,10 +2,11 @@ import 'server-only';
 import { readFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { brand } from '@repo/config/brand';
+import { horizontalLogo } from '@repo/config/logo/horizontal';
 import { SHARE_IMAGE_SIZE, type ShareCard } from '@repo/core/share-card';
 import { ImageResponse } from 'next/og';
 import sharp from 'sharp';
-import { brandMark } from '@/lib/pwa/icon-art';
+import { DrawnLogo } from '@/lib/brand/drawn-logo';
 import { isDrawablePhotoUrl } from '@/lib/storage/images';
 
 /**
@@ -139,24 +140,9 @@ export function ShareCardArt({ card, photo }: { card: ShareCard; photo: string |
           {card.picture === null ? null : <Picture picture={card.picture} photo={photo} />}
         </div>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 18 }}>
-            <div
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                width: 64,
-                height: 64,
-                borderRadius: 16,
-                background: colours.black,
-              }}
-            >
-              <svg width="40" height="40" viewBox="0 0 100 100">
-                <path d={brandMark} fill={colours.white} fillRule="evenodd" />
-              </svg>
-            </div>
-            <div style={{ display: 'flex', fontSize: 40, fontWeight: 700, letterSpacing: -0.5 }}>{brand.name}</div>
-          </div>
+          {/* The horizontal logo, not the one with the slogan: a preview is shown a third of this
+              size, where the slogan would be a smudge (assets/brand/README.md, D-249). */}
+          <DrawnLogo art={horizontalLogo} height={60} colour={colours.black} />
           <div
             style={{
               display: 'flex',

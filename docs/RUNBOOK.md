@@ -441,8 +441,9 @@ finished while the first hundred arrive.
 
 - Pro billing: section 3.7 steps 7a and 10, then set `STRIPE_WEBHOOK_SECRET`, which opens it.
 - Google sign-in, the last two steps (section 3.4): email and password work without it.
-- The logo: the eight files are in `assets/brand` (12 October 2026), described in its README.
-  Wiring them into the app is next.
+- **Done, 12 October 2026:** the logo. The eight files are in `assets/brand`, and the app draws
+  it everywhere from them (D-249). To change it, replace a file there, run `pnpm brand:logo`, and
+  commit both; its README says what each file is for.
 
 ## 4. Routine operations
 

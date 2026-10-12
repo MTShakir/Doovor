@@ -1,7 +1,9 @@
 'use client';
 
 import { brand } from '@repo/config/brand';
+import { horizontalLogo } from '@repo/config/logo/horizontal';
 import { BottomTabBar, Sidebar } from '@repo/ui/app-shell';
+import { Logo } from '@repo/ui/logo';
 import { usePathname } from 'next/navigation';
 import { Suspense, type ReactNode } from 'react';
 import { hrefFor, isActive, navFor, type Portal } from '@/lib/navigation';
@@ -18,7 +20,7 @@ function items(portal: Portal, surface: 'mobile' | 'desktop', pathname: string |
 
 interface SidebarParts {
   footer?: ReactNode;
-  /** Beside the name at the top of the menu: the notification bell (D-159). */
+  /** Beside the logo at the top of the menu: the notification bell (D-159). */
   headerAction?: ReactNode;
 }
 
@@ -29,7 +31,7 @@ function sidebar(portal: Portal, pathname: string | null, { footer, headerAction
       linkComponent={NavLink}
       header={
         <div className="-my-3 -mr-3 flex items-center justify-between gap-2">
-          <span className="text-h3 text-black">{brand.name}</span>
+          <Logo art={horizontalLogo} label={brand.name} className="h-7 text-black" />
           {headerAction}
         </div>
       }

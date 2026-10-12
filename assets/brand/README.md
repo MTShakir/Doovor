@@ -44,6 +44,13 @@ All eight passed on 12 October 2026:
 - The black files set no colour of their own. As an image they are black; placed inline in a
   page, CSS `fill` can colour them.
 
+## How the app uses them
+
+The app does not serve these files. `pnpm brand:logo` reads their shapes into
+`packages/config/src/logo`, and everything below is drawn from those, in the colour each place
+needs: the white files are checked to be the same artwork as the black ones, so only the black
+are read. A test reads the files here again and fails if the app's copy has drifted from them.
+
 ## Replacing a file
 
 Export the new one under the same name, keeping to what made these pass:
@@ -55,18 +62,22 @@ Export the new one under the same name, keeping to what made these pass:
    the wheel inside the middle 80%.
 5. **Exported as a plain SVG** ("SVG", not "Illustrator SVG" with editing data).
 
+Then run `pnpm brand:logo` and commit what it changes with the file. If an export breaks one of
+the rules above, it says which and changes nothing.
+
 If the logo ever gains a colour beyond black and white, send its hex value too, so the app's
 colours can match it.
 
-## What gets made from these
+## What is made from these
 
-None of this is made yet. It comes next, from the files above, with nothing else to export.
+Made on 12 October 2026 (D-249), with nothing else exported.
 
 | Made | From | Size | Where it shows |
 |---|---|---|---|
-| Favicon | `app-icon.svg` | 16, 32 and 48 px, plus an SVG one | The browser tab. White on black shows in light and dark tabs alike |
-| App icons | `app-icon.svg` | 192 and 512 px, and a 512 px one Android can crop to a circle | Installing the app on Android and a computer |
+| Favicon | `app-icon.svg` | `/favicon.ico` with 16, 32 and 48 px inside, and `/favicon.svg` | The browser tab. White on black shows in light and dark tabs alike |
+| App icons | `app-icon.svg` | 192 and 512 px, and a 512 px one Android can crop, with the wheel at 62% | Installing the app on Android and a computer |
 | Apple icon | `app-icon.svg` | 180 px | Adding the app to an iPhone home screen |
-| Email header | `logo-horizontal.svg` | 2x the size it is shown | The top of every email (email clients cannot show SVG) |
-| Share images | `logo-tagline-white.svg` | 1200 x 630 px | The preview when a page is shared on WhatsApp, Facebook, LinkedIn or X |
-| Headers | `logo-horizontal.svg` and its white version | from the SVGs | The site, the app on a phone and a computer, sign-in, and onboarding |
+| Email header | `logo-horizontal.svg` | `/brand/email-logo.png`, shown at 101 x 28 and drawn at twice that, on the email's grey | The top of every email (email clients cannot show SVG) |
+| Share images | `logo-horizontal.svg` | 60 px tall on a 1200 x 630 px card | The preview when a page is shared on WhatsApp, Facebook, LinkedIn or X. Not the slogan lockup: a preview is shown at about a third of this size, where the slogan could not be read |
+| Headers | `logo-horizontal.svg` | 28 to 32 px tall, drawn in the page | The site's header and footer, the app's top bar on a phone and its menu on a computer, sign-in, account, onboarding, and the page shown with no connection |
+| The design page | all of them | | `/design`, every version on light and on dark, and the made pictures above |

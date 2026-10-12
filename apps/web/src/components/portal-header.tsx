@@ -1,5 +1,7 @@
 import { brand } from '@repo/config/brand';
+import { horizontalLogo } from '@repo/config/logo/horizontal';
 import { MobileTopBar } from '@repo/ui/app-shell';
+import { Logo } from '@repo/ui/logo';
 import { connection } from 'next/server';
 import { Suspense } from 'react';
 import { getSession } from '@/lib/auth/session';
@@ -37,7 +39,7 @@ export function PortalHeaderActions() {
   );
 }
 
-/** The phone's top bar in a portal: the name, then support and the bell (D-159, D-241). */
+/** The phone's top bar in a portal: the logo, then support and the bell (D-159, D-241, D-249). */
 export function PortalTopBar() {
-  return <MobileTopBar title={brand.name} actions={<PortalHeaderActions />} />;
+  return <MobileTopBar title={<Logo art={horizontalLogo} label={brand.name} className="block h-7" />} actions={<PortalHeaderActions />} />;
 }
