@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { assertSeedTargets, isLocalUrl } from './guard';
+import { assertSeedTargets, databaseUrlFrom, isLocalUrl } from './guard';
 
 const localTargets = [
   { label: 'Supabase URL', url: 'http://127.0.0.1:54321' },
@@ -63,5 +63,95 @@ describe('seed guard (M0-28)', () => {
     expect(() => { assertSeedTargets(localTargets, { appEnv: 'production', allowRemote: true, customPassword: true }); }).toThrow(
       /production/,
     );
+  });
+});
+
+/**
+ * A connection string pasted from Supabase, with a real person's password in it (D-247). The
+ * launch wipe said only "Invalid URL" when a password had a # in it, which told nobody anything.
+ */
+describe('reading a pasted database connection string (D-247)', () => {
+  const pooler = 'aws-0-eu-west-2.pooler.supabase.com:5432/postgres';
+  const pasted = (password: string) => `postgresql://postgres.yvxuarrrvgnfcjfyqfyi:${password}@${pooler}`;
+
+  /** What a driver would actually connect with, read back out of the string. */
+  const readBack = (url: string) => {
+    const parsed = new URL(url);
+    return {
+      user: decodeURIComponent(parsed.username),
+      password: decodeURIComponent(parsed.password),
+      host: parsed.hostname,
+      port: parsed.port,
+      database: parsed.pathname.slice(1),
+    };
+  };
+
+  it('leaves a plain password as it is', () => {
+    const answer = databaseUrlFrom(pasted('LettersAndDigits123'));
+    expect(answer.ok).toBe(true);
+    if (!answer.ok) return;
+    expect(readBack(answer.url)).toEqual({
+      user: 'postgres.yvxuarrrvgnfcjfyqfyi',
+      password: 'LettersAndDigits123',
+      host: 'aws-0-eu-west-2.pooler.supabase.com',
+      port: '5432',
+      database: 'postgres',
+    });
+  });
+
+  it('takes a password with the characters that end the password part of an address', () => {
+    // Each of these made the old parser read a host and port out of the middle of the password.
+    for (const password of ['ab#cd', 'ab/cd', 'ab?cd', 'p@ss@word', 'a:b', 'all#/?@:%of them', '1234/x']) {
+      const answer = databaseUrlFrom(pasted(password));
+      expect(answer.ok, password).toBe(true);
+      if (!answer.ok) continue;
+      expect(readBack(answer.url).password, password).toBe(password);
+      expect(readBack(answer.url).host, password).toBe('aws-0-eu-west-2.pooler.supabase.com');
+    }
+  });
+
+  it('gives the same answer for a password somebody already encoded', () => {
+    const answer = databaseUrlFrom(pasted('ab%23cd'));
+    expect(answer.ok && readBack(answer.url).password).toBe('ab#cd');
+  });
+
+  it('takes the square brackets off a password typed inside the placeholder, and says so', () => {
+    const answer = databaseUrlFrom(pasted('[RealPassword]'));
+    expect(answer.ok).toBe(true);
+    if (!answer.ok) return;
+    expect(readBack(answer.url).password).toBe('RealPassword');
+    expect(answer.note).toMatch(/square brackets/);
+  });
+
+  it('refuses the placeholder left as it is', () => {
+    const answer = databaseUrlFrom(pasted('[YOUR-PASSWORD]'));
+    expect(answer.ok).toBe(false);
+    if (!answer.ok) expect(answer.problem).toMatch(/still has \[YOUR-PASSWORD\]/);
+  });
+
+  it('says what is wrong with something that is not a connection string at all', () => {
+    for (const raw of [
+      '',
+      'psql -h aws-0-eu-west-2.pooler.supabase.com -p 5432 -U postgres',
+      'User Id=postgres;Password=secret;Server=aws-0-eu-west-2.pooler.supabase.com',
+      'postgresql://no-password-here.pooler.supabase.com:5432/postgres',
+      'postgresql://postgres.ref@aws-0-eu-west-2.pooler.supabase.com:5432/postgres',
+    ]) {
+      const answer = databaseUrlFrom(raw);
+      expect(answer.ok, raw).toBe(false);
+    }
+  });
+
+  it('never repeats the password in what it says, whatever went wrong', () => {
+    const secret = 'Sup3rS3cret#Pass';
+    for (const raw of [
+      `postgres.ref:${secret}@aws-0-eu-west-2.pooler.supabase.com:5432/postgres`,
+      `postgresql://postgres.ref:${secret}@`,
+      `postgresql://postgres.ref${secret}@aws-0-eu-west-2.pooler.supabase.com:5432/postgres`,
+    ]) {
+      const answer = databaseUrlFrom(raw);
+      expect(answer.ok).toBe(false);
+      if (!answer.ok) expect(answer.problem).not.toContain(secret);
+    }
   });
 });

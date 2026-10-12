@@ -17,7 +17,7 @@ import { existsSync } from 'node:fs';
 import path from 'node:path';
 import { createClient, type SupabaseClient } from '@supabase/supabase-js';
 import postgres from 'postgres';
-import { isLocalUrl } from './guard';
+import { databaseUrlFrom, isLocalUrl } from './guard';
 
 const root = path.resolve(import.meta.dirname, '../../..');
 const envFile = path.join(root, '.env.local');
@@ -50,14 +50,36 @@ function argument(name: string): string | undefined {
 /** The project a Supabase URL belongs to: `https://<ref>.supabase.co`, or "local". */
 function projectOf(url: string): string {
   if (isLocalUrl(url)) return 'local';
-  const host = new URL(url).hostname;
+  let host: string;
+  try {
+    host = new URL(url).hostname;
+  } catch {
+    // Named, because a bare "Invalid URL" does not say which of two addresses it means.
+    throw new Error(
+      'NEXT_PUBLIC_SUPABASE_URL is not an address. It should look like https://yvxuarrrvgnfcjfyqfyi.supabase.co. Nothing has been touched.',
+    );
+  }
   return host.split('.')[0] ?? host;
+}
+
+/**
+ * The database to empty: the pasted connection string made safe to connect with, or the local
+ * stack's when none is given. A password with # / or ? in it used to end the run with "Invalid
+ * URL" and nothing else (D-247); now it connects, and anything actually wrong is said in words.
+ */
+function databaseUrl(): string {
+  const raw = process.env.SUPABASE_DB_URL;
+  if (raw === undefined || raw === '') return 'postgresql://postgres:postgres@127.0.0.1:54322/postgres';
+  const answer = databaseUrlFrom(raw);
+  if (!answer.ok) throw new Error(`${answer.problem} Nothing has been touched.`);
+  if (answer.note !== undefined) say(`  ${answer.note}`);
+  return answer.url;
 }
 
 async function main(): Promise<void> {
   const supabaseUrl = required('NEXT_PUBLIC_SUPABASE_URL');
   const secretKey = required('SUPABASE_SECRET_KEY');
-  const dbUrl = process.env.SUPABASE_DB_URL ?? 'postgresql://postgres:postgres@127.0.0.1:54322/postgres';
+  const dbUrl = databaseUrl();
   const email = required('ADMIN_EMAIL');
   const password = required('ADMIN_PASSWORD');
   const named = argument('project');
