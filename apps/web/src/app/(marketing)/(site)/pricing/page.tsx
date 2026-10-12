@@ -9,6 +9,7 @@ import type { Metadata } from 'next';
 import { Band, ClosingCall, FoundingOffer, PlanCard, PrimaryLink } from '@/components/site/marketing';
 import { getAppUrl } from '@/lib/app-url';
 import { publicPageMetadata } from '@/lib/public/metadata';
+import { foundingPlaces } from '@/lib/site/founding';
 import { planSummaries } from '@/lib/site/plan-features';
 
 /** Plans and prices (PRD 9.18, M5-09), every figure from `@repo/config/plans`. */
@@ -28,7 +29,8 @@ function cardFeeWords(): string {
   return `${String(standardCardFee.basisPoints / 100)}% plus ${String(standardCardFee.fixedPence)}p`;
 }
 
-export default function PricingPage() {
+export default async function PricingPage() {
+  const places = await foundingPlaces();
   const appUrl = getAppUrl();
   const summaries = planSummaries();
   const questions = [
@@ -74,7 +76,7 @@ export default function PricingPage() {
         </p>
       </section>
 
-      <FoundingOffer />
+      <FoundingOffer places={places} />
 
       <Band id="plans" title="Plans">
         <div className="grid grid-cols-[minmax(0,1fr)] gap-4 lg:grid-cols-3">

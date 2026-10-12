@@ -15,7 +15,16 @@ const appHost = `app.${domain}`;
 export const brand = {
   name,
   shortName: name,
+  /**
+   * What the product does, in a sentence: the description search engines, the app manifest and
+   * share previews carry. Not the slogan below, though the word tagline has meant both.
+   */
   tagline: 'Book, pay and track driving lessons in one simple app.',
+  /**
+   * The line that goes with the logo (D-244). Set beside or under the logo in the lockup, and on
+   * the share images, once the logo files are in assets/brand.
+   */
+  slogan: 'Drive Starts Here',
   legalEntity: 'Maxterz LTD',
   /** From Companies House: what the company's website and emails must say about it (see companyDisclosure). */
   company: {

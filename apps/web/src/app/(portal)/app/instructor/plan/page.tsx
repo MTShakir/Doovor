@@ -8,6 +8,7 @@ import { Suspense } from 'react';
 import { BackLink } from '@/components/back-link';
 import { PlanScreen } from '@/components/plan-screen';
 import { businessPlan } from '@/lib/billing/plan';
+import { proBillingOpen } from '@/lib/billing/provider';
 import { proSubscription } from '@/lib/billing/subscription';
 import { requirePortal } from '@/lib/auth/session';
 import { GoPro, ProSubscriptionCard, WaitingForStripe } from './go-pro';
@@ -53,9 +54,11 @@ async function Plan({ searchParams }: { searchParams: Promise<{ subscribed?: str
   const justPaid = params.subscribed === '1' || (Array.isArray(params.subscribed) && params.subscribed.includes('1'));
 
   // Null for a school owner, who pays per instructor instead (D-231), and for anybody whose
-  // plan is not theirs to change.
+  // plan is not theirs to change. Nothing to take or keep either while paying for Pro is closed
+  // (D-242): every instructor starts on Pro through a founding place or a trial, so there is
+  // nothing they are missing, and an offer that cannot be taken up is worse than no offer.
   const subscribe =
-    subscription === null ? undefined : subscription.live ? (
+    subscription === null || (!subscription.live && !proBillingOpen()) ? undefined : subscription.live ? (
       <ProSubscriptionCard subscription={subscription} />
     ) : justPaid ? (
       <WaitingForStripe />

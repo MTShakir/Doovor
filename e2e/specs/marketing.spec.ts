@@ -2,6 +2,7 @@ import { brand } from '@repo/config/brand';
 import { sitePagePaths } from '@repo/core/sitemap';
 import { foundingOffer, freeTrial, plans } from '@repo/config/plans';
 import { expect, test, type Page, type TestInfo } from '@playwright/test';
+import { withDatabase } from '../support/database';
 import { expectAccessible, settled, snap } from '../support/helpers';
 
 /** Whole pounds, as the site writes them. */
@@ -46,6 +47,38 @@ test.describe('the public site (PRD 8.3, 9.18, M5-09)', () => {
       await settled(page);
       await snap(page, testInfo, one.shot);
     }
+  });
+
+  test('the home page says how many founding places have gone, and only ever the true number (D-243)', async ({ page }, testInfo) => {
+    await page.goto('/');
+    const count = page.getByTestId('founding-count');
+    await expect(count).toBeVisible();
+
+    const truth = await withDatabase(async (sql) => {
+      const [row] = await sql<{ places: { instructorLimit: number; instructorsJoined: number } }[]>`
+        select public.founding_places() as places`;
+      if (!row) throw new Error('no founding places answer');
+      return row.places;
+    });
+
+    // "3/100 joined", or "100 places open" before anybody has. The page keeps its count for
+    // minutes and other specs make Businesses while this runs, so it may be behind the database
+    // but can never be ahead of it: a number above the truth is the one thing it must not say.
+    const headline = (await count.locator('span').first().textContent())?.trim() ?? '';
+    const joined = /^(\d+)\/(\d+) joined$/.exec(headline);
+    if (joined) {
+      expect(Number(joined[2])).toBe(truth.instructorLimit);
+      expect(Number(joined[1])).toBeGreaterThan(0);
+      expect(Number(joined[1])).toBeLessThanOrEqual(truth.instructorsJoined);
+    } else {
+      expect(headline).toBe(`${String(truth.instructorLimit)} places open`);
+    }
+    await expect(count.getByRole('progressbar', { name: /Founding places taken/ })).toBeVisible();
+
+    await expectAccessible(page);
+    await count.scrollIntoViewIfNeeded();
+    await settled(page);
+    await snap(page, testInfo, 'home-founding-count');
   });
 
   test('pricing shows each plan at its configured price, what it has now and what comes later, and the founding offer', async ({ page }, testInfo) => {

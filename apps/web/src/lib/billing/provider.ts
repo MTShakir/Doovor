@@ -47,9 +47,20 @@ export function billingProvider(): BillingProvider {
   return stripeBillingProvider({ secretKey: serverEnv.STRIPE_SECRET_KEY, productName: proProductName });
 }
 
-/** Whether Pro can be paid for at all here. Without a provider the screen says so, rather than failing. */
-export function billingIsLive(): boolean {
-  return serverEnv.PAYMENTS_PROVIDER !== 'stripe' || typeof serverEnv.STRIPE_SECRET_KEY === 'string';
+/**
+ * Whether Pro can be paid for here at all (D-242).
+ *
+ * Only where the event that grants it can arrive. Pro is granted by a signed webhook and never by
+ * the browser coming back from Stripe, so taking a card without the platform endpoint's secret
+ * would take real money and record nothing: the customer charged, Stripe retrying an event we
+ * refuse for three days, and the plan never changing. So the rule is the secret, not a flag
+ * somebody has to remember to turn on. With the fake there is nothing to receive, so it is open.
+ *
+ * This is what lets the first instructors arrive before billing is finished: every one of them
+ * starts on Pro through a founding place or a trial, so nobody needs to pay for months.
+ */
+export function proBillingOpen(): boolean {
+  return billingWebhookSecrets().length > 0;
 }
 
 /**

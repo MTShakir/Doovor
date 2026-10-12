@@ -7,7 +7,7 @@ import { bankedMonthsCreditPence, subscriptionPricePence } from '@repo/core/subs
 import { revalidatePath } from 'next/cache';
 import { requirePortal } from '@/lib/auth/session';
 import { refuseWhileViewing } from '@/lib/auth/view-as';
-import { billingProvider } from '@/lib/billing/provider';
+import { billingProvider, proBillingOpen } from '@/lib/billing/provider';
 import { deliverFakeSubscriptionEvent } from '@/lib/billing/webhook';
 import { proSubscription } from '@/lib/billing/subscription';
 import { getAppUrl } from '@/lib/app-url';
@@ -34,6 +34,12 @@ export async function startProCheckout(input: unknown): Promise<Result<{ url: st
   const parsed = startProCheckoutSchema.safeParse(input);
   if (!parsed.success) return err('VALIDATION_FAILED', undefined, fieldErrors(parsed.error));
   const { interval } = parsed.data;
+
+  // Refused here as well as hidden on the screen: a button nobody can see can still be pressed by
+  // anybody who knows what it posts, and money taken here could not be recorded (D-242).
+  if (!proBillingOpen()) {
+    return err('NOT_ALLOWED', 'Paying for Pro opens soon. Your plan carries on as it is until then.');
+  }
 
   await requirePortal('instructor');
   const mine = await proSubscription();

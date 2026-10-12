@@ -318,6 +318,69 @@ cannot work without, `cities`, `city_districts`, `marketplace_regions`, `skills`
 To rehearse it, run the same command against the local stack with `--project=local`, then
 `pnpm db:reset` to get the demo data back.
 
+### 3.10 Launching to the first instructor
+
+The code is ready for a real instructor. What is left is accounts and settings, in this order.
+Pro billing is **not** on this list: every instructor starts on Pro through a founding place or a
+trial, and the app will not take a payment for Pro until its webhook exists (D-242), so it is
+finished while the first hundred arrive.
+
+**Start these now. Each waits on somebody else.**
+
+1. **Texts reach a real phone.** Onboarding asks for a mobile number and will not go on without the
+   code, so this is the one that can stop a sign-up dead. On app.doovor.com, add your own mobile to
+   an account and check a code arrives. If not, section 3.3 step 4: Twilio sends nothing until its
+   Trust Hub customer profile is approved, and the reason is in Supabase, Logs > Auth, search `sms`.
+2. **Stripe's Connect questionnaire** (section 3.7 step 8): company identity, business model, the
+   loss liability choices. Stripe reviews it, so it is not same day. Until it is approved an
+   instructor can take cash and bank transfers but not cards, and "Set up payments" will fail; do
+   not point the first instructor at it before Stripe has said yes.
+3. **Emails reach an inbox.** Sign up with an address you have not used before and check the
+   confirmation arrives within a minute, not in spam. Supabase sends it through Resend (section
+   3.2); its own default sender is rate limited to a handful an hour and is not for real people.
+
+**Launch day, in this order.**
+
+4. **Supabase to Pro** (D-154). A free project pauses after a week without visits, which for a live
+   product is an outage nobody chose, and Pro brings the daily backup.
+5. **Leaked password protection on** (section 3.1 step 4), now Pro allows it.
+6. **Empty the database** (section 3.9). It removes every demo Business, and with them the one
+   founding place the seed holds, so the home page goes from "1/100 joined" to "100 places open".
+   Then two-step verification on the admin account straight away.
+7. **Stripe live endpoint for Connect** (section 3.7 step 7), in **live** mode this time, against
+   `https://app.doovor.com/api/webhooks/stripe`. Its signing secret is the
+   `STRIPE_CONNECT_WEBHOOK_SECRET` below. Leave the billing endpoint (step 7a) for later.
+8. **Vercel, Production only, all in one go** (section 3.7 step 9 and section 4's checklist):
+
+   | Name | Value |
+   |---|---|
+   | `APP_ENV` | `production` |
+   | `PAYMENTS_PROVIDER` | `stripe` |
+   | `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY` | live, `pk_live_...` |
+   | `STRIPE_SECRET_KEY` | live, `sk_live_...` (Sensitive) |
+   | `STRIPE_CONNECT_WEBHOOK_SECRET` | from step 7 (Sensitive) |
+   | `STRIPE_WEBHOOK_SECRET` | **leave unset**: it is what opens Pro billing |
+   | `EMAIL_PROVIDER` / `SMS_PROVIDER` | `resend` / `twilio` |
+   | `SUPABASE_SEND_SMS_HOOK_SECRET` | section 3.3 step 6 |
+   | `INNGEST_EVENT_KEY`, `INNGEST_SIGNING_KEY` | section 3.8 |
+   | `FIELD_ENCRYPTION_KEYS` | generate once, keep in your password manager |
+   | `NEXT_PUBLIC_SENTRY_DSN` | section 4, watching for errors and outages |
+
+   The app refuses to start in production with any fake provider, a test Stripe key, or any of
+   these missing, and says which. That refusal is the check: a build that comes up is configured.
+9. **Redeploy**, then section 4's going to production checklist, item 9.
+10. **Do not test sign-up with a made-up instructor.** Every instructor account takes a founding
+    place and the home page counts it, and `/admin` can suspend a Business but not remove one, so a
+    suspended test still holds its place. Test as the admin. If a test account does get made, it is
+    removed from the database rather than from a screen: ask, rather than leave it counted.
+11. **Invite the first instructor**, and approve their badge in `/admin` when it arrives.
+
+**Can wait until after the first instructor.**
+
+- Pro billing: section 3.7 steps 7a and 10, then set `STRIPE_WEBHOOK_SECRET`, which opens it.
+- Google sign-in, the last two steps (section 3.4): email and password work without it.
+- The logo: the files go in `assets/brand`, with the list in its README.
+
 ## 4. Routine operations
 
 ### Database changes

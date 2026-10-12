@@ -1,8 +1,11 @@
 import { foundingOffer } from '@repo/config/plans';
+import { foundingCountWords } from '@repo/core/founding';
 import { Button } from '@repo/ui/button';
+import { ProgressBar } from '@repo/ui/progress';
 import { cn } from '@repo/ui/lib/cn';
 import { Check, Clock, type LucideIcon } from 'lucide-react';
 import type { ReactNode } from 'react';
+import type { FoundingPlaces } from '@/lib/site/founding';
 import type { PlanSummary } from '@/lib/site/plan-features';
 
 /**
@@ -103,21 +106,58 @@ export function Steps({ steps }: { steps: readonly { title: string; description:
 }
 
 /** The founding offer (PRD 9.18, D-027): the one thing on the site drawn in yellow. */
-export function FoundingOffer({ action }: { action?: ReactNode }) {
+/**
+ * The founding offer, with how many of the places have gone when that is known (D-203, D-243).
+ *
+ * The count is read from the database, from the same rows the places are given out from, so it is
+ * true by construction: a number on a public page about how scarce something is has to be, and a
+ * fixed one would stop being true the day it was typed. When it cannot be read the band says what
+ * it said before there was a count, rather than guessing.
+ *
+ * Once every instructor place has gone the band stops offering one and says what a new business
+ * gets instead, which is a free trial: an offer still printed after it has closed is the other way
+ * for this number to lie. The page chooses the button's words, since it knows where it leads.
+ */
+export function FoundingOffer({ action, places }: { action?: ReactNode; places?: FoundingPlaces | null }) {
+  const instructors = places?.instructors ?? null;
+  const closed = instructors?.full === true;
+  const months = places?.months ?? foundingOffer.months;
+  const count = instructors === null ? null : foundingCountWords(instructors);
+
   return (
     <section aria-labelledby="founding-offer-heading" className="mx-auto w-full max-w-6xl px-4 md:px-6">
-      <div className="flex flex-col gap-6 rounded-card bg-yellow p-6 text-black md:flex-row md:items-center md:justify-between md:p-10">
+      <div className="flex flex-col gap-6 rounded-card bg-yellow p-6 text-black md:flex-row md:items-center md:justify-between md:gap-10 md:p-10">
         <div className="flex max-w-2xl flex-col gap-2">
           <p className="text-small font-semibold">Founding offer</p>
           <h2 id="founding-offer-heading" className="text-h1 text-balance">
-            The paid plan free for {foundingOffer.months} months
+            {closed ? 'Start on the paid plan, free' : `The paid plan free for ${String(months)} months`}
           </h2>
           <p className="text-body">
-            Pro for the first {foundingOffer.instructorLimit} independent instructors, and the School plan for the first {foundingOffer.schoolLimit} driving schools.
-            No card needed.
+            {closed
+              ? // No number of days: the trial is 90 days for the next 500 and 30 after, and a figure
+                // here would be the next thing on this page to stop being true (D-204).
+                'The founding places have all gone. Every new business still starts on the paid plan free for a while, with no card needed.'
+              : `Pro for the first ${String(foundingOffer.instructorLimit)} independent instructors, and the School plan for the first ${String(foundingOffer.schoolLimit)} driving schools. No card needed.`}
           </p>
+          {count === null || instructors === null ? null : (
+            // The count is the instructors', because the instructor places are the ones running
+            // out first and the ones the page is talking to.
+            <div className="mt-3 flex max-w-md flex-col gap-2" data-testid="founding-count">
+              <div className="flex items-baseline justify-between gap-3">
+                <span className="text-h2 font-semibold tabular-nums">{count.headline}</span>
+                <span className="text-small font-semibold tabular-nums">{count.detail}</span>
+              </div>
+              <ProgressBar
+                value={instructors.percent}
+                label={`Founding places taken: ${String(instructors.taken)} of ${String(instructors.limit)}`}
+                // Black on a tint of black, because grey on the brand yellow does not read.
+                className="h-3 bg-black/15"
+              />
+            </div>
+          )}
         </div>
-        {action}
+        {/* Its natural width, so the counter beside it cannot squeeze it onto two lines. */}
+        {action === undefined ? null : <div className="shrink-0">{action}</div>}
       </div>
     </section>
   );

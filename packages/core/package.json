@@ -23,6 +23,7 @@
     "./books": "./src/books.ts",
     "./csv-write": "./src/csv-write.ts",
     "./colour": "./src/colour.ts",
+    "./founding": "./src/founding.ts",
     "./loyalty": "./src/loyalty.ts",
     "./subscription": "./src/subscription.ts",
     "./mileage": "./src/mileage.ts",

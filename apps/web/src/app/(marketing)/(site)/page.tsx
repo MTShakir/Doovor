@@ -8,6 +8,7 @@ import { Band, ClosingCall, FeatureGrid, FoundingOffer, PageHero, PrimaryLink, S
 import { getAppUrl } from '@/lib/app-url';
 import { publicPageMetadata } from '@/lib/public/metadata';
 import { launchCities } from '@/lib/site/cities';
+import { foundingPlaces } from '@/lib/site/founding';
 
 /** The site's front door (PRD 8.3, M5-09). */
 export function generateMetadata(): Metadata {
@@ -80,7 +81,7 @@ const features = [
 
 export default async function HomePage() {
   const appUrl = getAppUrl();
-  const cities = await launchCities();
+  const [cities, places] = await Promise.all([launchCities(), foundingPlaces()]);
   return (
     <>
       <PageHero
@@ -116,7 +117,12 @@ export default async function HomePage() {
         <FeatureGrid features={features} />
       </Band>
 
-      <FoundingOffer action={<PrimaryLink href={`${appUrl}/start`}>Claim the offer</PrimaryLink>} />
+      <FoundingOffer
+        places={places}
+        action={
+          <PrimaryLink href={`${appUrl}/start`}>{places?.instructors.full === true ? 'Start free' : 'Claim the offer'}</PrimaryLink>
+        }
+      />
 
       {cities.length === 0 ? null : (
         <Band id="cities" title="Instructors near you" description="Every instructor listed is checked by us, with their prices and free times.">
