@@ -387,7 +387,8 @@ finished while the first hundred arrive.
 4. **Supabase to Pro** (D-154). A free project pauses after a week without visits, which for a live
    product is an outage nobody chose, and Pro brings the daily backup.
 5. **Leaked password protection on** (section 3.1 step 4), now Pro allows it.
-6. **Empty the database** (section 3.9). It removes every demo Business, and with them the one
+6. **Done, 12 October 2026:** the staging project was emptied; the super admin is the one
+   account left. **Empty the database** (section 3.9). It removes every demo Business, and with them the one
    founding place the seed holds, so the home page goes from "1/100 joined" to "100 places open".
    Then two-step verification on the admin account straight away.
 7. **Stripe live endpoint for Connect** (section 3.7 step 7), in **live** mode this time, against
