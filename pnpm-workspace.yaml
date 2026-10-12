@@ -45,6 +45,13 @@ overrides:
   # from the two advisories in auditConfig below. 5.3.1 is what resolves without this, and the
   # fix landed in a new major, so this is a major bump for a tool that never runs in anger.
   basic-ftp: '>=6.2.1 <7'
+  # Its librsvg can be made to misbehave by a crafted SVG (GHSA-wq5f-xc86-pv6w). It is what Next
+  # resizes pictures with in production, and the logo is about to arrive as SVG, so this is one of
+  # the few here that reaches a visitor's request rather than a developer's machine.
+  sharp: '>=0.35.5 <0.36'
+  # An event loop denial of service through a source map's section offsets (GHSA-68fv-2mgg-jv7q).
+  # Under vitest, through vite and postcss: it reads source maps our own build wrote.
+  source-map-js: '>=1.2.2 <2'
   # Path traversal through a prefix, under Lighthouse CI.
   tmp: '>=0.2.6'
   # Missing bounds check when given a buffer, under Lighthouse CI.
@@ -68,6 +75,11 @@ auditConfig:
   ignoreGhsas:
     - GHSA-jmr9-qjv8-65gv
     - GHSA-7pqw-9j4j-h8q3
+    # braces, stack exhaustion through deeply nested patterns, with no fixed version: 3.0.3 is the
+    # last release and is listed as vulnerable. It reaches us only through ESLint's Next plugin
+    # finding our own files, so the patterns it is given are the repository's globs and never
+    # anything a visitor sends. Reviewed 12 October 2026; drop this once a fixed version exists.
+    - GHSA-vfj7-8cjw-p6xm
 
 # Shared versions. Workspace packages reference these with "catalog:".
 catalog:
@@ -76,7 +88,10 @@ catalog:
   "@types/react-dom": ^19.2.0
   eslint: ^10.10.0
   # 16.3.6 fixes a critical remote code execution in next/og, which the public share images use.
-  next: ^16.3.6
+  # 16.3.8 fixes a server-side request forgery in image optimisation (GHSA-cjq9-62q9-8jv4), which
+  # every page with a picture goes through. A tilde rather than a caret, so this fix is the patch
+  # release it names and not 16.4.0 riding in with it: a minor is a change to read, not a patch.
+  next: ~16.3.8
   react: ^19.2.0
   react-dom: ^19.2.0
   tailwindcss: ^4.3.0
