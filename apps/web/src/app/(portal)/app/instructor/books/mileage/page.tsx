@@ -71,7 +71,25 @@ async function Mileage({ searchParams }: { searchParams: Promise<{ year?: string
 
   return (
     <>
-      {usable.length > 0 ? <LogMileage today={todayInZone()} vehicles={usable.map((one) => ({ id: one.id, name: one.name }))} /> : null}
+      {usable.length > 0 ? (
+        <LogMileage today={todayInZone()} vehicles={usable.map((one) => ({ id: one.id, name: one.name }))} />
+      ) : (
+        // Every car is claimed on its costs, which for a car with dual controls is the only way
+        // HMRC allows (D-256). Saying so beats a page with nothing to press.
+        <Card className="flex flex-col gap-3" role="region" aria-labelledby="mileage-costs-title">
+          <div className="flex flex-col gap-1">
+            <CardTitle id="mileage-costs-title">Your cars are claimed on what they cost</CardTitle>
+            <CardDescription>
+              {vehicles.some((one) => one.dualControls)
+                ? 'HMRC does not allow the mileage rate for a car with dual controls. Keep its fuel, insurance, servicing and the rest as expenses instead.'
+                : 'What your cars cost to run is already claimed, so their miles cannot be claimed as well. Keep adding their costs as expenses.'}
+            </CardDescription>
+          </div>
+          <Button variant="secondary" width="full" asChild>
+            <Link href="/app/instructor/books/expenses">Go to expenses</Link>
+          </Button>
+        </Card>
+      )}
 
       {summary && summary.mileage.claimPence > 0 ? (
         <Card className="flex flex-col gap-3" role="region" aria-labelledby="mileage-claim-title">

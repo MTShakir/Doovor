@@ -66,8 +66,9 @@ async function Setup() {
         <div className="flex flex-col gap-1">
           <CardTitle id="cars-title">Your cars</CardTitle>
           <CardDescription>
-            Each car is claimed one way or the other: by the mile, or on what it actually costs. The first claim
-            you make against a car settles it, and it only changes when you change the car.
+            Each car is claimed one way or the other: by the mile, or on what it actually costs. A car with dual
+            controls is always claimed on what it costs, because HMRC does not allow the mileage rate for it. For
+            any other car, the first claim you make settles it, and it only changes when you change the car.
           </CardDescription>
         </div>
         {vehicles.length > 0 ? (
@@ -77,7 +78,11 @@ async function Setup() {
                 <span className="flex min-w-0 flex-1 flex-col">
                   <span className="text-body text-ink">{one.name}</span>
                   <span className="text-small text-grey-700">
-                    {[one.year === null ? null : String(one.year), one.registration === null ? null : formatRegistration(one.registration)]
+                    {[
+                      one.year === null ? null : String(one.year),
+                      one.registration === null ? null : formatRegistration(one.registration),
+                      one.dualControls ? 'Dual controls' : null,
+                    ]
                       .filter((part) => part !== null)
                       .join(' · ')}
                   </span>

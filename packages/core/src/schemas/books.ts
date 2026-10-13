@@ -89,6 +89,11 @@ export const vehicleInputSchema = z.object({
     .default('')
     .refine((value) => value === '' || isUkRegistration(value), { error: 'Enter a registration like AB12 CDE' })
     .transform((value) => (value === '' ? null : normaliseRegistration(value))),
+  /**
+   * Asked every time and never assumed (D-256): HMRC's mileage rate is not for a car with dual
+   * controls, so the answer decides how the car can be claimed.
+   */
+  dualControls: z.enum(['yes', 'no'], { error: 'Say whether it has dual controls' }).transform((answer) => answer === 'yes'),
 });
 
 export type VehicleInput = z.input<typeof vehicleInputSchema>;

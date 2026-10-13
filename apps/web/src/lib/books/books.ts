@@ -155,13 +155,15 @@ export interface VehicleRow {
   registration: string | null;
   year: number | null;
   claimMethod: 'mileage' | 'actual_costs' | null;
+  /** HMRC's mileage rate is not for a car with dual controls, so one is claimed on its costs (D-256). */
+  dualControls: boolean;
 }
 
 export async function vehiclesFor(businessId: string): Promise<VehicleRow[]> {
   const supabase = await createSupabaseServerClient();
   const { data } = await supabase
     .from('vehicles')
-    .select('id, name, make, model, year, registration, claim_method')
+    .select('id, name, make, model, year, registration, claim_method, dual_controls')
     .eq('business_id', businessId)
     .is('retired_at', null)
     .order('created_at');
@@ -171,6 +173,7 @@ export async function vehiclesFor(businessId: string): Promise<VehicleRow[]> {
     registration: row.registration,
     year: row.year,
     claimMethod: row.claim_method,
+    dualControls: row.dual_controls,
   }));
 }
 

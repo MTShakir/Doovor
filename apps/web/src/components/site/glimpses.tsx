@@ -233,17 +233,18 @@ export function ProfileGlimpse({ className }: { className?: string }) {
   );
 }
 
-/** The instructor's tax year (MNY-01 to MNY-04): what came in, what went out, and the miles. */
+/** The instructor's tax year (MNY-01 to MNY-04): what came in, what went out, and what is left. */
 export function TaxYearGlimpse({ className }: { className?: string }) {
   return (
     <Frame title="This tax year" className={className}>
-      {/* 4,812 miles at HMRC's 55p a mile for a car's first 10,000, the 2026 to 2027 rate, is £2,647. */}
+      {/* A car with dual controls, as most instructors teach in, so it is claimed on what it costs
+          rather than by the mile (D-256). £18,420 less £4,860 and £1,240 is £12,320. */}
       <ul className="grid grid-cols-2 gap-2 text-small">
         {[
-          { label: 'Income', amount: '£18,420' },
-          { label: 'Expenses', amount: '£3,210' },
-          { label: 'Miles logged', amount: '4,812' },
-          { label: 'Mileage claim', amount: '£2,647' },
+          { label: 'Turnover', amount: '£18,420' },
+          { label: 'Car costs', amount: '£4,860' },
+          { label: 'Other expenses', amount: '£1,240' },
+          { label: 'Net profit', amount: '£12,320' },
         ].map((figure) => (
           <li key={figure.label} className="flex flex-col rounded-input bg-grey-100 p-3">
             <span className="text-grey-700">{figure.label}</span>

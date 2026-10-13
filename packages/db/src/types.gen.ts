@@ -3092,6 +3092,7 @@ export type Database = {
           business_id: string
           claim_method: Database["public"]["Enums"]["claim_method"] | null
           created_at: string
+          dual_controls: boolean
           id: string
           make: string | null
           method_settled_at: string | null
@@ -3106,6 +3107,7 @@ export type Database = {
           business_id: string
           claim_method?: Database["public"]["Enums"]["claim_method"] | null
           created_at?: string
+          dual_controls?: boolean
           id?: string
           make?: string | null
           method_settled_at?: string | null
@@ -3120,6 +3122,7 @@ export type Database = {
           business_id?: string
           claim_method?: Database["public"]["Enums"]["claim_method"] | null
           created_at?: string
+          dual_controls?: boolean
           id?: string
           make?: string | null
           method_settled_at?: string | null
@@ -3320,6 +3323,7 @@ export type Database = {
       add_vehicle: {
         Args: {
           p_business_id: string
+          p_dual_controls?: boolean
           p_make: string
           p_model?: string
           p_registration?: string

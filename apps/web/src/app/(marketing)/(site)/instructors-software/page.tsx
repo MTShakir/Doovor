@@ -151,7 +151,7 @@ const stories = [
     points: [
       { text: 'Income, unpaid lessons and refunds by week, month and tax year' },
       { text: 'Expenses with a photo of the receipt', pro: true },
-      { text: 'Mileage at the rates HMRC approves', pro: true },
+      { text: 'Mileage at HMRC rates, or running costs for a dual control car', pro: true },
       { text: 'Exports by tax year and quarter, ready for Making Tax Digital software', pro: true },
     ],
     visual: (

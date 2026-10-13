@@ -109,6 +109,7 @@ export async function addVehicle(input: unknown): Promise<Result<{ id: string }>
     p_model: parsed.data.model === '' ? undefined : parsed.data.model,
     p_year: parsed.data.year ?? undefined,
     p_registration: parsed.data.registration ?? undefined,
+    p_dual_controls: parsed.data.dualControls,
   });
   if (error) {
     const problem = parsePostgresError(error);

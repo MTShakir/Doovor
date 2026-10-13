@@ -83,8 +83,9 @@ export const drivingInstructorExpenses: Guide = {
     ## Where ${brand.name} fits
 
     ${brand.name} records every lesson payment as it happens, and on Pro keeps your expenses with a
-    photo of each receipt and exports your income and expenses by tax year and by quarter for your
-    accountant. [See how it works for instructors](/instructors-software).
+    photo of each receipt, asks whether each car has dual controls so it is claimed the way HMRC
+    allows, and exports your income and expenses by tax year and by quarter for your accountant.
+    [See how it works for instructors](/instructors-software).
 
     > This guide is general information, not tax advice. HMRC or an accountant can tell you how the
     > rules apply to you.

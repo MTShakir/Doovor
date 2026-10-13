@@ -20,14 +20,22 @@ function spareFor(project: string): string {
   return project === 'mobile' ? 'MO24 OLD' : 'DE24 OLD';
 }
 
+/** A car with dual controls, which is claimed on what it costs from the day it is added (D-256). */
+function dualFor(project: string): { make: string; model: string; car: string; plate: string } {
+  return project === 'mobile'
+    ? { make: 'Ford', model: 'Fiesta', car: 'Ford Fiesta', plate: 'MO24 DUO' }
+    : { make: 'Kia', model: 'Picanto', car: 'Kia Picanto', plate: 'DE24 DUO' };
+}
+
 async function clearUp(project: string): Promise<void> {
   const { plate, pence } = ownFor(project);
   const spare = spareFor(project).replace(/[^A-Za-z0-9]/g, '').toUpperCase();
+  const dual = dualFor(project).plate.replace(/[^A-Za-z0-9]/g, '').toUpperCase();
   const registration = plate.replace(/[^A-Za-z0-9]/g, '').toUpperCase();
   await withDatabase(async (sql) => {
     await sql`delete from public.mileage_log where vehicle_id in (select id from public.vehicles where registration = ${registration})`;
     await sql`delete from public.expenses where amount_pence = ${pence}`;
-    await sql`delete from public.vehicles where registration in (${registration}, ${spare})`;
+    await sql`delete from public.vehicles where registration in (${registration}, ${spare}, ${dual})`;
   });
 }
 
@@ -83,6 +91,7 @@ test.describe('bookkeeping (MNY-02, MNY-03, MNY-04, D-198)', () => {
     await page.getByLabel('Model (optional)').fill(own.model);
     await page.getByLabel('Year (optional)').fill('2020');
     await page.getByLabel('Registration (optional)').fill(own.plate);
+    await page.getByRole('group', { name: 'Does it have dual controls?' }).getByLabel('No').check();
     await page.getByRole('button', { name: 'Add it' }).click();
     await expect(page.getByText(own.car)).toBeVisible();
     await expect(page.getByRole('region', { name: 'Your cars' }).or(page.getByText('Not settled yet')).first()).toBeVisible();
@@ -132,6 +141,36 @@ test.describe('bookkeeping (MNY-02, MNY-03, MNY-04, D-198)', () => {
     await expect(page.getByRole('option', { name: own.car })).toHaveCount(1);
   });
 
+  test('a car with dual controls is claimed on what it costs, and its miles are never offered', async ({ page }, testInfo) => {
+    const dual = dualFor(testInfo.project.name);
+
+    await page.goto('/app/instructor/books/setup');
+    await page.getByRole('button', { name: 'Add a car' }).click();
+    await page.getByLabel('Make').fill(dual.make);
+    await page.getByLabel('Model (optional)').fill(dual.model);
+    await page.getByLabel('Registration (optional)').fill(dual.plate);
+    // Asked rather than assumed, because the answer decides how the car can be claimed (D-256).
+    await page.getByRole('button', { name: 'Add it' }).click();
+    await expect(page.getByText('Say whether it has dual controls')).toBeVisible();
+    await page.getByRole('group', { name: 'Does it have dual controls?' }).getByLabel('Yes').check();
+    await expectAccessible(page);
+    await settled(page);
+    await snap(page, testInfo, 'books-add-car');
+    await page.getByRole('button', { name: 'Add it' }).click();
+
+    const row = page.getByRole('list', { name: 'Your cars' }).getByRole('listitem').filter({ hasText: dual.plate });
+    await expect(row).toContainText('Dual controls');
+    await expect(row).toContainText('Claimed on what it costs');
+
+    // Its miles are not offered, while the car this width settled on the mile still is.
+    const own = ownFor(testInfo.project.name);
+    await page.goto('/app/instructor/books/mileage');
+    await page.getByRole('button', { name: 'Log a trip' }).click();
+    const cars = page.getByLabel('Which car?');
+    await expect(cars.getByRole('option', { name: own.car })).toHaveCount(1);
+    await expect(cars.getByRole('option', { name: dual.car })).toHaveCount(0);
+  });
+
   test('retires a car without taking its history with it', async ({ page }, testInfo) => {
     const spare = spareFor(testInfo.project.name);
 
@@ -140,6 +179,7 @@ test.describe('bookkeeping (MNY-02, MNY-03, MNY-04, D-198)', () => {
     await page.getByLabel('Make').fill('Skoda');
     await page.getByLabel('Model (optional)').fill('Fabia');
     await page.getByLabel('Registration (optional)').fill(spare);
+    await page.getByRole('group', { name: 'Does it have dual controls?' }).getByLabel('No').check();
     await page.getByRole('button', { name: 'Add it' }).click();
 
     const cars = page.getByRole('list', { name: 'Your cars' });
@@ -150,6 +190,7 @@ test.describe('bookkeeping (MNY-02, MNY-03, MNY-04, D-198)', () => {
     await page.getByRole('button', { name: 'Add a car' }).click();
     await page.getByLabel('Make').fill('Skoda');
     await page.getByLabel('Registration (optional)').fill(spare.toLowerCase());
+    await page.getByRole('group', { name: 'Does it have dual controls?' }).getByLabel('No').check();
     await page.getByRole('button', { name: 'Add it' }).click();
     await expect(page.getByText('That registration is already one of your cars.')).toBeVisible();
     await page.keyboard.press('Escape');

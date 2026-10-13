@@ -421,7 +421,7 @@ Priority key: **P1** = Phase 1 (MVP), **P2** = Phase 2, **P3** = Phase 3, **P4**
 |---|---|---|
 | MNY-01 | Money dashboard: this week, this month, this tax year (6 April to 5 April). Paid, unpaid, credit sold, refunds. | P1 |
 | MNY-02 | Expenses: fuel, car finance, insurance, servicing, franchise fee, ADI registration, training. Photo of receipt, held in a private bucket. | P1 (D-198) |
-| MNY-03 | Mileage log at HMRC's approved rates, with the bands shown (manual entry; automatic from trip in P4). The first claim against a car settles whether it is claimed by mileage or by actual cost, which is HMRC's rule, and each method then refuses the other. | P1 (D-198) |
+| MNY-03 | Mileage log at HMRC's approved rates for the tax year, with the bands shown (manual entry; automatic from trip in P4). Adding a car asks whether it has dual controls: HMRC does not allow the flat rate for a dual control instructor's car, so one is claimed on its actual costs from the day it is added and never appears in the mileage log. For any other car, the first claim settles whether it is claimed by mileage or by actual cost, which is HMRC's rule, and each method then refuses the other. | P1 (D-198, D-254, D-256) |
 | MNY-04 | Export income and expenses as CSV and PDF by tax year and by quarter, in a format ready for MTD software or an accountant. A Business is asked whether it charges VAT and the figures follow the answer. Solo instructors on Pro; a school is told it is coming. Every screen says it is in beta. | P1 (D-198) |
 | MNY-05 | Direct MTD submission through HMRC-recognised software partner or API. | P5 |
 | MNY-06 | School: revenue by instructor, instructor earnings statements, commission or franchise fee settings. | P2 |
