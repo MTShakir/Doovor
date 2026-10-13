@@ -1,4 +1,6 @@
 import { brand } from '@repo/config/brand';
+import { guidePath, guides } from '@repo/core/guides';
+import { sitemapKinds, sitemapPaths } from '@repo/core/sitemap';
 import { describe, expect, it } from 'vitest';
 import { hostRedirect, isSitePath } from './hosts';
 
@@ -43,6 +45,31 @@ describe('which host a request belongs on (D-084)', () => {
       expect(hostRedirect(site, path, '')).toBeNull();
     }
     expect(isSitePath('/pricing/extra')).toBe(false);
+  });
+
+  it('keeps every page a sitemap lists on the public site, so search is never sent to the app (D-109, D-255)', () => {
+    // One of each kind the database lists, and every guide, which the code lists itself.
+    const entries = {
+      instructors: [{ slug: 'sarah-khan', citySlug: 'leeds' }, { slug: 'emma-clarke', citySlug: null }],
+      schools: [{ slug: 'quayside-driving-school', citySlug: 'manchester' }],
+      places: [
+        { citySlug: 'london', areaSlug: 'croydon', automatic: false, instructorCount: 500 },
+        { citySlug: 'london', areaSlug: null, automatic: true, instructorCount: 500 },
+      ],
+    };
+    for (const kind of sitemapKinds) {
+      const paths = sitemapPaths(kind, entries);
+      expect(paths.length, kind).toBeGreaterThan(0);
+      for (const path of paths) {
+        expect(hostRedirect(site, path, ''), path).toBeNull();
+        // The app's own root is its door, not the site's home page (tested below).
+        if (path !== '/') expect(hostRedirect(app, path, ''), path).toEqual({ url: `${brand.productionUrl}${path}`, permanent: true });
+      }
+    }
+    // A guide's share picture is read from the site too, by whoever is drawing a link to it.
+    const guide = guides[0];
+    if (guide === undefined) throw new Error('There is no guide');
+    expect(hostRedirect(site, `${guidePath(guide.slug)}/share.png`, '')).toBeNull();
   });
 
   it('sends the app’s bare root to getting started, which knows where somebody signed in belongs', () => {

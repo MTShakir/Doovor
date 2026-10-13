@@ -4,10 +4,11 @@ import { sitePagePaths } from '@repo/core/sitemap';
 /**
  * The pages the public site serves on the bare domain: its own pages, which its sitemap lists, and
  * the public pages under these prefixes (PRD 8.3). Everything else on it belongs to the app. Each
- * public page adds its prefix here when it arrives (M5, D-109).
+ * public page adds its prefix here when it arrives (M5, D-109), and a test fails for any page a
+ * sitemap lists that would be sent to the app instead.
  */
 const siteHome = '/';
-const sitePrefixes: readonly string[] = ['/instructors/', '/schools/', '/driving-lessons/'];
+const sitePrefixes: readonly string[] = ['/instructors/', '/schools/', '/driving-lessons/', '/guides/'];
 
 /** Whether a path is one of the public site's pages. */
 export function isSitePath(pathname: string): boolean {
