@@ -43,7 +43,7 @@ async function BadgeStep() {
         badgePreview={badgePreview}
         hasBadgePhoto={session.badgePath !== null}
       />
-      <StepSkip />
+      <StepSkip step={step.step} />
     </StepShell>
   );
 }

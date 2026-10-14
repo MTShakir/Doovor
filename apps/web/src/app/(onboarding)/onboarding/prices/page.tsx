@@ -48,7 +48,7 @@ async function PricesStep() {
   return (
     <StepShell step={step} businessType={session.businessType}>
       <PricesForm hourlyPrice={hourly?.price_pence ?? null} packagePrice={block?.price_pence ?? null} />
-      <StepSkip />
+      <StepSkip step={step.step} />
     </StepShell>
   );
 }

@@ -43,7 +43,7 @@ async function HoursStep() {
   return (
     <StepShell step={step} businessType={session.businessType}>
       <HoursForm days={days} startTime={startTime} endTime={endTime} />
-      <StepSkip />
+      <StepSkip step={step.step} />
     </StepShell>
   );
 }

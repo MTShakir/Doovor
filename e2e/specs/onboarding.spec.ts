@@ -194,6 +194,42 @@ test.describe('instructor onboarding (AUTH-04, M1-02)', () => {
     await expect(page).toHaveURL(/\/onboarding\/area$/);
   });
 
+  test('goes back a screen to change it, and Continue carries on in order from there (D-263)', async ({ page }, testInfo) => {
+    const email = uniqueEmail(testInfo, 'back');
+    await chooseRoleAndCreateAccount(
+      page,
+      { card: "I'm an instructor", heading: 'Create your instructor account' },
+      { fullName: 'Nina Newstart', email },
+    );
+    await page.goto(await linkFromEmail(email, 'Confirm your email'));
+    await page.getByRole('link', { name: 'Do this later' }).click();
+    // The first screen has nowhere to go back to.
+    await expect(page.getByRole('link', { name: 'Back' })).toHaveCount(0);
+    await page.getByLabel('First name').fill('Nina');
+    await page.getByLabel('Last name').fill('Newstart');
+    await page.getByRole('button', { name: 'Continue' }).click();
+    await expect(page).toHaveURL(/\/onboarding\/badge$/);
+    await page.getByRole('button', { name: 'Skip for now' }).click();
+    await expect(page).toHaveURL(/\/onboarding\/area$/);
+
+    // The product owner's case: back from 3 to 2, then on, went to 4.
+    await page.getByRole('link', { name: 'Back' }).click();
+    await expect(page).toHaveURL(/\/onboarding\/badge$/);
+    await page.getByRole('button', { name: 'Skip for now' }).click();
+    await expect(page).toHaveURL(/\/onboarding\/area$/);
+    await page.getByRole('button', { name: 'Skip for now' }).click();
+    await expect(page).toHaveURL(/\/onboarding\/prices$/);
+
+    // All the way back to the name, which keeps what was typed, and on again one screen at a time.
+    for (const slug of ['area', 'badge', 'name']) {
+      await page.getByRole('link', { name: 'Back' }).click();
+      await expect(page).toHaveURL(new RegExp(`/onboarding/${slug}$`));
+    }
+    await expect(page.getByLabel('First name')).toHaveValue('Nina');
+    await page.getByRole('button', { name: 'Continue' }).click();
+    await expect(page).toHaveURL(/\/onboarding\/badge$/);
+  });
+
   test('draws the area as the slider moves (M1-07)', async ({ page }, testInfo) => {
     const email = uniqueEmail(testInfo, 'area');
     await chooseRoleAndCreateAccount(

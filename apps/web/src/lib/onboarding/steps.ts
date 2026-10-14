@@ -46,6 +46,32 @@ export function nextStep(step: number, businessType: BusinessType = 'independent
   return stepsFor(businessType).find((entry) => entry.step > step) ?? null;
 }
 
+/** The screen before this one in their own list, for the Back link, or null on the first (D-263). */
+export function previousStep(step: number, businessType: BusinessType = 'independent'): OnboardingStep | null {
+  return [...stepsFor(businessType)].reverse().find((entry) => entry.step < step) ?? null;
+}
+
+/** The number a screen is stored as, by its address. */
+export function stepNumber(slug: OnboardingSlug): number {
+  for (const entry of onboardingSteps) if (entry.slug === slug) return entry.step;
+  return 1;
+}
+
+/**
+ * Where a screen leads once it is saved or skipped (AUTH-04, D-263): the screen after the one they
+ * are on, not after the furthest one reached, so going back to change something and pressing
+ * Continue carries on in order. What is stored as reached never goes backwards, so the screens
+ * already done stay open. Null after the last screen, which finishes onboarding.
+ */
+export function afterStep(
+  from: number,
+  reached: number,
+  businessType: BusinessType = 'independent',
+): { next: OnboardingStep; reached: number } | null {
+  const next = nextStep(from, businessType);
+  return next ? { next, reached: Math.max(reached, next.step) } : null;
+}
+
 /** Where a screen sits in their own list, for the progress bar: "Where do you work" is 4 of 4 at a school. */
 export function stepPosition(step: OnboardingStep, businessType: BusinessType): { current: number; total: number } {
   const steps = stepsFor(businessType);

@@ -34,7 +34,7 @@ async function AreaStep() {
   return (
     <StepShell step={step} businessType={session.businessType}>
       <AreaForm postcode={session.basePostcode} radiusMiles={session.radiusMiles} centre={centre} />
-      <StepSkip />
+      <StepSkip step={step.step} />
     </StepShell>
   );
 }

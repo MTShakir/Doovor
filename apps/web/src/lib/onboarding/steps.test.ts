@@ -1,12 +1,15 @@
 import { describe, expect, it } from 'vitest';
 import {
+  afterStep,
   canOpenStep,
   isStepFor,
   nextStep,
   onboardingSteps,
+  previousStep,
   slugForStep,
   stepBySlug,
   stepByNumber,
+  stepNumber,
   stepPosition,
   totalOnboardingSteps,
 } from './steps';
@@ -49,5 +52,29 @@ describe('onboarding steps (AUTH-04, M1-02)', () => {
     expect(canOpenStep(4, 3)).toBe(false);
     expect(canOpenStep(0, 3)).toBe(false);
     expect(canOpenStep(6, 6)).toBe(false);
+  });
+
+  it('carries on from the screen they are on, not from the furthest one reached (D-263)', () => {
+    // The product owner's case: back from 3 to 2, then Continue, went to 4.
+    expect(afterStep(2, 3, 'independent')).toEqual({ next: stepBySlug('area'), reached: 3 });
+    // And what was reached stays reached, so the screens already done stay open.
+    expect(afterStep(2, 5, 'independent')?.reached).toBe(5);
+    // Going forward for the first time moves what was reached along with it.
+    expect(afterStep(3, 3, 'independent')).toEqual({ next: stepBySlug('prices'), reached: 4 });
+    // At a school the prices are the school's, so the area leads to the hours.
+    expect(afterStep(3, 3, 'school')).toEqual({ next: stepBySlug('hours'), reached: 5 });
+    // The last screen finishes.
+    expect(afterStep(5, 5, 'independent')).toBeNull();
+  });
+
+  it('goes back to the screen before, which is never the prices at a school (D-263)', () => {
+    expect(previousStep(1, 'independent')).toBeNull();
+    expect(previousStep(2, 'independent')?.slug).toBe('name');
+    expect(previousStep(5, 'independent')?.slug).toBe('prices');
+    expect(previousStep(5, 'school')?.slug).toBe('area');
+  });
+
+  it('numbers each screen by its address', () => {
+    expect(onboardingSteps.map((entry) => stepNumber(entry.slug))).toEqual([1, 2, 3, 4, 5]);
   });
 });

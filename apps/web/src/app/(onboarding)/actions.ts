@@ -13,24 +13,27 @@ import {
 } from '@repo/core/schemas/onboarding';
 import { getGeoProvider } from '@/lib/geo/provider';
 import { requireOnboarding } from '@/lib/onboarding/session';
-import { nextStep, slugForStep } from '@/lib/onboarding/steps';
+import { afterStep, canOpenStep, slugForStep, stepNumber } from '@/lib/onboarding/steps';
 import { fieldErrors } from '@/lib/forms';
 import { redirectTo } from '@/lib/redirect-to';
 import { avatarsBucket, removeProfileImage } from '@/lib/storage/images';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
 import { submitBadge } from '@/lib/verification/submit-badge';
 
-/** Moves to the next of their steps, or finishes onboarding after the last one (AUTH-04). */
-async function advance(session: { profileId: string; step: number; businessType: 'independent' | 'school' }): Promise<never> {
-  const { profileId, step: from, businessType } = session;
+/**
+ * Moves on from the screen they are on, to the next of their screens, or finishes onboarding after
+ * the last one (AUTH-04). From the screen they are on rather than the furthest one reached, so going
+ * back to change something carries on in order, and what is reached never goes backwards (D-263).
+ */
+async function advance(session: { profileId: string; step: number; businessType: 'independent' | 'school' }, from: number): Promise<never> {
   const supabase = await createSupabaseServerClient();
-  const next = nextStep(from, businessType);
-  const patch: { onboarding_step?: number; onboarding_completed_at?: string } = next
-    ? { onboarding_step: next.step }
+  const after = afterStep(from, session.step, session.businessType);
+  const patch: { onboarding_step?: number; onboarding_completed_at?: string } = after
+    ? { onboarding_step: after.reached }
     : { onboarding_completed_at: new Date().toISOString() };
-  const { error } = await supabase.from('instructor_profiles').update(patch).eq('id', profileId);
+  const { error } = await supabase.from('instructor_profiles').update(patch).eq('id', session.profileId);
   if (error) throw new Error(`Could not save your progress: ${error.message}`);
-  redirectTo(next ? `/onboarding/${slugForStep(next.step)}` : '/app/instructor');
+  redirectTo(after ? `/onboarding/${slugForStep(after.next.step)}` : '/app/instructor');
 }
 
 /**
@@ -70,7 +73,7 @@ export async function saveName(input: unknown): Promise<Result<null>> {
   }
 
   // Saving succeeded, so this redirects and never resolves.
-  return advance(session);
+  return advance(session, stepNumber('name'));
 }
 
 /** AUTH-04 step 2, INS-02: the badge goes to staff for review, never straight to a tick. */
@@ -84,7 +87,7 @@ export async function saveBadge(input: unknown): Promise<Result<null>> {
   if (!sent.ok) return sent;
 
   // Saving succeeded, so this redirects and never resolves.
-  return advance(session);
+  return advance(session, stepNumber('badge'));
 }
 
 /**
@@ -125,7 +128,7 @@ export async function saveArea(input: unknown): Promise<Result<null>> {
   if (error) return err('UNKNOWN', 'We could not save your area. Try again.');
 
   // Saving succeeded, so this redirects and never resolves.
-  return advance(session);
+  return advance(session, stepNumber('area'));
 }
 
 /** AUTH-04 step 4, R-05, PAY-04: one hourly price, and ten hours if they sell them that way. */
@@ -146,7 +149,7 @@ export async function savePrices(input: unknown): Promise<Result<null>> {
   }
 
   // Saving succeeded, so this redirects and never resolves.
-  return advance(session);
+  return advance(session, stepNumber('prices'));
 }
 
 /** AUTH-04 step 5, DIA-01: the week they work. Local wall clock, never instants. */
@@ -168,11 +171,15 @@ export async function saveHours(input: unknown): Promise<Result<null>> {
   }
 
   // Saving succeeded, so this redirects and never resolves.
-  return advance(session);
+  return advance(session, stepNumber('hours'));
 }
 
-/** Continue without filling this step in. Every step but the name can be skipped (AUTH-04). */
-export async function continueFromStep(): Promise<never> {
+/**
+ * Continue without filling this screen in. Every screen but the name can be skipped (AUTH-04). The
+ * screen is named by the page, so a number that is not one they can open carries on from where they
+ * had got to instead (D-263).
+ */
+export async function continueFromStep(from: number): Promise<never> {
   const session = await requireOnboarding();
-  return advance(session);
+  return advance(session, Number.isInteger(from) && canOpenStep(from, session.step) ? from : session.step);
 }
