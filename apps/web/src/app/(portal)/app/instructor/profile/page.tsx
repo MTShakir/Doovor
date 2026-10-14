@@ -1,7 +1,8 @@
 import type { Metadata } from 'next';
 import { instructorProfilePath } from '@repo/core/public-profile';
 import type { Specialism } from '@repo/core/schemas/profile';
-import { formatCalendarDate } from '@repo/core/time';
+import { canSendBadge, isBadgeExpired } from '@repo/core/badge-expiry';
+import { formatCalendarDate, todayInZone } from '@repo/core/time';
 import { PageHeader } from '@repo/ui/app-shell';
 import { Card, CardDescription, CardTitle } from '@repo/ui/card';
 import { SkeletonRow } from '@repo/ui/skeleton';
@@ -14,8 +15,10 @@ import { requirePortal } from '@/lib/auth/session';
 import { getGeoProvider } from '@/lib/geo/provider';
 import { instructorProfile } from '@/lib/public/instructor-profile';
 import { getSiteUrl } from '@/lib/site-url';
+import { signedBadgeUrl } from '@/lib/storage/images';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
 import { ProfileForm } from './profile-form';
+import { SendBadge } from './send-badge';
 import { SearchListing } from './search-listing';
 import { CoverageEditor } from '../coverage-editor';
 import { CoverageForm } from '../coverage-form';
@@ -35,12 +38,28 @@ export default function InstructorProfilePage() {
   );
 }
 
-/** INS-02: the badge is shown here but changed only by a submission a person reviews. */
-function verification(status: string) {
-  if (status === 'approved') return { pill: 'confirmed' as const, label: 'Verified', copy: 'Learners see the blue tick on your profile.' };
-  if (status === 'pending') return { pill: 'pending' as const, label: 'Being checked', copy: 'We are checking your badge against the DVSA register.' };
-  if (status === 'rejected') return { pill: 'cancelled' as const, label: 'Not approved', copy: 'Get in touch and we will tell you what we need.' };
-  return { pill: 'unpaid' as const, label: 'Not sent yet', copy: 'Send your badge for checking to get the blue tick.' };
+/**
+ * INS-02: the badge is shown here, and changed only by a submission a person reviews. One that was
+ * never sent, was refused, or has run out can be sent from here (D-262).
+ */
+function verification(status: string, expired: boolean) {
+  if (status === 'approved' && expired) {
+    return {
+      pill: 'attention' as const,
+      label: 'Badge run out',
+      copy: 'Your profile is not taking bookings. Send your new badge to get the tick back.',
+      action: 'Send your new badge',
+    };
+  }
+  if (status === 'approved') return { pill: 'confirmed' as const, label: 'Verified', copy: 'Learners see the blue tick on your profile.', action: null };
+  if (status === 'pending') {
+    return { pill: 'pending' as const, label: 'Being checked', copy: 'We are checking your badge against the DVSA register.', action: null };
+  }
+  if (status === 'rejected') {
+    // Something to put right, not something crossed out: "attention" rather than "cancelled".
+    return { pill: 'attention' as const, label: 'Not approved', copy: 'We could not verify your badge. Send it again and we will check it.', action: 'Send your badge again' };
+  }
+  return { pill: 'unpaid' as const, label: 'Not sent yet', copy: 'Send your badge for checking to get the blue tick.', action: 'Send your badge' };
 }
 
 /** R-18: a trainee teaches only under a school or an approved instructor (INS-04). */
@@ -64,13 +83,17 @@ async function Profile() {
   const { data: profile } = await supabase
     .from('instructor_profiles')
     .select(
-      'display_name, bio, photo_path, languages, years_teaching, transmission, car_make, car_model, dual_controls, specialisms, qualification, badge_number, badge_expiry, verification_status, supervisor_business_id, supervisor_instructor_id, base_postcode, radius_miles, public_slug, is_listed',
+      'display_name, bio, photo_path, languages, years_teaching, transmission, car_make, car_model, dual_controls, specialisms, qualification, badge_number, badge_expiry, badge_path, verification_status, verification_decision_reason, supervisor_business_id, supervisor_instructor_id, base_postcode, radius_miles, public_slug, is_listed',
     )
     .eq('id', membership.instructorProfileId)
     .single();
   if (!profile) return null;
 
-  const badge = verification(profile.verification_status);
+  const today = todayInZone();
+  const badge = verification(profile.verification_status, profile.badge_expiry !== null && isBadgeExpired(profile.badge_expiry, today));
+  const sendable = canSendBadge(profile.verification_status, profile.badge_expiry, today);
+  // The badge bucket is private, so a photo still on file is shown through a short-lived address.
+  const badgePreview = sendable ? await signedBadgeUrl(supabase, profile.badge_path) : undefined;
 
   // A base postcode saved earlier is in the cache, so the circle is drawn on the first paint.
   const geo = await getGeoProvider();
@@ -113,7 +136,27 @@ async function Profile() {
             {profile.badge_expiry ? `, expires ${formatCalendarDate(profile.badge_expiry)}` : ''}
           </CardDescription>
         ) : null}
+        {profile.verification_status === 'rejected' && profile.verification_decision_reason ? (
+          <p className="rounded-input bg-grey-100 p-3 text-small text-ink">
+            <span className="font-semibold">Why: </span>
+            {profile.verification_decision_reason}
+          </p>
+        ) : null}
         {profile.qualification === 'pdi' ? <Supervision supervised={supervised} /> : null}
+        {sendable && badge.action ? (
+          <div className="pt-2">
+            <SendBadge
+              label={badge.action}
+              reason={profile.verification_status === 'rejected' ? profile.verification_decision_reason : null}
+              profileId={membership.instructorProfileId}
+              qualification={profile.qualification}
+              badgeNumber={profile.badge_number}
+              badgeExpiry={profile.badge_expiry}
+              badgePreview={badgePreview}
+              hasBadgePhoto={profile.badge_path !== null}
+            />
+          </div>
+        ) : null}
       </Card>
       <Card className="flex flex-col gap-4">
         <div className="flex flex-col gap-1">

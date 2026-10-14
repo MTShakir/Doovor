@@ -47,3 +47,16 @@ export function reminderSummary(expiry: LocalDate, today: LocalDate): string {
   if (left === 1) return 'Your instructor badge expires tomorrow';
   return `Your instructor badge expires in ${String(left)} days`;
 }
+
+/**
+ * Whether an instructor can send their badge to be checked from their profile (INS-02, D-262):
+ * never sent, because the step was skipped; refused, with the reason beside it; or approved but run
+ * out, when the profile has stopped taking bookings anyway. Not while one is being checked, and not
+ * over an approved badge still in date, because sending one sets the profile back to being checked
+ * and takes its booking link away until it is.
+ */
+export function canSendBadge(status: string, expiry: LocalDate | null, today: LocalDate): boolean {
+  if (status === 'unsubmitted' || status === 'rejected') return true;
+  return status === 'approved' && expiry !== null && isBadgeExpired(expiry, today);
+}
+

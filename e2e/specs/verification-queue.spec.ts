@@ -104,5 +104,25 @@ test.describe('verification queue (INS-02, ADM-03, M1-12)', { tag: '@desktop-onl
     await page.goto('/app/instructor/profile');
     await expect(page.getByText('Not approved')).toBeVisible();
     await staff.close();
+
+    // Why, and a way to put it right, on the profile itself (D-262).
+    await expect(page.getByText('The badge photo is too blurred to read the number.').first()).toBeVisible();
+    await page.getByRole('button', { name: 'Send your badge again' }).click();
+    const sheet = page.getByRole('dialog', { name: 'Send your badge again' });
+    await expect(sheet.getByText('Why we could not verify it:')).toBeVisible();
+    // A decision clears the photo it was made from, so a new one is asked for before anything is sent.
+    await sheet.getByRole('checkbox', { name: 'I have a current enhanced DBS check' }).click();
+    await sheet.getByRole('button', { name: 'Send for checking' }).click();
+    await expect(sheet.getByText('Add a photo of your badge')).toBeVisible();
+
+    const upload = page.waitForRequest((r) => r.url().includes('/storage/v1/object/badges/') && r.method() === 'POST');
+    await sheet.locator('input[type="file"]').setInputFiles({ name: 'badge.jpg', mimeType: 'image/jpeg', buffer: await jpegWithGps(page) });
+    await upload;
+    await expect(sheet.getByRole('button', { name: 'Replace photo' })).toBeVisible();
+    await expectAccessible(page);
+    await snap(page, testInfo, 'profile-send-badge-again');
+    await sheet.getByRole('button', { name: 'Send for checking' }).click();
+    await expect(page.getByText('Being checked')).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Send your badge again' })).toHaveCount(0);
   });
 });

@@ -3,14 +3,19 @@
 import { parsePostgresError } from '@repo/core/errors';
 import { isProfileObjectPath } from '@repo/core/images';
 import { err, ok, type Result } from '@repo/core/result';
+import { onboardingBadgeSchema } from '@repo/core/schemas/onboarding';
 import { instructorProfileSchema } from '@repo/core/schemas/profile';
+import { todayInZone } from '@repo/core/time';
+import { canSendBadge } from '@repo/core/badge-expiry';
 import { z } from '@repo/core/zod';
 import { revalidatePath } from 'next/cache';
 import { requirePortal } from '@/lib/auth/session';
+import { refuseWhileViewing } from '@/lib/auth/view-as';
 import { fieldErrors } from '@/lib/forms';
 import { expireInstructorProfile } from '@/lib/public/instructor-profile';
 import { avatarsBucket, removeProfileImage } from '@/lib/storage/images';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
+import { submitBadge } from '@/lib/verification/submit-badge';
 
 /** INS-01: the profile a learner reads. Badge and verification are not editable here. */
 export async function saveProfile(input: unknown, photoPath?: string | null): Promise<Result<null>> {
@@ -96,3 +101,31 @@ export async function saveListing(listed: unknown): Promise<Result<null>> {
   expireInstructorProfile(profileId);
   return ok(null);
 }
+
+/** Sends a badge from the profile to be checked, with its photo (INS-02, D-262). */
+export async function resubmitBadge(input: unknown): Promise<Result<null>> {
+  const refused = await refuseWhileViewing();
+  if (refused) return refused;
+  const parsed = onboardingBadgeSchema.safeParse(input);
+  if (!parsed.success) return err('VALIDATION_FAILED', undefined, fieldErrors(parsed.error));
+
+  const { access } = await requirePortal('instructor');
+  const membership = access.memberships.find((m) => m.instructorProfileId !== null);
+  if (!membership?.instructorProfileId) return err('NOT_ALLOWED');
+  const profileId = membership.instructorProfileId;
+
+  const supabase = await createSupabaseServerClient();
+  const { data: current } = await supabase
+    .from('instructor_profiles')
+    .select('verification_status, badge_expiry, badge_path')
+    .eq('id', profileId)
+    .maybeSingle();
+  if (!current || !canSendBadge(current.verification_status, current.badge_expiry, todayInZone())) {
+    return err('NOT_ALLOWED', 'Your badge is already checked or being checked.');
+  }
+
+  const sent = await submitBadge(supabase, profileId, parsed.data, current.badge_path);
+  if (sent.ok) revalidatePath('/app/instructor/profile');
+  return sent;
+}
+

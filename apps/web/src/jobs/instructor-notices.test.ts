@@ -92,7 +92,7 @@ describe('a badge running out (INS-03, Appendix B, D-260)', () => {
     const [instructor, owner] = planBadgeExpiring(ian, warning);
     expect(instructor).toMatchObject({
       title: 'Your badge is running out',
-      body: 'Your instructor badge expires in 30 days. Renew it with the DVSA, then send the new one from your profile.',
+      body: 'Your instructor badge expires in 30 days. Renew it with the DVSA. Once the old one runs out, send the new one from your profile and we will check it.',
     });
     expect(owner).toMatchObject({
       title: "Ian One's badge is running out",

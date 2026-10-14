@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { daysUntilExpiry, isBadgeExpired, reminderDue, reminderSummary } from './badge-expiry.ts';
+import { canSendBadge, daysUntilExpiry, isBadgeExpired, reminderDue, reminderSummary } from './badge-expiry.ts';
 
 const today = '2026-09-12';
 
@@ -43,3 +43,25 @@ describe('badge expiry (INS-03, M1-13)', () => {
     expect(reminderSummary('2026-09-01', today)).toBe('Your instructor badge has expired');
   });
 });
+
+describe('sending a badge from the profile (INS-02, D-262)', () => {
+  const today = '2026-10-14';
+
+  it('lets somebody send a badge they skipped in onboarding, or one that was refused', () => {
+    expect(canSendBadge('unsubmitted', null, today)).toBe(true);
+    expect(canSendBadge('rejected', '2027-03-31', today)).toBe(true);
+  });
+
+  it('lets an approved instructor send a new one once theirs has run out, and not before', () => {
+    expect(canSendBadge('approved', '2026-10-13', today)).toBe(true);
+    // The printed day still counts, and sending would take the booking link away until checked.
+    expect(canSendBadge('approved', '2026-10-14', today)).toBe(false);
+    expect(canSendBadge('approved', '2027-03-31', today)).toBe(false);
+    expect(canSendBadge('approved', null, today)).toBe(false);
+  });
+
+  it('does not send another while one is being checked', () => {
+    expect(canSendBadge('pending', '2027-03-31', today)).toBe(false);
+  });
+});
+

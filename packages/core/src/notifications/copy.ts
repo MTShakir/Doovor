@@ -172,7 +172,7 @@ export function notificationCopy(
             title: `${facts.instructorName ?? 'An instructor'}'s badge is running out`,
             body: sentence(facts.when ? `It expires on ${facts.when}.` : undefined, 'They can send the new one from their profile once they have renewed it'),
           }
-        : { title: 'Your badge is running out', body: sentence(closed(facts.detail), 'Renew it with the DVSA, then send the new one from your profile') };
+        : { title: 'Your badge is running out', body: sentence(closed(facts.detail), 'Renew it with the DVSA. Once the old one runs out, send the new one from your profile and we will check it') };
 
     case 'subscription.renewing':
       return { title: 'Your Pro renews soon', body: sentence(facts.detail) };

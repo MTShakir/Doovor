@@ -108,7 +108,7 @@ describe('a badge decided, and a badge running out (INS-02, INS-03, Appendix B, 
   it('warns the instructor and the school about a badge running out, each in their own words', () => {
     expect(notificationCopy('badge.expiring', 'instructor', { detail: 'Your instructor badge expires in 30 days', when: 'Wed 31 Mar' })).toEqual({
       title: 'Your badge is running out',
-      body: 'Your instructor badge expires in 30 days. Renew it with the DVSA, then send the new one from your profile.',
+      body: 'Your instructor badge expires in 30 days. Renew it with the DVSA. Once the old one runs out, send the new one from your profile and we will check it.',
     });
     expect(notificationCopy('badge.expiring', 'school', { instructorName: 'Ian One', when: 'Wed 31 Mar' })).toEqual({
       title: "Ian One's badge is running out",
