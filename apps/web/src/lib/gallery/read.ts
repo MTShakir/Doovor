@@ -19,21 +19,32 @@ export interface PublicGallery {
   businessName: string;
   /** The Business own colour, for the banner. Null is the default black (D-210). */
   colour: string | null;
+  /** How many photos are up in all; a profile's `photos` are only three of them (D-268). */
+  total: number;
   photos: GalleryPhoto[];
 }
+
+/**
+ * Which of a wall (D-268): the three a profile shows, the ones we have checked first, or the
+ * whole of it for the gallery's own page, newest first.
+ */
+export type GalleryView = 'profile' | 'whole';
 
 /**
  * The wall on a public profile (D-218). Null where there is nothing to show: no such profile, or
  * a plan that does not carry it, which the database decides rather than this.
  */
-export const instructorGallery = cache(async (slug: string): Promise<PublicGallery | null> => {
-  const { data, error } = await getSupabaseAnonymousClient().rpc('instructor_gallery', { p_slug: slug });
+export const instructorGallery = cache(async (slug: string, view: GalleryView = 'profile'): Promise<PublicGallery | null> => {
+  const { data, error } = await getSupabaseAnonymousClient().rpc('instructor_gallery', {
+    p_slug: slug,
+    p_whole: view === 'whole',
+  });
   if (error) throw error;
   return (data as PublicGallery | null) ?? null;
 });
 
-export const schoolGallery = cache(async (slug: string): Promise<PublicGallery | null> => {
-  const { data, error } = await getSupabaseAnonymousClient().rpc('school_gallery', { p_slug: slug });
+export const schoolGallery = cache(async (slug: string, view: GalleryView = 'profile'): Promise<PublicGallery | null> => {
+  const { data, error } = await getSupabaseAnonymousClient().rpc('school_gallery', { p_slug: slug, p_whole: view === 'whole' });
   if (error) throw error;
   return (data as PublicGallery | null) ?? null;
 });

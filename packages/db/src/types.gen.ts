@@ -3595,7 +3595,10 @@ export type Database = {
         Args: { p_from: string; p_to: string }
         Returns: Json
       }
-      instructor_gallery: { Args: { p_slug: string }; Returns: Json }
+      instructor_gallery: {
+        Args: { p_slug: string; p_whole?: boolean }
+        Returns: Json
+      }
       instructor_profile_page: { Args: { p_slug: string }; Returns: Json }
       invitation_details: {
         Args: { p_token: string }
@@ -3850,7 +3853,10 @@ export type Database = {
         }
         Returns: Json
       }
-      school_gallery: { Args: { p_slug: string }; Returns: Json }
+      school_gallery: {
+        Args: { p_slug: string; p_whole?: boolean }
+        Returns: Json
+      }
       school_overview: { Args: { p_business_id: string }; Returns: Json }
       school_profile_page: { Args: { p_slug: string }; Returns: Json }
       school_team: { Args: { p_business_id: string }; Returns: Json }

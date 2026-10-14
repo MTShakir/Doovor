@@ -18,6 +18,16 @@ export function schoolProfilePath(citySlug: string | null, slug: string): string
   return `/schools/${citySlug ?? 'uk'}/${slug}`;
 }
 
+/** The whole pass gallery of a profile, on a page of its own under it (PUB-06, D-268). */
+export function instructorGalleryPath(citySlug: string | null, slug: string): string {
+  return `${instructorProfilePath(citySlug, slug)}/gallery`;
+}
+
+/** A school's whole pass gallery, every instructor's (PUB-06, D-268). */
+export function schoolGalleryPath(citySlug: string | null, slug: string): string {
+  return `${schoolProfilePath(citySlug, slug)}/gallery`;
+}
+
 /** What stands in for a photo: the first letters of the first and last names. */
 export function initialsFor(name: string): string {
   const parts = name.trim().split(/\s+/).filter(Boolean);

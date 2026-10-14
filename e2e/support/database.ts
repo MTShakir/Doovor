@@ -2064,6 +2064,16 @@ export async function addGalleryPhoto(
   });
 }
 
+/** Moves the Business behind a profile onto a plan, for a test of what that plan carries (D-218). */
+export async function putOnPlan(profileSlug: string, plan: 'free' | 'pro' | 'school'): Promise<void> {
+  await withDatabase(
+    (sql) => sql`
+      update public.businesses b set plan = ${plan}::public.plan_key
+        from public.instructor_profiles i
+       where i.business_id = b.id and i.public_slug = ${profileSlug}`,
+  );
+}
+
 /** Clears up after a gallery test, whatever it left behind. */
 export async function removeGalleryPhotos(learnerName: string): Promise<void> {
   await withDatabase(async (sql) => {

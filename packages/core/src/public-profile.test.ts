@@ -1,5 +1,15 @@
 import { describe, expect, it } from 'vitest';
-import { coverageWords, hourlyFromPence, initialsFor, instructorProfilePath, joinWords, qualificationWords, schoolProfilePath } from './public-profile';
+import {
+  coverageWords,
+  hourlyFromPence,
+  initialsFor,
+  instructorGalleryPath,
+  instructorProfilePath,
+  joinWords,
+  qualificationWords,
+  schoolGalleryPath,
+  schoolProfilePath,
+} from './public-profile';
 
 describe('the public instructor profile (PUB-01, M5-02)', () => {
   it('lives under the city its base is in, and under "uk" when that is not known yet', () => {
@@ -7,6 +17,13 @@ describe('the public instructor profile (PUB-01, M5-02)', () => {
     expect(instructorProfilePath(null, 'sarah-khan')).toBe('/instructors/uk/sarah-khan');
     expect(schoolProfilePath('manchester', 'quayside-driving-school')).toBe('/schools/manchester/quayside-driving-school');
     expect(schoolProfilePath(null, 'quayside-driving-school')).toBe('/schools/uk/quayside-driving-school');
+  });
+
+  it('keeps the whole pass gallery under the profile it belongs to (D-268)', () => {
+    expect(instructorGalleryPath('leeds', 'sarah-khan')).toBe('/instructors/leeds/sarah-khan/gallery');
+    expect(instructorGalleryPath(null, 'sarah-khan')).toBe('/instructors/uk/sarah-khan/gallery');
+    expect(schoolGalleryPath('manchester', 'quayside-driving-school')).toBe('/schools/manchester/quayside-driving-school/gallery');
+    expect(schoolGalleryPath(null, 'quayside-driving-school')).toBe('/schools/uk/quayside-driving-school/gallery');
   });
 
   it('stands initials in for a photo: first and last names, whatever the spacing', () => {

@@ -115,7 +115,9 @@ import { LearnerTabs, LessonHistoryTabs } from '@/app/(portal)/app/instructor/le
 import { TimeSlotGrid } from '@repo/ui/time-slot-grid';
 import { toast, toastWithUndo } from '@repo/ui/toast';
 import { BadgeCheck, CalendarX, Car, CreditCard, WifiOff } from 'lucide-react';
+import { GalleryHeader } from '@/components/gallery/gallery-header';
 import { PassPhotoCard } from '@/components/gallery/pass-photo';
+import { PassWall } from '@/components/gallery/pass-wall';
 import Image from 'next/image';
 import Link from 'next/link';
 import { Suspense, useState, type ReactNode } from 'react';
@@ -1288,6 +1290,25 @@ export function DesignShowcase() {
           <PassPhotoCard photo={examplePass} businessName="Khan Driving" colour={null} />
           <PassPhotoCard photo={exampleCheckedPass} businessName="Khan Driving" colour={null} />
           <PassPhotoCard photo={exampleCheckedPass} businessName="Quayside Driving School" colour={exampleBusinessColour} />
+        </div>
+        <Label>
+          Passes on a profile: three, the ones we have checked first, and the way to the rest when there are more (D-268)
+        </Label>
+        <div className="max-w-2xl">
+          <PassWall
+            photos={[exampleCheckedPass, examplePass, { ...examplePass, id: 'pass-3', learnerName: 'Amir Hussain', passedOn: '2026-07-21' }]}
+            total={7}
+            businessName="Khan Driving"
+            colour={null}
+            title="Learners who passed"
+            description="Photos from the day, shared with their permission."
+            galleryHref="/design"
+          />
+        </div>
+        <Label>The top of a whole gallery: the way back, named after the profile, and how many there are (D-268)</Label>
+        <div className="flex max-w-2xl flex-col gap-6">
+          <GalleryHeader name="Sarah Khan" profileHref="/design" shown={7} total={7} />
+          <GalleryHeader name="Quayside Driving School" profileHref="/design" shown={120} total={134} />
         </div>
         <Label>Header: an independent instructor with prices, and a trainee at a school with no car or prices yet (PUB-01, M5-02)</Label>
         <div className="grid items-start gap-6 md:grid-cols-2">

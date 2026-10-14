@@ -50,7 +50,8 @@ export function MyWall({
       <div className="flex flex-col gap-1">
         <CardTitle id="wall-title">Your gallery</CardTitle>
         <CardDescription>
-          {photos.length === 1 ? '1 pass' : `${String(photos.length)} passes`}, newest first, as your profile shows them.
+          {photos.length === 1 ? '1 pass' : `${String(photos.length)} passes`}, newest first. Your profile shows three,
+          the ones we have checked first, and links to the rest.
         </CardDescription>
       </div>
       {/* In columns, as the profile draws them: each photo is its own shape (D-267). */}

@@ -1,7 +1,7 @@
 import type { Metadata, Route } from 'next';
 import { brand } from '@repo/config/brand';
 import { isPlaceSlug, placePagePath } from '@repo/core/places';
-import { instructorProfilePath, qualificationWords, schoolProfilePath } from '@repo/core/public-profile';
+import { instructorGalleryPath, instructorProfilePath, qualificationWords, schoolProfilePath } from '@repo/core/public-profile';
 import { instructorStructuredData } from '@repo/core/structured-data';
 import { Skeleton } from '@repo/ui/skeleton';
 import { notFound, permanentRedirect } from 'next/navigation';
@@ -128,7 +128,7 @@ async function InstructorProfile({ params }: Pick<Props, 'params'>) {
             is a page that sells before it explains. Its own boundary, so a slow read of the
             photos never holds the rest of the page up. */}
         <Suspense fallback={null}>
-          <Passes slug={profile.slug} />
+          <Passes slug={profile.slug} galleryHref={instructorGalleryPath(place?.citySlug ?? null, profile.slug)} />
         </Suspense>
         <WhereLessonsStart
           radiusMiles={profile.radiusMiles}
@@ -164,13 +164,18 @@ async function InstructorProfile({ params }: Pick<Props, 'params'>) {
   );
 }
 
-/** The wall of passes, where the plan carries one and there is anything on it (D-218). */
-async function Passes({ slug }: { slug: string }) {
+/**
+ * The wall of passes, where the plan carries one and there is anything on it (D-218): three of
+ * them, and the way to the rest (D-268).
+ */
+async function Passes({ slug, galleryHref }: { slug: string; galleryHref: string }) {
   const gallery = await instructorGallery(slug);
   if (!gallery) return null;
   return (
     <PassWall
       photos={gallery.photos}
+      total={gallery.total}
+      galleryHref={galleryHref}
       businessName={gallery.businessName}
       colour={gallery.colour}
       title="Learners who passed"

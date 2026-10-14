@@ -1,7 +1,7 @@
 import { brand } from '@repo/config/brand';
 import { expect, test, type Locator } from '@playwright/test';
 import { authFile } from '../support/accounts';
-import { addGalleryPhoto, makeInstructor, removeGalleryPhotos } from '../support/database';
+import { addGalleryPhoto, makeInstructor, putOnPlan, removeGalleryPhotos } from '../support/database';
 import { expectAccessible, snap } from '../support/helpers';
 import { jpegWithGps } from '../support/images';
 import { signInThroughForm } from '../support/sign-in';
@@ -81,14 +81,20 @@ test.describe('the gallery (D-218)', () => {
       await expectAccessible(page);
       await snap(page, testInfo, 'gallery');
 
-      // On the public profile, with the banner and nothing ticked on it yet.
+      // On the public profile, which shows three of the wall (D-268): which three depends on the
+      // other tests adding to it at the same time, so this one is looked for on the whole wall.
       await page.goto('/instructors/leeds/sarah-khan');
-      const passes = page.getByRole('region', { name: 'Learners who passed' });
-      await expect(passes).toContainText(`${who} became a driver on`);
-      await expect(passes).toContainText('with Sarah Khan Driving');
-      await expectWhole(passes.getByRole('img', { name: new RegExp(`^${who} became a driver on`) }));
+      await expect(page.getByRole('region', { name: 'Learners who passed' })).toBeVisible();
       await expectAccessible(page);
       await snap(page, testInfo, 'gallery-public');
+
+      // With the banner and nothing ticked on it yet.
+      await page.goto('/instructors/leeds/sarah-khan/gallery');
+      await expect(page.getByRole('heading', { level: 1, name: 'Learners who passed with Sarah Khan' })).toBeVisible();
+      const ours = page.getByRole('figure').filter({ hasText: `${who} became a driver on` });
+      await expect(ours).toContainText('with Sarah Khan Driving');
+      await expect(ours.getByText(`Verified by ${brand.name}`)).toHaveCount(0);
+      await expectWhole(ours.getByRole('img'));
 
       // And the instructor takes their own down again.
       await page.goto('/app/instructor/gallery');
@@ -116,11 +122,11 @@ test.describe('checking a pass photo (D-218)', { tag: '@desktop-only' }, () => {
     const admin = await browser.newContext({ storageState: authFile('admin') });
     const staff = await admin.newPage();
     try {
-      // Before anybody has looked at it: on the page, and without the tick.
-      await page.goto('/instructors/leeds/sarah-khan');
-      const passes = page.getByRole('region', { name: 'Learners who passed' });
-      await expect(passes).toContainText(`${who} became a driver on`);
-      await expect(passes.getByText(`Verified by ${brand.name}`)).toHaveCount(0);
+      // Before anybody has looked at it: on the wall, and without the tick.
+      await page.goto('/instructors/leeds/sarah-khan/gallery');
+      const before = page.getByRole('figure').filter({ hasText: `${who} became a driver on` });
+      await expect(before).toBeVisible();
+      await expect(before.getByText(`Verified by ${brand.name}`)).toHaveCount(0);
 
       await staff.goto('/admin/gallery?onlyUnchecked=unchecked');
       const entry = staff.getByRole('region', { name: who });
@@ -131,8 +137,11 @@ test.describe('checking a pass photo (D-218)', { tag: '@desktop-only' }, () => {
       await expectAccessible(staff);
       await snap(staff, testInfo, 'admin-gallery');
 
+      // Ticked, it is the first of the profile's three: nothing else on this wall is (D-268).
       await page.goto('/instructors/leeds/sarah-khan');
-      await expect(page.getByRole('region', { name: 'Learners who passed' })).toContainText(`Verified by ${brand.name}`);
+      const first = page.getByRole('region', { name: 'Learners who passed' }).getByRole('figure').first();
+      await expect(first).toContainText(`${who} became a driver on`);
+      await expect(first).toContainText(`Verified by ${brand.name}`);
 
       // Taking one down takes it off the public page, and takes the tick with it.
       await staff.goto('/admin/gallery');
@@ -169,13 +178,65 @@ test.describe('a school keeps its own wall (D-218)', () => {
       await expect(page.getByRole('region', { name: 'Your gallery' })).toContainText(`${who} became a driver on`);
       await expect(page.getByRole('region', { name: 'Add a pass' })).toBeVisible();
 
-      // And the school's own public page carries it.
+      // And the school's own public pages carry it: three on its profile, and the whole wall.
       await page.goto('/schools/manchester/quayside-driving-school');
-      await expect(page.getByRole('region', { name: 'Learners who passed' })).toContainText(`${who} became a driver on`);
+      await expect(page.getByRole('region', { name: 'Learners who passed' })).toBeVisible();
       await expectAccessible(page);
       await snap(page, testInfo, 'gallery-school');
+      await page.goto('/schools/manchester/quayside-driving-school/gallery');
+      await expect(page.getByRole('heading', { level: 1, name: 'Learners who passed with Quayside Driving School' })).toBeVisible();
+      await expect(page.getByRole('figure').filter({ hasText: `${who} became a driver on` })).toBeVisible();
     } finally {
       await removeGalleryPhotos(who);
+    }
+  });
+});
+
+/**
+ * Three on a profile, and the whole wall on a page of its own (D-268). An instructor of its own,
+ * so the three are known: the seeded wall is added to by the tests above at the same time.
+ */
+test.describe('three on the profile (D-268)', () => {
+  test('the checked ones first, and the whole wall opens from it, newest first', async ({ page }, testInfo) => {
+    const instructor = await makeInstructor(`Three Passes ${testInfo.project.name}`, '2030-01-01', { listed: false });
+    const daysAgo = (days: number) => new Date(Date.now() - days * 24 * 3_600_000).toISOString().slice(0, 10);
+
+    try {
+      await putOnPlan(instructor.slug, 'pro');
+      await addGalleryPhoto(instructor.name, 'Ava Newest', daysAgo(1));
+      await addGalleryPhoto(instructor.name, 'Ben Second', daysAgo(2));
+      await addGalleryPhoto(instructor.name, 'Cal Third', daysAgo(3));
+      await addGalleryPhoto(instructor.name, 'Dee Checked', daysAgo(5), { verified: true });
+
+      // The one we have checked first, though it is the oldest, then the newest of the rest.
+      await page.goto(`/instructors/leeds/${instructor.slug}`);
+      const passes = page.getByRole('region', { name: 'Learners who passed' });
+      const three = passes.getByRole('figure');
+      await expect(three).toHaveCount(3);
+      await expect(three.nth(0)).toContainText('Dee Checked became a driver on');
+      await expect(three.nth(0)).toContainText(`Verified by ${brand.name}`);
+      await expect(three.nth(1)).toContainText('Ava Newest became a driver on');
+      await expect(three.nth(2)).toContainText('Ben Second became a driver on');
+      await expectAccessible(page);
+      await snap(page, testInfo, 'gallery-three');
+
+      // The rest, all four, newest first, on a page of their own with the way back.
+      await passes.getByRole('link', { name: 'View full gallery' }).click();
+      await expect(page).toHaveURL(new RegExp(`/instructors/leeds/${instructor.slug}/gallery$`));
+      await expect(page.getByRole('heading', { level: 1, name: `Learners who passed with ${instructor.name}` })).toBeVisible();
+      await expect(page.getByText('4 photos from the day, newest first, shared with their permission.')).toBeVisible();
+      const all = page.getByRole('figure');
+      await expect(all).toHaveCount(4);
+      for (const [place, name] of ['Ava Newest', 'Ben Second', 'Cal Third', 'Dee Checked'].entries()) {
+        await expect(all.nth(place)).toContainText(`${name} became a driver on`);
+      }
+      await expectAccessible(page);
+      await snap(page, testInfo, 'gallery-whole', { fullPage: true });
+
+      await page.getByRole('link', { name: instructor.name, exact: true }).click();
+      await expect(page).toHaveURL(new RegExp(`/instructors/leeds/${instructor.slug}$`));
+    } finally {
+      await instructor.remove();
     }
   });
 });

@@ -1,7 +1,7 @@
 import type { Metadata, Route } from 'next';
 import { brand } from '@repo/config/brand';
 import { isPlaceSlug, placePagePath } from '@repo/core/places';
-import { instructorProfilePath, schoolProfilePath } from '@repo/core/public-profile';
+import { instructorProfilePath, schoolGalleryPath, schoolProfilePath } from '@repo/core/public-profile';
 import { schoolStructuredData } from '@repo/core/structured-data';
 import { Skeleton } from '@repo/ui/skeleton';
 import { notFound, permanentRedirect } from 'next/navigation';
@@ -116,7 +116,7 @@ async function SchoolProfile({ params }: Pick<Props, 'params'>) {
         />
         {/* D-218: the school's wall is every instructor's, because it is the school's page. */}
         <Suspense fallback={null}>
-          <Passes slug={school.slug} />
+          <Passes slug={school.slug} galleryHref={schoolGalleryPath(school.place?.citySlug ?? null, school.slug)} />
         </Suspense>
         {place?.hasHub ? (
           <PlaceLinks
@@ -137,13 +137,18 @@ async function SchoolProfile({ params }: Pick<Props, 'params'>) {
   );
 }
 
-/** The wall of passes, where the plan carries one and there is anything on it (D-218). */
-async function Passes({ slug }: { slug: string }) {
+/**
+ * The wall of passes, where the plan carries one and there is anything on it (D-218): three of
+ * them, and the way to the rest (D-268).
+ */
+async function Passes({ slug, galleryHref }: { slug: string; galleryHref: string }) {
   const gallery = await schoolGallery(slug);
   if (!gallery) return null;
   return (
     <PassWall
       photos={gallery.photos}
+      total={gallery.total}
+      galleryHref={galleryHref}
       businessName={gallery.businessName}
       colour={gallery.colour}
       title="Learners who passed"
