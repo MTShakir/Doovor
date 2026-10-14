@@ -82,7 +82,8 @@ export async function startProCheckout(input: unknown): Promise<Result<{ url: st
   });
   if (!started.ok) return err('UNKNOWN', couldNot);
 
-  revalidatePath('/app/instructor/plan');
+  // Nothing is refreshed here: the browser is about to leave for the checkout, and a fresh copy of
+  // this screen would still be arriving as it left (D-264). The plan is read afresh on the way back.
   return ok({ url: started.data.url });
 }
 

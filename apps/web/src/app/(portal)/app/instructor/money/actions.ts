@@ -71,7 +71,9 @@ export async function connectPayments(input: unknown): Promise<Result<{ url: str
   const link = await provider.createAccountLink({ accountId, ...connectUrls(screen.data.screen) });
   if (!link.ok) return err('UNKNOWN', 'We could not open the setup page. Try again.');
 
-  for (const path of Object.values(moneyScreens)) revalidatePath(`${path}/setup`);
+  // Nothing is refreshed here (D-264). The browser is about to leave for the provider's page, and
+  // a fresh copy of this one, which asks the provider again as it draws, would still be arriving
+  // as it left. The screen is read afresh when they come back.
   return ok({ url: link.data.url });
 }
 

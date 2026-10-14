@@ -1384,3 +1384,8 @@ Every decision made without the product owner, newest last. Format: date, decisi
 - **Options:** Keep jumping to the furthest screen (what the product owner reported as wrong); go back to the furthest screen after an edit; carry on in order (chosen).
 - **Reason:** Somebody who goes back has something to change on that screen and the ones after it, and the numbers on the progress bar say the next one is next.
 
+## D-264 | 2026-10-14 | Handing over to Stripe does not refresh the page first | Claude
+- **Found:** the product owner reported that "Set up payments" and "Finish setting up" showed an error page for a moment before Stripe's page loaded. Both actions, and the one that opens the Pro checkout, asked Next to refresh the screen (`revalidatePath`) just before the browser left for Stripe. On the live site that refresh asks Stripe for the account again as it draws, so it was still arriving when the browser left, and the app has no error screen of its own to show instead of Next's.
+- **Decision:** `connectPayments` and `startProCheckout` no longer refresh anything: the screen is read afresh when somebody comes back (the return addresses are rendered on demand), and there is nothing to refresh on a page being left.
+- **Not reproduced:** the fake payments provider answers at once, so locally the refresh always finished first and nothing flashed, even with Stripe's delay added by hand. If it still happens after this, a screenshot of it will say what it is.
+
