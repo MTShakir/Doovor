@@ -78,13 +78,17 @@ test.describe('viewing as somebody, read only (ADM-06, M5-21)', { tag: '@desktop
       const question = page.getByRole('dialog', { name: 'View as Sarah Khan?' });
       await question.getByLabel('Why?').fill('Checking what her More menu opens.');
       await question.getByRole('button', { name: 'View as them' }).click();
-      await expect(page).toHaveURL(/\/app\/instructor$/);
+      // Her Today screen, whole, before anything is pressed on it.
       const banner = page.getByRole('status').filter({ hasText: 'Viewing as Sarah Khan, read only, until' });
+      await expect(banner).toBeVisible({ timeout: 20_000 });
+      await expect(page).toHaveURL(/\/app\/instructor$/);
 
-      // More from the sidebar, which used to send staff straight back to Today.
+      // More from the sidebar, which used to send staff straight back to Today. A first screen
+      // while viewing reads the viewing as well as the person, which on a busy runner can take
+      // longer than CI's usual five seconds, so its content is given longer to arrive.
       await page.getByRole('navigation').getByRole('link', { name: 'More', exact: true }).click();
+      await expect(page.getByRole('heading', { level: 1, name: 'More' })).toBeVisible({ timeout: 20_000 });
       await expect(page).toHaveURL(/\/app\/instructor\/more$/);
-      await expect(page.getByRole('heading', { level: 1, name: 'More' })).toBeVisible();
 
       // Every screen of hers it lists, with the banner, and none of them sending staff away.
       const screens = (await page.getByRole('main').getByRole('link').evaluateAll((links) => links.map((link) => link.getAttribute('href') ?? ''))).filter(
@@ -93,8 +97,10 @@ test.describe('viewing as somebody, read only (ADM-06, M5-21)', { tag: '@desktop
       expect(screens.length).toBeGreaterThan(5);
       for (const path of screens) {
         await page.goto(path);
+        // The banner comes with the screen's content, so the address is read once the screen is
+        // there, which is after anything that would have sent staff away.
+        await expect(banner, path).toBeVisible({ timeout: 20_000 });
         await expect(page, path).toHaveURL(new RegExp(`${path}$`));
-        await expect(banner).toBeVisible();
       }
 
       await banner.getByRole('button', { name: 'Stop viewing' }).click();
