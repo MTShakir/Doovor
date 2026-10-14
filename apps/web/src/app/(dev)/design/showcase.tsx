@@ -1399,6 +1399,16 @@ export function DesignShowcase() {
             ]}
           />
         </div>
+        <Label>On a city page: somebody running their own Business by its name, with theirs above, beside a school&apos;s instructor (D-269)</Label>
+        <div className="max-w-xl">
+          <SchoolInstructors
+            idPrefix="city-list-"
+            instructors={[
+              { href: '#khan', name: 'Khan Driving', personalName: 'Sarah Khan', qualification: 'adi', transmission: 'manual', car: 'Volkswagen Polo', takingBookings: true, hourlyFromPence: 4200 },
+              { href: '#emma-city', name: 'Emma Clarke', qualification: 'adi', transmission: 'automatic', car: 'Toyota Yaris Hybrid', takingBookings: true, hourlyFromPence: 4400 },
+            ]}
+          />
+        </div>
         <div className="max-w-xl">
           <SchoolInstructors idPrefix="empty-school-" instructors={[]} />
         </div>

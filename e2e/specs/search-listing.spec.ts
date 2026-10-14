@@ -111,3 +111,30 @@ test.describe('in search and out of it (PUB-04, INS-03, M5-06)', () => {
     }
   });
 });
+
+/**
+ * The name a list shows (D-269): somebody running their own Business by its name, with theirs
+ * small above it, as on their profile and their booking link. An instructor of its own, in Leeds.
+ */
+test.describe('listed by the Business name (D-269)', () => {
+  test('a city page and the booking link go by the Business name, with the person above it', async ({ page }, testInfo) => {
+    const instructor = await makeInstructor(`Brenda Brand ${testInfo.project.name}`, addDays(today(), 365));
+    try {
+      await freshPublicPages(page);
+      await page.goto('/driving-lessons/leeds');
+      const listed = onLeedsPage(page, instructor.name);
+      await expect(listed).toHaveAttribute('href', `/instructors/leeds/${instructor.slug}`);
+      await expect(listed.getByText(`${instructor.name} Driving`, { exact: true })).toBeVisible();
+      await expect(listed.getByText(instructor.name, { exact: true })).toBeVisible();
+      await expectAccessible(page);
+
+      await page.goto(`/book/${instructor.slug}`);
+      await expect(page.getByRole('heading', { level: 1, name: `${instructor.name} Driving`, exact: true })).toBeVisible();
+      await expect(page.getByText(instructor.name, { exact: true })).toBeVisible();
+      await expect(page).toHaveTitle(new RegExp(`^Book a lesson with ${instructor.name} Driving`));
+      await expectAccessible(page);
+    } finally {
+      await instructor.remove();
+    }
+  });
+});

@@ -3,7 +3,7 @@
 -- The seed has instructors in Leeds and Manchester too, so every check here is about the fixture's
 -- own instructors by their slugs, never a total.
 begin;
-select plan(14);
+select plan(15);
 
 select tests.create_fixture();
 
@@ -59,8 +59,13 @@ select is(pg_temp.slugs(public.city_page('manchester', null, 'automatic')), arra
 
 select is(
   (select array_agg(k order by k) from jsonb_object_keys(public.city_page('manchester') #> '{instructors,0}') as k),
-  array['areaName', 'car', 'hourlyFromPence', 'name', 'photoPath', 'qualification', 'slug', 'transmission'],
+  array['areaName', 'business', 'car', 'hourlyFromPence', 'name', 'photoPath', 'qualification', 'slug', 'transmission'],
   'each instructor on it is these fields and no others'
+);
+select is(
+  (select array_agg(k order by k) from jsonb_object_keys(public.city_page('manchester') #> '{instructors,0,business}') as k),
+  array['name', 'type'],
+  'and their Business is its name and its kind, which says whose name the list shows first (D-269)'
 );
 select ok(
   (select public.city_page('manchester')::text not like '%SK1 1EB%'

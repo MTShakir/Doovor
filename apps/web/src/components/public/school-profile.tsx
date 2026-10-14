@@ -36,7 +36,10 @@ export function SchoolHeader({ name, logoUrl, cityName, instructorCount }: Schoo
 export interface SchoolInstructor {
   /** Where the instructor's own profile lives. */
   href: string;
+  /** The name the list shows: a Business name for somebody running their own (D-269). */
   name: string;
+  /** Their own name, small above it, where `name` is their Business's. */
+  personalName?: string | null;
   photoUrl?: string;
   qualification: Qualification;
   transmission: 'manual' | 'automatic' | 'both';
@@ -75,8 +78,12 @@ export function SchoolInstructors({ instructors, idPrefix = '' }: SchoolInstruct
             return (
               <li key={instructor.href}>
                 <a href={instructor.href} className="flex min-h-16 items-center gap-3 px-4 py-3 hover:bg-grey-100">
-                  <Avatar name={instructor.name} src={instructor.photoUrl} verified size="lg" decorative />
+                  {/* The photo is of the person, so the letters standing in for it are theirs too. */}
+                  <Avatar name={instructor.personalName ?? instructor.name} src={instructor.photoUrl} verified size="lg" decorative />
                   <span className="flex min-w-0 flex-1 flex-col">
+                    {instructor.personalName ? (
+                      <span className="text-caption text-grey-700">{instructor.personalName}</span>
+                    ) : null}
                     <span className="text-body font-semibold text-black">{instructor.name}</span>
                     <span className="text-small text-grey-700">{facts.join(', ')}</span>
                   </span>

@@ -15,6 +15,11 @@ const cityPageSchema = z.object({
     z.object({
       slug: z.string(),
       name: z.string(),
+      /** Whose Business, which decides the name the list shows first (D-269). */
+      business: z
+        .object({ name: z.string(), type: z.enum(['independent', 'school']) })
+        .nullable()
+        .default(null),
       photoPath: z.string().nullable(),
       qualification: qualificationSchema,
       transmission: z.enum(['manual', 'automatic', 'both']),

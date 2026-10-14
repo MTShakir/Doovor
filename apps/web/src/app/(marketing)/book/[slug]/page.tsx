@@ -1,6 +1,6 @@
 import type { Metadata } from 'next';
 import { brand } from '@repo/config/brand';
-import { instructorProfilePath } from '@repo/core/public-profile';
+import { instructorProfilePath, profileNames } from '@repo/core/public-profile';
 import { todayInZone } from '@repo/core/time';
 import { EmptyState } from '@repo/ui/empty-state';
 import { Skeleton } from '@repo/ui/skeleton';
@@ -21,7 +21,9 @@ import { BookWithInstructor } from './book-with-instructor';
 export async function generateMetadata({ params }: BookPageProps): Promise<Metadata> {
   const { slug } = await params;
   const [page, published] = await Promise.all([bookingPage(slug), instructorProfile(slug)]);
-  const title = page ? `Book a lesson with ${page.name}` : 'Book a lesson';
+  // By the name the profile goes by: a Business name for somebody running their own (D-269).
+  const name = page && published ? profileNames(published.name, published.business).main : page?.name;
+  const title = name === undefined ? 'Book a lesson' : `Book a lesson with ${name}`;
   return {
     title,
     robots: { index: false, follow: true },
@@ -29,7 +31,7 @@ export async function generateMetadata({ params }: BookPageProps): Promise<Metad
     ...(page && published
       ? sharedLinkMetadata({
           title,
-          description: `Choose a time and book a driving lesson with ${page.name}.`,
+          description: `Choose a time and book a driving lesson with ${name ?? page.name}.`,
           url: `${getAppUrl()}/book/${slug}`,
           image: { path: instructorProfilePath(published.place?.citySlug ?? null, published.slug), card: instructorCard(published) },
         })
@@ -89,6 +91,7 @@ async function Instructor({ params, searchParams }: BookPageProps) {
   return (
     <BookWithInstructor
       page={page}
+      names={published ? profileNames(published.name, published.business) : { main: page.name, personal: null }}
       slug={slug}
       profileUrl={profileUrl}
       firstFreeDay={soonest === undefined ? null : todayInZone(new Date(soonest))}

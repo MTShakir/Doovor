@@ -1,6 +1,7 @@
 'use client';
 
 import { formatPence } from '@repo/core/money';
+import type { ProfileNames } from '@repo/core/public-profile';
 import { formatDate, formatMinutes, formatTime, todayInZone } from '@repo/core/time';
 import { Avatar } from '@repo/ui/avatar';
 import { Button } from '@repo/ui/button';
@@ -21,6 +22,8 @@ import { bookAsLearner, rememberSlot, slotsOnDay } from './actions';
 
 export interface BookWithInstructorProps {
   page: BookingPage;
+  /** What the page is headed with: a Business name for somebody running their own, with theirs above (D-269). */
+  names: ProfileNames;
   slug: string;
   /** A time carried back from signing up, already chosen (BOK-02). */
   chosen: string | null;
@@ -33,7 +36,7 @@ export interface BookWithInstructorProps {
 }
 
 /** BOK-02: choose how long, choose when, book. On a phone, in under a minute. */
-export function BookWithInstructor({ page, slug, chosen, learner, signedIn, profileUrl, firstFreeDay }: BookWithInstructorProps) {
+export function BookWithInstructor({ page, names, slug, chosen, learner, signedIn, profileUrl, firstFreeDay }: BookWithInstructorProps) {
   const [pending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
   const [booked, setBooked] = useState<string | null>(null);
@@ -131,15 +134,17 @@ export function BookWithInstructor({ page, slug, chosen, learner, signedIn, prof
     <div className="flex flex-col gap-6">
       <div className="flex items-center gap-4">
         {/* A booking link only takes bookings for an instructor the platform has checked (INS-02). */}
-        <Avatar name={page.name} src={avatarUrl(page.photoPath)} verified size="lg" decorative />
+        <Avatar name={names.personal ?? names.main} src={avatarUrl(page.photoPath)} verified size="lg" decorative />
         <div className="flex min-w-0 flex-col">
+          {names.personal === null ? null : <p className="text-caption text-grey-700">{names.personal}</p>}
           {/* D-210: the instructor's own colour, where they are on a plan that carries it. */}
           <h1 className="text-h1 text-black" style={page.brandColour === null ? undefined : { color: page.brandColour }}>
-            {page.name}
+            {names.main}
           </h1>
           <p className="text-small text-grey-700">
-            {page.businessName}
-            {page.car === null ? '' : ` · ${page.car}`} ·{' '}
+            {/* The Business, unless it is already the heading. */}
+            {names.main === page.businessName ? '' : `${page.businessName} · `}
+            {page.car === null ? '' : `${page.car} · `}
             {page.transmission === 'automatic' ? 'Automatic' : page.transmission === 'both' ? 'Manual or automatic' : 'Manual'}
           </p>
           {profileUrl === null ? null : (

@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
 import { brand } from '@repo/config/brand';
 import { isPlaceSlug, isThinPlace, placeHeading, placePagePath } from '@repo/core/places';
-import { instructorProfilePath } from '@repo/core/public-profile';
+import { instructorProfilePath, profileNames } from '@repo/core/public-profile';
 import { breadcrumbStructuredData } from '@repo/core/structured-data';
 import { Skeleton } from '@repo/ui/skeleton';
 import { notFound } from 'next/navigation';
@@ -95,16 +95,24 @@ export async function PlaceContent({ params }: { params: Promise<PlaceParams> })
         </p>
       </div>
       <SchoolInstructors
-        instructors={page.instructors.map((instructor) => ({
-          href: instructorProfilePath(page.city.slug, instructor.slug),
-          name: instructor.name,
-          photoUrl: avatarUrl(instructor.photoPath),
-          qualification: instructor.qualification,
-          transmission: instructor.transmission,
-          car: instructor.car,
-          takingBookings: true,
-          hourlyFromPence: instructor.hourlyFromPence,
-        }))}
+        instructors={page.instructors.map((instructor) => {
+          // By the name their profile goes by: a Business name for somebody running their own (D-269).
+          const names =
+            instructor.business === null
+              ? { main: instructor.name, personal: null }
+              : profileNames(instructor.name, instructor.business);
+          return {
+            href: instructorProfilePath(page.city.slug, instructor.slug),
+            name: names.main,
+            personalName: names.personal,
+            photoUrl: avatarUrl(instructor.photoPath),
+            qualification: instructor.qualification,
+            transmission: instructor.transmission,
+            car: instructor.car,
+            takingBookings: true,
+            hourlyFromPence: instructor.hourlyFromPence,
+          };
+        })}
       />
       {onCityPage ? (
         <>
