@@ -11,6 +11,8 @@ const rowSchema = z.object({
   learner_name: z.string(),
   passed_on: z.string(),
   image_path: z.string(),
+  image_width: z.number().int().nullable(),
+  image_height: z.number().int().nullable(),
   created_at: z.string(),
   verified_at: z.string().nullable(),
   hidden_at: z.string().nullable(),
@@ -36,6 +38,9 @@ export interface AdminGalleryPhoto {
   /** The day itself, for the banner the public page draws. */
   passedOnDate: string;
   imagePath: string;
+  /** The picture's size, null for one added before it was written down (D-267). */
+  width: number | null;
+  height: number | null;
   /** "Thu 24 Sep 2026, 11:13", in London. */
   added: string;
   verified: boolean;
@@ -85,6 +90,8 @@ export async function adminGallery(filters: {
         passedOn: formatCalendarDate(row.passed_on),
         passedOnDate: row.passed_on,
         imagePath: row.image_path,
+        width: row.image_width,
+        height: row.image_height,
         added: `${formatDateWithYear(added)}, ${formatTime(added)}`,
         verified: row.verified_at !== null,
         hidden: row.hidden_at !== null,

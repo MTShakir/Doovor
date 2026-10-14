@@ -50,6 +50,17 @@ describe('adding a pass photo (D-218)', () => {
     });
   });
 
+  it('sends the size of the picture, where the page sent one (D-267)', async () => {
+    await addGalleryPhoto({ ...good, imageWidth: 1050, imageHeight: 1400 });
+    expect(rpc).toHaveBeenCalledWith('add_gallery_photo', {
+      p_image_path: `${business}/passed.webp`,
+      p_passed_on: '2026-01-05',
+      p_learner_name: 'Jaz Hall',
+      p_image_width: 1050,
+      p_image_height: 1400,
+    });
+  });
+
   it('will not send anything without the tick, which is the whole of the consent', async () => {
     const result = await addGalleryPhoto({ ...good, consent: false });
     expect(result).toMatchObject({ ok: false, code: 'VALIDATION_FAILED' });

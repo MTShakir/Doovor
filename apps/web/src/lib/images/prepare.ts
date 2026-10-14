@@ -31,7 +31,8 @@ function canEncode(type: string): boolean {
 /** Why a picture was refused. The pickers turn these into copy. */
 export type ImageProblem = 'WRONG_TYPE' | 'TOO_BIG' | 'UNREADABLE';
 
-export type PreparedImage = { ok: true; blob: Blob } | { ok: false; problem: ImageProblem };
+/** The picture, and its width and height as drawn, which a page can keep room for (D-267). */
+export type PreparedImage = { ok: true; blob: Blob; width: number; height: number } | { ok: false; problem: ImageProblem };
 
 interface Target {
   outputType: string;
@@ -79,7 +80,7 @@ async function prepare(
     });
     if (!blob) return { ok: false, problem: 'UNREADABLE' };
     if (blob.size > target.maxOutputBytes) return { ok: false, problem: 'TOO_BIG' };
-    return { ok: true, blob };
+    return { ok: true, blob, width: canvas.width, height: canvas.height };
   } finally {
     picture.close();
   }

@@ -76,6 +76,9 @@ export function AddPassPhoto({ businessId, learners }: { businessId: string; lea
       const path = upload.path;
       setImagePath(path);
       form.setValue('imagePath', path);
+      // Its shape, so the wall keeps the right room for it before it loads (D-267).
+      form.setValue('imageWidth', prepared.width);
+      form.setValue('imageHeight', prepared.height);
       setPreview(URL.createObjectURL(prepared.blob));
       setWorking(false);
     })();
@@ -126,6 +129,8 @@ export function AddPassPhoto({ businessId, learners }: { businessId: string; lea
             setPreview(undefined);
             setImagePath('');
             form.setValue('imagePath', '');
+            form.setValue('imageWidth', null);
+            form.setValue('imageHeight', null);
           }}
         />
         <input type="hidden" {...form.register('imagePath')} value={imagePath} readOnly />

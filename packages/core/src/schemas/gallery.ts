@@ -14,10 +14,20 @@ import { z } from '../zod';
 import { isValidLocalDate } from '../time/calendar.ts';
 import { todayInZone } from '../time/zone.ts';
 
+/** One side of a prepared picture, in pixels. */
+const pictureSide = z.number().int().min(1).max(10_000).nullable().default(null);
+
 export const galleryPhotoSchema = z
   .object({
     /** Where the prepared picture was stored, as "<business id>/<file>". The server checks it. */
     imagePath: z.string().trim().min(1, { error: 'Choose a photo' }).max(200),
+    /**
+     * The prepared picture's width and height (D-267), so a page keeps the right room for it
+     * before it loads. Null from a page opened before they were sent: that photo takes its shape
+     * as it arrives instead.
+     */
+    imageWidth: pictureSide,
+    imageHeight: pictureSide,
     passedOn: z
       .string()
       .trim()
@@ -40,6 +50,11 @@ export const galleryPhotoSchema = z
   .refine((one) => one.learnerId !== null || one.learnerName !== '', {
     error: 'Choose a learner, or type their name',
     path: ['learnerName'],
+  })
+  // Both or neither: a width on its own says nothing about the picture's shape.
+  .refine((one) => (one.imageWidth === null) === (one.imageHeight === null), {
+    error: 'Choose the photo again',
+    path: ['imagePath'],
   });
 
 export type GalleryPhotoInput = z.infer<typeof galleryPhotoSchema>;

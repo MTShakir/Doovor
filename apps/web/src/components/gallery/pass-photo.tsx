@@ -1,5 +1,6 @@
 import { brand } from '@repo/config/brand';
 import { passBannerWords } from '@repo/core/gallery';
+import { cn } from '@repo/ui/lib/cn';
 import { BadgeCheck } from 'lucide-react';
 import { galleryUrl } from '@/lib/storage/images';
 
@@ -9,7 +10,52 @@ export interface PassPhoto {
   /** The calendar day they passed, as "YYYY-MM-DD". */
   passedOn: string;
   imagePath: string;
+  /** The picture's size, null for one added before it was written down (D-267). */
+  width: number | null;
+  height: number | null;
   verified: boolean;
+}
+
+/**
+ * A pass photo drawn whole, at its own shape (D-267).
+ *
+ * Every photo used to sit in a box four wide and three high with whatever did not fit cut off, and
+ * one taken upright on a phone lost the learner's head or the certificate in their hands. The size
+ * written down when it was added keeps the right room for it before it arrives, so nothing under it
+ * moves. One added before that keeps a four by three room until it loads and then takes its own
+ * shape, which is what `auto` in the ratio means.
+ *
+ * Never taller than most of the screen: a picture far taller than it is wide is shown whole inside
+ * that, rather than as a tile that goes on and on.
+ */
+export function PassPicture({
+  path,
+  alt,
+  width,
+  height,
+  className,
+}: {
+  path: string;
+  alt: string;
+  width: number | null;
+  height: number | null;
+  className?: string;
+}) {
+  const sized = width !== null && height !== null;
+  return (
+    // Not next/image: the picture is on a storage host, already resized to the width it is shown
+    // at, and a public page that waits for an optimiser is a page that loads slower.
+    // eslint-disable-next-line @next/next/no-img-element
+    <img
+      src={galleryUrl(path)}
+      alt={alt}
+      width={width ?? undefined}
+      height={height ?? undefined}
+      loading="lazy"
+      decoding="async"
+      className={cn('h-auto max-h-[80svh] w-full bg-grey-100 object-contain', !sized && 'aspect-[auto_4/3]', className)}
+    />
+  );
 }
 
 /**
@@ -35,16 +81,7 @@ export function PassPhotoCard({
   return (
     <figure className="overflow-hidden rounded-card border border-grey-200 bg-white">
       <div className="relative">
-        {/* Not next/image: the picture is on a storage host, already resized to the width it is
-            shown at, and a public page that waits for an optimiser is a page that loads slower. */}
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img
-          src={galleryUrl(photo.imagePath)}
-          alt={words}
-          loading="lazy"
-          decoding="async"
-          className="aspect-[4/3] w-full bg-grey-100 object-cover"
-        />
+        <PassPicture path={photo.imagePath} alt={words} width={photo.width} height={photo.height} />
         {photo.verified ? (
           <span className="absolute top-3 right-3 inline-flex items-center gap-1 rounded-full bg-black px-2.5 py-1 text-caption font-semibold text-white">
             <BadgeCheck className="size-4" aria-hidden />

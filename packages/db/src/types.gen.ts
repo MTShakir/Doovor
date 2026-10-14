@@ -1069,7 +1069,9 @@ export type Database = {
           hidden_at: string | null
           hidden_by: string | null
           id: string
+          image_height: number | null
           image_path: string
+          image_width: number | null
           instructor_id: string | null
           learner_id: string | null
           learner_name: string
@@ -1085,7 +1087,9 @@ export type Database = {
           hidden_at?: string | null
           hidden_by?: string | null
           id?: string
+          image_height?: number | null
           image_path: string
+          image_width?: number | null
           instructor_id?: string | null
           learner_id?: string | null
           learner_name: string
@@ -1101,7 +1105,9 @@ export type Database = {
           hidden_at?: string | null
           hidden_by?: string | null
           id?: string
+          image_height?: number | null
           image_path?: string
+          image_width?: number | null
           instructor_id?: string | null
           learner_id?: string | null
           learner_name?: string
@@ -3309,7 +3315,9 @@ export type Database = {
       accept_terms: { Args: { p_version: string }; Returns: undefined }
       add_gallery_photo: {
         Args: {
+          p_image_height?: number
           p_image_path: string
+          p_image_width?: number
           p_learner_id?: string
           p_learner_name?: string
           p_passed_on: string

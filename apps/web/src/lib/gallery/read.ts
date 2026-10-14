@@ -9,6 +9,9 @@ export interface GalleryPhoto {
   /** The calendar day they passed, as "YYYY-MM-DD". */
   passedOn: string;
   imagePath: string;
+  /** The picture's size, null for one added before it was written down (D-267). */
+  width: number | null;
+  height: number | null;
   verified: boolean;
 }
 
@@ -48,7 +51,7 @@ export async function myGallery(): Promise<OwnGalleryPhoto[]> {
   const supabase = await createSupabaseServerClient();
   const { data, error } = await supabase
     .from('gallery_photos')
-    .select('id, learner_name, passed_on, image_path, verified_at, hidden_at')
+    .select('id, learner_name, passed_on, image_path, image_width, image_height, verified_at, hidden_at')
     .order('passed_on', { ascending: false })
     .order('created_at', { ascending: false })
     .limit(60);
@@ -58,6 +61,8 @@ export async function myGallery(): Promise<OwnGalleryPhoto[]> {
     learnerName: row.learner_name,
     passedOn: row.passed_on,
     imagePath: row.image_path,
+    width: row.image_width,
+    height: row.image_height,
     verified: row.verified_at !== null,
     hidden: row.hidden_at !== null,
   }));

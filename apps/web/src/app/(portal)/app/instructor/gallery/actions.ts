@@ -35,6 +35,10 @@ export async function addGalleryPhoto(input: unknown): Promise<Result<{ photoId:
     p_passed_on: parsed.data.passedOn,
     ...(parsed.data.learnerId === null ? {} : { p_learner_id: parsed.data.learnerId }),
     ...(parsed.data.learnerName === '' ? {} : { p_learner_name: parsed.data.learnerName }),
+    // Its size, where the page sent one, so the wall keeps room for it (D-267).
+    ...(parsed.data.imageWidth === null || parsed.data.imageHeight === null
+      ? {}
+      : { p_image_width: parsed.data.imageWidth, p_image_height: parsed.data.imageHeight }),
   });
   if (error) {
     const { code } = parsePostgresError(error);

@@ -53,9 +53,10 @@ export function MyWall({
           {photos.length === 1 ? '1 pass' : `${String(photos.length)} passes`}, newest first, as your profile shows them.
         </CardDescription>
       </div>
-      <ul className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+      {/* In columns, as the profile draws them: each photo is its own shape (D-267). */}
+      <ul className="gap-4 sm:columns-2">
         {photos.map((photo) => (
-          <li key={photo.id} className="flex flex-col gap-2">
+          <li key={photo.id} className="mb-4 flex break-inside-avoid flex-col gap-2 last:mb-0">
             <PassPhotoCard photo={photo} businessName={businessName} colour={colour} />
             {photo.hidden ? (
               // Only the Business sees this: on the public page the photo is simply not there.

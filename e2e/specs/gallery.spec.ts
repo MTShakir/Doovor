@@ -1,5 +1,5 @@
 import { brand } from '@repo/config/brand';
-import { expect, test } from '@playwright/test';
+import { expect, test, type Locator } from '@playwright/test';
 import { authFile } from '../support/accounts';
 import { addGalleryPhoto, makeInstructor, removeGalleryPhotos } from '../support/database';
 import { expectAccessible, snap } from '../support/helpers';
@@ -14,6 +14,17 @@ import { signInThroughForm } from '../support/sign-in';
  * after itself, because both run at once against the same Business and the public page shows the
  * lot of them.
  */
+/**
+ * The 900 by 1200 photo the first test adds, drawn at that shape: its size was sent with it, so
+ * the room it takes is right before it has loaded, and nothing is cut off (D-267).
+ */
+async function expectWhole(picture: Locator): Promise<void> {
+  await expect(picture).toHaveAttribute('width', '900');
+  await expect(picture).toHaveAttribute('height', '1200');
+  const box = await picture.boundingBox();
+  expect(box ? box.height / box.width : null).toBeCloseTo(1200 / 900, 1);
+}
+
 test.describe('the gallery (D-218)', () => {
   test.use({ storageState: authFile('instructor') });
 
@@ -33,7 +44,10 @@ test.describe('the gallery (D-218)', () => {
       // error, because nothing ran. Nobody using the app can do that: the button that opens the
       // chooser is not wired before hydration either, so their click does nothing and they click
       // again. Only a test can reach past the button (D-043).
-      const photo = await jpegWithGps(page);
+      //
+      // Taken upright, as most are on a phone, and shown whole at that shape rather than cut down
+      // to a box four wide and three high (D-267).
+      const photo = await jpegWithGps(page, { width: 900, height: 1200 });
       await expect(async () => {
         await page.setInputFiles('input[type="file"]', { name: 'passed.jpg', mimeType: 'image/jpeg', buffer: photo });
         await expect(page.getByRole('button', { name: 'Replace photo' })).toBeVisible({ timeout: 5_000 });
@@ -63,6 +77,7 @@ test.describe('the gallery (D-218)', () => {
 
       const wall = page.getByRole('region', { name: 'Your gallery' });
       await expect(wall).toContainText(`${who} became a driver on`);
+      await expectWhole(wall.getByRole('img', { name: new RegExp(`^${who} became a driver on`) }));
       await expectAccessible(page);
       await snap(page, testInfo, 'gallery');
 
@@ -71,6 +86,7 @@ test.describe('the gallery (D-218)', () => {
       const passes = page.getByRole('region', { name: 'Learners who passed' });
       await expect(passes).toContainText(`${who} became a driver on`);
       await expect(passes).toContainText('with Sarah Khan Driving');
+      await expectWhole(passes.getByRole('img', { name: new RegExp(`^${who} became a driver on`) }));
       await expectAccessible(page);
       await snap(page, testInfo, 'gallery-public');
 

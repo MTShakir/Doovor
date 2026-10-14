@@ -9,8 +9,8 @@ import { toast } from '@repo/ui/toast';
 import { BadgeCheck, Eye, EyeOff, Images, Undo2 } from 'lucide-react';
 import { useState, useTransition } from 'react';
 import { FormAlert } from '@/components/form-alert';
+import { PassPicture } from '@/components/gallery/pass-photo';
 import type { AdminGalleryPhoto } from '@/lib/admin/gallery';
-import { galleryUrl } from '@/lib/storage/images';
 import { checkGalleryPhoto, hideGalleryPhoto } from './actions';
 
 /** One photo, with the two things staff decide about it: the tick, and whether it is shown. */
@@ -75,13 +75,13 @@ function Photo({ photo }: { photo: AdminGalleryPhoto }) {
         </StatusPill>
       </div>
 
-      {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img
-        src={galleryUrl(photo.imagePath)}
+      {/* All of it, at its own shape: the certificate is what staff are checking (D-267). */}
+      <PassPicture
+        path={photo.imagePath}
         alt={words}
-        loading="lazy"
-        decoding="async"
-        className="aspect-[4/3] w-full rounded-card bg-grey-100 object-cover"
+        width={photo.width}
+        height={photo.height}
+        className="rounded-card"
       />
       <p className="text-small text-grey-700">
         Passed {photo.passedOn}. Added {photo.added}.
@@ -117,9 +117,10 @@ export function GalleryScreen({ photos }: { photos: AdminGalleryPhoto[] }) {
     return <EmptyState icon={Images} title="Nothing here" description="No pass photos match what you are looking at." />;
   }
   return (
-    <ul className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+    // In columns, so a card with an upright photo leaves no gap beside it (D-267).
+    <ul className="gap-4 lg:columns-2">
       {photos.map((photo) => (
-        <li key={photo.id}>
+        <li key={photo.id} className="mb-4 break-inside-avoid last:mb-0">
           <Photo photo={photo} />
         </li>
       ))}

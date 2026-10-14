@@ -68,24 +68,27 @@ function exifWithGps(): Buffer {
   return Buffer.concat([header, Buffer.from('Exif\0\0', 'latin1'), tiff]);
 }
 
-/** A real JPEG, drawn by the browser under test, with a GPS position spliced in after the start marker. */
-export async function jpegWithGps(page: Page): Promise<Buffer> {
-  const dataUrl = await page.evaluate(() => {
+/**
+ * A real JPEG, drawn by the browser under test, with a GPS position spliced in after the start
+ * marker. Sideways unless a size says otherwise: a pass photo is often taken upright (D-267).
+ */
+export async function jpegWithGps(page: Page, size = { width: 1200, height: 800 }): Promise<Buffer> {
+  const dataUrl = await page.evaluate(({ width, height }) => {
     const canvas = document.createElement('canvas');
-    canvas.width = 1200;
-    canvas.height = 800;
+    canvas.width = width;
+    canvas.height = height;
     const context = canvas.getContext('2d');
     if (!context) throw new Error('No canvas');
-    const gradient = context.createLinearGradient(0, 0, 1200, 800);
+    const gradient = context.createLinearGradient(0, 0, width, height);
     gradient.addColorStop(0, '#1d4ed8');
     gradient.addColorStop(1, '#f59e0b');
     context.fillStyle = gradient;
-    context.fillRect(0, 0, 1200, 800);
+    context.fillRect(0, 0, width, height);
     context.fillStyle = '#fdf6e3';
     context.font = 'bold 160px sans-serif';
     context.fillText('NN', 480, 460);
     return canvas.toDataURL('image/jpeg', 0.92);
-  });
+  }, size);
   const jpeg = Buffer.from(dataUrl.slice(dataUrl.indexOf(',') + 1), 'base64');
   return Buffer.concat([jpeg.subarray(0, 2), exifWithGps(), jpeg.subarray(2)]);
 }

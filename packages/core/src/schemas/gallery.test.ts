@@ -47,3 +47,28 @@ describe('adding a pass photo (D-218)', () => {
     expect(empty.error?.issues[0]?.message).toBe('Choose a photo');
   });
 });
+
+describe('the size of a pass photo (D-267)', () => {
+  it('keeps the size of the prepared picture', () => {
+    const sized = galleryPhotoSchema.parse({ ...good, imageWidth: 1050, imageHeight: 1400 });
+    expect([sized.imageWidth, sized.imageHeight]).toEqual([1050, 1400]);
+  });
+
+  it('does without one, from a page opened before it was sent', () => {
+    const unsized = galleryPhotoSchema.parse(good);
+    expect([unsized.imageWidth, unsized.imageHeight]).toEqual([null, null]);
+  });
+
+  it('wants both or neither', () => {
+    const half = galleryPhotoSchema.safeParse({ ...good, imageWidth: 1050 });
+    expect(half.success).toBe(false);
+    expect(half.error?.issues[0]?.path).toEqual(['imagePath']);
+    expect(half.error?.issues[0]?.message).toBe('Choose the photo again');
+  });
+
+  it('refuses a size no picture has', () => {
+    for (const side of [0, -1, 1.5, 10_001]) {
+      expect(galleryPhotoSchema.safeParse({ ...good, imageWidth: side, imageHeight: 1400 }).success).toBe(false);
+    }
+  });
+});

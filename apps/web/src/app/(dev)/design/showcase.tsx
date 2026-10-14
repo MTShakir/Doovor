@@ -492,8 +492,25 @@ const examplePickups: LearnerPickupPoint[] = [
 ];
 
 /** Two pass photos, one checked and one not (D-218). */
-const examplePass = { id: 'pass-1', learnerName: 'Priya Sharma', passedOn: '2026-09-15', imagePath: 'design/example.webp', verified: false };
-const exampleCheckedPass = { ...examplePass, id: 'pass-2', learnerName: 'Daniel Okafor', passedOn: '2026-08-04', verified: true };
+// Taken upright and taken sideways, each drawn at its own shape (D-267).
+const examplePass = {
+  id: 'pass-1',
+  learnerName: 'Priya Sharma',
+  passedOn: '2026-09-15',
+  imagePath: 'design/example.webp',
+  width: 1050,
+  height: 1400,
+  verified: false,
+};
+const exampleCheckedPass = {
+  ...examplePass,
+  id: 'pass-2',
+  learnerName: 'Daniel Okafor',
+  passedOn: '2026-08-04',
+  width: 1400,
+  height: 1050,
+  verified: true,
+};
 
 /**
  * A colour a Business might have picked. Not a token and not the brand's: what this example is
@@ -1263,8 +1280,9 @@ export function DesignShowcase() {
 
       <Section title="Public profile">
         <Label>
-          Pass photos: not checked, checked, and a Business with a colour of its own. The banner carries white writing, which
-          is what D-210 lets a colour be picked for in the first place (D-218)
+          Pass photos, each whole at its own shape: not checked and taken upright, checked and taken sideways, and a Business
+          with a colour of its own. The banner carries white writing, which is what D-210 lets a colour be picked for in the
+          first place (D-218, D-267)
         </Label>
         <div className="grid max-w-3xl items-start gap-4 sm:grid-cols-3">
           <PassPhotoCard photo={examplePass} businessName="Khan Driving" colour={null} />
