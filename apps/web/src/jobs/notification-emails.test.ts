@@ -57,6 +57,9 @@ describe('what the email says (NTF-03, M2-28)', () => {
     expect(actionLabel('/app/instructor/diary?view=day&date=2026-09-16')).toBe('Open your diary');
     expect(actionLabel('/app/school/diary?date=2026-09-16')).toBe('Open the school diary');
     expect(actionLabel('/app/instructor/learners/abc')).toBe('See the learner');
+    // A badge decided or running out (D-260), to the instructor and to their school.
+    expect(actionLabel('/app/instructor/profile')).toBe('Open your profile');
+    expect(actionLabel('/app/school/instructors')).toBe('See your instructors');
     // The welcome (D-259): getting started knows what is next for each of them.
     expect(actionLabel('/start')).toBe('Get started');
     expect(actionLabel('/somewhere-else')).toBe('Open the app');

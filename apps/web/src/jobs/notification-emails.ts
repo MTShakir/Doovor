@@ -38,6 +38,8 @@ export function actionLabel(link: string): string {
   if (link.startsWith('/app/instructor/diary')) return 'Open your diary';
   if (link.startsWith('/app/school/diary')) return 'Open the school diary';
   if (link.startsWith('/app/instructor/learners')) return 'See the learner';
+  if (link.startsWith('/app/instructor/profile')) return 'Open your profile';
+  if (link.startsWith('/app/school/instructors')) return 'See your instructors';
   // Getting started sends somebody to whatever is next for them: onboarding, or their portal.
   if (link === '/start') return 'Get started';
   return 'Open the app';

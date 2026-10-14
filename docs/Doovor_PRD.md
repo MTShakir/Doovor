@@ -915,8 +915,8 @@ Rating scale: 1 Introduced, 2 Under full instruction, 3 Prompted, 4 Seldom promp
 | Payment failed or overdue | Yes | Yes | Yes | Email, push |
 | Lesson record added | Yes | No | No | Push |
 | Credit running low (2 hours left) | Yes | Yes | No | Push, email |
-| Verification approved or rejected | No | Yes | Yes | Email, push |
-| Badge expiry (60, 30, 7 days) | No | Yes | Yes | Email, push |
+| Verification approved or rejected: the instructor is told why and how to send it again; a school's owners and managers hear about their instructor by name (D-260) | No | Yes | Yes | Email, push |
+| Badge expiry (60, 30, 7 days), with the day it runs out (D-260) | No | Yes | Yes | Email, push |
 | New learner invite accepted | No | Yes | Yes | Push |
 | Report received, with its reference (NTF-05) | Yes | Yes | Yes | Email |
 | Report dealt with (NTF-05) | Yes | Yes | Yes | Email |

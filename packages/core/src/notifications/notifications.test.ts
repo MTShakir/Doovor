@@ -84,6 +84,39 @@ describe('the welcome, once an email is confirmed (NTF-03, NTF-06, D-259)', () =
   });
 });
 
+describe('a badge decided, and a badge running out (INS-02, INS-03, Appendix B, D-260)', () => {
+  it('tells the instructor they are verified, or why not and what to do, in their own words', () => {
+    expect(notificationCopy('verification.decided', 'instructor', { instructorName: 'Ian', approved: true })).toEqual({
+      title: 'You are verified',
+      body: 'Your badge has been checked, and your profile now shows you as a verified instructor.',
+    });
+    expect(
+      notificationCopy('verification.decided', 'instructor', { instructorName: 'Ian', approved: false, detail: 'The photo is too blurred to read' }),
+    ).toEqual({
+      title: 'Your badge was not verified',
+      body: 'The photo is too blurred to read. Send it again from your profile and we will check it.',
+    });
+  });
+
+  it('tells the school about its instructor by name', () => {
+    expect(notificationCopy('verification.decided', 'school', { instructorName: 'Ian One', approved: true }).title).toBe('Ian One is verified');
+    const refused = notificationCopy('verification.decided', 'school', { instructorName: 'Ian One', approved: false, detail: 'The photo is blurred' });
+    expect(refused.title).toBe('Ian One was not verified');
+    expect(refused.body).toBe('The photo is blurred. They can send it again from their profile.');
+  });
+
+  it('warns the instructor and the school about a badge running out, each in their own words', () => {
+    expect(notificationCopy('badge.expiring', 'instructor', { detail: 'Your instructor badge expires in 30 days', when: 'Wed 31 Mar' })).toEqual({
+      title: 'Your badge is running out',
+      body: 'Your instructor badge expires in 30 days. Renew it with the DVSA, then send the new one from your profile.',
+    });
+    expect(notificationCopy('badge.expiring', 'school', { instructorName: 'Ian One', when: 'Wed 31 Mar' })).toEqual({
+      title: "Ian One's badge is running out",
+      body: 'It expires on Wed 31 Mar. They can send the new one from their profile once they have renewed it.',
+    });
+  });
+});
+
 describe('what the settings screen offers (NTF-04)', () => {
   it('offers every channel the group can use', () => {
     expect(channelsInCategory('reminders')).toEqual(['in_app', 'email', 'push', 'sms']);

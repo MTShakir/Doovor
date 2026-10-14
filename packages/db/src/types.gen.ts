@@ -4079,6 +4079,10 @@ export type Database = {
         Args: { p_request_id: string }
         Returns: undefined
       }
+      system_instructor_notice: {
+        Args: { p_instructor_profile_id: string }
+        Returns: Json
+      }
       system_issue_receipt: { Args: { p_payment_id: string }; Returns: Json }
       system_learner_capture_confirmation: {
         Args: { p_id: string; p_kind: string }

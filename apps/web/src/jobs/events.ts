@@ -82,6 +82,14 @@ export const paymentAuthorised = eventType('payment.authorised', {
  * says, is the database's to say; the event carries the ids only.
  */
 /**
+ * Staff decided an instructor's badge (INS-02). The database queues it with the decision; the job
+ * reads the rest, so the event carries ids and the outcome's word only (D-260).
+ */
+export const instructorVerificationDecided = eventType('instructor/verification-decided', {
+  schema: staticSchema<{ instructor_profile_id: string; business_id: string; status: string }>(),
+});
+
+/**
  * Somebody's email was confirmed for the first time, or they signed up with Google or Apple, which
  * confirm it themselves (D-259). The database queues it; the job welcomes them.
  */

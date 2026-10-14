@@ -22,6 +22,8 @@ export interface NotificationFacts {
    * a fee was kept, or where their money is going (acceptance-04).
    */
   learnerDetail?: string;
+  /** Whether a decision went the person's way: a badge verified rather than refused (D-260). */
+  approved?: boolean;
 }
 
 export interface NotificationCopy {
@@ -151,11 +153,26 @@ export function notificationCopy(
         ? { title: 'Your credit is running low', body: sentence(closed(facts.detail), 'Top it up before your next lesson') }
         : { title: `${them} is running low on credit`, body: sentence(facts.detail) };
 
-    case 'verification.decided':
-      return { title: 'Your verification was reviewed', body: sentence(facts.detail) };
+    // The instructor is told what to do next; their school is told about them by name (D-260).
+    case 'verification.decided': {
+      const name = facts.instructorName ?? 'Your instructor';
+      if (audience === 'school') {
+        return facts.approved
+          ? { title: `${name} is verified`, body: 'Their badge has been checked, and their profile now shows them as verified.' }
+          : { title: `${name} was not verified`, body: sentence(closed(facts.detail), 'They can send it again from their profile') };
+      }
+      return facts.approved
+        ? { title: 'You are verified', body: 'Your badge has been checked, and your profile now shows you as a verified instructor.' }
+        : { title: 'Your badge was not verified', body: sentence(closed(facts.detail), 'Send it again from your profile and we will check it') };
+    }
 
     case 'badge.expiring':
-      return { title: 'Your badge is running out', body: sentence(facts.detail) };
+      return audience === 'school'
+        ? {
+            title: `${facts.instructorName ?? 'An instructor'}'s badge is running out`,
+            body: sentence(facts.when ? `It expires on ${facts.when}.` : undefined, 'They can send the new one from their profile once they have renewed it'),
+          }
+        : { title: 'Your badge is running out', body: sentence(closed(facts.detail), 'Renew it with the DVSA, then send the new one from your profile') };
 
     case 'subscription.renewing':
       return { title: 'Your Pro renews soon', body: sentence(facts.detail) };
