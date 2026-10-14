@@ -2,6 +2,7 @@
 
 import { zodResolver } from '@hookform/resolvers/zod';
 import { formatPence, parsePoundsToPence } from '@repo/core/money';
+import type { Result } from '@repo/core/result';
 import { onboardingPricesSchema, packageHours } from '@repo/core/schemas/onboarding';
 import { Field } from '@repo/ui/field';
 import { Input } from '@repo/ui/input';
@@ -10,13 +11,19 @@ import { useForm } from 'react-hook-form';
 import type { z } from '@repo/core/zod';
 import { ClientForm, SubmitButton } from '@/components/client-form';
 import { FormAlert } from '@/components/form-alert';
-import { savePrices } from '../../actions';
 
 type Values = z.input<typeof onboardingPricesSchema>;
 
-interface PricesFormProps {
+interface FirstPricesFormProps {
   hourlyPrice: number | null;
   packagePrice: number | null;
+  /** Onboarding's, which moves on to the next step, or Settings' (AUTH-04, R-05, D-266). */
+  save: (input: unknown) => Promise<Result<null>>;
+  /** After saving, where nothing else happens by itself: Settings draws the full price table. */
+  onSaved?: () => void;
+  submitLabel?: string;
+  /** Onboarding's one action is the black button; Settings saves each card with a quieter one. */
+  submitVariant?: 'primary' | 'secondary';
 }
 
 /** Pence back into the pounds a person typed, without a currency sign in the field. */
@@ -25,7 +32,20 @@ function pounds(pence: number | null): string {
   return pence % 100 === 0 ? String(pence / 100) : (pence / 100).toFixed(2);
 }
 
-export function PricesForm({ hourlyPrice, packagePrice }: PricesFormProps) {
+/**
+ * The first price an instructor sets: an hour, and a block of hours if they sell one (AUTH-04, M1-08).
+ * The database turns it into a standard lesson at 1, 1.5 and 2 hours and the package. Onboarding asks
+ * it, and so does Settings for somebody who skipped it there, where otherwise there was nothing to
+ * fill in (D-266).
+ */
+export function FirstPricesForm({
+  hourlyPrice,
+  packagePrice,
+  save,
+  onSaved,
+  submitLabel = 'Continue',
+  submitVariant = 'primary',
+}: FirstPricesFormProps) {
   const [pending, startTransition] = useTransition();
   const [formError, setFormError] = useState<string | null>(null);
   const [hourly, setHourly] = useState(pounds(hourlyPrice));
@@ -45,12 +65,14 @@ export function PricesForm({ hourlyPrice, packagePrice }: PricesFormProps) {
     startTransition(async () => {
       // The pounds someone typed, not the pence this form worked out: the server does that
       // conversion itself, from the same schema, so it never trusts a number from a browser.
-      const result = await savePrices(form.getValues());
-      if (!result.ok) {
-        setFormError(result.fields ? null : result.message);
-        for (const [field, message] of Object.entries(result.fields ?? {})) {
-          form.setError(field as keyof Values, { message });
-        }
+      const result = await save(form.getValues());
+      if (result.ok) {
+        onSaved?.();
+        return;
+      }
+      setFormError(result.fields ? null : result.message);
+      for (const [field, message] of Object.entries(result.fields ?? {})) {
+        form.setError(field as keyof Values, { message });
       }
     });
   });
@@ -82,8 +104,13 @@ export function PricesForm({ hourlyPrice, packagePrice }: PricesFormProps) {
       >
         <Input inputMode="decimal" autoComplete="off" placeholder="380" defaultValue={pounds(packagePrice)} {...form.register('packagePrice')} />
       </Field>
-      <SubmitButton width="full" size="lg" pending={pending}>
-        Continue
+      <SubmitButton
+        variant={submitVariant}
+        width={submitVariant === 'primary' ? 'full' : 'responsive'}
+        size={submitVariant === 'primary' ? 'lg' : 'md'}
+        pending={pending}
+      >
+        {submitLabel}
       </SubmitButton>
     </ClientForm>
   );

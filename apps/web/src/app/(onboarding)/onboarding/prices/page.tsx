@@ -7,7 +7,8 @@ import { redirectTo } from '@/lib/redirect-to';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
 import { StepSkip } from '../step-actions';
 import { StepShell } from '../step-shell';
-import { PricesForm } from './prices-form';
+import { FirstPricesForm } from '@/components/catalogue/first-prices-form';
+import { savePrices } from '../../actions';
 
 const step = stepBySlug('prices');
 
@@ -47,7 +48,7 @@ async function PricesStep() {
 
   return (
     <StepShell step={step} businessType={session.businessType}>
-      <PricesForm hourlyPrice={hourly?.price_pence ?? null} packagePrice={block?.price_pence ?? null} />
+      <FirstPricesForm hourlyPrice={hourly?.price_pence ?? null} packagePrice={block?.price_pence ?? null} save={savePrices} />
       <StepSkip step={step.step} />
     </StepShell>
   );

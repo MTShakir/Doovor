@@ -1396,3 +1396,7 @@ Every decision made without the product owner, newest last. Format: date, decisi
 - **Options:** A tick on the sign-up form only (leaves Google sign-ups and existing accounts out); a screen for everybody, sign-ups included (asks twice); a tick at sign-up and a screen for everybody else (chosen).
 - **Test accounts:** the seed and the database tests' helpers make accounts that agreed, as the people they stand for would have, and a test holds the helpers to the current version.
 
+## D-266 | 2026-10-14 | Prices skipped in onboarding are set from Settings, the same way | Product owner, Claude
+- **Found:** the product owner skipped prices in onboarding, and Settings then showed a "Save prices" button with nothing above it. The Prices card lists a price for each lesson and length, and somebody who skipped has no lesson yet: onboarding's prices screen is what makes the first one, from an hourly price.
+- **Decision:** With no lesson yet, the card says so and asks for the hourly price, and the package if they sell one, with onboarding's own form and the same `set_onboarding_prices`. Saved, it makes the standard lesson at 1, 1.5 and 2 hours as onboarding does, and the card shows the full table to change one by one. For an independent instructor, as the RPC is; a school's prices are set by the school.
+- **Options:** Default prices put in for them (prices nobody chose, shown to learners); an empty table with a row per length (a second way to start, unlike onboarding's); onboarding's form in the card (chosen).

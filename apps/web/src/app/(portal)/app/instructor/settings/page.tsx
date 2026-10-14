@@ -16,6 +16,7 @@ import { requirePortal } from '@/lib/auth/session';
 import { businessCatalogue } from '@/lib/catalogue/catalogue';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
 import { saveBookingRules, saveBusinessPackage, saveBusinessPrices, saveInstructorRules, saveOwnPrices } from './actions';
+import { FirstPrices } from './first-prices';
 import { Exceptions, type ExceptionRow } from './exceptions';
 import { WorkingWeek, type WorkingDayValue } from './working-week';
 
@@ -165,9 +166,19 @@ async function Availability() {
           <Card className="flex flex-col gap-4" role="region" aria-labelledby="business-prices-title">
             <div className="flex flex-col gap-1">
               <CardTitle id="business-prices-title">Prices</CardTitle>
-              <CardDescription>What learners pay for each lesson.</CardDescription>
+              <CardDescription>
+                {catalogue.rows.length > 0
+                  ? 'What learners pay for each lesson.'
+                  : 'You have not set your prices yet. Start with an hour, and longer lessons follow from it.'}
+              </CardDescription>
             </div>
-            <PricesForm rows={catalogue.rows} mode="business" save={saveBusinessPrices} />
+            {/* Skipped in onboarding, there is no lesson to price yet, so the first price is asked
+                the way onboarding asks it rather than showing a button with nothing above it (D-266). */}
+            {catalogue.rows.length > 0 ? (
+              <PricesForm rows={catalogue.rows} mode="business" save={saveBusinessPrices} />
+            ) : (
+              <FirstPrices />
+            )}
           </Card>
           <Card className="flex flex-col gap-4" role="region" aria-labelledby="business-packages-title">
             <div className="flex flex-col gap-1">

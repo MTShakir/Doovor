@@ -4,6 +4,7 @@ import { parsePostgresError } from '@repo/core/errors';
 import { err, ok, type Result } from '@repo/core/result';
 import { businessBookingRulesSchema, instructorBookingRulesSchema } from '@repo/core/booking-rules';
 import { availabilityExceptionSchema, workingWeekSchema } from '@repo/core/schemas/availability';
+import { onboardingPricesSchema } from '@repo/core/schemas/onboarding';
 import { localToUtc } from '@repo/core/time';
 import { revalidatePath } from 'next/cache';
 import { z } from '@repo/core/zod';
@@ -174,6 +175,32 @@ export async function saveBusinessPrices(input: unknown): Promise<Result<null>> 
   const mine = await teaching();
   if (mine?.businessType !== 'independent') return err('NOT_ALLOWED');
   return savePrices(mine.businessId, null, input);
+}
+
+/**
+ * R-05, M1-08: the first price, for an instructor who skipped it in onboarding (D-266). Settings
+ * had a price for each lesson and length to change, and with no lesson yet there was nothing to
+ * fill in. This makes the standard lesson at 1, 1.5 and 2 hours, and the block of hours if they
+ * sell one, exactly as onboarding does.
+ */
+export async function saveFirstPrices(input: unknown): Promise<Result<null>> {
+  const parsed = onboardingPricesSchema.safeParse(input);
+  if (!parsed.success) return err('VALIDATION_FAILED', undefined, fieldErrors(parsed.error));
+  const mine = await teaching();
+  if (mine?.businessType !== 'independent') return err('NOT_ALLOWED');
+
+  const supabase = await createSupabaseServerClient();
+  const { error } = await supabase.rpc('set_onboarding_prices', {
+    p_business_id: mine.businessId,
+    p_hourly_price_pence: parsed.data.hourlyPrice,
+    p_package_price_pence: parsed.data.packagePrice ?? undefined,
+  });
+  if (error) return err(parsePostgresError(error).code);
+
+  // What a learner sees changes with the prices: the profile, and the screen they are set on.
+  expireAllInstructorProfiles();
+  revalidatePath('/app/instructor/settings');
+  return ok(null);
 }
 
 /** PAY-04: a package of hours a Business of one sells. */

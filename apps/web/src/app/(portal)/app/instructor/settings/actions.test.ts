@@ -3,8 +3,9 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 const requirePortal = vi.fn<() => Promise<unknown>>();
 const savePrices = vi.fn<(...args: unknown[]) => Promise<unknown>>();
 const savePackage = vi.fn<(...args: unknown[]) => Promise<unknown>>();
+const rpc = vi.fn<(name: string, args: Record<string, unknown>) => Promise<{ data: unknown; error: { message: string } | null }>>();
 
-vi.mock('@/lib/supabase/server', () => ({ createSupabaseServerClient: () => Promise.resolve({}) }));
+vi.mock('@/lib/supabase/server', () => ({ createSupabaseServerClient: () => Promise.resolve({ rpc }) }));
 vi.mock('@/lib/auth/session', () => ({ requirePortal: () => requirePortal() }));
 vi.mock('@/lib/catalogue/save', () => ({
   savePrices: (...args: unknown[]) => savePrices(...args),
@@ -13,7 +14,7 @@ vi.mock('@/lib/catalogue/save', () => ({
 vi.mock('@/lib/public/instructor-profile', () => ({ expireAllInstructorProfiles: vi.fn(), expireInstructorProfile: vi.fn() }));
 vi.mock('next/cache', () => ({ revalidatePath: vi.fn() }));
 
-const { saveBusinessPackage, saveBusinessPrices, saveOwnPrices } = await import('./actions');
+const { saveBusinessPackage, saveBusinessPrices, saveFirstPrices, saveOwnPrices } = await import('./actions');
 
 function teachingFor(businessType: 'independent' | 'school') {
   requirePortal.mockResolvedValue({
@@ -25,6 +26,27 @@ beforeEach(() => {
   vi.clearAllMocks();
   savePrices.mockResolvedValue({ ok: true, data: null });
   savePackage.mockResolvedValue({ ok: true, data: { packageId: 'p-1' } });
+  rpc.mockResolvedValue({ data: 'lesson-type-1', error: null });
+});
+
+describe('the first price, for somebody who skipped it in onboarding (R-05, M1-08, D-266)', () => {
+  it('makes the standard lesson from an hour, and the block if they sell one, as onboarding does', async () => {
+    teachingFor('independent');
+    expect(await saveFirstPrices({ hourlyPrice: '42', packagePrice: '380' })).toEqual({ ok: true, data: null });
+    expect(rpc).toHaveBeenCalledWith('set_onboarding_prices', {
+      p_business_id: 'biz-1',
+      p_hourly_price_pence: 4200,
+      p_package_price_pence: 38000,
+    });
+  });
+
+  it('says what to fix, and is not for an instructor at a school, whose school sets the prices', async () => {
+    teachingFor('independent');
+    expect(await saveFirstPrices({ hourlyPrice: 'lots' })).toMatchObject({ ok: false, code: 'VALIDATION_FAILED' });
+    teachingFor('school');
+    expect(await saveFirstPrices({ hourlyPrice: '42', packagePrice: '' })).toMatchObject({ ok: false, code: 'NOT_ALLOWED' });
+    expect(rpc).not.toHaveBeenCalled();
+  });
 });
 
 describe('prices from the instructor settings (R-05, SCH-04, M5-15)', () => {

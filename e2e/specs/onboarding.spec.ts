@@ -230,6 +230,40 @@ test.describe('instructor onboarding (AUTH-04, M1-02)', () => {
     await expect(page).toHaveURL(/\/onboarding\/badge$/);
   });
 
+  test('prices skipped in onboarding are set from Settings, the same way (R-05, D-266)', async ({ page }, testInfo) => {
+    const email = uniqueEmail(testInfo, 'later-prices');
+    await chooseRoleAndCreateAccount(
+      page,
+      { card: "I'm an instructor", heading: 'Create your instructor account' },
+      { fullName: 'Pat Prices', email },
+    );
+    await page.goto(await linkFromEmail(email, 'Confirm your email'));
+    await page.getByRole('link', { name: 'Do this later' }).click();
+    await page.getByLabel('First name').fill('Pat');
+    await page.getByLabel('Last name').fill('Prices');
+    await page.getByRole('button', { name: 'Continue' }).click();
+    for (const next of ['area', 'prices', 'hours']) {
+      await page.getByRole('button', { name: 'Skip for now' }).click();
+      await expect(page).toHaveURL(new RegExp(`/onboarding/${next}$`));
+    }
+    await page.getByRole('button', { name: 'Skip for now' }).click();
+    await expect(page).toHaveURL(/\/app\/instructor$/);
+
+    // Nothing priced yet: the first price is asked for, rather than a button with nothing above it.
+    await page.goto('/app/instructor/settings');
+    const prices = page.getByRole('region', { name: 'Prices' });
+    await expect(prices.getByText('You have not set your prices yet.')).toBeVisible();
+    await prices.getByLabel('Price for an hour').fill('40');
+    await expectAccessible(page);
+    await snap(page, testInfo, 'settings-first-prices', { fullPage: true });
+    await prices.getByRole('button', { name: 'Save prices' }).click();
+
+    // Then the lesson at each length, from that hour, to change one by one.
+    await expect(prices.getByLabel('Price for 1 hour', { exact: true })).toHaveValue('40');
+    await expect(prices.getByLabel('Price for 1 hour 30 minutes')).toHaveValue('60');
+    await expect(prices.getByLabel('Price for 2 hours')).toHaveValue('80');
+  });
+
   test('draws the area as the slider moves (M1-07)', async ({ page }, testInfo) => {
     const email = uniqueEmail(testInfo, 'area');
     await chooseRoleAndCreateAccount(
