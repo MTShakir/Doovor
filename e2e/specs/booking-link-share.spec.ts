@@ -71,7 +71,8 @@ test.describe('sharing the booking link (PUB-03, M5-05)', () => {
   test.describe('a learner opening the link', () => {
     test('sees the tick, and can read the full profile first', async ({ page }, testInfo) => {
       await page.goto('/book/sarah-khan-driving');
-      await expect(page).toHaveTitle(/^Book a lesson with Sarah Khan \| /);
+      // Named as her profile is: by her Business (D-270).
+      await expect(page).toHaveTitle(/^Book a lesson with Sarah Khan Driving \| /);
       await expect(page.getByRole('link', { name: 'See the full profile' })).toHaveAttribute('href', /\/instructors\/leeds\/sarah-khan-driving$/);
       await expect(page.getByRole('group', { name: /^Times on/ }).or(page.getByText(/^Nothing free on/))).toBeVisible();
       await expectAccessible(page);
