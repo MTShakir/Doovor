@@ -143,7 +143,9 @@ export function PageHeader({ title, subtitle, back, actions }: { title: string; 
   return (
     <header className="flex flex-col gap-1 px-4 pt-4 pb-2 md:px-8 md:pt-8">
       {back ? <div className="-ml-3 mb-1">{back}</div> : null}
-      <div className="flex items-start justify-between gap-4">
+      {/* The buttons go under the title when the two do not fit side by side, as on a phone with
+          the text made larger, rather than squeezing the title until it cannot be read. */}
+      <div className="flex flex-wrap items-start justify-between gap-x-4 gap-y-3">
         <div className="flex min-w-0 flex-col gap-1">
           <h1 className="text-h1 text-black">{title}</h1>
           {subtitle ? <p className="text-small text-grey-700">{subtitle}</p> : null}
