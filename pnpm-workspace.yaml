@@ -86,22 +86,22 @@ catalog:
   "@types/node": ^24.0.0
   "@types/react": ^19.2.0
   "@types/react-dom": ^19.2.0
-  eslint: ^10.10.0
+  eslint: ^10.12.0
   # 16.3.6 fixes a critical remote code execution in next/og, which the public share images use.
   # 16.3.8 fixes a server-side request forgery in image optimisation (GHSA-cjq9-62q9-8jv4), which
   # every page with a picture goes through. A tilde rather than a caret, so this fix is the patch
   # release it names and not 16.4.0 riding in with it: a minor is a change to read, not a patch.
-  next: ~16.3.8
+  next: ~16.4.0
   react: ^19.2.0
   react-dom: ^19.2.0
   tailwindcss: ^4.3.0
   "@tailwindcss/postcss": ^4.3.0
   typescript: ~6.0.3
-  vitest: ^5.0.0
-  "@vitest/coverage-v8": ^5.0.0
+  vitest: ^5.0.3
+  "@vitest/coverage-v8": ^5.0.3
   zod: ^4.6.0
-  lucide-react: ^1.44.0
-  "@supabase/supabase-js": ^2.116.0
+  lucide-react: ^1.54.0
+  "@supabase/supabase-js": ^2.117.3
   "@supabase/ssr": ^0.12.0
-  react-hook-form: ^7.87.0
+  react-hook-form: ^7.89.0
   "@hookform/resolvers": ^5.9.0
