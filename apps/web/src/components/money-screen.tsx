@@ -6,7 +6,7 @@ import { Button } from '@repo/ui/button';
 import { Card, CardDescription, CardTitle } from '@repo/ui/card';
 import { EmptyState } from '@repo/ui/empty-state';
 import { SkeletonRow } from '@repo/ui/skeleton';
-import { BadgePoundSterling, ChevronRight, HandCoins } from 'lucide-react';
+import { BadgePoundSterling, ChevronRight, HandCoins, Settings2 } from 'lucide-react';
 import Link from 'next/link';
 import { connection } from 'next/server';
 import { Suspense } from 'react';
@@ -31,7 +31,20 @@ export function MoneyScreen({
 }) {
   return (
     <main className="flex flex-col gap-4 pb-8">
-      <PageHeader title="Money" subtitle="What you have taken, and what is owed." />
+      <PageHeader
+        title="Money"
+        subtitle="What you have taken, and what is owed."
+        actions={
+          // How learners pay and what their receipts say live on a screen of their own (D-195),
+          // and this is where somebody looking at their money goes looking for them.
+          <Button variant="secondary" className="px-4" asChild>
+            <Link href={screen === 'school' ? '/app/school/money/setup' : '/app/instructor/money/setup'}>
+              <Settings2 className="size-5 shrink-0" aria-hidden />
+              Payment setup
+            </Link>
+          </Button>
+        }
+      />
       <div className="flex flex-col gap-4 px-4 md:max-w-2xl md:px-8">
         <Suspense fallback={<SkeletonRow />}>
           <Money screen={screen} searchParams={searchParams} />

@@ -53,4 +53,23 @@ test.describe('the money dashboard (MNY-01, M3-21)', () => {
     await snap(page, testInfo, 'money-dashboard-instructor');
     await context.close();
   });
+  test('Payment setup is one tap from Money, for an instructor and for a school (PAY-01, D-264)', async ({ browser }, testInfo) => {
+    for (const [who, money] of [
+      ['instructor', '/app/instructor/money'],
+      ['schoolOwner', '/app/school/money'],
+    ] as const) {
+      const context = await browser.newContext({ storageState: authFile(who) });
+      const page = await context.newPage();
+      await page.goto(money);
+      const shortcut = page.getByRole('link', { name: 'Payment setup' });
+      await expect(shortcut).toHaveAttribute('href', `${money}/setup`);
+      if (who === 'instructor') {
+        await settled(page);
+        await snap(page, testInfo, 'money-payment-setup-shortcut', { fullPage: false });
+      }
+      await shortcut.click();
+      await expect(page.getByRole('heading', { level: 1, name: 'Payment setup' })).toBeVisible({ timeout: 20_000 });
+      await context.close();
+    }
+  });
 });
