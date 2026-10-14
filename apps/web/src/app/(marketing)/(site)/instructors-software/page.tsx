@@ -4,7 +4,7 @@ import { foundingTermWords } from '@repo/core/founding';
 import { formatPence } from '@repo/core/money';
 import { referralRewardMonths } from '@repo/core/referral';
 import { siteShareCard } from '@repo/core/share-card';
-import { Bell, FileSpreadsheet, Gift, LifeBuoy, Percent, Users } from 'lucide-react';
+import { Bell, FileSpreadsheet, Gift, MessageCircleQuestionMark, Percent, Users } from 'lucide-react';
 import type { Metadata } from 'next';
 import {
   BookingGlimpse,
@@ -189,7 +189,7 @@ const alsoIncluded = [
     description: 'The longer you stay on Pro, the less you pay for it, without asking.',
   },
   {
-    icon: LifeBuoy,
+    icon: MessageCircleQuestionMark,
     title: 'Help from real people',
     description: 'Tell us anything from the app, with a screenshot if it helps, and get a reference and a reply.',
   },

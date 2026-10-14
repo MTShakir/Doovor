@@ -2,7 +2,7 @@
 
 import { Sheet } from '@repo/ui/sheet';
 import { SkeletonRow } from '@repo/ui/skeleton';
-import { LifeBuoy } from 'lucide-react';
+import { MessageCircleQuestionMark } from 'lucide-react';
 import dynamic from 'next/dynamic';
 import { useState } from 'react';
 
@@ -44,7 +44,9 @@ export function SupportButton({ userId }: { userId: string }) {
           'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-black',
         ].join(' ')}
       >
-        <LifeBuoy size={24} strokeWidth={1.5} aria-hidden />
+        {/* A speech bubble with a question in it: help, or something to tell us. The lifebuoy it
+            replaced read as a settings cog at this size, beside the bell. */}
+        <MessageCircleQuestionMark size={24} strokeWidth={1.5} aria-hidden />
       </button>
       <Sheet
         open={open}
