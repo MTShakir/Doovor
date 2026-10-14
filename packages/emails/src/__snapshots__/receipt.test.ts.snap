@@ -32,7 +32,13 @@ See the receipt https://example.com/app/receipts/payment-1
 
 You are getting this because you have a Doovor account.
 
-Maxterz LTD, registered in England and Wales, company number 16822859. Registered office: 128 City Road, London, United Kingdom, EC1V 2NX."
+Need help? Email us at support@doovor.com and we will get back to you.
+
+Drive Starts Here.
+
+Privacy notice https://doovor.com/privacy · Terms for learners https://doovor.com/terms · Terms for instructors https://doovor.com/business-terms · doovor.com https://doovor.com
+
+Doovor is owned and run by Maxterz LTD, registered in England and Wales, company number 16822859. Registered office: 128 City Road, London, United Kingdom, EC1V 2NX. Registered with the Information Commissioner's Office, number ZC165156."
 `;
 
 exports[`the receipt email (PAY-08, M3-20) > for a Business registered for VAT: its VAT number, and the VAT in the price 1`] = `
@@ -73,5 +79,11 @@ See the receipt https://example.com/app/receipts/payment-1
 
 You are getting this because you have a Doovor account.
 
-Maxterz LTD, registered in England and Wales, company number 16822859. Registered office: 128 City Road, London, United Kingdom, EC1V 2NX."
+Need help? Email us at support@doovor.com and we will get back to you.
+
+Drive Starts Here.
+
+Privacy notice https://doovor.com/privacy · Terms for learners https://doovor.com/terms · Terms for instructors https://doovor.com/business-terms · doovor.com https://doovor.com
+
+Doovor is owned and run by Maxterz LTD, registered in England and Wales, company number 16822859. Registered office: 128 City Road, London, United Kingdom, EC1V 2NX. Registered with the Information Commissioner's Office, number ZC165156."
 `;

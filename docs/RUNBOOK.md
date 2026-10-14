@@ -462,6 +462,10 @@ finished while the first hundred arrive.
 ### The logo
 - Replace a file in `assets/brand` under the same name, run `pnpm brand:logo`, and commit both. Its README lists what each file is for and the rules an export has to keep to; an export that breaks one is refused by name and nothing is written (D-249).
 
+### Emails
+- Every email's footer, and the four emails Supabase Auth sends itself (confirm your email, sign-in link, reset your password, confirm your new email), come from `packages/emails` (D-258). Change the words or the layout there, then run `pnpm --filter @repo/emails test -u`, which writes Auth's templates into `supabase/templates`, and commit both. CI fails when a template has fallen behind the package.
+- The app's own emails change with the next deploy. Auth's templates are settings of the hosted project, so after merging, put them there: either `pnpm supabase config diff --workdir ops/staging --project-ref yvxuarrrvgnfcjfyqfyi`, read it, then `config push` with the same arguments (section 3.1 step 6, which needs the provider secrets in `.env.local`); or, without any secrets, open each file in `supabase/templates` and paste its contents into Authentication > Emails > Templates in the dashboard, under the template of the same name, keeping its subject. Then sign up with a spare address and check the email.
+
 ### Dependencies
 - Weekly pull requests from Dependabot (`.github/dependabot.yml`): minor and patch versions in one
   grouped pull request, a major version on its own. Read the notes, let CI run, then merge; a major

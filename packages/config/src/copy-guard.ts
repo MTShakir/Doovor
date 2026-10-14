@@ -22,6 +22,13 @@ interface Needle {
 /** The only file allowed to contain brand values. */
 export const BRAND_SOURCE = 'packages/config/src/brand.ts';
 
+/**
+ * Files written from brand.ts by a generator rather than by hand, which a test keeps the same as
+ * what the generator writes: Supabase Auth's email templates, rendered from packages/emails
+ * (D-258). The brand is in them because brand.ts put it there. Dashes are still refused.
+ */
+export const GENERATED_FROM_BRAND = /^supabase\/templates\/[a-z_]+\.html$/;
+
 const SCOPED_DIRS = ['apps/', 'packages/', 'supabase/', 'e2e/'];
 const TEXT_EXTENSIONS = /\.(?:ts|tsx|js|jsx|mjs|cjs|json|css|sql|toml|html|svg|txt|md|mdx|yml|yaml)$/i;
 /** Developer and agent instructions, not product copy (Next.js writes AGENTS.md itself). */
@@ -73,7 +80,7 @@ function scan(path: string, content: string, rule: GuardRule, needles: Needle[])
 export function findViolations(path: string, content: string, needles = brandNeedles()): Violation[] {
   const normalised = path.replace(/\\/g, '/');
   const dashes = scan(normalised, content, 'dash', [{ label: 'em or en dash', pattern: DASH_PATTERN }]);
-  if (normalised === BRAND_SOURCE) return dashes;
+  if (normalised === BRAND_SOURCE || GENERATED_FROM_BRAND.test(normalised)) return dashes;
   return [...dashes, ...scan(normalised, content, 'brand', needles)];
 }
 

@@ -16,6 +16,23 @@ export const emailLogo = {
   scale: 2,
 } as const;
 
+/** The same picture, smaller, signing off the footer (D-258). */
+export const footerLogo = {
+  height: 20,
+  width: Math.round((20 * horizontalLogo.width) / horizontalLogo.height),
+} as const;
+
+/**
+ * The pages somebody may want from any email: what we do with their data, the two sets of terms,
+ * and the site itself. Whole addresses, because an email has no page to be relative to.
+ */
+export const footerLinks = [
+  { label: 'Privacy notice', url: `${brand.productionUrl}/privacy` },
+  { label: 'Terms for learners', url: `${brand.productionUrl}/terms` },
+  { label: 'Terms for instructors', url: `${brand.productionUrl}/business-terms` },
+  { label: brand.domain, url: brand.productionUrl },
+] as const;
+
 /**
  * The shell every email shares (NTF-03, PRD 7.2).
  *
@@ -60,6 +77,18 @@ const footnote = { color: colours['grey-700'], fontSize: '13px', lineHeight: '20
 
 const link = { color: colours.blue, textDecoration: 'underline' };
 
+const signOff = { display: 'block', border: '0', color: colours.black, fontSize: '15px', fontWeight: 700, margin: '16px 0 4px' };
+
+const slogan = { color: colours.ink, fontSize: '13px', fontWeight: 600, lineHeight: '20px', margin: '0 0 12px' };
+
+const quietLink = { color: colours.ink, textDecoration: 'underline' };
+
+/**
+ * Who sends it, as the law asks a company's emails to say: its registered name, number, where it
+ * is registered and its registered office, and its entry in the ICO's register (D-258).
+ */
+export const ownership = `${brand.name} is owned and run by ${companyDisclosure()} Registered with the Information Commissioner's Office, number ${brand.icoRegistration}.`;
+
 export function EmailLayout({ preview, children, settingsUrl, reason }: EmailLayoutProps) {
   return (
     <Html lang="en-GB">
@@ -82,7 +111,32 @@ export function EmailLayout({ preview, children, settingsUrl, reason }: EmailLay
               </>
             ) : null}
           </Text>
-          <Text style={footnote}>{companyDisclosure()}</Text>
+          <Text style={footnote}>
+            Need help? Email us at{' '}
+            <Link href={`mailto:${brand.supportEmail}`} style={link}>
+              {brand.supportEmail}
+            </Link>{' '}
+            and we will get back to you.
+          </Text>
+          <Img
+            src={`${brand.appUrl}${emailLogo.path}`}
+            width={footerLogo.width}
+            height={footerLogo.height}
+            alt={brand.name}
+            style={signOff}
+          />
+          <Text style={slogan}>{brand.slogan}</Text>
+          <Text style={footnote}>
+            {footerLinks.map((one, index) => (
+              <span key={one.url}>
+                {index === 0 ? null : ' · '}
+                <Link href={one.url} style={quietLink}>
+                  {one.label}
+                </Link>
+              </span>
+            ))}
+          </Text>
+          <Text style={footnote}>{ownership}</Text>
         </Container>
       </Body>
     </Html>

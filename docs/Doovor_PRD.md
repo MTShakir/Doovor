@@ -244,7 +244,7 @@ Dark mode inverts black and white and keeps yellow. Ship light mode first; build
 - Sizes: 40 pixels tall in the site's header and on sign-in, account and onboarding; 32 in the app's top bar and menu; 64 in the site's footer (D-250).
 - The app icon is the white wheel on a black square, which the phone rounds. The icon Android crops draws the wheel smaller, so any crop keeps a ring of black around it.
 - The browser tab's icon is the white wheel on a black circle with the corners left clear, from a master of its own, so it reads on light and dark tabs alike (D-250).
-- Email cannot show SVG, so the top of every email is a picture of the horizontal logo on the email's own grey. With pictures turned off, the name shows in its place.
+- Email cannot show SVG, so the top of every email is a picture of the horizontal logo on the email's own grey, and a smaller one with the slogan signs off its footer (NTF-06). With pictures turned off, the name shows in its place.
 - Share images carry the horizontal logo, not the lockup: a preview is shown at about a third of its size.
 
 ## 8. Platform and information architecture
@@ -434,6 +434,7 @@ Priority key: **P1** = Phase 1 (MVP), **P2** = Phase 2, **P3** = Phase 3, **P4**
 | NTF-02 | Automatic reminders to learners 24 hours and 2 hours before each lesson. Configurable per Business. | P1 |
 | NTF-03 | Event notifications: booking made, changed, cancelled, payment received, payment failed, lesson record added, badge expiry, new review, new learner request. Full list in Appendix B. | P1 |
 | NTF-04 | Users control non-essential notifications per channel in settings. A reminder sent by hand from a lesson still obeys what that learner switched off (D-166). | P1 |
+| NTF-06 | Every email ends the same way: why it came, where to get help (the support address), the logo and slogan, links to the privacy notice, both sets of terms and the site, and who owns and runs the product, with its company number, where it is registered, its registered office and its ICO registration. The emails the sign-in service sends itself (confirm your email, a sign-in link, a new password, a new email address) share that layout, with a button to tap and the link written out underneath for when the button does not work (D-258). | P1 |
 | NTF-05 | Anybody signed in can tell us something, from the support button beside the bell or from the menu, with pictures if they want, shown as thumbnails while they upload. Each report gets a reference, R01 onwards, and an email saying it has arrived, and a second email when a person has dealt with it. Staff read every report in one place (D-202, D-241). | P1 |
 | MSG-01 | In-app chat between learner and instructor, tied to the learner relationship. Text and images. | P2 |
 | MSG-02 | Chat is logged and can be reported. Contact details are shared only after a first booking (marketplace leads) to protect both sides. | P2 |

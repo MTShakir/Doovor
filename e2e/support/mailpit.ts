@@ -27,7 +27,8 @@ export async function linkFromEmail(address: string, subject: string): Promise<s
     .toBe(true);
   if (!message) throw new Error('unreachable');
   const detail = (await (await fetch(`${MAILPIT}/api/v1/message/${message.ID}`)).json()) as { HTML: string };
-  const href = /href="([^"]+)"/.exec(detail.HTML)?.[1]?.replaceAll('&amp;', '&');
+  // The first link to tap: React also puts a preload for the logo in the head, which is an href too.
+  const href = /<a\b[^>]*\bhref="([^"]+)"/.exec(detail.HTML)?.[1]?.replaceAll('&amp;', '&');
   if (!href) throw new Error(`No link in email "${subject}" to ${address}`);
   if (!href.includes('/auth/confirm?token_hash=')) {
     throw new Error(`Email "${subject}" does not use our template (got ${href}). Restart the stack: pnpm db:stop && pnpm db:start`);

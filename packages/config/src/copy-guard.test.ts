@@ -43,6 +43,16 @@ describe('copy guard', () => {
     expect(findViolations(BRAND_SOURCE, `// a ${emDash} b`)).toHaveLength(1);
   });
 
+  it('allows brand values in the generated Auth email templates, and nowhere near them, but still bans dashes (D-258)', () => {
+    const template = `<p>Thanks for signing up to ${brand.name}.</p>`;
+    expect(findViolations('supabase/templates/confirmation.html', template)).toHaveLength(0);
+    expect(findViolations('supabase/templates/confirmation.html', `<p>a ${emDash} b</p>`)).toHaveLength(1);
+    // A file that only looks like one is still checked.
+    expect(findViolations('supabase/templates/nested/confirmation.html', template)).toHaveLength(1);
+    expect(findViolations('supabase/templates/confirmation.html.bak', template)).toHaveLength(1);
+    expect(findViolations('supabase/seed.sql', template)).toHaveLength(1);
+  });
+
   it('scopes to product source folders and text files', () => {
     expect(isInScope('apps/web/src/app/page.tsx')).toBe(true);
     expect(isInScope('supabase/migrations/0001_init.sql')).toBe(true);

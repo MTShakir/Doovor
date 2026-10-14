@@ -81,8 +81,8 @@ max_frequency = "1s"
 otp_length = 6
 otp_expiry = 3600
 
-# Links go to /auth/confirm with a token hash so they work on any device. Branded
-# React Email versions replace these in M2; hosted templates are set in the dashboard.
+# Links go to /auth/confirm with a token hash so they work on any device. The templates are
+# rendered from packages/emails (D-258), and a hosted push copies this folder into ops/staging.
 [auth.email.template.confirmation]
 subject = "Confirm your email"
 content_path = "./supabase/templates/confirmation.html"
