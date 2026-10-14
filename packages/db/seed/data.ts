@@ -116,7 +116,10 @@ export interface SeedInstructor {
   key: string;
   business: SeedBusiness['key'];
   displayName: string;
+  /** Made from the Business name for somebody running their own, from their own name at a school (D-269). */
   slug: string;
+  /** Addresses the profile had before, which lead to it (D-269). */
+  formerSlugs?: string[];
   bio: string;
   languages: string[];
   yearsTeaching: number;
@@ -138,7 +141,8 @@ const weekdays = (days: number[], start: string, end: string): SeedHours[] => da
 
 export const instructors: SeedInstructor[] = [
   {
-    key: 'sarah', business: 'sarahBiz', displayName: 'Sarah Khan', slug: 'sarah-khan',
+    // Named after her Business, and still found at the address she had before it was (D-269).
+    key: 'sarah', business: 'sarahBiz', displayName: 'Sarah Khan', slug: 'sarah-khan-driving', formerSlugs: ['sarah-khan'],
     bio: 'Calm, patient instructor with 9 years of experience. Nervous drivers are very welcome.',
     languages: ['English', 'Urdu'], yearsTeaching: 9, qualification: 'adi', badgeNumber: '416234', badgeExpiresInDays: 430,
     verification: 'approved', transmission: 'manual', car: ['Volkswagen', 'Polo'],

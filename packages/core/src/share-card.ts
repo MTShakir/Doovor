@@ -36,7 +36,10 @@ function count(n: number, one: string, many: string): string {
 }
 
 export interface InstructorCardFacts {
+  /** The name the profile goes by: a Business name for somebody running their own (D-269). */
   name: string;
+  /** Their own name, where `name` is their Business's, which the eyebrow and the initials use. */
+  personName?: string | null;
   qualification: Qualification;
   transmission: Transmission;
   cityName: string | null;
@@ -48,17 +51,24 @@ export interface InstructorCardFacts {
 /** An instructor, as the top of their profile shows them. Every public profile is a checked one. */
 export function instructorShareCard(facts: InstructorCardFacts): ShareCard {
   return {
-    eyebrow: facts.cityName === null ? 'Driving instructor' : `Driving instructor in ${facts.cityName}`,
+    eyebrow: instructorEyebrow(facts),
     title: facts.name,
     facts: [
       qualificationWords(facts.qualification),
       transmissions.find((one) => one.value === facts.transmission)?.label ?? facts.transmission,
       ...fromHourly(facts.hourlyFromPence),
     ],
-    picture: { initials: initialsFor(facts.name), photoUrl: facts.photoUrl, verified: true },
+    // The photo is of the person, so the letters standing in for it are theirs too.
+    picture: { initials: initialsFor(facts.personName ?? facts.name), photoUrl: facts.photoUrl, verified: true },
     action: facts.takingBookings ? 'Book a lesson' : 'Not taking new bookings',
     paused: !facts.takingBookings,
   };
+}
+
+/** What they do and where, after their own name where the card is titled with their Business's (D-269). */
+function instructorEyebrow(facts: InstructorCardFacts): string {
+  const where = facts.cityName === null ? '' : ` in ${facts.cityName}`;
+  return facts.personName ? `${facts.personName}, driving instructor${where}` : `Driving instructor${where}`;
 }
 
 export interface SchoolCardFacts {

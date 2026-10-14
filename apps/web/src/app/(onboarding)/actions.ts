@@ -15,6 +15,7 @@ import { getGeoProvider } from '@/lib/geo/provider';
 import { requireOnboarding } from '@/lib/onboarding/session';
 import { afterStep, canOpenStep, slugForStep, stepNumber } from '@/lib/onboarding/steps';
 import { fieldErrors } from '@/lib/forms';
+import { expireAllInstructorProfiles } from '@/lib/public/instructor-profile';
 import { redirectTo } from '@/lib/redirect-to';
 import { avatarsBucket, removeProfileImage } from '@/lib/storage/images';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
@@ -60,6 +61,8 @@ export async function saveName(input: unknown): Promise<Result<null>> {
   if (session.businessType === 'independent' && businessName !== undefined) {
     const named = await supabase.rpc('set_business_name', { p_business_id: session.businessId, p_name: businessName });
     if (named.error) return err(parsePostgresError(named.error).code, 'We could not save your business name. Try again.');
+    // The profile's address follows the name (D-269), for somebody back here after approval.
+    expireAllInstructorProfiles();
   }
 
   const patch =

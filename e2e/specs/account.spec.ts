@@ -99,6 +99,12 @@ test.describe('your name on your account (AUTH-09, D-217)', () => {
       await expect(page.getByRole('heading', { level: 1, name: 'Account and security' })).toBeVisible();
       await expect(details).toContainText('Robin Shah');
       await expect(details).toContainText('Robin Shah School of Motoring');
+
+      // The profile goes by the new name, at an address made from it, and the old address leads
+      // there (D-269). Told apart by a few letters where the other width got there first.
+      await page.goto(`/instructors/leeds/${instructor.slug}`);
+      await expect(page).toHaveURL(/\/instructors\/leeds\/robin-shah-school-of-motoring(-[0-9a-f]{5})?$/);
+      await expect(page.getByRole('heading', { level: 1, name: 'Robin Shah School of Motoring', exact: true })).toBeVisible();
     } finally {
       await instructor.remove();
     }

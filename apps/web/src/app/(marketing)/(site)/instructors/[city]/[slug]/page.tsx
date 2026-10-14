@@ -1,7 +1,7 @@
 import type { Metadata, Route } from 'next';
 import { brand } from '@repo/config/brand';
 import { isPlaceSlug, placePagePath } from '@repo/core/places';
-import { instructorGalleryPath, instructorProfilePath, qualificationWords, schoolProfilePath } from '@repo/core/public-profile';
+import { instructorGalleryPath, instructorProfilePath, profileNames, qualificationWords, schoolProfilePath } from '@repo/core/public-profile';
 import { instructorStructuredData } from '@repo/core/structured-data';
 import { Skeleton } from '@repo/ui/skeleton';
 import { notFound, permanentRedirect } from 'next/navigation';
@@ -19,7 +19,7 @@ import { Counted } from '@/components/analytics/counted';
 import { JsonLdScript } from '@/components/public/json-ld';
 import { PlaceLinks } from '@/components/public/place-links';
 import { getAppUrl } from '@/lib/app-url';
-import { instructorProfile, nextOpenTimes, type InstructorProfilePage } from '@/lib/public/instructor-profile';
+import { instructorProfile, movedProfile, nextOpenTimes, type InstructorProfilePage } from '@/lib/public/instructor-profile';
 import { publicPageMetadata } from '@/lib/public/metadata';
 import { PassWall } from '@/components/gallery/pass-wall';
 import { instructorGallery } from '@/lib/gallery/read';
@@ -36,8 +36,10 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   if (!profile) return { title: 'Instructor not found', robots: { index: false } };
 
   const where = profile.place?.cityName;
+  // By the name it goes by: a Business name for somebody running their own (D-269).
+  const { main } = profileNames(profile.name, profile.business);
   return publicPageMetadata({
-    title: where ? `${profile.name}, driving instructor in ${where}` : `${profile.name}, driving instructor`,
+    title: where ? `${main}, driving instructor in ${where}` : `${main}, driving instructor`,
     description:
       profile.bio ?? `${qualificationWords(profile.qualification)} on ${brand.name}. See prices and free times, and book a lesson.`,
     path: instructorProfilePath(profile.place?.citySlug ?? null, profile.slug),
@@ -64,7 +66,12 @@ async function InstructorProfile({ params }: Pick<Props, 'params'>) {
   const { city, slug } = await params;
   if (!isPlaceSlug(city) || !isPlaceSlug(slug)) notFound();
   const profile = await instructorProfile(slug);
-  if (!profile) notFound();
+  if (!profile) {
+    // An address the profile had before its Business was renamed goes to the one it has now (D-269).
+    const moved = await movedProfile(slug);
+    if (!moved) notFound();
+    permanentRedirect(instructorProfilePath(moved.place?.citySlug ?? null, moved.slug) as Route);
+  }
 
   // One address per profile: an old or mistyped city moves to the one the base is in.
   const path = instructorProfilePath(profile.place?.citySlug ?? null, profile.slug);
@@ -78,6 +85,7 @@ async function InstructorProfile({ params }: Pick<Props, 'params'>) {
   const photoUrl = avatarUrl(profile.photoPath);
   const schoolUrl = profile.business.type === 'school' ? schoolProfilePath(profile.business.citySlug, profile.business.slug) : null;
   const place = profile.place;
+  const names = profileNames(profile.name, profile.business);
   const structured = instructorStructuredData({
     url: `${site}${path}`,
     bookingUrl,
@@ -91,7 +99,7 @@ async function InstructorProfile({ params }: Pick<Props, 'params'>) {
     breadcrumbs: [
       { name: brand.name, url: site },
       ...(place?.hasHub ? [{ name: `Driving lessons in ${place.cityName}`, url: `${site}/driving-lessons/${place.citySlug}` }] : []),
-      { name: profile.name, url: `${site}${path}` },
+      { name: names.main, url: `${site}${path}` },
     ],
   });
 
@@ -101,7 +109,8 @@ async function InstructorProfile({ params }: Pick<Props, 'params'>) {
       <Counted event="profile_viewed" properties={{ kind: 'instructor' }} once={profile.slug} />
       <div className="flex flex-col gap-8">
         <ProfileHeader
-          name={profile.name}
+          name={names.main}
+          personalName={names.personal}
           photoUrl={photoUrl}
           qualification={profile.qualification}
           school={schoolUrl === null ? null : { name: profile.business.name, href: schoolUrl }}

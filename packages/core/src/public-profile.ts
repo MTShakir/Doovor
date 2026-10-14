@@ -18,6 +18,25 @@ export function schoolProfilePath(citySlug: string | null, slug: string): string
   return `/schools/${citySlug ?? 'uk'}/${slug}`;
 }
 
+/** What a profile is called (D-269). */
+export interface ProfileNames {
+  /** The heading: an independent instructor's Business name, or a school instructor's own name. */
+  main: string;
+  /** Their own name, small above the heading, where the heading is another name. */
+  personal: string | null;
+}
+
+/**
+ * An independent instructor's profile goes by their Business name, with their own name small
+ * above it (D-269), unless the two are the same. An instructor at a school goes by their own
+ * name: they all work for the school, and the school has a profile of its own.
+ */
+export function profileNames(personName: string, business: { name: string; type: 'independent' | 'school' }): ProfileNames {
+  if (business.type !== 'independent') return { main: personName, personal: null };
+  const same = business.name.trim().toLowerCase() === personName.trim().toLowerCase();
+  return same ? { main: personName, personal: null } : { main: business.name, personal: personName };
+}
+
 /** The whole pass gallery of a profile, on a page of its own under it (PUB-06, D-268). */
 export function instructorGalleryPath(citySlug: string | null, slug: string): string {
   return `${instructorProfilePath(citySlug, slug)}/gallery`;

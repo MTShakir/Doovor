@@ -148,6 +148,9 @@ async function main(): Promise<void> {
           ) returning id`;
         if (!row) throw new Error(`Instructor ${i.displayName} was not created`);
         instructorIds.set(i.key, row.id);
+        for (const former of i.formerSlugs ?? []) {
+          await tx`insert into private.former_profile_slugs (slug, instructor_id) values (${former}, ${row.id})`;
+        }
         for (const h of i.hours) {
           await tx`insert into public.working_hours (instructor_id, business_id, weekday, start_time, end_time)
                    values (${row.id}, ${biz}, ${h.weekday}, ${h.start}, ${h.end})`;

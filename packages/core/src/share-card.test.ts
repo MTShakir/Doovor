@@ -43,6 +43,16 @@ describe('the image a shared page shows (PRD 14.6, M5-08)', () => {
     expect(instructorShareCard({ ...sarah, hourlyFromPence: null }).facts).toEqual(['Approved driving instructor', 'Manual']);
   });
 
+  it('titles a Business of one with its name, and says whose it is above (D-269)', () => {
+    const card = instructorShareCard({ ...sarah, name: 'Perfect Driving', personName: 'Sarah Khan' });
+    expect(card.eyebrow).toBe('Sarah Khan, driving instructor in Leeds');
+    expect(card.title).toBe('Perfect Driving');
+    expect(card.picture?.initials).toBe('SK');
+    expect(instructorShareCard({ ...sarah, name: 'Perfect Driving', personName: 'Sarah Khan', cityName: null }).eyebrow).toBe(
+      'Sarah Khan, driving instructor',
+    );
+  });
+
   it('shows a school by its name, city and how many instructors a learner can choose from', () => {
     expect(schoolShareCard({ name: 'Quayside Driving School', cityName: 'Manchester', instructorCount: 2, hourlyFromPence: 4000, logoUrl: null })).toEqual({
       eyebrow: 'Driving school in Manchester',

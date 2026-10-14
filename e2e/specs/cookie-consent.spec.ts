@@ -64,7 +64,7 @@ test.describe('the cookie question (NFR-PRV-02, M6-08)', () => {
         said.push(event);
       });
     });
-    await page.goto('/instructors/leeds/sarah-khan');
+    await page.goto('/instructors/leeds/sarah-khan-driving');
     await expect(page.getByRole('heading', { level: 1, name: 'Sarah Khan' })).toBeVisible();
     // Nothing yet: the profile has been read, and nobody has said it may be counted.
     expect(await page.evaluate(() => (window as unknown as { counted: unknown[] }).counted.length)).toBe(0);

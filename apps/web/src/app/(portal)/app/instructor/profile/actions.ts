@@ -12,7 +12,7 @@ import { revalidatePath } from 'next/cache';
 import { requirePortal } from '@/lib/auth/session';
 import { refuseWhileViewing } from '@/lib/auth/view-as';
 import { fieldErrors } from '@/lib/forms';
-import { expireInstructorProfile } from '@/lib/public/instructor-profile';
+import { expireAllInstructorProfiles, expireInstructorProfile } from '@/lib/public/instructor-profile';
 import { avatarsBucket, removeProfileImage } from '@/lib/storage/images';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
 import { submitBadge } from '@/lib/verification/submit-badge';
@@ -76,7 +76,10 @@ export async function saveProfile(input: unknown, photoPath?: string | null): Pr
   }
 
   revalidatePath('/app/instructor/profile');
-  expireInstructorProfile(profileId);
+  // A new Business name is a new address for the profile (D-269): the old one has to stop
+  // answering, and the new one, which may have been looked up and found empty, start.
+  if (parsed.data.businessName !== undefined && membership.businessType === 'independent') expireAllInstructorProfiles();
+  else expireInstructorProfile(profileId);
   return ok(null);
 }
 

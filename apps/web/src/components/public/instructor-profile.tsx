@@ -17,7 +17,10 @@ import { CoverageImage } from '@/components/map/coverage-image';
  */
 
 export interface ProfileHeaderProps {
+  /** The name the profile goes by: a Business name for somebody running their own (D-269). */
   name: string;
+  /** Their own name, small above it, where `name` is their Business's. */
+  personalName?: string | null;
   photoUrl?: string;
   qualification: Qualification;
   /** The school the instructor teaches with, and its page; nothing for somebody who runs their own Business. */
@@ -29,7 +32,17 @@ export interface ProfileHeaderProps {
 }
 
 /** Who they are, and the facts a learner decides on first. Every profile is a checked instructor. */
-export function ProfileHeader({ name, photoUrl, qualification, school, transmission, car, dualControls, lessons }: ProfileHeaderProps) {
+export function ProfileHeader({
+  name,
+  personalName = null,
+  photoUrl,
+  qualification,
+  school,
+  transmission,
+  car,
+  dualControls,
+  lessons,
+}: ProfileHeaderProps) {
   const hourly = hourlyFromPence(lessons);
   const facts = [
     transmissions.find((one) => one.value === transmission)?.label ?? transmission,
@@ -40,8 +53,10 @@ export function ProfileHeader({ name, photoUrl, qualification, school, transmiss
   return (
     <header className="flex flex-col gap-4">
       <div className="flex items-center gap-4">
-        <Avatar name={name} src={photoUrl} verified size="xl" decorative />
+        {/* The photo is of the person, so the letters standing in for it are theirs too. */}
+        <Avatar name={personalName ?? name} src={photoUrl} verified size="xl" decorative />
         <div className="flex min-w-0 flex-col gap-1">
+          {personalName === null ? null : <p className="text-caption text-grey-700">{personalName}</p>}
           <h1 className="text-h1 text-black">{name}</h1>
           <p className="text-small text-grey-700">
             {qualificationWords(qualification)}, checked by {brand.name}

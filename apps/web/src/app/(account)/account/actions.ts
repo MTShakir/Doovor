@@ -9,6 +9,7 @@ import { redirect } from 'next/navigation';
 import { z } from '@repo/core/zod';
 import { requireAccess } from '@/lib/auth/session';
 import { fieldErrors } from '@/lib/forms';
+import { expireAllInstructorProfiles } from '@/lib/public/instructor-profile';
 import { ownBusiness } from '@/lib/auth/own-business';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
 
@@ -33,6 +34,8 @@ export async function saveAccountName(input: unknown): Promise<Result<null>> {
     if (mine === null) return err('NOT_ALLOWED', 'Your school looks after that name.');
     const named = await supabase.rpc('set_business_name', { p_business_id: mine.businessId, p_name: parsed.data.businessName });
     if (named.error) return err(parsePostgresError(named.error).code, 'We could not save your business name. Try again.');
+    // A new Business name is a new address for an instructor's profile (D-269).
+    expireAllInstructorProfiles();
   }
 
   const { error } = await supabase

@@ -174,7 +174,7 @@ test.describe('the public site (PRD 8.3, 9.18, M5-09)', () => {
   });
 
   test('every page of the site shares the header and a footer that links each city page, and search is told about them', async ({ page, request }) => {
-    await page.goto('/instructors/leeds/sarah-khan');
+    await page.goto('/instructors/leeds/sarah-khan-driving');
     await expect(page.getByRole('heading', { level: 1, name: 'Sarah Khan' })).toBeVisible();
     await expect(page.getByRole('banner').getByRole('link', { name: brand.name })).toHaveAttribute('href', '/');
     const footer = page.getByRole('contentinfo');

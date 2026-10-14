@@ -146,7 +146,7 @@ test.describe('the keyboard alone (WCAG 2.1.1, 2.4.1, 2.4.7, M6-06)', () => {
    */
   const screens: [RoleKey | null, string][] = [
     [null, '/'],
-    [null, '/book/sarah-khan'],
+    [null, '/book/sarah-khan-driving'],
     [null, '/sign-in'],
     ['instructor', '/app/instructor'],
     ['instructor', '/app/instructor/diary'],

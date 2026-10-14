@@ -1,12 +1,12 @@
 import type { Metadata, Route } from 'next';
 import { isPlaceSlug } from '@repo/core/places';
-import { instructorGalleryPath, instructorProfilePath } from '@repo/core/public-profile';
+import { instructorGalleryPath, instructorProfilePath, profileNames } from '@repo/core/public-profile';
 import { notFound, permanentRedirect } from 'next/navigation';
 import { Suspense } from 'react';
 import { GalleryHeader, GallerySkeleton } from '@/components/gallery/gallery-header';
 import { FullPassWall } from '@/components/gallery/pass-wall';
 import { instructorGallery } from '@/lib/gallery/read';
-import { instructorProfile } from '@/lib/public/instructor-profile';
+import { instructorProfile, movedProfile } from '@/lib/public/instructor-profile';
 import { publicPageMetadata } from '@/lib/public/metadata';
 import { instructorCard } from '@/lib/public/share-cards';
 
@@ -20,9 +20,10 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   if (!profile || !gallery || gallery.photos.length === 0) return { title: 'Gallery not found', robots: { index: false } };
 
   const citySlug = profile.place?.citySlug ?? null;
+  const { main } = profileNames(profile.name, profile.business);
   return publicPageMetadata({
-    title: `Learners who passed with ${profile.name}`,
-    description: `Photos from the day ${profile.name}'s learners passed their driving test, shared with their permission.`,
+    title: `Learners who passed with ${main}`,
+    description: `Photos from the day learners passed their driving test with ${main}, shared with their permission.`,
     path: instructorGalleryPath(citySlug, profile.slug),
     // In search when the profile is, and out of it when the profile is (PUB-04, INS-03).
     indexable: profile.inSearch,
@@ -46,7 +47,12 @@ async function InstructorGallery({ params }: Pick<Props, 'params'>) {
   const { city, slug } = await params;
   if (!isPlaceSlug(city) || !isPlaceSlug(slug)) notFound();
   const profile = await instructorProfile(slug);
-  if (!profile) notFound();
+  if (!profile) {
+    // From an address the profile had before its Business was renamed (D-269).
+    const moved = await movedProfile(slug);
+    if (!moved) notFound();
+    permanentRedirect(instructorGalleryPath(moved.place?.citySlug ?? null, moved.slug) as Route);
+  }
 
   // One address, as the profile has one: an old or mistyped city moves to the one the base is in.
   const citySlug = profile.place?.citySlug ?? null;
@@ -59,7 +65,7 @@ async function InstructorGallery({ params }: Pick<Props, 'params'>) {
   return (
     <>
       <GalleryHeader
-        name={profile.name}
+        name={profileNames(profile.name, profile.business).main}
         profileHref={instructorProfilePath(citySlug, profile.slug)}
         shown={gallery.photos.length}
         total={gallery.total}

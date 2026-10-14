@@ -6,6 +6,7 @@ import {
   instructorGalleryPath,
   instructorProfilePath,
   joinWords,
+  profileNames,
   qualificationWords,
   schoolGalleryPath,
   schoolProfilePath,
@@ -17,6 +18,20 @@ describe('the public instructor profile (PUB-01, M5-02)', () => {
     expect(instructorProfilePath(null, 'sarah-khan')).toBe('/instructors/uk/sarah-khan');
     expect(schoolProfilePath('manchester', 'quayside-driving-school')).toBe('/schools/manchester/quayside-driving-school');
     expect(schoolProfilePath(null, 'quayside-driving-school')).toBe('/schools/uk/quayside-driving-school');
+  });
+
+  it('goes by the Business name for somebody running their own, with their own name above it (D-269)', () => {
+    expect(profileNames('Sarah Khan', { name: 'Perfect Driving', type: 'independent' })).toEqual({
+      main: 'Perfect Driving',
+      personal: 'Sarah Khan',
+    });
+    // A Business still named after the person says the name once.
+    expect(profileNames('Sarah Khan', { name: ' sarah khan ', type: 'independent' })).toEqual({ main: 'Sarah Khan', personal: null });
+    // At a school, by their own name: the school has a profile of its own.
+    expect(profileNames('Emma Clarke', { name: 'Quayside Driving School', type: 'school' })).toEqual({
+      main: 'Emma Clarke',
+      personal: null,
+    });
   });
 
   it('keeps the whole pass gallery under the profile it belongs to (D-268)', () => {

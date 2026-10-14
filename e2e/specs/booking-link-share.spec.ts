@@ -42,7 +42,7 @@ test.describe('sharing the booking link (PUB-03, M5-05)', () => {
       await context.grantPermissions(['clipboard-read', 'clipboard-write']);
       await page.goto('/app/instructor/profile');
       const card = page.getByRole('region', { name: 'Your booking link' });
-      const link = new URL('/book/sarah-khan', page.url()).toString();
+      const link = new URL('/book/sarah-khan-driving', page.url()).toString();
       await expect(card.getByLabel('Link', { exact: true })).toHaveValue(link);
 
       await expect(async () => {
@@ -61,7 +61,7 @@ test.describe('sharing the booking link (PUB-03, M5-05)', () => {
       await expect(download).toHaveAttribute('download', 'booking-link-qr-code.svg');
       await expect(download).toHaveAttribute('href', /^data:image\/svg\+xml/);
 
-      await expect(card.getByRole('link', { name: 'See your public profile' })).toHaveAttribute('href', /\/instructors\/leeds\/sarah-khan$/);
+      await expect(card.getByRole('link', { name: 'See your public profile' })).toHaveAttribute('href', /\/instructors\/leeds\/sarah-khan-driving$/);
       await expectAccessible(page);
       await settled(page);
       await snap(page, testInfo, 'booking-link-share');
@@ -70,9 +70,9 @@ test.describe('sharing the booking link (PUB-03, M5-05)', () => {
 
   test.describe('a learner opening the link', () => {
     test('sees the tick, and can read the full profile first', async ({ page }, testInfo) => {
-      await page.goto('/book/sarah-khan');
+      await page.goto('/book/sarah-khan-driving');
       await expect(page).toHaveTitle(/^Book a lesson with Sarah Khan \| /);
-      await expect(page.getByRole('link', { name: 'See the full profile' })).toHaveAttribute('href', /\/instructors\/leeds\/sarah-khan$/);
+      await expect(page.getByRole('link', { name: 'See the full profile' })).toHaveAttribute('href', /\/instructors\/leeds\/sarah-khan-driving$/);
       await expect(page.getByRole('group', { name: /^Times on/ }).or(page.getByText(/^Nothing free on/))).toBeVisible();
       await expectAccessible(page);
       await settled(page);

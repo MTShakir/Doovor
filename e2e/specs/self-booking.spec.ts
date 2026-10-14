@@ -18,7 +18,7 @@ test.describe('booking from a shared link (BOK-02, M2-17)', () => {
    * is listening: a day chosen before that is a day the page never hears about (D-043).
    */
   const openLink = async (page: Page): Promise<void> => {
-    await page.goto('/book/sarah-khan');
+    await page.goto('/book/sarah-khan-driving');
     await expect(
       page.getByRole('group', { name: /^Times on/ }).or(page.getByText(/^Nothing free on/)),
     ).toBeVisible();

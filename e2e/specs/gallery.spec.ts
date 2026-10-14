@@ -83,13 +83,13 @@ test.describe('the gallery (D-218)', () => {
 
       // On the public profile, which shows three of the wall (D-268): which three depends on the
       // other tests adding to it at the same time, so this one is looked for on the whole wall.
-      await page.goto('/instructors/leeds/sarah-khan');
+      await page.goto('/instructors/leeds/sarah-khan-driving');
       await expect(page.getByRole('region', { name: 'Learners who passed' })).toBeVisible();
       await expectAccessible(page);
       await snap(page, testInfo, 'gallery-public');
 
       // With the banner and nothing ticked on it yet.
-      await page.goto('/instructors/leeds/sarah-khan/gallery');
+      await page.goto('/instructors/leeds/sarah-khan-driving/gallery');
       await expect(page.getByRole('heading', { level: 1, name: 'Learners who passed with Sarah Khan' })).toBeVisible();
       const ours = page.getByRole('figure').filter({ hasText: `${who} became a driver on` });
       await expect(ours).toContainText('with Sarah Khan Driving');
@@ -123,7 +123,7 @@ test.describe('checking a pass photo (D-218)', { tag: '@desktop-only' }, () => {
     const staff = await admin.newPage();
     try {
       // Before anybody has looked at it: on the wall, and without the tick.
-      await page.goto('/instructors/leeds/sarah-khan/gallery');
+      await page.goto('/instructors/leeds/sarah-khan-driving/gallery');
       const before = page.getByRole('figure').filter({ hasText: `${who} became a driver on` });
       await expect(before).toBeVisible();
       await expect(before.getByText(`Verified by ${brand.name}`)).toHaveCount(0);
@@ -138,7 +138,7 @@ test.describe('checking a pass photo (D-218)', { tag: '@desktop-only' }, () => {
       await snap(staff, testInfo, 'admin-gallery');
 
       // Ticked, it is the first of the profile's three: nothing else on this wall is (D-268).
-      await page.goto('/instructors/leeds/sarah-khan');
+      await page.goto('/instructors/leeds/sarah-khan-driving');
       const first = page.getByRole('region', { name: 'Learners who passed' }).getByRole('figure').first();
       await expect(first).toContainText(`${who} became a driver on`);
       await expect(first).toContainText(`Verified by ${brand.name}`);
@@ -150,7 +150,7 @@ test.describe('checking a pass photo (D-218)', { tag: '@desktop-only' }, () => {
       await expect(staff.getByText('Taken off the public page')).toBeVisible();
       await expect(again).toContainText('Taken down');
 
-      await page.goto('/instructors/leeds/sarah-khan');
+      await page.goto('/instructors/leeds/sarah-khan-driving');
       await expect(page.getByText(`${who} became a driver on`)).toHaveCount(0);
     } finally {
       await admin.close();
@@ -233,7 +233,8 @@ test.describe('three on the profile (D-268)', () => {
       await expectAccessible(page);
       await snap(page, testInfo, 'gallery-whole', { fullPage: true });
 
-      await page.getByRole('link', { name: instructor.name, exact: true }).click();
+      // Named as the profile is: by the Business (D-269).
+      await page.getByRole('link', { name: `${instructor.name} Driving`, exact: true }).click();
       await expect(page).toHaveURL(new RegExp(`/instructors/leeds/${instructor.slug}$`));
     } finally {
       await instructor.remove();

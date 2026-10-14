@@ -3566,6 +3566,7 @@ export type Database = {
         }
         Returns: string
       }
+      current_profile_slug: { Args: { p_slug: string }; Returns: string }
       decide_booking_request: {
         Args: { p_accept: boolean; p_booking_id: string; p_reason?: string }
         Returns: string

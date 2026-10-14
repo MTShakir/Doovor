@@ -66,7 +66,7 @@ test.describe('sitemaps, canonical addresses and share images (PRD 14.6, M5-08)'
 
       expect(await listed(request, '/sitemaps/pages.xml')).toContain('/');
       const instructors = await listed(request, '/sitemaps/instructors.xml');
-      expect(instructors).toEqual(expect.arrayContaining(['/instructors/leeds/sarah-khan', '/instructors/manchester/emma-clarke', ...made.map((one) => `/instructors/london/${one.slug}`)]));
+      expect(instructors).toEqual(expect.arrayContaining(['/instructors/leeds/sarah-khan-driving', '/instructors/manchester/emma-clarke', ...made.map((one) => `/instructors/london/${one.slug}`)]));
       // Aisha Rahman is still waiting to be checked.
       expect(instructors.filter((path) => path.endsWith('/aisha-rahman'))).toEqual([]);
       expect(await listed(request, '/sitemaps/schools.xml')).toContain('/schools/manchester/quayside-driving-school');
@@ -78,7 +78,7 @@ test.describe('sitemaps, canonical addresses and share images (PRD 14.6, M5-08)'
       expect(places).not.toContain('/driving-lessons/manchester');
 
       // Every page these tests know about is there to be indexed, at the address the sitemap gives.
-      for (const path of ['/instructors/leeds/sarah-khan', '/schools/manchester/quayside-driving-school', `/driving-lessons/london/${area.slug}`, `/instructors/london/${made[0]?.slug ?? ''}`]) {
+      for (const path of ['/instructors/leeds/sarah-khan-driving', '/schools/manchester/quayside-driving-school', `/driving-lessons/london/${area.slug}`, `/instructors/london/${made[0]?.slug ?? ''}`]) {
         const response = await page.goto(path);
         expect(response?.status(), path).toBe(200);
         expect(await robotsOf(page), path).toBeNull();
@@ -96,23 +96,23 @@ test.describe('sitemaps, canonical addresses and share images (PRD 14.6, M5-08)'
   });
 
   test('a shared profile, school, place or booking link previews with the image drawn for it', async ({ page }, testInfo) => {
-    await page.goto('/instructors/leeds/sarah-khan');
+    await page.goto('/instructors/leeds/sarah-khan-driving');
     await expect(page.getByRole('heading', { level: 1, name: 'Sarah Khan' })).toBeVisible();
     const canonical = (await page.locator('link[rel="canonical"]').getAttribute('href')) ?? '';
-    expect(new URL(canonical).pathname).toBe('/instructors/leeds/sarah-khan');
+    expect(new URL(canonical).pathname).toBe('/instructors/leeds/sarah-khan-driving');
     expect(await metaContent(page, 'meta[property="og:url"]')).toBe(canonical);
     expect(await metaContent(page, 'meta[property="og:type"]')).toBe('profile');
-    expect(await metaContent(page, 'meta[property="og:title"]')).toBe('Sarah Khan, driving instructor in Leeds');
+    expect(await metaContent(page, 'meta[property="og:title"]')).toBe('Sarah Khan Driving, driving instructor in Leeds');
     expect(await metaContent(page, 'meta[name="twitter:card"]')).toBe('summary_large_image');
     const profileImage = await shareImage(page, 'share-image-instructor', testInfo);
-    expect(profileImage).toMatch(/^\/instructors\/leeds\/sarah-khan\/share\.png\?v=[0-9a-z]+$/);
+    expect(profileImage).toMatch(/^\/instructors\/leeds\/sarah-khan-driving\/share\.png\?v=[0-9a-z]+$/);
 
     // The booking link, shared far more often than the profile, previews with the same picture.
-    await page.goto('/book/sarah-khan');
+    await page.goto('/book/sarah-khan-driving');
     await expect(page.getByLabel('Which lesson?')).toBeVisible();
     const bookingImage = new URL(await metaContent(page, 'meta[property="og:image"]'));
     expect(`${bookingImage.pathname}${bookingImage.search}`).toBe(profileImage);
-    expect(new URL(await metaContent(page, 'meta[property="og:url"]')).pathname).toBe('/book/sarah-khan');
+    expect(new URL(await metaContent(page, 'meta[property="og:url"]')).pathname).toBe('/book/sarah-khan-driving');
 
     await page.goto('/schools/manchester/quayside-driving-school');
     await expect(page.getByRole('heading', { level: 1, name: 'Quayside Driving School' })).toBeVisible();

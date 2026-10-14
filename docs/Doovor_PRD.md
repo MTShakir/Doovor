@@ -280,9 +280,9 @@ Content for admins. Every portal's header carries the logo, support and the noti
 | City hub | `/driving-lessons/{city}` | `/driving-lessons/manchester` |
 | Area page | `/driving-lessons/{city}/{area}` | `/driving-lessons/london/croydon` |
 | Transmission page | `/driving-lessons/{city}/automatic` | |
-| Instructor profile | `/instructors/{city}/{slug}` | `/instructors/leeds/sarah-khan` |
+| Instructor profile | `/instructors/{city}/{slug}`, the slug made from the Business name for somebody running their own (D-269) | `/instructors/leeds/sarah-khan-driving` |
 | School profile | `/schools/{city}/{slug}` | `/schools/bristol/greenlight-driving` |
-| Booking link | `/book/{slug}` | `/book/sarah-khan` |
+| Booking link | `/book/{slug}` | `/book/sarah-khan-driving` |
 | Guides | `/guides` and `/guides/{slug}` | `/guides/driving-test-booking-rules-2026` |
 
 Only areas with at least 3 verified instructors get an indexable area page. Thin pages carry `noindex` until they qualify.
@@ -454,7 +454,7 @@ Priority key: **P1** = Phase 1 (MVP), **P2** = Phase 2, **P3** = Phase 3, **P4**
 
 | ID | Requirement | Phase |
 |---|---|---|
-| PUB-01 | Public page per instructor and school: photo, Verified tick, bio, car, transmission, areas covered map, prices, packages, reviews, next available slots, "Book" or "Join waiting list" button. | P1 |
+| PUB-01 | Public page per instructor and school: photo, Verified tick, bio, car, transmission, areas covered map, prices, packages, reviews, next available slots, "Book" or "Join waiting list" button. An instructor running their own Business is shown by the Business name, with their own name small above it, at an address made from the Business name; every address a profile had before leads to it (D-269). | P1 |
 | PUB-02 | Server-rendered, fast, with schema.org markup (LocalBusiness for schools, Person plus Service for instructors, AggregateRating when reviews exist, Offer for prices). | P1 |
 | PUB-03 | Shareable booking link and QR code. Share buttons for WhatsApp, Instagram and copy link. | P1 |
 | PUB-04 | Instructor can hide their profile from search while keeping the booking link. | P1 |

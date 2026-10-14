@@ -10,13 +10,15 @@ import { expectAccessible, settled, snap } from '../support/helpers';
  */
 test.describe('public instructor profile (PUB-01, M5-02)', () => {
   test('a visitor reads a checked instructor, nothing private, and books from a free time', async ({ page }, testInfo) => {
-    await page.goto('/instructors/leeds/sarah-khan');
-    await expect(page.getByRole('heading', { level: 1, name: 'Sarah Khan' })).toBeVisible();
+    await page.goto('/instructors/leeds/sarah-khan-driving');
+    // By her Business name, with her own name small above it (D-269).
+    await expect(page.getByRole('heading', { level: 1, name: 'Sarah Khan Driving', exact: true })).toBeVisible();
+    await expect(page.getByText('Sarah Khan', { exact: true })).toBeVisible();
     await expect(page.getByText(`Approved driving instructor, checked by ${brand.name}`)).toBeVisible();
     await expect(page.getByRole('list', { name: 'At a glance' })).toContainText('Manual');
     await expect(page.getByRole('region', { name: 'Where lessons start' })).toContainText(/Lessons within \d+ miles? of LS6/);
     await expect(page.getByRole('region', { name: 'Prices' }).getByRole('listitem').first()).toContainText(/£\d+/);
-    await expect(page).toHaveTitle(/^Sarah Khan, driving instructor in Leeds \| /);
+    await expect(page).toHaveTitle(/^Sarah Khan Driving, driving instructor in Leeds \| /);
 
     // Nothing private anywhere in the page: not her home postcode, not her badge number.
     const html = await page.content();
@@ -28,7 +30,11 @@ test.describe('public instructor profile (PUB-01, M5-02)', () => {
       '@graph': { '@type': string; name?: string; offers?: { price: string; priceCurrency: string }[] }[];
     };
     expect(structured['@graph'].map((node) => node['@type'])).toEqual(['Person', 'Service', 'BreadcrumbList']);
+    // The person is who she is; the page is her Business's.
     expect(structured['@graph'][0]?.name).toBe('Sarah Khan');
+    expect(structured['@graph'][2]).toMatchObject({
+      itemListElement: expect.arrayContaining([expect.objectContaining({ name: 'Sarah Khan Driving' })]),
+    });
     expect(structured['@graph'][1]?.offers?.[0]).toMatchObject({ priceCurrency: 'GBP', price: expect.stringMatching(/^\d+\.\d\d$/) });
 
     const times = page.getByRole('region', { name: 'Next free times' }).getByRole('listitem').getByRole('link');
@@ -43,13 +49,28 @@ test.describe('public instructor profile (PUB-01, M5-02)', () => {
     const chosenAt = new URL((await first.getAttribute('href')) ?? '', page.url()).searchParams.get('slot') ?? '';
     const clock = new Intl.DateTimeFormat('en-GB', { timeZone: 'Europe/London', hour: '2-digit', minute: '2-digit' }).format(new Date(chosenAt));
     await first.click();
-    await expect(page).toHaveURL(/\/book\/sarah-khan\?slot=/);
+    await expect(page).toHaveURL(/\/book\/sarah-khan-driving\?slot=/);
     await expect(page.getByRole('button', { name: clock, pressed: true })).toBeVisible();
   });
 
+  test('the address from before her Business name leads to the one she has now, the booking link too (D-269)', async ({ page }) => {
+    await page.goto('/instructors/leeds/sarah-khan');
+    await expect(page).toHaveURL(/\/instructors\/leeds\/sarah-khan-driving$/);
+    await expect(page.getByRole('heading', { level: 1, name: 'Sarah Khan Driving', exact: true })).toBeVisible();
+
+    // A booking link on a card or in a text, given out before.
+    await page.goto('/book/sarah-khan');
+    await expect(page).toHaveURL(/\/book\/sarah-khan-driving$/);
+
+    // And the image a link shared before still shows her.
+    const image = await page.request.get('/instructors/leeds/sarah-khan/share.png');
+    expect(image.status()).toBe(200);
+    expect(image.headers()['content-type']).toBe('image/png');
+  });
+
   test('one address per profile: another city moves to the right one, and nobody unchecked has one', async ({ page }) => {
-    await page.goto('/instructors/manchester/sarah-khan');
-    await expect(page).toHaveURL(/\/instructors\/leeds\/sarah-khan$/);
+    await page.goto('/instructors/manchester/sarah-khan-driving');
+    await expect(page).toHaveURL(/\/instructors\/leeds\/sarah-khan-driving$/);
     await expect(page.getByRole('heading', { level: 1, name: 'Sarah Khan' })).toBeVisible();
 
     await page.goto('/instructors/leeds/nobody-teaches-here');

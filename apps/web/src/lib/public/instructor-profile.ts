@@ -96,6 +96,30 @@ export async function instructorProfile(slug: string): Promise<InstructorProfile
 }
 
 /**
+ * Where an address a profile used to have leads now (D-269): the address it has today, or null
+ * for one that was never a profile's. Kept like the profile, and expired with every profile when
+ * a Business is renamed.
+ */
+export async function currentProfileSlug(slug: string): Promise<string | null> {
+  'use cache';
+  cacheTag(profileTags.all, profileTags.slug(slug));
+
+  const { data, error } = await getSupabaseAnonymousClient().rpc('current_profile_slug', { p_slug: slug });
+  if (error) throw new Error(`Could not read where ${slug} leads: ${error.message}`);
+  // Typed as text, and null when the address was never anybody's.
+  const now = (data as string | null) ?? null;
+  if (now === null) cacheLife('minutes');
+  else cacheLife('hours');
+  return now;
+}
+
+/** The profile an old address leads to (D-269), or null. */
+export async function movedProfile(slug: string): Promise<InstructorProfilePage | null> {
+  const now = await currentProfileSlug(slug);
+  return now === null ? null : instructorProfile(now);
+}
+
+/**
  * The next few times a learner could book with an instructor, soonest first (PUB-01, R-04). Kept
  * for about a minute: the booking page checks a time again before anything is booked.
  */

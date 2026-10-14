@@ -19,7 +19,7 @@ const atLeast90 = ['error', { minScore: 0.9, aggregationMethod: 'median' }];
  * the first ever does, and that cost landed on run one and dragged the median with it (D-151).
  */
 const pages = [
-  `${origin}/instructors/leeds/sarah-khan`,
+  `${origin}/instructors/leeds/sarah-khan-driving`,
   `${origin}/schools/manchester/quayside-driving-school`,
   `${origin}/driving-lessons/manchester`,
   `${origin}/driving-lessons/manchester/salford`,

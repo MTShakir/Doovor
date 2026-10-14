@@ -11,6 +11,12 @@ vi.mock('@/lib/supabase/server', () => ({
 vi.mock('@/lib/auth/session', () => ({ requireAccess: () => requireAccess() }));
 vi.mock('next/cache', () => ({ revalidatePath: vi.fn() }));
 vi.mock('next/navigation', () => ({ redirect: vi.fn() }));
+const expireAllInstructorProfiles = vi.fn<() => void>();
+vi.mock('@/lib/public/instructor-profile', () => ({
+  expireAllInstructorProfiles: () => {
+    expireAllInstructorProfiles();
+  },
+}));
 
 const { saveAccountName } = await import('./actions');
 
@@ -48,6 +54,14 @@ describe('the name on the account (AUTH-09, D-217)', () => {
     signedInAs('owner');
     await saveAccountName({ firstName: 'Sarah', lastName: 'Khan', businessName: 'Khan School of Motoring' });
     expect(rpc).toHaveBeenCalledWith('set_business_name', { p_business_id: 'biz-1', p_name: 'Khan School of Motoring' });
+    // The profile's address follows the name, so the public pages are read again (D-269).
+    expect(expireAllInstructorProfiles).toHaveBeenCalledOnce();
+  });
+
+  it('leaves the public pages alone when only the person is renamed', async () => {
+    signedInAs('owner');
+    await saveAccountName({ firstName: 'Sarah', lastName: 'Khan' });
+    expect(expireAllInstructorProfiles).not.toHaveBeenCalled();
   });
 
   it('refuses a business name from somebody who owns nothing, before the database has to (D-196)', async () => {

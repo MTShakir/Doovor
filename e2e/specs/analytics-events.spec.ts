@@ -36,7 +36,7 @@ async function countedSoFar(page: Page): Promise<{ event: string; properties: Re
 test.describe('what the product counts (PRD 16, M6-09)', () => {
   test('a profile read is counted, with what kind it was', async ({ page }) => {
     await sayingYes(page);
-    await page.goto('/instructors/leeds/sarah-khan');
+    await page.goto('/instructors/leeds/sarah-khan-driving');
     await expect(page.getByRole('heading', { level: 1, name: 'Sarah Khan' })).toBeVisible();
     await expect
       .poll(async () => (await countedSoFar(page)).filter((one) => one.event === 'profile_viewed'))
@@ -72,7 +72,7 @@ test.describe('what the product counts (PRD 16, M6-09)', () => {
     try {
       const theirs = await context.newPage();
       await sayingYes(theirs);
-      await theirs.goto('/book/sarah-khan');
+      await theirs.goto('/book/sarah-khan-driving');
       await expect(theirs.getByRole('heading', { level: 1 }).first()).toBeVisible();
       // Nothing is booked here; the point is that the screen is ready to count when it is, and
       // that reading it counts nothing on its own.
@@ -91,7 +91,7 @@ test.describe('what the product counts (PRD 16, M6-09)', () => {
         said.push(event);
       });
     });
-    await page.goto('/instructors/leeds/sarah-khan');
+    await page.goto('/instructors/leeds/sarah-khan-driving');
     await expect(page.getByRole('heading', { level: 1, name: 'Sarah Khan' })).toBeVisible();
     await page.waitForLoadState('networkidle', { timeout: 3000 }).catch(() => undefined);
     expect(await countedSoFar(page)).toEqual([]);

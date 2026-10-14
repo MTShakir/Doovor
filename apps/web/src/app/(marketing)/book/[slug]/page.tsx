@@ -5,10 +5,12 @@ import { todayInZone } from '@repo/core/time';
 import { EmptyState } from '@repo/ui/empty-state';
 import { Skeleton } from '@repo/ui/skeleton';
 import { CalendarX } from 'lucide-react';
+import type { Route } from 'next';
+import { permanentRedirect } from 'next/navigation';
 import { Suspense } from 'react';
 import { getAccess } from '@/lib/auth/session';
 import { bookingPage } from '@/lib/booking/public';
-import { instructorProfile, nextOpenTimes } from '@/lib/public/instructor-profile';
+import { currentProfileSlug, instructorProfile, nextOpenTimes } from '@/lib/public/instructor-profile';
 import { sharedLinkMetadata } from '@/lib/public/metadata';
 import { instructorCard } from '@/lib/public/share-cards';
 import { getAppUrl } from '@/lib/app-url';
@@ -57,6 +59,13 @@ async function Instructor({ params, searchParams }: BookPageProps) {
   const page = await bookingPage(slug);
 
   if (!page) {
+    // A link given out before the Business was renamed books with the same instructor (D-269),
+    // at the time it was opened for.
+    const now = await currentProfileSlug(slug);
+    if (now !== null) {
+      const { slot } = await searchParams;
+      permanentRedirect(`/book/${now}${slot === undefined ? '' : `?slot=${encodeURIComponent(slot)}`}` as Route);
+    }
     return (
       <EmptyState
         icon={CalendarX}

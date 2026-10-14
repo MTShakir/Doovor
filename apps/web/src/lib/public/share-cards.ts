@@ -1,4 +1,4 @@
-import { hourlyFromPence } from '@repo/core/public-profile';
+import { hourlyFromPence, profileNames } from '@repo/core/public-profile';
 import { instructorShareCard, placeShareCard, schoolShareCard, type ShareCard } from '@repo/core/share-card';
 import { avatarUrl } from '@/lib/storage/images';
 import type { CityPage } from './city-page';
@@ -12,8 +12,10 @@ import type { SchoolProfilePage } from './school-profile';
  */
 
 export function instructorCard(profile: InstructorProfilePage): ShareCard {
+  const names = profileNames(profile.name, profile.business);
   return instructorShareCard({
-    name: profile.name,
+    name: names.main,
+    personName: names.personal,
     qualification: profile.qualification,
     transmission: profile.transmission,
     cityName: profile.place?.cityName ?? null,

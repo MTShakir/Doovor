@@ -1310,10 +1310,14 @@ export function DesignShowcase() {
           <GalleryHeader name="Sarah Khan" profileHref="/design" shown={7} total={7} />
           <GalleryHeader name="Quayside Driving School" profileHref="/design" shown={120} total={134} />
         </div>
-        <Label>Header: an independent instructor with prices, and a trainee at a school with no car or prices yet (PUB-01, M5-02)</Label>
+        <Label>
+          Header: an independent instructor by their Business name, with their own name above it and prices, and a trainee
+          at a school by their own name, with no car or prices yet (PUB-01, M5-02, D-269)
+        </Label>
         <div className="grid items-start gap-6 md:grid-cols-2">
           <ProfileHeader
-            name="Sarah Khan"
+            name="Khan Driving"
+            personalName="Sarah Khan"
             qualification="adi"
             school={null}
             transmission="manual"
