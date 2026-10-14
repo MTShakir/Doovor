@@ -15,7 +15,7 @@ export const metadata: Metadata = { title: 'Suspended' };
 export default function SuspendedPage() {
   return (
     <div className="flex flex-col gap-6">
-      <span className="flex size-16 items-center justify-center rounded-full bg-grey-100 text-black">
+      <span className="flex size-16 items-center justify-center rounded-full bg-white text-black">
         <Ban size={32} strokeWidth={1.5} aria-hidden />
       </span>
       <Suspense fallback={<Skeleton className="h-24 w-full" />}>
