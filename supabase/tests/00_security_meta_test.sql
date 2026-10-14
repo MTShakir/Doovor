@@ -69,6 +69,8 @@ select is_empty(
 --   before anybody signs in; yes or no for each, and nothing else (ADM-05, M5-20).
 --   founding_places: how many founding places have gone against the limit, which the home page
 --   and the pricing page print. Five numbers and nothing about whose places they are (D-243).
+--   current_profile_slug: where an address a profile used to have leads now, so an old link to a
+--   profile or a booking link still arrives. Both ends are public addresses already (D-269).
 select is_empty(
   $$ select distinct routine_name from information_schema.routine_privileges
       where routine_schema = 'public' and grantee in ('PUBLIC', 'anon')
@@ -78,7 +80,7 @@ select is_empty(
                                  'city_page', 'sitemap_entries', 'coming_soon_area', 'join_area_waiting_list',
                                  'post_lesson_request', 'learner_capture_by_token', 'leave_learner_capture',
                                  'feature_flags', 'instructor_gallery', 'school_gallery',
-                                 'founding_places') $$,
+                                 'founding_places', 'current_profile_slug') $$,
   'no public function is executable by anon unless allowlisted'
 );
 
