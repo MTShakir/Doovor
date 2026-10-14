@@ -65,4 +65,42 @@ test.describe('viewing as somebody, read only (ADM-06, M5-21)', { tag: '@desktop
       await learner.remove();
     }
   });
+
+  test('staff viewing as an instructor open her More menu and every screen it lists, and stay on each', async ({ browser }) => {
+    // A session of its own: a viewing belongs to the staff session that started it, and the test
+    // above starts and stops one on the support session at the same time as this runs.
+    const context = await browser.newContext({ storageState: authFile('admin') });
+    try {
+      const page = await context.newPage();
+      await page.goto(`/admin/instructors?q=${encodeURIComponent('sarah.khan@example.com')}`);
+      await page.getByRole('button', { name: /^Sarah Khan/ }).first().click();
+      await page.getByRole('dialog', { name: 'Sarah Khan' }).getByRole('button', { name: 'View as Sarah Khan' }).click();
+      const question = page.getByRole('dialog', { name: 'View as Sarah Khan?' });
+      await question.getByLabel('Why?').fill('Checking what her More menu opens.');
+      await question.getByRole('button', { name: 'View as them' }).click();
+      await expect(page).toHaveURL(/\/app\/instructor$/);
+      const banner = page.getByRole('status').filter({ hasText: 'Viewing as Sarah Khan, read only, until' });
+
+      // More from the sidebar, which used to send staff straight back to Today.
+      await page.getByRole('navigation').getByRole('link', { name: 'More', exact: true }).click();
+      await expect(page).toHaveURL(/\/app\/instructor\/more$/);
+      await expect(page.getByRole('heading', { level: 1, name: 'More' })).toBeVisible();
+
+      // Every screen of hers it lists, with the banner, and none of them sending staff away.
+      const screens = (await page.getByRole('main').getByRole('link').evaluateAll((links) => links.map((link) => link.getAttribute('href') ?? ''))).filter(
+        (href) => href.startsWith('/app/instructor/'),
+      );
+      expect(screens.length).toBeGreaterThan(5);
+      for (const path of screens) {
+        await page.goto(path);
+        await expect(page, path).toHaveURL(new RegExp(`${path}$`));
+        await expect(banner).toBeVisible();
+      }
+
+      await banner.getByRole('button', { name: 'Stop viewing' }).click();
+      await expect(page).toHaveURL(/\/admin$/);
+    } finally {
+      await context.close();
+    }
+  });
 });

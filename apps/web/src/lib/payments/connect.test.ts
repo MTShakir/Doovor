@@ -8,7 +8,7 @@ const requireAccess = vi.fn<() => Promise<unknown>>();
 const chain = { select: () => chain, eq: () => chain, maybeSingle };
 const from = vi.fn(() => chain);
 vi.mock('@/lib/supabase/server', () => ({ createSupabaseServerClient: () => Promise.resolve({ from, rpc }) }));
-vi.mock('@/lib/auth/session', () => ({ requireAccess: () => requireAccess() }));
+vi.mock('@/lib/auth/session', () => ({ requireSignedIn: () => requireAccess() }));
 vi.mock('@/lib/payments/provider', () => ({ paymentsProvider: () => ({ getAccount }) }));
 vi.mock('@/lib/app-url', () => ({ getAppUrl: () => 'https://app.example.test' }));
 

@@ -3,7 +3,7 @@ import { referralLink } from '@repo/core/referral';
 import { formatDateWithYear } from '@repo/core/time';
 import { z } from '@repo/core/zod';
 import { getAppUrl } from '@/lib/app-url';
-import { requireAccess } from '@/lib/auth/session';
+import { requireSignedIn } from '@/lib/auth/session';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
 
 const resultSchema = z.object({
@@ -48,7 +48,7 @@ export interface Referrals {
  * the same people who may see the plan (D-123).
  */
 export async function myReferrals(): Promise<Referrals | null> {
-  const { access } = await requireAccess();
+  const { access } = await requireSignedIn();
   const membership = access.memberships.find((one) => one.role === 'owner');
   if (!membership) return null;
 

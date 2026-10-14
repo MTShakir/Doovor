@@ -6,7 +6,7 @@ import { vehicleName } from '@repo/core/vehicle';
 import { todayInZone } from '@repo/core/time';
 import { z } from '@repo/core/zod';
 import { hasEntitlement, isPlanKey, type PlanKey } from '@repo/config/plans';
-import { requireAccess } from '@/lib/auth/session';
+import { requireSignedIn } from '@/lib/auth/session';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
 
 const pence = z.number().int();
@@ -42,7 +42,7 @@ export interface BooksAccess {
 }
 
 export async function booksAccess(): Promise<BooksAccess | null> {
-  const { access } = await requireAccess();
+  const { access } = await requireSignedIn();
   const membership = access.memberships.find((one) => one.role === 'owner');
   if (!membership) return null;
 

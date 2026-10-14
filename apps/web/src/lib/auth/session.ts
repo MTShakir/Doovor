@@ -118,6 +118,19 @@ export async function requireAccess(): Promise<{ session: Session; access: Acces
   return result;
 }
 
+/**
+ * For what a portal's own screens read: whoever the request is for, which is the person viewed
+ * while staff view as somebody (ADM-06, D-129). Signed-out people go to sign in, and nobody is sent
+ * anywhere else: the portal's layout has already decided who may be on the screen. The account
+ * guard above sends a viewing back to the portal's home, which from a screen of that same portal
+ * bounced staff from More, the plan and the books straight back to Today.
+ */
+export async function requireSignedIn(): Promise<{ session: Session; access: AccessContext }> {
+  const result = await getAccess();
+  if (!result) redirectTo(`/sign-in?next=${encodeURIComponent(await currentPath())}`);
+  return result;
+}
+
 export async function requireSession(): Promise<Session> {
   return (await requireAccess()).session;
 }

@@ -14,7 +14,7 @@ import {
   type SubscriptionStatus,
 } from '@repo/core/subscription';
 import { formatDateWithYear } from '@repo/core/time';
-import { requireAccess } from '@/lib/auth/session';
+import { requireSignedIn } from '@/lib/auth/session';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
 
 /** One of the two choices on the plan screen, priced. */
@@ -74,7 +74,7 @@ const labels: Record<BillingInterval, string> = { month: 'Monthly', year: 'Yearl
  * School plan, which is Phase 2 (D-231), and a manager never sees what the Business pays (PRD 6.2).
  */
 export async function proSubscription(): Promise<ProSubscription | null> {
-  const { access, session } = await requireAccess();
+  const { access, session } = await requireSignedIn();
   const membership = access.memberships.find((one) => one.role === 'owner');
   if (!membership) return null;
 

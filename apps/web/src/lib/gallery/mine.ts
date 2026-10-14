@@ -1,6 +1,6 @@
 import 'server-only';
 import { isPlanKey, type PlanKey } from '@repo/config/plans';
-import { requireAccess } from '@/lib/auth/session';
+import { requireSignedIn } from '@/lib/auth/session';
 import { listLearners } from '@/lib/learners/list';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
 
@@ -22,7 +22,7 @@ export interface GalleryContext {
  * because the school's profile is the page their learners are looking at.
  */
 export async function galleryContext(): Promise<GalleryContext | null> {
-  const { access } = await requireAccess();
+  const { access } = await requireSignedIn();
   const membership = access.memberships.find((one) => one.role === 'owner') ?? access.memberships[0];
   if (!membership) return null;
 

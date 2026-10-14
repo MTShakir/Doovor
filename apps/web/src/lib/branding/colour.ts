@@ -1,6 +1,6 @@
 import 'server-only';
 import { isPlanKey, type PlanKey } from '@repo/config/plans';
-import { requireAccess } from '@/lib/auth/session';
+import { requireSignedIn } from '@/lib/auth/session';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
 
 export interface BrandColour {
@@ -15,7 +15,7 @@ export interface BrandColour {
  * (D-210). Null for anybody who does not own a Business: the page is the Business's.
  */
 export async function brandColour(): Promise<BrandColour | null> {
-  const { access } = await requireAccess();
+  const { access } = await requireSignedIn();
   const membership = access.memberships.find((one) => one.role === 'owner');
   if (!membership) return null;
 

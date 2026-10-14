@@ -1,7 +1,7 @@
 import 'server-only';
 import { isPlanKey, plans, type PlanKey } from '@repo/config/plans';
 import { formatDateWithYear } from '@repo/core/time';
-import { requireAccess } from '@/lib/auth/session';
+import { requireSignedIn } from '@/lib/auth/session';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
 
 export interface BusinessPlan {
@@ -27,7 +27,7 @@ const DAY_MS = 24 * 60 * 60 * 1000;
  * own one: the plan is what a Business pays the platform, and PRD 6.2 keeps that from managers.
  */
 export async function businessPlan(now = new Date()): Promise<BusinessPlan | null> {
-  const { access } = await requireAccess();
+  const { access } = await requireSignedIn();
   const membership = access.memberships.find((one) => one.role === 'owner');
   if (!membership) return null;
 
@@ -63,7 +63,7 @@ export async function businessPlan(now = new Date()): Promise<BusinessPlan | nul
  * may not do. The More menu only wants to know whether to grey a row, so it asks this instead.
  */
 export async function businessPlanKey(): Promise<PlanKey | null> {
-  const { access } = await requireAccess();
+  const { access } = await requireSignedIn();
   const membership = access.memberships.find((one) => one.role === 'owner');
   if (!membership) return null;
 

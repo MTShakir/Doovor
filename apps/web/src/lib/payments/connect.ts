@@ -1,7 +1,7 @@
 import 'server-only';
 import { chosenPaymentMode, type PaymentMode } from '@repo/core/payment-modes';
 import { getAppUrl } from '@/lib/app-url';
-import { requireAccess } from '@/lib/auth/session';
+import { requireSignedIn } from '@/lib/auth/session';
 import { paymentsProvider } from '@/lib/payments/provider';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
 
@@ -55,7 +55,7 @@ export function connectUrls(screen: MoneyScreen): { returnUrl: string; refreshUr
  * Business that finished onboarding on a laptop sees it on their phone without a webhook.
  */
 export async function paymentsState(): Promise<PaymentsState | null> {
-  const { access } = await requireAccess();
+  const { access } = await requireSignedIn();
   // The Business somebody owns comes first: that is the one they can do anything about.
   const membership =
     access.memberships.find((one) => one.role === 'owner') ??
