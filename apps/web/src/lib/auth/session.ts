@@ -1,4 +1,5 @@
 import 'server-only';
+import { termsVersion } from '@repo/core/legal';
 import { formatTime } from '@repo/core/time';
 import { getAccessContext, SessionEndedError, type AccessContext } from '@repo/db';
 import { headers } from 'next/headers';
@@ -86,6 +87,32 @@ export const getAccess = cache(async (): Promise<{ session: Session; access: Acc
   }
 });
 
+/** Which version of the terms somebody agreed to, or null: read once a request (D-265). */
+const agreedTermsVersion = cache(async (userId: string): Promise<string | null> => {
+  const supabase = await createSupabaseServerClient();
+  const { data } = await supabase.from('users').select('terms_version').eq('id', userId).maybeSingle();
+  return data?.terms_version ?? null;
+});
+
+/**
+ * Whether somebody still has to agree to the current terms and privacy notice (NFR-PRV-02, D-265).
+ * Staff are not asked, and nor is staff viewing as somebody: the terms are between the product and
+ * the people who use it, and a viewing changes nothing.
+ */
+export async function needsToAgree(result: { session: Session; access: AccessContext }): Promise<boolean> {
+  if (result.session.viewingAs !== null || result.access.staffRole !== null) return false;
+  return (await agreedTermsVersion(result.session.userId)) !== termsVersion;
+}
+
+/**
+ * Sends somebody who has not agreed to the current terms to agree before anything of theirs opens:
+ * someone who signed up with Google or Apple, someone an instructor added, an account from before
+ * the terms were asked for, or anybody after the terms change (D-265).
+ */
+export async function requireAgreedTerms(result: { session: Session; access: AccessContext }, path: string): Promise<void> {
+  if (await needsToAgree(result)) redirectTo(`/agree?next=${encodeURIComponent(path)}`);
+}
+
 /** The path of the current request, set by proxy.ts, for sign-in and MFA return links. */
 export async function currentPath(): Promise<string> {
   return (await headers()).get('x-pathname') ?? '/';
@@ -102,6 +129,7 @@ export async function requirePortal(portal: Portal): Promise<{ session: Session;
   if (requiresMfa(result.access) && result.session.aal !== 'aal2' && result.session.viewingAs === null) {
     redirectTo(`/mfa?next=${encodeURIComponent(path)}`);
   }
+  await requireAgreedTerms(result, path);
   if (!canUsePortal(result.access, portal)) redirectTo(landingPath(result.access));
   if (portal === 'school' && needsSchoolOnboarding(result.access)) redirectTo('/onboarding/school');
   if (portal === 'instructor' && needsOnboarding(result.access)) redirectTo('/onboarding');

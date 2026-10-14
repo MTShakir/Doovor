@@ -3,7 +3,7 @@ import { authFile } from '../support/accounts';
 import { learnerInstructorName } from '../support/database';
 import { expectAccessible, snap, tapUntil } from '../support/helpers';
 import { linkFromEmail } from '../support/mailpit';
-import { uniqueEmail } from '../support/sign-up';
+import { agreeToTerms, uniqueEmail } from '../support/sign-up';
 
 /** Makes an invitation as the seeded instructor and returns the link she would send. */
 async function inviteLink(browser: Browser, learner: { fullName: string; email: string }): Promise<string> {
@@ -83,6 +83,7 @@ test.describe('inviting a learner (AUTH-07, M2-03)', () => {
     await expect(page.getByLabel('Email')).toHaveValue(email);
 
     await page.getByLabel('Password', { exact: true }).fill('a long pass phrase');
+    await agreeToTerms(page);
     await page.getByRole('button', { name: 'Create account' }).click();
     await expect(page.getByRole('heading', { name: 'Check your email' })).toBeVisible();
 

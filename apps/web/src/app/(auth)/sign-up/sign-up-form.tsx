@@ -2,17 +2,19 @@
 
 import { zodResolver } from '@hookform/resolvers/zod';
 import type { FlagOverrides } from '@repo/config/flags';
+import { termsFor } from '@repo/core/legal';
 import { passwordMinLength, signUpSchema, type IntendedRole } from '@repo/core/schemas/auth';
 import { Field } from '@repo/ui/field';
 import { Input } from '@repo/ui/input';
 import Link from 'next/link';
 import { useState, useTransition } from 'react';
-import { useForm } from 'react-hook-form';
+import { Controller, useForm } from 'react-hook-form';
 import type { z } from '@repo/core/zod';
 import { ClientForm, SubmitButton } from '@/components/client-form';
 import { FormAlert } from '@/components/form-alert';
 import { OAuthButtons } from '@/components/oauth-buttons';
 import { PasswordInput } from '@/components/password-input';
+import { TermsAgreement } from '@/components/terms-agreement';
 import { signUp } from '../actions';
 import { track } from '@/lib/analytics/track';
 
@@ -32,8 +34,9 @@ export function SignUpForm({ role, prefill, flags }: { role: IntendedRole; prefi
   const [formError, setFormError] = useState<string | null>(null);
   const form = useForm<z.input<typeof signUpSchema>>({
     resolver: zodResolver(signUpSchema),
-    // Only the role: text fields read what is typed, even before hydration (ClientForm).
-    defaultValues: { role },
+    // The role, and the tick, which starts unticked for everybody (D-265). Text fields read what
+    // is typed, even before hydration (ClientForm).
+    defaultValues: { role, acceptedTerms: false },
   });
   const { errors } = form.formState;
 
@@ -77,9 +80,18 @@ export function SignUpForm({ role, prefill, flags }: { role: IntendedRole; prefi
         <Field label="Password" hint={`At least ${String(passwordMinLength)} characters. A short phrase is easy to remember.`} error={errors.password?.message}>
           <PasswordInput autoComplete="new-password" {...form.register('password')} />
         </Field>
-        <p className="text-small text-grey-700">
-          By creating an account you agree to our terms and privacy notice.
-        </p>
+        <Controller
+          control={form.control}
+          name="acceptedTerms"
+          render={({ field }) => (
+            <TermsAgreement
+              terms={[termsFor(role)]}
+              checked={field.value}
+              onCheckedChange={field.onChange}
+              error={errors.acceptedTerms?.message}
+            />
+          )}
+        />
         <SubmitButton width="full" size="lg" pending={pending}>
           Create account
         </SubmitButton>

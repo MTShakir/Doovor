@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
 import { SkeletonRow } from '@repo/ui/skeleton';
 import { Suspense } from 'react';
-import { getAccess } from '@/lib/auth/session';
+import { getAccess, requireAgreedTerms } from '@/lib/auth/session';
 import { landingPath } from '@/lib/auth/portals';
 import { redirectTo } from '@/lib/redirect-to';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
@@ -21,6 +21,7 @@ export default function AboutYouPage() {
 async function AboutYou() {
   const result = await getAccess();
   if (!result) redirectTo('/sign-in?next=%2Fonboarding%2Fabout-you');
+  await requireAgreedTerms(result, '/onboarding/about-you');
   if (!result.access.isLearner || result.access.learnerOnboarded) redirectTo(landingPath(result.access));
 
   const supabase = await createSupabaseServerClient();

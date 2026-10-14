@@ -12,6 +12,7 @@ import { generateBookings, type SeedBooking } from './bookings';
 import { businesses, catalogue, instructors, SEED_PASSWORD, seedPeople } from './data';
 import { assertSeedTargets } from './guard';
 import fixture from './fixtures/postcodes.json' with { type: 'json' };
+import { termsVersion } from '@repo/core/legal';
 
 const root = path.resolve(import.meta.dirname, '../../..');
 const envFile = path.join(root, '.env.local');
@@ -54,7 +55,12 @@ async function main(): Promise<void> {
       password,
       email_confirm: true,
       ...(person.phone ? { phone: person.phone, phone_confirm: true } : {}),
-      user_metadata: { full_name: person.fullName, ...(person.intendedRole ? { intended_role: person.intendedRole } : {}) },
+      // Seeded people stand for people who signed up, and agreed to the terms as they did (D-265).
+      user_metadata: {
+        full_name: person.fullName,
+        terms_version: termsVersion,
+        ...(person.intendedRole ? { intended_role: person.intendedRole } : {}),
+      },
     });
     if (error) {
       throw new Error(`Could not create ${person.email}: ${error.message}. Seed a fresh database with pnpm db:reset.`);

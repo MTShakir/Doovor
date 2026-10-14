@@ -23,7 +23,9 @@ begin
     '00000000-0000-0000-0000-000000000000', v_id, 'authenticated', 'authenticated', p_email,
     extensions.crypt('Password123!', extensions.gen_salt('bf')), now(),
     '{"provider": "email", "providers": ["email"]}',
-    jsonb_build_object('full_name', p_full_name) || p_meta, now(), now()
+    -- An account made here stands for somebody who signed up, who agreed to the terms as they did
+    -- (D-265). The version is the one in packages/core/src/legal.ts, which a test holds this to.
+    jsonb_build_object('full_name', p_full_name, 'terms_version', '2026-09-30') || p_meta, now(), now()
   );
   return v_id;
 end;
@@ -84,7 +86,7 @@ begin
   ) values (
     '00000000-0000-0000-0000-000000000000', p_id, 'authenticated', 'authenticated', p_email,
     extensions.crypt('Password123!', extensions.gen_salt('bf')), now(),
-    '{"provider": "email", "providers": ["email"]}', jsonb_build_object('full_name', p_full_name), now(), now(),
+    '{"provider": "email", "providers": ["email"]}', jsonb_build_object('full_name', p_full_name, 'terms_version', '2026-09-30'), now(), now(),
     '', '', '', ''
   );
   insert into auth.identities (user_id, provider_id, provider, identity_data, created_at, updated_at)

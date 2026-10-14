@@ -1,7 +1,7 @@
 import 'server-only';
 import { defaultRadiusMiles } from '@repo/core/schemas/onboarding';
 import type { AccessMembership } from '@repo/db';
-import { getAccess } from '@/lib/auth/session';
+import { getAccess, requireAgreedTerms } from '@/lib/auth/session';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
 import { redirectTo } from '@/lib/redirect-to';
 import { landingPath } from '@/lib/auth/portals';
@@ -37,6 +37,7 @@ function instructorMembership(memberships: AccessMembership[]): AccessMembership
 export async function requireOnboarding(): Promise<OnboardingSession> {
   const result = await getAccess();
   if (!result) redirectTo('/sign-in?next=%2Fonboarding');
+  await requireAgreedTerms(result, '/onboarding');
   const membership = instructorMembership(result.access.memberships);
   if (!membership?.instructorProfileId || !membership.onboarding) redirectTo(landingPath(result.access));
   if (membership.onboarding.completed) redirectTo('/app/instructor');

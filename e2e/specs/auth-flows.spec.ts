@@ -5,7 +5,9 @@ import { expectAccessible, snap } from '../support/helpers';
 import { linkFromEmail } from '../support/mailpit';
 import { testNumber } from '../support/phone-numbers';
 import { enterCode, signInThroughForm } from '../support/sign-in';
-import { chooseRoleAndCreateAccount, uniqueEmail } from '../support/sign-up';
+import { agreeToTerms, chooseRoleAndCreateAccount, uniqueEmail } from '../support/sign-up';
+import { forgetTerms, makeSchoolLearner, termsAgreed } from '../support/database';
+import { termsVersion } from '@repo/core/legal';
 
 /** Different seeded people per viewport so parallel projects never share state. */
 function perProject<T>(testInfo: TestInfo, mobile: T, desktop: T): T {
@@ -118,6 +120,7 @@ test.describe('sign-up (AUTH-01, AUTH-03)', () => {
     await expect(page.getByLabel('Full name')).toHaveValue('Early Typist');
     await expect(page.getByLabel('Email')).toHaveValue(email);
     await expect(password).toHaveValue('a long pass phrase');
+    await agreeToTerms(page);
     await submit.click();
     await expect(page.getByRole('heading', { name: 'Check your email' })).toBeVisible();
   });
@@ -130,6 +133,56 @@ test.describe('sign-up (AUTH-01, AUTH-03)', () => {
     await expect(page.getByText('Enter your name')).toBeVisible();
     await expect(page.getByText('Enter an email address like name@example.com')).toBeVisible();
     await expect(page.getByText('Use at least 10 characters')).toBeVisible();
+    await expect(page.getByText('Agree to the terms to create your account')).toBeVisible();
+  });
+
+  test('will not make an account until the terms are agreed to, links each one, and writes down which (D-265)', async ({ page }, testInfo) => {
+    await page.goto('/sign-up?role=instructor');
+    const email = uniqueEmail(testInfo, 'terms');
+    await page.getByLabel('Full name').fill('Tess Terms');
+    await page.getByLabel('Email').fill(email);
+    await page.getByLabel('Password', { exact: true }).fill('a long pass phrase');
+    await page.getByRole('button', { name: 'Create account' }).click();
+    await expect(page.getByText('Agree to the terms to create your account')).toBeVisible();
+    await expect(page).toHaveURL(/\/sign-up/);
+
+    // An instructor agrees to the business terms, and is shown the privacy notice, each in a new tab.
+    await expect(page.getByRole('checkbox', { name: /^I agree to the / })).not.toBeChecked();
+    await expect(page.getByRole('link', { name: 'Terms for instructors' })).toHaveAttribute('href', '/business-terms');
+    await expect(page.getByRole('link', { name: 'Privacy notice' })).toHaveAttribute('href', '/privacy');
+    await expect(page.getByRole('link', { name: 'Privacy notice' })).toHaveAttribute('target', '_blank');
+    await expectAccessible(page);
+    await agreeToTerms(page);
+    await page.getByRole('button', { name: 'Create account' }).click();
+    await expect(page.getByRole('heading', { name: 'Check your email' })).toBeVisible();
+    expect(await termsAgreed(email)).toBe(termsVersion);
+  });
+
+  test('somebody who has not agreed is asked before anything of theirs opens, and only once (D-265)', async ({ page }, testInfo) => {
+    const learner = await makeSchoolLearner(`Tara Terms ${testInfo.project.name}`, { postcode: 'M13 9PL', transmission: 'manual' });
+    try {
+      await forgetTerms(learner.email);
+      await signInThroughForm(page, learner.email);
+      await expect(page).toHaveURL(/\/agree\?next=/);
+      await expect(page.getByRole('heading', { level: 1, name: 'Before you carry on' })).toBeVisible();
+      await expect(page.getByRole('link', { name: 'Terms for learners' })).toHaveAttribute('href', '/terms');
+
+      // Not without the tick.
+      await page.getByRole('button', { name: 'Agree and continue' }).click();
+      await expect(page.getByText('Agree to the terms to carry on')).toBeVisible();
+      await agreeToTerms(page);
+      await expectAccessible(page);
+      await snap(page, testInfo, 'agree-to-terms');
+      await page.getByRole('button', { name: 'Agree and continue' }).click();
+      await expect(page).toHaveURL(/\/app\/learner/);
+      expect(await termsAgreed(learner.email)).toBe(termsVersion);
+
+      // Once: the next screen opens without asking again.
+      await page.goto('/app/learner/lessons');
+      await expect(page).toHaveURL(/\/app\/learner\/lessons$/);
+    } finally {
+      await learner.remove();
+    }
   });
 });
 

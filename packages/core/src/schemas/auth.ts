@@ -40,6 +40,10 @@ export const signUpSchema = z
     password: passwordSchema,
     role: intendedRoleSchema,
     schoolName: z.string().trim().max(120).optional(),
+    /** The terms and the privacy notice, agreed to with a tick: never assumed (NFR-PRV-02, D-265). */
+    acceptedTerms: z.boolean({ error: 'Agree to the terms to create your account' }).refine((agreed) => agreed, {
+      error: 'Agree to the terms to create your account',
+    }),
   })
   .refine((value) => value.role !== 'school' || (value.schoolName?.length ?? 0) > 0, {
     path: ['schoolName'],

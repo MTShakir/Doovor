@@ -747,7 +747,7 @@ Money is always stored as integer pence. Never floats.
 | ID | Requirement |
 |---|---|
 | NFR-PRV-01 | Data hosted in the UK or EU (London region preferred). |
-| NFR-PRV-02 | Privacy notice, cookie banner with real choice (no analytics before consent), terms for learners, terms for Businesses, data processing terms for Businesses. |
+| NFR-PRV-02 | Privacy notice, cookie banner with real choice (no analytics before consent), terms for learners, terms for Businesses, data processing terms for Businesses. Nobody uses the product without agreeing to the terms that apply to them and having been shown the privacy notice: a tick on the sign-up form, never ticked for them, and a screen of its own before anything opens for anybody who signed up another way, had an account from before, or comes back after the documents change. Each account records which version it agreed to and when (D-265). |
 | NFR-PRV-03 | Self-service data export, as a file and as a page that prints (D-148), and account deletion that waits seven days and can be called off until then (D-149). Deletion anonymises records that must be kept for tax (6 years for financial records). |
 | NFR-PRV-04 | Data minimisation: licence number optional; instructors see age band, not date of birth. |
 | NFR-PRV-05 | Marketing emails and SMS only with opt-in consent (PECR). Service messages allowed without. |

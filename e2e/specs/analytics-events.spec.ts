@@ -1,6 +1,7 @@
 import { analyticsEvents, eventsAwaitingTheirFeature } from '@repo/core/analytics';
 import { expect, test, type Page } from '@playwright/test';
 import { authFile, cookieAnswer } from '../support/accounts';
+import { agreeToTerms } from '../support/sign-up';
 
 /**
  * The events PRD section 16 asks for, counted where they happen (M6-09).
@@ -58,6 +59,7 @@ test.describe('what the product counts (PRD 16, M6-09)', () => {
     // An address that is already taken: the point is that asking is counted, not that it worked.
     await page.getByLabel('Email').fill('jack.taylor@example.com');
     await page.getByLabel('Password', { exact: true }).fill('not-the-right-one-1');
+    await agreeToTerms(page);
     await page.getByRole('button', { name: 'Create account' }).click();
     await expect
       .poll(async () => (await countedSoFar(page)).map((one) => one.event))

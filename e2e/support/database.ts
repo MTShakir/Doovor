@@ -2070,3 +2070,16 @@ export async function removeGalleryPhotos(learnerName: string): Promise<void> {
     await sql`delete from public.gallery_photos where learner_name = ${learnerName}`;
   });
 }
+
+/** Takes back somebody's agreement to the terms, as if their account were from before (D-265). */
+export async function forgetTerms(email: string): Promise<void> {
+  await withDatabase((sql) => sql`update public.users set terms_version = null, terms_accepted_at = null where email = ${email}`);
+}
+
+/** Which version of the terms an account agreed to, or null (D-265). */
+export async function termsAgreed(email: string): Promise<string | null> {
+  return withDatabase(async (sql) => {
+    const [row] = await sql<{ terms_version: string | null }[]>`select terms_version from public.users where email = ${email}`;
+    return row?.terms_version ?? null;
+  });
+}

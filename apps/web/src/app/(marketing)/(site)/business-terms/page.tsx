@@ -1,4 +1,5 @@
 import { brand } from '@repo/config/brand';
+import { legalDate, legalDocuments } from '@repo/core/legal';
 import type { Metadata } from 'next';
 import { ForTheSolicitor, LegalList, LegalPage, LegalSection, LegalTable, LegalText } from '@/components/site/legal';
 import { publicPageMetadata } from '@/lib/public/metadata';
@@ -21,7 +22,7 @@ export default function BusinessTermsPage() {
     <LegalPage
       title="Terms for instructors and schools"
       summary="The agreement between your driving business and us, and how we handle the data of the learners you teach."
-      updated="30 September 2026"
+      updated={legalDate(legalDocuments.businessTerms.updated)}
     >
       <LegalSection title="What you are buying">
         <LegalText>

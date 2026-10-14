@@ -6,7 +6,7 @@ import { expectAccessible, snap } from '../support/helpers';
 import { jpegWithGps } from '../support/images';
 import { linkFromEmail } from '../support/mailpit';
 import { enterCode } from '../support/sign-in';
-import { chooseRoleAndCreateAccount, uniqueEmail } from '../support/sign-up';
+import { agreeToTerms, chooseRoleAndCreateAccount, uniqueEmail } from '../support/sign-up';
 
 test.describe('school onboarding (AUTH-05, M5-11)', () => {
   test('an owner sets the school up and invites an instructor, who joins and sets up in four steps', async ({ page, browser }, testInfo) => {
@@ -95,6 +95,7 @@ test.describe('school onboarding (AUTH-05, M5-11)', () => {
     const niaEmail = uniqueEmail(testInfo, 'school-instructor');
     await nia.getByLabel('Email').fill(niaEmail);
     await nia.getByLabel('Password', { exact: true }).fill('a long pass phrase');
+    await agreeToTerms(nia);
     await nia.getByRole('button', { name: 'Create account' }).click();
     await expect(nia.getByRole('heading', { name: 'Check your email' })).toBeVisible();
     await nia.goto(await linkFromEmail(niaEmail, 'Confirm your email'));

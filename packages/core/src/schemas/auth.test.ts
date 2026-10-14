@@ -37,20 +37,30 @@ describe('auth schemas', () => {
         fullName: 'Enter your name',
         email: 'Enter an email address like name@example.com',
         password: 'Use at least 10 characters',
+        acceptedTerms: 'Agree to the terms to create your account',
       });
     }
   });
 
   it('asks for ten characters or more, and still signs in a password chosen when eight was enough (D-161)', () => {
-    const person = { fullName: 'Ben', email: 'ben@example.com', role: 'learner' as const };
+    const person = { fullName: 'Ben', email: 'ben@example.com', role: 'learner' as const, acceptedTerms: true };
     expect(signUpSchema.safeParse({ ...person, password: '123456789' }).success).toBe(false);
     expect(signUpSchema.safeParse({ ...person, password: '1234567890' }).success).toBe(true);
     expect(newPasswordSchema.safeParse({ password: '123456789' }).success).toBe(false);
     expect(signInSchema.safeParse({ email: 'ben@example.com', password: '12345678' }).success).toBe(true);
   });
 
+  it('will not make an account until the terms are agreed to (NFR-PRV-02, D-265)', () => {
+    const person = { fullName: 'Ben', email: 'ben@example.com', password: 'longenough', role: 'learner' as const };
+    for (const acceptedTerms of [false, undefined, 'yes']) {
+      const result = signUpSchema.safeParse({ ...person, acceptedTerms });
+      expect(result.success, String(acceptedTerms)).toBe(false);
+    }
+    expect(signUpSchema.safeParse({ ...person, acceptedTerms: true }).success).toBe(true);
+  });
+
   it('asks schools for their name', () => {
-    const result = signUpSchema.safeParse({ fullName: 'Ben', email: 'ben@example.com', password: 'longenough', role: 'school' });
+    const result = signUpSchema.safeParse({ fullName: 'Ben', email: 'ben@example.com', password: 'longenough', role: 'school', acceptedTerms: true });
     expect(result.success).toBe(false);
     expect(roleChoiceSchema.safeParse({ role: 'school', schoolName: 'Bee School' }).success).toBe(true);
     expect(roleChoiceSchema.safeParse({ role: 'learner' }).success).toBe(true);

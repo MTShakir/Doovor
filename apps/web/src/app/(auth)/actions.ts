@@ -1,5 +1,6 @@
 'use server';
 
+import { termsVersion } from '@repo/core/legal';
 import { err, ok, type Result } from '@repo/core/result';
 import {
   magicLinkSchema,
@@ -49,7 +50,13 @@ export async function signUp(input: unknown): Promise<Result<null>> {
     email,
     password,
     options: {
-      data: { full_name: fullName, intended_role: role, ...(role === 'school' ? { school_name: schoolName } : {}) },
+      // The version of the terms ticked on the form, written down as the account is made (D-265).
+      data: {
+        full_name: fullName,
+        intended_role: role,
+        terms_version: termsVersion,
+        ...(role === 'school' ? { school_name: schoolName } : {}),
+      },
       emailRedirectTo: `${getAppUrl()}/auth/confirm`,
     },
   });
@@ -167,3 +174,20 @@ export async function signOut(scope: 'local' | 'global' = 'local'): Promise<void
   (await cookies()).delete(VIEW_AS_COOKIE);
   redirect('/sign-in');
 }
+
+/**
+ * Agreeing to the terms and the privacy notice on the screen that asks (NFR-PRV-02, D-265), then on
+ * to wherever they were going. Not agreeing is not saved anywhere: the screen asks again next time.
+ */
+export async function agreeToTerms(input: unknown): Promise<Result<null>> {
+  const parsed = z.object({ agreed: z.literal(true), next: z.string().max(500) }).safeParse(input);
+  if (!parsed.success) return err('VALIDATION_FAILED', undefined, { agreed: 'Agree to the terms to carry on' });
+
+  const supabase = await createSupabaseServerClient();
+  const { error } = await supabase.rpc('accept_terms', { p_version: termsVersion });
+  if (error) return err('UNKNOWN', 'We could not save that. Try again.');
+
+  // Agreed, so this redirects and never resolves.
+  redirectTo(safeNextPath(parsed.data.next, '/start'));
+}
+

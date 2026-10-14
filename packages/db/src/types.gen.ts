@@ -3044,6 +3044,8 @@ export type Database = {
           phone: string | null
           phone_verified_at: string | null
           platform_number: number
+          terms_accepted_at: string | null
+          terms_version: string | null
           timezone: string
           updated_at: string
         }
@@ -3063,6 +3065,8 @@ export type Database = {
           phone?: string | null
           phone_verified_at?: string | null
           platform_number?: number
+          terms_accepted_at?: string | null
+          terms_version?: string | null
           timezone?: string
           updated_at?: string
         }
@@ -3082,6 +3086,8 @@ export type Database = {
           phone?: string | null
           phone_verified_at?: string | null
           platform_number?: number
+          terms_accepted_at?: string | null
+          terms_version?: string | null
           timezone?: string
           updated_at?: string
         }
@@ -3300,6 +3306,7 @@ export type Database = {
     Functions: {
       accept_invitation: { Args: { p_token: string }; Returns: string }
       accept_member_invitation: { Args: { p_token: string }; Returns: string }
+      accept_terms: { Args: { p_version: string }; Returns: undefined }
       add_gallery_photo: {
         Args: {
           p_image_path: string

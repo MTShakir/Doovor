@@ -1,4 +1,5 @@
 import { brand, companyDisclosure } from '@repo/config/brand';
+import { legalDate, legalDocuments } from '@repo/core/legal';
 import type { Metadata } from 'next';
 import { ForTheSolicitor, LegalList, LegalPage, LegalSection, LegalTable, LegalText } from '@/components/site/legal';
 import { publicPageMetadata } from '@/lib/public/metadata';
@@ -18,7 +19,7 @@ export default function PrivacyPage() {
     <LegalPage
       title="Privacy notice"
       summary={`What ${brand.name} holds about you, why we hold it, where it is kept and what you can ask us to do with it.`}
-      updated="30 September 2026"
+      updated={legalDate(legalDocuments.privacy.updated)}
     >
       <LegalSection title="Who is responsible">
         <LegalText>

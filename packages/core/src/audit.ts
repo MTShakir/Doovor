@@ -13,6 +13,7 @@ export const auditCategoryKeys = [
   'export',
   'deletion',
   'viewing',
+  'terms',
   'platform',
   'housekeeping',
   'bookings',
@@ -75,6 +76,7 @@ export const auditActionWords: Readonly<Record<string, string>> = {
   'account.suspended': 'Account suspended',
   'account.reactivated': 'Account reactivated',
   'account.two_step_reset': 'Two-step verification reset',
+  'account.terms_accepted': 'Terms and privacy notice agreed to',
   'business.suspended': 'Business suspended',
   'business.reactivated': 'Business reactivated',
   'platform.setting_changed': 'Platform setting changed',
@@ -180,6 +182,8 @@ export const auditCategories: readonly AuditCategory[] = [
   { key: 'export', label: 'Data exports', required: true, actions: ['account.data_exported', 'audit_log.exported'] },
   { key: 'deletion', label: 'Account deletions', required: true, actions: ['account.deletion_requested', 'account.deletion_cancelled', 'account.deleted'] },
   { key: 'viewing', label: 'Viewing as somebody', required: true, actions: ['impersonation.started', 'impersonation.ended'] },
+  // Agreeing to the terms on a screen of its own: at sign-up the account row records it (D-265).
+  { key: 'terms', label: 'Terms agreed to', required: false, actions: ['account.terms_accepted'] },
   {
     key: 'platform',
     label: 'Platform staff decisions',
