@@ -81,6 +81,14 @@ export const paymentAuthorised = eventType('payment.authorised', {
  * A lesson record was saved (PRG-01, NTF-03, M4-12). Whether the learner reads it, and what it
  * says, is the database's to say; the event carries the ids only.
  */
+/**
+ * Somebody's email was confirmed for the first time, or they signed up with Google or Apple, which
+ * confirm it themselves (D-259). The database queues it; the job welcomes them.
+ */
+export const accountEmailConfirmed = eventType('account/email-confirmed', {
+  schema: staticSchema<{ user_id: string }>(),
+});
+
 export const lessonRecordAdded = eventType('lesson_record.added', {
   schema: staticSchema<{ lesson_record_id: string; booking_id: string }>(),
 });

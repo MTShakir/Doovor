@@ -921,6 +921,7 @@ Rating scale: 1 Introduced, 2 Under full instruction, 3 Prompted, 4 Seldom promp
 | Report received, with its reference (NTF-05) | Yes | Yes | Yes | Email |
 | Report dealt with (NTF-05) | Yes | Yes | Yes | Email |
 | Pro renewal ahead (14 days yearly, 3 days monthly) | No | Yes | No | Email, and SMS on a yearly plan |
+| Welcome, once the email is confirmed or the account is made with Google or Apple: what is next for their side, and where to ask for help (D-259) | Yes | Yes | Yes | Email, in-app |
 
 ## Appendix C. Glossary
 

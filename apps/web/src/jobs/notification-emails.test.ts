@@ -57,6 +57,8 @@ describe('what the email says (NTF-03, M2-28)', () => {
     expect(actionLabel('/app/instructor/diary?view=day&date=2026-09-16')).toBe('Open your diary');
     expect(actionLabel('/app/school/diary?date=2026-09-16')).toBe('Open the school diary');
     expect(actionLabel('/app/instructor/learners/abc')).toBe('See the learner');
+    // The welcome (D-259): getting started knows what is next for each of them.
+    expect(actionLabel('/start')).toBe('Get started');
     expect(actionLabel('/somewhere-else')).toBe('Open the app');
   });
 

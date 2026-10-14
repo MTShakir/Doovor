@@ -4305,6 +4305,7 @@ export type Database = {
           name: string
         }[]
       }
+      system_welcome_notice: { Args: { p_user_id: string }; Returns: Json }
       undo_offline_payment: { Args: { p_payment_id: string }; Returns: string }
     }
     Enums: {

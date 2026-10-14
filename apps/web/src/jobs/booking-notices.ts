@@ -280,7 +280,8 @@ export function peopleInvolved(notice: BookingNotice): string[] {
 export type NotificationRow = Record<string, string | string[] | null>;
 
 export interface RowContext {
-  businessId: string;
+  /** Null for a notice about somebody's own account, which is no Business's (D-259). */
+  businessId: string | null;
   /** What it is about: a booking today, a payment later. */
   entityType: string;
   entityId: string;

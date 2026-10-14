@@ -7,6 +7,7 @@
  * push notice cannot drift apart.
  */
 
+import { brand } from '@repo/config/brand';
 import type { NotificationAudience, NotificationKind } from './catalogue.ts';
 
 export interface NotificationFacts {
@@ -54,6 +55,16 @@ function whenWith(audience: NotificationAudience, facts: NotificationFacts): str
   const withWhom = audience === 'school' && facts.instructorName ? `with ${facts.instructorName}` : name ? `with ${name}` : undefined;
   return sentence(facts.when, withWhom);
 }
+
+/** The first thing somebody is told to do once their email is confirmed (D-259). */
+const welcomeNext: Record<NotificationAudience, string> = {
+  learner: 'Your email is confirmed. Find an instructor, book your lessons and see your progress, all in one place.',
+  instructor:
+    'Your email is confirmed. Finish setting up and you can take bookings and payments and keep track of every learner, all in one place.',
+  school: 'Your email is confirmed. Finish setting up your school, then bring in your instructors and learners.',
+};
+
+const helpLine = `Any questions as you get going? Email ${brand.supportEmail} and we will help.`;
 
 /** The words for one kind, read by one audience. */
 export function notificationCopy(
@@ -151,5 +162,9 @@ export function notificationCopy(
 
     case 'learner.joined':
       return { title: `${them} joined you`, body: sentence(facts.detail ?? 'They can be booked in now') };
+
+    // What is next depends on the side they signed up for; the way to ask for help does not.
+    case 'account.welcome':
+      return { title: `Welcome to ${brand.name}`, body: sentence(welcomeNext[audience], helpLine) };
   }
 }

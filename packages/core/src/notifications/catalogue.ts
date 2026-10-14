@@ -62,6 +62,9 @@ export const notificationKinds = [
   // be told about before it happens rather than after (9.18, D-231).
   'subscription.renewing',
   'learner.joined',
+  // Once an email is confirmed: welcome, what is next, and where to ask for help (D-259). Not in
+  // Appendix B's first draft; the product owner asked for it.
+  'account.welcome',
 ] as const;
 
 export type NotificationKind = (typeof notificationKinds)[number];
@@ -223,6 +226,15 @@ export const notificationCatalogue: Record<NotificationKind, NotificationSpec> =
     audiences: ['instructor', 'school'],
     channels: ['in_app', 'push'],
     essential: false,
+  },
+  'account.welcome': {
+    kind: 'account.welcome',
+    category: 'account',
+    audiences: ['learner', 'instructor', 'school'],
+    // No push: nobody has turned it on for a phone yet when their email is first confirmed.
+    channels: ['in_app', 'email'],
+    // About their own account, and the first thing they hear from us: a service message.
+    essential: true,
   },
 };
 

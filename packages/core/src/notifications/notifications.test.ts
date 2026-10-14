@@ -1,3 +1,4 @@
+import { brand } from '@repo/config/brand';
 import { describe, expect, it } from 'vitest';
 import {
   alwaysOnChannels,
@@ -18,7 +19,7 @@ const lesson = { learnerName: 'Jack Taylor', instructorName: 'Sarah Khan', when:
 
 describe('the catalogue (PRD Appendix B, NTF-03)', () => {
   it('has every kind of notification Phase 1 sends', () => {
-    expect(notificationKinds).toHaveLength(21);
+    expect(notificationKinds).toHaveLength(22);
     for (const kind of notificationKinds) expect(notificationCatalogue[kind].kind).toBe(kind);
   });
 
@@ -46,6 +47,40 @@ describe('the catalogue (PRD Appendix B, NTF-03)', () => {
   it('names every category and channel for the settings screen (NTF-04)', () => {
     for (const category of notificationCategories) expect(categoryCopy[category].title).not.toBe('');
     for (const channel of ['in_app', 'email', 'push', 'sms'] as const) expect(channelCopy[channel].title).not.toBe('');
+  });
+});
+
+describe('the welcome, once an email is confirmed (NTF-03, NTF-06, D-259)', () => {
+  const audiences: NotificationAudience[] = ['learner', 'instructor', 'school'];
+
+  it('welcomes each side by name of the product, says what to do next, and where to ask for help', () => {
+    const bodies = audiences.map((audience) => {
+      const copy = notificationCopy('account.welcome', audience, {});
+      expect(copy.title, audience).toBe(`Welcome to ${brand.name}`);
+      expect(copy.body, audience).toContain(brand.supportEmail);
+      expect(copy.body.length, audience).toBeLessThanOrEqual(400);
+      expect(copy.body, audience).not.toMatch(/[\u2013\u2014]/);
+      return copy.body;
+    });
+    // Each side is told what is next for them, not one line for everybody.
+    expect(new Set(bodies).size).toBe(3);
+  });
+
+  it('arrives by email and in the inbox, once for each person, whatever they have switched off', () => {
+    const plan = (muted?: ('email' | 'push')[]) =>
+      planNotifications({
+        kind: 'account.welcome',
+        entityId: 'user-1',
+        facts: {},
+        recipients: [{ userId: 'user-1', audience: 'instructor', muted }],
+        linkFor: () => '/start',
+      });
+    const [welcome, ...more] = plan();
+    expect(more).toEqual([]);
+    expect(welcome).toMatchObject({ channels: ['in_app', 'email'], category: 'account', link: '/start' });
+    expect(welcome?.dedupeKey).toBe(notificationDedupeKey('account.welcome', 'user-1', 'user-1'));
+    // A service message about their own account: the inbox keeps it even with email switched off.
+    expect(plan(['email'])[0]?.channels).toEqual(['in_app']);
   });
 });
 

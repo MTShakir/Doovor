@@ -12,6 +12,7 @@ import { reminderByHand, reminderSweep } from './functions/reminders';
 import { outboxSweep } from './functions/outbox-sweep';
 import { subscriptionRenewalNotices } from './functions/subscriptions';
 import { systemPingFunction } from './functions/ping';
+import { welcomeNotices } from './functions/welcome-notices';
 
 /** Every job the runner serves. Add new ones here. */
 export const functions = [
@@ -42,4 +43,5 @@ export const functions = [
   subscriptionRenewalNotices,
   feedbackReceivedEmails,
   feedbackHandledEmails,
+  welcomeNotices,
 ];
