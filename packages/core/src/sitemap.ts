@@ -69,6 +69,15 @@ export function sitemapPaths(kind: SitemapKind, entries: SitemapEntries): string
   }
 }
 
+/**
+ * The kinds the index lists: those with at least one page (D-261). Search reports a sitemap with no
+ * page in it as an error, which a new site's instructors, schools and places would all be; each
+ * joins the index with its first page.
+ */
+export function sitemapKindsWithPages(entries: SitemapEntries): SitemapKind[] {
+  return sitemapKinds.filter((kind) => sitemapPaths(kind, entries).length > 0);
+}
+
 const XML_DECLARATION = '<?xml version="1.0" encoding="UTF-8"?>\n';
 const SITEMAP_NAMESPACE = 'http://www.sitemaps.org/schemas/sitemap/0.9';
 

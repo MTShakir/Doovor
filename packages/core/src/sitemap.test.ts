@@ -4,6 +4,7 @@ import {
   SITEMAP_URL_LIMIT,
   sitemapIndexXml,
   sitemapKinds,
+  sitemapKindsWithPages,
   sitemapPath,
   sitemapPaths,
   sitePagePaths,
@@ -64,6 +65,17 @@ describe('sitemaps by type (PRD 14.6, M5-08)', () => {
         '</urlset>\n',
     );
     expect(urlSetXml([])).toBe('<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n</urlset>\n');
+  });
+
+  it('indexes only the sitemaps with a page in them, because search reports an empty one as an error (D-261)', () => {
+    expect(sitemapKindsWithPages(entries)).toEqual(sitemapKinds);
+    // A new site: nobody listed yet, and no place worth indexing. The site's own pages and the
+    // guides are always there.
+    expect(sitemapKindsWithPages({ instructors: [], schools: [], places: [] })).toEqual(['pages', 'guides']);
+    // A place too thin to index leaves its sitemap empty, so it stays out too.
+    expect(
+      sitemapKindsWithPages({ ...entries, places: [{ citySlug: 'leeds', areaSlug: null, automatic: false, instructorCount: 1 }] }),
+    ).toEqual(['pages', 'instructors', 'schools', 'guides']);
   });
 
   it('writes the index of sitemaps', () => {

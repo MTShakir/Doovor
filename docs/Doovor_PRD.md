@@ -770,7 +770,7 @@ Money is always stored as integer pence. Never floats.
 
 ### 14.6 SEO
 
-- Server-side rendering for public pages. Clean URLs (section 8.3). XML sitemaps split by type. Canonical tags. Open Graph images generated per profile.
+- Server-side rendering for public pages. Clean URLs (section 8.3). XML sitemaps split by type; the index lists a type only once it has a page, because search reports an empty sitemap as an error (D-261). Canonical tags. Open Graph images generated per profile.
 - Structured data per section PUB-02. Breadcrumb markup on city and area pages.
 - Internal links: city hub to area pages to instructor profiles and back.
 - Guides at `/guides`, by "The Doovor team", answer what instructors and learners search for: running an instructor business (Making Tax Digital, expenses), learning to drive (the 2026 test booking rules), and then costs and manual or automatic. Each says when it was last checked, lists the GOV.UK pages its facts come from, carries Article, FAQPage and BreadcrumbList markup and a share image, and is in a sitemap of its own. They are written as data in the code and checked by tests; an editor for them is ADM-09, Phase 2 (D-255).

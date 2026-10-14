@@ -42,14 +42,13 @@ async function shareImage(page: Page, name: string, testInfo: TestInfo): Promise
  * the seed keeps, never for everything they hold.
  */
 test.describe('sitemaps, canonical addresses and share images (PRD 14.6, M5-08)', () => {
-  test('the sitemap index lists every type, and each lists only pages search may show, at their canonical addresses', async ({ page, request }, testInfo) => {
-    expect(await listed(request, '/sitemap.xml')).toEqual([
-      '/sitemaps/pages.xml',
-      '/sitemaps/instructors.xml',
-      '/sitemaps/schools.xml',
-      '/sitemaps/places.xml',
-      '/sitemaps/guides.xml',
-    ]);
+  test('the sitemap index lists every type with a page in it, and each lists only pages search may show, at their canonical addresses', async ({ page, request }, testInfo) => {
+    // The seed lists instructors and a school. Places may have none worth indexing yet, which
+    // keeps their sitemap out of the index until they do (D-261).
+    const types = ['/sitemaps/pages.xml', '/sitemaps/instructors.xml', '/sitemaps/schools.xml', '/sitemaps/places.xml', '/sitemaps/guides.xml'];
+    const index = await listed(request, '/sitemap.xml');
+    expect(index).toEqual(types.filter((type) => index.includes(type)));
+    expect(index).toEqual(expect.arrayContaining(['/sitemaps/pages.xml', '/sitemaps/instructors.xml', '/sitemaps/schools.xml', '/sitemaps/guides.xml']));
     expect((await request.get('/sitemaps/learners.xml')).status()).toBe(404);
 
     // A London borough of each width's own, filled to three: Islington on a phone, Lambeth on a wide screen.
@@ -73,6 +72,8 @@ test.describe('sitemaps, canonical addresses and share images (PRD 14.6, M5-08)'
       expect(await listed(request, '/sitemaps/schools.xml')).toContain('/schools/manchester/quayside-driving-school');
       const places = await listed(request, '/sitemaps/places.xml');
       expect(places).toEqual(expect.arrayContaining(['/driving-lessons/london', `/driving-lessons/london/${area.slug}`]));
+      // With a place worth indexing, its sitemap is in the index.
+      expect(await listed(request, '/sitemap.xml')).toContain('/sitemaps/places.xml');
       // Manchester lists two: too thin to index.
       expect(places).not.toContain('/driving-lessons/manchester');
 

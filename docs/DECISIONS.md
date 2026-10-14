@@ -1365,3 +1365,9 @@ Every decision made without the product owner, newest last. Format: date, decisi
 - **Options:** Write the notifications inside `decide_verification` (it would need rebuilding from its newest definition, and every other notice is written by a job after the change, D-017); a job per event reading through one lookup (chosen).
 - **Reason:** The events were already queued with the right identifiers; what was missing was the listener, and the lookup is the same for both.
 
+## D-261 | 2026-10-14 | The sitemap index lists a type only once it has a page | Claude
+- **Found:** in Google Search Console, at the product owner's request. The index at `/sitemap.xml` was read successfully, but the instructors, schools and places sitemaps each showed "1 error": "Missing XML tag", parent `urlset`, tag `url`. Production has nobody listed yet, so those sitemaps had no `<url>` in them, which Google reports as an error.
+- **Decision:** `sitemapKindsWithPages` keeps the kinds with at least one page, and the index lists only those. The site's own pages and the guides are always there; instructors, schools and places join the index with their first page, when the entries are read fresh after a profile changes (D-114). Each kind's own sitemap still answers at its address.
+- **Options:** Leave the empty sitemaps and the errors (they would clear on their own once something is listed); put a placeholder page in each (a page that is not a profile, listed as one); leave empty kinds out of the index (chosen).
+- **Reason:** Search Console should show errors only for things that are wrong, so a real one is not lost among them. The end to end test now checks that places joins the index once a place is worth indexing.
+
