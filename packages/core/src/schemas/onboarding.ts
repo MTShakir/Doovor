@@ -43,15 +43,15 @@ export const qualificationSchema = z.enum(['adi', 'pdi']);
 export type Qualification = z.infer<typeof qualificationSchema>;
 
 /**
- * The number printed on the badge. The DVSA issues digits, but the field is kept wide enough
- * for a badge that does not match what we expect rather than turning a real instructor away
- * (D-056). A person checks it against the register before the tick is granted.
+ * The number printed on the badge: digits, five to seven of them, with any spaces dropped (D-262).
+ * ADI badges carry six today; one either side allows for a badge from before or after that. Letters,
+ * or far too many digits, are usually a driving licence or phone number typed by mistake. A person
+ * still checks the number against the register before the tick is granted (D-056).
  */
 export const badgeNumberSchema = z
   .string()
-  .trim()
-  .toUpperCase()
-  .regex(/^[A-Z0-9]{4,12}$/, { error: 'Enter the number printed on your badge' });
+  .transform((typed) => typed.replace(/\s+/g, ''))
+  .pipe(z.string().regex(/^[0-9]{5,7}$/, { error: 'Enter the number on your badge in digits, like 123456' }));
 
 /** Step 2: ADI or PDI badge and DBS (INS-02). */
 export const onboardingBadgeSchema = z.object({

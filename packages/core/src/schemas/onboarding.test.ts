@@ -41,8 +41,8 @@ describe('badge step (INS-02, M1-04)', () => {
     expect(onboardingBadgeSchema.parse(valid)).toMatchObject({ qualification: 'adi', badgeNumber: '123456' });
   });
 
-  it('tidies the number the way it is printed', () => {
-    expect(onboardingBadgeSchema.parse({ ...valid, badgeNumber: ' ab1234 ' }).badgeNumber).toBe('AB1234');
+  it('keeps the digits of the number, without the spaces it was typed with', () => {
+    expect(onboardingBadgeSchema.parse({ ...valid, badgeNumber: ' 123 456 ' }).badgeNumber).toBe('123456');
   });
 
   it('refuses a badge that has already expired', () => {
@@ -58,9 +58,17 @@ describe('badge step (INS-02, M1-04)', () => {
     expect(problem({ ...valid, badgeExpiry: '2027-02-31' })).toEqual(['badgeExpiry']);
   });
 
-  it('refuses a number that is not printed on any badge', () => {
-    expect(problem({ ...valid, badgeNumber: '12' })).toEqual(['badgeNumber']);
-    expect(problem({ ...valid, badgeNumber: '1234-5678' })).toEqual(['badgeNumber']);
+  it("takes five to seven digits, which allows for a badge older or newer than today's six (D-262)", () => {
+    expect(onboardingBadgeSchema.parse({ ...valid, badgeNumber: '61234' }).badgeNumber).toBe('61234');
+    expect(onboardingBadgeSchema.parse({ ...valid, badgeNumber: '6123456' }).badgeNumber).toBe('6123456');
+  });
+
+  it('refuses a number that is not printed on any badge, and says what one looks like', () => {
+    for (const typed of ['12', '1234', '12345678', '1234-5678', 'AB1234', 'ADI123456', '07700900123']) {
+      expect(problem({ ...valid, badgeNumber: typed }), typed).toEqual(['badgeNumber']);
+    }
+    const result = onboardingBadgeSchema.safeParse({ ...valid, badgeNumber: 'AB1234' });
+    expect(result.success ? '' : result.error.issues[0]?.message).toBe('Enter the number on your badge in digits, like 123456');
   });
 
   it('will not take a submission without the DBS confirmation', () => {

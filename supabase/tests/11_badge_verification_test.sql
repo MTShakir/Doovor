@@ -40,14 +40,14 @@ select throws_ok(
 
 -- Submitting
 select is(
-  public.submit_verification(:'asha', 'adi', ' ab1234 ', (private.today() + 400)::date, true, null),
+  public.submit_verification(:'asha', 'adi', ' 123 456 ', (private.today() + 400)::date, true, :'asha' || '/badge-photo-one.webp'),
   'pending'::public.verification_status,
-  'a submission is recorded as waiting for review'
+  'a submission, with its photo, is recorded as waiting for review'
 );
 select is(
   (select badge_number from public.instructor_profiles where id = :'asha'),
-  'AB1234',
-  'the number is stored as it is printed'
+  '123456',
+  'the number is stored as its digits, without the spaces it was typed with'
 );
 select ok(
   (select verification_submitted_at is not null and verified_at is null from public.instructor_profiles where id = :'asha'),
@@ -94,29 +94,29 @@ select throws_ok(
 -- ---------------------------------------------------------------------------------------
 select tests.authenticate_as(:'asha_user');
 select lives_ok(
-  format($$ select public.submit_verification(%L, 'adi', 'ADI778899', (private.today() + 400)::date, true, null) $$, :'asha'),
+  format($$ select public.submit_verification(%L, 'adi', '778899', (private.today() + 400)::date, true, null) $$, :'asha'),
   'a badge number nobody else has is accepted'
 );
 select tests.clear_authentication();
 select tests.authenticate_as(:'ivy_user');
 select throws_ok(
-  format($$ select public.submit_verification(%L, 'adi', 'ADI778899', (private.today() + 400)::date, true, null) $$, :'ivy'),
+  format($$ select public.submit_verification(%L, 'adi', '778899', (private.today() + 400)::date, true, null) $$, :'ivy'),
   'P0001',
   'BADGE_TAKEN',
   'a second account cannot claim the same badge number'
 );
--- Folded and trimmed, because that is what a person means by the same number.
+-- Without its spaces, because that is what a person means by the same number.
 select throws_ok(
-  format($$ select public.submit_verification(%L, 'adi', '  adi778899 ', (private.today() + 400)::date, true, null) $$, :'ivy'),
+  format($$ select public.submit_verification(%L, 'adi', ' 778 899 ', (private.today() + 400)::date, true, null) $$, :'ivy'),
   'P0001',
   'BADGE_TAKEN',
-  'nor the same one in different letters with a space on the end'
+  'nor the same one typed with spaces in it'
 );
 -- Sending the same one again is somebody correcting their own record, not a clash.
 select tests.clear_authentication();
 select tests.authenticate_as(:'asha_user');
 select lives_ok(
-  format($$ select public.submit_verification(%L, 'pdi', 'ADI778899', (private.today() + 500)::date, true, null) $$, :'asha'),
+  format($$ select public.submit_verification(%L, 'pdi', '778899', (private.today() + 500)::date, true, null) $$, :'asha'),
   'and the instructor who has it can send it again'
 );
 

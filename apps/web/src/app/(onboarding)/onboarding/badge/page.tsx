@@ -8,7 +8,8 @@ import { signedBadgeUrl } from '@/lib/storage/images';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
 import { StepSkip } from '../step-actions';
 import { StepShell } from '../step-shell';
-import { BadgeForm } from './badge-form';
+import { BadgeForm } from '@/components/badge/badge-form';
+import { saveBadge } from '../../actions';
 
 const step = stepBySlug('badge');
 
@@ -34,6 +35,7 @@ async function BadgeStep() {
   return (
     <StepShell step={step} businessType={session.businessType}>
       <BadgeForm
+        onSave={saveBadge}
         profileId={session.profileId}
         qualification={session.qualification}
         badgeNumber={session.badgeNumber}

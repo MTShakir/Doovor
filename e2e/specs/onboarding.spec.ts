@@ -159,7 +159,7 @@ test.describe('instructor onboarding (AUTH-04, M1-02)', () => {
     expect(response.status()).toBeGreaterThanOrEqual(400);
   });
 
-  test('will not submit a badge that has expired (INS-02)', async ({ page }, testInfo) => {
+  test('will not submit a badge that has expired, has no photo or is not a badge number, and skipping still moves on (INS-02, D-262)', async ({ page }, testInfo) => {
     const email = uniqueEmail(testInfo, 'expired-badge');
     await chooseRoleAndCreateAccount(
       page,
@@ -179,6 +179,19 @@ test.describe('instructor onboarding (AUTH-04, M1-02)', () => {
 
     await expect(page.getByText('That date has passed. Renew your badge first')).toBeVisible();
     await expect(page).toHaveURL(/\/onboarding\/badge$/);
+
+    // A badge goes with its photo, every problem is shown at once, and the number is digits (D-262).
+    await expect(page.getByText('Add a photo of your badge')).toBeVisible();
+    await page.getByLabel('Badge number').fill('AB1234');
+    await page.getByLabel('Badge expiry date').fill('2029-03-31');
+    await page.getByRole('button', { name: 'Continue' }).click();
+    await expect(page.getByText('Enter the number on your badge in digits, like 123456')).toBeVisible();
+    await expect(page.getByText('Add a photo of your badge')).toBeVisible();
+    await expect(page).toHaveURL(/\/onboarding\/badge$/);
+
+    // Skipping sends nothing, and still moves on.
+    await page.getByRole('button', { name: 'Skip for now' }).click();
+    await expect(page).toHaveURL(/\/onboarding\/area$/);
   });
 
   test('draws the area as the slider moves (M1-07)', async ({ page }, testInfo) => {

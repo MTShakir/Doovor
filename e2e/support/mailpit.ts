@@ -33,5 +33,20 @@ export async function linkFromEmail(address: string, subject: string): Promise<s
   if (!href.includes('/auth/confirm?token_hash=')) {
     throw new Error(`Email "${subject}" does not use our template (got ${href}). Restart the stack: pnpm db:stop && pnpm db:start`);
   }
-  return href;
+  return onThisApp(href);
+}
+
+/**
+ * The link on the app these tests are running against. The local stack writes its site URL into
+ * every email, which is port 3000; a run pointed somewhere else locally (E2E_BASE_URL, when 3000 is
+ * busy) follows it there instead. In CI the two are the same address, so nothing changes.
+ */
+function onThisApp(href: string): string {
+  const base = process.env.E2E_BASE_URL;
+  const link = new URL(href);
+  if (!base || !['localhost', '127.0.0.1'].includes(link.hostname)) return href;
+  const app = new URL(base);
+  link.protocol = app.protocol;
+  link.host = app.host;
+  return link.toString();
 }

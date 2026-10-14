@@ -220,8 +220,9 @@ export function nextWeekday(weekday: number, now = new Date()): string {
  * moment: a number written into a test collides with itself.
  */
 export function aBadgeNumber(): string {
-  const alphabet = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
-  return Array.from({ length: 10 }, () => alphabet[Math.floor(Math.random() * alphabet.length)] ?? 'A').join('');
+  // Seven digits starting with 9: the shape a badge number takes (D-262), and never one of the
+  // seed's six-digit numbers, so a badge belongs to one account however many tests run at once.
+  return `9${String(Math.floor(Math.random() * 1_000_000)).padStart(6, '0')}`;
 }
 
 /** A local day in British words, with the parts asked for: "Tuesday 22 September", "September 2026". */

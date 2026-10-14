@@ -16,8 +16,9 @@ import { requireOnboarding } from '@/lib/onboarding/session';
 import { nextStep, slugForStep } from '@/lib/onboarding/steps';
 import { fieldErrors } from '@/lib/forms';
 import { redirectTo } from '@/lib/redirect-to';
-import { avatarsBucket, badgesBucket, removeProfileImage } from '@/lib/storage/images';
+import { avatarsBucket, removeProfileImage } from '@/lib/storage/images';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
+import { submitBadge } from '@/lib/verification/submit-badge';
 
 /** Moves to the next of their steps, or finishes onboarding after the last one (AUTH-04). */
 async function advance(session: { profileId: string; step: number; businessType: 'independent' | 'school' }): Promise<never> {
@@ -78,29 +79,9 @@ export async function saveBadge(input: unknown): Promise<Result<null>> {
   if (!parsed.success) return err('VALIDATION_FAILED', undefined, fieldErrors(parsed.error));
 
   const session = await requireOnboarding();
-  const { qualification, badgeNumber, badgeExpiry, dbsConfirmed, badgePath } = parsed.data;
-  if (typeof badgePath === 'string' && !isProfileObjectPath(badgePath, session.profileId)) {
-    return err('NOT_ALLOWED', 'That photo could not be saved. Try choosing it again.');
-  }
-
   const supabase = await createSupabaseServerClient();
-  const { error } = await supabase.rpc('submit_verification', {
-    p_profile_id: session.profileId,
-    p_qualification: qualification,
-    p_badge_number: badgeNumber,
-    p_badge_expiry: badgeExpiry,
-    p_dbs_confirmed: dbsConfirmed,
-    p_badge_path: badgePath ?? undefined,
-  });
-  if (error) {
-    const { code } = parsePostgresError(error);
-    return err(code === 'VALIDATION_FAILED' ? 'VALIDATION_FAILED' : code);
-  }
-
-  // The badge photo it replaced is nobody's now.
-  if (typeof badgePath === 'string' && session.badgePath && session.badgePath !== badgePath) {
-    await removeProfileImage(supabase, badgesBucket, session.badgePath);
-  }
+  const sent = await submitBadge(supabase, session.profileId, parsed.data, session.badgePath);
+  if (!sent.ok) return sent;
 
   // Saving succeeded, so this redirects and never resolves.
   return advance(session);
