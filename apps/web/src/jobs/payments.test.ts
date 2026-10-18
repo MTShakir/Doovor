@@ -7,7 +7,7 @@ const refund = vi.fn();
 vi.mock('@/lib/supabase/service', () => ({ getSupabaseServiceClient: () => ({ rpc }) }));
 vi.mock('@/lib/payments/provider', () => ({ paymentsProvider: () => ({ cancelHold, refund }) }));
 
-const { expirePaymentHolds, sendRefund } = await import('./payments');
+const { cancelExpiredHold, sendRefund } = await import('./payments');
 
 const attempt = (n: number) => ({
   payment_id: `pay-${String(n)}`,
@@ -32,36 +32,44 @@ beforeEach(() => {
   refund.mockReset();
 });
 
-describe('giving back a slot whose hold ran out (R-10, M3-06)', () => {
-  it('calls off the attempt behind every hold that lapsed', async () => {
-    rpc.mockResolvedValueOnce({ data: { expired: 2, cancel: [attempt(1), attempt(2)] }, error: null });
+describe('calling off the payment behind a hold that ran out (R-10, D-274)', () => {
+  it('calls off every attempt the expired booking still has open', async () => {
+    rpc.mockResolvedValueOnce({ data: [attempt(1), attempt(2)], error: null });
     cancelHold.mockResolvedValue({ ok: true, data: { id: 'pi_1' } });
     rpc.mockResolvedValue({ data: true, error: null });
 
-    expect(await expirePaymentHolds()).toEqual({ expired: 2, cancelled: 2 });
+    expect(await cancelExpiredHold('book-1')).toEqual({ cancelled: 2 });
+    expect(rpc).toHaveBeenCalledWith('system_hold_cancellations', { p_booking_id: 'book-1' });
     expect(cancelHold).toHaveBeenCalledWith({ accountId: 'acct_1', paymentIntentId: 'pi_1' });
     expect(rpc).toHaveBeenCalledWith('system_record_payment_cancelled', { p_payment_id: 'pay-2' });
   });
 
   it('leaves an attempt that will not cancel alone, because it has already gone through', async () => {
-    rpc.mockResolvedValueOnce({ data: { expired: 1, cancel: [attempt(1)] }, error: null });
+    rpc.mockResolvedValueOnce({ data: [attempt(1)], error: null });
     cancelHold.mockResolvedValue({ ok: false, reason: 'DECLINED', message: 'That payment has already been taken.' });
 
-    expect(await expirePaymentHolds()).toEqual({ expired: 1, cancelled: 0 });
+    expect(await cancelExpiredHold('book-1')).toEqual({ cancelled: 0 });
     expect(rpc).toHaveBeenCalledTimes(1);
   });
 
-  it('talks to nobody when nothing lapsed', async () => {
-    rpc.mockResolvedValueOnce({ data: { expired: 0, cancel: [] }, error: null });
+  it('throws when the provider cannot be reached, so the runner tries again', async () => {
+    rpc.mockResolvedValueOnce({ data: [attempt(1)], error: null });
+    cancelHold.mockResolvedValue({ ok: false, reason: 'UNAVAILABLE', message: 'Timed out.' });
 
-    expect(await expirePaymentHolds()).toEqual({ expired: 0, cancelled: 0 });
+    await expect(cancelExpiredHold('book-1')).rejects.toThrow('Could not reach the payment provider: Timed out.');
+  });
+
+  it('talks to nobody when nothing is open', async () => {
+    rpc.mockResolvedValueOnce({ data: [], error: null });
+
+    expect(await cancelExpiredHold('book-1')).toEqual({ cancelled: 0 });
     expect(cancelHold).not.toHaveBeenCalled();
   });
 
-  it('fails loudly when the sweep itself fails, so the run is retried', async () => {
+  it('fails loudly when the database cannot be read, so the run is retried', async () => {
     rpc.mockResolvedValueOnce({ data: null, error: { message: 'connection refused' } });
 
-    await expect(expirePaymentHolds()).rejects.toThrow('Could not expire payment holds');
+    await expect(cancelExpiredHold('book-1')).rejects.toThrow('Could not read the holds to call off');
   });
 });
 

@@ -5,17 +5,15 @@
  * 44,640 of them in a long month on its own, and two of them used the month up by the middle of
  * October 2026, when every job would have stopped. So a schedule is only as frequent as what it
  * does needs: what follows something somebody did runs from that event at once, notifications go
- * out in the same run that writes them, and these sweeps only catch what no event can.
+ * out in the same run that writes them, and these sweeps only catch what no event can. Sweeps that
+ * only change the database run inside it instead, on its own scheduler (D-274): giving back lapsed
+ * holds and lapsing unanswered requests, every five minutes, in `20261018100000_sweeps_in_the_database`.
  */
 export const schedules = {
   /** Events still in the outbox go to the runner, and notifications that failed are tried again. */
   outbox: '*/3 * * * *',
   /** Reminders, and the nudge five minutes before a lesson starts (D-201), which needs this resolution. */
   reminders: '*/5 * * * *',
-  /** A slot held fifteen minutes for a payment that never came goes back in the diary (R-10). */
-  holds: 'TZ=Europe/London */10 * * * *',
-  /** A request nobody answered lapses after hours (R-12), so a quarter of an hour later is nothing. */
-  requests: 'TZ=Europe/London */15 * * * *',
   /** Cards for requests that ran out are let go. An answer or an authorisation settles at once. */
   authorisations: 'TZ=Europe/London */15 * * * *',
   /** About a day before a lesson (PAY-03): half an hour either way is still about a day. */

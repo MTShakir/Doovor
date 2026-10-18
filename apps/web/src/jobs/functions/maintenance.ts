@@ -5,7 +5,6 @@ import {
   clearExpiredInvitations,
   clearOldRateLimits,
   eraseDueAccounts,
-  expireBookingRequests,
   extendRecurrences,
   pruneAuditTrail,
   removeUnreferencedFiles,
@@ -24,15 +23,6 @@ export const maintenanceSweep = inngest.createFunction(
     ...(await removeUnreferencedFiles()),
     ...(await pruneAuditTrail()),
   }),
-);
-
-/**
- * A request nobody answered stops holding the slot when it lapses (R-12). Every fifteen minutes:
- * a request lasts hours, so a quarter of an hour after that is nothing to anybody (D-271).
- */
-export const requestExpirySweep = inngest.createFunction(
-  { id: 'request-expiry-sweep', name: 'Expire booking requests', triggers: [cron(schedules.requests)] },
-  () => expireBookingRequests(),
 );
 
 /**

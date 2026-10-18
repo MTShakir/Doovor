@@ -2,23 +2,20 @@ import { cron } from 'inngest';
 import { settleAuthorisations } from '../authorisations';
 import { chargeBeforeLessons } from '../charges';
 import { inngest } from '../client';
-import { bookingAccepted, bookingDeclined, paymentAuthorised, paymentFeeCharge, paymentReceived, paymentRefund } from '../events';
+import { bookingAccepted, bookingDeclined, bookingHoldExpired, paymentAuthorised, paymentFeeCharge, paymentReceived, paymentRefund } from '../events';
 import { chargeFee } from '../fees';
 import { sendReceipt } from '../receipts';
-import { expirePaymentHolds, sendRefund } from '../payments';
+import { cancelExpiredHold, sendRefund } from '../payments';
 import { schedules } from '../schedules';
 
 /**
- * A slot held for somebody who never paid goes back in the diary (R-10). Every ten minutes: a
- * hold lasts fifteen, and a slot back within ten of that is still back for anybody looking (D-271).
+ * A slot held for somebody who never paid goes back in the diary (R-10): the database does that
+ * itself, every five minutes, and says which booking (D-274). This calls off the payment that was
+ * waiting behind it, once per booking.
  */
-export const holdSweep = inngest.createFunction(
-  {
-    id: 'payment-hold-sweep',
-    name: 'Give back slots whose hold ran out',
-    triggers: [cron(schedules.holds)],
-  },
-  () => expirePaymentHolds(),
+export const holdCancel = inngest.createFunction(
+  { id: 'payment-hold-cancel', name: 'Call off the payment behind a lapsed hold', triggers: [bookingHoldExpired] },
+  ({ event }) => cancelExpiredHold(event.data.booking_id),
 );
 
 /**

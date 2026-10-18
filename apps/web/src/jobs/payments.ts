@@ -9,48 +9,46 @@ interface Attempt {
   intent_id: string;
 }
 
-interface Sweep {
-  expired: number;
-  cancel: Attempt[];
-}
-
-export interface HoldSweepResult {
-  /** Slots given back to the diary. */
-  expired: number;
+export interface HoldCancelResult {
   /** Attempts the provider agreed to call off. */
   cancelled: number;
 }
 
 /**
- * Gives back every slot whose hold has run out, and calls off the payment behind it (R-10).
+ * Calls off the payment behind a hold that ran out (R-10, D-274). The database gives the slot back
+ * on its own schedule and raises `booking.hold_expired`; this is the part it cannot do, which is
+ * telling the provider.
  *
- * The database decides what lapsed, in one transaction; this only does the part the database
- * cannot, which is telling the provider. An attempt that will not cancel is left alone on
- * purpose: it is a payment that has already gone through, and the webhook is about to say so.
+ * An attempt that will not cancel because it was refused is left alone on purpose: it is a payment
+ * that has already gone through, and the webhook is about to say so. One the provider could not be
+ * reached about throws, so the runner tries again.
  */
-export async function expirePaymentHolds(): Promise<HoldSweepResult> {
+export async function cancelExpiredHold(bookingId: string): Promise<HoldCancelResult> {
   const supabase = getSupabaseServiceClient();
-  const { data, error } = await supabase.rpc('system_expire_payment_holds');
-  if (error) throw new Error(`Could not expire payment holds: ${error.message}`);
+  const { data, error } = await supabase.rpc('system_hold_cancellations', { p_booking_id: bookingId });
+  if (error) throw new Error(`Could not read the holds to call off: ${error.message}`);
 
-  const sweep = data as unknown as Sweep;
-  if (sweep.cancel.length === 0) return { expired: sweep.expired, cancelled: 0 };
+  const attempts = data as unknown as Attempt[];
+  if (attempts.length === 0) return { cancelled: 0 };
 
   const provider = paymentsProvider();
   let cancelled = 0;
-  for (const attempt of sweep.cancel) {
+  for (const attempt of attempts) {
     const answer = await provider.cancelHold({
       accountId: attempt.account_id,
       paymentIntentId: attempt.intent_id,
     });
-    if (!answer.ok) continue;
+    if (!answer.ok) {
+      if (answer.reason === 'UNAVAILABLE') throw new Error(`Could not reach the payment provider: ${answer.message}`);
+      continue;
+    }
 
     const marked = await supabase.rpc('system_record_payment_cancelled', { p_payment_id: attempt.payment_id });
     if (marked.error) throw new Error(`Could not record a cancelled payment: ${marked.error.message}`);
     if (marked.data) cancelled += 1;
   }
 
-  return { expired: sweep.expired, cancelled };
+  return { cancelled };
 }
 
 interface RefundToSend {

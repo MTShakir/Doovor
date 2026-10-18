@@ -10,13 +10,6 @@ export async function clearOldRateLimits(): Promise<{ cleared: number }> {
   return { cleared: data };
 }
 
-/** Requests nobody answered stop holding a slot the moment they lapse (R-12, M2-18). */
-export async function expireBookingRequests(): Promise<{ expired: number }> {
-  const { data, error } = await getSupabaseServiceClient().rpc('system_expire_requests');
-  if (error) throw new Error(`Could not expire booking requests: ${error.message}`);
-  return { expired: data };
-}
-
 /** Invitations nobody accepted are of no use after a month (AUTH-07). */
 export async function clearExpiredInvitations(): Promise<{ cleared: number }> {
   const { data, error } = await getSupabaseServiceClient().rpc('system_clear_expired_invitations', {

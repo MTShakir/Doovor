@@ -26,6 +26,8 @@ const bookingEvent = <Name extends string>(name: Name) =>
 export const bookingCreated = bookingEvent('booking.created');
 export const bookingAccepted = bookingEvent('booking.accepted');
 export const bookingDeclined = bookingEvent('booking.declined');
+/** A payment hold ran out and the database gave the slot back (R-10, D-274). */
+export const bookingHoldExpired = bookingEvent('booking.hold_expired');
 export const bookingCancelled = bookingEvent('booking.cancelled');
 export const bookingRescheduled = bookingEvent('booking.rescheduled');
 export const bookingCompleted = bookingEvent('booking.completed');

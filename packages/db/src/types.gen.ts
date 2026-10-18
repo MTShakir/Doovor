@@ -4101,6 +4101,10 @@ export type Database = {
         Args: { p_request_id: string }
         Returns: undefined
       }
+      system_hold_cancellations: {
+        Args: { p_booking_id: string }
+        Returns: Json
+      }
       system_instructor_notice: {
         Args: { p_instructor_profile_id: string }
         Returns: Json
