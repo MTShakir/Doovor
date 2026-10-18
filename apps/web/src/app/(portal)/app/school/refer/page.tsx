@@ -1,7 +1,7 @@
 import { PageHeader } from '@repo/ui/app-shell';
 import { EmptyState } from '@repo/ui/empty-state';
 import { SkeletonRow } from '@repo/ui/skeleton';
-import { UserRoundPlus } from 'lucide-react';
+import { icons } from '@/lib/icons';
 import type { Metadata } from 'next';
 import { connection } from 'next/server';
 import { Suspense } from 'react';
@@ -35,7 +35,7 @@ async function Refer() {
   if (!referrals) {
     return (
       <EmptyState
-        icon={UserRoundPlus}
+        icon={icons.refer}
         title="The owner looks after this"
         description="The link belongs to the business, so whoever owns it shares it. Ask them for theirs."
       />

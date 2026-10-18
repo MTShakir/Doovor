@@ -4,7 +4,7 @@ import { PageHeader } from '@repo/ui/app-shell';
 import { Card, CardDescription, CardTitle } from '@repo/ui/card';
 import { EmptyState } from '@repo/ui/empty-state';
 import { SkeletonRow } from '@repo/ui/skeleton';
-import { BadgeCheck } from 'lucide-react';
+import { icons } from '@/lib/icons';
 import { Suspense } from 'react';
 import { requirePortal } from '@/lib/auth/session';
 import { signedBadgeUrl } from '@/lib/storage/images';
@@ -41,7 +41,7 @@ async function Queue() {
   if (!waiting?.length) {
     return (
       <EmptyState
-        icon={BadgeCheck}
+        icon={icons.verification}
         title="Nothing waiting"
         description="Every badge that has been sent in has been checked."
       />

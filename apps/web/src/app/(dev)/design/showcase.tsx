@@ -42,6 +42,7 @@ import { InstructorStatsCard } from '@/components/instructor/stats';
 import type { InstructorStats } from '@/lib/instructor/spans';
 import { InstallCard } from '@/components/pwa/install-prompt';
 import { GoogleButton } from '@/components/oauth-buttons';
+import { icons } from '@/lib/icons';
 import { LessonRecordCard } from '@/components/progress/lesson-record-card';
 import { EditableSkillMap } from '@/components/progress/editable-skill-map';
 import { SkillMap } from '@/components/progress/skill-map';
@@ -520,6 +521,22 @@ const exampleCheckedPass = {
  * showing is that the banner is drawn in whatever the Business chose (D-210, D-218).
  */
 const exampleBusinessColour = '#1D4ED8';
+
+/** What each shared icon stands for, as the menus word it (D-273). */
+const iconNames: Record<keyof typeof icons, string> = {
+  account: 'Account and security',
+  feedback: 'Tell us something',
+  paymentSetup: 'Payment setup',
+  verification: 'Badges to check',
+  learners: 'Learners',
+  instructors: 'Instructors',
+  pickupPoints: 'Pickup points',
+  bookkeeping: 'Bookkeeping',
+  refer: 'Refer an instructor',
+  messages: 'Messages',
+  whatsApp: 'WhatsApp',
+  text: 'Text message',
+};
 
 /** A lesson as its sheet shows it (D-166), with a number from the range kept for drama. */
 const exampleLesson: LessonDetails = {
@@ -2010,6 +2027,18 @@ export function DesignShowcase() {
 
       <Section title="Navigation">
         <p className="text-body text-grey-700">Portal shells with bottom tabs on phones and a sidebar on desktop (PRD 8.2).</p>
+        <Label>One icon for each thing reached from more than one place: menus, navigation, buttons and the header (D-273)</Label>
+        <ul className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
+          {(Object.keys(icons) as (keyof typeof icons)[]).map((key) => {
+            const Icon = icons[key];
+            return (
+              <li key={key} className="flex items-center gap-3 text-body text-ink">
+                <Icon size={24} strokeWidth={1.5} aria-hidden />
+                {iconNames[key]}
+              </li>
+            );
+          })}
+        </ul>
         <p className="text-body text-grey-700">
           The notification bell, top right on a phone and beside the name at the top of the menu on a larger screen
           (NTF-01, D-159): before the count is known, with nothing waiting, with three, and with more than nine.

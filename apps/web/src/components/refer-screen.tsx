@@ -10,7 +10,8 @@ import { Field } from '@repo/ui/field';
 import { Input } from '@repo/ui/input';
 import { StatusPill } from '@repo/ui/status-pill';
 import { toast } from '@repo/ui/toast';
-import { Copy, MessageCircle, UserRoundPlus } from 'lucide-react';
+import { Copy } from 'lucide-react';
+import { icons } from '@/lib/icons';
 import { useId } from 'react';
 import type { Referrals } from '@/lib/billing/referrals';
 
@@ -57,7 +58,7 @@ export function ReferScreen({ referrals }: { referrals: Referrals }) {
           </Button>
           <Button variant="secondary" asChild>
             <a href={whatsAppShareUrl(message)} target="_blank" rel="noreferrer">
-              <MessageCircle className="size-5" aria-hidden />
+              <icons.whatsApp className="size-5" aria-hidden />
               Share on WhatsApp
             </a>
           </Button>
@@ -74,7 +75,7 @@ export function ReferScreen({ referrals }: { referrals: Referrals }) {
 
         {referrals.joined.length === 0 ? (
           <EmptyState
-            icon={UserRoundPlus}
+            icon={icons.refer}
             title="Nobody yet"
             description="Send your link to an instructor you know. When they start their business from it, it shows here."
           />

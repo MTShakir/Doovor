@@ -9,7 +9,8 @@ import { Button } from '@repo/ui/button';
 import { Card, CardTitle } from '@repo/ui/card';
 import { ListDivider, ListRow } from '@repo/ui/list-row';
 import { SkeletonRow } from '@repo/ui/skeleton';
-import { ChevronLeft, Mail, MessageCircle, MessageSquare, Phone, TrendingUp } from 'lucide-react';
+import { ChevronLeft, Mail, Phone, TrendingUp } from 'lucide-react';
+import { icons } from '@/lib/icons';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { Suspense } from 'react';
@@ -224,8 +225,8 @@ function Reach({ card }: { card: LearnerCard }) {
   // the only way "WhatsApp" fits in a quarter of a 390 px screen without being cut short.
   const ways = [
     card.phone === null ? null : { key: 'call', href: `tel:${card.phone}`, icon: Phone, label: 'Call' },
-    card.phone === null ? null : { key: 'text', href: `sms:${card.phone}`, icon: MessageSquare, label: 'Text' },
-    card.phone === null ? null : { key: 'whatsapp', href: whatsAppTo(card.phone), icon: MessageCircle, label: 'WhatsApp', away: true },
+    card.phone === null ? null : { key: 'text', href: `sms:${card.phone}`, icon: icons.text, label: 'Text' },
+    card.phone === null ? null : { key: 'whatsapp', href: whatsAppTo(card.phone), icon: icons.whatsApp, label: 'WhatsApp', away: true },
     card.email === null ? null : { key: 'email', href: `mailto:${card.email}`, icon: Mail, label: 'Email' },
   ].filter((one) => one !== null);
 

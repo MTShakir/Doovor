@@ -8,7 +8,8 @@ import { Sheet } from '@repo/ui/sheet';
 import { StatusPill } from '@repo/ui/status-pill';
 import { Textarea } from '@repo/ui/input';
 import { toast } from '@repo/ui/toast';
-import { HeartHandshake, Mail, MessageSquare, Phone, UserRoundCheck } from 'lucide-react';
+import { HeartHandshake, Mail, Phone, UserRoundCheck } from 'lucide-react';
+import { icons } from '@/lib/icons';
 import { useState, useTransition } from 'react';
 import { FormAlert } from '@/components/form-alert';
 import type { DeletionRequest } from '@/lib/admin/deletions';
@@ -42,7 +43,7 @@ function Reach({ request }: { request: DeletionRequest }) {
           </Button>
           <Button asChild variant="secondary">
             <a href={`https://wa.me/${digits}`} target="_blank" rel="noreferrer">
-              <MessageSquare className="size-5" aria-hidden />
+              <icons.whatsApp className="size-5" aria-hidden />
               WhatsApp
             </a>
           </Button>

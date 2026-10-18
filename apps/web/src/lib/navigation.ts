@@ -14,19 +14,17 @@ import {
   ListChecks,
   MapPinned,
   Menu,
-  MessageSquare,
   PoundSterling,
   ScrollText,
   Settings,
-  ShieldCheck,
   Star,
   Sun,
   TrendingUp,
   type LucideIcon,
   User,
   UserRound,
-  Users,
 } from 'lucide-react';
+import { icons } from './icons';
 
 export type Portal = 'learner' | 'instructor' | 'school' | 'admin';
 
@@ -60,7 +58,7 @@ const navigation: Record<Portal, PortalNavItem[]> = {
   instructor: [
     { section: '', label: 'Today', icon: Sun, mobile: true, desktop: true, phase: 1 },
     { section: 'diary', label: 'Diary', icon: CalendarDays, mobile: true, desktop: true, phase: 1 },
-    { section: 'learners', label: 'Learners', icon: Users, mobile: true, desktop: true, phase: 1 },
+    { section: 'learners', label: 'Learners', icon: icons.learners, mobile: true, desktop: true, phase: 1 },
     { section: 'money', label: 'Money', icon: PoundSterling, mobile: true, desktop: true, phase: 1 },
     { section: 'waiting-list', label: 'Waiting list', icon: ListChecks, mobile: false, desktop: true, phase: 2 },
     { section: 'profile', label: 'Profile', icon: UserRound, mobile: false, desktop: true, phase: 1 },
@@ -70,8 +68,8 @@ const navigation: Record<Portal, PortalNavItem[]> = {
   school: [
     { section: '', label: 'Overview', icon: LayoutDashboard, mobile: true, desktop: true, phase: 1 },
     { section: 'diary', label: 'Diary', icon: CalendarDays, mobile: true, desktop: true, phase: 1 },
-    { section: 'instructors', label: 'Instructors', icon: Users, mobile: true, desktop: true, phase: 1 },
-    { section: 'learners', label: 'Learners', icon: UserRound, mobile: true, desktop: true, phase: 1 },
+    { section: 'instructors', label: 'Instructors', icon: icons.instructors, mobile: true, desktop: true, phase: 1 },
+    { section: 'learners', label: 'Learners', icon: icons.learners, mobile: true, desktop: true, phase: 1 },
     { section: 'money', label: 'Money', icon: PoundSterling, mobile: false, desktop: true, phase: 1 },
     { section: 'fleet', label: 'Fleet', icon: Car, mobile: false, desktop: true, phase: 2 },
     { section: 'reports', label: 'Reports', icon: BarChart3, mobile: false, desktop: true, phase: 2 },
@@ -81,9 +79,9 @@ const navigation: Record<Portal, PortalNavItem[]> = {
   admin: [
     { section: '', label: 'Dashboard', icon: LayoutDashboard, mobile: false, desktop: true, phase: 1 },
     { section: 'businesses', label: 'Businesses', icon: Building2, mobile: false, desktop: true, phase: 1 },
-    { section: 'instructors', label: 'Instructors', icon: Users, mobile: false, desktop: true, phase: 1 },
-    { section: 'verification', label: 'Verification', icon: ShieldCheck, mobile: false, desktop: true, phase: 1 },
-    { section: 'learners', label: 'Learners', icon: UserRound, mobile: false, desktop: true, phase: 1 },
+    { section: 'instructors', label: 'Instructors', icon: icons.instructors, mobile: false, desktop: true, phase: 1 },
+    { section: 'verification', label: 'Verification', icon: icons.verification, mobile: false, desktop: true, phase: 1 },
+    { section: 'learners', label: 'Learners', icon: icons.learners, mobile: false, desktop: true, phase: 1 },
     { section: 'payments', label: 'Payments', icon: CreditCard, mobile: false, desktop: true, phase: 1 },
     { section: 'deletions', label: 'Leaving', icon: HeartHandshake, mobile: false, desktop: true, phase: 1 },
     { section: 'reviews', label: 'Reviews', icon: Star, mobile: false, desktop: true, phase: 2 },
@@ -92,7 +90,7 @@ const navigation: Record<Portal, PortalNavItem[]> = {
     { section: 'plans', label: 'Plans', icon: Layers, mobile: false, desktop: true, phase: 2 },
     { section: 'content', label: 'Content', icon: FileText, mobile: false, desktop: true, phase: 2 },
     { section: 'gallery', label: 'Galleries', icon: Images, mobile: false, desktop: true, phase: 1 },
-    { section: 'feedback', label: 'Feedback', icon: MessageSquare, mobile: false, desktop: true, phase: 1 },
+    { section: 'feedback', label: 'Feedback', icon: icons.feedback, mobile: false, desktop: true, phase: 1 },
     { section: 'settings', label: 'Settings', icon: Settings, mobile: false, desktop: true, phase: 1 },
     { section: 'audit-log', label: 'Audit log', icon: ScrollText, mobile: false, desktop: true, phase: 1 },
   ],

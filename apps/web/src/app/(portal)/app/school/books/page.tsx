@@ -1,7 +1,7 @@
 import { PageHeader } from '@repo/ui/app-shell';
 import { Card } from '@repo/ui/card';
 import { EmptyState } from '@repo/ui/empty-state';
-import { BookOpen } from 'lucide-react';
+import { icons } from '@/lib/icons';
 import type { Metadata } from 'next';
 import { BackLink } from '@/components/back-link';
 
@@ -19,7 +19,7 @@ export default function SchoolBooksPage() {
       <div className="flex flex-col gap-4 px-4 md:max-w-2xl md:px-8">
         <Card padding="none">
           <EmptyState
-            icon={BookOpen}
+            icon={icons.bookkeeping}
             title="Coming soon for schools"
             description="A school's books need commission and instructor settlements, and we would rather get those right than early. Instructors running their own business can keep theirs now."
           />

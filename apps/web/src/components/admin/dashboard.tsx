@@ -3,7 +3,8 @@ import { formatPence } from '@repo/core/money';
 import { Card, CardTitle } from '@repo/ui/card';
 import { ListDivider, ListRow } from '@repo/ui/list-row';
 import { Skeleton } from '@repo/ui/skeleton';
-import { BadgeCheck, Gavel } from 'lucide-react';
+import { Gavel } from 'lucide-react';
+import { icons } from '@/lib/icons';
 import Link from 'next/link';
 import { Figure } from '@/components/figure';
 import type { PlatformDashboard } from '@/lib/admin/dashboard';
@@ -43,7 +44,7 @@ export function WaitingOnStaff({
           <ListRow
             asChild
             chevron
-            leading={<BadgeCheck className="text-grey-700" size={24} strokeWidth={1.5} aria-hidden />}
+            leading={<icons.verification className="text-grey-700" size={24} strokeWidth={1.5} aria-hidden />}
             title={verification.waiting === 0 ? 'No badges to check' : countOf(verification.waiting, 'badge to check', 'badges to check')}
             subtitle={badgesWords(verification.waiting, verification.oldestSince)}
           >

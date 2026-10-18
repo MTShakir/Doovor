@@ -13,7 +13,8 @@ import { Sheet } from '@repo/ui/sheet';
 import { Skeleton } from '@repo/ui/skeleton';
 import { StatusPill } from '@repo/ui/status-pill';
 import { toast } from '@repo/ui/toast';
-import { Banknote, CalendarClock, Mail, MapPin, MessageCircle, MessageSquare, Navigation, Pencil, Phone, UserRound, X } from 'lucide-react';
+import { Banknote, CalendarClock, Mail, MapPin, Navigation, Pencil, Phone, UserRound, X } from 'lucide-react';
+import { icons } from '@/lib/icons';
 import type { Route } from 'next';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
@@ -215,13 +216,13 @@ export function LessonDetailsBody({
             </Button>
             <Button asChild variant="secondary">
               <a href={`sms:${phone}`}>
-                <MessageSquare className="size-5" aria-hidden />
+                <icons.text className="size-5" aria-hidden />
                 Text
               </a>
             </Button>
             <Button asChild variant="secondary">
               <a href={whatsAppTo(phone)} target="_blank" rel="noreferrer">
-                <MessageCircle className="size-5" aria-hidden />
+                <icons.whatsApp className="size-5" aria-hidden />
                 WhatsApp
               </a>
             </Button>
@@ -249,7 +250,7 @@ export function LessonDetailsBody({
               disabled={!details.textReminders}
               onClick={() => { onRemind('sms'); }}
             >
-              <MessageSquare className="size-5" aria-hidden />
+              <icons.text className="size-5" aria-hidden />
               By SMS
             </Button>
           </div>

@@ -4,7 +4,7 @@ import { Button } from '@repo/ui/button';
 import { Field } from '@repo/ui/field';
 import { Select } from '@repo/ui/select';
 import { toast } from '@repo/ui/toast';
-import { MapPin, Plus } from 'lucide-react';
+import { icons } from '@/lib/icons';
 import Link from 'next/link';
 import { useState, useTransition } from 'react';
 import { FormAlert } from '@/components/form-alert';
@@ -73,7 +73,7 @@ export function LessonPickup({
       )}
       <Button asChild variant="secondary" className="self-start">
         <Link href="/app/learner/account/pickup-points">
-          {places.length === 0 ? <Plus className="size-5" aria-hidden /> : <MapPin className="size-5" aria-hidden />}
+          <icons.pickupPoints className="size-5" aria-hidden />
           {places.length === 0 ? 'Add a pickup point' : 'Manage my pickup points'}
         </Link>
       </Button>

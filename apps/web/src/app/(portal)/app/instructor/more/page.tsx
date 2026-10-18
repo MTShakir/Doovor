@@ -1,18 +1,13 @@
 import { hasEntitlement } from '@repo/config/plans';
 import {
   CalendarSync,
-  Gift,
   Images,
   Layers,
-  MessageCircle,
-  MessageSquarePlus,
   Palette,
-  Receipt,
   Settings,
-  ShieldCheck,
   UserRound,
-  CreditCard,
 } from 'lucide-react';
+import { icons } from '@/lib/icons';
 import { installAppLink, MoreMenu } from '@/components/more-menu';
 import { businessPlanKey } from '@/lib/billing/plan';
 
@@ -37,11 +32,11 @@ export default async function InstructorMorePage() {
       links={[
         { href: '/app/instructor/profile', icon: UserRound, title: 'Profile', subtitle: 'Your public profile and booking link' },
         { href: '/app/instructor/settings', icon: Settings, title: 'Settings', subtitle: 'Booking rules and working hours' },
-        { href: '/app/instructor/money/setup', icon: CreditCard, title: 'Payment setup', subtitle: 'Card payments, how learners pay, receipts' },
-        { href: '/app/instructor/messages', icon: MessageCircle, title: 'Messages', subtitle: 'In-app chat with your learners, on the way' },
+        { href: '/app/instructor/money/setup', icon: icons.paymentSetup, title: 'Payment setup', subtitle: 'Card payments, how learners pay, receipts' },
+        { href: '/app/instructor/messages', icon: icons.messages, title: 'Messages', subtitle: 'In-app chat with your learners, on the way' },
         {
           href: '/app/instructor/books',
-          icon: Receipt,
+          icon: icons.bookkeeping,
           title: 'Bookkeeping',
           subtitle: 'Expenses, mileage and your year',
           pro: true,
@@ -58,9 +53,9 @@ export default async function InstructorMorePage() {
         },
         { href: '/app/instructor/colours', icon: Palette, title: 'Your booking colours', subtitle: 'Your colour on your booking page', pro: true, locked },
         { href: '/app/instructor/plan', icon: Layers, title: 'Your plan', subtitle: 'What you are on, and until when' },
-        { href: '/app/instructor/refer', icon: Gift, title: 'Refer an instructor', subtitle: 'A month free for every one who joins' },
-        { href: '/feedback', icon: MessageSquarePlus, title: 'Tell us something', subtitle: 'A request, a problem, or anything else' },
-        { href: '/account', icon: ShieldCheck, title: 'Account and security', subtitle: 'Password, devices, two-step verification' },
+        { href: '/app/instructor/refer', icon: icons.refer, title: 'Refer an instructor', subtitle: 'A month free for every one who joins' },
+        { href: '/feedback', icon: icons.feedback, title: 'Tell us something', subtitle: 'A request, a problem, or anything else' },
+        { href: '/account', icon: icons.account, title: 'Account and security', subtitle: 'Password, devices, two-step verification' },
         installAppLink,
       ]}
     />

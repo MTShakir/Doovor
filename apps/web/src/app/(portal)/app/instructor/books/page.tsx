@@ -6,7 +6,7 @@ import { Card, CardDescription, CardTitle } from '@repo/ui/card';
 import { EmptyState } from '@repo/ui/empty-state';
 import { ListDivider, ListRow } from '@repo/ui/list-row';
 import { SkeletonRow } from '@repo/ui/skeleton';
-import { BookOpen } from 'lucide-react';
+import { icons } from '@/lib/icons';
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { connection } from 'next/server';
@@ -47,7 +47,7 @@ async function Books({ searchParams }: { searchParams: Promise<{ year?: string |
     return (
       <Card padding="none">
         <EmptyState
-          icon={BookOpen}
+          icon={icons.bookkeeping}
           title="Coming soon for schools"
           description="A school's books need commission and instructor settlements, which we are still working on. Instructors running their own business can keep theirs now."
         />

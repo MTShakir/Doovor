@@ -1,4 +1,5 @@
-import { LogOut, UserRound } from 'lucide-react';
+import { LogOut } from 'lucide-react';
+import { icons } from '@/lib/icons';
 import Link from 'next/link';
 import { signOut } from '@/app/(auth)/actions';
 
@@ -9,7 +10,7 @@ export function SidebarFooter() {
   return (
     <div className="flex flex-col gap-1">
       <Link href="/account" className={item}>
-        <UserRound size={24} strokeWidth={1.5} aria-hidden />
+        <icons.account size={24} strokeWidth={1.5} aria-hidden />
         Account and security
       </Link>
       <form action={signOut.bind(null, 'local')}>

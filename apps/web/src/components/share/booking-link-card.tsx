@@ -6,7 +6,8 @@ import { Card, CardDescription, CardTitle } from '@repo/ui/card';
 import { Field } from '@repo/ui/field';
 import { Input } from '@repo/ui/input';
 import { toast } from '@repo/ui/toast';
-import { Copy, Download, MessageCircle, Share2 } from 'lucide-react';
+import { Copy, Download, Share2 } from 'lucide-react';
+import { icons } from '@/lib/icons';
 import { useId, useMemo } from 'react';
 
 export interface BookingLinkCardProps {
@@ -77,7 +78,7 @@ export function BookingLinkCard({ instructorName, bookingUrl, profileUrl, unavai
         </Button>
         <Button variant="secondary" asChild>
           <a href={whatsAppShareUrl(message)} target="_blank" rel="noreferrer">
-            <MessageCircle className="size-5" aria-hidden />
+            <icons.whatsApp className="size-5" aria-hidden />
             WhatsApp
           </a>
         </Button>

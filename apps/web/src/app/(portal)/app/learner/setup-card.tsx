@@ -8,7 +8,7 @@ import { Field } from '@repo/ui/field';
 import { Textarea } from '@repo/ui/input';
 import { Select } from '@repo/ui/select';
 import { toast } from '@repo/ui/toast';
-import { MapPin } from 'lucide-react';
+import { icons } from '@/lib/icons';
 import Link from 'next/link';
 import { useState, useTransition } from 'react';
 import { FormAlert } from '@/components/form-alert';
@@ -138,7 +138,7 @@ export function SetupCard({ setup }: { setup: LearnerSetup }) {
         {step === 'pickup' ? (
           <Button asChild>
             <Link href="/app/learner/account/pickup-points">
-              <MapPin className="size-5" aria-hidden />
+              <icons.pickupPoints className="size-5" aria-hidden />
               Add a pickup point
             </Link>
           </Button>
