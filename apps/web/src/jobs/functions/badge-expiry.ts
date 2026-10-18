@@ -1,5 +1,6 @@
 import { cron } from 'inngest';
 import { inngest } from '../client';
+import { schedules } from '../schedules';
 import { runBadgeExpirySweep } from '../badges';
 
 /**
@@ -8,6 +9,6 @@ import { runBadgeExpirySweep } from '../badges';
  * the email is waiting rather than arriving in the night.
  */
 export const badgeExpirySweep = inngest.createFunction(
-  { id: 'badge-expiry-sweep', name: 'Badge expiry sweep', triggers: [cron('TZ=Europe/London 0 7 * * *')] },
+  { id: 'badge-expiry-sweep', name: 'Badge expiry sweep', triggers: [cron(schedules.badgeExpiry)] },
   () => runBadgeExpirySweep(),
 );

@@ -281,6 +281,7 @@ from `pnpm test:e2e:stripe`; every other run stays on the fake.
 3. To register at once rather than on the next deployment: Inngest, Apps, Sync new app, `https://app.doovor.com/api/inngest`. The app appears as `platform-web` with its functions, and the scheduled ones start within a minute.
 4. Preview deployments do not register while Deployment Protection is on. They need no jobs today; if they ever do, add Vercel's Protection Bypass for Automation secret in the same settings.
 5. `/api/inngest` answers a plain request with 401 Unauthorized once the signing key is set: it only talks to Inngest.
+6. The free plan (Hobby) runs 50,000 executions a month, five at a time. Every schedule is in `apps/web/src/jobs/schedules.ts`, about 36,000 a month together, and a test fails if they pass 40,000 (D-271); the rest is for jobs that follow a booking, a payment or a badge. When the month runs out every job stops until the next cycle: emails, reminders, holds and charges. Inngest, Overview, View usage shows how much is left. Usage grows with the business, so look each week, and move to a paid plan before it nears the limit.
 
 ### 3.9 Emptying a database for a launch
 
@@ -463,6 +464,7 @@ finished while the first hundred arrive.
 - Replace a file in `assets/brand` under the same name, run `pnpm brand:logo`, and commit both. Its README lists what each file is for and the rules an export has to keep to; an export that breaks one is refused by name and nothing is written (D-249).
 
 ### Emails
+- **When emails stop** (18 October 2026): look at Resend, Domains first. A domain that shows Failed has lost a DNS record, and Resend refuses everything from it, Supabase's sign-up emails included: on 15 October `resend._domainkey` went missing at Hostinger. Put the record back with the value Resend shows, press Restart, and wait for Verified. Then Resend, Logs: no requests at all for a day means the jobs are not running, so check Inngest's usage (section 3.8 step 6). A notification Resend refused is not tried again, so emails refused while a domain was down are not sent later.
 - Every email's footer, and the four emails Supabase Auth sends itself (confirm your email, sign-in link, reset your password, confirm your new email), come from `packages/emails` (D-258). Change the words or the layout there, then run `pnpm --filter @repo/emails test -u`, which writes Auth's templates into `supabase/templates`, and commit both. CI fails when a template has fallen behind the package.
 - The app's own emails change with the next deploy. Auth's templates are settings of the hosted project, so after merging, put them there: either `pnpm supabase config diff --workdir ops/staging --project-ref yvxuarrrvgnfcjfyqfyi`, read it, then `config push` with the same arguments (section 3.1 step 6, which needs the provider secrets in `.env.local`); or, without any secrets, open each file in `supabase/templates` and paste its contents into Authentication > Emails > Templates in the dashboard, under the template of the same name, keeping its subject. Then sign up with a spare address and check the email.
 

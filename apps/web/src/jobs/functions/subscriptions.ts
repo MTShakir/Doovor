@@ -1,5 +1,7 @@
 import { cron } from 'inngest';
 import { inngest } from '../client';
+import { thenSend } from '../notifications-send';
+import { schedules } from '../schedules';
 import { runRenewalNotices } from '../subscriptions';
 
 /**
@@ -13,7 +15,7 @@ export const subscriptionRenewalNotices = inngest.createFunction(
   {
     id: 'subscription-renewal-notices',
     name: 'Subscription renewal notices',
-    triggers: [cron('TZ=Europe/London 0 8 * * *')],
+    triggers: [cron(schedules.renewals)],
   },
-  () => runRenewalNotices(),
+  () => runRenewalNotices().then(thenSend),
 );

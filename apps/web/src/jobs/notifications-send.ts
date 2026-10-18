@@ -21,6 +21,15 @@ export interface SendResult {
 }
 
 /**
+ * What a job has just written goes out in the same run (D-271), rather than at a sweep a minute
+ * later: a sweep every minute cost more than the job runner's free month. Anything else waiting
+ * goes too, which does no harm, because each notification is claimed once.
+ */
+export async function thenSend<T extends object>(result: T): Promise<T & { delivery: SendResult }> {
+  return { ...result, delivery: await sendPendingNotifications() };
+}
+
+/**
  * Sends what the notification core decided to send (NTF-01, NTF-03, M2-28).
  *
  * Email today; push and text messages join the same loop in M2-29 and M2-30, on the channels

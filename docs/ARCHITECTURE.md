@@ -557,7 +557,7 @@ The table names each job by what it does; the ids Inngest shows are the function
 
 **Hosting.** Production's functions belong to the Inngest account linked to the Vercel project through Inngest's integration, with access to the `doovor` project only. The integration writes `INNGEST_EVENT_KEY` and `INNGEST_SIGNING_KEY` for Production and Preview, and registers the app on every deploy through `app.doovor.com`, its custom production domain, because Deployment Protection turns away the deployment's own address (RUNBOOK 3.8). `/api/inngest` answers anything not signed by Inngest with 401.
 
-**Transactional outbox:** RPCs never call Inngest directly. They insert into `outbox_events` in the same transaction, and a small dispatcher (called right after the RPC returns, plus a one-minute cron sweep) sends pending rows to Inngest and marks them sent. If the app crashes between the database commit and the send, the event is still delivered.
+**Transactional outbox:** RPCs never call Inngest directly. They insert into `outbox_events` in the same transaction, and a sweep every three minutes sends pending rows to Inngest and marks them sent (D-271: every minute cost more than the free plan's month). A job that writes notifications sends them in the same run, and the same sweep tries again any that failed. Every schedule lives in `apps/web/src/jobs/schedules.ts`, where a test adds them up. If the app crashes between the database commit and the send, the event is still delivered.
 
 ## 10. Notifications (NTF-01 to NTF-04, Appendix B)
 

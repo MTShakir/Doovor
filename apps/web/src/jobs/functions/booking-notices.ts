@@ -11,6 +11,7 @@ import {
   bookingRescheduled,
   paymentChargeFailed,
 } from '../events';
+import { thenSend } from '../notifications-send';
 import { notifyAboutBooking } from '../notify';
 
 /**
@@ -37,5 +38,5 @@ export const bookingNotices = inngest.createFunction(
       paymentChargeFailed,
     ],
   },
-  ({ event }) => notifyAboutBooking({ name: event.name, payload: event.data }),
+  ({ event }) => notifyAboutBooking({ name: event.name, payload: event.data }).then(thenSend),
 );

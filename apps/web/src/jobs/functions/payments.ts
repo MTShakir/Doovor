@@ -6,16 +6,17 @@ import { bookingAccepted, bookingDeclined, paymentAuthorised, paymentFeeCharge, 
 import { chargeFee } from '../fees';
 import { sendReceipt } from '../receipts';
 import { expirePaymentHolds, sendRefund } from '../payments';
+import { schedules } from '../schedules';
 
 /**
- * A slot held for somebody who never paid goes back in the diary (R-10). Often, because the
- * difference between a slot that is held and one that is free is what people book on.
+ * A slot held for somebody who never paid goes back in the diary (R-10). Every ten minutes: a
+ * hold lasts fifteen, and a slot back within ten of that is still back for anybody looking (D-271).
  */
 export const holdSweep = inngest.createFunction(
   {
     id: 'payment-hold-sweep',
     name: 'Give back slots whose hold ran out',
-    triggers: [cron('TZ=Europe/London */5 * * * *')],
+    triggers: [cron(schedules.holds)],
   },
   () => expirePaymentHolds(),
 );
@@ -55,30 +56,30 @@ export const feeCharge = inngest.createFunction(
 
 /**
  * An authorised card is taken when its request is accepted and let go when it is declined or
- * runs out (R-12). At once when an answer or an authorisation arrives, and every five minutes
- * for the requests that simply ran out. One run at a time, so two answers arriving together
- * are settled in turn rather than raced.
+ * runs out (R-12). At once when an answer or an authorisation arrives, and every fifteen minutes
+ * for the requests that simply ran out (D-271). One run at a time, so two answers arriving
+ * together are settled in turn rather than raced.
  */
 export const authorisationSweep = inngest.createFunction(
   {
     id: 'authorisation-sweep',
     name: 'Take or release authorised cards',
     concurrency: { limit: 1 },
-    triggers: [cron('TZ=Europe/London */5 * * * *'), bookingAccepted, bookingDeclined, paymentAuthorised],
+    triggers: [cron(schedules.authorisations), bookingAccepted, bookingDeclined, paymentAuthorised],
   },
   () => settleAuthorisations(),
 );
 
 /**
- * Lessons paid for the day before are charged about a day before they start (PAY-03). Every ten
- * minutes is close enough to "24 hours before" for anybody, and one run at a time.
+ * Lessons paid for the day before are charged about a day before they start (PAY-03). Every half
+ * hour is close enough to "24 hours before" for anybody (D-271), and one run at a time.
  */
 export const beforeLessonCharges = inngest.createFunction(
   {
     id: 'before-lesson-charges',
     name: 'Charge lessons paid the day before',
     concurrency: { limit: 1 },
-    triggers: [cron('TZ=Europe/London */10 * * * *')],
+    triggers: [cron(schedules.charges)],
   },
   () => chargeBeforeLessons(),
 );

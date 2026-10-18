@@ -1,5 +1,6 @@
 import { cron } from 'inngest';
 import { inngest } from '../client';
+import { schedules } from '../schedules';
 import {
   clearExpiredInvitations,
   clearOldRateLimits,
@@ -16,7 +17,7 @@ import {
  * years the privacy notice gives.
  */
 export const maintenanceSweep = inngest.createFunction(
-  { id: 'maintenance-sweep', name: 'Maintenance sweep', triggers: [cron('TZ=Europe/London 30 3 * * *')] },
+  { id: 'maintenance-sweep', name: 'Maintenance sweep', triggers: [cron(schedules.maintenance)] },
   async () => ({
     ...(await clearOldRateLimits()),
     ...(await clearExpiredInvitations()),
@@ -26,11 +27,11 @@ export const maintenanceSweep = inngest.createFunction(
 );
 
 /**
- * A request nobody answered stops holding the slot when it lapses (R-12). Often, because
- * the difference between a slot that is held and one that is free is what people book on.
+ * A request nobody answered stops holding the slot when it lapses (R-12). Every fifteen minutes:
+ * a request lasts hours, so a quarter of an hour after that is nothing to anybody (D-271).
  */
 export const requestExpirySweep = inngest.createFunction(
-  { id: 'request-expiry-sweep', name: 'Expire booking requests', triggers: [cron('TZ=Europe/London */5 * * * *')] },
+  { id: 'request-expiry-sweep', name: 'Expire booking requests', triggers: [cron(schedules.requests)] },
   () => expireBookingRequests(),
 );
 
@@ -39,7 +40,7 @@ export const requestExpirySweep = inngest.createFunction(
  * anybody looks at their day, and a week that clashes is simply tried again tomorrow.
  */
 export const recurrenceSweep = inngest.createFunction(
-  { id: 'recurrence-sweep', name: 'Extend weekly slots', triggers: [cron('TZ=Europe/London 15 4 * * *')] },
+  { id: 'recurrence-sweep', name: 'Extend weekly slots', triggers: [cron(schedules.recurrence)] },
   () => extendRecurrences(),
 );
 
@@ -49,6 +50,6 @@ export const recurrenceSweep = inngest.createFunction(
  * the middle of a working day.
  */
 export const deletionSweep = inngest.createFunction(
-  { id: 'deletion-sweep', name: 'Delete accounts that asked', triggers: [cron('TZ=Europe/London 45 3 * * *')] },
+  { id: 'deletion-sweep', name: 'Delete accounts that asked', triggers: [cron(schedules.deletion)] },
   () => eraseDueAccounts(),
 );

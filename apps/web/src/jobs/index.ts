@@ -5,7 +5,6 @@ import { bookingNotices } from './functions/booking-notices';
 import { feedbackHandledEmails, feedbackReceivedEmails } from './functions/feedback';
 import { badgeExpiringNotices, verificationDecidedNotices } from './functions/instructor-notices';
 import { deletionSweep, maintenanceSweep, recurrenceSweep, requestExpirySweep } from './functions/maintenance';
-import { notificationDispatch } from './functions/notification-dispatch';
 import { creditLowNotices, dailyPaymentSummaries, overdueSweep, paymentReceivedNotices } from './functions/payment-notices';
 import { authorisationSweep, beforeLessonCharges, feeCharge, holdSweep, receiptSend, refundSend } from './functions/payments';
 import { lessonRecordNotices } from './functions/record-notices';
@@ -25,7 +24,6 @@ export const functions = [
   requestExpirySweep,
   recurrenceSweep,
   bookingNotices,
-  notificationDispatch,
   reminderSweep,
   reminderByHand,
   holdSweep,

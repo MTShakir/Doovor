@@ -1,7 +1,9 @@
 import { cron } from 'inngest';
 import { inngest } from '../client';
 import { creditLow, paymentReceived } from '../events';
+import { thenSend } from '../notifications-send';
 import { notifyAboutPayment, notifyCreditLow, notifyOverdueLessons, sendDailyPaymentSummaries } from '../payment-notify';
+import { schedules } from '../schedules';
 
 /**
  * Everybody a payment concerns hears it arrived (NTF-03, PRD Appendix B, M3-22). Alongside its
@@ -11,10 +13,10 @@ import { notifyAboutPayment, notifyCreditLow, notifyOverdueLessons, sendDailyPay
 export const paymentReceivedNotices = inngest.createFunction(
   { id: 'payment-received-notices', name: 'Notify about a payment received', triggers: [paymentReceived] },
   async ({ event, step }) => {
-    const first = await step.run('notify', () => notifyAboutPayment(event.data.payment_id));
+    const first = await step.run('notify', () => notifyAboutPayment(event.data.payment_id).then(thenSend));
     if (!('waitUntil' in first)) return first;
     await step.sleepUntil('wait-for-the-undo-window', first.waitUntil);
-    return step.run('notify-after-waiting', () => notifyAboutPayment(event.data.payment_id));
+    return step.run('notify-after-waiting', () => notifyAboutPayment(event.data.payment_id).then(thenSend));
   },
 );
 
@@ -27,15 +29,15 @@ export const overdueSweep = inngest.createFunction(
     id: 'payment-overdue-sweep',
     name: 'Notify about lessons owed for two days',
     concurrency: { limit: 1 },
-    triggers: [cron('TZ=Europe/London 0 10 * * *')],
+    triggers: [cron(schedules.overdue)],
   },
-  () => notifyOverdueLessons(),
+  () => notifyOverdueLessons().then(thenSend),
 );
 
 /** Using credit has left 2 hours or less: the learner and their instructor are told (M3-22). */
 export const creditLowNotices = inngest.createFunction(
   { id: 'credit-low-notices', name: 'Notify about credit running low', triggers: [creditLow] },
-  ({ event }) => notifyCreditLow(event.data.business_id, event.data.learner_id),
+  ({ event }) => notifyCreditLow(event.data.business_id, event.data.learner_id).then(thenSend),
 );
 
 /** Each school's owners and managers get yesterday's payments in one message, each morning (M3-22). */
@@ -43,7 +45,7 @@ export const dailyPaymentSummaries = inngest.createFunction(
   {
     id: 'daily-payment-summaries',
     name: 'Sum up the day before for each school',
-    triggers: [cron('TZ=Europe/London 0 8 * * *')],
+    triggers: [cron(schedules.dailySummaries)],
   },
-  () => sendDailyPaymentSummaries(),
+  () => sendDailyPaymentSummaries().then(thenSend),
 );
