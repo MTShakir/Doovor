@@ -42,6 +42,7 @@ import { InstructorStatsCard } from '@/components/instructor/stats';
 import type { InstructorStats } from '@/lib/instructor/spans';
 import { InstallCard } from '@/components/pwa/install-prompt';
 import { GoogleButton } from '@/components/oauth-buttons';
+import { emailLogo } from '@repo/emails/logo';
 import { icons } from '@/lib/icons';
 import { LessonRecordCard } from '@/components/progress/lesson-record-card';
 import { EditableSkillMap } from '@/components/progress/editable-skill-map';
@@ -803,7 +804,10 @@ export function DesignShowcase() {
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src="/favicon.svg" alt="Browser tab icon" width={32} height={32} />
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src="/brand/email-logo.png" alt="Email logo" width={Math.round((28 * horizontalLogo.width) / horizontalLogo.height)} height={28} />
+          <img src="/brand/email-logo.png" alt="Email logo, on its tile" width={emailLogo.width} height={emailLogo.height} />
+          {/* The one a mail app in dark mode shows instead (D-275). */}
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src="/brand/email-logo-dark.png" alt="Email logo in dark mode" width={emailLogo.width} height={emailLogo.height} />
         </div>
       </Section>
 

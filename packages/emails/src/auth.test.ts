@@ -46,7 +46,8 @@ describe("Auth's own emails, rendered into its templates (AUTH-01, AUTH-02, D-25
 
   it('signs off with the logo, the company that runs the product, the legal pages and where to get help', async () => {
     const html = await renderAuthTemplate('confirmation');
-    expect(html.match(new RegExp(`alt="${brand.name}"`, 'g'))).toHaveLength(2);
+    // At the top and signing off, each as a tile and as the white logo a dark mail app shows (D-275).
+    expect(html.match(new RegExp(`alt="${brand.name}"`, 'g'))).toHaveLength(4);
     expect(html).toContain(`${brand.name} is owned and run by ${brand.legalEntity}, registered in ${brand.company.registeredIn}`);
     expect(html).toContain(brand.company.number);
     expect(html).toContain(brand.company.registeredOffice);

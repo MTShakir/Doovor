@@ -1,26 +1,38 @@
 import { Body, Container, Head, Hr, Html, Img, Link, Preview, Section, Text } from '@react-email/components';
 import { brand, companyDisclosure } from '@repo/config/brand';
-import { horizontalLogo } from '@repo/config/logo/horizontal';
-import type { ReactNode } from 'react';
+import { emailLogo, footerLogo } from './logo.ts';
+import type { CSSProperties, ReactNode } from 'react';
 
 /**
- * The logo at the top of every email (D-249). Email cannot show SVG, so it is a picture the app
- * draws at twice this size from the logo's own shapes, at this address. It sits on the email's
- * grey with that grey painted in, so a mail app that darkens the background cannot leave a black
- * logo on black. With pictures turned off, the name shows in its place.
+ * Only the logo changes in dark mode (D-275): everything else is left to the mail app, which already
+ * darkens it well. A mail app that cannot say it is dark, or drops this, keeps the tile.
  */
-export const emailLogo = {
-  path: '/brand/email-logo.png',
-  height: 28,
-  width: Math.round((28 * horizontalLogo.width) / horizontalLogo.height),
-  scale: 2,
-} as const;
+const darkLogo = `
+@media (prefers-color-scheme: dark) {
+  .logo-light { display: none !important; }
+  .logo-dark { display: block !important; max-height: none !important; }
+}
+[data-ogsc] .logo-light { display: none !important; }
+[data-ogsc] .logo-dark { display: block !important; max-height: none !important; }
+`;
 
-/** The same picture, smaller, signing off the footer (D-258). */
-export const footerLogo = {
-  height: 20,
-  width: Math.round((20 * horizontalLogo.width) / horizontalLogo.height),
-} as const;
+/** The logo for light and the logo for dark, of which a mail app shows one. */
+function LogoPictures({ width, height, style }: { width: number; height: number; style: CSSProperties }) {
+  return (
+    <>
+      <Img className="logo-light" src={`${brand.appUrl}${emailLogo.path}`} width={width} height={height} alt={brand.name} style={style} />
+      <Img
+        className="logo-dark"
+        src={`${brand.appUrl}${emailLogo.darkPath}`}
+        width={width}
+        height={height}
+        alt={brand.name}
+        // Hidden every way a mail app might honour, Outlook on Windows included.
+        style={{ ...style, display: 'none', maxHeight: 0, overflow: 'hidden', msoHide: 'all' } as CSSProperties}
+      />
+    </>
+  );
+}
 
 /**
  * The pages somebody may want from any email: what we do with their data, the two sets of terms,
@@ -92,11 +104,13 @@ export const ownership = `${brand.name} is owned and run by ${companyDisclosure(
 export function EmailLayout({ preview, children, settingsUrl, reason }: EmailLayoutProps) {
   return (
     <Html lang="en-GB">
-      <Head />
+      <Head>
+        <style>{darkLogo}</style>
+      </Head>
       <Preview>{preview}</Preview>
       <Body style={body}>
         <Container style={container}>
-          <Img src={`${brand.appUrl}${emailLogo.path}`} width={emailLogo.width} height={emailLogo.height} alt={brand.name} style={logo} />
+          <LogoPictures width={emailLogo.width} height={emailLogo.height} style={logo} />
           <Section style={card}>{children}</Section>
           <Hr style={rule} />
           <Text style={footnote}>
@@ -118,13 +132,7 @@ export function EmailLayout({ preview, children, settingsUrl, reason }: EmailLay
             </Link>{' '}
             and we will get back to you.
           </Text>
-          <Img
-            src={`${brand.appUrl}${emailLogo.path}`}
-            width={footerLogo.width}
-            height={footerLogo.height}
-            alt={brand.name}
-            style={signOff}
-          />
+          <LogoPictures width={footerLogo.width} height={footerLogo.height} style={signOff} />
           <Text style={slogan}>{brand.slogan}</Text>
           <Text style={footnote}>
             {footerLinks.map((one, index) => (

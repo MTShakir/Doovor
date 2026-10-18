@@ -2,7 +2,7 @@ import { brand } from '@repo/config/brand';
 import { horizontalLogo } from '@repo/config/logo/horizontal';
 import { notificationCatalogue, notificationCopy } from '@repo/core/notifications';
 import { describe, expect, it } from 'vitest';
-import { emailLogo } from './layout.tsx';
+import { emailLogo } from './logo.ts';
 import { renderNotificationEmail } from './render.ts';
 
 const lesson = {
@@ -49,9 +49,23 @@ describe('the notification email (NTF-03, M2-28)', () => {
     expect(email.html).toMatch(new RegExp(`<img[^>]+alt="${brand.name}"[^>]+src="${brand.appUrl}${emailLogo.path}"`));
     expect(email.html).toContain(`width="${String(emailLogo.width)}"`);
     expect(email.html).toContain(`height="${String(emailLogo.height)}"`);
-    // Drawn at twice the size it is shown, in the logo's own proportions.
+    // Drawn at twice the size it is shown, in the logo's own proportions, on a tile with room round it.
     expect(emailLogo.scale).toBe(2);
-    expect(Math.abs(emailLogo.width / emailLogo.height - horizontalLogo.width / horizontalLogo.height)).toBeLessThan(0.05);
+    expect(Math.abs(emailLogo.logoWidth / emailLogo.logoHeight - horizontalLogo.width / horizontalLogo.height)).toBeLessThan(0.05);
+    expect(emailLogo.width).toBe(emailLogo.logoWidth + emailLogo.padding.x * 2);
+    expect(emailLogo.height).toBe(emailLogo.logoHeight + emailLogo.padding.y * 2);
+  });
+
+  it('swaps the tile for a white logo in a mail app that says it is dark, and only that (D-275)', async () => {
+    const email = await renderNotificationEmail({ title: 'Lesson booked', body: 'Wed 16 Sep at 09:00.' });
+
+    // Both pictures, at the top and signing off, the white one hidden until a dark mail app shows it.
+    expect(email.html.match(new RegExp(`src="${brand.appUrl}${emailLogo.darkPath}"`, 'g'))).toHaveLength(2);
+    expect(email.html).toMatch(/<img[^>]+class="logo-dark"[^>]+style="[^"]*display:none/);
+    expect(email.html).toContain('@media (prefers-color-scheme: dark)');
+    expect(email.html).toContain('.logo-light { display: none !important; }');
+    // Nothing else is told it is dark: the mail apps already darken the rest well.
+    expect(email.html).not.toContain('name="color-scheme"');
   });
 
   it('leaves out the parts it was not given', async () => {
