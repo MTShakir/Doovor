@@ -2,7 +2,8 @@
 
 import { isFlagEnabled, type FlagOverrides } from '@repo/config/flags';
 import { Button } from '@repo/ui/button';
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
+import { FormAlert } from '@/components/form-alert';
 import { clientEnv } from '@/env/client';
 import { getSupabaseBrowserClient } from '@/lib/supabase/browser';
 
@@ -23,30 +24,71 @@ function GoogleMark() {
 }
 
 /**
- * Google (and later Apple) sign-in (AUTH-01). Shown only when the provider is configured
- * for this environment and a super admin has not switched it off (ADM-05); Apple stays hidden
- * until its keys exist.
+ * Continue with Google (AUTH-01), whatever this environment has switched on: the design page
+ * shows it everywhere, and `OAuthButtons` decides where else it appears.
+ *
+ * Somebody who leaves for Google and comes back with the browser's back button without signing
+ * in can be shown this page exactly as they left it, which phones above all do (D-272): the button
+ * still turning, and the forms under it failing until the page is loaded again. So a page brought
+ * back that way, after leaving for Google, loads itself again at once.
  */
-export function OAuthButtons({ next, flags }: { next: string; flags: FlagOverrides }) {
+export function GoogleButton({ next }: { next: string }) {
   const [pending, setPending] = useState(false);
-  const google = clientEnv.NEXT_PUBLIC_AUTH_GOOGLE_ENABLED && isFlagEnabled('googleSignIn', flags);
-  if (!google) return null;
+  const [problem, setProblem] = useState<string | null>(null);
+  const leftForGoogle = useRef(false);
+
+  useEffect(() => {
+    const cameBack = (event: PageTransitionEvent) => {
+      if (event.persisted && leftForGoogle.current) window.location.reload();
+    };
+    window.addEventListener('pageshow', cameBack);
+    return () => {
+      window.removeEventListener('pageshow', cameBack);
+    };
+  }, []);
 
   return (
-    <div className="flex flex-col gap-3">
+    <>
+      {problem ? <FormAlert>{problem}</FormAlert> : null}
       <Button
         variant="secondary"
         width="full"
         pending={pending}
         onClick={() => {
+          setProblem(null);
           setPending(true);
+          leftForGoogle.current = true;
           const redirectTo = `${window.location.origin}/auth/callback?next=${encodeURIComponent(next)}`;
-          void getSupabaseBrowserClient().auth.signInWithOAuth({ provider: 'google', options: { redirectTo } });
+          void getSupabaseBrowserClient()
+            .auth.signInWithOAuth({ provider: 'google', options: { redirectTo } })
+            .then(({ error }) => {
+              // Nothing left for Google: the button stops turning rather than turning for ever.
+              if (!error) return;
+              leftForGoogle.current = false;
+              setPending(false);
+              setProblem('We could not reach Google. Try again, or use your email below.');
+            });
         }}
       >
         {pending ? null : <GoogleMark />}
         Continue with Google
       </Button>
+    </>
+  );
+}
+
+/**
+ * Google (and later Apple) sign-in (AUTH-01). Shown only when the provider is configured
+ * for this environment and a super admin has not switched it off (ADM-05); Apple stays hidden
+ * until its keys exist.
+ */
+export function OAuthButtons({ next, flags }: { next: string; flags: FlagOverrides }) {
+  const google = clientEnv.NEXT_PUBLIC_AUTH_GOOGLE_ENABLED && isFlagEnabled('googleSignIn', flags);
+  if (!google) return null;
+
+  return (
+    <div className="flex flex-col gap-3">
+      <GoogleButton next={next} />
       <div className="flex items-center gap-3 text-small text-grey-700" aria-hidden>
         <span className="h-px flex-1 bg-grey-200" />
         or

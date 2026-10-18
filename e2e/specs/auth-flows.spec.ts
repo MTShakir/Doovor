@@ -1,7 +1,7 @@
 import { expect, test, type TestInfo } from '@playwright/test';
 import { totp } from '../../packages/db/src/testing/totp';
 import { seedAccounts } from '../support/accounts';
-import { expectAccessible, snap } from '../support/helpers';
+import { expectAccessible, snap, tapUntil } from '../support/helpers';
 import { linkFromEmail } from '../support/mailpit';
 import { testNumber } from '../support/phone-numbers';
 import { enterCode, signInThroughForm } from '../support/sign-in';
@@ -272,5 +272,35 @@ test.describe('sign-in (AUTH-01)', () => {
     // And the session is gone: a screen behind sign in asks who they are, not for a code.
     await page.goto('/admin');
     await expect(page).toHaveURL(/\/sign-in/);
+  });
+});
+
+/**
+ * Back from Google without signing in (AUTH-01, D-272). A phone can show the page exactly as it was
+ * left, the button still turning and the forms under it failing, so it loads itself again.
+ */
+test.describe('leaving for Google and coming back (AUTH-01, D-272)', () => {
+  test('a page the browser brings back from memory loads itself again, and its button stops turning', async ({ page }) => {
+    // Google is not switched on for these tests, so the button is pressed where the design page
+    // shows it. The trip to Google is answered with nothing, which keeps the page where it is.
+    await page.route('**/auth/v1/authorize**', (route) => route.fulfill({ status: 204 }));
+    await page.goto('/design');
+    const google = page.getByRole('button', { name: 'Continue with Google' });
+    await tapUntil(google, page.locator('button[aria-busy="true"]', { hasText: 'Continue with Google' }));
+
+    // The browser brings the page back from its memory, as the back button does on a phone.
+    await page.evaluate(() => {
+      Reflect.set(window, 'fromBefore', true);
+    });
+    await page
+      .evaluate(() => {
+        window.dispatchEvent(new PageTransitionEvent('pageshow', { persisted: true }));
+      })
+      // It reloads at once, which can take the page out from under this call.
+      .catch(() => undefined);
+
+    // Loaded again: nothing from before is left, and the button no longer turns.
+    await expect.poll(() => page.evaluate(() => Reflect.get(window, 'fromBefore') === true).catch(() => true)).toBe(false);
+    await expect(page.getByRole('button', { name: 'Continue with Google' })).not.toHaveAttribute('aria-busy', 'true');
   });
 });

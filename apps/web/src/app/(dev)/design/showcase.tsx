@@ -41,6 +41,7 @@ import { InstallHelpCard } from '@/components/pwa/install-help';
 import { InstructorStatsCard } from '@/components/instructor/stats';
 import type { InstructorStats } from '@/lib/instructor/spans';
 import { InstallCard } from '@/components/pwa/install-prompt';
+import { GoogleButton } from '@/components/oauth-buttons';
 import { LessonRecordCard } from '@/components/progress/lesson-record-card';
 import { EditableSkillMap } from '@/components/progress/editable-skill-map';
 import { SkillMap } from '@/components/progress/skill-map';
@@ -832,6 +833,13 @@ export function DesignShowcase() {
         <Button asChild variant="secondary">
           <Link href="/">Go home</Link>
         </Button>
+        <Label>
+          Continue with Google, shown here whatever this environment has switched on; pressed, it turns until Google opens,
+          and a page brought back from the browser&apos;s memory after leaving for Google loads itself again (AUTH-01, D-272)
+        </Label>
+        <div className="max-w-sm">
+          <GoogleButton next="/design" />
+        </div>
       </Section>
 
       <Section title="Inputs">
