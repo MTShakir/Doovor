@@ -1,6 +1,6 @@
 import { expect, test, type Page } from '@playwright/test';
 import { authFile } from '../support/accounts';
-import { bookLesson, lessonEvents, lessonIdAt, lessonRecordFor, notificationChannels } from '../support/database';
+import { bookLesson, lessonEvents, lessonIdAt, lessonRecordFor, notificationChannels, removeLesson } from '../support/database';
 import { addDays, dayLabel, expectAccessible, fillUntil, settled, snap } from '../support/helpers';
 
 /**
@@ -101,6 +101,9 @@ test.describe('a lesson and its record (PRG-01, M4-04, M4-05)', () => {
     // Nothing in a record is compulsory, except rating a skill that was tapped: a skill with no
     // rating says nothing at all, and is a slip rather than a choice (D-201).
     await skills.getByRole('button', { name: 'Manoeuvres' }).click();
+    // Its rating opens under it, where it was tapped, rather than above the list out of sight, which
+    // left only the error on saving to show it was there (D-276).
+    await expect(form.getByRole('radiogroup', { name: 'Manoeuvres, from 1 to 5' })).toBeInViewport();
     await form.getByRole('button', { name: 'Save record' }).click();
     await expect(form.getByRole('alert')).toContainText('Manoeuvres');
     await skills.getByRole('button', { name: 'Manoeuvres' }).click();
@@ -156,6 +159,41 @@ test.describe('a lesson and its record (PRG-01, M4-04, M4-05)', () => {
       await expect(inbox.getByRole('heading', { level: 1, name: 'Progress' })).toBeVisible();
     } finally {
       await jack.close();
+    }
+  });
+
+  test('the record opens on the skills tapped during the lesson, and one added there is rated under its name (PRG-01, D-276)', async ({ page }, testInfo) => {
+    const mobile = testInfo.project.name === 'mobile';
+    // A lesson still to come, so the screen opens on the lesson rather than its record, which only
+    // a lesson that happened can save. Two days apart for the widths, at an hour of its own.
+    const day = addDays(today(), mobile ? 9 : 11);
+    await bookLesson('Sarah Khan', learner, day, '05:00');
+    const lessonId = await lessonIdAt('Sarah Khan', day, '05:00');
+
+    try {
+      await page.goto(`/app/instructor/lessons/${lessonId}`);
+      await ready(page);
+      await page.getByRole('list', { name: 'Skills' }).getByRole('button', { name: 'Junctions' }).click();
+      await page.getByRole('button', { name: 'Finish lesson' }).click();
+
+      // Just what was tapped, to rate, and the whole list only when asked for.
+      const form = page.getByRole('form', { name: 'Lesson record' });
+      await expect(form.getByRole('list', { name: 'Ratings' }).getByRole('radiogroup')).toHaveCount(1);
+      await expect(form.getByRole('list', { name: 'Skills' })).toHaveCount(0);
+      await form.getByRole('button', { name: 'Add or change skills' }).click();
+
+      // A skill far down the list opens its rating under it, on the screen.
+      await form.getByRole('list', { name: 'Skills' }).getByRole('button', { name: 'Emergency stop' }).click();
+      const added = form.getByRole('radiogroup', { name: 'Emergency stop, from 1 to 5' });
+      await expect(added).toBeInViewport();
+      await added.getByRole('radio', { name: '2, Under full instruction' }).click();
+      await form.getByRole('radiogroup', { name: 'Junctions, from 1 to 5' }).getByRole('radio', { name: '3, Prompted' }).click();
+      await expect(form.getByRole('radio', { checked: true })).toHaveCount(2);
+      await expectAccessible(page);
+      await settled(page);
+      await snap(page, testInfo, 'record-skill-added');
+    } finally {
+      await removeLesson('Sarah Khan', learner, day, '05:00');
     }
   });
 });

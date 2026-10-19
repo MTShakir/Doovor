@@ -11,7 +11,7 @@ import { RatingScale } from '@repo/ui/rating-scale';
 import { toast } from '@repo/ui/toast';
 import { MapPin } from 'lucide-react';
 import { useRouter } from 'next/navigation';
-import { useEffect, useMemo, useState, useSyncExternalStore } from 'react';
+import { Fragment, useEffect, useMemo, useState, useSyncExternalStore } from 'react';
 import { track } from '@/lib/analytics/track';
 import { FormAlert } from '@/components/form-alert';
 import { clearDraft, draftSnapshot, newDraft, parseDraft, saveDraft, subscribeToDrafts, type LessonDraft } from '@/lib/lessons/draft';
@@ -81,8 +81,9 @@ export function LessonScreen({ lesson, startOnRecord }: LessonScreenProps) {
 
   const toggle = (code: SkillCode) => {
     update({ skills: skills.includes(code) ? skills.filter((one) => one !== code) : [...skills, code] });
-    // The list stays open once somebody is choosing from it.
-    setPicking(true);
+    // On the record, the list stays open once somebody is choosing from it. Taps during the lesson
+    // leave it closed, so the record opens on just those skills to rate (D-276).
+    if (step === 'record') setPicking(true);
   };
 
   const save = async () => {
@@ -169,6 +170,16 @@ export function LessonScreen({ lesson, startOnRecord }: LessonScreenProps) {
     </header>
   );
 
+  /** One skill's rating, 1 to 5, kept with the draft as it is tapped. */
+  const rating = (code: SkillCode) => (
+    <RatingScale
+      label={skillArea(code).name}
+      value={draft?.ratings[code] ?? null}
+      onChange={(value: SkillRating) => { update({ ratings: { ...(draft?.ratings ?? {}), [code]: value } }); }}
+    />
+  );
+
+  /** The skills to tap while the lesson is taught. */
   const checklist = (
     <ul className="flex flex-wrap gap-2" aria-label="Skills">
       {skillAreas.map((area) => (
@@ -231,30 +242,45 @@ export function LessonScreen({ lesson, startOnRecord }: LessonScreenProps) {
           <h2 id="skills-rated" className="text-h3 text-black">
             Skills covered
           </h2>
-          {skills.length === 0 ? <p className="text-small text-grey-700">Tap the skills you covered, then rate each one.</p> : null}
-          {skills.length > 0 ? (
-            <ul className="flex flex-col gap-4" aria-label="Ratings">
-              {skills.map((code) => (
-                <li key={code} className="flex flex-col gap-2">
-                  <span className="text-body font-semibold text-black">{skillArea(code).name}</span>
-                  <RatingScale
-                    label={skillArea(code).name}
-                    value={draft?.ratings[code] ?? null}
-                    onChange={(rating: SkillRating) => { update({ ratings: { ...(draft?.ratings ?? {}), [code]: rating } }); }}
-                  />
-                </li>
-              ))}
-            </ul>
-          ) : null}
           {picking || skills.length === 0 ? (
             <>
-              {skills.length > 0 ? <p className="text-small text-grey-700">Tap a skill to add it or take it off.</p> : null}
-              {checklist}
+              <p className="text-small text-grey-700">
+                {skills.length === 0
+                  ? 'Tap the skills you covered, then rate each one.'
+                  : 'Tap a skill to add it or take it off. Rate it under its name.'}
+              </p>
+              {/* A skill's rating opens under it, where it was tapped (D-276): at the top of the list
+                  it opened out of sight on a phone, and only a failed save scrolled back to it. */}
+              <ul className="flex flex-wrap gap-2" aria-label="Skills">
+                {skillAreas.map((area) => {
+                  const chosen = skills.includes(area.code);
+                  return (
+                    <Fragment key={area.code}>
+                      <li>
+                        <Chip selected={chosen} onClick={() => { toggle(area.code); }}>
+                          {area.name}
+                        </Chip>
+                      </li>
+                      {chosen ? <li className="mb-2 basis-full">{rating(area.code)}</li> : null}
+                    </Fragment>
+                  );
+                })}
+              </ul>
             </>
           ) : (
-            <Button variant="secondary" width="responsive" onClick={() => { setPicking(true); }}>
-              Add or change skills
-            </Button>
+            <>
+              <ul className="flex flex-col gap-4" aria-label="Ratings">
+                {skills.map((code) => (
+                  <li key={code} className="flex flex-col gap-2">
+                    <span className="text-body font-semibold text-black">{skillArea(code).name}</span>
+                    {rating(code)}
+                  </li>
+                ))}
+              </ul>
+              <Button variant="secondary" width="responsive" onClick={() => { setPicking(true); }}>
+                Add or change skills
+              </Button>
+            </>
           )}
         </section>
 
