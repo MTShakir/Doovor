@@ -378,7 +378,7 @@ export function LetGoDialog({
       open={linked !== null}
       onOpenChange={(open) => { if (!open) onCancel(); }}
       title={`Stop linking ${who}?`}
-      description={`Their business stays theirs, with its learners, prices and payments. You stop sending them pupils, ${brand.name} checks their badge again, and the Pro your school gave them ends.`}
+      description={`Their business stays theirs, with its learners, prices and payments. You stop sending them pupils, no new fees are raised, ${brand.name} checks their badge again, and the Pro your school gave them ends. Any pupils you introduced to them are asked whether to come back to you.`}
       footer={
         <>
           <Button variant="secondary" onClick={onCancel}>
