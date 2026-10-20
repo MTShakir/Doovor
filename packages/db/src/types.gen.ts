@@ -3536,6 +3536,7 @@ export type Database = {
         Args: { p_booking_id: string; p_reason?: string }
         Returns: Json
       }
+      cancellation_policy: { Args: { p_instructor_id: string }; Returns: Json }
       city_page: {
         Args: { p_area?: string; p_city: string; p_transmission?: string }
         Returns: Json
