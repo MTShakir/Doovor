@@ -19,7 +19,7 @@ import { BalanceHistory, BalanceLines, OwedBackList, OwedLessons } from '@/compo
 import { MarkPaidButton } from '@/components/money/mark-paid';
 import { lessonWhen } from '@/components/progress/lesson-record-card';
 import { requirePortal } from '@/lib/auth/session';
-import { learnerCard, type LearnerCard } from '@/lib/learners/card';
+import { learnerCard, learnerIntroducedBy, type LearnerCard } from '@/lib/learners/card';
 import { learnerLessons, learnerTotals, type LearnerTotals } from '@/lib/learners/totals';
 import { learnerHistory, type LearnerHistoryEntry } from '@/lib/learners/history';
 import { learnerHealth, type LearnerHealth } from '@/lib/learner/health';
@@ -82,12 +82,16 @@ async function Learner({ params, searchParams }: LearnerPageProps) {
   ]);
   const mine = access.memberships.some((one) => one.instructorProfileId === card.instructorId);
   const gearbox = card.transmission === null ? null : card.transmission === 'manual' ? 'Manual' : 'Automatic';
+  // M9-19, D-290: a pupil a school found and passed on says so.
+  const introducedBy = await learnerIntroducedBy(card.learnerId);
 
   return (
     <>
       <PageHeader
         title={card.fullName}
-        subtitle={[gearbox, card.postcode].filter((part) => part !== null).join(' · ')}
+        subtitle={[gearbox, card.postcode, introducedBy === null ? null : `Introduced by ${introducedBy}`]
+          .filter((part) => part !== null)
+          .join(' · ')}
         back={
           <Link
             href="/app/instructor/learners"

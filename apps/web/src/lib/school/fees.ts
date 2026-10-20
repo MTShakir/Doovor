@@ -64,17 +64,20 @@ interface FeeRow {
   due_on: string;
   status: FeeStatus;
   settled_note: string | null;
+  learner_name: string | null;
 }
 
 const linkColumns = 'id, fee_period, fee_pence, fees_start_on, free_weeks, pupil_fee_pence';
-const feeColumns = 'id, link_id, kind, period_starts_on, period_ends_on, amount_pence, due_on, status, settled_note';
+const feeColumns = 'id, link_id, kind, period_starts_on, period_ends_on, amount_pence, due_on, status, settled_note, learner_name';
 
 function feeLine(row: FeeRow): FeeLine {
   const starts = row.period_starts_on;
   const weekly = starts !== null && row.period_ends_on !== null && Date.parse(row.period_ends_on) - Date.parse(starts) === 6 * 86_400_000;
   const label =
     row.kind === 'pupil' || starts === null
-      ? 'A pupil introduced'
+      ? row.learner_name === null
+        ? 'A pupil introduced'
+        : `A pupil introduced: ${row.learner_name}`
       : `${weekly ? 'Week' : 'Month'} from ${formatCalendarDate(starts, { year: false })}`;
   return { feeId: row.id, label, due: formatCalendarDate(row.due_on, { year: false }), amountPence: row.amount_pence, status: row.status, note: row.settled_note };
 }

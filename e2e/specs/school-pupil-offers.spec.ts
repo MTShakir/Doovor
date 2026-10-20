@@ -1,14 +1,15 @@
 import { expect, test } from '@playwright/test';
-import { makeInstructor, makeSchool, withDatabase } from '../support/database';
+import { bookLesson, makeInstructor, makeSchool, withDatabase } from '../support/database';
 import { addDays, expectAccessible, snap } from '../support/helpers';
 import { signInThroughForm } from '../support/sign-in';
 
 const today = (): string => new Intl.DateTimeFormat('en-CA', { timeZone: 'Europe/London' }).format(new Date());
 
 /**
- * A new pupil offered to a linked instructor, who accepts and sees who they are, and another given
- * to one of the school's own instructors (M9-17, M9-18, D-289). Each width has a school and an
- * instructor of its own.
+ * A new pupil offered to a linked instructor, who accepts, sees who they are and puts them on their
+ * own list, where they show as introduced by the school, whose fee for them falls due with their
+ * first lesson; and another given to one of the school's own instructors (M9-17 to M9-20, D-289,
+ * D-290). Each width has a school and an instructor of its own.
  */
 test.describe('finding a new pupil an instructor (SCH-03, D-289)', () => {
   test('the school offers one to a linked instructor who accepts, and gives another to its own', async ({ browser }, testInfo) => {
@@ -19,14 +20,17 @@ test.describe('finding a new pupil an instructor (SCH-03, D-289)', () => {
     const pat = `Pat ${label}`;
     const rae = `Rae ${label}`;
     const raeEmail = `rae.${testInfo.project.name}.${Date.now().toString(36)}@example.com`;
+    const patEmail = `pat.${testInfo.project.name}.${Date.now().toString(36)}@example.com`;
     await withDatabase(async (sql) => {
       await sql`update public.businesses set lesson_seller = 'both' where id = ${school.businessId}`;
       await sql`
         insert into public.school_links (school_id, business_id)
         select ${school.businessId}, p.business_id from public.instructor_profiles p where p.public_slug = ${oli.slug}`;
+      // £20 for each pupil the school introduces.
+      await sql`update public.school_links set pupil_fee_pence = 2000 where school_id = ${school.businessId}`;
       await sql`
         insert into public.school_enquiries (school_id, full_name, email, postcode, transmission, note, source, consent_wording)
-        values (${school.businessId}, ${pat}, ${`pat.${testInfo.project.name}@example.com`}, 'M1 2QF', 'manual', 'Weekday evenings', 'public', 'I agree.'),
+        values (${school.businessId}, ${pat}, ${patEmail}, 'M1 2QF', 'manual', 'Weekday evenings', 'public', 'I agree.'),
                (${school.businessId}, ${rae}, ${raeEmail}, 'M1 2QF', null, null, 'office', 'They agreed.')`;
     });
 
@@ -62,7 +66,23 @@ test.describe('finding a new pupil an instructor (SCH-03, D-289)', () => {
       await expect(instructor.getByText('Pat is yours')).toBeVisible();
       const yours = pupils.getByRole('listitem').filter({ hasText: pat });
       await expect(yours.getByRole('heading', { name: pat })).toBeVisible();
-      await expect(yours.getByRole('link', { name: `pat.${testInfo.project.name}@example.com` })).toBeVisible();
+      await expect(yours.getByRole('link', { name: patEmail })).toBeVisible();
+
+      // He puts Pat on his own list, where Pat shows as introduced by the school.
+      await yours.getByRole('button', { name: 'Add to my learners' }).click();
+      await expect(instructor.getByText('Added to your learners')).toBeVisible();
+      await expect(yours).toContainText('On your list of learners.');
+      await instructor.goto('/app/instructor/learners');
+      await instructor.getByRole('link', { name: new RegExp(pat) }).first().click();
+      // The learner's page can be its first compile on a dev server, so it is given longer.
+      await expect(instructor.getByText(`Introduced by ${school.name}`)).toBeVisible({ timeout: 20_000 });
+
+      // Pat's first lesson raises the school's fee for introducing them.
+      await bookLesson(oli.name, patEmail, addDays(today(), testInfo.project.name === 'mobile' ? 9 : 11), '10:00');
+      await manager.goto('/app/school/money/fees');
+      const fees = manager.getByRole('region', { name: oli.name });
+      await expect(fees).toContainText(`A pupil introduced: ${pat}`);
+      await expect(fees).toContainText('£20 owed');
 
       // The school sees who took them.
       await manager.goto('/app/school/pupils?status=taken');
@@ -86,10 +106,14 @@ test.describe('finding a new pupil an instructor (SCH-03, D-289)', () => {
     } finally {
       await managerContext.close();
       await oliContext.close();
+      // A Business keeps its lessons, so Pat's go before Oli's Business does.
+      await withDatabase(async (sql) => {
+        await sql`delete from public.bookings where learner_id in (select id from public.users where lower(email) = lower(${patEmail}))`;
+      });
       await school.remove();
       await oli.remove();
       await withDatabase(async (sql) => {
-        await sql`delete from auth.users where lower(email) = lower(${raeEmail})`;
+        await sql`delete from auth.users where lower(email) in (lower(${raeEmail}), lower(${patEmail}))`;
       });
     }
   });

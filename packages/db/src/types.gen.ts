@@ -1600,6 +1600,7 @@ export type Database = {
           created_by: string | null
           id: string
           instructor_id: string | null
+          introduced_by: string | null
           learner_id: string
           source: Database["public"]["Enums"]["learner_source"]
           status: Database["public"]["Enums"]["learner_status"]
@@ -1612,6 +1613,7 @@ export type Database = {
           created_by?: string | null
           id?: string
           instructor_id?: string | null
+          introduced_by?: string | null
           learner_id: string
           source?: Database["public"]["Enums"]["learner_source"]
           status?: Database["public"]["Enums"]["learner_status"]
@@ -1624,6 +1626,7 @@ export type Database = {
           created_by?: string | null
           id?: string
           instructor_id?: string | null
+          introduced_by?: string | null
           learner_id?: string
           source?: Database["public"]["Enums"]["learner_source"]
           status?: Database["public"]["Enums"]["learner_status"]
@@ -1651,6 +1654,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "instructor_profiles"
             referencedColumns: ["id", "business_id"]
+          },
+          {
+            foreignKeyName: "learner_relationships_introduced_by_fkey"
+            columns: ["introduced_by"]
+            isOneToOne: false
+            referencedRelation: "businesses"
+            referencedColumns: ["id"]
           },
           {
             foreignKeyName: "learner_relationships_learner_id_fkey"
@@ -3015,6 +3025,7 @@ export type Database = {
           id: string
           kind: string
           learner_id: string | null
+          learner_name: string | null
           link_id: string
           period_ends_on: string | null
           period_starts_on: string | null
@@ -3032,6 +3043,7 @@ export type Database = {
           id?: string
           kind: string
           learner_id?: string | null
+          learner_name?: string | null
           link_id: string
           period_ends_on?: string | null
           period_starts_on?: string | null
@@ -3049,6 +3061,7 @@ export type Database = {
           id?: string
           kind?: string
           learner_id?: string | null
+          learner_name?: string | null
           link_id?: string
           period_ends_on?: string | null
           period_starts_on?: string | null
@@ -3710,6 +3723,10 @@ export type Database = {
       accept_link_invitation: { Args: { p_token: string }; Returns: string }
       accept_member_invitation: { Args: { p_token: string }; Returns: string }
       accept_terms: { Args: { p_version: string }; Returns: undefined }
+      add_enquiry_learner: {
+        Args: { p_enquiry_id: string; p_learner_id: string }
+        Returns: undefined
+      }
       add_gallery_photo: {
         Args: {
           p_image_height?: number
@@ -4125,6 +4142,7 @@ export type Database = {
           happened_at: string
         }[]
       }
+      learner_introduced_by: { Args: { p_learner_id: string }; Returns: string }
       leave_learner_capture: { Args: { p_token: string }; Returns: number }
       lesson_reminder_options: { Args: { p_booking_id: string }; Returns: Json }
       list_my_sessions: {

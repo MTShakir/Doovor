@@ -509,7 +509,7 @@ const examplePupilOffers: PupilOffer[] = [
     district: 'M14',
     transmission: null,
     note: null,
-    contact: { fullName: 'Sam Caller', email: null, phone: '07700 900124', postcode: 'M14 5RL' },
+    contact: { fullName: 'Sam Caller', email: null, phone: '07700 900124', phoneE164: '+447700900124', postcode: 'M14 5RL' },
     learnerAdded: false,
   },
 ];

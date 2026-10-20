@@ -38,7 +38,7 @@ export interface PupilOffer {
   transmission: 'manual' | 'automatic' | null;
   note: string | null;
   /** Who they are and how to reach them, once the instructor has accepted. */
-  contact: { fullName: string; email: string | null; phone: string | null; postcode: string } | null;
+  contact: { fullName: string; email: string | null; phone: string | null; phoneE164: string | null; postcode: string } | null;
   /** They are on the instructor's own list of learners already. */
   learnerAdded: boolean;
 }
@@ -62,7 +62,13 @@ export async function pupilOffersFor(businessId: string): Promise<PupilOffer[]> 
     note: one.note,
     contact:
       one.status === 'accepted' && one.fullName !== null && one.postcode !== null
-        ? { fullName: one.fullName, email: one.email, phone: one.phone === null ? null : formatUkMobile(one.phone), postcode: one.postcode }
+        ? {
+            fullName: one.fullName,
+            email: one.email,
+            phone: one.phone === null ? null : formatUkMobile(one.phone),
+            phoneE164: one.phone,
+            postcode: one.postcode,
+          }
         : null,
     learnerAdded: one.learnerAdded,
   }));

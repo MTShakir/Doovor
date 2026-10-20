@@ -56,6 +56,7 @@ export const auditActionWords: Readonly<Record<string, string>> = {
   'school.enquiry_taken': 'A linked instructor accepted a new pupil',
   'school.enquiry_offer_declined': 'A linked instructor declined a new pupil',
   'school.enquiry_given': "A new pupil was given to one of the school's instructors",
+  'school.enquiry_learner_added': 'A linked instructor put a pupil the school introduced on their list',
   'staff.added': 'Made platform staff',
   'staff.removed': 'Removed from the platform staff',
   'staff.role_changed': 'Platform staff role changed',
@@ -238,6 +239,7 @@ export const auditCategories: readonly AuditCategory[] = [
       'school.enquiry_taken',
       'school.enquiry_offer_declined',
       'school.enquiry_given',
+      'school.enquiry_learner_added',
     ],
   },
   {
