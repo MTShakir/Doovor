@@ -48,7 +48,7 @@ test.describe('linking an instructor\'s own business to a school (SCH-09, D-282)
       await instructor.getByRole('button', { name: `Link Oli ${testInfo.project.name} Driving to ${school.name}` }).click();
 
       await expect(instructor).toHaveURL(/\/app\/instructor\/school$/);
-      const yours = instructor.getByRole('region', { name: school.name });
+      const yours = instructor.getByRole('region', { name: school.name, exact: true });
       await expect(yours).toContainText(`Oli ${testInfo.project.name} Driving has been linked since`);
       await expect(yours).toContainText('Your plan includes Pro while you are linked');
       await expectAccessible(instructor);

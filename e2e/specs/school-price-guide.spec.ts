@@ -57,7 +57,7 @@ test.describe('prices for linked instructors (SCH-04, D-286)', () => {
 
       // And on Your school, beside what linking means.
       await instructor.goto('/app/instructor/school');
-      await expect(instructor.getByRole('region', { name: school.name })).toContainText('lets you charge at most £45 an hour');
+      await expect(instructor.getByRole('region', { name: school.name, exact: true })).toContainText('lets you charge at most £45 an hour');
     } finally {
       await managerContext.close();
       await oliContext.close();
