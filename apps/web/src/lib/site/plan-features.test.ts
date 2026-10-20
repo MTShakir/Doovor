@@ -38,7 +38,14 @@ describe('what each plan says it includes (PRD 9.18, M5-09)', () => {
       'Google and Outlook calendar sync',
       'AI Assistant',
     ]);
-    expect(school?.features).toEqual(['Everything in Pro', 'School overview, instructors, learner allocation and school prices']);
+    expect(school?.features).toEqual([
+      'Everything in Pro',
+      'School overview, instructors, learner allocation and school prices',
+      // What M9 built for schools, which is no entitlement of its own (D-308).
+      'Linked instructors who keep their own business, and their fees',
+      'New pupils from your school’s page',
+      'Weekly pay statements for your instructors',
+    ]);
     expect(school?.later).toEqual([
       'Messages: in-app chat with your learners',
       'Gap Fill: cancelled lessons offered to your waiting list',

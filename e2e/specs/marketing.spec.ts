@@ -48,6 +48,11 @@ test.describe('the public site (PRD 8.3, 9.18, M5-09)', () => {
       await settled(page);
       await snap(page, testInfo, one.shot);
     }
+
+    // The last of them, for schools, says what working with instructors who keep their own business is (D-308).
+    const linked = page.getByRole('region', { name: 'Instructors with their own business' });
+    await expect(linked.getByRole('heading', { name: 'Fees on your terms' })).toBeVisible();
+    await expect(linked).toContainText('the first to accept takes them');
   });
 
   test('the home page says how many founding places have gone, and only ever the true number (D-243)', async ({ page }, testInfo) => {
@@ -168,6 +173,11 @@ test.describe('the public site (PRD 8.3, 9.18, M5-09)', () => {
     await expect(questions).toContainText('What if the founding places have gone?');
     await expect(questions).toContainText(`${String(freeTrial.longDays)} days for the next ${String(freeTrial.first)} businesses`);
     await expect(questions).toContainText(`${String(freeTrial.shortDays)} days after that`);
+    // What a school pays, and the instructors it can work with who keep their own business (D-308).
+    await expect(questions).toContainText('How is the School plan priced?');
+    await expect(questions).toContainText('Invitations still waiting and anybody switched off are not counted.');
+    await expect(questions).toContainText('Can a school work with instructors who run their own business?');
+    await expect(school).toContainText('Linked instructors who keep their own business, and their fees');
 
     await expect(page.getByRole('region', { name: 'Card payments' })).toContainText('about 1.5% plus 20p');
     await expectAccessible(page);

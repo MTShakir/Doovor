@@ -41,7 +41,16 @@ export default async function PricingPage() {
     },
     {
       question: 'What does the founding offer include?',
-      answer: `The paid plan for your business, free for ${foundingTermWords(places?.months ?? foundingOffer.months)}: Pro for independent instructors, and the School plan for driving schools. It is open to the first ${String(foundingOffer.instructorLimit)} instructors and the first ${String(foundingOffer.schoolLimit)} schools.`,
+      answer: `The paid plan for your business, free for ${foundingTermWords(places?.months ?? foundingOffer.months)}: Pro for independent instructors, and the School plan for driving schools, the school’s own fee and every instructor’s. It is open to the first ${String(foundingOffer.instructorLimit)} instructors and the first ${String(foundingOffer.schoolLimit)} schools.`,
+    },
+    // What a school pays, and the instructors it works with who keep their own business (D-279, D-282, D-308).
+    {
+      question: 'How is the School plan priced?',
+      answer: `${formatPence(plans.school.schoolFee?.monthlyPricePence ?? 0)} a month for the school and ${formatPence(plans.school.monthlyPricePence)} for each instructor teaching there, linked instructors included, or ${formatPence(plans.school.schoolFee?.yearlyPricePence ?? 0)} and ${formatPence(plans.school.yearlyPricePence ?? 0)} a year. Invitations still waiting and anybody switched off are not counted.`,
+    },
+    {
+      question: 'Can a school work with instructors who run their own business?',
+      answer: `Yes. A linked instructor keeps their own business, learners, prices and payments, and has Pro while linked, as one of the school’s instructors. The school can send them pupils, recommend prices with a most they can charge, and charge them a weekly or monthly fee.`,
     },
     {
       question: 'What if the founding places have gone?',

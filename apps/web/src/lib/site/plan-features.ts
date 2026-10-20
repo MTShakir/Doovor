@@ -45,6 +45,20 @@ const alsoComing: Record<PlanKey, string[]> = {
   school: [],
 };
 
+/**
+ * What a plan has today that is not an entitlement, because no plan below it could have it: the
+ * school's own arrangements M9 built, said where the plans are compared (D-308).
+ */
+const alsoIncluded: Record<PlanKey, string[]> = {
+  free: [],
+  pro: [],
+  school: [
+    'Linked instructors who keep their own business, and their fees',
+    'New pupils from your school’s page',
+    'Weekly pay statements for your instructors',
+  ],
+};
+
 /** What every plan has, the Free plan's list in PRD 9.18. How many learners is an entitlement. */
 const everyPlan = [
   'Diary and bookings',
@@ -101,7 +115,11 @@ function summary(plan: Plan, below: Plan | null, audience: string, signUpRole: P
     price: formatPence(plan.schoolFee?.monthlyPricePence ?? plan.monthlyPricePence),
     cadence,
     audience,
-    features: [...lead, ...added.filter((key) => entitlementWords[key].available).map((key) => entitlementWords[key].words(plan.entitlements))],
+    features: [
+      ...lead,
+      ...added.filter((key) => entitlementWords[key].available).map((key) => entitlementWords[key].words(plan.entitlements)),
+      ...alsoIncluded[plan.key],
+    ],
     later: [
       ...added.filter((key) => !entitlementWords[key].available).map((key) => entitlementWords[key].words(plan.entitlements)),
       ...alsoComing[plan.key],
