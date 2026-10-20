@@ -11,10 +11,18 @@ import {
   stepByNumber,
   stepNumber,
   stepPosition,
+  stepTitle,
   totalOnboardingSteps,
 } from './steps';
 
 describe('onboarding steps (AUTH-04, M1-02)', () => {
+  it('asks somebody joining a school their name, as the business is the school (D-196)', () => {
+    const name = stepByNumber(1);
+    expect(stepTitle(name, 'independent')).toBe('Your name and your business');
+    expect(stepTitle(name, 'school')).toBe('Your name');
+    expect(stepTitle(stepByNumber(2), 'school')).toBe('Your instructor badge');
+  });
+
   it('has the five screens from the requirements, and only the name is required', () => {
     expect(totalOnboardingSteps).toBe(5);
     expect(onboardingSteps.map((entry) => entry.slug)).toEqual(['name', 'badge', 'area', 'prices', 'hours']);

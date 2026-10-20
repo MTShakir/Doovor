@@ -31,6 +31,11 @@ export function slugForStep(step: number): OnboardingSlug {
   return stepByNumber(step).slug;
 }
 
+/** What a screen asks, for somebody on their own or at a school, where the business is the school's (D-196). */
+export function stepTitle(step: OnboardingStep, businessType: BusinessType): string {
+  return businessType === 'school' && step.slug === 'name' ? 'Your name' : step.title;
+}
+
 /** The screens an instructor goes through: all five on their own, four at a school. */
 export function stepsFor(businessType: BusinessType): readonly OnboardingStep[] {
   return businessType === 'school' ? onboardingSteps.filter((entry) => entry.slug !== 'prices') : onboardingSteps;
