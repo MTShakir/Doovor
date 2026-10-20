@@ -4,6 +4,7 @@ import { regionOpenedNotices } from './functions/regions';
 import { bookingNotices } from './functions/booking-notices';
 import { feedbackHandledEmails, feedbackReceivedEmails } from './functions/feedback';
 import { badgeExpiringNotices, verificationDecidedNotices } from './functions/instructor-notices';
+import { learnerJoinedNotices } from './functions/learner-notices';
 import { deletionSweep, maintenanceSweep, recurrenceSweep } from './functions/maintenance';
 import { creditLowNotices, dailyPaymentSummaries, overdueSweep, paymentReceivedNotices } from './functions/payment-notices';
 import { authorisationSweep, beforeLessonCharges, feeCharge, holdCancel, receiptSend, refundSend } from './functions/payments';
@@ -46,4 +47,5 @@ export const functions = [
   verificationDecidedNotices,
   badgeExpiringNotices,
   schoolNotices,
+  learnerJoinedNotices,
 ];
