@@ -316,7 +316,7 @@ Priority key: **P1** = Phase 1 (MVP), **P2** = Phase 2, **P3** = Phase 3, **P4**
 | ID | Requirement | Phase |
 |---|---|---|
 | INS-01 | Profile fields: display name, photo, bio (300 characters), languages spoken, years teaching, ADI or PDI status, badge number, badge expiry date, car make and model, transmission (manual, automatic or both), dual controls (yes), lesson types, specialisms (nervous drivers, intensive courses, Pass Plus, motorway, refresher, test prep). | P1 |
-| INS-02 | Verification: instructor uploads a photo of their ADI (green) or PDI (pink) badge and confirms DBS status; a badge is never sent without its photo, and its number is digits, five to seven of them (D-262). Support Admin reviews and approves. A refused badge shows why on the instructor's profile, with a way to send it again; a badge skipped in onboarding, or one that has run out, is sent from there too. Approved profiles show a blue Verified tick. A badge number belongs to one account: a second one is refused, and told to email support if the badge is theirs (D-230). | P1 |
+| INS-02 | Verification: instructor uploads a photo of their ADI (green) or PDI (pink) badge and confirms DBS status; a badge is never sent without its photo, and its number is digits, five to seven of them (D-262). Support Admin reviews and approves. A refused badge shows why on the instructor's profile, with a way to send it again; a badge skipped in onboarding, or one that has run out, is sent from there too. Approved profiles show a blue Verified tick. A badge number belongs to one account: a second one is refused, and told to email support if the badge is theirs (D-230). A school's instructors are vouched for by the school rather than checked by Doovor (D-278). | P1 |
 | INS-03 | Badge expiry tracking with reminders at 60, 30 and 7 days. Profile hides from search when expired. | P1 |
 | INS-04 | PDI profiles show "Trainee instructor" clearly. Trainees must link to a supervising school or ADI. | P1 |
 | INS-05 | Public profile page and booking link generated on approval (see 9.13). | P1 |
@@ -494,12 +494,12 @@ Priority key: **P1** = Phase 1 (MVP), **P2** = Phase 2, **P3** = Phase 3, **P4**
 | SCH-01 | Overview: lessons today, this week, revenue this month, unpaid total, instructor utilisation, new learners. | P1 |
 | SCH-02 | Instructors: invite, deactivate, set permissions, set pricing control (school prices or instructor prices), view diaries. | P1 |
 | SCH-03 | Learner allocation: manual assign, or suggested instructor by area, transmission and free capacity. | P1 |
-| SCH-04 | School-level prices, packages, cancellation policy and booking rules that apply to all instructors unless overridden. | P1 |
-| SCH-05 | Payment routing: school collects all payments (default) or instructors collect their own. Instructor earnings statements. | P2 |
+| SCH-04 | School-level prices, packages, cancellation policy and booking rules that apply to all instructors unless overridden. For linked instructors the school only recommends or caps prices (D-278). | P1 |
+| SCH-05 | Payment routing: the school sells the lessons of its members, or linked instructors sell their own through their own Business; a school can have both (D-278). Instructor earnings statements. | P2 (M9) |
 | SCH-06 | Fleet: vehicles, registration, transmission, MOT, service and insurance dates with reminders, assignment to instructor. | P2 |
 | SCH-07 | Reports: revenue by instructor, utilisation, cancellations, learner pipeline, pass rates. CSV export. | P2 |
 | SCH-08 | Multi-branch schools with branch managers. | P5 |
-| SCH-09 | Franchise model: instructors pay a weekly franchise fee to the school, tracked in the app. | P5 |
+| SCH-09 | Franchise model: linked instructors pay the school a weekly or monthly fee and a fee per introduced pupil, tracked in the app; collected through Stripe once the advisers have answered (D-278). | P2 (M9) |
 
 ### 9.17 Super Admin
 
@@ -528,7 +528,7 @@ All prices live in configuration. The values below are the launch prices.
 |---|---|---|
 | Free (independent instructor) | £0 | Diary, ten learners at a time, lesson records, offline payments, card payments, public profile and booking link, email and push reminders. |
 | Pro (independent instructor) | £12 per month or £120 per year | Everything in Free plus SMS reminders (up to 200 per month), auto-charge before lesson, Gap Fill, waiting list automation, bookkeeping and MTD-ready exports, calendar sync, the Business's own colour, the pass gallery. |
-| School | £9 per instructor per month (minimum 2) | All Pro features plus school portal, allocation, reports, fleet. |
+| School | £6 per instructor per month (minimum 2, D-278) | All Pro features plus school portal, allocation, reports, fleet. |
 | Founding offer | The paid plan free for 1 year | Pro for the first 100 independent instructors and the School plan for the first 50 schools, with no card needed (D-203). The badge outlasts the plan. |
 | Free trial | Pro for a while | A Business created after the founding places run out starts on the paid plan rather than Free: 90 days for the first 500, 30 days for everybody after (D-204). |
 | Referrals | A month of Pro | Every Business has an eight character referral code, from an alphabet with no I, O, 0 or 1 so it can be read off a phone. Earned when the instructor who was referred is approved by staff, not when they sign up, and spent against the first invoice that uses it (D-205, D-231). |

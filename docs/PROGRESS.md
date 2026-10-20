@@ -1,6 +1,6 @@
 # Progress
 
-Last updated: 12 October 2026
+Last updated: 20 October 2026
 
 ## Status
 
@@ -20,12 +20,49 @@ M6 Hardening and beta is approved (19 September 2026) and merged into `main`, wi
 
 M7 Bookkeeping is done and merged (D-198).
 
+M9 Schools is under way on branch `m9-schools`, in its own worktree (D-278): a school can sell its members' lessons as now, or have linked instructors who keep their own Business and pay the school a fee. The plan is in `docs/PLAN.md` and the research behind it at https://claude.ai/artifact/FoFZFsV7GgCzb5CDuoBf2Q.
+
 Beta preparation (below) runs on `beta-prep` and reaches `main` when the product owner merges it;
 on 12 October 2026 `main` and production carry every row to B-91, and the launch is under way in
 the order `docs/RUNBOOK.md` section 3.10 sets: texts, emails and Stripe live are done, the
 database is empty with one super admin, and the job runner and every production value are in
 place. What remains before the first instructor is Supabase Pro on launch day and a solicitor
 through the legal pages (`docs/BETA.md`).
+
+## M9 progress
+
+| Task | What | PRD | State |
+|---|---|---|---|
+| M9-01 | The plan, the owner's decisions and the PRD rows they change | SCH-05, SCH-09 | Done. The plan in `docs/PLAN.md`, the owner's answers in D-278, and the PRD rows they change: SCH-04, SCH-05, SCH-09, INS-02 and the School plan's price in 9.18. |
+| M9-02 | The School plan at £6 an instructor a month | 9.18 | To do. |
+| M9-03 | A school's instructors need no badge check by Doovor: the school vouches; expiry reminders stay | INS-02, INS-03 | To do. |
+| M9-04 | A school says who sells its lessons (the school, its instructors, or both) at setup and in Settings, in plain words | SCH-05 | To do. |
+| M9-05 | `school_links`: a school and an instructor's own Business, invited, active or ended, with RLS | SCH-09 | To do. |
+| M9-06 | Linking: the owner sends a link; an instructor with an account links in one tap; a new one sets up their own Business, then links | SCH-09, AUTH-05 | To do. |
+| M9-07 | The school's Instructors screen shows linked instructors beside members | SCH-02 | To do. |
+| M9-08 | The school sees when a linked instructor is free and busy, never their money or their learners' details | SCH-02 | To do. |
+| M9-09 | Public pages: a linked instructor's profile names the school, and the school's page lists them | PUB-01 | To do. |
+| M9-10 | Recommended and maximum prices for linked instructors, never fixed or a minimum | SCH-04 | To do. |
+| M9-11 | Fee settings for each linked instructor: weekly or monthly fee, start date, free weeks, a fee per introduced pupil | SCH-09, MNY-06 | To do. |
+| M9-12 | Fees fall due on their schedule, by a database job, and each is owed, paid or written off | SCH-09 | To do. |
+| M9-13 | A fee statement each linked instructor and the school both see; the school marks a fee paid outside Doovor | MNY-06 | To do. |
+| M9-14 | Collecting fees by card or Direct Debit through the school's Stripe account | SCH-09 | Waiting for the accountant and solicitor (D-278, answer 8). |
+| M9-15 | `school_enquiries`: new pupils from the school's public page, or added by the office, with consent | GAP-01, SCH-03 | To do. |
+| M9-16 | The school's inbox of new pupils: new, offered, taken, closed | SCH-03 | To do. |
+| M9-17 | Offer a pupil to one or more linked instructors: the first to accept gets them, and offers lapse | SCH-03 | To do. |
+| M9-18 | Give a pupil to a member, with the suggestions already built | SCH-03, LRN-06 | To do. |
+| M9-19 | Where each learner came from, the school or the instructor, kept on the relationship | SCH-09 | To do. |
+| M9-20 | A fee per introduced pupil falls due when their first lesson is booked | SCH-09 | To do. |
+| M9-21 | Pay settings for a member: an hourly rate or a share of the lesson price | MNY-06 | To do. |
+| M9-22 | A weekly statement for each member: lessons taught, hours and pay, with a CSV | MNY-06, SCH-05 | To do. |
+| M9-23 | Joining as a member with an account: their own Business pauses, and their learners choose whether to move | AUTH-05, LRN-07 | To do. |
+| M9-24 | A linked instructor leaves or is let go: the link ends, fees stop, introduced learners choose | SCH-09, LRN-07 | To do. |
+| M9-25 | A member leaves: switched off as in D-120, and their own Business can open again | SCH-02 | To do. |
+| M9-26 | Invite managers, with a manager's permissions | SCH-02 | To do. |
+| M9-27 | The school adds and imports learners | LRN-01 | To do. |
+| M9-28 | Words and a kind for every new audit action, and the notifications for offers, fees and leaving | ADM-07, NTF-03 | To do. |
+| M9-29 | The privacy notice and both sets of terms cover linked instructors, school fees and introduced learners | NFR-PRV-01 | To do. |
+| M9-30 | The M9 report |  | To do. |
 
 ## Beta preparation
 

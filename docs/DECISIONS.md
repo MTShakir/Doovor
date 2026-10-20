@@ -1463,3 +1463,17 @@ Every decision made without the product owner, newest last. Format: date, decisi
 - **Asked for:** the product owner gave the number that takes calls and WhatsApp messages: the support email can go anywhere it is needed, the number only where it is really needed.
 - **Decision:** the number lives in `brand.ts` beside the support email, with a link that dials it and one that opens a WhatsApp chat, and the copy guard fails the build if it is written anywhere else, however it is spaced. It is shown in two places: the accessibility statement, where somebody who finds the product hard to use may need another way than writing in, and the page a suspended Business sees, which cannot take bookings or payments and may need a person sooner than an email brings one. Everywhere else, the footer, the legal pages and every email, keeps the email alone.
 - **Options:** the number in the site footer as well (every visitor sees it, which is more calls than "really needed"); on the schools page for owners who would rather talk before signing up (left for the product owner to ask for).
+
+## D-278 | 2026-10-20 | Schools work the way UK schools do | Product owner, Claude
+- **Research:** "How UK Driving Schools Work" (20 Oct 2026, https://claude.ai/artifact/FoFZFsV7GgCzb5CDuoBf2Q). Most school instructors are self-employed and sell their own lessons, the school earning a weekly fee; HMRC's guidance for driving schools (VTAXPER66100, VTAXPER66400) makes the school the seller of every lesson when it allocates pupils, sets prices and takes the money, which is how the school side was built in M5 (D-011, SCH-03, SCH-04, SCH-05's default).
+- **Owner's answers, 20 October 2026:** every recommendation accepted.
+  1. A school's lessons are sold by the school, through its members (as built), or by linked instructors who keep their own Business, Stripe account, learners and prices; a school can have both.
+  2. A school never holds learners' money to pay its instructors later.
+  3. Payment routing (SCH-05) and the school's fees (SCH-09, which was Phase 5) come first.
+  4. For linked instructors the school may recommend or cap prices, never fix them or set a minimum.
+  5. When an instructor leaves, learners the school introduced may stay with them or move to another of the school's instructors, and an instructor's own learners go with them; the learner agrees either way.
+  6. Prepaid hours pause and are refunded pro rata rather than running out.
+  7. The School plan costs £6 an instructor a month, the lowest in the market (it was £9).
+  8. An accountant and a solicitor answer the brief's questions before Doovor collects any money for a school.
+- **Also from the owner:** Doovor does not check the badges of a school's instructors; the school vouches for them, and expiry reminders stay. Asked what happens to an instructor who already has an account: linked, they keep everything and nothing moves; as a member, their own Business pauses and their learners choose whether to move. Leaving works the same way round. This replaces the 17 September answer in D-118, under which they signed up again with another email.
+- **Plan:** M9 in `docs/PLAN.md`, built on branch `m9-schools`.
