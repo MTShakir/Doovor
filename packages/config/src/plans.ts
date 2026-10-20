@@ -90,7 +90,7 @@ export const plans: Record<PlanKey, Plan> = {
   school: {
     key: 'school',
     label: 'School',
-    monthlyPricePence: 900,
+    monthlyPricePence: 600,
     yearlyPricePence: null,
     perInstructor: true,
     minimumInstructors: 2,

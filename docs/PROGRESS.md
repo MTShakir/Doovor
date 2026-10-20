@@ -34,7 +34,7 @@ through the legal pages (`docs/BETA.md`).
 | Task | What | PRD | State |
 |---|---|---|---|
 | M9-01 | The plan, the owner's decisions and the PRD rows they change | SCH-05, SCH-09 | Done. The plan in `docs/PLAN.md`, the owner's answers in D-278, and the PRD rows they change: SCH-04, SCH-05, SCH-09, INS-02 and the School plan's price in 9.18. |
-| M9-02 | The School plan at £6 an instructor a month | 9.18 | To do. |
+| M9-02 | The School plan at £6 an instructor a month | 9.18 | Done (D-278, answer 7). The price lives in `packages/config/src/plans.ts`, which the pricing page, the founding offer and the plan features read, so £6 shows wherever the School plan does; the minimum of 2 instructors stays. Unit tests for the price and for 0, 1 and 6 instructors. |
 | M9-03 | A school's instructors need no badge check by Doovor: the school vouches; expiry reminders stay | INS-02, INS-03 | To do. |
 | M9-04 | A school says who sells its lessons (the school, its instructors, or both) at setup and in Settings, in plain words | SCH-05 | To do. |
 | M9-05 | `school_links`: a school and an instructor's own Business, invited, active or ended, with RLS | SCH-09 | To do. |

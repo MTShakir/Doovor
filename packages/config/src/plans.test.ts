@@ -13,7 +13,7 @@ describe('plans', () => {
     expect(plans.free.monthlyPricePence).toBe(0);
     expect(plans.pro.monthlyPricePence).toBe(1200);
     expect(plans.pro.yearlyPricePence).toBe(12000);
-    expect(plans.school.monthlyPricePence).toBe(900);
+    expect(plans.school.monthlyPricePence).toBe(600);
     expect(plans.school.minimumInstructors).toBe(2);
   });
 
@@ -35,9 +35,9 @@ describe('plans', () => {
   });
 
   it('applies the school minimum of 2 instructors', () => {
-    expect(monthlyPricePence('school', 0)).toBe(1800);
-    expect(monthlyPricePence('school', 1)).toBe(1800);
-    expect(monthlyPricePence('school', 6)).toBe(5400);
+    expect(monthlyPricePence('school', 0)).toBe(1200);
+    expect(monthlyPricePence('school', 1)).toBe(1200);
+    expect(monthlyPricePence('school', 6)).toBe(3600);
     expect(monthlyPricePence('pro', 6)).toBe(1200);
   });
 
