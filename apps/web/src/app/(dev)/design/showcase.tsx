@@ -1595,7 +1595,7 @@ export function DesignShowcase() {
             <NextTimesSkeleton idPrefix="loading-" />
           </div>
         </Suspense>
-        <Label>About, with everything said and with only languages; where lessons start, with districts added</Label>
+        <Label>About, with everything said and with only languages; where lessons start, with districts added, and with no base yet (D-307)</Label>
         <div className="grid items-start gap-6 md:grid-cols-2">
           <AboutInstructor
             idPrefix="full-"
@@ -1606,8 +1606,9 @@ export function DesignShowcase() {
           />
           <AboutInstructor idPrefix="short-" bio={null} yearsTeaching={0} languages={['English']} specialisms={[]} />
         </div>
-        <div className="max-w-xl">
+        <div className="grid max-w-xl gap-6">
           <WhereLessonsStart radiusMiles={8} outcode="LS6" alsoCovers={['LS17', 'LS18']} areaCentre={null} />
+          <WhereLessonsStart idPrefix="no-base-" radiusMiles={8} outcode={null} alsoCovers={['LS17']} areaCentre={null} />
         </div>
         <Label>Prices, with packages, and nothing published yet</Label>
         <div className="grid items-start gap-6 md:grid-cols-2">

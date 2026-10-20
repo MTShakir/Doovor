@@ -74,10 +74,15 @@ export interface Coverage {
   alsoCovers: readonly string[];
 }
 
-/** Where lessons can start, in one sentence. */
-export function coverageWords({ radiusMiles, outcode, alsoCovers }: Coverage): string {
+/**
+ * Where lessons can start, in one sentence. Without a base there is no distance to give, because
+ * the miles are only the setting's starting value until a base is set: just the districts they
+ * added, or nothing at all (D-307).
+ */
+export function coverageWords({ radiusMiles, outcode, alsoCovers }: Coverage): string | null {
+  if (outcode === null) return alsoCovers.length === 0 ? null : `Lessons in ${joinWords(alsoCovers)}.`;
   const miles = radiusMiles === 1 ? '1 mile' : `${String(radiusMiles)} miles`;
-  const around = `Lessons within ${miles} of ${outcode ?? 'their base'}`;
+  const around = `Lessons within ${miles} of ${outcode}`;
   return alsoCovers.length === 0 ? `${around}.` : `${around}, and in ${joinWords(alsoCovers)}.`;
 }
 

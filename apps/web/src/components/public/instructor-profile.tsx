@@ -221,20 +221,27 @@ export interface WhereLessonsStartProps extends Prefixed {
   colour?: string | null;
 }
 
-/** The area covered, drawn and said (PUB-01). The middle is rounded, never the instructor's home. */
+/**
+ * The area covered, drawn and said (PUB-01). The middle is rounded, never the instructor's home.
+ * With no base there is no circle to draw: just the districts they added, or no section (D-307).
+ */
 export function WhereLessonsStart({ radiusMiles, outcode, alsoCovers, areaCentre, colour = null, idPrefix = '' }: WhereLessonsStartProps) {
+  const words = coverageWords({ radiusMiles, outcode, alsoCovers });
+  if (words === null) return null;
   return (
     <ProfileSection id={`${idPrefix}area-heading`} title="Where lessons start">
-      <CoverageImage
-        centre={areaCentre === null ? null : { latitude: areaCentre.latitude, longitude: areaCentre.longitude }}
-        radiusMiles={radiusMiles}
-        place={outcode}
-        description={`Where lessons start: within ${String(radiusMiles)} ${radiusMiles === 1 ? 'mile' : 'miles'} of ${outcode ?? "the instructor's base"}`}
-        colour={colour}
-      />
+      {outcode === null ? null : (
+        <CoverageImage
+          centre={areaCentre === null ? null : { latitude: areaCentre.latitude, longitude: areaCentre.longitude }}
+          radiusMiles={radiusMiles}
+          place={outcode}
+          description={`Where lessons start: within ${String(radiusMiles)} ${radiusMiles === 1 ? 'mile' : 'miles'} of ${outcode}`}
+          colour={colour}
+        />
+      )}
       <p className="flex items-start gap-2 text-body text-ink">
         <MapPin className="mt-0.5 size-5 shrink-0 text-grey-700" aria-hidden />
-        {coverageWords({ radiusMiles, outcode, alsoCovers })}
+        {words}
       </p>
     </ProfileSection>
   );

@@ -65,9 +65,9 @@ describe('the public instructor profile (PUB-01, M5-02)', () => {
     expect(coverageWords({ radiusMiles: 1, outcode: 'M1', alsoCovers: ['M20', 'M21'] })).toBe(
       'Lessons within 1 mile of M1, and in M20 and M21.',
     );
-    expect(coverageWords({ radiusMiles: 10, outcode: null, alsoCovers: ['M20'] })).toBe(
-      'Lessons within 10 miles of their base, and in M20.',
-    );
+    // No base yet: the miles are only the setting's starting value, so they are not said (D-307).
+    expect(coverageWords({ radiusMiles: 10, outcode: null, alsoCovers: ['M20', 'M21'] })).toBe('Lessons in M20 and M21.');
+    expect(coverageWords({ radiusMiles: 8, outcode: null, alsoCovers: [] })).toBeNull();
   });
 
   it('finds the lowest price for an hour of driving, whatever the lesson lengths', () => {
