@@ -1,6 +1,6 @@
 import type { Metadata } from 'next';
 import { resolveBookingRules } from '@repo/core/booking-rules';
-import { effectivePence } from '@repo/core/catalogue';
+import { effectivePence, priceRowLabel } from '@repo/core/catalogue';
 import { formatPence } from '@repo/core/money';
 import { defaultWorkingHours } from '@repo/core/schemas/onboarding';
 import { formatDate, formatMinutes, formatTime, todayInZone } from '@repo/core/time';
@@ -11,9 +11,11 @@ import { connection } from 'next/server';
 import { Suspense } from 'react';
 import { PackagesEditor } from '@/components/catalogue/packages-editor';
 import { PricesForm } from '@/components/catalogue/prices-form';
+import { PriceGuideNote } from '@/components/school/price-guide-note';
 import { BookingRulesForm } from '@/components/settings/booking-rules-form';
 import { requirePortal } from '@/lib/auth/session';
 import { businessCatalogue } from '@/lib/catalogue/catalogue';
+import { schoolLinkOf } from '@/lib/school/link';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
 import { saveBookingRules, saveBusinessPackage, saveBusinessPrices, saveInstructorRules, saveOwnPrices } from './actions';
 import { FirstPrices } from './first-prices';
@@ -101,6 +103,20 @@ async function Availability() {
     isRecord(business?.settings) ? business.settings : null,
     profile ? { bufferMinutes: profile.buffer_minutes, instantBook: profile.instant_book } : null,
   );
+  // The school their own Business is linked to, if any, and what it recommends and allows (D-286).
+  const link = !atSchool && membership.role === 'owner' ? await schoolLinkOf(membership.businessId) : null;
+  const cap = link?.maxHourlyPence ?? null;
+  const aboveCap =
+    cap === null
+      ? []
+      : [
+          ...catalogue.rows
+            .filter((row) => row.businessPence !== null && row.businessPence * 60 > cap * row.durationMinutes)
+            .map((row) => `${priceRowLabel(row)}, ${formatPence(row.businessPence ?? 0)}`),
+          ...catalogue.packages
+            .filter((one) => one.onSale && one.pricePence * 60 > cap * one.minutes)
+            .map((one) => `${one.name}, ${formatPence(one.pricePence)}`),
+        ];
   // A school sets the rules for everyone who teaches for it (SCH-04).
   const canSetBusinessRules = membership.role === 'owner' || membership.role === 'manager';
   // At a school, an instructor sets their own prices only when the school allows it (SCH-02).
@@ -174,6 +190,14 @@ async function Availability() {
             </div>
             {/* Skipped in onboarding, there is no lesson to price yet, so the first price is asked
                 the way onboarding asks it rather than showing a button with nothing above it (D-266). */}
+            {link === null ? null : (
+              <PriceGuideNote
+                school={link.schoolName}
+                recommendedHourlyPence={link.recommendedHourlyPence}
+                maxHourlyPence={link.maxHourlyPence}
+                above={aboveCap}
+              />
+            )}
             {catalogue.rows.length > 0 ? (
               <PricesForm rows={catalogue.rows} mode="business" save={saveBusinessPrices} />
             ) : (

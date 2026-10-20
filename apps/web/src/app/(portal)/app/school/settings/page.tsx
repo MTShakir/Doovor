@@ -7,11 +7,12 @@ import { Suspense } from 'react';
 import { PackagesEditor } from '@/components/catalogue/packages-editor';
 import { PricesForm } from '@/components/catalogue/prices-form';
 import { LessonSellerForm } from '@/components/school/lesson-seller-form';
+import { PriceGuideForm } from '@/components/school/price-guide-form';
 import { BookingRulesForm } from '@/components/settings/booking-rules-form';
 import { requirePortal } from '@/lib/auth/session';
 import { businessCatalogue } from '@/lib/catalogue/catalogue';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
-import { saveLessonSeller, saveSchoolPackage, saveSchoolPrices, saveSchoolRules } from './actions';
+import { saveLessonSeller, saveLinkedPriceGuide, saveSchoolPackage, saveSchoolPrices, saveSchoolRules } from './actions';
 
 export const metadata: Metadata = { title: 'Settings' };
 
@@ -41,7 +42,11 @@ async function Settings() {
   const supabase = await createSupabaseServerClient();
   const [catalogue, { data: business }, { data: platform }] = await Promise.all([
     businessCatalogue(school.businessId),
-    supabase.from('businesses').select('settings, lesson_seller').eq('id', school.businessId).single(),
+    supabase
+      .from('businesses')
+      .select('settings, lesson_seller, linked_recommended_hourly_pence, linked_max_hourly_pence')
+      .eq('id', school.businessId)
+      .single(),
     supabase.from('platform_settings').select('value').eq('key', 'booking_defaults').maybeSingle(),
   ]);
   const rules = resolveBookingRules(isRecord(platform?.value) ? platform.value : null, isRecord(business?.settings) ? business.settings : null, null);
@@ -64,6 +69,21 @@ async function Settings() {
         </div>
         <PricesForm rows={catalogue.rows} mode="business" save={saveSchoolPrices} />
       </Card>
+      {business?.lesson_seller === 'instructors' || business?.lesson_seller === 'both' ? (
+        <Card className="flex flex-col gap-4" role="region" aria-labelledby="school-guide-title">
+          <div className="flex flex-col gap-1">
+            <CardTitle id="school-guide-title">Prices for linked instructors</CardTitle>
+            <CardDescription>
+              Instructors linked to your school set their own prices. You can recommend one and set the most they charge.
+            </CardDescription>
+          </div>
+          <PriceGuideForm
+            recommendedPence={business.linked_recommended_hourly_pence}
+            maxPence={business.linked_max_hourly_pence}
+            onSave={saveLinkedPriceGuide}
+          />
+        </Card>
+      ) : null}
       <Card className="flex flex-col gap-4" role="region" aria-labelledby="school-packages-title">
         <div className="flex flex-col gap-1">
           <CardTitle id="school-packages-title">Packages</CardTitle>

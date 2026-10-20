@@ -46,6 +46,7 @@ export const auditActionWords: Readonly<Record<string, string>> = {
   'school.link_invitation_revoked': 'Invitation to link to the school cancelled',
   'school.instructor_linked': 'An instructor linked their Business to the school',
   'school.link_ended': 'An instructor and the school stopped being linked',
+  'school.price_guide_set': 'The prices the school recommends and allows its linked instructors changed',
   'staff.added': 'Made platform staff',
   'staff.removed': 'Removed from the platform staff',
   'staff.role_changed': 'Platform staff role changed',
@@ -218,6 +219,7 @@ export const auditCategories: readonly AuditCategory[] = [
       'school.link_invitation_revoked',
       'school.instructor_linked',
       'school.link_ended',
+      'school.price_guide_set',
     ],
   },
   {

@@ -102,3 +102,28 @@ describe('saving a package (PAY-04, SCH-04, M5-15)', () => {
     });
   });
 });
+
+describe("the most a linked instructor's school allows (M9-10, D-286)", () => {
+  const capped = { code: 'P0001', message: 'VALIDATION_FAILED', details: '{"field": "price", "reason": "above_school_cap", "maxHourlyPence": 4500, "school": "Quayside Driving School"}' };
+
+  it('says the most an hour when a price is above it', async () => {
+    rpc.mockResolvedValueOnce({ data: null, error: capped });
+    expect(await savePrices('biz-1', null, { prices: [{ lessonTypeId, durationMinutes: 60, price: '50' }] })).toMatchObject({
+      ok: false,
+      code: 'VALIDATION_FAILED',
+      message: 'Quayside Driving School lets you charge at most £45 an hour. Lower the prices above it.',
+    });
+    expect(expireAll).not.toHaveBeenCalled();
+  });
+
+  it('says the most a package of those hours can cost, beside its price', async () => {
+    single.mockResolvedValueOnce({ data: null, error: capped });
+    const most = 'Quayside Driving School lets you charge at most £45 an hour, so this package can cost at most £450.';
+    expect(await savePackage('biz-1', { packageId: null, name: '10 hours', hours: '10', price: '480', expiryDays: '', onSale: true })).toMatchObject({
+      ok: false,
+      code: 'VALIDATION_FAILED',
+      message: most,
+      fields: { price: most },
+    });
+  });
+});

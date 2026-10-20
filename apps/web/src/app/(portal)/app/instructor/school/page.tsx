@@ -6,6 +6,7 @@ import { SkeletonRow } from '@repo/ui/skeleton';
 import type { Metadata } from 'next';
 import { Suspense } from 'react';
 import { requirePortal } from '@/lib/auth/session';
+import { PriceGuideNote } from '@/components/school/price-guide-note';
 import { icons } from '@/lib/icons';
 import { ownSchoolLink } from '@/lib/school/link';
 import { LeaveSchool } from './leave-school';
@@ -54,9 +55,14 @@ async function School() {
       <ul className="flex list-disc flex-col gap-1 pl-5 text-body text-ink">
         <li>Your prices, payments and learners are yours, as they were.</li>
         <li>{link.schoolName} sends you pupils and sees when you are free, never your money.</li>
-        <li>{link.schoolName} vouches for your badge, so {brand.name} does not check it while you are linked.</li>
+        {link.vouched ? (
+          <li>{link.schoolName} vouches for your badge, so {brand.name} does not check it while you are linked.</li>
+        ) : (
+          <li>{brand.name} checked your badge before you linked, and your profile keeps its tick.</li>
+        )}
         {link.proGiven ? <li>Your plan includes Pro while you are linked, paid for by {link.schoolName}.</li> : null}
       </ul>
+      <PriceGuideNote school={link.schoolName} recommendedHourlyPence={link.recommendedHourlyPence} maxHourlyPence={link.maxHourlyPence} />
       <LeaveSchool linkId={link.linkId} school={link.schoolName} proGiven={link.proGiven} />
     </Card>
   );

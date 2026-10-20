@@ -84,6 +84,8 @@ import type { SchoolOverview } from '@/lib/school/overview';
 import { LetGoDialog, SwitchOffDialog, TeamSections } from '@/components/school/team';
 import { AllocationChoices } from '@/components/school/allocation-choices';
 import { LinkedFreeBusy } from '@/components/school/linked-free-busy';
+import { PriceGuideForm } from '@/components/school/price-guide-form';
+import { PriceGuideNote } from '@/components/school/price-guide-note';
 import type { LinkedDay } from '@/lib/school/linked-diary';
 import { PackagesEditor } from '@/components/catalogue/packages-editor';
 import { PricesForm } from '@/components/catalogue/prices-form';
@@ -1766,6 +1768,22 @@ export function DesignShowcase() {
         <InstructorWeeks instructors={[]} week={exampleWeek} idPrefix="design-weeks-empty" />
         <Label>Loading</Label>
         <OverviewSkeleton />
+        <Label>Prices for linked instructors: none yet, and a recommended price with a most (D-286)</Label>
+        <div className="grid items-start gap-6 md:grid-cols-2">
+          <PriceGuideForm idPrefix="design-a-" recommendedPence={null} maxPence={null} onSave={savedNothing} />
+          <PriceGuideForm idPrefix="design-b-" recommendedPence={4000} maxPence={4500} onSave={savedNothing} />
+        </div>
+        <Label>What a linked instructor is told: both, a recommendation alone, and prices above the most (D-286)</Label>
+        <div className="grid items-start gap-4 md:grid-cols-3">
+          <PriceGuideNote school="Quayside Driving School" recommendedHourlyPence={4000} maxHourlyPence={4500} />
+          <PriceGuideNote school="Quayside Driving School" recommendedHourlyPence={4000} maxHourlyPence={null} />
+          <PriceGuideNote
+            school="Quayside Driving School"
+            recommendedHourlyPence={null}
+            maxHourlyPence={4500}
+            above={['Standard lesson, 1 hour, £50', '10 hours, £480']}
+          />
+        </div>
         <Label>The diary&apos;s linked instructors: busy with lessons and time off, free all day, and away all week (D-284)</Label>
         <LinkedFreeBusy instructors={exampleLinkedDays} />
         <Label>Team, as the owner of a school that sells some lessons and links instructors who sell their own sees it, with invitations of both kinds and somebody switched off (D-282)</Label>

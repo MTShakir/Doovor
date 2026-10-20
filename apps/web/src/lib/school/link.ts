@@ -11,6 +11,9 @@ const linkSchema = z.object({
   schoolSlug: z.string(),
   linkedAt: z.string(),
   proGiven: z.boolean(),
+  vouched: z.boolean().default(true),
+  recommendedHourlyPence: z.number().nullable().default(null),
+  maxHourlyPence: z.number().nullable().default(null),
 });
 
 /** The school an instructor's own Business is linked to (D-282). */
@@ -22,6 +25,11 @@ export interface SchoolLink {
   linkedOn: string;
   /** Pro came with the link, so it goes when the link does (D-279). */
   proGiven: boolean;
+  /** The school vouches for the badge; false where the platform checked it before they linked (D-280). */
+  vouched: boolean;
+  /** What the school recommends an hour, and the most it allows (D-286). */
+  recommendedHourlyPence: number | null;
+  maxHourlyPence: number | null;
 }
 
 /**
@@ -34,8 +42,8 @@ export async function schoolLinkOf(businessId: string): Promise<SchoolLink | nul
   if (error || data === null) return null;
   const parsed = linkSchema.safeParse(data);
   if (!parsed.success) return null;
-  const { linkId, schoolName, schoolSlug, linkedAt, proGiven } = parsed.data;
-  return { linkId, schoolName, schoolSlug, linkedOn: formatDate(new Date(linkedAt)), proGiven };
+  const { linkedAt, ...rest } = parsed.data;
+  return { ...rest, linkedOn: formatDate(new Date(linkedAt)) };
 }
 
 /** The Business an account runs on its own, which is what can be linked to a school. */

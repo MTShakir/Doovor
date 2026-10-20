@@ -14,7 +14,7 @@ vi.mock('@/lib/catalogue/save', () => ({
 }));
 vi.mock('@/lib/public/instructor-profile', () => ({ expireAllInstructorProfiles: () => { expireAll(); } }));
 
-const { saveLessonSeller, saveSchoolPackage, saveSchoolPrices, saveSchoolRules } = await import('./actions');
+const { saveLessonSeller, saveLinkedPriceGuide, saveSchoolPackage, saveSchoolPrices, saveSchoolRules } = await import('./actions');
 
 const manager = { businessId: 'school-1', businessType: 'school', role: 'manager' };
 const rules = { noticeHours: '24', horizonWeeks: '8', cancellationWindowHours: '24', lateFeePercent: '50', requestExpiryHours: '12', reminderHoursBefore: '24,2' };
@@ -88,5 +88,31 @@ describe('who sells the school\'s lessons (D-281)', () => {
       code: 'VALIDATION_FAILED',
       fields: { lessonSeller: 'Some of your instructors still teach under the school. Choose Some of each while they move to their own.' },
     });
+  });
+});
+
+describe('prices for linked instructors (M9-10, D-286)', () => {
+  it("saves what the school recommends and the most, in pence, through the database's own door", async () => {
+    expect(await saveLinkedPriceGuide({ recommended: '40', maximum: '45' })).toEqual({ ok: true, data: null });
+    expect(rpc).toHaveBeenCalledWith('set_linked_price_guide', { p_school_id: 'school-1', p_recommended_hourly_pence: 4000, p_max_hourly_pence: 4500 });
+  });
+
+  it('leaves out what is left empty, which is none', async () => {
+    await saveLinkedPriceGuide({ recommended: '', maximum: '' });
+    expect(rpc).toHaveBeenCalledWith('set_linked_price_guide', { p_school_id: 'school-1', p_recommended_hourly_pence: undefined, p_max_hourly_pence: undefined });
+  });
+
+  it('says what to fix, and is for somebody running the school', async () => {
+    expect(await saveLinkedPriceGuide({ recommended: '50', maximum: '45' })).toMatchObject({
+      ok: false,
+      code: 'VALIDATION_FAILED',
+      fields: { recommended: 'Recommend no more than the most they can charge' },
+    });
+    rpc.mockResolvedValueOnce({ data: null, error: { code: 'P0001', message: 'VALIDATION_FAILED', details: '{"field": "recommended", "reason": "above_maximum"}' } });
+    expect(await saveLinkedPriceGuide({ recommended: '40', maximum: '45' })).toMatchObject({ fields: { recommended: 'Recommend no more than the most they can charge' } });
+    requirePortal.mockResolvedValue({ access: { memberships: [{ ...manager, role: 'instructor' }] } });
+    rpc.mockClear();
+    expect(await saveLinkedPriceGuide({ recommended: '40', maximum: '45' })).toMatchObject({ ok: false, code: 'NOT_ALLOWED' });
+    expect(rpc).not.toHaveBeenCalled();
   });
 });

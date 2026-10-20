@@ -522,6 +522,8 @@ export type Database = {
           founding_offer: boolean
           id: string
           lesson_seller: Database["public"]["Enums"]["lesson_seller"] | null
+          linked_max_hourly_pence: number | null
+          linked_recommended_hourly_pence: number | null
           logo_url: string | null
           name: string
           onboarding_completed_at: string | null
@@ -558,6 +560,8 @@ export type Database = {
           founding_offer?: boolean
           id?: string
           lesson_seller?: Database["public"]["Enums"]["lesson_seller"] | null
+          linked_max_hourly_pence?: number | null
+          linked_recommended_hourly_pence?: number | null
           logo_url?: string | null
           name: string
           onboarding_completed_at?: string | null
@@ -594,6 +598,8 @@ export type Database = {
           founding_offer?: boolean
           id?: string
           lesson_seller?: Database["public"]["Enums"]["lesson_seller"] | null
+          linked_max_hourly_pence?: number | null
+          linked_recommended_hourly_pence?: number | null
           logo_url?: string | null
           name?: string
           onboarding_completed_at?: string | null
@@ -4024,6 +4030,14 @@ export type Database = {
         Args: {
           p_business_id: string
           p_seller: Database["public"]["Enums"]["lesson_seller"]
+        }
+        Returns: undefined
+      }
+      set_linked_price_guide: {
+        Args: {
+          p_max_hourly_pence?: number
+          p_recommended_hourly_pence?: number
+          p_school_id: string
         }
         Returns: undefined
       }

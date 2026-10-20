@@ -1,6 +1,7 @@
 'use server';
 
 import { businessBookingRulesSchema } from '@repo/core/booking-rules';
+import { linkedPriceGuideSchema } from '@repo/core/catalogue';
 import { lessonSellerChoiceSchema } from '@repo/core/schemas/school';
 import { parsePostgresError } from '@repo/core/errors';
 import { err, ok, type Result } from '@repo/core/result';
@@ -34,6 +35,33 @@ export async function saveLessonSeller(input: unknown): Promise<Result<null>> {
       return err('VALIDATION_FAILED', undefined, {
         lessonSeller: 'Some of your instructors still teach under the school. Choose Some of each while they move to their own.',
       });
+    }
+    return err(code);
+  }
+  return ok(null);
+}
+
+/**
+ * SCH-04, D-286: what the school recommends its linked instructors charge an hour, and the most it
+ * lets them. Whoever sets the school's prices says it; the database checks.
+ */
+export async function saveLinkedPriceGuide(input: unknown): Promise<Result<null>> {
+  const parsed = linkedPriceGuideSchema.safeParse(input);
+  if (!parsed.success) return err('VALIDATION_FAILED', undefined, fieldErrors(parsed.error));
+
+  const businessId = await runningSchool();
+  if (!businessId) return err('NOT_ALLOWED');
+  const supabase = await createSupabaseServerClient();
+  const { error } = await supabase.rpc('set_linked_price_guide', {
+    p_school_id: businessId,
+    // Left empty, there is none.
+    p_recommended_hourly_pence: parsed.data.recommended ?? undefined,
+    p_max_hourly_pence: parsed.data.maximum ?? undefined,
+  });
+  if (error) {
+    const { code, context } = parsePostgresError(error);
+    if (context.reason === 'above_maximum') {
+      return err('VALIDATION_FAILED', undefined, { recommended: 'Recommend no more than the most they can charge' });
     }
     return err(code);
   }

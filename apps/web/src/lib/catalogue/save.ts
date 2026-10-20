@@ -1,10 +1,24 @@
 import 'server-only';
-import { lessonPricesSchema, packageSchema } from '@repo/core/catalogue';
+import { lessonPricesSchema, mostFor, packageSchema } from '@repo/core/catalogue';
+import { formatPence } from '@repo/core/money';
 import { parsePostgresError } from '@repo/core/errors';
 import { err, ok, type Result } from '@repo/core/result';
 import { fieldErrors } from '@/lib/forms';
 import { expireAllInstructorProfiles, expireInstructorProfile } from '@/lib/public/instructor-profile';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
+
+/**
+ * What a refusal for being above the most a linked instructor's school allows says (D-286), or null
+ * for any other refusal. For a package, it says the most that package may cost.
+ */
+function aboveSchoolCap(context: Record<string, unknown>, packageMinutes?: number): string | null {
+  if (context.reason !== 'above_school_cap' || typeof context.maxHourlyPence !== 'number') return null;
+  const school = typeof context.school === 'string' ? context.school : 'Your school';
+  const most = `${school} lets you charge at most ${formatPence(context.maxHourlyPence)} an hour`;
+  return packageMinutes === undefined
+    ? `${most}. Lower the prices above it.`
+    : `${most}, so this package can cost at most ${formatPence(mostFor(packageMinutes, context.maxHourlyPence))}.`;
+}
 
 /**
  * Saves prices for a Business, or one instructor's own (R-05, SCH-04): all of them or none. The
@@ -27,7 +41,9 @@ export async function savePrices(businessId: string, instructorId: string | null
     })),
   });
   if (error) {
-    const { code } = parsePostgresError(error);
+    const { code, context } = parsePostgresError(error);
+    const capped = aboveSchoolCap(context);
+    if (capped !== null) return err('VALIDATION_FAILED', capped);
     return err(code === 'VALIDATION_FAILED' ? 'VALIDATION_FAILED' : code, code === 'VALIDATION_FAILED' ? 'Those prices could not be saved. Check them and try again.' : undefined);
   }
 
@@ -49,7 +65,9 @@ export async function savePackage(businessId: string, input: unknown): Promise<R
       ? await supabase.from('packages').insert({ ...row, business_id: businessId }).select('id').single()
       : await supabase.from('packages').update(row).eq('id', packageId).eq('business_id', businessId).select('id').single();
   if (saved.error) {
-    const { code } = parsePostgresError(saved.error);
+    const { code, context } = parsePostgresError(saved.error);
+    const capped = aboveSchoolCap(context, hours);
+    if (capped !== null) return err('VALIDATION_FAILED', capped, { price: capped });
     // No row back from an update is somebody else's package, or no package at all.
     return err(code === 'NOT_FOUND' ? 'NOT_ALLOWED' : code, 'That package could not be saved. Try again.');
   }
