@@ -1,3 +1,4 @@
+import { brand } from '@repo/config/brand';
 import { expect, test } from '@playwright/test';
 import { expectAccessible, robotsOf, settled, snap } from '../support/helpers';
 
@@ -48,6 +49,9 @@ test.describe('the legal pages (NFR-PRV-02, M6-07)', () => {
     await expect(page.getByText('For the solicitor')).toHaveCount(0);
     await expect(page.getByRole('heading', { name: 'What we know is not right yet' })).toBeVisible();
     await expect(page.getByText('Web Content Accessibility Guidelines 2.2 at level AA')).toBeVisible();
+    // A problem can be told to a person, not only written down (D-277).
+    await expect(page.getByRole('link', { name: brand.supportPhone.display })).toHaveAttribute('href', brand.supportPhone.href);
+    await expect(page.getByRole('link', { name: 'WhatsApp', exact: true })).toHaveAttribute('href', brand.supportPhone.whatsApp);
     await expectAccessible(page);
     await settled(page);
     await snap(page, testInfo, 'legal-accessibility');

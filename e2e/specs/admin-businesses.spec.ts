@@ -1,3 +1,4 @@
+import { brand } from '@repo/config/brand';
 import { expect, test } from '@playwright/test';
 import { authFile } from '../support/accounts';
 import { makeInstructor } from '../support/database';
@@ -62,6 +63,9 @@ test.describe('Businesses for platform staff (ADM-02, M5-18)', { tag: '@desktop-
       await signInThroughForm(theirs, instructor.email);
       await expect(theirs).toHaveURL(/\/suspended$/);
       await expect(theirs.getByRole('heading', { level: 1, name: `${business} is suspended` })).toBeVisible();
+      // A number to call or message as well as the email, as they cannot take bookings (D-277).
+      await expect(theirs.getByRole('link', { name: brand.supportPhone.display })).toHaveAttribute('href', brand.supportPhone.href);
+      await expect(theirs.getByRole('link', { name: 'WhatsApp', exact: true })).toHaveAttribute('href', brand.supportPhone.whatsApp);
       await expectAccessible(theirs);
       await snap(theirs, testInfo, 'business-suspended');
       await theirs.goto('/app/instructor');

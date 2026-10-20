@@ -11,6 +11,8 @@
 const name = 'Doovor';
 const domain = 'doovor.com';
 const appHost = `app.${domain}`;
+/** The support number in full international form, for calls and WhatsApp. */
+const supportNumber = '+447518512991';
 
 export const brand = {
   name,
@@ -42,6 +44,19 @@ export const brand = {
   /** The app: signing in, the portals, paying, booking links, and every link in an email. */
   appUrl: `https://${appHost}`,
   supportEmail: `support@${domain}`,
+  /**
+   * The number that takes calls and WhatsApp messages. Email is the way to reach us everywhere;
+   * the number is shown only where somebody may need a person and an email may not do (D-277):
+   * the accessibility statement, and the page of a Business that has been suspended.
+   */
+  supportPhone: {
+    /** As a person reads and dials it. */
+    display: '+44 7518 512991',
+    /** For a link that dials it. */
+    href: `tel:${supportNumber}`,
+    /** For a link that opens a chat with it in WhatsApp. */
+    whatsApp: `https://wa.me/${supportNumber.slice(1)}`,
+  },
   email: {
     fromName: name,
     fromAddress: `hello@${domain}`,

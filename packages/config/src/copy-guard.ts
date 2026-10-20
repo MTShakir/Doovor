@@ -44,6 +44,12 @@ export function brandNeedles(source: Brand = brand): Needle[] {
   return [
     { label: 'brand name', pattern: new RegExp(escapeRegExp(source.name), 'gi') },
     { label: 'brand domain', pattern: new RegExp(escapeRegExp(source.domain), 'gi') },
+    {
+      label: 'support phone number',
+      // The digits after the country code, however they are spaced: with +44 or 44 in front, as
+      // in a WhatsApp link, or with the 0 a UK number is written with.
+      pattern: new RegExp(source.supportPhone.href.replace(/[^0-9]/g, '').slice(2).split('').join('[ .-]?'), 'g'),
+    },
     ...Object.entries(source.colours).map(([token, hex]) => ({
       label: `brand colour ${token}`,
       pattern: new RegExp(`${escapeRegExp(hex)}(?![0-9a-f])`, 'gi'),

@@ -19,6 +19,16 @@ describe('copy guard', () => {
     expect(found.map((v) => v.detail)).toContain('brand domain');
   });
 
+  it('flags the support phone number however it is written (D-277)', () => {
+    const { display, whatsApp } = brand.supportPhone;
+    const written = [display, display.replace('+44 ', '0'), display.replaceAll(' ', ''), whatsApp];
+    for (const one of written) {
+      expect(findViolations('apps/web/src/app/page.tsx', `const call = '${one}';`).map((v) => v.detail), one).toEqual(['support phone number']);
+    }
+    // Another number is not ours.
+    expect(findViolations('apps/web/src/app/page.tsx', "const call = '+44 7700 900123';")).toHaveLength(0);
+  });
+
   it('flags raw brand hex colours but not other hex values', () => {
     const content = `const a = '${brand.colours.yellow.toLowerCase()}';\nconst b = '#123456';`;
     const found = findViolations('packages/ui/src/button.tsx', content);

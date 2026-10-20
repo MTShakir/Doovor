@@ -18,7 +18,7 @@ export default function AccessibilityPage() {
     <LegalPage
       title="Accessibility"
       summary="How accessible the app is, how we test it, what we know is not right yet, and how to tell us."
-      updated="18 September 2026"
+      updated="20 October 2026"
       reviewed="18 September 2026"
     >
       <LegalSection title="What we aim for">
@@ -56,8 +56,20 @@ export default function AccessibilityPage() {
 
       <LegalSection title="Telling us about a problem">
         <LegalText>
-          If something on {brand.name} is hard or impossible to use, email {brand.supportEmail} and say which screen
-          and what happened. We will reply within five working days and tell you what we are doing about it.
+          If something on {brand.name} is hard or impossible to use, email{' '}
+          <a href={`mailto:${brand.supportEmail}`} className="font-semibold text-blue underline underline-offset-4">
+            {brand.supportEmail}
+          </a>
+          , or call or{' '}
+          <a href={brand.supportPhone.whatsApp} className="font-semibold text-blue underline underline-offset-4">
+            WhatsApp
+          </a>{' '}
+          us on{' '}
+          <a href={brand.supportPhone.href} className="whitespace-nowrap font-semibold text-blue underline underline-offset-4">
+            {brand.supportPhone.display}
+          </a>
+          , and say which screen and what happened. We will reply within five working days and tell you what we are
+          doing about it.
         </LegalText>
       </LegalSection>
 

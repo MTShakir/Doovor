@@ -48,6 +48,15 @@ async function Explanation() {
         <a href={`mailto:${brand.supportEmail}`} className="font-semibold text-blue underline underline-offset-4">
           {brand.supportEmail}
         </a>
+        , or call or{' '}
+        {/* A Business that cannot take bookings may need a person sooner than an email brings one (D-277). */}
+        <a href={brand.supportPhone.whatsApp} className="font-semibold text-blue underline underline-offset-4">
+          WhatsApp
+        </a>{' '}
+        us on{' '}
+        <a href={brand.supportPhone.href} className="whitespace-nowrap font-semibold text-blue underline underline-offset-4">
+          {brand.supportPhone.display}
+        </a>
         .
       </p>
     </div>
