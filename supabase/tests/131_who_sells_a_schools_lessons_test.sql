@@ -66,10 +66,10 @@ select is(
   'each change is in the audit log, and the one that changed nothing is not'
 );
 select is(
-  (select after ->> 'lesson_seller' from public.audit_log
-    where action = 'school.lesson_seller_set' and business_id = :'school' order by occurred_at desc, id desc limit 1),
-  'instructors',
-  'with what it became'
+  (select array_agg(after ->> 'lesson_seller' order by after ->> 'lesson_seller') from public.audit_log
+    where action = 'school.lesson_seller_set' and business_id = :'school'),
+  array['both', 'instructors'],
+  'with what it became each time'
 );
 
 select * from finish();

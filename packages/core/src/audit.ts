@@ -42,6 +42,10 @@ export const auditActionWords: Readonly<Record<string, string>> = {
   'member.invitation_accepted': 'Accepted an invitation to work for a Business',
   'member.invitation_revoked': 'Invitation to work for a Business cancelled',
   'school.lesson_seller_set': "Who sells the school's lessons changed",
+  'school.link_invited': 'Invited an instructor to link their Business to the school',
+  'school.link_invitation_revoked': 'Invitation to link to the school cancelled',
+  'school.instructor_linked': 'An instructor linked their Business to the school',
+  'school.link_ended': 'An instructor and the school stopped being linked',
   'staff.added': 'Made platform staff',
   'staff.removed': 'Removed from the platform staff',
   'staff.role_changed': 'Platform staff role changed',
@@ -204,7 +208,18 @@ export const auditCategories: readonly AuditCategory[] = [
   },
   // What the nightly sweep does on its own, so it is never mistaken for a person's doing (D-158).
   { key: 'housekeeping', label: 'Housekeeping', required: false, actions: ['audit_log.pruned'] },
-  { key: 'schools', label: 'Schools and their instructors', required: false, actions: ['school.lesson_seller_set'] },
+  {
+    key: 'schools',
+    label: 'Schools and their instructors',
+    required: false,
+    actions: [
+      'school.lesson_seller_set',
+      'school.link_invited',
+      'school.link_invitation_revoked',
+      'school.instructor_linked',
+      'school.link_ended',
+    ],
+  },
   {
     key: 'bookings',
     label: 'Lessons',

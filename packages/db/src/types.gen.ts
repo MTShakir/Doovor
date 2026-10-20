@@ -2811,6 +2811,96 @@ export type Database = {
           },
         ]
       }
+      school_links: {
+        Row: {
+          business_id: string
+          created_at: string
+          created_by: string | null
+          end_reason: string | null
+          ended_at: string | null
+          ended_by: string | null
+          id: string
+          invitation_id: string | null
+          prior_plan: Database["public"]["Enums"]["plan_key"] | null
+          prior_plan_expires_at: string | null
+          pro_given: boolean
+          school_id: string
+          started_at: string
+          status: Database["public"]["Enums"]["school_link_status"]
+          updated_at: string
+        }
+        Insert: {
+          business_id: string
+          created_at?: string
+          created_by?: string | null
+          end_reason?: string | null
+          ended_at?: string | null
+          ended_by?: string | null
+          id?: string
+          invitation_id?: string | null
+          prior_plan?: Database["public"]["Enums"]["plan_key"] | null
+          prior_plan_expires_at?: string | null
+          pro_given?: boolean
+          school_id: string
+          started_at?: string
+          status?: Database["public"]["Enums"]["school_link_status"]
+          updated_at?: string
+        }
+        Update: {
+          business_id?: string
+          created_at?: string
+          created_by?: string | null
+          end_reason?: string | null
+          ended_at?: string | null
+          ended_by?: string | null
+          id?: string
+          invitation_id?: string | null
+          prior_plan?: Database["public"]["Enums"]["plan_key"] | null
+          prior_plan_expires_at?: string | null
+          pro_given?: boolean
+          school_id?: string
+          started_at?: string
+          status?: Database["public"]["Enums"]["school_link_status"]
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "school_links_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "businesses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "school_links_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "school_links_ended_by_fkey"
+            columns: ["ended_by"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "school_links_invitation_id_fkey"
+            columns: ["invitation_id"]
+            isOneToOne: false
+            referencedRelation: "invitations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "school_links_school_id_fkey"
+            columns: ["school_id"]
+            isOneToOne: false
+            referencedRelation: "businesses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       skill_assessments: {
         Row: {
           assessed_at: string
@@ -3317,6 +3407,7 @@ export type Database = {
     }
     Functions: {
       accept_invitation: { Args: { p_token: string }; Returns: string }
+      accept_link_invitation: { Args: { p_token: string }; Returns: string }
       accept_member_invitation: { Args: { p_token: string }; Returns: string }
       accept_terms: { Args: { p_version: string }; Returns: undefined }
       add_gallery_photo: {
@@ -3590,6 +3681,7 @@ export type Database = {
         Returns: string
       }
       end_impersonation: { Args: { p_session_id: string }; Returns: undefined }
+      end_school_link: { Args: { p_link_id: string }; Returns: undefined }
       export_my_data: { Args: never; Returns: Json }
       feature_flags: { Args: never; Returns: Json }
       founding_places: { Args: never; Returns: Json }
@@ -3627,6 +3719,20 @@ export type Database = {
           p_full_name?: string
           p_instructor_id: string
           p_phone?: string
+        }
+        Returns: {
+          expires_at: string
+          invitation_id: string
+          token: string
+        }[]
+      }
+      invite_linked_instructor: {
+        Args: {
+          p_channel: string
+          p_email?: string
+          p_full_name?: string
+          p_phone?: string
+          p_school_id: string
         }
         Returns: {
           expires_at: string
@@ -3864,6 +3970,7 @@ export type Database = {
         Args: { p_slug: string; p_whole?: boolean }
         Returns: Json
       }
+      school_link_of: { Args: { p_business_id: string }; Returns: Json }
       school_overview: { Args: { p_business_id: string }; Returns: Json }
       school_profile_page: { Args: { p_slug: string }; Returns: Json }
       school_team: { Args: { p_business_id: string }; Returns: Json }
@@ -4459,6 +4566,7 @@ export type Database = {
         | "other"
       refund_kind: "card" | "credit" | "offline"
       refund_status: "pending" | "succeeded" | "failed" | "cancelled"
+      school_link_status: "active" | "ended"
       subscription_status:
         | "incomplete"
         | "trialing"
@@ -4712,6 +4820,7 @@ export const Constants = {
       ],
       refund_kind: ["card", "credit", "offline"],
       refund_status: ["pending", "succeeded", "failed", "cancelled"],
+      school_link_status: ["active", "ended"],
       subscription_status: [
         "incomplete",
         "trialing",
