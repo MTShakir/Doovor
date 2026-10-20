@@ -353,7 +353,7 @@ Branch: `m9-schools`, in its own worktree, so fixes on `beta-prep` can still be 
 | M9-28 | Words and a kind for every new audit action, and the notifications for offers, fees and leaving | ADM-07, NTF-03 | Unit tests |
 | M9-29 | The privacy notice and both sets of terms cover linked instructors, school fees and introduced learners | NFR-PRV-01 | Copy guards pass |
 | M9-30 | The M9 report | | Published |
-| M9-31 | Send "New learner invite accepted", found unsent while writing M9-28 (added with the owner's go) | NTF-03 | pgTAP, unit tests |
+| M9-31 | Send "New learner invite accepted", found unsent while writing M9-28 | NTF-03 | Withdrawn: `beta-prep` sent it first (D-301) |
 
 Never built, whatever the school asks (D-278): a school holding learners' money to pay instructors
 later; fixed or minimum prices for linked instructors; anything that books, changes or watches DVSA

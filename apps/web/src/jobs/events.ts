@@ -137,11 +137,3 @@ export const marketplaceRegionOpened = eventType('marketplace_region.opened', {
 export const schoolNotice = eventType('school.notice', {
   schema: staticSchema<{ kind: string; id: string }>(),
 });
-
-/**
- * A learner accepted a Business's invitation (NTF-03, Appendix B, D-297). The database queues it
- * as the invitation is stamped accepted; the invitation's id is all it carries.
- */
-export const learnerJoined = eventType('learner.joined', {
-  schema: staticSchema<{ invitation_id: string }>(),
-});
