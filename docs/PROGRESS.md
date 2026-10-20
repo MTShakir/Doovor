@@ -20,7 +20,7 @@ M6 Hardening and beta is approved (19 September 2026) and merged into `main`, wi
 
 M7 Bookkeeping is done and merged (D-198).
 
-M9 Schools is complete on branch `m9-schools`, in its own worktree (D-278), and waits for the product owner's "Approved, continue" before it is merged and its 16 migrations pushed: a school can sell its members' lessons as before, or have linked instructors who keep their own Business and pay the school a fee, or both. Every task is done but M9-14, which waits for the advisers, and the definition of done passes end to end at both widths for each kind of school (`school-m9-done.spec.ts`). The plan is in `docs/PLAN.md`, the research behind it at https://claude.ai/artifact/FoFZFsV7GgCzb5CDuoBf2Q, and the milestone report at https://claude.ai/artifact/8NZmmtaV5yCzoHyQcdmcKy.
+M9 Schools is complete on branch `m9-schools`, in its own worktree (D-278), and waits for the product owner's "Approved, continue" before it is merged and its 17 migrations pushed: a school can sell its members' lessons as before, or have linked instructors who keep their own Business and pay the school a fee, or both. Every task is done but M9-14, which waits for the advisers, and M9-31 sends a notice Appendix B always had, and the definition of done passes end to end at both widths for each kind of school (`school-m9-done.spec.ts`). The plan is in `docs/PLAN.md`, the research behind it at https://claude.ai/artifact/FoFZFsV7GgCzb5CDuoBf2Q, and the milestone report at https://claude.ai/artifact/8NZmmtaV5yCzoHyQcdmcKy.
 
 Beta preparation (below) runs on `beta-prep` and reaches `main` when the product owner merges it;
 on 12 October 2026 `main` and production carry every row to B-91, and the launch is under way in
