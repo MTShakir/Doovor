@@ -28,7 +28,7 @@ async function Support() {
 
 export function PortalHeaderActions() {
   return (
-    <div className="flex items-center gap-0.5">
+    <div className="flex items-center gap-[2px]">
       {/* No fallback: a button that cannot do anything yet is worse than one that arrives a
           moment late beside a bell that is already there. */}
       <Suspense fallback={null}>
@@ -39,7 +39,10 @@ export function PortalHeaderActions() {
   );
 }
 
-/** The phone's top bar in a portal: the logo, then support and the bell (D-159, D-241, D-249). */
+/**
+ * The phone's top bar in a portal: the logo, then support and the bell (D-159, D-241, D-249). The
+ * logo is 32 pixels high at any text size, like the bar itself (D-304).
+ */
 export function PortalTopBar() {
-  return <MobileTopBar title={<Logo art={horizontalLogo} label={brand.name} className="block h-8" />} actions={<PortalHeaderActions />} />;
+  return <MobileTopBar title={<Logo art={horizontalLogo} label={brand.name} className="block h-[32px]" />} actions={<PortalHeaderActions />} />;
 }

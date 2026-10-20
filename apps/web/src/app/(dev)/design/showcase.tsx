@@ -2054,8 +2054,9 @@ export function DesignShowcase() {
           <NotificationBell href="/notifications" unread={12} />
         </div>
         <div className="max-w-sm overflow-hidden rounded-2xl border border-grey-200">
-          <div className="flex min-h-14 items-center justify-between gap-2 border-b border-grey-200 bg-white pr-2 pl-4">
-            <Logo art={horizontalLogo} label={brand.name} className="block h-8 text-black" />
+          {/* Sized as MobileTopBar is, in pixels, so it keeps its size at any text size (D-304). */}
+          <div className="flex min-h-[56px] items-center justify-between gap-[8px] border-b border-grey-200 bg-white pr-[8px] pl-[16px]">
+            <Logo art={horizontalLogo} label={brand.name} className="block h-[32px] text-black" />
             <NotificationBell href="/notifications" unread={3} />
           </div>
           <p className="px-4 py-6 text-small text-grey-700">The top bar as it looks on a phone, above the screen&apos;s own title.</p>
