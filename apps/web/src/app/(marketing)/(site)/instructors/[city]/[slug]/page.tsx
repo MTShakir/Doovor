@@ -84,6 +84,14 @@ async function InstructorProfile({ params }: Pick<Props, 'params'>) {
   const site = getSiteUrl();
   const photoUrl = avatarUrl(profile.photoPath);
   const schoolUrl = profile.business.type === 'school' ? schoolProfilePath(profile.business.citySlug, profile.business.slug) : null;
+  // A school the instructor's own Business is linked to is named too, though it does not employ them (D-285).
+  const linked = profile.linkedSchool;
+  const school =
+    schoolUrl !== null
+      ? { name: profile.business.name, href: schoolUrl, linked: false }
+      : linked === null
+        ? null
+        : { name: linked.name, href: schoolProfilePath(linked.citySlug, linked.slug), linked: true };
   const place = profile.place;
   const names = profileNames(profile.name, profile.business);
   const structured = instructorStructuredData({
@@ -113,7 +121,8 @@ async function InstructorProfile({ params }: Pick<Props, 'params'>) {
           personalName={names.personal}
           photoUrl={photoUrl}
           qualification={profile.qualification}
-          school={schoolUrl === null ? null : { name: profile.business.name, href: schoolUrl }}
+          school={school}
+          platformChecked={profile.platformChecked}
           transmission={profile.transmission}
           car={profile.car}
           dualControls={profile.dualControls}

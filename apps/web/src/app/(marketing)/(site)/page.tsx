@@ -64,8 +64,8 @@ const features = [
   },
   {
     icon: BadgeCheck,
-    title: 'Instructors checked by us',
-    description: 'A blue tick on a profile means we have checked the instructor’s badge ourselves.',
+    title: 'Badges checked',
+    description: 'A blue tick on a profile means we have checked the instructor’s badge ourselves. A driving school checks its own.',
   },
   {
     icon: BellRing,
@@ -125,7 +125,7 @@ export default async function HomePage() {
       />
 
       {cities.length === 0 ? null : (
-        <Band id="cities" title="Instructors near you" description="Every instructor listed is checked by us, with their prices and free times.">
+        <Band id="cities" title="Instructors near you" description="Every instructor listed has a checked badge, with their prices and free times.">
           <ul className="flex flex-wrap gap-2">
             {cities.map((city) => (
               <li key={city.slug}>

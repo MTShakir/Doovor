@@ -59,7 +59,8 @@ select is(pg_temp.slugs(public.city_page('manchester', null, 'automatic')), arra
 
 select is(
   (select array_agg(k order by k) from jsonb_object_keys(public.city_page('manchester') #> '{instructors,0}') as k),
-  array['areaName', 'business', 'car', 'hourlyFromPence', 'name', 'photoPath', 'qualification', 'slug', 'transmission'],
+  array['areaName', 'business', 'car', 'hourlyFromPence', 'name', 'photoPath', 'platformChecked', 'qualification', 'slug',
+        'transmission'],
   'each instructor on it is these fields and no others'
 );
 select is(

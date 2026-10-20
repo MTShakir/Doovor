@@ -1,7 +1,7 @@
 import type { Metadata, Route } from 'next';
 import { brand } from '@repo/config/brand';
 import { isPlaceSlug, placePagePath } from '@repo/core/places';
-import { instructorProfilePath, schoolGalleryPath, schoolProfilePath } from '@repo/core/public-profile';
+import { instructorProfilePath, profileNames, schoolGalleryPath, schoolProfilePath } from '@repo/core/public-profile';
 import { schoolStructuredData } from '@repo/core/structured-data';
 import { Skeleton } from '@repo/ui/skeleton';
 import { notFound, permanentRedirect } from 'next/navigation';
@@ -100,21 +100,39 @@ async function SchoolProfile({ params }: Pick<Props, 'params'>) {
           name={school.name}
           logoUrl={logoUrl}
           cityName={school.place?.cityName ?? null}
-          instructorCount={school.instructors.length}
+          instructorCount={school.instructors.length + school.linked.length}
         />
         <SchoolInstructors
-          instructors={school.instructors.map((instructor) => ({
-            href: instructorProfilePath(instructor.citySlug, instructor.slug),
-            name: instructor.name,
-            photoUrl: avatarUrl(instructor.photoPath),
-            qualification: instructor.qualification,
-            transmission: instructor.transmission,
-            car: instructor.car,
-            takingBookings: instructor.takingBookings,
-            hourlyFromPence: instructor.hourlyFromPence,
-            // The school vouches for its own instructors, so the platform's tick is not theirs (D-280).
-            platformChecked: false,
-          }))}
+          instructors={[
+            ...school.instructors.map((instructor) => ({
+              href: instructorProfilePath(instructor.citySlug, instructor.slug),
+              name: instructor.name,
+              photoUrl: avatarUrl(instructor.photoPath),
+              qualification: instructor.qualification,
+              transmission: instructor.transmission,
+              car: instructor.car,
+              takingBookings: instructor.takingBookings,
+              hourlyFromPence: instructor.hourlyFromPence,
+              // The school vouches for its own instructors, so the platform's tick is not theirs (D-280).
+              platformChecked: false,
+            })),
+            // Those linked to it after them, by the Business each runs (D-269, D-285).
+            ...school.linked.map((instructor) => {
+              const names = profileNames(instructor.name, instructor.business);
+              return {
+                href: instructorProfilePath(instructor.citySlug, instructor.slug),
+                name: names.main,
+                personalName: names.personal,
+                photoUrl: avatarUrl(instructor.photoPath),
+                qualification: instructor.qualification,
+                transmission: instructor.transmission,
+                car: instructor.car,
+                takingBookings: instructor.takingBookings,
+                hourlyFromPence: instructor.hourlyFromPence,
+                platformChecked: instructor.platformChecked,
+              };
+            }),
+          ]}
         />
         {/* D-218: the school's wall is every instructor's, because it is the school's page. */}
         <Suspense fallback={null}>

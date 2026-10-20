@@ -1388,8 +1388,9 @@ export function DesignShowcase() {
           <GalleryHeader name="Quayside Driving School" profileHref="/design" shown={120} total={134} />
         </div>
         <Label>
-          Header: an independent instructor by their Business name, with their own name above it and prices, and a trainee
-          at a school by their own name, with no car or prices yet (PUB-01, M5-02, D-269)
+          Header: an independent instructor by their Business name, with their own name above it and prices, a trainee
+          at a school by their own name, with no car or prices yet, and an instructor whose Business is linked to a
+          school that vouched for them (PUB-01, M5-02, D-269, D-285)
         </Label>
         <div className="grid items-start gap-6 md:grid-cols-2">
           <ProfileHeader
@@ -1397,6 +1398,7 @@ export function DesignShowcase() {
             personalName="Sarah Khan"
             qualification="adi"
             school={null}
+            platformChecked
             transmission="manual"
             car="Volkswagen Polo"
             dualControls
@@ -1406,10 +1408,22 @@ export function DesignShowcase() {
             name="Aisha Rahman"
             qualification="pdi"
             school={{ name: 'Quayside Driving School', href: '#school' }}
+            platformChecked={false}
             transmission="both"
             car={null}
             dualControls={false}
             lessons={[]}
+          />
+          <ProfileHeader
+            name="Owusu Driving"
+            personalName="Ama Owusu"
+            qualification="adi"
+            school={{ name: 'Quayside Driving School', href: '#school', linked: true }}
+            platformChecked={false}
+            transmission="automatic"
+            car="Toyota Yaris"
+            dualControls
+            lessons={[{ durationMinutes: 60, pricePence: 4000 }]}
           />
         </div>
         <Label>Booking: open, a badge out of date (INS-03), and in a Business's own colour (D-229)</Label>
@@ -1647,7 +1661,7 @@ export function DesignShowcase() {
               tone="grey"
               features={[
                 { icon: CreditCard, title: 'Paid, not chased', description: 'Cards, packages of hours, and cash recorded in two taps.' },
-                { icon: BadgeCheck, title: 'Instructors checked by us', description: 'The blue tick means we have checked the badge.' },
+                { icon: BadgeCheck, title: 'Badges checked', description: 'The blue tick means we have checked the badge.' },
                 { icon: WifiOff, title: 'Works without signal', description: 'Today and lesson records work offline.' },
               ]}
             />
