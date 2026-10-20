@@ -1,24 +1,11 @@
 import 'server-only';
-import { lessonPricesSchema, mostFor, packageSchema } from '@repo/core/catalogue';
-import { formatPence } from '@repo/core/money';
+import { lessonPricesSchema, packageSchema } from '@repo/core/catalogue';
 import { parsePostgresError } from '@repo/core/errors';
 import { err, ok, type Result } from '@repo/core/result';
+import { aboveSchoolCap } from '@/lib/catalogue/school-cap';
 import { fieldErrors } from '@/lib/forms';
 import { expireAllInstructorProfiles, expireInstructorProfile } from '@/lib/public/instructor-profile';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
-
-/**
- * What a refusal for being above the most a linked instructor's school allows says (D-286), or null
- * for any other refusal. For a package, it says the most that package may cost.
- */
-function aboveSchoolCap(context: Record<string, unknown>, packageMinutes?: number): string | null {
-  if (context.reason !== 'above_school_cap' || typeof context.maxHourlyPence !== 'number') return null;
-  const school = typeof context.school === 'string' ? context.school : 'Your school';
-  const most = `${school} lets you charge at most ${formatPence(context.maxHourlyPence)} an hour`;
-  return packageMinutes === undefined
-    ? `${most}. Lower the prices above it.`
-    : `${most}, so this package can cost at most ${formatPence(mostFor(packageMinutes, context.maxHourlyPence))}.`;
-}
 
 /**
  * Saves prices for a Business, or one instructor's own (R-05, SCH-04): all of them or none. The

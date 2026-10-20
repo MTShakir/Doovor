@@ -11,6 +11,7 @@ import {
   onboardingNameSchema,
   onboardingPricesSchema,
 } from '@repo/core/schemas/onboarding';
+import { aboveSchoolCap } from '@/lib/catalogue/school-cap';
 import { getGeoProvider } from '@/lib/geo/provider';
 import { requireOnboarding } from '@/lib/onboarding/session';
 import { afterStep, canOpenStep, slugForStep, stepNumber } from '@/lib/onboarding/steps';
@@ -149,7 +150,10 @@ export async function savePrices(input: unknown): Promise<Result<null>> {
     p_package_price_pence: parsed.data.packagePrice ?? undefined,
   });
   if (error) {
-    const { code } = parsePostgresError(error);
+    // Linked to a school already, above the most it allows: it says so rather than "check the fields".
+    const { code, context } = parsePostgresError(error);
+    const capped = aboveSchoolCap(context);
+    if (capped !== null) return err('VALIDATION_FAILED', capped);
     return err(code === 'UNKNOWN' ? 'UNKNOWN' : code);
   }
 

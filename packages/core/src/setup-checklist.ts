@@ -15,6 +15,11 @@ export interface SetupState {
   verified: boolean;
   /** The badge is in date, so the booking link takes bookings (INS-03). Hiding from search does not matter (PUB-04). */
   badgeInDate: boolean;
+  /**
+   * They teach under a school, which takes the payments: connecting them is the owner's, and not on
+   * the instructor's list at all (D-123).
+   */
+  paymentsAreTheSchools?: boolean;
 }
 
 export type SetupTaskId = 'first-learner' | 'connect-payments' | 'booking-link';
@@ -30,7 +35,7 @@ export function setupTasks(state: SetupState): SetupTask[] {
   const linkLive = state.verified && state.badgeInDate;
   return [
     { id: 'first-learner', done: state.learners > 0 },
-    { id: 'connect-payments', done: state.paymentsConnected },
+    ...(state.paymentsAreTheSchools ? [] : [{ id: 'connect-payments' as const, done: state.paymentsConnected }]),
     // A link nobody can open is not worth sharing, so this waits for the badge check.
     linkLive ? { id: 'booking-link', done: true } : { id: 'booking-link', done: false, blockedBy: 'verification' },
   ];

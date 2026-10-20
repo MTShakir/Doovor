@@ -12,6 +12,7 @@ import { requirePortal } from '@/lib/auth/session';
 import { savePackage, savePrices } from '@/lib/catalogue/save';
 import { fieldErrors } from '@/lib/forms';
 import { expireAllInstructorProfiles, expireInstructorProfile } from '@/lib/public/instructor-profile';
+import { aboveSchoolCap } from '@/lib/catalogue/school-cap';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
 
 async function instructorId(): Promise<string | null> {
@@ -195,7 +196,12 @@ export async function saveFirstPrices(input: unknown): Promise<Result<null>> {
     p_hourly_price_pence: parsed.data.hourlyPrice,
     p_package_price_pence: parsed.data.packagePrice ?? undefined,
   });
-  if (error) return err(parsePostgresError(error).code);
+  if (error) {
+    // Above the most the school they are linked to allows, it says so rather than "check the fields".
+    const { code, context } = parsePostgresError(error);
+    const capped = aboveSchoolCap(context);
+    return capped === null ? err(code) : err('VALIDATION_FAILED', capped);
+  }
 
   // What a learner sees changes with the prices: the profile, and the screen they are set on.
   expireAllInstructorProfiles();

@@ -15,7 +15,9 @@ insert into public.postcodes (postcode, outcode, area, latitude, longitude) valu
   ('LS1 4DY', 'LS1', 'LS', 53.7965, -1.5478),   -- in the middle
   ('LS17 8AB', 'LS17', 'LS', 53.8600, -1.5400), -- about 5 miles north
   ('YO1 7HH', 'YO1', 'YO', 53.9600, -1.0800)    -- York, well outside
-on conflict (postcode) do nothing;
+-- Its own places, whatever an earlier lookup left in the cache: distances are measured from these.
+on conflict (postcode) do update
+  set outcode = excluded.outcode, area = excluded.area, latitude = excluded.latitude, longitude = excluded.longitude;
 
 update public.instructor_profiles
    set base_location = extensions.st_setsrid(extensions.st_makepoint(-1.5478, 53.7965), 4326)::extensions.geography,

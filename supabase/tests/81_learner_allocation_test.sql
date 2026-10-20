@@ -27,7 +27,10 @@ insert into public.postcodes (postcode, outcode, area, latitude, longitude, admi
   ('M14 6HR', 'M14', 'M', 53.4452, -2.2193, 'Manchester'),
   ('M1 1AE', 'M1', 'M', 53.4794, -2.2453, 'Manchester'),
   ('LS1 4DY', 'LS1', 'LS', 53.7986, -1.5492, 'Leeds')
-on conflict (postcode) do nothing;
+-- Its own places, whatever an earlier lookup left in the cache: distances are measured from these.
+on conflict (postcode) do update
+  set outcode = excluded.outcode, area = excluded.area, latitude = excluded.latitude, longitude = excluded.longitude,
+      admin_district = excluded.admin_district;
 
 update public.learner_profiles
    set postcode = 'M14 6HR', location = (select location from public.postcodes where postcode = 'M14 6HR'), transmission = 'automatic'

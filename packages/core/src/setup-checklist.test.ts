@@ -24,6 +24,13 @@ describe('setup checklist (PRD 10.1, M1-10)', () => {
     expect(doneIds({ ...fresh, paymentsConnected: true })).toEqual(['connect-payments']);
   });
 
+  it('leaves payments off the list of somebody teaching under a school, whose owner connects them (D-123)', () => {
+    const atSchool = { ...fresh, paymentsAreTheSchools: true };
+    expect(setupTasks(atSchool).map((task) => task.id)).toEqual(['first-learner', 'booking-link']);
+    expect(setupProgress({ ...atSchool, learners: 1, verified: true })).toEqual({ done: 2, total: 2, percent: 100 });
+    expect(setupComplete({ ...atSchool, learners: 1, verified: true })).toBe(true);
+  });
+
   it('waits for the badge check before asking anyone to share a link', () => {
     const [, , link] = setupTasks(fresh);
     expect(link).toEqual({ id: 'booking-link', done: false, blockedBy: 'verification' });

@@ -129,6 +129,8 @@ async function Setup() {
     paymentsConnected: business?.stripe_charges_enabled ?? false,
     verified: profile?.verification_status === 'approved',
     badgeInDate: !profile?.badge_expiry || profile.badge_expiry >= todayInZone(),
+    // The school takes the payments for somebody teaching under it; its owner connects them.
+    paymentsAreTheSchools: membership.businessType === 'school' && membership.role !== 'owner',
   };
 
   return setupComplete(state) ? null : <SetupChecklist state={state} />;

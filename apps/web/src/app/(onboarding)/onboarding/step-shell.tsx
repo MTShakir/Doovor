@@ -2,7 +2,7 @@ import { StepProgress } from '@repo/ui/stepper';
 import { ChevronLeft } from 'lucide-react';
 import Link from 'next/link';
 import type { ReactNode } from 'react';
-import { previousStep, stepPosition, type OnboardingStep } from '@/lib/onboarding/steps';
+import { previousStep, stepPosition, stepTitle, type OnboardingStep } from '@/lib/onboarding/steps';
 
 /**
  * The frame every onboarding screen shares: the way back, progress at the top, then one question.
@@ -33,7 +33,7 @@ export function StepShell({
           </Link>
         ) : null}
         <StepProgress current={position.current} total={position.total} />
-        <h1 className="text-h1 text-black">{step.title}</h1>
+        <h1 className="text-h1 text-black">{stepTitle(step, businessType)}</h1>
       </div>
       {children}
     </div>

@@ -40,6 +40,23 @@ describe('the first price, for somebody who skipped it in onboarding (R-05, M1-0
     });
   });
 
+  it('says the most a linked school allows, rather than asking to check the fields (D-286)', async () => {
+    teachingFor('independent');
+    rpc.mockResolvedValueOnce({
+      data: null,
+      error: {
+        code: 'P0001',
+        message: 'VALIDATION_FAILED',
+        details: '{"field": "price", "reason": "above_school_cap", "maxHourlyPence": 4500, "school": "Quayside Driving School"}',
+      } as { message: string },
+    });
+    expect(await saveFirstPrices({ hourlyPrice: '50', packagePrice: '' })).toEqual({
+      ok: false,
+      code: 'VALIDATION_FAILED',
+      message: 'Quayside Driving School lets you charge at most £45 an hour. Lower the prices above it.',
+    });
+  });
+
   it('says what to fix, and is not for an instructor at a school, whose school sets the prices', async () => {
     teachingFor('independent');
     expect(await saveFirstPrices({ hourlyPrice: 'lots' })).toMatchObject({ ok: false, code: 'VALIDATION_FAILED' });
