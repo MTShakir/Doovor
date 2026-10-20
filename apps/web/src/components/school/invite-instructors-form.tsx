@@ -30,6 +30,7 @@ function isChannel(value: string): value is InviteChannel {
 const kindOptions: { value: InstructorInviteKind; label: string }[] = [
   { value: 'member', label: 'Teaches under the school' },
   { value: 'link', label: 'Sells their own lessons, with their own business' },
+  { value: 'manager', label: 'Helps run the school, as a manager' },
 ];
 
 function isKind(value: string): value is InstructorInviteKind {
@@ -104,7 +105,9 @@ export function InviteInstructorsForm({ invite, kinds = ['member'] }: InviteInst
           hint={
             invitation.kind === 'link'
               ? 'Whoever opens this link can link their business to your school, so send it to them only.'
-              : 'Whoever opens this link can join your school, so send it to them only.'
+              : invitation.kind === 'manager'
+                ? 'Whoever opens this link can help run your school, so send it to them only.'
+                : 'Whoever opens this link can join your school, so send it to them only.'
           }
         >
           <Input readOnly value={invitation.link} onFocus={(event) => { event.target.select(); }} />
@@ -139,7 +142,7 @@ export function InviteInstructorsForm({ invite, kinds = ['member'] }: InviteInst
               setPhone('');
             }}
           >
-            Invite another instructor
+            {invitation.kind === 'manager' ? 'Invite another manager' : 'Invite another instructor'}
           </Button>
         </div>
         <div className="flex flex-col gap-1">

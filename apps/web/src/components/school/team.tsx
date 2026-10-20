@@ -314,7 +314,11 @@ export function TeamSections({
                   <div className="flex min-w-0 flex-1 flex-col">
                     <span className="truncate text-body font-medium text-ink">{who}</span>
                     <span className="truncate text-small text-grey-700">
-                      {one.kind === 'link' ? `To link their business, works until ${one.expiresOn}` : `Works until ${one.expiresOn}`}
+                      {one.kind === 'link'
+                        ? `To link their business, works until ${one.expiresOn}`
+                        : one.kind === 'manager'
+                          ? `To help run the school, works until ${one.expiresOn}`
+                          : `Works until ${one.expiresOn}`}
                     </span>
                   </div>
                   <StatusPill status="pending">Waiting</StatusPill>

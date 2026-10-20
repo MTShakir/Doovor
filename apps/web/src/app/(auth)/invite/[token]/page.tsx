@@ -120,10 +120,12 @@ async function SchoolInvitation({
   details,
 }: {
   token: string;
-  details: { business_name: string; full_name: string | null; email: string | null; already_member: boolean };
+  details: { business_name: string; full_name: string | null; email: string | null; already_member: boolean; role?: string | null };
 }) {
   const school = details.business_name;
-  const heading = `${school} would like you to teach with them`;
+  // A manager helps run the school, and teaches nowhere because of it (D-293).
+  const managing = details.role === 'manager';
+  const heading = managing ? `${school} would like you to help run it` : `${school} would like you to teach with them`;
   const access = await getAccess();
 
   if (access && details.already_member) {
@@ -137,6 +139,18 @@ async function SchoolInvitation({
         <Button asChild width="responsive">
           <Link href={landingPath(access.access) as Route}>Go to my account</Link>
         </Button>
+      </div>
+    );
+  }
+
+  if (access && managing) {
+    return (
+      <div className="flex flex-col gap-4">
+        <h1 className="text-h1 text-black">{heading}</h1>
+        <p className="text-body text-grey-700">
+          As a manager you look after its instructors, bookings, prices and learners. You see its revenue if the owner lets you.
+        </p>
+        <JoinButton token={token} school={school} />
       </div>
     );
   }
@@ -189,7 +203,9 @@ async function SchoolInvitation({
     <div className="flex flex-col gap-4">
       <h1 className="text-h1 text-black">{heading}</h1>
       <p className="text-body text-grey-700">
-        Create your account to join {school}, then set up your instructor profile in four short steps.
+        {managing
+          ? `Create your account to help run ${school}.`
+          : `Create your account to join ${school}, then set up your instructor profile in four short steps.`}
       </p>
       {signUp.prefilled ? <FormAlert tone="success">Your details are already filled in. It takes a minute.</FormAlert> : null}
       <Button asChild width="responsive" size="lg">

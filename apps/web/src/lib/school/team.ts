@@ -42,6 +42,7 @@ const teamSchema = z.object({
     z.object({
       invitation_id: z.string(),
       kind: z.enum(['member', 'link']).default('member'),
+      role: z.enum(['owner', 'manager', 'instructor']).nullable().default(null),
       full_name: z.string().nullable(),
       email: z.string().nullable(),
       phone: z.string().nullable(),
@@ -85,7 +86,7 @@ export interface LinkedInstructor {
 
 export interface WaitingInvitation {
   invitationId: string;
-  kind: 'member' | 'link';
+  kind: 'member' | 'link' | 'manager';
   fullName: string | null;
   email: string | null;
   phone: string | null;
@@ -140,7 +141,8 @@ export async function schoolTeam(businessId: string): Promise<SchoolTeam> {
     })),
     invitations: team.invitations.map((one) => ({
       invitationId: one.invitation_id,
-      kind: one.kind,
+      // A member invitation for a manager is its own kind on the screen (D-293).
+      kind: one.kind === 'member' && one.role === 'manager' ? 'manager' : one.kind,
       fullName: one.full_name,
       email: one.email,
       phone: one.phone,

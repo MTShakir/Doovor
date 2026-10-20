@@ -37,6 +37,14 @@ describe('inviting from the Instructors screen (SCH-02, M5-13)', () => {
     expect(rpc).toHaveBeenCalledWith('invite_member', expect.objectContaining({ p_business_id: 'school-1', p_role: 'instructor', p_channel: 'link' }));
   });
 
+  it('makes a link for a manager, which the database lets only the owner make (D-293)', async () => {
+    expect(await inviteToSchool({ kind: 'manager', channel: 'link', fullName: 'Maya', email: '', phone: '' })).toMatchObject({
+      ok: true,
+      data: { kind: 'manager', fullName: 'Maya' },
+    });
+    expect(rpc).toHaveBeenCalledWith('invite_member', expect.objectContaining({ p_business_id: 'school-1', p_role: 'manager', p_channel: 'link' }));
+  });
+
   it('is only for somebody running a school', async () => {
     requirePortal.mockResolvedValueOnce({ access: { memberships: [{ ...school, role: 'instructor' }] } });
     expect(await inviteToSchool({ channel: 'link', fullName: '', email: '', phone: '' })).toMatchObject({ ok: false, code: 'NOT_ALLOWED' });

@@ -15,7 +15,7 @@ export interface InvitationMessage {
    * A learner invited to book, unless this invites an instructor to teach for a school (member)
    * or to link the business they run themselves to one (link, D-282).
    */
-  kind?: 'learner' | 'member' | 'link';
+  kind?: 'learner' | 'member' | 'link' | 'manager';
   /** The learner's name, when the instructor gave one. */
   learnerName?: string | null;
   /** Where to send it, for the channels that need an address. */
@@ -32,12 +32,16 @@ export function invitationText(message: InvitationMessage): string {
   if (message.kind === 'link') {
     return `${greeting}${message.instructorName} would like to send you pupils. Link your instructor business here, and keep your own prices, payments and learners: ${message.link}`;
   }
+  if (message.kind === 'manager') {
+    return `${greeting}${message.instructorName} would like you to help run it. Set up your account here: ${message.link}`;
+  }
   return `${greeting}it is ${message.instructorName}. Book your driving lessons with me here: ${message.link}`;
 }
 
 export function invitationSubject(message: InvitationMessage): string {
   if (message.kind === 'member') return `Teach with ${message.instructorName}`;
   if (message.kind === 'link') return `Link your business to ${message.instructorName}`;
+  if (message.kind === 'manager') return `Help run ${message.instructorName}`;
   return `Your driving lessons with ${message.instructorName}`;
 }
 

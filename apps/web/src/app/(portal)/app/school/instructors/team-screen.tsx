@@ -24,7 +24,8 @@ export function TeamScreen({
 }) {
   const router = useRouter();
   const [, startTransition] = useTransition();
-  const [inviting, setInviting] = useState(false);
+  // An instructor, or, for the owner alone, a manager (D-293).
+  const [inviting, setInviting] = useState<'instructor' | 'manager' | null>(null);
   const [busyId, setBusyId] = useState<string | null>(null);
   const [switchingOff, setSwitchingOff] = useState<TeamMember | null>(null);
   const [lettingGo, setLettingGo] = useState<LinkedInstructor | null>(null);
@@ -70,10 +71,17 @@ export function TeamScreen({
         <p className="text-small text-grey-700" aria-live="polite">
           {teaching === 1 ? '1 instructor' : `${String(teaching)} instructors`}
         </p>
-        <Button width="responsive" onClick={() => { setInviting(true); }}>
-          <UserPlus className="size-5" aria-hidden />
-          Invite an instructor
-        </Button>
+        <div className="flex flex-col gap-2 md:flex-row">
+          {viewerIsOwner ? (
+            <Button variant="secondary" width="responsive" onClick={() => { setInviting('manager'); }}>
+              Invite a manager
+            </Button>
+          ) : null}
+          <Button width="responsive" onClick={() => { setInviting('instructor'); }}>
+            <UserPlus className="size-5" aria-hidden />
+            Invite an instructor
+          </Button>
+        </div>
       </div>
 
       <TeamSections
@@ -116,22 +124,26 @@ export function TeamScreen({
       />
 
       <Sheet
-        open={inviting}
+        open={inviting !== null}
         onOpenChange={(open) => {
-          setInviting(open);
-          // Whoever was just invited shows under Invitations waiting.
-          if (!open) router.refresh();
+          if (!open) {
+            setInviting(null);
+            // Whoever was just invited shows under Invitations waiting.
+            router.refresh();
+          }
         }}
-        title="Invite an instructor"
+        title={inviting === 'manager' ? 'Invite a manager' : 'Invite an instructor'}
         description={
-          kinds.length === 2
-            ? 'They get a link to join the school, or to link their own business to it.'
-            : kinds.includes('link')
-              ? 'They get a link to link their own business to the school, keeping their prices, payments and learners.'
-              : 'They get a link to join the school and set up their profile in four short steps.'
+          inviting === 'manager'
+            ? 'They get a link to help run the school: its instructors, bookings, prices and learners. They see its revenue only if you let them.'
+            : kinds.length === 2
+              ? 'They get a link to join the school, or to link their own business to it.'
+              : kinds.includes('link')
+                ? 'They get a link to link their own business to the school, keeping their prices, payments and learners.'
+                : 'They get a link to join the school and set up their profile in four short steps.'
         }
       >
-        <InviteInstructorsForm invite={inviteToSchool} kinds={kinds} />
+        <InviteInstructorsForm key={inviting ?? 'none'} invite={inviteToSchool} kinds={inviting === 'manager' ? ['manager'] : kinds} />
       </Sheet>
     </div>
   );

@@ -31,7 +31,7 @@ export async function createInstructorInvitation(
   const { data, error } =
     kind === 'link'
       ? await supabase.rpc('invite_linked_instructor', { p_school_id: school.businessId, ...who }).single()
-      : await supabase.rpc('invite_member', { p_business_id: school.businessId, p_role: 'instructor', ...who }).single();
+      : await supabase.rpc('invite_member', { p_business_id: school.businessId, p_role: kind === 'manager' ? 'manager' : 'instructor', ...who }).single();
   if (error) {
     const { code, context } = parsePostgresError(error);
     if (context.reason === 'school_sells') {

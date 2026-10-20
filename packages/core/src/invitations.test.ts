@@ -62,6 +62,14 @@ describe('sharing an invitation (AUTH-07, M2-03)', () => {
     expect(invitationSubject(invite)).toBe('Link your business to Northern Lights Driving');
   });
 
+  it('asks somebody to help run a school, as a manager (D-293)', () => {
+    const invite = { link: 'https://example.test/invite/abc', instructorName: 'Northern Lights Driving', learnerName: 'Maya', kind: 'manager' as const };
+    expect(invitationText(invite)).toBe(
+      'Hi Maya, Northern Lights Driving would like you to help run it. Set up your account here: https://example.test/invite/abc',
+    );
+    expect(invitationSubject(invite)).toBe('Help run Northern Lights Driving');
+  });
+
   it('builds the link one way, so the page and the message agree', () => {
     expect(invitationLink('https://example.test', 'abc-123')).toBe('https://example.test/invite/abc-123');
     expect(invitationLink('https://example.test/', 'a b')).toBe('https://example.test/invite/a%20b');

@@ -86,9 +86,9 @@ select throws_ok(
   format($$ select public.invite_member(%L, 'owner', 'link') $$, :'school'),
   'P0001', 'VALIDATION_FAILED', 'nor to own a school'
 );
-select throws_ok(
+select lives_ok(
   format($$ select public.invite_member(%L, 'manager', 'link') $$, :'school'),
-  'P0001', 'VALIDATION_FAILED', 'and managers wait until a school can say what they may do'
+  'and the owner invites a manager (D-293)'
 );
 
 -- What the link says before anybody signs in.
