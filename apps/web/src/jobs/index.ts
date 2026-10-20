@@ -9,6 +9,7 @@ import { creditLowNotices, dailyPaymentSummaries, overdueSweep, paymentReceivedN
 import { authorisationSweep, beforeLessonCharges, feeCharge, holdCancel, receiptSend, refundSend } from './functions/payments';
 import { lessonRecordNotices } from './functions/record-notices';
 import { reminderByHand, reminderSweep } from './functions/reminders';
+import { schoolNotices } from './functions/school-notices';
 import { outboxSweep } from './functions/outbox-sweep';
 import { subscriptionRenewalNotices } from './functions/subscriptions';
 import { systemPingFunction } from './functions/ping';
@@ -44,4 +45,5 @@ export const functions = [
   welcomeNotices,
   verificationDecidedNotices,
   badgeExpiringNotices,
+  schoolNotices,
 ];

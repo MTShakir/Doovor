@@ -9,6 +9,7 @@
 import { z } from './zod';
 import { formatPence, parsePoundsToPence } from './money.ts';
 import { addDaysToLocalDate, isValidLocalDate, type LocalDate } from './time/calendar.ts';
+import { formatCalendarDate } from './time/format.ts';
 
 export const feePeriods = [
   { value: 'weekly', label: 'Every week' },
@@ -94,4 +95,30 @@ export function feeTermsWords(terms: FeeTerms, firstFeeDate: string | null): str
   if (terms.pupilFeePence !== null) lines.push(`${formatPence(terms.pupilFeePence)} for each pupil the school introduces`);
   if (lines.length === 0) lines.push('No fees');
   return lines;
+}
+
+/** The terms as a notice says them (M9-28): the lines in one, or that there are none now. */
+export function feeTermsInOneLine(terms: FeeTerms, firstFeeDate: string | null): string {
+  const lines = feeTermsWords(terms, firstFeeDate);
+  return lines.length === 1 && lines[0] === 'No fees' ? 'No fees from now on' : lines.join('. ');
+}
+
+export interface RaisedFee {
+  kind: 'period' | 'pupil';
+  amountPence: number;
+  periodStartsOn: LocalDate | null;
+  periodEndsOn: LocalDate | null;
+  /** The pupil, for a fee for introducing one. */
+  learnerName: string | null;
+}
+
+/**
+ * One fee in words, for the notices a linked instructor gets (M9-28): "£15 for the week from
+ * Mon 9 Nov", "£60 for the month from Mon 9 Nov" or "£10 for introducing Pat Pupil".
+ */
+export function feeInWords(fee: RaisedFee): string {
+  const amount = formatPence(fee.amountPence);
+  if (fee.kind === 'pupil' || fee.periodStartsOn === null) return `${amount} for introducing ${fee.learnerName ?? 'a pupil'}`;
+  const weekly = fee.periodEndsOn !== null && addDaysToLocalDate(fee.periodStartsOn, 6) === fee.periodEndsOn;
+  return `${amount} for the ${weekly ? 'week' : 'month'} from ${formatCalendarDate(fee.periodStartsOn, { year: false })}`;
 }

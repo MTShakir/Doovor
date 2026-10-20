@@ -65,6 +65,16 @@ export const notificationKinds = [
   // Once an email is confirmed: welcome, what is next, and where to ask for help (D-259). Not in
   // Appendix B's first draft; the product owner asked for it.
   'account.welcome',
+  // A school's own arrangements (M9-28, D-295), which Appendix B's first draft did not have: a
+  // pupil offered to a linked instructor and taken, the fees a linked instructor owes, a learner
+  // asked whether to move, and an instructor and a school parting.
+  'pupil.offered',
+  'pupil.taken',
+  'school_fee.terms_set',
+  'school_fee.due',
+  'school_fee.settled',
+  'learner.move_asked',
+  'school.left',
 ] as const;
 
 export type NotificationKind = (typeof notificationKinds)[number];
@@ -234,6 +244,60 @@ export const notificationCatalogue: Record<NotificationKind, NotificationSpec> =
     // No push: nobody has turned it on for a phone yet when their email is first confirmed.
     channels: ['in_app', 'email'],
     // About their own account, and the first thing they hear from us: a service message.
+    essential: true,
+  },
+  // An offer lapses in a day or so, and answering it is part of the arrangement the instructor
+  // joined: a service message, so it always reaches the inbox (D-289).
+  'pupil.offered': {
+    kind: 'pupil.offered',
+    category: 'account',
+    audiences: ['instructor'],
+    channels: PUSH_AND_EMAIL,
+    essential: true,
+  },
+  'pupil.taken': {
+    kind: 'pupil.taken',
+    category: 'account',
+    audiences: ['school'],
+    channels: ['in_app', 'push'],
+    essential: false,
+  },
+  // Money an instructor owes a school, or will: service messages, as a fee is (D-287).
+  'school_fee.terms_set': {
+    kind: 'school_fee.terms_set',
+    category: 'money',
+    audiences: ['instructor'],
+    channels: PUSH_AND_EMAIL,
+    essential: true,
+  },
+  'school_fee.due': {
+    kind: 'school_fee.due',
+    category: 'money',
+    audiences: ['instructor'],
+    channels: PUSH_AND_EMAIL,
+    essential: true,
+  },
+  'school_fee.settled': {
+    kind: 'school_fee.settled',
+    category: 'money',
+    audiences: ['instructor'],
+    channels: ['in_app', 'push'],
+    essential: true,
+  },
+  // Who teaches them is the learner's to say, and nothing moves until they do (D-292).
+  'learner.move_asked': {
+    kind: 'learner.move_asked',
+    category: 'account',
+    audiences: ['learner'],
+    channels: PUSH_AND_EMAIL,
+    essential: true,
+  },
+  // A link ended by either side, or an instructor switched off: what changes for them (D-292).
+  'school.left': {
+    kind: 'school.left',
+    category: 'account',
+    audiences: ['instructor', 'school'],
+    channels: PUSH_AND_EMAIL,
     essential: true,
   },
 };

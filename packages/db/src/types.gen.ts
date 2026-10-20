@@ -4997,6 +4997,10 @@ export type Database = {
         Returns: undefined
       }
       system_reminder_notice: { Args: { p_booking_id: string }; Returns: Json }
+      system_school_notice: {
+        Args: { p_id: string; p_kind: string }
+        Returns: Json
+      }
       system_set_payments_state: {
         Args: {
           p_account_id: string

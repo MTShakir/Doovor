@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { feeTermsWords, firstFeeOn, schoolFeeTermsSchema, settleFeeSchema } from './school-fees.ts';
+import { feeInWords, feeTermsInOneLine, feeTermsWords, firstFeeOn, schoolFeeTermsSchema, settleFeeSchema } from './school-fees.ts';
 
 const linkId = '0a1b2c3d-4e5f-4061-8728-394a5b6c7d8e';
 const terms = { linkId, period: 'weekly', fee: '50', startsOn: '2026-11-02', freeWeeks: '2', pupilFee: '20' };
@@ -44,5 +44,23 @@ describe('what a linked instructor pays the school (M9-11, D-287)', () => {
       '£200 a month, the first due Mon 9 Nov, after 1 free week',
     ]);
     expect(feeTermsWords({ period: null, feePence: null, startsOn: null, freeWeeks: 0, pupilFeePence: null }, null)).toEqual(['No fees']);
+  });
+});
+
+describe('a fee and the terms, as a notice says them (M9-28)', () => {
+  it('says each fee by its week, its month or its pupil', () => {
+    const week = { kind: 'period' as const, amountPence: 1500, periodStartsOn: '2026-11-16', periodEndsOn: '2026-11-22', learnerName: null };
+    expect(feeInWords(week)).toBe('£15 for the week from Mon 16 Nov');
+    expect(feeInWords({ ...week, amountPence: 6000, periodEndsOn: '2026-12-15' })).toBe('£60 for the month from Mon 16 Nov');
+    const pupil = { kind: 'pupil' as const, amountPence: 1000, periodStartsOn: null, periodEndsOn: null, learnerName: 'Pat Pupil' };
+    expect(feeInWords(pupil)).toBe('£10 for introducing Pat Pupil');
+    expect(feeInWords({ ...pupil, amountPence: 1050, learnerName: null })).toBe('£10.50 for introducing a pupil');
+  });
+
+  it('says the terms in one line, or that there are none now', () => {
+    expect(feeTermsInOneLine({ period: 'weekly', feePence: 1500, startsOn: '2026-11-02', freeWeeks: 2, pupilFeePence: 1000 }, 'Mon 16 Nov')).toBe(
+      '£15 a week, the first due Mon 16 Nov, after 2 free weeks. £10 for each pupil the school introduces',
+    );
+    expect(feeTermsInOneLine({ period: null, feePence: null, startsOn: null, freeWeeks: 0, pupilFeePence: null }, null)).toBe('No fees from now on');
   });
 });

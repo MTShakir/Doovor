@@ -128,3 +128,12 @@ export const feedbackHandled = eventType('feedback.handled', {
 export const marketplaceRegionOpened = eventType('marketplace_region.opened', {
   schema: staticSchema<{ area: string }>(),
 });
+
+/**
+ * Something changed in a school's arrangements (M9-28, D-295): a pupil offered or taken, a linked
+ * instructor's fees, a learner asked whether to move, a link or a membership ended. The database
+ * queues it with the change; the kind of notice and the row's id are all it carries.
+ */
+export const schoolNotice = eventType('school.notice', {
+  schema: staticSchema<{ kind: string; id: string }>(),
+});

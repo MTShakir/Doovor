@@ -11,15 +11,16 @@ import {
   notificationKinds,
   switchableChannels,
   type NotificationAudience,
+  type NotificationChannel,
 } from './catalogue.ts';
-import { notificationCopy } from './copy.ts';
+import { notificationCopy, offeredPupilLine } from './copy.ts';
 import { channelsFor, notificationDedupeKey, planNotifications } from './plan.ts';
 
 const lesson = { learnerName: 'Jack Taylor', instructorName: 'Sarah Khan', when: 'Wed 16 Sep at 09:00' };
 
 describe('the catalogue (PRD Appendix B, NTF-03)', () => {
   it('has every kind of notification Phase 1 sends', () => {
-    expect(notificationKinds).toHaveLength(22);
+    expect(notificationKinds).toHaveLength(29);
     for (const kind of notificationKinds) expect(notificationCatalogue[kind].kind).toBe(kind);
   });
 
@@ -349,5 +350,74 @@ describe('planning one event (NTF-03)', () => {
       recipients: [{ userId: 'learner-1', audience: 'learner', muted: ['in_app', 'push', 'email'] }],
     });
     expect(planned).toEqual([]);
+  });
+});
+
+describe("a school's own arrangements (M9-28, D-295)", () => {
+  const school = { schoolName: 'Quayside Driving School' };
+
+  it('offers a pupil with as much as the instructor sees before accepting, and when to answer by', () => {
+    const detail = offeredPupilLine({ firstName: 'Pat', area: 'M1', transmission: 'automatic' });
+    expect(detail).toBe('Pat, near M1, for automatic lessons');
+    expect(offeredPupilLine({ firstName: 'Pat', area: null, transmission: null })).toBe('Pat');
+    expect(notificationCopy('pupil.offered', 'instructor', { ...school, detail, when: 'Wed 21 Oct at 14:30' })).toEqual({
+      title: 'Quayside Driving School has a pupil for you',
+      body: 'Pat, near M1, for automatic lessons. Answer by Wed 21 Oct at 14:30.',
+    });
+  });
+
+  it('tells the school who took a pupil', () => {
+    expect(notificationCopy('pupil.taken', 'school', { learnerName: 'Pat Pupil', instructorName: 'Sarah Khan' })).toEqual({
+      title: 'Pat Pupil has an instructor',
+      body: 'Sarah Khan took them, and has their details to get in touch.',
+    });
+  });
+
+  it('tells a linked instructor their fees, each one due, and each one settled', () => {
+    const terms = '£15 a week, the first due Mon 16 Nov, after 2 free weeks. £10 for each pupil the school introduces';
+    expect(notificationCopy('school_fee.terms_set', 'instructor', { ...school, detail: terms })).toEqual({
+      title: 'Quayside Driving School set your fees',
+      body: `${terms}.`,
+    });
+    expect(notificationCopy('school_fee.due', 'instructor', { ...school, detail: '£15 for the week from Mon 16 Nov' })).toEqual({
+      title: 'A fee to Quayside Driving School is due',
+      body: '£15 for the week from Mon 16 Nov. Pay it as you agreed, and they mark it paid.',
+    });
+    expect(notificationCopy('school_fee.settled', 'instructor', { ...school, outcome: 'paid', detail: '£15 for the week from Mon 16 Nov' })).toEqual({
+      title: 'Quayside Driving School marked a fee paid',
+      body: '£15 for the week from Mon 16 Nov.',
+    });
+    expect(notificationCopy('school_fee.settled', 'instructor', { ...school, outcome: 'written_off', detail: '£10 for introducing Pat Pupil' })).toEqual({
+      title: 'Quayside Driving School wrote off a fee',
+      body: '£10 for introducing Pat Pupil. You do not owe it.',
+    });
+  });
+
+  it('asks a learner to choose, in the words of the choice itself (D-292)', () => {
+    expect(notificationCopy('learner.move_asked', 'learner', { ...school, instructorName: 'Asha Patel', outcome: 'joined_school' })).toEqual({
+      title: 'Asha Patel now teaches for Quayside Driving School',
+      body: 'Move to Quayside Driving School to keep learning with them, or not now. Nothing changes until you choose.',
+    });
+    expect(notificationCopy('learner.move_asked', 'learner', { ...school, businessName: 'Patel Driving', outcome: 'left_school' })).toEqual({
+      title: 'Patel Driving no longer works with Quayside Driving School',
+      body: 'Quayside Driving School introduced you. Go back to it and it will find you an instructor, or keep learning with Patel Driving.',
+    });
+  });
+
+  it('tells each side what changes when they part, and somebody switched off how to open their own again', () => {
+    expect(notificationCopy('school.left', 'school', { instructorName: 'Asha Patel', outcome: 'left' }).title).toBe('Asha Patel stopped working with you');
+    expect(notificationCopy('school.left', 'instructor', { ...school, outcome: 'let_go' }).title).toBe('Quayside Driving School stopped working with you');
+    expect(notificationCopy('school.left', 'instructor', { ...school, outcome: 'switched_off', businessName: 'Patel Driving' })).toEqual({
+      title: 'Quayside Driving School switched you off',
+      body: 'You no longer teach under it. Open Patel Driving again, and its profile and booking link come back with the learners who stayed with it.',
+    });
+    expect(notificationCopy('school.left', 'instructor', { ...school, outcome: 'switched_off' }).body).toBe('You no longer teach under it.');
+  });
+
+  it('keeps an offer and money owed in the inbox, and lets a school switch off hearing who took a pupil', () => {
+    const everything = { userId: 'user-1', audience: 'instructor' as const, muted: ['in_app', 'email', 'push'] as NotificationChannel[] };
+    expect(channelsFor('pupil.offered', everything)).toEqual(['in_app']);
+    expect(channelsFor('school_fee.due', everything)).toEqual(['in_app']);
+    expect(channelsFor('pupil.taken', { ...everything, audience: 'school' })).toEqual([]);
   });
 });

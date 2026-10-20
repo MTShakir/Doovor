@@ -40,6 +40,10 @@ export function actionLabel(link: string): string {
   if (link.startsWith('/app/instructor/learners')) return 'See the learner';
   if (link.startsWith('/app/instructor/profile')) return 'Open your profile';
   if (link.startsWith('/app/school/instructors')) return 'See your instructors';
+  // A school's own arrangements (M9-28): offers and fees, new pupils, and a Business to open again.
+  if (link.startsWith('/app/instructor/school')) return 'See your school';
+  if (link.startsWith('/app/school/pupils')) return 'See your new pupils';
+  if (link === '/paused') return 'Open your business again';
   // Getting started sends somebody to whatever is next for them: onboarding, or their portal.
   if (link === '/start') return 'Get started';
   return 'Open the app';
