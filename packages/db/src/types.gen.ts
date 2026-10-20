@@ -2817,6 +2817,96 @@ export type Database = {
           },
         ]
       }
+      school_fees: {
+        Row: {
+          amount_pence: number
+          business_id: string
+          created_at: string
+          due_on: string
+          id: string
+          kind: string
+          learner_id: string | null
+          link_id: string
+          period_ends_on: string | null
+          period_starts_on: string | null
+          school_id: string
+          settled_at: string | null
+          settled_by: string | null
+          settled_note: string | null
+          status: Database["public"]["Enums"]["school_fee_status"]
+        }
+        Insert: {
+          amount_pence: number
+          business_id: string
+          created_at?: string
+          due_on: string
+          id?: string
+          kind: string
+          learner_id?: string | null
+          link_id: string
+          period_ends_on?: string | null
+          period_starts_on?: string | null
+          school_id: string
+          settled_at?: string | null
+          settled_by?: string | null
+          settled_note?: string | null
+          status?: Database["public"]["Enums"]["school_fee_status"]
+        }
+        Update: {
+          amount_pence?: number
+          business_id?: string
+          created_at?: string
+          due_on?: string
+          id?: string
+          kind?: string
+          learner_id?: string | null
+          link_id?: string
+          period_ends_on?: string | null
+          period_starts_on?: string | null
+          school_id?: string
+          settled_at?: string | null
+          settled_by?: string | null
+          settled_note?: string | null
+          status?: Database["public"]["Enums"]["school_fee_status"]
+        }
+        Relationships: [
+          {
+            foreignKeyName: "school_fees_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "businesses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "school_fees_learner_id_fkey"
+            columns: ["learner_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "school_fees_link_id_fkey"
+            columns: ["link_id"]
+            isOneToOne: false
+            referencedRelation: "school_links"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "school_fees_school_id_fkey"
+            columns: ["school_id"]
+            isOneToOne: false
+            referencedRelation: "businesses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "school_fees_settled_by_fkey"
+            columns: ["settled_by"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       school_links: {
         Row: {
           business_id: string
@@ -2825,11 +2915,16 @@ export type Database = {
           end_reason: string | null
           ended_at: string | null
           ended_by: string | null
+          fee_pence: number | null
+          fee_period: Database["public"]["Enums"]["school_fee_period"] | null
+          fees_start_on: string | null
+          free_weeks: number
           id: string
           invitation_id: string | null
           prior_plan: Database["public"]["Enums"]["plan_key"] | null
           prior_plan_expires_at: string | null
           pro_given: boolean
+          pupil_fee_pence: number | null
           school_id: string
           started_at: string
           status: Database["public"]["Enums"]["school_link_status"]
@@ -2842,11 +2937,16 @@ export type Database = {
           end_reason?: string | null
           ended_at?: string | null
           ended_by?: string | null
+          fee_pence?: number | null
+          fee_period?: Database["public"]["Enums"]["school_fee_period"] | null
+          fees_start_on?: string | null
+          free_weeks?: number
           id?: string
           invitation_id?: string | null
           prior_plan?: Database["public"]["Enums"]["plan_key"] | null
           prior_plan_expires_at?: string | null
           pro_given?: boolean
+          pupil_fee_pence?: number | null
           school_id: string
           started_at?: string
           status?: Database["public"]["Enums"]["school_link_status"]
@@ -2859,11 +2959,16 @@ export type Database = {
           end_reason?: string | null
           ended_at?: string | null
           ended_by?: string | null
+          fee_pence?: number | null
+          fee_period?: Database["public"]["Enums"]["school_fee_period"] | null
+          fees_start_on?: string | null
+          free_weeks?: number
           id?: string
           invitation_id?: string | null
           prior_plan?: Database["public"]["Enums"]["plan_key"] | null
           prior_plan_expires_at?: string | null
           pro_given?: boolean
+          pupil_fee_pence?: number | null
           school_id?: string
           started_at?: string
           status?: Database["public"]["Enums"]["school_link_status"]
@@ -4086,6 +4191,17 @@ export type Database = {
         }
         Returns: number
       }
+      set_school_fee_terms: {
+        Args: {
+          p_fee_pence?: number
+          p_free_weeks?: number
+          p_link_id: string
+          p_period?: Database["public"]["Enums"]["school_fee_period"]
+          p_pupil_fee_pence?: number
+          p_starts_on?: string
+        }
+        Returns: undefined
+      }
       set_supervisor: {
         Args: { p_instructor_id: string; p_supervised: boolean }
         Returns: boolean
@@ -4113,6 +4229,14 @@ export type Database = {
         Returns: number
       }
       settle_offline_refund: { Args: { p_refund_id: string }; Returns: Json }
+      settle_school_fee: {
+        Args: {
+          p_fee_id: string
+          p_note?: string
+          p_outcome: Database["public"]["Enums"]["school_fee_status"]
+        }
+        Returns: undefined
+      }
       sitemap_entries: { Args: never; Returns: Json }
       slot_problem: {
         Args: {
@@ -4322,6 +4446,7 @@ export type Database = {
           p256dh: string
         }[]
       }
+      system_raise_school_fees: { Args: { p_today?: string }; Returns: number }
       system_rate_limit_hit: {
         Args: {
           p_action: string
@@ -4584,6 +4709,8 @@ export type Database = {
         | "other"
       refund_kind: "card" | "credit" | "offline"
       refund_status: "pending" | "succeeded" | "failed" | "cancelled"
+      school_fee_period: "weekly" | "monthly"
+      school_fee_status: "owed" | "paid" | "written_off"
       school_link_status: "active" | "ended"
       subscription_status:
         | "incomplete"
@@ -4838,6 +4965,8 @@ export const Constants = {
       ],
       refund_kind: ["card", "credit", "offline"],
       refund_status: ["pending", "succeeded", "failed", "cancelled"],
+      school_fee_period: ["weekly", "monthly"],
+      school_fee_status: ["owed", "paid", "written_off"],
       school_link_status: ["active", "ended"],
       subscription_status: [
         "incomplete",

@@ -12,6 +12,7 @@ import Link from 'next/link';
 import { connection } from 'next/server';
 import { Suspense } from 'react';
 import { paymentsState } from '@/lib/payments/connect';
+import { feesOwedToSchool, owedWords } from '@/lib/school/fees';
 import { moneySummary } from '@/lib/payments/money-summary';
 import { moneyTransactions, pendingRefunds, type Transaction } from '@/lib/payments/transactions';
 
@@ -215,6 +216,11 @@ async function Money({
           </Link>
         </Button>
       ) : null}
+      {screen === 'school' ? (
+        <Suspense fallback={null}>
+          <SchoolFeesLink schoolId={state.businessId} />
+        </Suspense>
+      ) : null}
       <MoneyDashboard businessId={state.businessId} screen={screen} period={period} />
       <Suspense fallback={<SkeletonRow />}>
         <RecentTransactions businessId={state.businessId} base={base} period={period} show={show} />
@@ -298,5 +304,25 @@ async function RecentTransactions({
         </Button>
       ) : null}
     </Card>
+  );
+}
+
+/** D-287: the fees the school's linked instructors owe it, for a school that has any. */
+async function SchoolFeesLink({ schoolId }: { schoolId: string }) {
+  const { linked, owedPence } = await feesOwedToSchool(schoolId);
+  if (linked === 0 && owedPence === 0) return null;
+  return (
+    <Button variant="secondary" width="full" className="justify-between" asChild>
+      <Link href="/app/school/money/fees">
+        <span className="flex items-center gap-2">
+          <icons.school className="size-5 shrink-0" aria-hidden />
+          Fees from linked instructors
+        </span>
+        <span className="flex items-center gap-1">
+          <span className="tabular-nums">{owedWords(owedPence)}</span>
+          <ChevronRight className="size-5 shrink-0" aria-hidden />
+        </span>
+      </Link>
+    </Button>
   );
 }

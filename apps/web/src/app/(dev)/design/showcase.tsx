@@ -84,6 +84,10 @@ import type { SchoolOverview } from '@/lib/school/overview';
 import { LetGoDialog, SwitchOffDialog, TeamSections } from '@/components/school/team';
 import { AllocationChoices } from '@/components/school/allocation-choices';
 import { LinkedFreeBusy } from '@/components/school/linked-free-busy';
+import { FeeList } from '@/components/school/fee-list';
+import { FeeTermsForm } from '@/components/school/fee-terms-form';
+import { LinkedFeesCard } from '@/components/school/linked-fees';
+import type { FeeLine, LinkedFees } from '@/lib/school/fees';
 import { PriceGuideForm } from '@/components/school/price-guide-form';
 import { PriceGuideNote } from '@/components/school/price-guide-note';
 import type { LinkedDay } from '@/lib/school/linked-diary';
@@ -438,6 +442,23 @@ const exampleRegions: AdminRegion[] = [
   { area: 'M', label: 'M, Manchester', instructors: 41, freeHours: 380, waiting: 0, requests: 3, open: true, switchedOn: 'Tue 15 Sep 2026', meetsRule: true, instructorsShort: 0, hoursShort: 0 },
   { area: 'SK', label: 'SK, Stockport', instructors: 12, freeHours: 96, waiting: 17, requests: 2, open: false, switchedOn: null, meetsRule: false, instructorsShort: 13, hoursShort: 54 },
 ];
+
+// Fees a linked instructor owes, written out as the server would (D-287).
+const exampleFees: FeeLine[] = [
+  { feeId: 'design-fee-3', label: 'Week from Mon 23 Nov', due: 'Mon 23 Nov', amountPence: 5000, status: 'owed', note: null },
+  { feeId: 'design-fee-2', label: 'Week from Mon 16 Nov', due: 'Mon 16 Nov', amountPence: 5000, status: 'paid', note: 'Bank transfer' },
+  { feeId: 'design-fee-1', label: 'Week from Mon 9 Nov', due: 'Mon 9 Nov', amountPence: 5000, status: 'written_off', note: null },
+];
+const exampleLinkedFees: LinkedFees = {
+  linkId: '0a1b2c3d-4e5f-4061-8728-394a5b6c7d8e',
+  name: 'Sarah Khan',
+  businessName: 'Khan Driving',
+  terms: { period: 'weekly', feePence: 5000, startsOn: '2026-11-02', freeWeeks: 1, pupilFeePence: 2000 },
+  typed: { period: 'weekly', fee: '50', startsOn: '2026-11-02', freeWeeks: '1', pupilFee: '20' },
+  words: ['£50 a week, the first due Mon 9 Nov, after 1 free week', '£20 for each pupil the school introduces'],
+  owedPence: 5000,
+  fees: exampleFees,
+};
 
 // A Tuesday, with the times written out as the server would.
 const exampleLinkedDays: LinkedDay[] = [
@@ -1768,6 +1789,27 @@ export function DesignShowcase() {
         <InstructorWeeks instructors={[]} week={exampleWeek} idPrefix="design-weeks-empty" />
         <Label>Loading</Label>
         <OverviewSkeleton />
+        <Label>Fees from a linked instructor, as the school sees them: the terms, what is owed, and each fee to mark paid or write off (D-287)</Label>
+        <LinkedFeesCard
+          idPrefix="design-"
+          linked={exampleLinkedFees}
+          handlers={{ saveTerms: savedNothing, settle: savedNothing, refresh: () => undefined }}
+        />
+        <Label>The same fees as the instructor sees them, and none yet</Label>
+        <div className="grid items-start gap-6 md:grid-cols-2">
+          <FeeList fees={exampleFees} />
+          <FeeList fees={[]} />
+        </div>
+        <Label>The fees form: none yet, and a weekly fee with free weeks and a fee for each pupil</Label>
+        <div className="grid items-start gap-6 md:grid-cols-2">
+          <FeeTermsForm
+            idPrefix="design-fees-a-"
+            linkId="0a1b2c3d-4e5f-4061-8728-394a5b6c7d8e"
+            current={{ period: '', fee: '', startsOn: '', freeWeeks: '0', pupilFee: '' }}
+            onSave={savedNothing}
+          />
+          <FeeTermsForm idPrefix="design-fees-b-" linkId="0a1b2c3d-4e5f-4061-8728-394a5b6c7d8e" current={exampleLinkedFees.typed} onSave={savedNothing} />
+        </div>
         <Label>Prices for linked instructors: none yet, and a recommended price with a most (D-286)</Label>
         <div className="grid items-start gap-6 md:grid-cols-2">
           <PriceGuideForm idPrefix="design-a-" recommendedPence={null} maxPence={null} onSave={savedNothing} />

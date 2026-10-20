@@ -6,8 +6,10 @@ import { SkeletonRow } from '@repo/ui/skeleton';
 import type { Metadata } from 'next';
 import { Suspense } from 'react';
 import { requirePortal } from '@/lib/auth/session';
+import { FeeList } from '@/components/school/fee-list';
 import { PriceGuideNote } from '@/components/school/price-guide-note';
 import { icons } from '@/lib/icons';
+import { ownFees, owedWords } from '@/lib/school/fees';
 import { ownSchoolLink } from '@/lib/school/link';
 import { LeaveSchool } from './leave-school';
 
@@ -44,7 +46,9 @@ async function School() {
   }
 
   const { link, businessName } = linked;
+  const fees = await ownFees(linked.businessId);
   return (
+    <>
     <Card className="flex flex-col gap-4" role="region" aria-labelledby="your-school-title">
       <div className="flex flex-col gap-1">
         <CardTitle id="your-school-title">{link.schoolName}</CardTitle>
@@ -65,5 +69,23 @@ async function School() {
       <PriceGuideNote school={link.schoolName} recommendedHourlyPence={link.recommendedHourlyPence} maxHourlyPence={link.maxHourlyPence} />
       <LeaveSchool linkId={link.linkId} school={link.schoolName} proGiven={link.proGiven} />
     </Card>
+    {/* D-287: what the instructor pays the school, and each fee, as the school records it. */}
+    {fees === null ? null : (
+      <Card className="flex flex-col gap-4" role="region" aria-labelledby="your-fees-title">
+        <div className="flex flex-col gap-1">
+          <CardTitle id="your-fees-title">Fees</CardTitle>
+          <CardDescription>
+            {owedWords(fees.owedPence)}. You pay {link.schoolName} yourself, and it marks each fee paid.
+          </CardDescription>
+        </div>
+        <ul className="flex flex-col gap-1 text-small text-ink">
+          {fees.words.map((line) => (
+            <li key={line}>{line}</li>
+          ))}
+        </ul>
+        <FeeList fees={fees.fees} />
+      </Card>
+    )}
+    </>
   );
 }
