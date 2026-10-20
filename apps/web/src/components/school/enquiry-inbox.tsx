@@ -109,6 +109,9 @@ export function EnquiryInbox({
                     <p className="text-small text-grey-700">
                       Asked {enquiry.receivedOn}, {enquiry.source === 'office' ? 'added by the office' : 'from your page'}
                     </p>
+                    {enquiry.offeredTo ?? enquiry.takenBy ? (
+                      <p className="text-small font-semibold text-ink">{enquiry.offeredTo ?? enquiry.takenBy}</p>
+                    ) : null}
                   </div>
                   <StatusPill status="pending">{enquiry.transmission === null ? 'Either gearbox' : gearboxWords[enquiry.transmission]}</StatusPill>
                 </div>

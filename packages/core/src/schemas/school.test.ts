@@ -1,12 +1,15 @@
 import { describe, expect, it } from 'vitest';
 import {
+  answerOfferSchema,
   enquiryConsentWords,
+  giveEnquirySchema,
   instructorInviteSchema,
   invitationIdSchema,
   inviteKindsFor,
   lessonSellerChoiceSchema,
   memberPermissionSchema,
   memberSwitchSchema,
+  offerEnquirySchema,
   officeEnquiryConsentWords,
   officeEnquirySchema,
   schoolDetailsSchema,
@@ -151,5 +154,21 @@ describe('somebody asking a school for lessons (M9-15, D-288)', () => {
       'I agree to Bee School keeping these details and passing them to one of its instructors, who will contact me about lessons.',
     );
     expect(officeEnquiryConsentWords('Bee School')).toContain('They agreed to Bee School');
+  });
+});
+
+describe('offering and giving a new pupil (M9-17, M9-18, D-289)', () => {
+  const enquiryId = '0a1b2c3d-4e5f-4061-8728-394a5b6c7d8e';
+  const linkId = '1b2c3d4e-5f60-4718-8a9b-0c1d2e3f4a5b';
+
+  it('offers to at least one linked instructor, for a while they choose from', () => {
+    expect(offerEnquirySchema.parse({ enquiryId, linkIds: [linkId], hours: '24' })).toEqual({ enquiryId, linkIds: [linkId], hours: 24 });
+    expect(offerEnquirySchema.safeParse({ enquiryId, linkIds: [], hours: '24' }).error?.issues[0]?.message).toBe('Choose at least one instructor');
+    expect(offerEnquirySchema.safeParse({ enquiryId, linkIds: [linkId], hours: '5' }).error?.issues[0]?.message).toBe('Choose how long they have to answer');
+  });
+
+  it('gives to one instructor, and takes a yes or a no', () => {
+    expect(giveEnquirySchema.safeParse({ enquiryId, instructorId: '' }).error?.issues[0]?.message).toBe('Choose an instructor');
+    expect(answerOfferSchema.parse({ offerId: linkId, accept: false })).toEqual({ offerId: linkId, accept: false });
   });
 });

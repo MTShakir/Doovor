@@ -2,10 +2,12 @@
 
 import { parsePostgresError } from '@repo/core/errors';
 import { err, ok, type Result } from '@repo/core/result';
-import { closeEnquirySchema, officeEnquiryConsentWords, officeEnquirySchema } from '@repo/core/schemas/school';
+import { closeEnquirySchema, giveEnquirySchema, offerEnquirySchema, officeEnquiryConsentWords, officeEnquirySchema } from '@repo/core/schemas/school';
 import { z } from '@repo/core/zod';
 import { requirePortal } from '@/lib/auth/session';
 import { fieldErrors } from '@/lib/forms';
+import { createUnclaimedLearnerAccount, removeUnclaimedLearnerAccount } from '@/lib/learners/account';
+import { enquiryAllocation, type LearnerAllocation } from '@/lib/school/allocation';
 import { enquiryRefused } from '@/lib/school/enquiries';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
 
@@ -67,5 +69,83 @@ export async function reopenEnquiry(enquiryId: unknown): Promise<Result<null>> {
   const supabase = await createSupabaseServerClient();
   const { error } = await supabase.rpc('reopen_school_enquiry', { p_enquiry_id: parsed.data });
   if (error) return err(parsePostgresError(error).code);
+  return ok(null);
+}
+
+/** What the database says about a pupil no longer waiting, or an instructor no longer linked. */
+function pupilRefused(code: Parameters<typeof err>[0], reason: unknown): Result<null> {
+  if (reason === 'not_open') return err('VALIDATION_FAILED', 'This pupil is no longer waiting.');
+  if (reason === 'not_linked') return err('VALIDATION_FAILED', 'One of them is no longer linked to your school.');
+  return err(code);
+}
+
+/** M9-17, D-289: a new pupil offered to instructors linked to the school, the first to accept getting them. */
+export async function offerEnquiry(input: unknown): Promise<Result<null>> {
+  const parsed = offerEnquirySchema.safeParse(input);
+  if (!parsed.success) return err('VALIDATION_FAILED', undefined, fieldErrors(parsed.error));
+  if (!(await runningSchool())) return err('NOT_ALLOWED');
+
+  const supabase = await createSupabaseServerClient();
+  const { error } = await supabase.rpc('offer_school_enquiry', {
+    p_enquiry_id: parsed.data.enquiryId,
+    p_link_ids: parsed.data.linkIds,
+    p_hours: parsed.data.hours,
+  });
+  if (error) {
+    const { code, context } = parsePostgresError(error);
+    return pupilRefused(code, context.reason);
+  }
+  return ok(null);
+}
+
+/** M9-18, SCH-03: who of the school's own could teach somebody who asked, best first. */
+export async function allocationForEnquiry(enquiryId: unknown): Promise<Result<LearnerAllocation>> {
+  const parsed = z.uuid().safeParse(enquiryId);
+  if (!parsed.success) return err('NOT_FOUND');
+  if (!(await runningSchool())) return err('NOT_ALLOWED');
+  try {
+    return ok(await enquiryAllocation(parsed.data));
+  } catch {
+    return err('NOT_FOUND');
+  }
+}
+
+/**
+ * M9-18, D-289: a new pupil given to one of the school's own instructors. The enquiry is read
+ * through the caller's own session first, so an account is only ever made for somebody this school
+ * was asked by and still has waiting; then the account they will claim (D-068), then the database
+ * makes them the school's learner, all in one go, or the account goes again.
+ */
+export async function giveEnquiry(input: unknown): Promise<Result<null>> {
+  const parsed = giveEnquirySchema.safeParse(input);
+  if (!parsed.success) return err('VALIDATION_FAILED', undefined, fieldErrors(parsed.error));
+  if (!(await runningSchool())) return err('NOT_ALLOWED');
+
+  const supabase = await createSupabaseServerClient();
+  const { data: enquiry } = await supabase
+    .from('school_enquiries')
+    .select('full_name, email, phone, status')
+    .eq('id', parsed.data.enquiryId)
+    .maybeSingle();
+  if (!enquiry) return err('NOT_FOUND');
+  if (enquiry.status !== 'new' && enquiry.status !== 'offered') return err('VALIDATION_FAILED', 'This pupil is no longer waiting.');
+
+  const account = await createUnclaimedLearnerAccount({ fullName: enquiry.full_name, email: enquiry.email, phone: enquiry.phone });
+  if (!account.ok) {
+    return account.taken
+      ? err('DUPLICATE_CONTACT', 'Those details already belong to an account. Ask them to join with a link from Learners instead.')
+      : err('UNKNOWN', 'We could not make their account. Try again.');
+  }
+  const { error } = await supabase.rpc('give_school_enquiry', {
+    p_enquiry_id: parsed.data.enquiryId,
+    p_instructor_id: parsed.data.instructorId,
+    p_learner_id: account.userId,
+  });
+  if (error) {
+    // The account was a moment old and nobody's, so it goes rather than sits there unowned.
+    await removeUnclaimedLearnerAccount(account.userId);
+    const { code, context } = parsePostgresError(error);
+    return pupilRefused(code, context.reason);
+  }
   return ok(null);
 }

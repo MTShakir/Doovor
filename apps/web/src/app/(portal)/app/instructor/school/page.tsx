@@ -11,6 +11,8 @@ import { PriceGuideNote } from '@/components/school/price-guide-note';
 import { icons } from '@/lib/icons';
 import { ownFees, owedWords } from '@/lib/school/fees';
 import { ownSchoolLink } from '@/lib/school/link';
+import { pupilOffersFor } from '@/lib/school/pupil-offers';
+import { PupilOffersScreen } from './pupil-offers-screen';
 import { LeaveSchool } from './leave-school';
 
 export const metadata: Metadata = { title: 'Your school' };
@@ -46,9 +48,12 @@ async function School() {
   }
 
   const { link, businessName } = linked;
-  const fees = await ownFees(linked.businessId);
+  const [fees, offers] = await Promise.all([ownFees(linked.businessId), pupilOffersFor(linked.businessId)]);
+  // An offer runs out, so one waiting on an answer comes before everything else.
+  const waiting = offers.some((offer) => offer.status === 'open');
   return (
     <>
+    {waiting ? <PupilOffersScreen school={link.schoolName} offers={offers} /> : null}
     <Card className="flex flex-col gap-4" role="region" aria-labelledby="your-school-title">
       <div className="flex flex-col gap-1">
         <CardTitle id="your-school-title">{link.schoolName}</CardTitle>
@@ -69,6 +74,8 @@ async function School() {
       <PriceGuideNote school={link.schoolName} recommendedHourlyPence={link.recommendedHourlyPence} maxHourlyPence={link.maxHourlyPence} />
       <LeaveSchool linkId={link.linkId} school={link.schoolName} proGiven={link.proGiven} />
     </Card>
+    {/* D-289: pupils the school offers, and those accepted. */}
+    {waiting ? null : <PupilOffersScreen school={link.schoolName} offers={offers} />}
     {/* D-287: what the instructor pays the school, and each fee, as the school records it. */}
     {fees === null ? null : (
       <Card className="flex flex-col gap-4" role="region" aria-labelledby="your-fees-title">

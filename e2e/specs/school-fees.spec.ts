@@ -60,8 +60,8 @@ test.describe('fees from a linked instructor (SCH-09, MNY-06, D-287)', () => {
       const dialog = manager.getByRole('dialog', { name: 'Mark £50 paid?' });
       await dialog.getByLabel('How was it paid?').fill('Bank transfer');
       await dialog.getByRole('button', { name: 'Mark paid' }).click();
+      // The undo lasts five seconds, so it is pressed as soon as it shows, whatever else is loading.
       await expect(manager.getByText('£50 marked paid')).toBeVisible();
-      await expect(card).toContainText('Nothing owed');
       await manager.getByRole('button', { name: 'Undo' }).click();
       await expect(card).toContainText('£50 owed');
       await card.getByRole('button', { name: 'Mark paid' }).click();

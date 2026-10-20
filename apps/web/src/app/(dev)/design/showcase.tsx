@@ -86,6 +86,10 @@ import { AllocationChoices } from '@/components/school/allocation-choices';
 import { LinkedFreeBusy } from '@/components/school/linked-free-busy';
 import { EnquiryForm } from '@/components/school/enquiry-form';
 import { EnquiryInbox } from '@/components/school/enquiry-inbox';
+import { GivePupilSheet } from '@/components/school/give-pupil-sheet';
+import { OfferPupilSheet } from '@/components/school/offer-pupil-sheet';
+import { PupilOffers } from '@/components/school/pupil-offers';
+import type { PupilOffer } from '@/lib/school/pupil-offers';
 import type { Enquiry } from '@/lib/school/enquiries';
 import { FeeList } from '@/components/school/fee-list';
 import { FeeTermsForm } from '@/components/school/fee-terms-form';
@@ -460,6 +464,8 @@ const exampleEnquiries: Enquiry[] = [
     status: 'new',
     receivedOn: 'Tue 20 Oct',
     closedReason: null,
+    offeredTo: 'Offered to Khan Driving and Price Driving, until Wed 21 Oct, 14:00',
+    takenBy: null,
   },
   {
     enquiryId: 'design-enquiry-2',
@@ -473,9 +479,47 @@ const exampleEnquiries: Enquiry[] = [
     status: 'new',
     receivedOn: 'Mon 19 Oct',
     closedReason: null,
+    offeredTo: null,
+    takenBy: null,
   },
 ];
 const exampleEnquiryCounts = { new: 2, offered: 1, taken: 4, closed: 3 };
+// What a linked instructor sees of pupils offered and accepted (D-289).
+const examplePupilOffers: PupilOffer[] = [
+  {
+    offerId: 'design-offer-1',
+    enquiryId: 'design-enquiry-1',
+    status: 'open',
+    schoolName: 'Quayside Driving School',
+    answerBy: 'Wed 21 Oct, 14:00',
+    firstName: 'Pat',
+    district: 'M1',
+    transmission: 'automatic',
+    note: 'Weekday evenings',
+    contact: null,
+    learnerAdded: false,
+  },
+  {
+    offerId: 'design-offer-2',
+    enquiryId: 'design-enquiry-2',
+    status: 'accepted',
+    schoolName: 'Quayside Driving School',
+    answerBy: 'Tue 20 Oct, 09:00',
+    firstName: 'Sam',
+    district: 'M14',
+    transmission: null,
+    note: null,
+    contact: { fullName: 'Sam Caller', email: null, phone: '07700 900124', postcode: 'M14 5RL' },
+    learnerAdded: false,
+  },
+];
+const exampleAllocation = {
+  suggestions: [{ instructorId: 'design-ian', name: 'Emma Clarke', area: 'covers' as const, freeMinutes: 600, reasons: ['Teaches automatic', 'Covers M1', '10 hours free in the next fortnight'] }],
+  everybody: [
+    { id: 'design-ian', name: 'Emma Clarke' },
+    { id: 'design-tom', name: 'Tom Walsh' },
+  ],
+};
 
 // Fees a linked instructor owes, written out as the server would (D-287).
 const exampleFees: FeeLine[] = [
@@ -1855,6 +1899,11 @@ export function DesignShowcase() {
           consentWords="They agreed to Quayside Driving School keeping these details."
           handlers={{ add: savedNothing, close: savedNothing, reopen: savedNothing, refresh: () => undefined }}
         />
+        <Label>Offering a pupil to linked instructors, and giving one to the school&apos;s own, each opened from a button (D-289)</Label>
+        <ShowcaseOfferAndGive />
+        <Label>Pupils a school offers a linked instructor: one to answer, and one accepted with their details (D-289)</Label>
+        <PupilOffers school="Quayside Driving School" offers={examplePupilOffers} handlers={{ answer: savedNothing, refresh: () => undefined }} />
+        <PupilOffers school="Quayside Driving School" offers={[]} handlers={{ answer: savedNothing, refresh: () => undefined }} />
         <Label>Fees from a linked instructor, as the school sees them: the terms, what is owed, and each fee to mark paid or write off (D-287)</Label>
         <LinkedFeesCard
           idPrefix="design-"
@@ -2295,5 +2344,39 @@ export function DesignShowcase() {
         </div>
       </Section>
     </main>
+  );
+}
+
+/** The two sheets for a new pupil, each opened from its own button (D-289). */
+function ShowcaseOfferAndGive() {
+  const [offering, setOffering] = useState<{ enquiryId: string; fullName: string } | null>(null);
+  const [giving, setGiving] = useState<{ enquiryId: string; fullName: string } | null>(null);
+  const pat = { enquiryId: 'design-enquiry-1', fullName: 'Pat Pupil' };
+  return (
+    <div className="flex flex-wrap gap-2">
+      <Button variant="secondary" onClick={() => { setOffering(pat); }}>
+        Offer to instructors
+      </Button>
+      <Button variant="secondary" onClick={() => { setGiving(pat); }}>
+        Give to an instructor
+      </Button>
+      <OfferPupilSheet
+        pupil={offering}
+        linked={[
+          { linkId: 'design-link-1', name: 'Sarah Khan', businessName: 'Khan Driving' },
+          { linkId: 'design-link-2', name: 'Tom Price', businessName: 'Price Driving' },
+        ]}
+        onOffer={savedNothing}
+        onClose={() => { setOffering(null); }}
+        onOffered={() => { setOffering(null); }}
+      />
+      <GivePupilSheet
+        pupil={giving}
+        loadAllocation={() => Promise.resolve({ ok: true as const, data: exampleAllocation })}
+        onGive={savedNothing}
+        onClose={() => { setGiving(null); }}
+        onGiven={() => { setGiving(null); }}
+      />
+    </div>
   );
 }

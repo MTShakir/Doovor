@@ -161,3 +161,30 @@ export const closeEnquirySchema = z.object({
   enquiryId: z.uuid(),
   reason: z.string().trim().max(200, { error: 'Use 200 characters or fewer' }).default(''),
 });
+
+/** How long linked instructors have to answer an offer of a pupil, in hours (D-289). */
+export const offerWindows = [
+  { value: '4', label: '4 hours' },
+  { value: '24', label: 'A day' },
+  { value: '48', label: '2 days' },
+  { value: '168', label: 'A week' },
+] as const;
+
+/** A new pupil offered to instructors linked to the school: the first to accept gets them (M9-17, D-289). */
+export const offerEnquirySchema = z.object({
+  enquiryId: z.uuid(),
+  linkIds: z.array(z.uuid()).min(1, { error: 'Choose at least one instructor' }).max(30),
+  hours: z.enum(['4', '24', '48', '168'], { error: 'Choose how long they have to answer' }).transform(Number),
+});
+
+/** A new pupil given to one of the school's own instructors (M9-18, D-289). */
+export const giveEnquirySchema = z.object({
+  enquiryId: z.uuid(),
+  instructorId: z.uuid({ error: 'Choose an instructor' }),
+});
+
+/** A linked instructor's answer to an offer of a pupil. */
+export const answerOfferSchema = z.object({
+  offerId: z.uuid(),
+  accept: z.boolean(),
+});

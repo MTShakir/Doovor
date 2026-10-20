@@ -2931,6 +2931,81 @@ export type Database = {
           },
         ]
       }
+      school_enquiry_offers: {
+        Row: {
+          answered_at: string | null
+          business_id: string
+          created_at: string
+          created_by: string | null
+          enquiry_id: string
+          expires_at: string
+          id: string
+          link_id: string
+          school_id: string
+          status: Database["public"]["Enums"]["enquiry_offer_status"]
+        }
+        Insert: {
+          answered_at?: string | null
+          business_id: string
+          created_at?: string
+          created_by?: string | null
+          enquiry_id: string
+          expires_at: string
+          id?: string
+          link_id: string
+          school_id: string
+          status?: Database["public"]["Enums"]["enquiry_offer_status"]
+        }
+        Update: {
+          answered_at?: string | null
+          business_id?: string
+          created_at?: string
+          created_by?: string | null
+          enquiry_id?: string
+          expires_at?: string
+          id?: string
+          link_id?: string
+          school_id?: string
+          status?: Database["public"]["Enums"]["enquiry_offer_status"]
+        }
+        Relationships: [
+          {
+            foreignKeyName: "school_enquiry_offers_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "businesses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "school_enquiry_offers_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "school_enquiry_offers_enquiry_id_fkey"
+            columns: ["enquiry_id"]
+            isOneToOne: false
+            referencedRelation: "school_enquiries"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "school_enquiry_offers_link_id_fkey"
+            columns: ["link_id"]
+            isOneToOne: false
+            referencedRelation: "school_links"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "school_enquiry_offers_school_id_fkey"
+            columns: ["school_id"]
+            isOneToOne: false
+            referencedRelation: "businesses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       school_fees: {
         Row: {
           amount_pence: number
@@ -3819,6 +3894,10 @@ export type Database = {
         Args: { p_key: string; p_value: Json }
         Returns: undefined
       }
+      answer_enquiry_offer: {
+        Args: { p_accept: boolean; p_offer_id: string }
+        Returns: undefined
+      }
       assign_learner: {
         Args: { p_instructor_id: string; p_learner_id: string }
         Returns: string
@@ -3924,9 +4003,18 @@ export type Database = {
       }
       end_impersonation: { Args: { p_session_id: string }; Returns: undefined }
       end_school_link: { Args: { p_link_id: string }; Returns: undefined }
+      enquiry_allocation: { Args: { p_enquiry_id: string }; Returns: Json }
       export_my_data: { Args: never; Returns: Json }
       feature_flags: { Args: never; Returns: Json }
       founding_places: { Args: never; Returns: Json }
+      give_school_enquiry: {
+        Args: {
+          p_enquiry_id: string
+          p_instructor_id: string
+          p_learner_id: string
+        }
+        Returns: undefined
+      }
       hold_booking_for_payment: {
         Args: { p_booking_id: string }
         Returns: Json
@@ -4073,6 +4161,10 @@ export type Database = {
         }
         Returns: string[]
       }
+      offer_school_enquiry: {
+        Args: { p_enquiry_id: string; p_hours?: number; p_link_ids: string[] }
+        Returns: undefined
+      }
       open_slots: {
         Args: {
           p_date: string
@@ -4132,6 +4224,7 @@ export type Database = {
         Args: { p_booking_id: string; p_duration_minutes: number }
         Returns: number
       }
+      pupil_offers_for: { Args: { p_business_id: string }; Returns: Json }
       rate_skill: {
         Args: { p_learner_id: string; p_rating: number; p_skill_code: string }
         Returns: string
@@ -4521,6 +4614,7 @@ export type Database = {
         Returns: Json
       }
       system_issue_receipt: { Args: { p_payment_id: string }; Returns: Json }
+      system_lapse_enquiry_offers: { Args: never; Returns: number }
       system_learner_capture_confirmation: {
         Args: { p_id: string; p_kind: string }
         Returns: Json
@@ -4796,6 +4890,12 @@ export type Database = {
         | "expiry"
         | "adjustment"
         | "refund"
+      enquiry_offer_status:
+        | "open"
+        | "accepted"
+        | "declined"
+        | "lapsed"
+        | "withdrawn"
       exception_kind: "open" | "blocked"
       expense_category:
         | "fuel"
@@ -5047,6 +5147,13 @@ export const Constants = {
         "expiry",
         "adjustment",
         "refund",
+      ],
+      enquiry_offer_status: [
+        "open",
+        "accepted",
+        "declined",
+        "lapsed",
+        "withdrawn",
       ],
       exception_kind: ["open", "blocked"],
       expense_category: [

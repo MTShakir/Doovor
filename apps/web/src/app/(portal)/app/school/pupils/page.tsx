@@ -5,6 +5,7 @@ import type { Metadata } from 'next';
 import { Suspense } from 'react';
 import { requirePortal } from '@/lib/auth/session';
 import { enquiryCounts, enquiryStatuses, schoolEnquiries, type EnquiryStatus } from '@/lib/school/enquiries';
+import { schoolTeam } from '@/lib/school/team';
 import { PupilsScreen } from './pupils-screen';
 
 export const metadata: Metadata = { title: 'New pupils' };
@@ -37,6 +38,22 @@ async function Pupils({ searchParams }: PupilsProps) {
   const school = access.memberships.find((one) => one.businessType === 'school' && (one.role === 'owner' || one.role === 'manager'));
   if (!school) return null;
 
-  const [enquiries, counts] = await Promise.all([schoolEnquiries(school.businessId, status), enquiryCounts(school.businessId)]);
-  return <PupilsScreen status={status} counts={counts} enquiries={enquiries} consentWords={officeEnquiryConsentWords(school.businessName)} />;
+  // Names for who a pupil is offered to or taken by, and who there is to offer or give them to.
+  const team = await schoolTeam(school.businessId);
+  const teachers = team.members.filter((one) => one.active && one.instructorId !== null);
+  const names = {
+    businesses: new Map(team.linked.map((one) => [one.businessId, one.businessName])),
+    instructors: new Map(teachers.flatMap((one) => (one.instructorId === null ? [] : [[one.instructorId, one.name] as const]))),
+  };
+  const [enquiries, counts] = await Promise.all([schoolEnquiries(school.businessId, status, names), enquiryCounts(school.businessId)]);
+  return (
+    <PupilsScreen
+      status={status}
+      counts={counts}
+      enquiries={enquiries}
+      consentWords={officeEnquiryConsentWords(school.businessName)}
+      linked={team.linked.map((one) => ({ linkId: one.linkId, name: one.name, businessName: one.businessName }))}
+      hasTeachers={teachers.length > 0 || school.instructorProfileId !== null}
+    />
+  );
 }
