@@ -4,6 +4,7 @@ import { learnerTransmissions } from '@repo/core/schemas/learner';
 import { Field } from '@repo/ui/field';
 import { Input } from '@repo/ui/input';
 import { Select } from '@repo/ui/select';
+import type { Result } from '@repo/core/result';
 import { toast } from '@repo/ui/toast';
 import { useState, useTransition } from 'react';
 import { track } from '@/lib/analytics/track';
@@ -11,10 +12,22 @@ import { ClientForm, SubmitButton } from '@/components/client-form';
 import { FormAlert } from '@/components/form-alert';
 import { addLearner } from './actions';
 
-const empty = { fullName: '', phone: '', email: '', postcode: '', transmission: '' };
+const empty = { fullName: '', phone: '', email: '', postcode: '', transmission: '', instructorId: '' };
 
-/** LRN-03: a learner the instructor already teaches, typed in by them. */
-export function ManualLearnerForm({ onAdded }: { onAdded: () => void }) {
+/**
+ * LRN-03: a learner the instructor already teaches, typed in by them. A school's office adds one
+ * the same way (M9-27, D-294), choosing who teaches them or leaving it for later.
+ */
+export function ManualLearnerForm({
+  onAdded,
+  add = addLearner,
+  instructors,
+}: {
+  onAdded: () => void;
+  add?: (values: typeof empty) => Promise<Result<{ learnerId: string }>>;
+  /** At a school: its instructors, one of whom may teach them. */
+  instructors?: readonly { id: string; name: string }[];
+}) {
   const [pending, startTransition] = useTransition();
   const [values, setValues] = useState(empty);
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -29,7 +42,7 @@ export function ManualLearnerForm({ onAdded }: { onAdded: () => void }) {
     setErrors({});
     setFormError(null);
     startTransition(async () => {
-      const result = await addLearner(values);
+      const result = await add(values);
       if (!result.ok) {
         const { form, ...fields } = result.fields ?? {};
         setErrors(fields);
@@ -75,6 +88,15 @@ export function ManualLearnerForm({ onAdded }: { onAdded: () => void }) {
           onChange={set('transmission')}
         />
       </Field>
+      {instructors ? (
+        <Field label="Who teaches them?" hint="Choose later if you are not sure yet." error={errors.instructorId}>
+          <Select
+            options={[{ value: '', label: 'Choose later' }, ...instructors.map((one) => ({ value: one.id, label: one.name }))]}
+            value={values.instructorId}
+            onChange={set('instructorId')}
+          />
+        </Field>
+      ) : null}
       <SubmitButton width="responsive" pending={pending}>
         Add them
       </SubmitButton>

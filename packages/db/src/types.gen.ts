@@ -3908,6 +3908,17 @@ export type Database = {
         }
         Returns: string
       }
+      add_school_learner: {
+        Args: {
+          p_instructor_id?: string
+          p_learner_id: string
+          p_postcode?: string
+          p_school_id: string
+          p_source?: string
+          p_transmission?: string
+        }
+        Returns: string
+      }
       add_vehicle: {
         Args: {
           p_business_id: string

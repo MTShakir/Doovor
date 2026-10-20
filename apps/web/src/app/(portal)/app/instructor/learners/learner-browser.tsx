@@ -20,8 +20,10 @@ export interface LearnerBrowserProps {
   total: number;
   /** Where the search and the filters are written, so a school reads its own list. */
   path?: string;
-  /** A school has no way of adding somebody yet: their instructors do that. */
+  /** The instructor's own way of adding somebody; a school brings its own instead, as `action`. */
   canAdd?: boolean;
+  /** Where the add button goes, for a school's office (M9-27, D-294). */
+  action?: ReactNode;
   /** Opened with the add sheet showing, from "Add a new learner" when booking (D-165). */
   startAdding?: boolean;
   children: ReactNode;
@@ -36,6 +38,7 @@ export function LearnerBrowser({
   total,
   path = '/app/instructor/learners',
   canAdd = true,
+  action,
   startAdding = false,
   children,
 }: LearnerBrowserProps) {
@@ -86,7 +89,7 @@ export function LearnerBrowser({
             <UserPlus className="size-5" aria-hidden />
             Add a learner
           </Button>
-        ) : null}
+        ) : (action ?? null)}
       </div>
 
       <ChipGroup role="group" aria-label="Filter learners">
@@ -132,8 +135,10 @@ export function LearnerBrowser({
           {way === 'link' ? <InviteForm /> : <ManualLearnerForm onAdded={() => { setAdding(false); }} />}
           <p className="text-small text-grey-700">
             Got a list of them already?{' '}
+            {/* Closed on the way, or it is still open on the way back: the list keeps its state. */}
             <Link
               href="/app/instructor/learners/import"
+              onClick={() => { setAdding(false); }}
               className="font-semibold text-blue underline underline-offset-4"
             >
               Import a spreadsheet

@@ -89,6 +89,7 @@ import { EnquiryInbox } from '@/components/school/enquiry-inbox';
 import { GivePupilSheet } from '@/components/school/give-pupil-sheet';
 import { OfferPupilSheet } from '@/components/school/offer-pupil-sheet';
 import { PupilOffers } from '@/components/school/pupil-offers';
+import { ManualLearnerForm } from '@/app/(portal)/app/instructor/learners/manual-form';
 import { MemberPayForm } from '@/components/school/member-pay-form';
 import { PayWeekView } from '@/components/school/pay-week';
 import type { PayWeek } from '@/lib/school/pay';
@@ -1955,6 +1956,14 @@ export function DesignShowcase() {
         </div>
         <Label>Offering a pupil to linked instructors, and giving one to the school&apos;s own, each opened from a button (D-289)</Label>
         <ShowcaseOfferAndGive />
+        <Label>A learner the school already teaches, added by the office with one of its instructors or nobody yet (D-294)</Label>
+        <div className="md:max-w-md">
+          <ManualLearnerForm
+            add={() => Promise.resolve({ ok: true as const, data: { learnerId: 'design-learner-1' } })}
+            instructors={exampleEverybody}
+            onAdded={() => undefined}
+          />
+        </div>
         <Label>Pupils a school offers a linked instructor: one to answer, and one accepted with their details (D-289)</Label>
         <PupilOffers school="Quayside Driving School" offers={examplePupilOffers} handlers={{ answer: savedNothing, refresh: () => undefined }} />
         <PupilOffers school="Quayside Driving School" offers={[]} handlers={{ answer: savedNothing, refresh: () => undefined }} />
