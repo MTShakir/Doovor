@@ -595,6 +595,10 @@ test.describe('lesson credit (PAY-04, M3-13, M3-14)', () => {
     await expect(purchase).toContainText('£39 an hour');
     await expect(purchase).toContainText(`It is for lessons with ${school} only.`);
     await expect(purchase).toContainText('Use them within a year of buying.');
+    // The policy a saved card's fees come from, in the words the booking link uses (BOK-09, R-06).
+    await expect(purchase).toContainText(
+      'You can cancel for free up to 48 hours before the lesson. After that, cancelling or missing it costs the full price.',
+    );
 
     // Nothing is asked of the card until the learner has said their lessons may start (D-086).
     const pay = purchase.getByRole('button', { name: 'Pay £195 for 5 hours' });
