@@ -1941,6 +1941,74 @@ export type Database = {
         }
         Relationships: []
       }
+      member_pay: {
+        Row: {
+          basis: string | null
+          business_id: string
+          created_at: string
+          effective_from: string
+          hourly_pence: number | null
+          id: string
+          membership_id: string
+          share_percent: number | null
+          updated_by: string | null
+          user_id: string
+        }
+        Insert: {
+          basis?: string | null
+          business_id: string
+          created_at?: string
+          effective_from: string
+          hourly_pence?: number | null
+          id?: string
+          membership_id: string
+          share_percent?: number | null
+          updated_by?: string | null
+          user_id: string
+        }
+        Update: {
+          basis?: string | null
+          business_id?: string
+          created_at?: string
+          effective_from?: string
+          hourly_pence?: number | null
+          id?: string
+          membership_id?: string
+          share_percent?: number | null
+          updated_by?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "member_pay_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "businesses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "member_pay_membership_id_fkey"
+            columns: ["membership_id"]
+            isOneToOne: false
+            referencedRelation: "memberships"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "member_pay_updated_by_fkey"
+            columns: ["updated_by"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "member_pay_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       memberships: {
         Row: {
           business_id: string
@@ -4161,6 +4229,14 @@ export type Database = {
         Args: { p_booking_id: string; p_reason?: string }
         Returns: Json
       }
+      member_pay_statement: {
+        Args: {
+          p_business_id: string
+          p_user_id?: string
+          p_week_start: string
+        }
+        Returns: Json
+      }
       money_summary: {
         Args: { p_business_id: string; p_from: string; p_to: string }
         Returns: Json
@@ -4394,6 +4470,16 @@ export type Database = {
       }
       set_member_active: {
         Args: { p_active: boolean; p_membership_id: string }
+        Returns: undefined
+      }
+      set_member_pay: {
+        Args: {
+          p_basis?: string
+          p_from?: string
+          p_hourly_pence?: number
+          p_membership_id: string
+          p_share_percent?: number
+        }
         Returns: undefined
       }
       set_member_permission: {

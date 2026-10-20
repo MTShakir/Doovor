@@ -6,7 +6,7 @@ import { Button } from '@repo/ui/button';
 import { Card, CardDescription, CardTitle } from '@repo/ui/card';
 import { EmptyState } from '@repo/ui/empty-state';
 import { SkeletonRow } from '@repo/ui/skeleton';
-import { BadgePoundSterling, ChevronRight, HandCoins } from 'lucide-react';
+import { BadgePoundSterling, ChevronRight, HandCoins, Wallet } from 'lucide-react';
 import { icons } from '@/lib/icons';
 import Link from 'next/link';
 import { connection } from 'next/server';
@@ -217,9 +217,21 @@ async function Money({
         </Button>
       ) : null}
       {screen === 'school' ? (
-        <Suspense fallback={null}>
-          <SchoolFeesLink schoolId={state.businessId} />
-        </Suspense>
+        <>
+          <Suspense fallback={null}>
+            <SchoolFeesLink schoolId={state.businessId} />
+          </Suspense>
+          {/* D-291: what the school's own instructors taught each week, and their pay. */}
+          <Button variant="secondary" width="full" className="justify-between" asChild>
+            <Link href="/app/school/money/pay">
+              <span className="flex items-center gap-2">
+                <Wallet className="size-5 shrink-0" aria-hidden />
+                Instructor pay
+              </span>
+              <ChevronRight className="size-5 shrink-0" aria-hidden />
+            </Link>
+          </Button>
+        </>
       ) : null}
       <MoneyDashboard businessId={state.businessId} screen={screen} period={period} />
       <Suspense fallback={<SkeletonRow />}>

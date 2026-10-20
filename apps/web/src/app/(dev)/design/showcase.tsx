@@ -89,6 +89,9 @@ import { EnquiryInbox } from '@/components/school/enquiry-inbox';
 import { GivePupilSheet } from '@/components/school/give-pupil-sheet';
 import { OfferPupilSheet } from '@/components/school/offer-pupil-sheet';
 import { PupilOffers } from '@/components/school/pupil-offers';
+import { MemberPayForm } from '@/components/school/member-pay-form';
+import { PayWeekView } from '@/components/school/pay-week';
+import type { PayWeek } from '@/lib/school/pay';
 import type { PupilOffer } from '@/lib/school/pupil-offers';
 import type { Enquiry } from '@/lib/school/enquiries';
 import { FeeList } from '@/components/school/fee-list';
@@ -484,6 +487,49 @@ const exampleEnquiries: Enquiry[] = [
   },
 ];
 const exampleEnquiryCounts = { new: 2, offered: 1, taken: 4, closed: 3 };
+// A week of pay for a school's own instructors, written out as the server would (D-291).
+const examplePayWeek: PayWeek = {
+  weekStart: '2026-10-12',
+  label: 'Mon 12 Oct to Sun 18 Oct',
+  previous: '2026-10-05',
+  next: '2026-10-19',
+  members: [
+    {
+      membershipId: 'design-member-1',
+      name: 'Emma Clarke',
+      active: true,
+      basis: 'hourly',
+      hourlyPence: 1800,
+      sharePercent: null,
+      payWords: '£18 an hour',
+      now: { basis: 'hourly', hourlyPence: 2000, sharePercent: null, words: '£20 an hour' },
+      lessons: [
+        { bookingId: 'design-pay-1', startsAt: '2026-10-13T09:00:00Z', when: 'Tue 13 Oct, 10:00', length: '1h', minutes: 60, learnerName: 'Lee One', noShow: false, pricePence: 4200, payPence: 1800 },
+        { bookingId: 'design-pay-2', startsAt: '2026-10-15T09:00:00Z', when: 'Thu 15 Oct, 10:00', length: '1.5h', minutes: 90, learnerName: 'Lee One', noShow: true, pricePence: 6000, payPence: 2700 },
+      ],
+      taught: '2 hours 30 minutes',
+      minutes: 150,
+      pricePence: 10200,
+      payPence: 4500,
+    },
+    {
+      membershipId: 'design-member-2',
+      name: 'Tom Walsh',
+      active: true,
+      basis: null,
+      hourlyPence: null,
+      sharePercent: null,
+      payWords: 'No pay set',
+      now: { basis: null, hourlyPence: null, sharePercent: null, words: null },
+      lessons: [],
+      taught: 'Nothing taught',
+      minutes: 0,
+      pricePence: 0,
+      payPence: null,
+    },
+  ],
+};
+
 // What a linked instructor sees of pupils offered and accepted (D-289).
 const examplePupilOffers: PupilOffer[] = [
   {
@@ -1899,6 +1945,14 @@ export function DesignShowcase() {
           consentWords="They agreed to Quayside Driving School keeping these details."
           handlers={{ add: savedNothing, close: savedNothing, reopen: savedNothing, refresh: () => undefined }}
         />
+        <Label>A week of instructor pay, as the school sees it, with a way to change pay, and as an instructor sees their own (D-291)</Label>
+        <PayWeekView week={examplePayWeek} base="/design" csvHref="#csv" handlers={{ savePay: savedNothing, refresh: () => undefined }} />
+        <PayWeekView week={{ ...examplePayWeek, members: examplePayWeek.members.slice(0, 1) }} base="/design" csvHref="#csv" />
+        <Label>The pay form: nothing set, and £18 an hour</Label>
+        <div className="grid items-start gap-6 md:grid-cols-2">
+          <MemberPayForm idPrefix="design-pay-a-" membershipId="0a1b2c3d-4e5f-4061-8728-394a5b6c7d8e" basis={null} hourlyPence={null} sharePercent={null} onSave={savedNothing} onSaved={() => undefined} />
+          <MemberPayForm idPrefix="design-pay-b-" membershipId="0a1b2c3d-4e5f-4061-8728-394a5b6c7d8e" basis="hourly" hourlyPence={1800} sharePercent={null} onSave={savedNothing} onSaved={() => undefined} />
+        </div>
         <Label>Offering a pupil to linked instructors, and giving one to the school&apos;s own, each opened from a button (D-289)</Label>
         <ShowcaseOfferAndGive />
         <Label>Pupils a school offers a linked instructor: one to answer, and one accepted with their details (D-289)</Label>

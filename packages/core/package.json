@@ -56,6 +56,7 @@
     "./booking-rules": "./src/booking-rules.ts",
     "./diary": "./src/diary.ts",
     "./school-fees": "./src/school-fees.ts",
+    "./member-pay": "./src/member-pay.ts",
     "./age": "./src/age.ts",
     "./schemas/learner": "./src/schemas/learner.ts",
     "./schemas/note": "./src/schemas/note.ts",

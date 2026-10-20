@@ -6,10 +6,12 @@ import {
   Palette,
   Settings,
   UserRound,
+  Wallet,
 } from 'lucide-react';
 import { icons } from '@/lib/icons';
 import { installAppLink, MoreMenu } from '@/components/more-menu';
 import { businessPlanKey } from '@/lib/billing/plan';
+import { requirePortal } from '@/lib/auth/session';
 import { ownSchoolLink } from '@/lib/school/link';
 
 /**
@@ -24,7 +26,9 @@ import { ownSchoolLink } from '@/lib/school/link';
  * nobody buys.
  */
 export default async function InstructorMorePage() {
-  const [plan, linked] = await Promise.all([businessPlanKey(), ownSchoolLink()]);
+  const [plan, linked, { access }] = await Promise.all([businessPlanKey(), ownSchoolLink(), requirePortal('instructor')]);
+  // An instructor teaching under a school sees what it pays them (D-291).
+  const teachesForSchool = access.memberships.some((one) => one.businessType === 'school' && one.role === 'instructor');
   const locked = plan === null || !hasEntitlement(plan, 'expensesAndExports');
 
   return (
@@ -34,6 +38,7 @@ export default async function InstructorMorePage() {
         { href: '/app/instructor/profile', icon: UserRound, title: 'Profile', subtitle: 'Your public profile and booking link' },
         // Only for an instructor whose own business is linked to a school (D-282).
         ...(linked ? [{ href: '/app/instructor/school' as const, icon: icons.school, title: 'Your school', subtitle: linked.link.schoolName }] : []),
+        ...(teachesForSchool ? [{ href: '/app/instructor/pay' as const, icon: Wallet, title: 'Your pay', subtitle: 'What you taught each week, and your pay' }] : []),
         { href: '/app/instructor/settings', icon: Settings, title: 'Settings', subtitle: 'Booking rules and working hours' },
         { href: '/app/instructor/money/setup', icon: icons.paymentSetup, title: 'Payment setup', subtitle: 'Card payments, how learners pay, receipts' },
         { href: '/app/instructor/messages', icon: icons.messages, title: 'Messages', subtitle: 'In-app chat with your learners, on the way' },
