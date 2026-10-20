@@ -49,7 +49,9 @@ export function LessonSellerCards({
   const why = `${idPrefix}lesson-seller-why`;
   const problem = `${idPrefix}lesson-seller-error`;
   return (
-    <fieldset className="flex flex-col gap-3" aria-describedby={error ? `${problem} ${why}` : why}>
+    // A fieldset will not shrink below its widest content unless told to, which at 200% text put
+    // the cards past a phone's edge; the icon keeps its size in pixels, as the top bar does (D-304).
+    <fieldset className="flex min-w-0 flex-col gap-3" aria-describedby={error ? `${problem} ${why}` : why}>
       <legend className="mb-1 text-small font-semibold text-ink">Who sells your lessons?</legend>
       {lessonSellerOptions.map(({ value, title, description, icon: Icon }) => (
         <label
@@ -67,10 +69,10 @@ export function LessonSellerCards({
             defaultChecked={defaultValue === value}
             {...field}
           />
-          <span className="flex size-12 shrink-0 items-center justify-center rounded-full bg-white text-black shadow-card">
+          <span className="flex size-[48px] shrink-0 items-center justify-center rounded-full bg-white text-black shadow-card">
             <Icon size={24} strokeWidth={1.5} aria-hidden />
           </span>
-          <span className="flex flex-col gap-0.5">
+          <span className="flex min-w-0 flex-col gap-0.5 break-words">
             <span className="text-body font-semibold text-black">{title}</span>
             <span className="text-small text-grey-700">{description}</span>
           </span>
