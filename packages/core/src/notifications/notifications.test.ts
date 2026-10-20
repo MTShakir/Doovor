@@ -117,6 +117,29 @@ describe('a badge decided, and a badge running out (INS-02, INS-03, Appendix B, 
   });
 });
 
+describe('a learner who accepted an invitation (LRN-03, Appendix B, D-301)', () => {
+  it('tells the instructor who sent it that they can book them in now', () => {
+    expect(notificationCopy('learner.joined', 'instructor', { learnerName: 'Nina New', instructorName: 'Ian One' })).toEqual({
+      title: 'Nina New joined you',
+      body: 'They accepted your invitation and can be booked in now.',
+    });
+  });
+
+  it('tells the school who joined and who invited them', () => {
+    expect(notificationCopy('learner.joined', 'school', { learnerName: 'Nina New', instructorName: 'Ian One' })).toEqual({
+      title: 'Nina New joined',
+      body: 'Ian One invited them. They can be booked in now.',
+    });
+    expect(notificationCopy('learner.joined', 'school', { learnerName: 'Nina New' }).body).toBe(
+      'They accepted an invitation and can be booked in now.',
+    );
+  });
+
+  it('arrives in the inbox and on a phone, with the rest of the account group (NTF-04)', () => {
+    expect(notificationCatalogue['learner.joined']).toMatchObject({ channels: ['in_app', 'push'], category: 'account', essential: false });
+  });
+});
+
 describe('what the settings screen offers (NTF-04)', () => {
   it('offers every channel the group can use', () => {
     expect(channelsInCategory('reminders')).toEqual(['in_app', 'email', 'push', 'sms']);

@@ -99,6 +99,14 @@ export const accountEmailConfirmed = eventType('account/email-confirmed', {
   schema: staticSchema<{ user_id: string }>(),
 });
 
+/**
+ * A learner accepted an invitation (LRN-03, D-301). The database queues it as it links them; the job
+ * tells the instructor who sent it, and their school. Which invitation, and nothing about who.
+ */
+export const learnerJoined = eventType('learner.joined', {
+  schema: staticSchema<{ invitation_id: string }>(),
+});
+
 export const lessonRecordAdded = eventType('lesson_record.added', {
   schema: staticSchema<{ lesson_record_id: string; booking_id: string }>(),
 });

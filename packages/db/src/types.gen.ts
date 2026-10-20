@@ -4115,6 +4115,10 @@ export type Database = {
         Args: { p_id: string; p_kind: string }
         Returns: Json
       }
+      system_learner_joined_notice: {
+        Args: { p_invitation_id: string }
+        Returns: Json
+      }
       system_lesson_record_notice: {
         Args: { p_lesson_record_id: string }
         Returns: Json
