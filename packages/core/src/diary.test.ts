@@ -1,11 +1,13 @@
 import { describe, expect, it } from 'vitest';
 import {
+  busyOnDay,
   byDay,
   gapsBetween,
   isOff,
   lessonAnswers,
   lessonState,
   lessonStateLabel,
+  minutesTaken,
   teachingMinutes,
   type DiaryLesson,
   type LessonFacts,
@@ -195,5 +197,42 @@ describe('a lesson paid two ways says both (D-225)', () => {
   it('is one word while the rest is still owed, because it is not paid yet', () => {
     expect(lessonState({ ...standard, paymentStatus: 'unpaid', creditMinutes: 60 })).toBe('unpaid');
     expect(lessonStateLabel({ ...standard, paymentStatus: 'unpaid', creditMinutes: 60 })).toBeUndefined();
+  });
+});
+
+describe('when a linked instructor is taken, for the school (M9-08, D-284)', () => {
+  // Tue 20 Oct 2026, in London: British Summer Time, an hour ahead of UTC.
+  const day = { startsAt: new Date('2026-10-19T23:00:00Z'), endsAt: new Date('2026-10-20T23:00:00Z') };
+  const at = (time: string) => new Date(`2026-10-20T${time}:00Z`);
+
+  it('cuts what runs past the day to the day, and leaves out what misses it', () => {
+    const parts = busyOnDay(
+      [
+        { kind: 'away', startsAt: at('13:00'), endsAt: new Date('2026-10-23T12:00:00Z') },
+        { kind: 'lesson', startsAt: at('09:00'), endsAt: at('10:00') },
+        { kind: 'lesson', startsAt: new Date('2026-10-19T09:00:00Z'), endsAt: new Date('2026-10-19T10:00:00Z') },
+      ],
+      day,
+    );
+    expect(parts).toEqual([
+      { kind: 'lesson', startsAt: at('09:00'), endsAt: at('10:00'), allDay: false },
+      { kind: 'away', startsAt: at('13:00'), endsAt: day.endsAt, allDay: false },
+    ]);
+  });
+
+  it('says a week away is all of the day', () => {
+    const [part] = busyOnDay([{ kind: 'away', startsAt: new Date('2026-10-18T08:00:00Z'), endsAt: new Date('2026-10-25T08:00:00Z') }], day);
+    expect(part).toEqual({ kind: 'away', startsAt: day.startsAt, endsAt: day.endsAt, allDay: true });
+  });
+
+  it('counts a lesson during time off once', () => {
+    expect(
+      minutesTaken([
+        { kind: 'away', startsAt: at('12:00'), endsAt: at('16:00') },
+        { kind: 'lesson', startsAt: at('13:00'), endsAt: at('14:00') },
+        { kind: 'lesson', startsAt: at('09:00'), endsAt: at('10:30') },
+      ]),
+    ).toBe(330);
+    expect(minutesTaken([])).toBe(0);
   });
 });

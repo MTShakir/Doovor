@@ -83,6 +83,8 @@ import type { PlatformDashboard } from '@/lib/admin/dashboard';
 import type { SchoolOverview } from '@/lib/school/overview';
 import { LetGoDialog, SwitchOffDialog, TeamSections } from '@/components/school/team';
 import { AllocationChoices } from '@/components/school/allocation-choices';
+import { LinkedFreeBusy } from '@/components/school/linked-free-busy';
+import type { LinkedDay } from '@/lib/school/linked-diary';
 import { PackagesEditor } from '@/components/catalogue/packages-editor';
 import { PricesForm } from '@/components/catalogue/prices-form';
 import type { SchoolTeam } from '@/lib/school/team';
@@ -433,6 +435,31 @@ const exampleRegions: AdminRegion[] = [
   { area: 'LS', label: 'LS, Leeds', instructors: 27, freeHours: 212, waiting: 48, requests: 9, open: false, switchedOn: null, meetsRule: true, instructorsShort: 0, hoursShort: 0 },
   { area: 'M', label: 'M, Manchester', instructors: 41, freeHours: 380, waiting: 0, requests: 3, open: true, switchedOn: 'Tue 15 Sep 2026', meetsRule: true, instructorsShort: 0, hoursShort: 0 },
   { area: 'SK', label: 'SK, Stockport', instructors: 12, freeHours: 96, waiting: 17, requests: 2, open: false, switchedOn: null, meetsRule: false, instructorsShort: 13, hoursShort: 54 },
+];
+
+// A Tuesday, with the times written out as the server would.
+const exampleLinkedDays: LinkedDay[] = [
+  {
+    instructorId: 'design-linked-1',
+    name: 'Sarah Khan',
+    businessName: 'Sarah Khan Driving',
+    allDay: null,
+    busyMinutes: 330,
+    parts: [
+      { key: 'a', kind: 'lesson', allDay: false, from: '09:00', to: '10:30' },
+      { key: 'b', kind: 'lesson', allDay: false, from: '11:00', to: '12:00' },
+      { key: 'c', kind: 'away', allDay: false, from: '14:00', to: '17:00' },
+    ],
+  },
+  { instructorId: 'design-linked-2', name: 'Tom Price', businessName: 'Price Driving', allDay: null, busyMinutes: 0, parts: [] },
+  {
+    instructorId: 'design-linked-3',
+    name: 'Ama Owusu',
+    businessName: 'Ama Owusu Driving',
+    allDay: 'away',
+    busyMinutes: 1440,
+    parts: [{ key: 'a', kind: 'away', allDay: true, from: '00:00', to: '00:00' }],
+  },
 ];
 
 const exampleTeam: SchoolTeam = {
@@ -1725,6 +1752,8 @@ export function DesignShowcase() {
         <InstructorWeeks instructors={[]} week={exampleWeek} idPrefix="design-weeks-empty" />
         <Label>Loading</Label>
         <OverviewSkeleton />
+        <Label>The diary&apos;s linked instructors: busy with lessons and time off, free all day, and away all week (D-284)</Label>
+        <LinkedFreeBusy instructors={exampleLinkedDays} />
         <Label>Team, as the owner of a school that sells some lessons and links instructors who sell their own sees it, with invitations of both kinds and somebody switched off (D-282)</Label>
         <TeamSections
           members={exampleTeam.members}

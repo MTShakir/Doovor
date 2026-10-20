@@ -190,3 +190,40 @@ export function byDay<T extends DiaryLesson>(lessons: T[], dayOf: (instant: Date
   }
   return days;
 }
+
+/** A stretch of time somebody is taken: a lesson, or time off (D-284). */
+export interface BusyStretch {
+  kind: 'lesson' | 'away';
+  startsAt: Date;
+  endsAt: Date;
+}
+
+/** A busy stretch cut to the day shown: a week away is all of that day, not a time to read. */
+export interface BusyPart extends BusyStretch {
+  allDay: boolean;
+}
+
+/** The busy stretches that touch a day, cut to it, in time order. */
+export function busyOnDay(busy: BusyStretch[], day: { startsAt: Date; endsAt: Date }): BusyPart[] {
+  return busy
+    .map((stretch) => {
+      const startsAt = stretch.startsAt < day.startsAt ? day.startsAt : stretch.startsAt;
+      const endsAt = stretch.endsAt > day.endsAt ? day.endsAt : stretch.endsAt;
+      return { kind: stretch.kind, startsAt, endsAt, allDay: startsAt <= day.startsAt && endsAt >= day.endsAt };
+    })
+    .filter((part) => part.endsAt > part.startsAt)
+    .sort((a, b) => a.startsAt.getTime() - b.startsAt.getTime());
+}
+
+/** The minutes taken, counting a lesson during time off once. */
+export function minutesTaken(busy: BusyStretch[]): number {
+  let minutes = 0;
+  let reached = Number.NEGATIVE_INFINITY;
+  for (const stretch of [...busy].sort((a, b) => a.startsAt.getTime() - b.startsAt.getTime())) {
+    const from = Math.max(stretch.startsAt.getTime(), reached);
+    const to = stretch.endsAt.getTime();
+    if (to > from) minutes += (to - from) / 60_000;
+    reached = Math.max(reached, to);
+  }
+  return Math.round(minutes);
+}

@@ -9,9 +9,11 @@ import { Suspense } from 'react';
 import { hoursTaught } from '@/components/diary/day-view';
 import { LiveDiary } from '@/components/diary/live-diary';
 import { LessonRow } from '@/components/diary/lesson-row';
+import { LinkedFreeBusy } from '@/components/school/linked-free-busy';
 import { requirePortal } from '@/lib/auth/session';
 import { lessonsBetween, type DiaryEntry } from '@/lib/diary/lessons';
 import { dateFrom, step, windowFor } from '@/lib/diary/range';
+import { linkedBusyBetween, linkedDay } from '@/lib/school/linked-diary';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
 import { SchoolDiaryNav } from './school-diary-nav';
 
@@ -32,7 +34,10 @@ export default function SchoolDiaryPage({ searchParams }: SchoolDiaryParams) {
   );
 }
 
-/** DIA-09: every instructor side by side, for one day. */
+/**
+ * DIA-09: every instructor side by side, for one day. Those linked to the school come after its
+ * own, with when they are busy and nothing more (M9-08, D-284).
+ */
 async function SchoolDay({ searchParams }: SchoolDiaryParams) {
   const params = await searchParams;
   const date = dateFrom(params.date);
@@ -48,13 +53,16 @@ async function SchoolDay({ searchParams }: SchoolDiaryParams) {
     .eq('business_id', business.businessId)
     .order('display_name');
 
-  const shown = (team ?? []).filter(
-    (member) =>
-      (instructor === undefined || instructor === '' || member.id === instructor) &&
-      (transmission === undefined || transmission === '' || member.transmission === transmission),
-  );
-
   const range = windowFor('day', date);
+  const linked = business.role === 'instructor' ? [] : await linkedBusyBetween(business.businessId, range.startsAt, range.endsAt);
+  const matches = (one: { id: string; transmission: string }) =>
+    (instructor === undefined || instructor === '' || one.id === instructor) &&
+    (transmission === undefined || transmission === '' || one.transmission === transmission);
+  const shown = (team ?? []).filter(matches);
+  const shownLinked = linked.filter((one) => matches({ id: one.instructorId, transmission: one.transmission }));
+  // A school with linked instructors names its own as a group too, so the two read apart.
+  const Name = shownLinked.length > 0 ? 'h3' : 'h2';
+
   const lessons = shown.length > 0 ? await lessonsBetween(range.startsAt, range.endsAt, shown.map((member) => member.id)) : [];
   const byInstructor = new Map<string, DiaryEntry[]>();
   for (const lesson of lessons) {
@@ -73,20 +81,27 @@ async function SchoolDay({ searchParams }: SchoolDiaryParams) {
         previous={step('day', date, -1)}
         next={step('day', date, 1)}
         today={todayInZone()}
-        instructors={(team ?? []).map((member) => ({ id: member.id, name: member.display_name }))}
+        instructors={[
+          ...(team ?? []).map((member) => ({ id: member.id, name: member.display_name })),
+          ...linked.map((one) => ({ id: one.instructorId, name: one.name })),
+        ]}
         instructor={instructor ?? ''}
         transmission={transmission ?? ''}
       />
-        {shown.length === 0 ? (
+        {shown.length === 0 && shownLinked.length === 0 ? (
           <EmptyState icon={Users} title="Nobody matches" description="Change the filters to see your instructors." />
-        ) : (
+        ) : null}
+        {shown.length > 0 && shownLinked.length > 0 ? (
+          <h2 className="text-h2 text-black">Teaching under the school</h2>
+        ) : null}
+        {shown.length === 0 ? null : (
         <ol className="grid grid-cols-[minmax(0,1fr)] gap-4 md:grid-cols-2 xl:grid-cols-3">
           {shown.map((member) => {
             const theirs = byInstructor.get(member.id) ?? [];
             return (
               <li key={member.id} className="flex flex-col gap-2">
                 <div className="flex items-baseline justify-between gap-2">
-                  <h2 className="text-h3 text-black">{member.display_name}</h2>
+                  <Name className="text-h3 text-black">{member.display_name}</Name>
                   <span className="text-small text-grey-700">
                     {theirs.length === 0 ? 'Free all day' : hoursTaught(teachingMinutes(theirs)).toLowerCase()}
                   </span>
@@ -109,6 +124,7 @@ async function SchoolDay({ searchParams }: SchoolDiaryParams) {
           })}
           </ol>
         )}
+        {shownLinked.length > 0 ? <LinkedFreeBusy instructors={shownLinked.map((one) => linkedDay(one, range))} /> : null}
       </div>
     </>
   );

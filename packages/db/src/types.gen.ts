@@ -3971,6 +3971,10 @@ export type Database = {
         Returns: Json
       }
       school_link_of: { Args: { p_business_id: string }; Returns: Json }
+      school_linked_busy: {
+        Args: { p_from: string; p_school_id: string; p_to: string }
+        Returns: Json
+      }
       school_overview: { Args: { p_business_id: string }; Returns: Json }
       school_profile_page: { Args: { p_slug: string }; Returns: Json }
       school_team: { Args: { p_business_id: string }; Returns: Json }
