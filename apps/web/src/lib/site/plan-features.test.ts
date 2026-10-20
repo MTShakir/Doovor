@@ -7,7 +7,7 @@ describe('what each plan says it includes (PRD 9.18, M5-09)', () => {
     expect(planSummaries().map(({ name, price, cadence }) => ({ name, price, cadence }))).toEqual([
       { name: 'Free', price: '£0', cadence: 'per month' },
       { name: 'Pro', price: '£12', cadence: 'per month, or £120 a year' },
-      { name: 'School', price: '£6', cadence: 'per instructor per month, for at least 2 instructors' },
+      { name: 'School', price: '£15', cadence: 'per month plus £6 per instructor, or £150 a year plus £60 per instructor' },
     ]);
   });
 
@@ -95,9 +95,9 @@ describe('a paid plan at its founding price (PRD 9.18, D-251)', () => {
       left: '54 of 100 places left',
     });
     expect(school && foundingPrice(school, places(46, 3))).toEqual({
-      usual: '£6',
+      usual: '£15',
       free: 'Free for 1 year',
-      then: 'then £6 per instructor per month, for at least 2 instructors',
+      then: 'then £15 per month plus £6 per instructor, or £150 a year plus £60 per instructor',
       left: '47 of 50 places left',
     });
   });

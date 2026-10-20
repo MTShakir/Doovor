@@ -17,7 +17,7 @@ import { foundingPrice, planSummaries } from '@/lib/site/plan-features';
 export function generateMetadata(): Metadata {
   return publicPageMetadata({
     title: 'Pricing',
-    description: `Free for independent driving instructors, Pro at ${formatPence(plans.pro.monthlyPricePence)} a month, and ${formatPence(plans.school.monthlyPricePence)} per instructor for schools. See what each plan includes on ${brand.name}.`,
+    description: `Free for independent driving instructors, Pro at ${formatPence(plans.pro.monthlyPricePence)} a month, and ${formatPence(plans.school.schoolFee?.monthlyPricePence ?? 0)} a month plus ${formatPence(plans.school.monthlyPricePence)} per instructor for schools. See what each plan includes on ${brand.name}.`,
     path: '/pricing',
     indexable: true,
     card: siteShareCard(brand.tagline),

@@ -528,7 +528,7 @@ All prices live in configuration. The values below are the launch prices.
 |---|---|---|
 | Free (independent instructor) | £0 | Diary, ten learners at a time, lesson records, offline payments, card payments, public profile and booking link, email and push reminders. |
 | Pro (independent instructor) | £12 per month or £120 per year | Everything in Free plus SMS reminders (up to 200 per month), auto-charge before lesson, Gap Fill, waiting list automation, bookkeeping and MTD-ready exports, calendar sync, the Business's own colour, the pass gallery. |
-| School | £6 per instructor per month (minimum 2, D-278) | All Pro features plus school portal, allocation, reports, fleet. |
+| School | £15 per month plus £6 per instructor, or £150 a year plus £60 per instructor, for each instructor the school has (D-278, D-279) | All Pro features plus school portal, allocation, reports, fleet. |
 | Founding offer | The paid plan free for 1 year | Pro for the first 100 independent instructors and the School plan for the first 50 schools, with no card needed (D-203). The badge outlasts the plan. |
 | Free trial | Pro for a while | A Business created after the founding places run out starts on the paid plan rather than Free: 90 days for the first 500, 30 days for everybody after (D-204). |
 | Referrals | A month of Pro | Every Business has an eight character referral code, from an alphabet with no I, O, 0 or 1 so it can be read off a phone. Earned when the instructor who was referred is approved by staff, not when they sign up, and spent against the first invoice that uses it (D-205, D-231). |

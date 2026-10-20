@@ -324,7 +324,7 @@ Branch: `m9-schools`, in its own worktree, so fixes on `beta-prep` can still be 
 | ID | Task | PRD | Done when |
 |---|---|---|---|
 | M9-01 | The plan, the owner's decisions and the PRD rows they change | SCH-05, SCH-09 | Docs committed |
-| M9-02 | The School plan at £6 an instructor a month | 9.18 | Unit test of the price; the pricing page end to end |
+| M9-02 | The School plan: £15 a month for the school plus £6 for each instructor, or £150 and £60 a year | 9.18 | Unit test of the price; the pricing page end to end |
 | M9-03 | A school's instructors need no badge check by Doovor: the school vouches; expiry reminders stay | INS-02, INS-03 | pgTAP for listing and allocation; end to end on the profile |
 | M9-04 | A school says who sells its lessons (the school, its instructors, or both) at setup and in Settings, in plain words | SCH-05 | pgTAP; end to end at both widths |
 | M9-05 | `school_links`: a school and an instructor's own Business, invited, active or ended, with RLS | SCH-09 | pgTAP for RLS and every constraint |

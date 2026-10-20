@@ -138,8 +138,10 @@ test.describe('the public site (PRD 8.3, 9.18, M5-09)', () => {
     await expect(pro.getByRole('list', { name: 'Coming later to Pro' })).toContainText('Google and Outlook calendar sync');
 
     const school = page.getByRole('article', { name: 'School' });
-    await expect(school).toContainText(pounds(plans.school.monthlyPricePence));
-    await expect(school).toContainText(`for at least ${String(plans.school.minimumInstructors)} instructors`);
+    // A fee for the school and one for each instructor it has, by the month or the year (D-279).
+    await expect(school).toContainText(pounds(plans.school.schoolFee?.monthlyPricePence ?? 0));
+    await expect(school).toContainText(`plus ${pounds(plans.school.monthlyPricePence)} per instructor`);
+    await expect(school).toContainText(`plus ${pounds(plans.school.yearlyPricePence ?? 0)} per instructor`);
     await expect(school.getByRole('link', { name: 'Set up your school on School' })).toHaveAttribute('href', /\/sign-up\?role=school$/);
 
     // While a plan's founding places last it is £0 beside its own price struck through, for as
@@ -158,7 +160,7 @@ test.describe('the public site (PRD 8.3, 9.18, M5-09)', () => {
     }
     if (open.school) {
       await expect(school.getByTestId('founding-price-school')).toContainText(term);
-      await expect(school.locator('s')).toHaveText(`Usually ${pounds(plans.school.monthlyPricePence)}`);
+      await expect(school.locator('s')).toHaveText(`Usually ${pounds(plans.school.schoolFee?.monthlyPricePence ?? 0)}`);
     }
 
     // Everybody who misses a founding place is told what they get instead (D-204).
