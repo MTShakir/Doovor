@@ -74,6 +74,9 @@ export const notificationKinds = [
   'school_fee.due',
   'school_fee.settled',
   'learner.move_asked',
+  // A learner who chose to move, told to the school they moved to and the instructor they came
+  // with (D-306): somebody back from a linked instructor has nobody teaching them until it chooses.
+  'learner.moved',
   'school.left',
 ] as const;
 
@@ -289,6 +292,15 @@ export const notificationCatalogue: Record<NotificationKind, NotificationSpec> =
     kind: 'learner.move_asked',
     category: 'account',
     audiences: ['learner'],
+    channels: PUSH_AND_EMAIL,
+    essential: true,
+  },
+  // The learner's answer, which the school acts on as it acts on a pupil offered: by email too,
+  // for an office at a desk, and always in the inbox (D-306).
+  'learner.moved': {
+    kind: 'learner.moved',
+    category: 'account',
+    audiences: ['instructor', 'school'],
     channels: PUSH_AND_EMAIL,
     essential: true,
   },

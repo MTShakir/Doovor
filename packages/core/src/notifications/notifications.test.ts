@@ -20,7 +20,7 @@ const lesson = { learnerName: 'Jack Taylor', instructorName: 'Sarah Khan', when:
 
 describe('the catalogue (PRD Appendix B, NTF-03)', () => {
   it('has every kind of notification Phase 1 sends', () => {
-    expect(notificationKinds).toHaveLength(29);
+    expect(notificationKinds).toHaveLength(30);
     for (const kind of notificationKinds) expect(notificationCatalogue[kind].kind).toBe(kind);
   });
 
@@ -425,6 +425,24 @@ describe("a school's own arrangements (M9-28, D-295)", () => {
       title: 'Patel Driving no longer works with Quayside Driving School',
       body: 'Quayside Driving School introduced you. Go back to it and it will find you an instructor, or keep learning with Patel Driving.',
     });
+  });
+
+  it('tells the school who moved to it, and who teaches them, and the instructor who they came with (D-306)', () => {
+    expect(notificationCopy('learner.moved', 'school', { ...school, learnerName: 'Pat Pupil', businessName: 'Patel Driving', outcome: 'left_school' })).toEqual({
+      title: 'Pat Pupil came back to you',
+      body: 'Patel Driving no longer works with you, and they chose to come back. Choose who teaches them.',
+    });
+    expect(notificationCopy('learner.moved', 'school', { ...school, learnerName: 'Lee One', instructorName: 'Asha Patel', outcome: 'joined_school' })).toEqual({
+      title: 'Lee One moved to you',
+      body: 'They came with Asha Patel, who keeps teaching them.',
+    });
+    expect(notificationCopy('learner.moved', 'instructor', { ...school, learnerName: 'Lee One', instructorName: 'Asha Patel', outcome: 'joined_school' })).toEqual({
+      title: 'Lee One moved with you',
+      body: 'They learn with you at Quayside Driving School now.',
+    });
+    expect(notificationCopy('learner.moved', 'school', { outcome: 'left_school' }).title).toBe('A learner came back to you');
+    // Nobody teaches them until the school chooses, so it reaches the inbox whatever is switched off.
+    expect(channelsFor('learner.moved', { userId: 'ben-1', audience: 'school', muted: ['in_app', 'email', 'push'] })).toEqual(['in_app']);
   });
 
   it('tells each side what changes when they part, and somebody switched off how to open their own again', () => {

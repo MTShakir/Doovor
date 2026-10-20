@@ -65,6 +65,7 @@ describe('what the email says (NTF-03, M2-28)', () => {
     // A school's own arrangements (M9-28, D-295).
     expect(actionLabel('/app/instructor/school')).toBe('See your school');
     expect(actionLabel('/app/school/pupils')).toBe('See your new pupils');
+    expect(actionLabel('/app/school/learners')).toBe('See your learners');
     expect(actionLabel('/paused')).toBe('Open your business again');
     expect(actionLabel('/somewhere-else')).toBe('Open the app');
   });

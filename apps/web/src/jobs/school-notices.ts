@@ -23,6 +23,7 @@ export const schoolNoticeEvents = [
   'school_fee.due',
   'school_fee.settled',
   'learner.move_asked',
+  'learner.moved',
   'school.link_ended',
   'school.member_left',
 ] as const;
@@ -34,12 +35,22 @@ export function isSchoolNoticeEvent(value: string): value is SchoolNoticeEvent {
 
 /** What `system_school_notice` answers: who hears, and the facts as the database keeps them. */
 export interface SchoolNotice {
-  kind: 'pupil.offered' | 'pupil.taken' | 'school_fee.terms_set' | 'school_fee.due' | 'school_fee.settled' | 'learner.move_asked' | 'school.left';
+  kind:
+    | 'pupil.offered'
+    | 'pupil.taken'
+    | 'school_fee.terms_set'
+    | 'school_fee.due'
+    | 'school_fee.settled'
+    | 'learner.move_asked'
+    | 'learner.moved'
+    | 'school.left';
   business_id: string | null;
   entity_type: string;
   entity_id: string;
   version: string | null;
   recipients: { user_id: string; audience: NotificationAudience }[];
+  /** A learner who moved: whose card the instructor they came with opens (D-306). */
+  learner_id?: string | null;
   school_name?: string | null;
   learner_name?: string | null;
   instructor_name?: string | null;
@@ -122,6 +133,12 @@ export function schoolNoticeLink(notice: SchoolNotice, audience: NotificationAud
       return '/app/school/pupils';
     case 'learner.move_asked':
       return '/app/learner';
+    case 'learner.moved': {
+      // The school chooses who teaches them there; the instructor they came with opens their card.
+      if (audience === 'school') return '/app/school/learners';
+      const learner = given(notice.learner_id);
+      return learner === undefined ? '/app/instructor/learners' : `/app/instructor/learners/${learner}`;
+    }
     case 'school.left':
       if (audience === 'school') return '/app/school/instructors';
       if (notice.outcome !== 'switched_off') return '/app/instructor';
@@ -135,7 +152,8 @@ export function schoolNoticeLink(notice: SchoolNotice, audience: NotificationAud
 
 /**
  * A school's own arrangements (M9-28, D-295): a pupil offered and taken, a linked instructor's
- * fees, a learner asked whether to move, and an instructor and a school parting. One notice for
+ * fees, a learner asked whether to move and one who moved (D-306), and an instructor and a school
+ * parting. One notice for
  * each change, however often the event arrives.
  */
 export function planSchoolNotice(notice: SchoolNotice, muted?: Map<string, NotificationChannel[]>): PlannedNotification[] {

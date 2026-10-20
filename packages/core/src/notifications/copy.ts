@@ -256,6 +256,29 @@ export function notificationCopy(
       };
     }
 
+    // Their answer, to the school they moved to and the instructor they came with (D-306). Back
+    // from a linked instructor, nobody teaches them until the school chooses.
+    case 'learner.moved': {
+      const who = facts.learnerName ?? 'A learner';
+      if (audience === 'instructor') {
+        return {
+          title: `${who} moved with you`,
+          body: facts.schoolName ? sentence(`They learn with you at ${facts.schoolName} now`) : 'They learn with you at your school now.',
+        };
+      }
+      if (facts.outcome === 'left_school') {
+        const from = facts.businessName ?? facts.instructorName ?? 'Their instructor';
+        return {
+          title: `${who} came back to you`,
+          body: sentence(`${from} no longer works with you, and they chose to come back.`, 'Choose who teaches them'),
+        };
+      }
+      return {
+        title: `${who} moved to you`,
+        body: sentence(`They came with ${facts.instructorName ?? 'their instructor'}, who keeps teaching them`),
+      };
+    }
+
     case 'school.left':
       if (audience === 'school') {
         return {

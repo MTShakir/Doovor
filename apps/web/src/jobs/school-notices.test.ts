@@ -99,6 +99,45 @@ describe("telling people about a school's own arrangements (M9-28, NTF-03, D-295
     });
   });
 
+  it('tells the school who moved to it, and the instructor they came with, each where they act on it (D-306)', () => {
+    const moved: SchoolNotice = {
+      ...school,
+      kind: 'learner.moved',
+      business_id: 'school-1',
+      entity_type: 'learner_move',
+      recipients: [
+        { user_id: 'ian-1', audience: 'instructor' },
+        { user_id: 'ben-1', audience: 'school' },
+      ],
+      learner_id: 'lee-1',
+      learner_name: 'Lee One',
+      business_name: 'Ian Driving',
+      instructor_name: 'Ian One',
+      outcome: 'joined_school',
+    };
+    expect(planSchoolNotice(moved)).toEqual([
+      expect.objectContaining({
+        userId: 'ian-1',
+        channels: ['in_app', 'push', 'email'],
+        title: 'Lee One moved with you',
+        link: '/app/instructor/learners/lee-1',
+        dedupeKey: 'learner.moved:row-1:0:ian-1',
+      }),
+      expect.objectContaining({ userId: 'ben-1', title: 'Lee One moved to you', body: 'They came with Ian One, who keeps teaching them.', link: '/app/school/learners' }),
+    ]);
+
+    const back: SchoolNotice = { ...moved, recipients: [{ user_id: 'ben-1', audience: 'school' }], instructor_name: null, outcome: 'left_school' };
+    expect(planSchoolNotice(back)).toEqual([
+      expect.objectContaining({
+        userId: 'ben-1',
+        title: 'Lee One came back to you',
+        body: 'Ian Driving no longer works with you, and they chose to come back. Choose who teaches them.',
+        link: '/app/school/learners',
+      }),
+    ]);
+    expect(schoolNoticeLink({ ...moved, learner_id: null }, 'instructor')).toBe('/app/instructor/learners');
+  });
+
   it('takes each side of a parting to the screen that answers it', () => {
     const parted: SchoolNotice = { ...school, kind: 'school.left', entity_type: 'school_link', outcome: 'let_go' };
     expect(schoolNoticeLink(parted, 'instructor')).toBe('/app/instructor');
