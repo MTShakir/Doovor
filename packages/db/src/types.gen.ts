@@ -1208,6 +1208,7 @@ export type Database = {
           verification_status: Database["public"]["Enums"]["verification_status"]
           verification_submitted_at: string | null
           verified_at: string | null
+          vouched_at: string | null
           years_teaching: number | null
         }
         Insert: {
@@ -1245,6 +1246,7 @@ export type Database = {
           verification_status?: Database["public"]["Enums"]["verification_status"]
           verification_submitted_at?: string | null
           verified_at?: string | null
+          vouched_at?: string | null
           years_teaching?: number | null
         }
         Update: {
@@ -1282,6 +1284,7 @@ export type Database = {
           verification_status?: Database["public"]["Enums"]["verification_status"]
           verification_submitted_at?: string | null
           verified_at?: string | null
+          vouched_at?: string | null
           years_teaching?: number | null
         }
         Relationships: [

@@ -105,7 +105,10 @@ export async function saveListing(listed: unknown): Promise<Result<null>> {
   return ok(null);
 }
 
-/** Sends a badge from the profile to be checked, with its photo (INS-02, D-262). */
+/**
+ * Sends a badge from the profile to be checked, with its photo (INS-02, D-262). A school's instructor
+ * keeps its details up to date instead, whenever they like, with nothing to check (D-280).
+ */
 export async function resubmitBadge(input: unknown): Promise<Result<null>> {
   const refused = await refuseWhileViewing();
   if (refused) return refused;
@@ -116,6 +119,7 @@ export async function resubmitBadge(input: unknown): Promise<Result<null>> {
   const membership = access.memberships.find((m) => m.instructorProfileId !== null);
   if (!membership?.instructorProfileId) return err('NOT_ALLOWED');
   const profileId = membership.instructorProfileId;
+  const vouched = membership.businessType === 'school';
 
   const supabase = await createSupabaseServerClient();
   const { data: current } = await supabase
@@ -123,11 +127,11 @@ export async function resubmitBadge(input: unknown): Promise<Result<null>> {
     .select('verification_status, badge_expiry, badge_path')
     .eq('id', profileId)
     .maybeSingle();
-  if (!current || !canSendBadge(current.verification_status, current.badge_expiry, todayInZone())) {
+  if (!current || (!vouched && !canSendBadge(current.verification_status, current.badge_expiry, todayInZone()))) {
     return err('NOT_ALLOWED', 'Your badge is already checked or being checked.');
   }
 
-  const sent = await submitBadge(supabase, profileId, parsed.data, current.badge_path);
+  const sent = await submitBadge(supabase, profileId, parsed.data, current.badge_path, { vouched });
   if (sent.ok) revalidatePath('/app/instructor/profile');
   return sent;
 }

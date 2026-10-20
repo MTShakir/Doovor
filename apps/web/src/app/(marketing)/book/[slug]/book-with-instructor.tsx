@@ -133,8 +133,9 @@ export function BookWithInstructor({ page, names, slug, chosen, learner, signedI
   return (
     <div className="flex flex-col gap-6">
       <div className="flex items-center gap-4">
-        {/* A booking link only takes bookings for an instructor the platform has checked (INS-02). */}
-        <Avatar name={names.personal ?? names.main} src={avatarUrl(page.photoPath)} verified size="lg" decorative />
+        {/* A link takes bookings for an instructor the platform checked, or a school vouches for; the
+            tick is only for the first (INS-02, D-280). */}
+        <Avatar name={names.personal ?? names.main} src={avatarUrl(page.photoPath)} verified={page.platformChecked} size="lg" decorative />
         <div className="flex min-w-0 flex-col">
           {names.personal === null ? null : <p className="text-caption text-grey-700">{names.personal}</p>}
           {/* D-210: the instructor's own colour, where they are on a plan that carries it. */}

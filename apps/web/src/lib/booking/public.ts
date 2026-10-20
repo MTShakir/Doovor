@@ -20,6 +20,8 @@ const pageSchema = z.object({
   /** The Business's own colour, where the plan carries it (D-210). Null is the default black. */
   brandColour: z.string().nullable().default(null),
   logoUrl: z.string().nullable().default(null),
+  /** The platform checked the badge itself, rather than a school vouching for the instructor (D-280). */
+  platformChecked: z.boolean().default(false),
   lessons: z.array(lessonSchema),
 });
 

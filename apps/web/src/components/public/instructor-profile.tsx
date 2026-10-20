@@ -54,12 +54,14 @@ export function ProfileHeader({
     <header className="flex flex-col gap-4">
       <div className="flex items-center gap-4">
         {/* The photo is of the person, so the letters standing in for it are theirs too. */}
-        <Avatar name={personalName ?? name} src={photoUrl} verified size="xl" decorative />
+        {/* The platform's tick is for a badge it checked: a school vouches for its own instructors (D-280). */}
+        <Avatar name={personalName ?? name} src={photoUrl} verified={school === null} size="xl" decorative />
         <div className="flex min-w-0 flex-col gap-1">
           {personalName === null ? null : <p className="text-caption text-grey-700">{personalName}</p>}
           <h1 className="text-h1 text-black">{name}</h1>
           <p className="text-small text-grey-700">
-            {qualificationWords(qualification)}, checked by {brand.name}
+            {qualificationWords(qualification)}
+            {school === null ? `, checked by ${brand.name}` : ''}
           </p>
           {school === null ? null : (
             <p className="text-small text-grey-700">

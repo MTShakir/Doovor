@@ -1,3 +1,4 @@
+import { brand } from '@repo/config/brand';
 import type { Metadata } from 'next';
 import { instructorProfilePath } from '@repo/core/public-profile';
 import type { Specialism } from '@repo/core/schemas/profile';
@@ -62,6 +63,27 @@ function verification(status: string, expired: boolean) {
   return { pill: 'unpaid' as const, label: 'Not sent yet', copy: 'Send your badge for checking to get the blue tick.', action: 'Send your badge' };
 }
 
+/**
+ * A school's instructor: vouched for by the school rather than checked by the platform, with the badge's
+ * details theirs to keep up to date at any time for the reminders (D-280).
+ */
+function vouched(school: string, expired: boolean, hasBadge: boolean) {
+  if (expired) {
+    return {
+      pill: 'attention' as const,
+      label: 'Badge run out',
+      copy: 'Your profile is not taking bookings. Add your new badge and it will take them again.',
+      action: 'Add your new badge',
+    };
+  }
+  return {
+    pill: 'confirmed' as const,
+    label: 'Vouched for',
+    copy: `${school} vouches for you, so ${brand.name} does not check your badge.${hasBadge ? ' We remind you before it runs out.' : ' Add its number and expiry date so we can remind you before it runs out.'}`,
+    action: hasBadge ? 'Change your badge' : 'Add your badge',
+  };
+}
+
 /** R-18: a trainee teaches only under a school or an approved instructor (INS-04). */
 function Supervision({ supervised }: { supervised: boolean }) {
   return supervised ? (
@@ -90,10 +112,13 @@ async function Profile() {
   if (!profile) return null;
 
   const today = todayInZone();
-  const badge = verification(profile.verification_status, profile.badge_expiry !== null && isBadgeExpired(profile.badge_expiry, today));
-  const sendable = canSendBadge(profile.verification_status, profile.badge_expiry, today);
+  const expired = profile.badge_expiry !== null && isBadgeExpired(profile.badge_expiry, today);
+  const school = membership.businessType === 'school' ? membership.businessName : null;
+  const badge =
+    school === null ? verification(profile.verification_status, expired) : vouched(school, expired, profile.badge_number !== null);
+  const sendable = school !== null || canSendBadge(profile.verification_status, profile.badge_expiry, today);
   // The badge bucket is private, so a photo still on file is shown through a short-lived address.
-  const badgePreview = sendable ? await signedBadgeUrl(supabase, profile.badge_path) : undefined;
+  const badgePreview = sendable && school === null ? await signedBadgeUrl(supabase, profile.badge_path) : undefined;
 
   // A base postcode saved earlier is in the cache, so the circle is drawn on the first paint.
   const geo = await getGeoProvider();
@@ -154,6 +179,7 @@ async function Profile() {
               badgeExpiry={profile.badge_expiry}
               badgePreview={badgePreview}
               hasBadgePhoto={profile.badge_path !== null}
+              vouchedBy={school}
             />
           </div>
         ) : null}

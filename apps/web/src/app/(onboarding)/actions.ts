@@ -86,7 +86,9 @@ export async function saveBadge(input: unknown): Promise<Result<null>> {
 
   const session = await requireOnboarding();
   const supabase = await createSupabaseServerClient();
-  const sent = await submitBadge(supabase, session.profileId, parsed.data, session.badgePath);
+  const sent = await submitBadge(supabase, session.profileId, parsed.data, session.badgePath, {
+    vouched: session.businessType === 'school',
+  });
   if (!sent.ok) return sent;
 
   // Saving succeeded, so this redirects and never resolves.

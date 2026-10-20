@@ -45,6 +45,7 @@ export const auditActionWords: Readonly<Record<string, string>> = {
   'staff.role_changed': 'Platform staff role changed',
   'instructor.verification_submitted': 'Badge sent in to be checked',
   'instructor.verification_decided': 'Badge approved or refused',
+  'instructor.badge_vouched': 'Badge details saved, vouched for by their school',
   'instructor.unlisted_badge_expired': 'Badge ran out',
   'refund.requested': 'Refund asked for',
   'refund.issued': 'Refund issued',
@@ -151,7 +152,7 @@ export const auditCategories: readonly AuditCategory[] = [
     key: 'verification',
     label: 'Verification decisions',
     required: true,
-    actions: ['instructor.verification_submitted', 'instructor.verification_decided', 'instructor.unlisted_badge_expired'],
+    actions: ['instructor.verification_submitted', 'instructor.verification_decided', 'instructor.badge_vouched', 'instructor.unlisted_badge_expired'],
   },
   {
     key: 'refunds',

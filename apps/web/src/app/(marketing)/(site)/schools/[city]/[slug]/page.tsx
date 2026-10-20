@@ -112,6 +112,8 @@ async function SchoolProfile({ params }: Pick<Props, 'params'>) {
             car: instructor.car,
             takingBookings: instructor.takingBookings,
             hourlyFromPence: instructor.hourlyFromPence,
+            // The school vouches for its own instructors, so the platform's tick is not theirs (D-280).
+            platformChecked: false,
           }))}
         />
         {/* D-218: the school's wall is every instructor's, because it is the school's page. */}

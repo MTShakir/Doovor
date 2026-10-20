@@ -11,6 +11,8 @@ export interface OnboardingSession {
   businessId: string;
   /** A school sets its instructors' prices, so they have no prices step (D-118). */
   businessType: 'independent' | 'school';
+  /** The Business's name: at a school, the one that vouches for them (D-280). */
+  businessName: string;
   step: number;
   completed: boolean;
   /** What they are called today: the name step starts from this. */
@@ -53,6 +55,7 @@ export async function requireOnboarding(): Promise<OnboardingSession> {
     profileId: membership.instructorProfileId,
     businessId: membership.businessId,
     businessType: membership.businessType,
+    businessName: membership.businessName,
     step: membership.onboarding.step,
     completed: membership.onboarding.completed,
     displayName: profile?.display_name ?? '',

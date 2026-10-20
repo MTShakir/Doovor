@@ -1423,18 +1423,18 @@ export function DesignShowcase() {
           <SchoolInstructors
             idPrefix="school-"
             instructors={[
-              { href: '#emma', name: 'Emma Clarke', qualification: 'adi', transmission: 'automatic', car: 'Toyota Yaris Hybrid', takingBookings: true, hourlyFromPence: 4400 },
-              { href: '#tom', name: 'Tom Walsh', qualification: 'adi', transmission: 'manual', car: 'Ford Fiesta', takingBookings: false, hourlyFromPence: 4200 },
+              { href: '#emma', name: 'Emma Clarke', qualification: 'adi', transmission: 'automatic', car: 'Toyota Yaris Hybrid', takingBookings: true, hourlyFromPence: 4400, platformChecked: false },
+              { href: '#tom', name: 'Tom Walsh', qualification: 'adi', transmission: 'manual', car: 'Ford Fiesta', takingBookings: false, hourlyFromPence: 4200, platformChecked: false },
             ]}
           />
         </div>
-        <Label>On a city page: somebody running their own Business by its name, with theirs above, beside a school&apos;s instructor (D-269)</Label>
+        <Label>On a city page: somebody running their own Business by its name, with theirs above, beside a school&apos;s instructor (D-269); the platform&apos;s tick only for the badge it checked (D-280)</Label>
         <div className="max-w-xl">
           <SchoolInstructors
             idPrefix="city-list-"
             instructors={[
-              { href: '#khan', name: 'Khan Driving', personalName: 'Sarah Khan', qualification: 'adi', transmission: 'manual', car: 'Volkswagen Polo', takingBookings: true, hourlyFromPence: 4200 },
-              { href: '#emma-city', name: 'Emma Clarke', qualification: 'adi', transmission: 'automatic', car: 'Toyota Yaris Hybrid', takingBookings: true, hourlyFromPence: 4400 },
+              { href: '#khan', name: 'Khan Driving', personalName: 'Sarah Khan', qualification: 'adi', transmission: 'manual', car: 'Volkswagen Polo', takingBookings: true, hourlyFromPence: 4200, platformChecked: true },
+              { href: '#emma-city', name: 'Emma Clarke', qualification: 'adi', transmission: 'automatic', car: 'Toyota Yaris Hybrid', takingBookings: true, hourlyFromPence: 4400, platformChecked: false },
             ]}
           />
         </div>

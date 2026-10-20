@@ -111,6 +111,8 @@ export async function PlaceContent({ params }: { params: Promise<PlaceParams> })
             car: instructor.car,
             takingBookings: true,
             hourlyFromPence: instructor.hourlyFromPence,
+            // The platform's tick is for a badge it checked: a school vouches for its own (D-280).
+            platformChecked: instructor.business?.type === 'independent',
           };
         })}
       />

@@ -1,16 +1,18 @@
 -- The public instructor profile, and nothing private on it (PUB-01, INS-05, M5-02).
 begin;
-select plan(22);
+select plan(23);
 
 select tests.create_fixture();
 
 \set ian 'b1000000-0000-0000-0000-000000000001'
 \set ivy 'b1000000-0000-0000-0000-000000000002'
+\set asha 'a1000000-0000-0000-0000-000000000001'
 \set school 'bbbb0000-0000-0000-0000-000000000000'
 \set lesson_type 'b2000000-0000-0000-0000-000000000001'
 
 -- Ian lives by a Manchester postcode, works every day from nine to five, and publishes a price
--- and a package. Ivy has not been checked yet.
+-- and a package. Ivy, at the school too, is vouched for by it (D-280); Asha, on her own, has not
+-- been checked yet.
 insert into public.postcodes (postcode, outcode, area, latitude, longitude, admin_district)
 values ('M1 1AE', 'M1', 'M', 53.47941, -2.24531, 'Manchester')
 on conflict (postcode) do update set admin_district = excluded.admin_district;
@@ -23,6 +25,7 @@ update public.instructor_profiles
        specialisms = array['nervous_drivers'], radius_miles = 8
  where id = :'ian';
 update public.instructor_profiles set public_slug = 'ivy-two' where id = :'ivy';
+update public.instructor_profiles set public_slug = 'asha-unchecked' where id = :'asha';
 insert into public.working_hours (instructor_id, business_id, weekday, start_time, end_time)
 select :'ian', :'school', day, '09:00', '17:00' from generate_series(1, 7) as day;
 insert into public.lesson_prices (business_id, lesson_type_id, duration_minutes, price_pence)
@@ -81,7 +84,8 @@ select is(
   array['citySlug', 'colour', 'name', 'slug', 'type'],
   'the Business is named with where its own profile lives and the colour it is drawn in, and nothing more'
 );
-select is(public.instructor_profile_page('ivy-two'), null, 'an instructor not yet checked has no profile');
+select is(public.instructor_profile_page('asha-unchecked'), null, 'an instructor of one not yet checked has no profile');
+select isnt(public.instructor_profile_page('ivy-two'), null, 'an instructor at a school has one from the start, the school vouching for them (D-280)');
 select is(public.instructor_profile_page('nobody-at-all'), null, 'and a slug that is nobody''s has none either');
 
 -- The next free times: half hours in London, soonest first, all to come.

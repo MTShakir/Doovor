@@ -118,6 +118,9 @@ test.describe('school onboarding (AUTH-05, M5-11)', () => {
 
     await expect(nia).toHaveURL(/\/onboarding\/badge$/);
     await expect(nia.getByText('Step 2 of 4')).toBeVisible();
+    // The school vouches for its instructors, so there is no photo to send and nobody to check it (D-280).
+    await expect(nia.getByText(`${schoolName} vouches for you`, { exact: false })).toBeVisible();
+    await expect(nia.getByText('Photo of your badge')).toHaveCount(0);
     await nia.getByRole('button', { name: 'Skip for now' }).click();
     await expect(nia).toHaveURL(/\/onboarding\/area$/);
     await expect(nia.getByText('Step 3 of 4')).toBeVisible();

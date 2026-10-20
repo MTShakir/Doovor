@@ -48,6 +48,8 @@ interface BadgeFormProps {
   /** A short-lived address for the badge photo already stored, if there is one. */
   badgePreview?: string;
   hasBadgePhoto: boolean;
+  /** The school that vouches for this instructor: then there is no photo, and nothing to check (D-280). */
+  vouchedBy?: string | null;
 }
 
 export function BadgeForm({
@@ -60,6 +62,7 @@ export function BadgeForm({
   badgeExpiry,
   badgePreview,
   hasBadgePhoto,
+  vouchedBy = null,
 }: BadgeFormProps) {
   const [pending, startTransition] = useTransition();
   const [formError, setFormError] = useState<string | null>(null);
@@ -123,7 +126,7 @@ export function BadgeForm({
 
   // Asked whatever else is wrong, so every problem shows at once rather than one at a time.
   const checkPhoto = (): boolean => {
-    if (stored || working) return true;
+    if (vouchedBy !== null || stored || working) return true;
     setPhotoError(photoNeeded);
     return false;
   };
@@ -166,6 +169,12 @@ export function BadgeForm({
   return (
     <ClientForm onSubmit={onSubmit} pending={pending} className="flex flex-col gap-5">
       {formError ? <FormAlert>{formError}</FormAlert> : null}
+      {vouchedBy === null ? null : (
+        <p className="text-small text-grey-700">
+          {vouchedBy} vouches for you, so {brand.name} does not check your badge. Its number and expiry date are kept to remind
+          you before it runs out.
+        </p>
+      )}
       <Field label="Your qualification" error={errors.qualification?.message}>
         <Select options={qualifications} defaultValue={qualification} {...form.register('qualification')} />
       </Field>
@@ -179,18 +188,20 @@ export function BadgeForm({
       <Field label="Badge expiry date" error={errors.badgeExpiry?.message}>
         <Input type="date" defaultValue={badgeExpiry ?? ''} {...form.register('badgeExpiry')} />
       </Field>
-      <PhotoUpload
-        label="Photo of your badge"
-        hint="We check the number against the DVSA register. Nobody else can see this photo."
-        accept={badgeImage.acceptedTypes.join(',')}
-        src={preview}
-        stored={stored}
-        storedLabel="Badge photo added"
-        busy={working}
-        error={photoError}
-        onChoose={choose}
-        onRemove={remove}
-      />
+      {vouchedBy === null ? (
+        <PhotoUpload
+          label="Photo of your badge"
+          hint="We check the number against the DVSA register. Nobody else can see this photo."
+          accept={badgeImage.acceptedTypes.join(',')}
+          src={preview}
+          stored={stored}
+          storedLabel="Badge photo added"
+          busy={working}
+          error={photoError}
+          onChoose={choose}
+          onRemove={remove}
+        />
+      ) : null}
       <Controller
         control={form.control}
         name="dbsConfirmed"
