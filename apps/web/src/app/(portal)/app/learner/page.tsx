@@ -11,6 +11,8 @@ import { Suspense } from 'react';
 import { ComingSoon } from '@/components/capture/coming-soon';
 import { InstallPrompt } from '@/components/pwa/install-prompt';
 import { SetupCard } from './setup-card';
+import { Moves } from './moves';
+import { learnerMoves } from '@/lib/learners/moves';
 import { requirePortal } from '@/lib/auth/session';
 import { myLessons } from '@/lib/learner/lessons';
 import { learnerSetup } from '@/lib/learner/setup';
@@ -31,13 +33,15 @@ export default function LearnerHomePage() {
 /** PRD 8.2: the one thing a learner opens the app for is when their next lesson is. */
 async function Home() {
   const { session } = await requirePortal('learner');
-  const [{ upcoming, past }, setup] = await Promise.all([myLessons(), learnerSetup(session.userId)]);
+  const [{ upcoming, past }, setup, moves] = await Promise.all([myLessons(), learnerSetup(session.userId), learnerMoves()]);
   const next = upcoming[0];
 
   return (
     <>
       <PageHeader title="Home" subtitle="Your next lesson, and how to get to it." />
       <div className="flex flex-col gap-4 px-4 md:max-w-2xl md:px-8">
+        {/* D-292: a choice waiting on them comes first, as nothing moves until they make it. */}
+        <Moves moves={moves} />
         <SetupCard setup={setup} />
         {next ? (
           <Card className="flex flex-col gap-3">

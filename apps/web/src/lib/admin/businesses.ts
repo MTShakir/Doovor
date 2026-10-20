@@ -5,7 +5,8 @@ import { z } from '@repo/core/zod';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
 
 export type BusinessType = 'independent' | 'school';
-export type BusinessStanding = 'pending' | 'active' | 'suspended';
+/** Paused: its owner teaches under a school for now (D-292). */
+export type BusinessStanding = 'pending' | 'active' | 'suspended' | 'paused';
 export type MemberRole = 'owner' | 'manager' | 'instructor';
 
 export interface AdminBusinessRow {
@@ -41,7 +42,7 @@ const detailSchema = z.object({
   business_id: z.string(),
   name: z.string(),
   type: z.enum(['independent', 'school']),
-  status: z.enum(['pending', 'active', 'suspended']),
+  status: z.enum(['pending', 'active', 'suspended', 'paused']),
   base_postcode: z.string().nullable(),
   created_at: z.string(),
   takes_cards: z.boolean(),

@@ -21,7 +21,7 @@ vi.mock('@/lib/booking/pending', () => ({ takePendingBooking: () => takePendingB
 
 const { completeSignIn } = await import('./complete-sign-in');
 
-const nobody: AccessContext = { userId: 'user-1', staffRole: null, isLearner: false, learnerOnboarded: false, memberships: [], suspendedBusinesses: [] };
+const nobody: AccessContext = { userId: 'user-1', staffRole: null, isLearner: false, learnerOnboarded: false, memberships: [], suspendedBusinesses: [], pausedBusinesses: [] };
 const schoolInstructor: AccessMembership = {
   businessId: 'school-1',
   businessName: 'Northern Lights Driving',
@@ -152,5 +152,14 @@ describe('the referral link they arrived from (D-205)', () => {
 
     expect(rpc).not.toHaveBeenCalledWith('create_business', expect.anything());
     expect(forgetReferral).not.toHaveBeenCalled();
+  });
+});
+
+describe('signing in with a business of their own paused (M9-25, D-292)', () => {
+  it('sends them to open it again, and makes them no new one', async () => {
+    getAccessContext.mockResolvedValue({ ...nobody, pausedBusinesses: ['Oli Driving'] });
+
+    expect(await completeSignIn()).toBe('/paused');
+    expect(rpc).not.toHaveBeenCalledWith('create_business', expect.anything());
   });
 });

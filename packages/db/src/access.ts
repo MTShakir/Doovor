@@ -23,6 +23,11 @@ export interface AccessContext {
   memberships: AccessMembership[];
   /** The names of Businesses this person works for that platform staff have suspended (ADM-02). */
   suspendedBusinesses: string[];
+  /**
+   * Businesses of their own they paused to teach under a school (D-292), by name. Like a
+   * suspended one, a paused Business opens no portal; leaving the school, they open it again.
+   */
+  pausedBusinesses: string[];
 }
 
 export class AccessContextError extends Error {
@@ -61,6 +66,7 @@ export async function getAccessContext(client: DbClient, userId: string): Promis
 
   const profileByBusiness = new Map((instructors.data ?? []).map((p) => [p.business_id, p]));
   const suspended = (memberships.data ?? []).filter((m) => m.businesses.status === 'suspended');
+  const paused = (memberships.data ?? []).filter((m) => m.businesses.status === 'paused' && m.role === 'owner');
 
   return {
     userId,
@@ -69,7 +75,7 @@ export async function getAccessContext(client: DbClient, userId: string): Promis
     // The row is created at sign-up; the answers are what say they have been through it.
     learnerOnboarded: typeof learner.data?.transmission === 'string',
     memberships: (memberships.data ?? [])
-      .filter((m) => m.businesses.status !== 'suspended')
+      .filter((m) => m.businesses.status !== 'suspended' && m.businesses.status !== 'paused')
       .map((m) => ({
         businessId: m.business_id,
         businessName: m.businesses.name,
@@ -85,5 +91,6 @@ export async function getAccessContext(client: DbClient, userId: string): Promis
         businessOnboarded: m.businesses.onboarding_completed_at !== null,
       })),
     suspendedBusinesses: suspended.map((m) => m.businesses.name),
+    pausedBusinesses: paused.map((m) => m.businesses.name),
   };
 }

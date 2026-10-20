@@ -46,7 +46,9 @@ export function landingPath(context: AccessContext): string {
   if (first === 'instructor' && needsOnboarding(context)) return '/onboarding';
   if (first === 'learner' && needsLearnerOnboarding(context)) return '/onboarding/about-you';
   if (first) return portalRoots[first];
-  return context.suspendedBusinesses.length > 0 ? '/suspended' : '/start';
+  if (context.suspendedBusinesses.length > 0) return '/suspended';
+  // Their own Business, paused while they taught under a school, is opened again, not replaced (D-292).
+  return context.pausedBusinesses.length > 0 ? '/paused' : '/start';
 }
 
 /**

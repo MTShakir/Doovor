@@ -143,6 +143,23 @@ async function SchoolInvitation({
 
   if (access) {
     const teaching = access.access.memberships.find((membership) => membership.instructorProfileId !== null);
+    // A business of their own pauses while they teach under the school (D-292).
+    if (teaching?.businessType === 'independent' && teaching.role === 'owner') {
+      return (
+        <div className="flex flex-col gap-4">
+          <h1 className="text-h1 text-black">{heading}</h1>
+          <p className="text-body text-grey-700">
+            Joining pauses {teaching.businessName} while you teach under {school}: its profile and booking link go offline, and each of
+            your learners is asked whether to move to {school} with you. Leave {school} later and you can open it again.
+          </p>
+          <p className="text-body text-grey-700">
+            It can pause with no lessons still to come and no learner with hours left to use. To keep your own business instead, ask{' '}
+            {school} to link it.
+          </p>
+          <JoinButton token={token} school={school} />
+        </div>
+      );
+    }
     if (teaching) {
       return (
         <div className="flex flex-col gap-4">

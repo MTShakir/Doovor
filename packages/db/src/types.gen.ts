@@ -527,6 +527,8 @@ export type Database = {
           logo_url: string | null
           name: string
           onboarding_completed_at: string | null
+          paused_at: string | null
+          paused_for: string | null
           plan: Database["public"]["Enums"]["plan_key"]
           plan_expires_at: string | null
           referral_code: string
@@ -565,6 +567,8 @@ export type Database = {
           logo_url?: string | null
           name: string
           onboarding_completed_at?: string | null
+          paused_at?: string | null
+          paused_for?: string | null
           plan?: Database["public"]["Enums"]["plan_key"]
           plan_expires_at?: string | null
           referral_code: string
@@ -603,6 +607,8 @@ export type Database = {
           logo_url?: string | null
           name?: string
           onboarding_completed_at?: string | null
+          paused_at?: string | null
+          paused_for?: string | null
           plan?: Database["public"]["Enums"]["plan_key"]
           plan_expires_at?: string | null
           referral_code?: string
@@ -631,6 +637,13 @@ export type Database = {
             columns: ["created_by"]
             isOneToOne: false
             referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "businesses_paused_for_fkey"
+            columns: ["paused_for"]
+            isOneToOne: false
+            referencedRelation: "businesses"
             referencedColumns: ["id"]
           },
         ]
@@ -1446,6 +1459,71 @@ export type Database = {
             columns: ["user_id"]
             isOneToOne: true
             referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      learner_moves: {
+        Row: {
+          answered_at: string | null
+          created_at: string
+          from_business_id: string
+          id: string
+          instructor_id: string | null
+          learner_id: string
+          reason: string
+          status: Database["public"]["Enums"]["learner_move_status"]
+          to_business_id: string
+        }
+        Insert: {
+          answered_at?: string | null
+          created_at?: string
+          from_business_id: string
+          id?: string
+          instructor_id?: string | null
+          learner_id: string
+          reason: string
+          status?: Database["public"]["Enums"]["learner_move_status"]
+          to_business_id: string
+        }
+        Update: {
+          answered_at?: string | null
+          created_at?: string
+          from_business_id?: string
+          id?: string
+          instructor_id?: string | null
+          learner_id?: string
+          reason?: string
+          status?: Database["public"]["Enums"]["learner_move_status"]
+          to_business_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "learner_moves_from_business_id_fkey"
+            columns: ["from_business_id"]
+            isOneToOne: false
+            referencedRelation: "businesses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "learner_moves_instructor_id_fkey"
+            columns: ["instructor_id"]
+            isOneToOne: false
+            referencedRelation: "instructor_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "learner_moves_learner_id_fkey"
+            columns: ["learner_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "learner_moves_to_business_id_fkey"
+            columns: ["to_business_id"]
+            isOneToOne: false
+            referencedRelation: "businesses"
             referencedColumns: ["id"]
           },
         ]
@@ -3983,6 +4061,10 @@ export type Database = {
         Args: { p_accept: boolean; p_offer_id: string }
         Returns: undefined
       }
+      answer_learner_move: {
+        Args: { p_move: boolean; p_move_id: string }
+        Returns: undefined
+      }
       assign_learner: {
         Args: { p_instructor_id: string; p_learner_id: string }
         Returns: string
@@ -4211,6 +4293,7 @@ export type Database = {
         }[]
       }
       learner_introduced_by: { Args: { p_learner_id: string }; Returns: string }
+      learner_moves_for_me: { Args: never; Returns: Json }
       leave_learner_capture: { Args: { p_token: string }; Returns: number }
       lesson_reminder_options: { Args: { p_booking_id: string }; Returns: Json }
       list_my_sessions: {
@@ -4245,6 +4328,7 @@ export type Database = {
         Args: { p_business_id: string; p_limit: number; p_offset: number }
         Returns: Json
       }
+      my_paused_business: { Args: never; Returns: Json }
       my_referrals: { Args: { p_business_id: string }; Returns: Json }
       my_subscription: { Args: { p_business_id: string }; Returns: Json }
       next_open_slots: {
@@ -4363,6 +4447,10 @@ export type Database = {
       remove_expense: { Args: { p_expense_id: string }; Returns: Json }
       remove_gallery_photo: { Args: { p_photo_id: string }; Returns: string }
       remove_mileage: { Args: { p_mileage_id: string }; Returns: undefined }
+      reopen_own_business: {
+        Args: { p_business_id: string }
+        Returns: undefined
+      }
       reopen_school_enquiry: {
         Args: { p_enquiry_id: string }
         Returns: undefined
@@ -4982,7 +5070,7 @@ export type Database = {
         | "no_show"
         | "declined"
         | "expired"
-      business_status: "pending" | "active" | "suspended"
+      business_status: "pending" | "active" | "suspended" | "paused"
       business_type: "independent" | "school"
       claim_method: "mileage" | "actual_costs"
       coverage_rule: "include" | "exclude"
@@ -5018,6 +5106,7 @@ export type Database = {
       feedback_kind: "feature" | "feedback" | "issue" | "other"
       instructor_qualification: "adi" | "pdi"
       intended_role: "learner" | "instructor" | "school"
+      learner_move_status: "asked" | "moved" | "stayed" | "withdrawn"
       learner_source: "invite" | "marketplace" | "import" | "manual"
       learner_status:
         | "enquiry"
@@ -5239,7 +5328,7 @@ export const Constants = {
         "declined",
         "expired",
       ],
-      business_status: ["pending", "active", "suspended"],
+      business_status: ["pending", "active", "suspended", "paused"],
       business_type: ["independent", "school"],
       claim_method: ["mileage", "actual_costs"],
       coverage_rule: ["include", "exclude"],
@@ -5278,6 +5367,7 @@ export const Constants = {
       feedback_kind: ["feature", "feedback", "issue", "other"],
       instructor_qualification: ["adi", "pdi"],
       intended_role: ["learner", "instructor", "school"],
+      learner_move_status: ["asked", "moved", "stayed", "withdrawn"],
       learner_source: ["invite", "marketplace", "import", "manual"],
       learner_status: [
         "enquiry",

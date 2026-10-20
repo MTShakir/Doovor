@@ -47,6 +47,16 @@ describe('joining a school from its link (AUTH-05, M5-11)', () => {
 
     rpc.mockResolvedValueOnce({ data: null, error: { code: 'P0001', message: 'VALIDATION_FAILED', details: '{"field": "token", "reason": "expired"}' } });
     expect(await acceptMemberInvitation('tok_abc-123')).toMatchObject({ code: 'NOT_FOUND', message: 'This link has already been used or has expired.' });
+
+    // D-292: a business of their own pauses only with nothing still owed to its learners.
+    rpc.mockResolvedValueOnce({ data: null, error: { code: 'P0001', message: 'VALIDATION_FAILED', details: '{"reason": "lessons_to_come"}' } });
+    expect(await acceptMemberInvitation('tok_abc-123')).toMatchObject({
+      message: 'Your business has lessons still to come. Move or cancel them first, then join.',
+    });
+    rpc.mockResolvedValueOnce({ data: null, error: { code: 'P0001', message: 'VALIDATION_FAILED', details: '{"reason": "credit_left"}' } });
+    expect(await acceptMemberInvitation('tok_abc-123')).toMatchObject({
+      message: 'Some of your learners have hours left to use. Teach or refund them first, then join.',
+    });
     expect(completeSignIn).not.toHaveBeenCalled();
   });
 

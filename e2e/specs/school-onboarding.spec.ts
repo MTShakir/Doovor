@@ -1,7 +1,7 @@
 import { expect, test } from '@playwright/test';
 import { totp } from '../../packages/db/src/testing/totp';
 import { authFile } from '../support/accounts';
-import { membershipsOf, schoolInvitationPath, schoolOwnedBy } from '../support/database';
+import { makeSchool, membershipsOf, schoolInvitationPath, schoolOwnedBy, withDatabase } from '../support/database';
 import { expectAccessible, snap } from '../support/helpers';
 import { jpegWithGps } from '../support/images';
 import { linkFromEmail } from '../support/mailpit';
@@ -152,16 +152,43 @@ test.describe('school onboarding (AUTH-05, M5-11)', () => {
     await expect(page.getByRole('heading', { level: 1, name: 'This link has expired' })).toBeVisible();
   });
 
-  test('an account that already teaches is told a school link is not for it', async ({ browser }, testInfo) => {
+  test('an instructor with a business of their own is told joining pauses it (D-292)', async ({ browser }, testInfo) => {
     const path = await schoolInvitationPath('Quayside Driving School');
     const context = await browser.newContext({ storageState: authFile('instructor') });
     const page = await context.newPage();
     await page.goto(path);
-    await expect(page.getByRole('heading', { level: 1, name: 'This account already teaches' })).toBeVisible();
-    await expect(page.getByText(/To join Quayside Driving School, sign out and create a new account/)).toBeVisible();
-    await expect(page.getByRole('button', { name: /^Join / })).toHaveCount(0);
+    await expect(page.getByText(/^Joining pauses .* while you teach under Quayside Driving School/)).toBeVisible();
+    await expect(page.getByText('It can pause with no lessons still to come and no learner with hours left to use.', { exact: false })).toBeVisible();
+    // Not pressed: the seeded instructor's business is every other test's.
+    await expect(page.getByRole('button', { name: 'Join Quayside Driving School' })).toBeVisible();
     await expectAccessible(page);
-    await snap(page, testInfo, 'school-invite-teaches-elsewhere');
+    await snap(page, testInfo, 'school-invite-own-business');
     await context.close();
+  });
+
+  test('an account that teaches for a school is told another school\'s link is not for it', async ({ browser }, testInfo) => {
+    const other = await makeSchool(`Elsewhere ${testInfo.project.name}`);
+    const context = await browser.newContext({ storageState: authFile('schoolInstructor') });
+    try {
+      // A school of its own, whose manager made the link: it has no owner to have sent one.
+      const token = crypto.randomUUID().replaceAll('-', '');
+      await withDatabase(async (sql) => {
+        await sql`
+          insert into public.invitations (business_id, kind, role, channel, token_hash, invited_by)
+          select m.business_id, 'member', 'instructor', 'link', private.invitation_hash(${token}), m.user_id
+            from public.memberships m where m.business_id = ${other.businessId} and m.role = 'manager'`;
+      });
+      const path = `/invite/${token}`;
+      const page = await context.newPage();
+      await page.goto(path);
+      await expect(page.getByRole('heading', { level: 1, name: 'This account already teaches' })).toBeVisible();
+      await expect(page.getByText(new RegExp(`To join ${other.name}, sign out and create a new account`))).toBeVisible();
+      await expect(page.getByRole('button', { name: /^Join / })).toHaveCount(0);
+      await expectAccessible(page);
+      await snap(page, testInfo, 'school-invite-teaches-elsewhere');
+    } finally {
+      await context.close();
+      await other.remove();
+    }
   });
 });

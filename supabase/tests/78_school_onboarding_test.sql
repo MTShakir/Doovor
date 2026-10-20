@@ -105,11 +105,17 @@ select is(
   'and tells somebody already at the school, who opened the link they sent, that it is not for them'
 );
 
--- Somebody who teaches for another Business keeps to it: one account, one diary.
+-- Somebody with a Business of their own pauses it to join, but not with a lesson still to come on
+-- it (D-292): one account, one diary.
+reset role;
+insert into public.bookings (business_id, instructor_id, learner_id, lesson_type_id, starts_at, ends_at, buffer_minutes, status, price_pence, source)
+values (:'asha_biz', 'a1000000-0000-0000-0000-000000000001', 'c0000000-0000-0000-0000-000000000001', 'a2000000-0000-0000-0000-000000000001',
+        (private.today() + 4 + time '10:00') at time zone 'Europe/London',
+        (private.today() + 4 + time '11:00') at time zone 'Europe/London', 30, 'confirmed', 4500, 'instructor');
 select tests.authenticate_as(:'asha_user');
 select throws_ok(
   format($$ select public.accept_member_invitation(%L) $$, :'invite_token'),
-  'P0001', 'VALIDATION_FAILED', 'an instructor with a Business of their own cannot join a school on the same account'
+  'P0001', 'VALIDATION_FAILED', 'an instructor with a lesson to come on a Business of their own cannot join a school yet'
 );
 select tests.clear_authentication();
 select is((select accepted_at from public.invitations where id = :'invited'), null, 'and the invitation is still there for the right person');

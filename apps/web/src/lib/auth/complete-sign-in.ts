@@ -48,7 +48,8 @@ export async function completeSignIn(next?: string | null): Promise<string> {
 
   // A business set up now, for an instructor who came from a school's link to link one (D-282).
   let businessSetUp = false;
-  if (availablePortals(access).length === 0) {
+  // Somebody whose own Business is paused opens it again rather than being given another (D-292).
+  if (availablePortals(access).length === 0 && access.pausedBusinesses.length === 0) {
     const { data: profile } = await supabase.from('users').select('intended_role, full_name').eq('id', user.id).single();
     const metadata = user.user_metadata as Record<string, unknown>;
     const schoolName = typeof metadata.school_name === 'string' ? metadata.school_name.trim() : '';
@@ -96,7 +97,8 @@ export async function completeSignIn(next?: string | null): Promise<string> {
     return `/book/${encodeURIComponent(pending.slug)}?slot=${encodeURIComponent(pending.startsAt)}`;
   }
 
-  const destination = availablePortals(access).length > 0 ? safeNextPath(next, landingPath(access)) : '/start';
+  // With no portal, the landing says why: a role to choose, a suspended or a paused Business (D-292).
+  const destination = availablePortals(access).length > 0 ? safeNextPath(next, landingPath(access)) : landingPath(access);
 
   // Instructors verify their mobile by text after sign-up (AUTH-02, PRD 10.1 step 2).
   const isInstructor = access.memberships.some((m) => m.instructorProfileId !== null);

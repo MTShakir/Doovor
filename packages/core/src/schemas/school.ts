@@ -188,3 +188,9 @@ export const answerOfferSchema = z.object({
   offerId: z.uuid(),
   accept: z.boolean(),
 });
+
+/** A learner's answer to moving with their instructor, or back to the school that introduced them (D-292). */
+export const answerMoveSchema = z.object({
+  moveId: z.uuid(),
+  move: z.boolean(),
+});
