@@ -1,4 +1,5 @@
 import 'server-only';
+import type { LessonSeller } from '@repo/core/schemas/school';
 import type { AccessMembership } from '@repo/db';
 import { landingPath, requiresMfa } from '@/lib/auth/portals';
 import { getAccess, requireAgreedTerms } from '@/lib/auth/session';
@@ -13,6 +14,8 @@ export interface SchoolSetupSession {
   logoPath: string | null;
   basePostcode: string | null;
   expectedInstructors: number | null;
+  /** Who sells its lessons, once the owner has said (D-281). */
+  lessonSeller: LessonSeller | null;
 }
 
 function schoolToSetUp(memberships: AccessMembership[]): AccessMembership | null {
@@ -42,7 +45,7 @@ export async function requireSchoolSetup(path: string): Promise<SchoolSetupSessi
   const supabase = await createSupabaseServerClient();
   const { data: school, error } = await supabase
     .from('businesses')
-    .select('slug, name, logo_url, base_postcode, expected_instructors')
+    .select('slug, name, logo_url, base_postcode, expected_instructors, lesson_seller')
     .eq('id', membership.businessId)
     .single();
   if (error) throw new Error(`Could not read the school being set up: ${error.message}`);
@@ -54,5 +57,6 @@ export async function requireSchoolSetup(path: string): Promise<SchoolSetupSessi
     logoPath: school.logo_url,
     basePostcode: school.base_postcode,
     expectedInstructors: school.expected_instructors,
+    lessonSeller: school.lesson_seller,
   };
 }

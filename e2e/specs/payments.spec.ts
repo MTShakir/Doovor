@@ -183,6 +183,10 @@ test.describe('paying for a lesson (PAY-02, M3-05)', () => {
     const checkout = page.getByRole('region', { name: /at \d\d:\d\d$/ });
     await expect(checkout).toContainText('To pay');
     await expect(checkout).toContainText('£42');
+    // What cancelling costs, said again before paying (BOK-09, R-06).
+    await expect(checkout).toContainText(
+      'You can cancel for free up to 48 hours before the lesson. After that, cancelling or missing it costs the full price.',
+    );
     await expectAccessible(page);
     await snap(page, testInfo, 'pay-lesson');
 
@@ -401,6 +405,8 @@ test.describe('paying for a lesson (PAY-02, M3-05)', () => {
     await expect(first).toContainText('Booked');
     await expect(first).toContainText('Save a card and £42 is charged to it at 21:30 on');
     await expect(first).toContainText('Nothing is taken until then.');
+    // The policy the fee it can be charged comes from (BOK-09, R-06).
+    await expect(first).toContainText('You can cancel for free up to 48 hours before the lesson.');
     await expect(first.getByRole('button', { name: /^Pay £/ })).toHaveCount(0);
     await expectAccessible(page);
     await snap(page, testInfo, 'pay-before-lesson');
@@ -589,6 +595,10 @@ test.describe('lesson credit (PAY-04, M3-13, M3-14)', () => {
     await expect(purchase).toContainText('£39 an hour');
     await expect(purchase).toContainText(`It is for lessons with ${school} only.`);
     await expect(purchase).toContainText('Use them within a year of buying.');
+    // The policy a saved card's fees come from, in the words the booking link uses (BOK-09, R-06).
+    await expect(purchase).toContainText(
+      'You can cancel for free up to 48 hours before the lesson. After that, cancelling or missing it costs the full price.',
+    );
 
     // Nothing is asked of the card until the learner has said their lessons may start (D-086).
     const pay = purchase.getByRole('button', { name: 'Pay £195 for 5 hours' });

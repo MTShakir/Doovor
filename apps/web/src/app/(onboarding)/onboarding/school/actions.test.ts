@@ -39,9 +39,10 @@ const session: SchoolSetupSession = {
   logoPath: null,
   basePostcode: null,
   expectedInstructors: null,
+  lessonSeller: null,
 };
 const manchester = { postcode: 'M1 1AE', outcode: 'M1', latitude: 53.4794, longitude: -2.2453, district: 'Manchester', country: 'England' };
-const details = { name: 'Northern Lights Driving', postcode: 'm1 1ae', expectedInstructors: '6' };
+const details = { name: 'Northern Lights Driving', postcode: 'm1 1ae', expectedInstructors: '6', lessonSeller: 'instructors' };
 const logo = `businesses/${businessId}/9a8b7c6d-5e4f-4031-8213-b4c5d6e7f8a9.webp`;
 
 beforeEach(() => {
@@ -66,6 +67,8 @@ describe('saving what the school is (AUTH-05, M5-11)', () => {
       logo_url: logo,
     });
     expect(eq).toHaveBeenCalledWith('id', businessId);
+    // Who sells its lessons goes through the database's own door, which only the owner passes (D-281).
+    expect(rpc).toHaveBeenCalledWith('set_lesson_seller', { p_business_id: businessId, p_seller: 'instructors' });
     expect(expireSchoolProfile).toHaveBeenCalledWith('northern-lights-driving');
   });
 
@@ -94,6 +97,9 @@ describe('saving what the school is (AUTH-05, M5-11)', () => {
       fields: { expectedInstructors: 'Enter how many instructors teach for you, like 6' },
     });
     expect(requireSchoolSetup).not.toHaveBeenCalled();
+    // Nothing is chosen for them: who sells the lessons is the school's to say (D-281).
+    const unanswered = { name: details.name, postcode: details.postcode, expectedInstructors: details.expectedInstructors };
+    expect(await saveSchoolDetails(unanswered)).toMatchObject({ code: 'VALIDATION_FAILED', fields: { lessonSeller: 'Choose who sells your lessons' } });
 
     lookup.mockResolvedValueOnce({ ok: false, reason: 'NOT_FOUND' });
     expect(await saveSchoolDetails(details)).toMatchObject({ fields: { postcode: 'We could not find that postcode. Check it and try again' } });
@@ -113,6 +119,7 @@ describe('inviting an instructor to the school (AUTH-05, M5-11)', () => {
     expect(await inviteInstructor({ channel: 'sms', fullName: 'Nia Newcomer', email: '', phone: '07700 900555' })).toEqual({
       ok: true,
       data: {
+        kind: 'member',
         link: 'https://app.example.test/invite/tok_abc-123',
         schoolName: 'Northern Lights Driving',
         fullName: 'Nia Newcomer',

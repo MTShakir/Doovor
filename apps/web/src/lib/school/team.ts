@@ -1,5 +1,5 @@
 import 'server-only';
-import { formatDate } from '@repo/core/time';
+import { formatCalendarDate, formatDate } from '@repo/core/time';
 import { z } from '@repo/core/zod';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
 
@@ -21,9 +21,28 @@ const teamSchema = z.object({
       lessons_to_come: z.number().int(),
     }),
   ),
+  linked: z
+    .array(
+      z.object({
+        link_id: z.string(),
+        business_id: z.string(),
+        business_name: z.string(),
+        name: z.string(),
+        email: z.string().nullable(),
+        phone: z.string().nullable(),
+        instructor_id: z.string().nullable(),
+        photo_path: z.string().nullable(),
+        qualification: z.enum(['adi', 'pdi']).nullable(),
+        badge_expiry: z.string().nullable(),
+        linked_at: z.string(),
+      }),
+    )
+    .default([]),
   invitations: z.array(
     z.object({
       invitation_id: z.string(),
+      kind: z.enum(['member', 'link']).default('member'),
+      role: z.enum(['owner', 'manager', 'instructor']).nullable().default(null),
       full_name: z.string().nullable(),
       email: z.string().nullable(),
       phone: z.string().nullable(),
@@ -49,8 +68,25 @@ export interface TeamMember {
   lessonsToCome: number;
 }
 
+/** An instructor who sells their own lessons, by the Business they run, linked to the school (D-282). */
+export interface LinkedInstructor {
+  linkId: string;
+  businessId: string;
+  businessName: string;
+  name: string;
+  email: string | null;
+  phone: string | null;
+  instructorId: string | null;
+  photoPath: string | null;
+  qualification: 'adi' | 'pdi' | null;
+  /** When their badge runs out, in words, worked out here: a client component may not read dates while prerendering. */
+  badgeExpiresOn: string | null;
+  linkedOn: string;
+}
+
 export interface WaitingInvitation {
   invitationId: string;
+  kind: 'member' | 'link' | 'manager';
   fullName: string | null;
   email: string | null;
   phone: string | null;
@@ -61,6 +97,7 @@ export interface WaitingInvitation {
 
 export interface SchoolTeam {
   members: TeamMember[];
+  linked: LinkedInstructor[];
   invitations: WaitingInvitation[];
 }
 
@@ -89,8 +126,23 @@ export async function schoolTeam(businessId: string): Promise<SchoolTeam> {
       viewRevenue: one.view_revenue,
       lessonsToCome: one.lessons_to_come,
     })),
+    linked: team.linked.map((one) => ({
+      linkId: one.link_id,
+      businessId: one.business_id,
+      businessName: one.business_name,
+      name: one.name,
+      email: one.email,
+      phone: one.phone,
+      instructorId: one.instructor_id,
+      photoPath: one.photo_path,
+      qualification: one.qualification,
+      badgeExpiresOn: one.badge_expiry === null ? null : formatCalendarDate(one.badge_expiry),
+      linkedOn: formatDate(new Date(one.linked_at)),
+    })),
     invitations: team.invitations.map((one) => ({
       invitationId: one.invitation_id,
+      // A member invitation for a manager is its own kind on the screen (D-293).
+      kind: one.kind === 'member' && one.role === 'manager' ? 'manager' : one.kind,
       fullName: one.full_name,
       email: one.email,
       phone: one.phone,

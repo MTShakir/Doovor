@@ -1,5 +1,6 @@
 import {
   BadgeCheck,
+  Building2,
   CreditCard,
   Gift,
   IdCard,
@@ -31,6 +32,8 @@ export const icons = {
   verification: BadgeCheck,
   learners: Users,
   instructors: IdCard,
+  /** A driving school: the one a linked instructor works with, and the school's own way of selling (D-282). */
+  school: Building2,
   pickupPoints: MapPin,
   bookkeeping: Receipt,
   refer: Gift,

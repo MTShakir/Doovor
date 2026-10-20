@@ -10,7 +10,7 @@ type ServerClient = Awaited<ReturnType<typeof createSupabaseServerClient>>;
 
 interface OpenedInvitation {
   token: string;
-  kind: 'learner' | 'member';
+  kind: 'learner' | 'member' | 'link';
   usable: boolean;
 }
 
@@ -18,7 +18,8 @@ interface OpenedInvitation {
 async function openInvitation(supabase: ServerClient, token: string): Promise<OpenedInvitation | null> {
   const { data } = await supabase.rpc('invitation_details', { p_token: token }).maybeSingle();
   if (!data) return null;
-  return { token, kind: data.kind === 'member' ? 'member' : 'learner', usable: !data.expired };
+  const kind = data.kind === 'member' || data.kind === 'link' ? data.kind : 'learner';
+  return { token, kind, usable: !data.expired };
 }
 
 /**
@@ -45,7 +46,10 @@ export async function completeSignIn(next?: string | null): Promise<string> {
     access = await getAccessContext(supabase, user.id);
   }
 
-  if (availablePortals(access).length === 0) {
+  // A business set up now, for an instructor who came from a school's link to link one (D-282).
+  let businessSetUp = false;
+  // Somebody whose own Business is paused opens it again rather than being given another (D-292).
+  if (availablePortals(access).length === 0 && access.pausedBusinesses.length === 0) {
     const { data: profile } = await supabase.from('users').select('intended_role, full_name').eq('id', user.id).single();
     const metadata = user.user_metadata as Record<string, unknown>;
     const schoolName = typeof metadata.school_name === 'string' ? metadata.school_name.trim() : '';
@@ -62,10 +66,18 @@ export async function completeSignIn(next?: string | null): Promise<string> {
         p_name: profile.full_name || 'My driving business',
         p_referral_code: referral ?? undefined,
       });
+      businessSetUp = true;
     } else if (profile?.intended_role === 'school' && schoolName) {
       await supabase.rpc('create_business', { p_type: 'school', p_name: schoolName, p_referral_code: referral ?? undefined });
     }
     if (referral !== null) await forgetReferral();
+    access = await getAccessContext(supabase, user.id);
+  }
+
+  // The account was made from a school's link to link a business, so the business it now has is
+  // linked straight away. Somebody signing in with a business already says yes on the link's page.
+  if (invitation?.kind === 'link' && invitation.usable && businessSetUp) {
+    await supabase.rpc('accept_link_invitation', { p_token: invitation.token });
     access = await getAccessContext(supabase, user.id);
   }
 
@@ -85,7 +97,8 @@ export async function completeSignIn(next?: string | null): Promise<string> {
     return `/book/${encodeURIComponent(pending.slug)}?slot=${encodeURIComponent(pending.startsAt)}`;
   }
 
-  const destination = availablePortals(access).length > 0 ? safeNextPath(next, landingPath(access)) : '/start';
+  // With no portal, the landing says why: a role to choose, a suspended or a paused Business (D-292).
+  const destination = availablePortals(access).length > 0 ? safeNextPath(next, landingPath(access)) : landingPath(access);
 
   // Instructors verify their mobile by text after sign-up (AUTH-02, PRD 10.1 step 2).
   const isInstructor = access.memberships.some((m) => m.instructorProfileId !== null);

@@ -37,6 +37,21 @@ export async function learnerAllocation(businessId: string, learnerId: string): 
   const supabase = await createSupabaseServerClient();
   const { data, error } = await supabase.rpc('learner_allocation', { p_business_id: businessId, p_learner_id: learnerId });
   if (error) throw new Error(`Could not read who could teach this learner: ${error.message}`);
+  return allocationFrom(data);
+}
+
+/**
+ * Who at the school could teach somebody who asked for lessons, from where they asked to start
+ * and the gearbox they want (M9-18, D-289), in the same order as for a learner.
+ */
+export async function enquiryAllocation(enquiryId: string): Promise<LearnerAllocation> {
+  const supabase = await createSupabaseServerClient();
+  const { data, error } = await supabase.rpc('enquiry_allocation', { p_enquiry_id: enquiryId });
+  if (error) throw new Error(`Could not read who could teach this pupil: ${error.message}`);
+  return allocationFrom(data);
+}
+
+function allocationFrom(data: unknown): LearnerAllocation {
   const facts = factsSchema.parse(data);
 
   const instructors = facts.instructors.map((one) => ({

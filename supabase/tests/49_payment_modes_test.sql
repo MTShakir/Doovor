@@ -13,6 +13,9 @@ select tests.create_fixture();
 \set school 'bbbb0000-0000-0000-0000-000000000000'
 \set lesson_type 'b2000000-0000-0000-0000-000000000001'
 
+-- On the School plan, which carries charging the day before (D-302); Free is in test 142.
+update public.businesses set plan = 'school' where id = :'school';
+
 insert into public.working_hours (instructor_id, business_id, weekday, start_time, end_time)
 select :'ian', :'school', d, '06:00', '22:00' from generate_series(1, 7) as d;
 insert into public.lesson_prices (business_id, lesson_type_id, duration_minutes, price_pence)

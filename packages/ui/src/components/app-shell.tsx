@@ -85,12 +85,16 @@ export function Sidebar({ items, header, footer, linkComponent: Link = 'a' }: Si
 /**
  * The bar across the top of a phone's screen: the name on the left, and what belongs at the top
  * right, the notification bell (D-159). From the md breakpoint the sidebar carries both instead.
+ *
+ * Its spacing is in pixels, like the logo and the buttons that go in it, because none of them is
+ * text: in rem they doubled with 200% text and pushed the bell 87 pixels past the edge of a phone
+ * (WCAG 1.4.4, M6-06, D-304). A title in words still grows with the text, and wraps.
  */
 export function MobileTopBar({ title, actions }: { title: ReactNode; actions?: ReactNode }) {
   return (
-    <header className="flex min-h-14 items-center justify-between gap-2 border-b border-grey-200 bg-white pt-[env(safe-area-inset-top)] pr-2 pl-4 md:hidden">
-      <span className="text-h3 text-black">{title}</span>
-      {actions ? <div className="flex items-center gap-1">{actions}</div> : null}
+    <header className="flex min-h-[56px] items-center justify-between gap-[8px] border-b border-grey-200 bg-white pt-[env(safe-area-inset-top)] pr-[8px] pl-[16px] md:hidden">
+      <span className="min-w-0 text-h3 text-black">{title}</span>
+      {actions ? <div className="flex shrink-0 items-center gap-[4px]">{actions}</div> : null}
     </header>
   );
 }

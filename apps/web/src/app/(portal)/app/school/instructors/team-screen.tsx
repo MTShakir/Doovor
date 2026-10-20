@@ -1,6 +1,6 @@
 'use client';
 
-import type { MemberPermission } from '@repo/core/schemas/school';
+import { inviteKindsFor, type LessonSeller, type MemberPermission } from '@repo/core/schemas/school';
 import { Button } from '@repo/ui/button';
 import { Sheet } from '@repo/ui/sheet';
 import { toast } from '@repo/ui/toast';
@@ -8,17 +8,29 @@ import { UserPlus } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useState, useTransition } from 'react';
 import { InviteInstructorsForm } from '@/components/school/invite-instructors-form';
-import { SwitchOffDialog, TeamSections } from '@/components/school/team';
-import type { SchoolTeam, TeamMember } from '@/lib/school/team';
-import { cancelInvitation, changePermission, inviteToSchool, switchMember } from './actions';
+import { LetGoDialog, SwitchOffDialog, TeamSections } from '@/components/school/team';
+import type { LinkedInstructor, SchoolTeam, TeamMember } from '@/lib/school/team';
+import { cancelInvitation, changePermission, inviteToSchool, letGo, switchMember } from './actions';
 
 /** SCH-02: the school's team, and the one button that invites somebody to it. */
-export function TeamScreen({ team, viewerIsOwner }: { team: SchoolTeam; viewerIsOwner: boolean }) {
+export function TeamScreen({
+  team,
+  viewerIsOwner,
+  lessonSeller = 'school',
+}: {
+  team: SchoolTeam;
+  viewerIsOwner: boolean;
+  lessonSeller?: LessonSeller | null;
+}) {
   const router = useRouter();
   const [, startTransition] = useTransition();
-  const [inviting, setInviting] = useState(false);
+  // An instructor, or, for the owner alone, a manager (D-293).
+  const [inviting, setInviting] = useState<'instructor' | 'manager' | null>(null);
   const [busyId, setBusyId] = useState<string | null>(null);
   const [switchingOff, setSwitchingOff] = useState<TeamMember | null>(null);
+  const [lettingGo, setLettingGo] = useState<LinkedInstructor | null>(null);
+  const kinds = inviteKindsFor(lessonSeller);
+  const teaching = team.members.filter((one) => one.active && one.role === 'instructor').length + team.linked.length;
 
   /** Runs one change, says what went wrong if it did, and reads the team again either way. */
   const change = (id: string, work: () => Promise<{ ok: true } | { ok: false; message: string }>, done: string) => {
@@ -28,6 +40,7 @@ export function TeamScreen({ team, viewerIsOwner }: { team: SchoolTeam; viewerIs
       toast(result.ok ? done : result.message);
       setBusyId(null);
       setSwitchingOff(null);
+      setLettingGo(null);
       router.refresh();
     });
   };
@@ -56,19 +69,26 @@ export function TeamScreen({ team, viewerIsOwner }: { team: SchoolTeam; viewerIs
     <div className="flex flex-col gap-4">
       <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
         <p className="text-small text-grey-700" aria-live="polite">
-          {team.members.filter((one) => one.active && one.role === 'instructor').length === 1
-            ? '1 instructor'
-            : `${String(team.members.filter((one) => one.active && one.role === 'instructor').length)} instructors`}
+          {teaching === 1 ? '1 instructor' : `${String(teaching)} instructors`}
         </p>
-        <Button width="responsive" onClick={() => { setInviting(true); }}>
-          <UserPlus className="size-5" aria-hidden />
-          Invite an instructor
-        </Button>
+        <div className="flex flex-col gap-2 md:flex-row">
+          {viewerIsOwner ? (
+            <Button variant="secondary" width="responsive" onClick={() => { setInviting('manager'); }}>
+              Invite a manager
+            </Button>
+          ) : null}
+          <Button width="responsive" onClick={() => { setInviting('instructor'); }}>
+            <UserPlus className="size-5" aria-hidden />
+            Invite an instructor
+          </Button>
+        </div>
       </div>
 
       <TeamSections
         members={team.members}
+        linked={team.linked}
         invitations={team.invitations}
+        lessonSeller={lessonSeller}
         handlers={{
           viewerIsOwner,
           busyId,
@@ -77,6 +97,18 @@ export function TeamScreen({ team, viewerIsOwner }: { team: SchoolTeam; viewerIs
           onCancelInvitation: (invitation) => {
             change(invitation.invitationId, () => cancelInvitation(invitation.invitationId), 'Invitation cancelled. The link no longer works');
           },
+          onLetGo: setLettingGo,
+        }}
+      />
+
+      <LetGoDialog
+        linked={lettingGo}
+        pending={lettingGo !== null && busyId === lettingGo.linkId}
+        onCancel={() => { setLettingGo(null); }}
+        onConfirm={() => {
+          if (!lettingGo) return;
+          const linked = lettingGo;
+          change(linked.linkId, () => letGo(linked.linkId), `${linked.name} is no longer linked`);
         }}
       />
 
@@ -92,16 +124,26 @@ export function TeamScreen({ team, viewerIsOwner }: { team: SchoolTeam; viewerIs
       />
 
       <Sheet
-        open={inviting}
+        open={inviting !== null}
         onOpenChange={(open) => {
-          setInviting(open);
-          // Whoever was just invited shows under Invitations waiting.
-          if (!open) router.refresh();
+          if (!open) {
+            setInviting(null);
+            // Whoever was just invited shows under Invitations waiting.
+            router.refresh();
+          }
         }}
-        title="Invite an instructor"
-        description="They get a link to join the school and set up their profile in four short steps."
+        title={inviting === 'manager' ? 'Invite a manager' : 'Invite an instructor'}
+        description={
+          inviting === 'manager'
+            ? 'They get a link to help run the school: its instructors, bookings, prices and learners. They see its revenue only if you let them.'
+            : kinds.length === 2
+              ? 'They get a link to join the school, or to link their own business to it.'
+              : kinds.includes('link')
+                ? 'They get a link to link their own business to the school, keeping their prices, payments and learners.'
+                : 'They get a link to join the school and set up their profile in four short steps.'
+        }
       >
-        <InviteInstructorsForm invite={inviteToSchool} />
+        <InviteInstructorsForm key={inviting ?? 'none'} invite={inviteToSchool} kinds={inviting === 'manager' ? ['manager'] : kinds} />
       </Sheet>
     </div>
   );

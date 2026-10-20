@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
   emailShareUrl,
   invitationLink,
+  invitationSubject,
   invitationText,
   smsShareUrl,
   whatsappShareUrl,
@@ -51,6 +52,22 @@ describe('sharing an invitation (AUTH-07, M2-03)', () => {
     );
     expect(decodeURIComponent(emailShareUrl({ ...invite, email: 'nia@example.test' }))).toContain('subject=Teach with Northern Lights Driving');
     expect(decodeURIComponent(smsShareUrl({ ...invite, phone: '+447700900555' }))).toContain('you are invited to teach with');
+  });
+
+  it('asks an instructor with a business of their own to link it to a school, saying what they keep (D-282)', () => {
+    const invite = { link: 'https://example.test/invite/abc', instructorName: 'Northern Lights Driving', learnerName: 'Oli', kind: 'link' as const };
+    expect(invitationText(invite)).toBe(
+      'Hi Oli, Northern Lights Driving would like to send you pupils. Link your instructor business here, and keep your own prices, payments and learners: https://example.test/invite/abc',
+    );
+    expect(invitationSubject(invite)).toBe('Link your business to Northern Lights Driving');
+  });
+
+  it('asks somebody to help run a school, as a manager (D-293)', () => {
+    const invite = { link: 'https://example.test/invite/abc', instructorName: 'Northern Lights Driving', learnerName: 'Maya', kind: 'manager' as const };
+    expect(invitationText(invite)).toBe(
+      'Hi Maya, Northern Lights Driving would like you to help run it. Set up your account here: https://example.test/invite/abc',
+    );
+    expect(invitationSubject(invite)).toBe('Help run Northern Lights Driving');
   });
 
   it('builds the link one way, so the page and the message agree', () => {

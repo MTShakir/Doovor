@@ -1,4 +1,4 @@
-import { Images, Layers, PoundSterling, Settings } from 'lucide-react';
+import { Images, Layers, PoundSterling, Settings, UserPlus, Wallet } from 'lucide-react';
 import { icons } from '@/lib/icons';
 import { installAppLink, MoreMenu } from '@/components/more-menu';
 
@@ -12,7 +12,9 @@ export default function SchoolMorePage() {
     <MoreMenu
       title="More"
       links={[
+        { href: '/app/school/pupils', icon: UserPlus, title: 'New pupils', subtitle: 'People who asked for lessons' },
         { href: '/app/school/money', icon: PoundSterling, title: 'Money', subtitle: 'Payments and revenue' },
+        { href: '/app/school/money/pay', icon: Wallet, title: 'Instructor pay', subtitle: 'What each instructor taught, and their pay' },
         { href: '/app/school/money/setup', icon: icons.paymentSetup, title: 'Payment setup', subtitle: 'Card payments, how learners pay, receipts' },
         { href: '/app/school/books', icon: icons.bookkeeping, title: 'Bookkeeping', subtitle: 'On the way for schools' },
         { href: '/app/school/gallery', icon: Images, title: 'Gallery', subtitle: 'Photos from the day somebody passes' },

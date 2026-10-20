@@ -26,6 +26,7 @@ async function SchoolDetails() {
         initialLogoPath={session.logoPath}
         initialPostcode={session.basePostcode}
         initialExpectedInstructors={session.expectedInstructors}
+        initialLessonSeller={session.lessonSeller}
       />
     </SchoolStep>
   );

@@ -147,3 +147,23 @@ export function penceAsTyped(pence: number | null): string {
   if (pence === null) return '';
   return pence % 100 === 0 ? String(pence / 100) : (pence / 100).toFixed(2);
 }
+
+/**
+ * What a school recommends its linked instructors charge an hour, and the most it lets them
+ * (D-286). Either may be left empty. The law lets a school do no more: there is no fixed price
+ * and no lowest price to set.
+ */
+export const linkedPriceGuideSchema = z
+  .object({
+    recommended: pounds(lessonPriceRange.min, lessonPriceRange.max, `Enter a price between ${formatPence(lessonPriceRange.min)} and ${formatPence(lessonPriceRange.max)}`),
+    maximum: pounds(lessonPriceRange.min, lessonPriceRange.max, `Enter a price between ${formatPence(lessonPriceRange.min)} and ${formatPence(lessonPriceRange.max)}`),
+  })
+  .refine((guide) => guide.recommended === null || guide.maximum === null || guide.recommended <= guide.maximum, {
+    error: 'Recommend no more than the most they can charge',
+    path: ['recommended'],
+  });
+
+/** The most a lesson or package of so many minutes may cost at a price an hour, to the penny below (D-286). */
+export function mostFor(minutes: number, hourlyPence: number): number {
+  return Math.floor((hourlyPence * minutes) / 60);
+}

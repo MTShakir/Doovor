@@ -521,9 +521,14 @@ export type Database = {
           expected_instructors: number | null
           founding_offer: boolean
           id: string
+          lesson_seller: Database["public"]["Enums"]["lesson_seller"] | null
+          linked_max_hourly_pence: number | null
+          linked_recommended_hourly_pence: number | null
           logo_url: string | null
           name: string
           onboarding_completed_at: string | null
+          paused_at: string | null
+          paused_for: string | null
           plan: Database["public"]["Enums"]["plan_key"]
           plan_expires_at: string | null
           referral_code: string
@@ -556,9 +561,14 @@ export type Database = {
           expected_instructors?: number | null
           founding_offer?: boolean
           id?: string
+          lesson_seller?: Database["public"]["Enums"]["lesson_seller"] | null
+          linked_max_hourly_pence?: number | null
+          linked_recommended_hourly_pence?: number | null
           logo_url?: string | null
           name: string
           onboarding_completed_at?: string | null
+          paused_at?: string | null
+          paused_for?: string | null
           plan?: Database["public"]["Enums"]["plan_key"]
           plan_expires_at?: string | null
           referral_code: string
@@ -591,9 +601,14 @@ export type Database = {
           expected_instructors?: number | null
           founding_offer?: boolean
           id?: string
+          lesson_seller?: Database["public"]["Enums"]["lesson_seller"] | null
+          linked_max_hourly_pence?: number | null
+          linked_recommended_hourly_pence?: number | null
           logo_url?: string | null
           name?: string
           onboarding_completed_at?: string | null
+          paused_at?: string | null
+          paused_for?: string | null
           plan?: Database["public"]["Enums"]["plan_key"]
           plan_expires_at?: string | null
           referral_code?: string
@@ -622,6 +637,13 @@ export type Database = {
             columns: ["created_by"]
             isOneToOne: false
             referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "businesses_paused_for_fkey"
+            columns: ["paused_for"]
+            isOneToOne: false
+            referencedRelation: "businesses"
             referencedColumns: ["id"]
           },
         ]
@@ -1208,6 +1230,7 @@ export type Database = {
           verification_status: Database["public"]["Enums"]["verification_status"]
           verification_submitted_at: string | null
           verified_at: string | null
+          vouched_at: string | null
           years_teaching: number | null
         }
         Insert: {
@@ -1245,6 +1268,7 @@ export type Database = {
           verification_status?: Database["public"]["Enums"]["verification_status"]
           verification_submitted_at?: string | null
           verified_at?: string | null
+          vouched_at?: string | null
           years_teaching?: number | null
         }
         Update: {
@@ -1282,6 +1306,7 @@ export type Database = {
           verification_status?: Database["public"]["Enums"]["verification_status"]
           verification_submitted_at?: string | null
           verified_at?: string | null
+          vouched_at?: string | null
           years_teaching?: number | null
         }
         Relationships: [
@@ -1438,6 +1463,71 @@ export type Database = {
           },
         ]
       }
+      learner_moves: {
+        Row: {
+          answered_at: string | null
+          created_at: string
+          from_business_id: string
+          id: string
+          instructor_id: string | null
+          learner_id: string
+          reason: string
+          status: Database["public"]["Enums"]["learner_move_status"]
+          to_business_id: string
+        }
+        Insert: {
+          answered_at?: string | null
+          created_at?: string
+          from_business_id: string
+          id?: string
+          instructor_id?: string | null
+          learner_id: string
+          reason: string
+          status?: Database["public"]["Enums"]["learner_move_status"]
+          to_business_id: string
+        }
+        Update: {
+          answered_at?: string | null
+          created_at?: string
+          from_business_id?: string
+          id?: string
+          instructor_id?: string | null
+          learner_id?: string
+          reason?: string
+          status?: Database["public"]["Enums"]["learner_move_status"]
+          to_business_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "learner_moves_from_business_id_fkey"
+            columns: ["from_business_id"]
+            isOneToOne: false
+            referencedRelation: "businesses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "learner_moves_instructor_id_fkey"
+            columns: ["instructor_id"]
+            isOneToOne: false
+            referencedRelation: "instructor_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "learner_moves_learner_id_fkey"
+            columns: ["learner_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "learner_moves_to_business_id_fkey"
+            columns: ["to_business_id"]
+            isOneToOne: false
+            referencedRelation: "businesses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       learner_notes: {
         Row: {
           author_id: string
@@ -1588,6 +1678,7 @@ export type Database = {
           created_by: string | null
           id: string
           instructor_id: string | null
+          introduced_by: string | null
           learner_id: string
           source: Database["public"]["Enums"]["learner_source"]
           status: Database["public"]["Enums"]["learner_status"]
@@ -1600,6 +1691,7 @@ export type Database = {
           created_by?: string | null
           id?: string
           instructor_id?: string | null
+          introduced_by?: string | null
           learner_id: string
           source?: Database["public"]["Enums"]["learner_source"]
           status?: Database["public"]["Enums"]["learner_status"]
@@ -1612,6 +1704,7 @@ export type Database = {
           created_by?: string | null
           id?: string
           instructor_id?: string | null
+          introduced_by?: string | null
           learner_id?: string
           source?: Database["public"]["Enums"]["learner_source"]
           status?: Database["public"]["Enums"]["learner_status"]
@@ -1639,6 +1732,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "instructor_profiles"
             referencedColumns: ["id", "business_id"]
+          },
+          {
+            foreignKeyName: "learner_relationships_introduced_by_fkey"
+            columns: ["introduced_by"]
+            isOneToOne: false
+            referencedRelation: "businesses"
+            referencedColumns: ["id"]
           },
           {
             foreignKeyName: "learner_relationships_learner_id_fkey"
@@ -1918,6 +2018,74 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
+      }
+      member_pay: {
+        Row: {
+          basis: string | null
+          business_id: string
+          created_at: string
+          effective_from: string
+          hourly_pence: number | null
+          id: string
+          membership_id: string
+          share_percent: number | null
+          updated_by: string | null
+          user_id: string
+        }
+        Insert: {
+          basis?: string | null
+          business_id: string
+          created_at?: string
+          effective_from: string
+          hourly_pence?: number | null
+          id?: string
+          membership_id: string
+          share_percent?: number | null
+          updated_by?: string | null
+          user_id: string
+        }
+        Update: {
+          basis?: string | null
+          business_id?: string
+          created_at?: string
+          effective_from?: string
+          hourly_pence?: number | null
+          id?: string
+          membership_id?: string
+          share_percent?: number | null
+          updated_by?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "member_pay_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "businesses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "member_pay_membership_id_fkey"
+            columns: ["membership_id"]
+            isOneToOne: false
+            referencedRelation: "memberships"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "member_pay_updated_by_fkey"
+            columns: ["updated_by"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "member_pay_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       memberships: {
         Row: {
@@ -2805,6 +2973,393 @@ export type Database = {
           },
         ]
       }
+      school_enquiries: {
+        Row: {
+          closed_at: string | null
+          closed_reason: string | null
+          consent_wording: string
+          consented_at: string
+          created_at: string
+          created_by: string | null
+          email: string | null
+          full_name: string
+          id: string
+          note: string | null
+          phone: string | null
+          postcode: string
+          school_id: string
+          source: string
+          status: Database["public"]["Enums"]["school_enquiry_status"]
+          taken_at: string | null
+          taken_business_id: string | null
+          taken_instructor_id: string | null
+          taken_learner_id: string | null
+          transmission:
+            | Database["public"]["Enums"]["learner_transmission"]
+            | null
+          updated_at: string
+        }
+        Insert: {
+          closed_at?: string | null
+          closed_reason?: string | null
+          consent_wording: string
+          consented_at?: string
+          created_at?: string
+          created_by?: string | null
+          email?: string | null
+          full_name: string
+          id?: string
+          note?: string | null
+          phone?: string | null
+          postcode: string
+          school_id: string
+          source: string
+          status?: Database["public"]["Enums"]["school_enquiry_status"]
+          taken_at?: string | null
+          taken_business_id?: string | null
+          taken_instructor_id?: string | null
+          taken_learner_id?: string | null
+          transmission?:
+            | Database["public"]["Enums"]["learner_transmission"]
+            | null
+          updated_at?: string
+        }
+        Update: {
+          closed_at?: string | null
+          closed_reason?: string | null
+          consent_wording?: string
+          consented_at?: string
+          created_at?: string
+          created_by?: string | null
+          email?: string | null
+          full_name?: string
+          id?: string
+          note?: string | null
+          phone?: string | null
+          postcode?: string
+          school_id?: string
+          source?: string
+          status?: Database["public"]["Enums"]["school_enquiry_status"]
+          taken_at?: string | null
+          taken_business_id?: string | null
+          taken_instructor_id?: string | null
+          taken_learner_id?: string | null
+          transmission?:
+            | Database["public"]["Enums"]["learner_transmission"]
+            | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "school_enquiries_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "school_enquiries_school_id_fkey"
+            columns: ["school_id"]
+            isOneToOne: false
+            referencedRelation: "businesses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "school_enquiries_taken_business_id_fkey"
+            columns: ["taken_business_id"]
+            isOneToOne: false
+            referencedRelation: "businesses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "school_enquiries_taken_instructor_id_fkey"
+            columns: ["taken_instructor_id"]
+            isOneToOne: false
+            referencedRelation: "instructor_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "school_enquiries_taken_learner_id_fkey"
+            columns: ["taken_learner_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      school_enquiry_offers: {
+        Row: {
+          answered_at: string | null
+          business_id: string
+          created_at: string
+          created_by: string | null
+          enquiry_id: string
+          expires_at: string
+          id: string
+          link_id: string
+          school_id: string
+          status: Database["public"]["Enums"]["enquiry_offer_status"]
+        }
+        Insert: {
+          answered_at?: string | null
+          business_id: string
+          created_at?: string
+          created_by?: string | null
+          enquiry_id: string
+          expires_at: string
+          id?: string
+          link_id: string
+          school_id: string
+          status?: Database["public"]["Enums"]["enquiry_offer_status"]
+        }
+        Update: {
+          answered_at?: string | null
+          business_id?: string
+          created_at?: string
+          created_by?: string | null
+          enquiry_id?: string
+          expires_at?: string
+          id?: string
+          link_id?: string
+          school_id?: string
+          status?: Database["public"]["Enums"]["enquiry_offer_status"]
+        }
+        Relationships: [
+          {
+            foreignKeyName: "school_enquiry_offers_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "businesses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "school_enquiry_offers_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "school_enquiry_offers_enquiry_id_fkey"
+            columns: ["enquiry_id"]
+            isOneToOne: false
+            referencedRelation: "school_enquiries"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "school_enquiry_offers_link_id_fkey"
+            columns: ["link_id"]
+            isOneToOne: false
+            referencedRelation: "school_links"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "school_enquiry_offers_school_id_fkey"
+            columns: ["school_id"]
+            isOneToOne: false
+            referencedRelation: "businesses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      school_fees: {
+        Row: {
+          amount_pence: number
+          business_id: string
+          created_at: string
+          due_on: string
+          id: string
+          kind: string
+          learner_id: string | null
+          learner_name: string | null
+          link_id: string
+          period_ends_on: string | null
+          period_starts_on: string | null
+          school_id: string
+          settled_at: string | null
+          settled_by: string | null
+          settled_note: string | null
+          status: Database["public"]["Enums"]["school_fee_status"]
+        }
+        Insert: {
+          amount_pence: number
+          business_id: string
+          created_at?: string
+          due_on: string
+          id?: string
+          kind: string
+          learner_id?: string | null
+          learner_name?: string | null
+          link_id: string
+          period_ends_on?: string | null
+          period_starts_on?: string | null
+          school_id: string
+          settled_at?: string | null
+          settled_by?: string | null
+          settled_note?: string | null
+          status?: Database["public"]["Enums"]["school_fee_status"]
+        }
+        Update: {
+          amount_pence?: number
+          business_id?: string
+          created_at?: string
+          due_on?: string
+          id?: string
+          kind?: string
+          learner_id?: string | null
+          learner_name?: string | null
+          link_id?: string
+          period_ends_on?: string | null
+          period_starts_on?: string | null
+          school_id?: string
+          settled_at?: string | null
+          settled_by?: string | null
+          settled_note?: string | null
+          status?: Database["public"]["Enums"]["school_fee_status"]
+        }
+        Relationships: [
+          {
+            foreignKeyName: "school_fees_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "businesses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "school_fees_learner_id_fkey"
+            columns: ["learner_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "school_fees_link_id_fkey"
+            columns: ["link_id"]
+            isOneToOne: false
+            referencedRelation: "school_links"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "school_fees_school_id_fkey"
+            columns: ["school_id"]
+            isOneToOne: false
+            referencedRelation: "businesses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "school_fees_settled_by_fkey"
+            columns: ["settled_by"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      school_links: {
+        Row: {
+          business_id: string
+          created_at: string
+          created_by: string | null
+          end_reason: string | null
+          ended_at: string | null
+          ended_by: string | null
+          fee_pence: number | null
+          fee_period: Database["public"]["Enums"]["school_fee_period"] | null
+          fees_start_on: string | null
+          free_weeks: number
+          id: string
+          invitation_id: string | null
+          prior_plan: Database["public"]["Enums"]["plan_key"] | null
+          prior_plan_expires_at: string | null
+          pro_given: boolean
+          pupil_fee_pence: number | null
+          school_id: string
+          started_at: string
+          status: Database["public"]["Enums"]["school_link_status"]
+          updated_at: string
+        }
+        Insert: {
+          business_id: string
+          created_at?: string
+          created_by?: string | null
+          end_reason?: string | null
+          ended_at?: string | null
+          ended_by?: string | null
+          fee_pence?: number | null
+          fee_period?: Database["public"]["Enums"]["school_fee_period"] | null
+          fees_start_on?: string | null
+          free_weeks?: number
+          id?: string
+          invitation_id?: string | null
+          prior_plan?: Database["public"]["Enums"]["plan_key"] | null
+          prior_plan_expires_at?: string | null
+          pro_given?: boolean
+          pupil_fee_pence?: number | null
+          school_id: string
+          started_at?: string
+          status?: Database["public"]["Enums"]["school_link_status"]
+          updated_at?: string
+        }
+        Update: {
+          business_id?: string
+          created_at?: string
+          created_by?: string | null
+          end_reason?: string | null
+          ended_at?: string | null
+          ended_by?: string | null
+          fee_pence?: number | null
+          fee_period?: Database["public"]["Enums"]["school_fee_period"] | null
+          fees_start_on?: string | null
+          free_weeks?: number
+          id?: string
+          invitation_id?: string | null
+          prior_plan?: Database["public"]["Enums"]["plan_key"] | null
+          prior_plan_expires_at?: string | null
+          pro_given?: boolean
+          pupil_fee_pence?: number | null
+          school_id?: string
+          started_at?: string
+          status?: Database["public"]["Enums"]["school_link_status"]
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "school_links_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "businesses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "school_links_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "school_links_ended_by_fkey"
+            columns: ["ended_by"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "school_links_invitation_id_fkey"
+            columns: ["invitation_id"]
+            isOneToOne: false
+            referencedRelation: "invitations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "school_links_school_id_fkey"
+            columns: ["school_id"]
+            isOneToOne: false
+            referencedRelation: "businesses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       skill_assessments: {
         Row: {
           assessed_at: string
@@ -3311,8 +3866,13 @@ export type Database = {
     }
     Functions: {
       accept_invitation: { Args: { p_token: string }; Returns: string }
+      accept_link_invitation: { Args: { p_token: string }; Returns: string }
       accept_member_invitation: { Args: { p_token: string }; Returns: string }
       accept_terms: { Args: { p_version: string }; Returns: undefined }
+      add_enquiry_learner: {
+        Args: { p_enquiry_id: string; p_learner_id: string }
+        Returns: undefined
+      }
       add_gallery_photo: {
         Args: {
           p_image_height?: number
@@ -3332,6 +3892,30 @@ export type Database = {
           p_source?: string
           p_transmission?: string
           p_usual_minutes?: number
+        }
+        Returns: string
+      }
+      add_school_enquiry: {
+        Args: {
+          p_consent: string
+          p_email?: string
+          p_full_name: string
+          p_note?: string
+          p_phone?: string
+          p_postcode: string
+          p_school_id: string
+          p_transmission?: string
+        }
+        Returns: string
+      }
+      add_school_learner: {
+        Args: {
+          p_instructor_id?: string
+          p_learner_id: string
+          p_postcode?: string
+          p_school_id: string
+          p_source?: string
+          p_transmission?: string
         }
         Returns: string
       }
@@ -3484,6 +4068,14 @@ export type Database = {
         Args: { p_key: string; p_value: Json }
         Returns: undefined
       }
+      answer_enquiry_offer: {
+        Args: { p_accept: boolean; p_offer_id: string }
+        Returns: undefined
+      }
+      answer_learner_move: {
+        Args: { p_move: boolean; p_move_id: string }
+        Returns: undefined
+      }
       assign_learner: {
         Args: { p_instructor_id: string; p_learner_id: string }
         Returns: string
@@ -3536,9 +4128,14 @@ export type Database = {
         Args: { p_booking_id: string; p_reason?: string }
         Returns: Json
       }
+      cancellation_policy: { Args: { p_instructor_id: string }; Returns: Json }
       city_page: {
         Args: { p_area?: string; p_city: string; p_transmission?: string }
         Returns: Json
+      }
+      close_school_enquiry: {
+        Args: { p_enquiry_id: string; p_reason?: string }
+        Returns: undefined
       }
       coming_soon_area: { Args: { p_postcode: string }; Returns: Json }
       complete_booking: { Args: { p_booking_id: string }; Returns: string }
@@ -3584,9 +4181,19 @@ export type Database = {
         Returns: string
       }
       end_impersonation: { Args: { p_session_id: string }; Returns: undefined }
+      end_school_link: { Args: { p_link_id: string }; Returns: undefined }
+      enquiry_allocation: { Args: { p_enquiry_id: string }; Returns: Json }
       export_my_data: { Args: never; Returns: Json }
       feature_flags: { Args: never; Returns: Json }
       founding_places: { Args: never; Returns: Json }
+      give_school_enquiry: {
+        Args: {
+          p_enquiry_id: string
+          p_instructor_id: string
+          p_learner_id: string
+        }
+        Returns: undefined
+      }
       hold_booking_for_payment: {
         Args: { p_booking_id: string }
         Returns: Json
@@ -3621,6 +4228,20 @@ export type Database = {
           p_full_name?: string
           p_instructor_id: string
           p_phone?: string
+        }
+        Returns: {
+          expires_at: string
+          invitation_id: string
+          token: string
+        }[]
+      }
+      invite_linked_instructor: {
+        Args: {
+          p_channel: string
+          p_email?: string
+          p_full_name?: string
+          p_phone?: string
+          p_school_id: string
         }
         Returns: {
           expires_at: string
@@ -3683,6 +4304,8 @@ export type Database = {
           happened_at: string
         }[]
       }
+      learner_introduced_by: { Args: { p_learner_id: string }; Returns: string }
+      learner_moves_for_me: { Args: never; Returns: Json }
       leave_learner_capture: { Args: { p_token: string }; Returns: number }
       lesson_reminder_options: { Args: { p_booking_id: string }; Returns: Json }
       list_my_sessions: {
@@ -3701,6 +4324,14 @@ export type Database = {
         Args: { p_booking_id: string; p_reason?: string }
         Returns: Json
       }
+      member_pay_statement: {
+        Args: {
+          p_business_id: string
+          p_user_id?: string
+          p_week_start: string
+        }
+        Returns: Json
+      }
       money_summary: {
         Args: { p_business_id: string; p_from: string; p_to: string }
         Returns: Json
@@ -3709,6 +4340,7 @@ export type Database = {
         Args: { p_business_id: string; p_limit: number; p_offset: number }
         Returns: Json
       }
+      my_paused_business: { Args: never; Returns: Json }
       my_referrals: { Args: { p_business_id: string }; Returns: Json }
       my_subscription: { Args: { p_business_id: string }; Returns: Json }
       next_open_slots: {
@@ -3718,6 +4350,10 @@ export type Database = {
           p_limit?: number
         }
         Returns: string[]
+      }
+      offer_school_enquiry: {
+        Args: { p_enquiry_id: string; p_hours?: number; p_link_ids: string[] }
+        Returns: undefined
       }
       open_slots: {
         Args: {
@@ -3778,6 +4414,7 @@ export type Database = {
         Args: { p_booking_id: string; p_duration_minutes: number }
         Returns: number
       }
+      pupil_offers_for: { Args: { p_business_id: string }; Returns: Json }
       rate_skill: {
         Args: { p_learner_id: string; p_rating: number; p_skill_code: string }
         Returns: string
@@ -3822,6 +4459,14 @@ export type Database = {
       remove_expense: { Args: { p_expense_id: string }; Returns: Json }
       remove_gallery_photo: { Args: { p_photo_id: string }; Returns: string }
       remove_mileage: { Args: { p_mileage_id: string }; Returns: undefined }
+      reopen_own_business: {
+        Args: { p_business_id: string }
+        Returns: undefined
+      }
+      reopen_school_enquiry: {
+        Args: { p_enquiry_id: string }
+        Returns: undefined
+      }
       request_account_deletion: { Args: { p_reason?: string }; Returns: string }
       request_lesson_reminder: {
         Args: { p_booking_id: string; p_channel: string }
@@ -3856,6 +4501,11 @@ export type Database = {
       }
       school_gallery: {
         Args: { p_slug: string; p_whole?: boolean }
+        Returns: Json
+      }
+      school_link_of: { Args: { p_business_id: string }; Returns: Json }
+      school_linked_busy: {
+        Args: { p_from: string; p_school_id: string; p_to: string }
         Returns: Json
       }
       school_overview: { Args: { p_business_id: string }; Returns: Json }
@@ -3903,8 +4553,33 @@ export type Database = {
         }
         Returns: undefined
       }
+      set_lesson_seller: {
+        Args: {
+          p_business_id: string
+          p_seller: Database["public"]["Enums"]["lesson_seller"]
+        }
+        Returns: undefined
+      }
+      set_linked_price_guide: {
+        Args: {
+          p_max_hourly_pence?: number
+          p_recommended_hourly_pence?: number
+          p_school_id: string
+        }
+        Returns: undefined
+      }
       set_member_active: {
         Args: { p_active: boolean; p_membership_id: string }
+        Returns: undefined
+      }
+      set_member_pay: {
+        Args: {
+          p_basis?: string
+          p_from?: string
+          p_hourly_pence?: number
+          p_membership_id: string
+          p_share_percent?: number
+        }
         Returns: undefined
       }
       set_member_permission: {
@@ -3948,6 +4623,17 @@ export type Database = {
         }
         Returns: number
       }
+      set_school_fee_terms: {
+        Args: {
+          p_fee_pence?: number
+          p_free_weeks?: number
+          p_link_id: string
+          p_period?: Database["public"]["Enums"]["school_fee_period"]
+          p_pupil_fee_pence?: number
+          p_starts_on?: string
+        }
+        Returns: undefined
+      }
       set_supervisor: {
         Args: { p_instructor_id: string; p_supervised: boolean }
         Returns: boolean
@@ -3975,6 +4661,14 @@ export type Database = {
         Returns: number
       }
       settle_offline_refund: { Args: { p_refund_id: string }; Returns: Json }
+      settle_school_fee: {
+        Args: {
+          p_fee_id: string
+          p_note?: string
+          p_outcome: Database["public"]["Enums"]["school_fee_status"]
+        }
+        Returns: undefined
+      }
       sitemap_entries: { Args: never; Returns: Json }
       slot_problem: {
         Args: {
@@ -3997,6 +4691,19 @@ export type Database = {
           p_page?: string
         }
         Returns: Json
+      }
+      submit_school_enquiry: {
+        Args: {
+          p_consent: string
+          p_email?: string
+          p_full_name: string
+          p_note?: string
+          p_phone?: string
+          p_postcode: string
+          p_slug: string
+          p_transmission?: string
+        }
+        Returns: undefined
       }
       submit_verification: {
         Args: {
@@ -4101,6 +4808,7 @@ export type Database = {
         Args: { p_request_id: string }
         Returns: undefined
       }
+      system_forget_school_enquiries: { Args: never; Returns: number }
       system_hold_cancellations: {
         Args: { p_booking_id: string }
         Returns: Json
@@ -4110,8 +4818,13 @@ export type Database = {
         Returns: Json
       }
       system_issue_receipt: { Args: { p_payment_id: string }; Returns: Json }
+      system_lapse_enquiry_offers: { Args: never; Returns: number }
       system_learner_capture_confirmation: {
         Args: { p_id: string; p_kind: string }
+        Returns: Json
+      }
+      system_learner_joined_notice: {
+        Args: { p_invitation_id: string }
         Returns: Json
       }
       system_lesson_record_notice: {
@@ -4184,6 +4897,7 @@ export type Database = {
           p256dh: string
         }[]
       }
+      system_raise_school_fees: { Args: { p_today?: string }; Returns: number }
       system_rate_limit_hit: {
         Args: {
           p_action: string
@@ -4288,6 +5002,10 @@ export type Database = {
         Returns: undefined
       }
       system_reminder_notice: { Args: { p_booking_id: string }; Returns: Json }
+      system_school_notice: {
+        Args: { p_id: string; p_kind: string }
+        Returns: Json
+      }
       system_set_payments_state: {
         Args: {
           p_account_id: string
@@ -4372,7 +5090,7 @@ export type Database = {
         | "no_show"
         | "declined"
         | "expired"
-      business_status: "pending" | "active" | "suspended"
+      business_status: "pending" | "active" | "suspended" | "paused"
       business_type: "independent" | "school"
       claim_method: "mileage" | "actual_costs"
       coverage_rule: "include" | "exclude"
@@ -4384,6 +5102,12 @@ export type Database = {
         | "expiry"
         | "adjustment"
         | "refund"
+      enquiry_offer_status:
+        | "open"
+        | "accepted"
+        | "declined"
+        | "lapsed"
+        | "withdrawn"
       exception_kind: "open" | "blocked"
       expense_category:
         | "fuel"
@@ -4402,6 +5126,7 @@ export type Database = {
       feedback_kind: "feature" | "feedback" | "issue" | "other"
       instructor_qualification: "adi" | "pdi"
       intended_role: "learner" | "instructor" | "school"
+      learner_move_status: "asked" | "moved" | "stayed" | "withdrawn"
       learner_source: "invite" | "marketplace" | "import" | "manual"
       learner_status:
         | "enquiry"
@@ -4420,6 +5145,7 @@ export type Database = {
         | "test_day"
         | "custom"
       lesson_record_visibility: "learner" | "business"
+      lesson_seller: "school" | "instructors" | "both"
       membership_role: "owner" | "manager" | "instructor"
       membership_status: "invited" | "active" | "deactivated"
       no_show_dispute_outcome: "waived" | "kept"
@@ -4445,6 +5171,10 @@ export type Database = {
         | "other"
       refund_kind: "card" | "credit" | "offline"
       refund_status: "pending" | "succeeded" | "failed" | "cancelled"
+      school_enquiry_status: "new" | "offered" | "taken" | "closed"
+      school_fee_period: "weekly" | "monthly"
+      school_fee_status: "owed" | "paid" | "written_off"
+      school_link_status: "active" | "ended"
       subscription_status:
         | "incomplete"
         | "trialing"
@@ -4618,7 +5348,7 @@ export const Constants = {
         "declined",
         "expired",
       ],
-      business_status: ["pending", "active", "suspended"],
+      business_status: ["pending", "active", "suspended", "paused"],
       business_type: ["independent", "school"],
       claim_method: ["mileage", "actual_costs"],
       coverage_rule: ["include", "exclude"],
@@ -4630,6 +5360,13 @@ export const Constants = {
         "expiry",
         "adjustment",
         "refund",
+      ],
+      enquiry_offer_status: [
+        "open",
+        "accepted",
+        "declined",
+        "lapsed",
+        "withdrawn",
       ],
       exception_kind: ["open", "blocked"],
       expense_category: [
@@ -4650,6 +5387,7 @@ export const Constants = {
       feedback_kind: ["feature", "feedback", "issue", "other"],
       instructor_qualification: ["adi", "pdi"],
       intended_role: ["learner", "instructor", "school"],
+      learner_move_status: ["asked", "moved", "stayed", "withdrawn"],
       learner_source: ["invite", "marketplace", "import", "manual"],
       learner_status: [
         "enquiry",
@@ -4670,6 +5408,7 @@ export const Constants = {
         "custom",
       ],
       lesson_record_visibility: ["learner", "business"],
+      lesson_seller: ["school", "instructors", "both"],
       membership_role: ["owner", "manager", "instructor"],
       membership_status: ["invited", "active", "deactivated"],
       no_show_dispute_outcome: ["waived", "kept"],
@@ -4697,6 +5436,10 @@ export const Constants = {
       ],
       refund_kind: ["card", "credit", "offline"],
       refund_status: ["pending", "succeeded", "failed", "cancelled"],
+      school_enquiry_status: ["new", "offered", "taken", "closed"],
+      school_fee_period: ["weekly", "monthly"],
+      school_fee_status: ["owed", "paid", "written_off"],
+      school_link_status: ["active", "ended"],
       subscription_status: [
         "incomplete",
         "trialing",

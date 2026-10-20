@@ -19,6 +19,9 @@ export function unreadLabel(unread: number | null): string {
  * The way to what somebody has been told, from every screen (NTF-01, D-159): top right on a
  * phone, and at the top of the menu from the md breakpoint. A red count says how many are
  * waiting. Until the count is known the bell shows on its own, so the screen never waits for it.
+ *
+ * The button is 48 pixels whatever the text size, since it holds an icon and no text (D-304); the
+ * count is text, and grows.
  */
 export function NotificationBell({
   href,
@@ -37,7 +40,7 @@ export function NotificationBell({
       href={href}
       aria-label={unreadLabel(unread)}
       className={cn(
-        'relative flex size-12 shrink-0 items-center justify-center rounded-full text-black transition-colors duration-200 hover:bg-quiet',
+        'relative flex size-[48px] shrink-0 items-center justify-center rounded-full text-black transition-colors duration-200 hover:bg-quiet',
         'focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-black',
       )}
     >

@@ -2,6 +2,8 @@ import { describe, expect, it } from 'vitest';
 import {
   effectivePence,
   lessonPricesSchema,
+  linkedPriceGuideSchema,
+  mostFor,
   packageSchema,
   penceAsTyped,
   priceRowLabel,
@@ -91,5 +93,27 @@ describe('packages of hours (PAY-04, SCH-04)', () => {
       ['price', 'Enter the price of the package'],
       ['expiryDays', 'Enter the days to use the hours in, up to 1095, or leave it blank'],
     ]);
+  });
+});
+
+describe('a school\'s price guide for linked instructors (M9-10, D-286)', () => {
+  it('takes a recommended price and a most an hour in pounds, either of them left empty', () => {
+    expect(linkedPriceGuideSchema.parse({ recommended: '40', maximum: '45.50' })).toEqual({ recommended: 4000, maximum: 4550 });
+    expect(linkedPriceGuideSchema.parse({ recommended: '', maximum: '' })).toEqual({ recommended: null, maximum: null });
+    expect(linkedPriceGuideSchema.parse({ recommended: '', maximum: '45' })).toEqual({ recommended: null, maximum: 4500 });
+  });
+
+  it('refuses a recommended price above the most, and a price out of range', () => {
+    const above = linkedPriceGuideSchema.safeParse({ recommended: '50', maximum: '45' });
+    expect(above.success).toBe(false);
+    expect(above.error?.issues[0]?.path).toEqual(['recommended']);
+    expect(linkedPriceGuideSchema.safeParse({ recommended: '4', maximum: '' }).success).toBe(false);
+  });
+
+  it('works out the most a lesson or package may cost, to the penny below', () => {
+    expect(mostFor(60, 4500)).toBe(4500);
+    expect(mostFor(90, 4500)).toBe(6750);
+    expect(mostFor(600, 4500)).toBe(45000);
+    expect(mostFor(45, 4333)).toBe(3249);
   });
 });

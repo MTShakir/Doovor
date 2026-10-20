@@ -46,6 +46,8 @@ export interface SchoolInstructor {
   car: string | null;
   takingBookings: boolean;
   hourlyFromPence: number | null;
+  /** The platform checked their badge itself, rather than a school vouching for them (D-280). */
+  platformChecked: boolean;
 }
 
 export interface SchoolInstructorsProps {
@@ -79,7 +81,7 @@ export function SchoolInstructors({ instructors, idPrefix = '' }: SchoolInstruct
               <li key={instructor.href}>
                 <a href={instructor.href} className="flex min-h-16 items-center gap-3 px-4 py-3 hover:bg-grey-100">
                   {/* The photo is of the person, so the letters standing in for it are theirs too. */}
-                  <Avatar name={instructor.personalName ?? instructor.name} src={instructor.photoUrl} verified size="lg" decorative />
+                  <Avatar name={instructor.personalName ?? instructor.name} src={instructor.photoUrl} verified={instructor.platformChecked} size="lg" decorative />
                   <span className="flex min-w-0 flex-1 flex-col">
                     {instructor.personalName ? (
                       <span className="text-caption text-grey-700">{instructor.personalName}</span>

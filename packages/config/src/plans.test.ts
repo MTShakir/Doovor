@@ -6,6 +6,10 @@ describe('plans', () => {
     for (const plan of Object.values(plans)) {
       expect(Number.isInteger(plan.monthlyPricePence)).toBe(true);
       if (plan.yearlyPricePence !== null) expect(Number.isInteger(plan.yearlyPricePence)).toBe(true);
+      if (plan.schoolFee !== null) {
+        expect(Number.isInteger(plan.schoolFee.monthlyPricePence)).toBe(true);
+        expect(Number.isInteger(plan.schoolFee.yearlyPricePence)).toBe(true);
+      }
     }
   });
 
@@ -13,8 +17,12 @@ describe('plans', () => {
     expect(plans.free.monthlyPricePence).toBe(0);
     expect(plans.pro.monthlyPricePence).toBe(1200);
     expect(plans.pro.yearlyPricePence).toBe(12000);
-    expect(plans.school.monthlyPricePence).toBe(900);
-    expect(plans.school.minimumInstructors).toBe(2);
+    // £15 a month for the school plus £6 for each instructor, or £150 and £60 a year (D-279).
+    expect(plans.school.schoolFee).toEqual({ monthlyPricePence: 1500, yearlyPricePence: 15000 });
+    expect(plans.school.monthlyPricePence).toBe(600);
+    expect(plans.school.yearlyPricePence).toBe(6000);
+    expect(plans.school.minimumInstructors).toBe(0);
+    expect(plans.pro.schoolFee).toBeNull();
   });
 
   it('quotes the standard UK card fee as PRD 9.18 does: 1.5% plus 20p, in whole numbers', () => {
@@ -34,10 +42,10 @@ describe('plans', () => {
     expect(hasEntitlement('school', 'gapFill')).toBe(true);
   });
 
-  it('applies the school minimum of 2 instructors', () => {
-    expect(monthlyPricePence('school', 0)).toBe(1800);
-    expect(monthlyPricePence('school', 1)).toBe(1800);
-    expect(monthlyPricePence('school', 6)).toBe(5400);
+  it('charges a school its own fee and each instructor it has, and no more (D-279)', () => {
+    expect(monthlyPricePence('school', 0)).toBe(1500);
+    expect(monthlyPricePence('school', 1)).toBe(2100);
+    expect(monthlyPricePence('school', 6)).toBe(5100);
     expect(monthlyPricePence('pro', 6)).toBe(1200);
   });
 

@@ -51,6 +51,9 @@ export const portals: [RoleKey, string[]][] = [
       '/app/instructor/settings',
       '/app/instructor/more',
       '/app/instructor/gallery',
+      // Their school from M9: the link, pupils offered, fees, and their pay as a member.
+      '/app/instructor/school',
+      '/app/instructor/pay',
       '/account',
       '/account/name',
       '/notifications',
@@ -69,6 +72,23 @@ export const portals: [RoleKey, string[]][] = [
       '/account/install',
     ],
   ],
-  ['schoolOwner', ['/app/school', '/app/school/diary', '/app/school/instructors', '/app/school/learners', '/app/school/money', '/app/school/gallery', '/app/school/settings', '/app/school/more']],
+  [
+    'schoolOwner',
+    [
+      '/app/school',
+      '/app/school/diary',
+      '/app/school/instructors',
+      '/app/school/learners',
+      // The school's own screens from M9: its learners from a spreadsheet, new pupils, fees and pay.
+      '/app/school/learners/import',
+      '/app/school/pupils',
+      '/app/school/money',
+      '/app/school/money/fees',
+      '/app/school/money/pay',
+      '/app/school/gallery',
+      '/app/school/settings',
+      '/app/school/more',
+    ],
+  ],
   ['admin', ['/admin', '/admin/businesses', '/admin/instructors', '/admin/learners', '/admin/payments', '/admin/deletions', '/admin/regions', '/admin/settings', '/admin/verification', '/admin/gallery', '/admin/audit-log']],
 ];

@@ -56,7 +56,14 @@ function problemWith(candidate: ImportCandidate): string | null {
   return result.success ? null : (result.error.issues[0]?.message ?? 'We could not read that row');
 }
 
-export function ImportLearners() {
+/** The door each batch goes through, and the list it ends on: the instructor's own, or a school's (M9-27). */
+export function ImportLearners({
+  importer = importLearners,
+  listPath = '/app/instructor/learners',
+}: {
+  importer?: typeof importLearners;
+  listPath?: '/app/instructor/learners' | '/app/school/learners';
+}) {
   const [file, setFile] = useState<FileRead | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
@@ -99,7 +106,7 @@ export function ImportLearners() {
 
       for (let at = 0; at < review.ready.length; at += BATCH) {
         const batch = review.ready.slice(at, at + BATCH);
-        const result = await importLearners({ rows: batch });
+        const result = await importer({ rows: batch });
         if (!result.ok) {
           setError(result.message);
           break;
@@ -144,7 +151,7 @@ export function ImportLearners() {
         )}
         <div className="flex flex-wrap gap-2">
           <Button asChild>
-            <Link href="/app/instructor/learners">See your learners</Link>
+            <Link href={listPath}>See your learners</Link>
           </Button>
           <Button variant="secondary" onClick={() => { setDone(null); }}>
             Import another file

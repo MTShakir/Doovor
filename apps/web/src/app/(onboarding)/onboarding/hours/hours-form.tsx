@@ -83,7 +83,7 @@ export function HoursForm({ days, startTime, endTime }: HoursFormProps) {
         </Field>
       </div>
       <p className="text-small text-grey-700">
-        These are your usual hours. Time off and extra slots are added from your diary.
+        These are your usual hours. Time off and extra hours are added in Settings.
       </p>
       <SubmitButton width="full" size="lg" pending={pending}>
         Finish

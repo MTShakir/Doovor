@@ -1,3 +1,4 @@
+import { hasEntitlement, type PlanKey } from '@repo/config/plans';
 import { paymentModeCopy, type PaymentMode } from '@repo/core/payment-modes';
 import { PageHeader } from '@repo/ui/app-shell';
 import { BackLink } from '@/components/back-link';
@@ -8,6 +9,7 @@ import { StatusPill } from '@repo/ui/status-pill';
 import { BadgePoundSterling, CreditCard } from 'lucide-react';
 import { connection } from 'next/server';
 import { Suspense } from 'react';
+import { businessPlanKey } from '@/lib/billing/plan';
 import { paymentsState, requirementInWords, type PaymentsAccount } from '@/lib/payments/connect';
 import { receiptDetails } from '@/lib/payments/receipts';
 import { AcceptPayments } from '@/app/(portal)/app/instructor/money/accept-payments';
@@ -39,7 +41,7 @@ export function PaymentSetupScreen({ screen }: { screen: 'instructor' | 'school'
 async function Setup({ screen }: { screen: 'instructor' | 'school' }) {
   // The provider is asked as the page renders, which a prerendered shell cannot do.
   await connection();
-  const state = await paymentsState();
+  const [state, plan] = await Promise.all([paymentsState(), businessPlanKey()]);
   if (!state) {
     return (
       <Card padding="none">
@@ -74,7 +76,9 @@ async function Setup({ screen }: { screen: 'instructor' | 'school' }) {
       {state.account ? (
         <CardPayments account={state.account} businessName={state.businessName} ready={state.chargesEnabled} screen={screen} />
       ) : null}
-      {state.chargesEnabled && accepting ? <HowLearnersPay mode={state.paymentMode} canManage={state.canManage} /> : null}
+      {state.chargesEnabled && accepting ? (
+        <HowLearnersPay mode={state.paymentMode} canManage={state.canManage} plan={plan} screen={screen} />
+      ) : null}
       <Receipts businessId={state.businessId} canManage={state.canManage} />
     </>
   );
@@ -178,7 +182,18 @@ async function Receipts({ businessId, canManage }: { businessId: string; canMana
 const choices: PaymentMode[] = ['at_booking', 'before_lesson', 'after_lesson'];
 
 /** PAY-03: once cards can be taken, the owner decides when learners are asked for one. */
-function HowLearnersPay({ mode, canManage }: { mode: PaymentMode; canManage: boolean }) {
+function HowLearnersPay({
+  mode,
+  canManage,
+  plan,
+  screen,
+}: {
+  mode: PaymentMode;
+  canManage: boolean;
+  /** The owner's plan; null for anybody else, from whom it is kept (D-123). */
+  plan: PlanKey | null;
+  screen: 'instructor' | 'school';
+}) {
   return (
     <Card className="flex flex-col gap-3" role="region" aria-labelledby="payment-mode-title">
       <div className="flex flex-col gap-1">
@@ -186,7 +201,13 @@ function HowLearnersPay({ mode, canManage }: { mode: PaymentMode; canManage: boo
         <CardDescription>Credit a learner has already bought is always used first.</CardDescription>
       </div>
       {canManage ? (
-        <PaymentModeChoice current={mode} choices={choices.includes(mode) ? choices : [...choices, mode]} />
+        <PaymentModeChoice
+          current={mode}
+          choices={choices.includes(mode) ? choices : [...choices, mode]}
+          // Charging the day before is Pro (D-302); only the owner chooses, so only the owner is told.
+          dayBeforeIsPro={plan !== null && !hasEntitlement(plan, 'autoChargeBeforeLesson')}
+          planHref={screen === 'school' ? '/app/school/plan' : '/app/instructor/plan'}
+        />
       ) : (
         <p className="text-body text-ink">
           Learners pay {paymentModeCopy[mode].label.toLowerCase()}. {paymentModeCopy[mode].description}

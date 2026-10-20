@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
   canMarkNoShow,
   cancellationOutcome,
+  cancellationPolicyWords,
   cancellationWarning,
   cancelledMoneyWords,
   disputeDecisionWords,
@@ -316,6 +317,56 @@ describe('cancellationWarning', () => {
     // 45 minutes at half: 22.5 back, rounded up to 23, so 22 are kept.
     const odd = cancellationOutcome({ ...base, by: 'learner', paidWith: 'credit', creditMinutes: 45, now: before(2), lateFeePercent: 50 });
     expect(odd).toMatchObject({ creditReturnedMinutes: 23, creditKeptMinutes: 22 });
+  });
+});
+
+describe('the policy, said before booking or paying (R-06, R-09, BOK-09)', () => {
+  it('says how long before a lesson it is free to cancel, and what later costs', () => {
+    expect(cancellationPolicyWords({ windowHours: 48, lateFeePercent: 100 })).toBe(
+      'You can cancel for free up to 48 hours before the lesson. After that, cancelling or missing it costs the full price.',
+    );
+    expect(cancellationPolicyWords({ windowHours: 24, lateFeePercent: 50 })).toBe(
+      'You can cancel for free up to 24 hours before the lesson. After that, cancelling or missing it costs half the price.',
+    );
+    expect(cancellationPolicyWords({ windowHours: 1, lateFeePercent: 100 })).toContain('up to 1 hour before the lesson');
+  });
+
+  it('with no window, is free until the lesson starts', () => {
+    expect(cancellationPolicyWords({ windowHours: 0, lateFeePercent: 100 })).toBe(
+      'You can cancel for free until the lesson starts. After that, cancelling or missing it costs the full price.',
+    );
+  });
+
+  it('with no fee, is free whenever, however long the window', () => {
+    expect(cancellationPolicyWords({ windowHours: 48, lateFeePercent: 0 })).toBe('You can cancel for free at any time.');
+    expect(cancellationPolicyWords({ windowHours: 0, lateFeePercent: 0 })).toBe('You can cancel for free at any time.');
+  });
+
+  it('keeps a value out of range to the range, as the outcome does', () => {
+    expect(cancellationPolicyWords({ windowHours: -5, lateFeePercent: 100 })).toContain('until the lesson starts');
+    expect(cancellationPolicyWords({ windowHours: 48, lateFeePercent: 150 })).toContain('costs the full price');
+  });
+
+  it('says what cancelling and not coming then actually do', () => {
+    for (const policy of [
+      { windowHours: 48, lateFeePercent: 100 },
+      { windowHours: 24, lateFeePercent: 50 },
+      { windowHours: 0, lateFeePercent: 100 },
+      { windowHours: 72, lateFeePercent: 0 },
+    ]) {
+      const rules = { ...base, ...policy, by: 'learner' as const, paidWith: 'none' as const };
+      const free = cancellationOutcome({ ...rules, now: before(policy.windowHours + 1) });
+      const late = cancellationOutcome({ ...rules, now: policy.windowHours === 0 ? new Date(lesson.getTime() + 60_000) : before(policy.windowHours - 1) });
+      const missed = noShowOutcome({ ...rules, now: new Date(lesson.getTime() + 3_600_000) });
+      const fee = Math.round((base.pricePence * policy.lateFeePercent) / 100);
+
+      expect(free.feePence).toBe(0);
+      expect(late.feePence).toBe(fee);
+      expect(missed.feePence).toBe(fee);
+      const words = cancellationPolicyWords(policy);
+      if (fee === 0) expect(words).toBe('You can cancel for free at any time.');
+      else expect(words).toContain(fee === base.pricePence ? 'the full price' : 'half the price');
+    }
   });
 });
 

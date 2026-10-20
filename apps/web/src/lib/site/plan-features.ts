@@ -86,15 +86,19 @@ function summary(plan: Plan, below: Plan | null, audience: string, signUpRole: P
     (key) => below === null || !enabled(below).includes(key) || plan.entitlements[key] !== below.entitlements[key],
   );
   const lead = below === null ? [...everyPlan] : [`Everything in ${below.label}`];
-  const cadence = plan.perInstructor
-    ? `per instructor per month, for at least ${String(plan.minimumInstructors)} instructors`
-    : plan.monthlyPricePence === 0
-      ? 'per month'
-      : `per month, or ${formatPence(plan.yearlyPricePence ?? plan.monthlyPricePence * 12)} a year`;
+  const yearly = formatPence(plan.yearlyPricePence ?? plan.monthlyPricePence * 12);
+  // A school's price is its own fee, with each instructor on top of it (D-279).
+  const cadence = plan.schoolFee
+    ? `per month plus ${formatPence(plan.monthlyPricePence)} per instructor, or ${formatPence(plan.schoolFee.yearlyPricePence)} a year plus ${yearly} per instructor`
+    : plan.perInstructor
+      ? `per instructor per month${plan.minimumInstructors > 1 ? `, for at least ${String(plan.minimumInstructors)} instructors` : ''}`
+      : plan.monthlyPricePence === 0
+        ? 'per month'
+        : `per month, or ${yearly} a year`;
   return {
     key: plan.key,
     name: plan.label,
-    price: formatPence(plan.monthlyPricePence),
+    price: formatPence(plan.schoolFee?.monthlyPricePence ?? plan.monthlyPricePence),
     cadence,
     audience,
     features: [...lead, ...added.filter((key) => entitlementWords[key].available).map((key) => entitlementWords[key].words(plan.entitlements))],

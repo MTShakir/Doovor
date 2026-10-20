@@ -23,18 +23,23 @@ export const badgeFieldProblems: Readonly<Record<string, string>> = {
 /**
  * Sends a badge to be checked, from onboarding or from the profile (INS-02). It needs a photo: the
  * one chosen now, or one still on file from before. The photo it replaces is nobody's afterwards.
+ *
+ * A school's instructor sends no photo: the school vouches for them, so their badge's details are
+ * kept for the reminders and nobody on the platform checks it (D-280).
  */
 export async function submitBadge(
   supabase: Supabase,
   profileId: string,
   values: OnboardingBadge,
   storedPath: string | null,
+  { vouched = false }: { vouched?: boolean } = {},
 ): Promise<Result<null>> {
-  const { qualification, badgeNumber, badgeExpiry, dbsConfirmed, badgePath } = values;
+  const { qualification, badgeNumber, badgeExpiry, dbsConfirmed } = values;
+  const badgePath = vouched ? undefined : values.badgePath;
   if (typeof badgePath === 'string' && !isProfileObjectPath(badgePath, profileId)) {
     return err('VALIDATION_FAILED', undefined, { badgePath: 'That photo could not be saved. Choose it again.' });
   }
-  if (!badgePath && storedPath === null) {
+  if (!vouched && !badgePath && storedPath === null) {
     return err('VALIDATION_FAILED', undefined, { badgePath: badgeFieldProblems.badgePath ?? '' });
   }
 

@@ -13,7 +13,7 @@ import {
 } from './portals';
 
 function context(overrides: Partial<AccessContext> = {}): AccessContext {
-  return { userId: 'u1', staffRole: null, isLearner: false, learnerOnboarded: true, memberships: [], suspendedBusinesses: [], ...overrides };
+  return { userId: 'u1', staffRole: null, isLearner: false, learnerOnboarded: true, memberships: [], suspendedBusinesses: [], pausedBusinesses: [], ...overrides };
 }
 
 function membership(overrides: Partial<AccessMembership>): AccessMembership {
@@ -40,6 +40,11 @@ describe('portal access', () => {
     expect(landingPath(ctx)).toBe('/suspended');
     // A learner too still has their own portal.
     expect(landingPath(context({ suspendedBusinesses: ['Asha Driving'], isLearner: true }))).toBe('/app/learner');
+  });
+
+  it('sends somebody whose own Business is paused to open it again, not to start another (D-292)', () => {
+    expect(landingPath(context({ pausedBusinesses: ['Asha Driving'] }))).toBe('/paused');
+    expect(landingPath(context({ pausedBusinesses: ['Asha Driving'], isLearner: true }))).toBe('/app/learner');
   });
 
   it('lands an independent instructor on Today', () => {

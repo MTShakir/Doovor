@@ -90,25 +90,26 @@ describe('the notification email (NTF-03, M2-28)', () => {
     expect(email.text).not.toContain('account');
   });
 
-  it('writes every notification in the catalogue without a dash anybody has to guess at', async () => {
-    for (const spec of Object.values(notificationCatalogue)) {
-      if (!spec.channels.includes('email')) continue;
-      for (const audience of spec.audiences) {
-        const copy = notificationCopy(spec.kind, audience, lesson);
-        const email = await renderNotificationEmail({
-          ...copy,
-          greeting: 'Hello Jack',
-          facts: [{ label: 'When', value: lesson.when }],
-          action: { label: 'Open it', url: 'https://example.com/notifications' },
-          settingsUrl: 'https://example.com/notifications/settings',
-        });
+  // Every notice that can go by email, to everybody it can go to: one test each, so a render has
+  // its own time and a failure names the notice (the catalogue grew by seven in M9).
+  const emailed = Object.values(notificationCatalogue)
+    .filter((spec) => spec.channels.includes('email'))
+    .flatMap((spec) => spec.audiences.map((audience) => ({ kind: spec.kind, audience })));
 
-        expect(email.subject, `${spec.kind} to a ${audience}`).not.toMatch(DASHES);
-        expect(email.html, `${spec.kind} to a ${audience}`).not.toMatch(DASHES);
-        expect(email.text, `${spec.kind} to a ${audience}`).not.toMatch(DASHES);
-        // HTML escapes an apostrophe, and the words are the same words.
-        expect(email.html).toContain(copy.title.replaceAll("'", '&#x27;'));
-      }
-    }
+  it.each(emailed)('writes $kind to a $audience without a dash anybody has to guess at', async ({ kind, audience }) => {
+    const copy = notificationCopy(kind, audience, lesson);
+    const email = await renderNotificationEmail({
+      ...copy,
+      greeting: 'Hello Jack',
+      facts: [{ label: 'When', value: lesson.when }],
+      action: { label: 'Open it', url: 'https://example.com/notifications' },
+      settingsUrl: 'https://example.com/notifications/settings',
+    });
+
+    expect(email.subject).not.toMatch(DASHES);
+    expect(email.html).not.toMatch(DASHES);
+    expect(email.text).not.toMatch(DASHES);
+    // HTML escapes an apostrophe, and the words are the same words.
+    expect(email.html).toContain(copy.title.replaceAll("'", '&#x27;'));
   });
 });

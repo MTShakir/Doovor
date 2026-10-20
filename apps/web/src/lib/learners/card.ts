@@ -88,3 +88,15 @@ export async function mayReadLearner(learnerId: string, readerId: string): Promi
   if (error) throw error;
   return data.length > 0;
 }
+
+/**
+ * The school that introduced a learner to the Business teaching them, by name, or null when they
+ * came another way (M9-19, D-290). The school's own row stays the school's to read.
+ */
+export async function learnerIntroducedBy(learnerId: string): Promise<string | null> {
+  const supabase = await createSupabaseServerClient();
+  const { data, error } = await supabase.rpc('learner_introduced_by', { p_learner_id: learnerId });
+  if (error) return null;
+  // Null when nobody introduced them.
+  return data;
+}

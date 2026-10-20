@@ -34,7 +34,12 @@ export default function StartPage() {
 
 async function RoleChoice() {
   const result = await getAccess();
-  if (result && (availablePortals(result.access).length > 0 || result.access.suspendedBusinesses.length > 0)) {
+  if (
+    result &&
+    (availablePortals(result.access).length > 0 ||
+      result.access.suspendedBusinesses.length > 0 ||
+      result.access.pausedBusinesses.length > 0)
+  ) {
     redirectTo(landingPath(result.access));
   }
   if (result) return <SignedInRoleChoice />;

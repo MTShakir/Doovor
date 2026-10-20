@@ -31,12 +31,14 @@ export default function PrivacyPage() {
           items={[
             'When a driving instructor or a school uses the app to run their own business, they decide what they keep about their learners. They are the controller of that, and we hold it for them as their processor.',
             'When somebody searches for lessons, looks at a public profile or creates an account, we decide what we keep. We are the controller of that.',
+            'When somebody asks a driving school for lessons, the school decides what happens to what they told it. If it passes them to an instructor who works with it and runs their own business, that instructor decides what they keep from then on. We hold it for each of them.',
           ]}
         />
         <ForTheSolicitor>
           <p>
             Please confirm the controller and processor split above, and say whether a representative or data
-            protection officer must be named.
+            protection officer must be named. Please also say whether a school and the instructors it works with need a
+            data sharing agreement for the pupils it passes on.
           </p>
         </ForTheSolicitor>
       </LegalSection>
@@ -74,6 +76,22 @@ export default function PrivacyPage() {
               'If you send us feedback, we hold what you wrote, the screen you were on, and a screenshot if you chose to attach one. A screenshot shows whatever was on your screen at the time, so it may hold somebody else’s name: only the people who run the platform read these.',
             ],
             [
+              'Asking a school about lessons',
+              'If you ask a driving school for lessons on its page, or it takes your details on the phone, we hold your name, your email address or mobile number, your postcode, the gearbox you want and when suits you, with the words you agreed to and when. The school may offer you to instructors who work with it. Until one of them takes you on, they see your first name, the first half of your postcode, the gearbox and when suits, and nothing they could contact you with.',
+            ],
+            [
+              'Instructors who work with a school',
+              'Some instructors run a business of their own and work with a school that sends them pupils. We record that they work together, the fee the school charges and each one as it falls due, the most the school asks them to charge, and which pupils the school introduced. The school sees when they are busy, but not who with.',
+            ],
+            [
+              'What a school pays its instructors',
+              'A school can record what it pays the instructors who teach under it, by the hour or as a share of each lesson, and the app works out each week from the lessons they taught. The instructor sees their own, and so do the people at the school allowed to see its money.',
+            ],
+            [
+              'Moving with your instructor',
+              'If your instructor joins a school, or stops working with the school that introduced you, we ask whether you want to move, and keep your answer. Nothing moves until you choose.',
+            ],
+            [
               'How you found us',
               'Every Business has a referral code. If a Business joined through somebody else’s code we record which code, so the reward can be applied. It says one Business introduced another and nothing else.',
             ],
@@ -89,6 +107,7 @@ export default function PrivacyPage() {
             'To meet the law: financial records for HMRC, and the checks that say an instructor is who they say they are.',
             'To count how the product is used, but only once you have said yes to it. Nothing is counted before that.',
             'Anything you tell us about your health is held only because you chose to tell us, and for no other reason. Take it back and we stop holding it.',
+            'To pass your details from a school to an instructor who works with it, because you asked the school for lessons and agreed to it, in the words we keep with what you asked.',
           ]}
         />
         <ForTheSolicitor>
@@ -141,10 +160,15 @@ export default function PrivacyPage() {
             'A request to close your account: until the account is closed or you change your mind.',
             'A pass photograph: while it is on the profile. It goes when it is taken down, when the instructor’s account is closed, or when you ask, and the file itself is removed within a day.',
             'Feedback you send us, and any screenshot with it: two years, the same as the audit trail.',
+            'Asking a school about lessons: a year after the school closes it or an instructor takes you on, or a year after it was last touched if it is still waiting. Once an instructor takes you on, you are their learner and the rest of this notice applies.',
+            'Fees between a school and the instructors who work with it, and what a school pays its instructors: with the rest of each business’s records.',
           ]}
         />
         <ForTheSolicitor>
-          <p>Please confirm each period, and whether anything else must be kept for a set time.</p>
+          <p>
+            Please confirm each period, and whether anything else must be kept for a set time, including the fees
+            between a school and the instructors who work with it and the pay records a school keeps.
+          </p>
         </ForTheSolicitor>
       </LegalSection>
 
@@ -163,6 +187,10 @@ export default function PrivacyPage() {
             [
               'The people who run a school',
               'Everything above, for the learners of the instructors who teach for that school, because they are responsible for the teaching. An owner sees the school’s money; a manager does not see payouts or billing.',
+            ],
+            [
+              'A school an instructor works with',
+              'The instructor’s name, when they are busy but not who with, the fees between them, and the pupils it introduced to them. Not the instructor’s other learners, their lessons or their money.',
             ],
             [
               'Other learners',

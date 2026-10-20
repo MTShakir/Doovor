@@ -32,11 +32,14 @@ export interface Entitlements {
 export interface Plan {
   key: PlanKey;
   label: string;
+  /** On a plan priced per instructor, the price of each instructor. */
   monthlyPricePence: number;
   yearlyPricePence: number | null;
-  /** School plan is priced per instructor with a minimum number of instructors. */
+  /** Priced for each instructor the Business has, and at least `minimumInstructors` of them. */
   perInstructor: boolean;
   minimumInstructors: number;
+  /** What a school pays for itself, on top of its instructors (D-279). Null on a plan without one. */
+  schoolFee: { monthlyPricePence: number; yearlyPricePence: number } | null;
   entitlements: Entitlements;
 }
 
@@ -76,6 +79,7 @@ export const plans: Record<PlanKey, Plan> = {
     yearlyPricePence: 0,
     perInstructor: false,
     minimumInstructors: 1,
+    schoolFee: null,
     entitlements: freeEntitlements,
   },
   pro: {
@@ -85,15 +89,19 @@ export const plans: Record<PlanKey, Plan> = {
     yearlyPricePence: 12000,
     perInstructor: false,
     minimumInstructors: 1,
+    schoolFee: null,
     entitlements: proEntitlements,
   },
   school: {
     key: 'school',
     label: 'School',
-    monthlyPricePence: 900,
-    yearlyPricePence: null,
+    // £15 a month for the school, plus £6 for each instructor it has, with no minimum; by the year,
+    // two months free, as Pro has (D-279).
+    monthlyPricePence: 600,
+    yearlyPricePence: 6000,
     perInstructor: true,
-    minimumInstructors: 2,
+    minimumInstructors: 0,
+    schoolFee: { monthlyPricePence: 1500, yearlyPricePence: 15000 },
     entitlements: { ...proEntitlements, schoolPortal: true, reports: true, fleet: true },
   },
 };
@@ -151,11 +159,12 @@ export function hasEntitlement(
   return plans[plan].entitlements[key];
 }
 
-/** Monthly price in pence for a Business on a plan, applying the per-instructor minimum. */
+/** Monthly price in pence for a Business on a plan: a school's own fee, then each instructor it has. */
 export function monthlyPricePence(plan: PlanKey, instructorCount: number): number {
   const p = plans[plan];
-  if (!p.perInstructor) return p.monthlyPricePence;
-  return p.monthlyPricePence * Math.max(p.minimumInstructors, Math.max(0, Math.floor(instructorCount)));
+  const fee = p.schoolFee?.monthlyPricePence ?? 0;
+  if (!p.perInstructor) return fee + p.monthlyPricePence;
+  return fee + p.monthlyPricePence * Math.max(p.minimumInstructors, Math.max(0, Math.floor(instructorCount)));
 }
 
 /** The text message limits a super admin may set per plan, as the platform settings keep them (ADM-05). */

@@ -42,6 +42,7 @@ async function BadgeStep() {
         badgeExpiry={session.badgeExpiry}
         badgePreview={badgePreview}
         hasBadgePhoto={session.badgePath !== null}
+        vouchedBy={session.vouchedBy}
       />
       <StepSkip step={step.step} />
     </StepShell>

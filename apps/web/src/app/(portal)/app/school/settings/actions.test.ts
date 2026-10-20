@@ -14,7 +14,7 @@ vi.mock('@/lib/catalogue/save', () => ({
 }));
 vi.mock('@/lib/public/instructor-profile', () => ({ expireAllInstructorProfiles: () => { expireAll(); } }));
 
-const { saveSchoolPackage, saveSchoolPrices, saveSchoolRules } = await import('./actions');
+const { saveLessonSeller, saveLinkedPriceGuide, saveSchoolPackage, saveSchoolPrices, saveSchoolRules } = await import('./actions');
 
 const manager = { businessId: 'school-1', businessType: 'school', role: 'manager' };
 const rules = { noticeHours: '24', horizonWeeks: '8', cancellationWindowHours: '24', lateFeePercent: '50', requestExpiryHours: '12', reminderHoursBefore: '24,2' };
@@ -62,6 +62,57 @@ describe('the school settings (SCH-04, M5-15)', () => {
       ok: false,
       fields: { lateFeePercent: 'Choose 0, 50 or 100 per cent' },
     });
+    expect(rpc).not.toHaveBeenCalled();
+  });
+});
+
+describe('who sells the school\'s lessons (D-281)', () => {
+  const owner = { businessId: 'school-1', businessType: 'school', role: 'owner' };
+
+  it('is said by the owner, through the database\'s own door', async () => {
+    requirePortal.mockResolvedValue({ access: { memberships: [owner] } });
+    expect(await saveLessonSeller({ lessonSeller: 'both' })).toEqual({ ok: true, data: null });
+    expect(rpc).toHaveBeenCalledWith('set_lesson_seller', { p_business_id: 'school-1', p_seller: 'both' });
+  });
+
+  it('is not the manager\'s to say, and needs an answer', async () => {
+    expect(await saveLessonSeller({ lessonSeller: 'both' })).toMatchObject({ ok: false, code: 'NOT_ALLOWED' });
+    expect(await saveLessonSeller({})).toMatchObject({ code: 'VALIDATION_FAILED', fields: { lessonSeller: 'Choose who sells your lessons' } });
+    expect(rpc).not.toHaveBeenCalled();
+  });
+
+  it('says why the instructors cannot sell every lesson while some teach under the school', async () => {
+    requirePortal.mockResolvedValue({ access: { memberships: [owner] } });
+    rpc.mockResolvedValueOnce({ data: null, error: { code: 'P0001', message: 'VALIDATION_FAILED', details: '{"field": "seller", "reason": "instructors_teach_here"}' } });
+    expect(await saveLessonSeller({ lessonSeller: 'instructors' })).toMatchObject({
+      code: 'VALIDATION_FAILED',
+      fields: { lessonSeller: 'Some of your instructors still teach under the school. Choose Some of each while they move to their own.' },
+    });
+  });
+});
+
+describe('prices for linked instructors (M9-10, D-286)', () => {
+  it("saves what the school recommends and the most, in pence, through the database's own door", async () => {
+    expect(await saveLinkedPriceGuide({ recommended: '40', maximum: '45' })).toEqual({ ok: true, data: null });
+    expect(rpc).toHaveBeenCalledWith('set_linked_price_guide', { p_school_id: 'school-1', p_recommended_hourly_pence: 4000, p_max_hourly_pence: 4500 });
+  });
+
+  it('leaves out what is left empty, which is none', async () => {
+    await saveLinkedPriceGuide({ recommended: '', maximum: '' });
+    expect(rpc).toHaveBeenCalledWith('set_linked_price_guide', { p_school_id: 'school-1', p_recommended_hourly_pence: undefined, p_max_hourly_pence: undefined });
+  });
+
+  it('says what to fix, and is for somebody running the school', async () => {
+    expect(await saveLinkedPriceGuide({ recommended: '50', maximum: '45' })).toMatchObject({
+      ok: false,
+      code: 'VALIDATION_FAILED',
+      fields: { recommended: 'Recommend no more than the most they can charge' },
+    });
+    rpc.mockResolvedValueOnce({ data: null, error: { code: 'P0001', message: 'VALIDATION_FAILED', details: '{"field": "recommended", "reason": "above_maximum"}' } });
+    expect(await saveLinkedPriceGuide({ recommended: '40', maximum: '45' })).toMatchObject({ fields: { recommended: 'Recommend no more than the most they can charge' } });
+    requirePortal.mockResolvedValue({ access: { memberships: [{ ...manager, role: 'instructor' }] } });
+    rpc.mockClear();
+    expect(await saveLinkedPriceGuide({ recommended: '40', maximum: '45' })).toMatchObject({ ok: false, code: 'NOT_ALLOWED' });
     expect(rpc).not.toHaveBeenCalled();
   });
 });

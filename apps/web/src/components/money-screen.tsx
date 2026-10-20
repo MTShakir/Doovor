@@ -6,12 +6,13 @@ import { Button } from '@repo/ui/button';
 import { Card, CardDescription, CardTitle } from '@repo/ui/card';
 import { EmptyState } from '@repo/ui/empty-state';
 import { SkeletonRow } from '@repo/ui/skeleton';
-import { BadgePoundSterling, ChevronRight, HandCoins } from 'lucide-react';
+import { BadgePoundSterling, ChevronRight, HandCoins, Wallet } from 'lucide-react';
 import { icons } from '@/lib/icons';
 import Link from 'next/link';
 import { connection } from 'next/server';
 import { Suspense } from 'react';
 import { paymentsState } from '@/lib/payments/connect';
+import { feesOwedToSchool, owedWords } from '@/lib/school/fees';
 import { moneySummary } from '@/lib/payments/money-summary';
 import { moneyTransactions, pendingRefunds, type Transaction } from '@/lib/payments/transactions';
 
@@ -215,6 +216,23 @@ async function Money({
           </Link>
         </Button>
       ) : null}
+      {screen === 'school' ? (
+        <>
+          <Suspense fallback={null}>
+            <SchoolFeesLink schoolId={state.businessId} />
+          </Suspense>
+          {/* D-291: what the school's own instructors taught each week, and their pay. */}
+          <Button variant="secondary" width="full" className="justify-between" asChild>
+            <Link href="/app/school/money/pay">
+              <span className="flex items-center gap-2">
+                <Wallet className="size-5 shrink-0" aria-hidden />
+                Instructor pay
+              </span>
+              <ChevronRight className="size-5 shrink-0" aria-hidden />
+            </Link>
+          </Button>
+        </>
+      ) : null}
       <MoneyDashboard businessId={state.businessId} screen={screen} period={period} />
       <Suspense fallback={<SkeletonRow />}>
         <RecentTransactions businessId={state.businessId} base={base} period={period} show={show} />
@@ -298,5 +316,25 @@ async function RecentTransactions({
         </Button>
       ) : null}
     </Card>
+  );
+}
+
+/** D-287: the fees the school's linked instructors owe it, for a school that has any. */
+async function SchoolFeesLink({ schoolId }: { schoolId: string }) {
+  const { linked, owedPence } = await feesOwedToSchool(schoolId);
+  if (linked === 0 && owedPence === 0) return null;
+  return (
+    <Button variant="secondary" width="full" className="justify-between" asChild>
+      <Link href="/app/school/money/fees">
+        <span className="flex items-center gap-2">
+          <icons.school className="size-5 shrink-0" aria-hidden />
+          Fees from linked instructors
+        </span>
+        <span className="flex items-center gap-1">
+          <span className="tabular-nums">{owedWords(owedPence)}</span>
+          <ChevronRight className="size-5 shrink-0" aria-hidden />
+        </span>
+      </Link>
+    </Button>
   );
 }

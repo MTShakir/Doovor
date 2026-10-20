@@ -99,6 +99,14 @@ export const accountEmailConfirmed = eventType('account/email-confirmed', {
   schema: staticSchema<{ user_id: string }>(),
 });
 
+/**
+ * A learner accepted an invitation (LRN-03, D-301). The database queues it as it links them; the job
+ * tells the instructor who sent it, and their school. Which invitation, and nothing about who.
+ */
+export const learnerJoined = eventType('learner.joined', {
+  schema: staticSchema<{ invitation_id: string }>(),
+});
+
 export const lessonRecordAdded = eventType('lesson_record.added', {
   schema: staticSchema<{ lesson_record_id: string; booking_id: string }>(),
 });
@@ -127,4 +135,13 @@ export const feedbackHandled = eventType('feedback.handled', {
 /** A super admin opened the learner marketplace in a postcode area (ADM-04, M5-19): the people waiting there are told. */
 export const marketplaceRegionOpened = eventType('marketplace_region.opened', {
   schema: staticSchema<{ area: string }>(),
+});
+
+/**
+ * Something changed in a school's arrangements (M9-28, D-295): a pupil offered or taken, a linked
+ * instructor's fees, a learner asked whether to move, a link or a membership ended. The database
+ * queues it with the change; the kind of notice and the row's id are all it carries.
+ */
+export const schoolNotice = eventType('school.notice', {
+  schema: staticSchema<{ kind: string; id: string }>(),
 });

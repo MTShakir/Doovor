@@ -24,6 +24,28 @@ export interface NotificationFacts {
   learnerDetail?: string;
   /** Whether a decision went the person's way: a badge verified rather than refused (D-260). */
   approved?: boolean;
+  /** The school it is about, by name (M9-28). */
+  schoolName?: string;
+  /** The Business somebody would move from, or the one that is paused, by name (D-292). */
+  businessName?: string;
+  /** Which way it went, for a notice about a school that can go more than one way (M9-28, D-295). */
+  outcome?: SchoolNoticeOutcome;
+}
+
+/**
+ * A learner asked to move because their instructor joined a school or left one (D-292), a link
+ * ended by the instructor or by the school, an instructor switched off, a fee paid or written off.
+ */
+export type SchoolNoticeOutcome = 'joined_school' | 'left_school' | 'left' | 'let_go' | 'switched_off' | 'paid' | 'written_off';
+
+/**
+ * A pupil offered to a linked instructor, as much as they see before accepting (D-289):
+ * "Pat, near M1, for automatic lessons".
+ */
+export function offeredPupilLine(pupil: { firstName: string; area: string | null; transmission: 'manual' | 'automatic' | null }): string {
+  return [pupil.firstName, pupil.area === null ? undefined : `near ${pupil.area}`, pupil.transmission === null ? undefined : `for ${pupil.transmission} lessons`]
+    .filter((part): part is string => part !== undefined && part.trim() !== '')
+    .join(', ');
 }
 
 export interface NotificationCopy {
@@ -76,6 +98,7 @@ export function notificationCopy(
 ): NotificationCopy {
   const them = theirName(audience, facts) ?? 'Somebody';
   const line = whenWith(audience, facts);
+  const school = facts.schoolName ?? 'Your school';
 
   switch (kind) {
     case 'booking.confirmed':
@@ -177,11 +200,81 @@ export function notificationCopy(
     case 'subscription.renewing':
       return { title: 'Your Pro renews soon', body: sentence(facts.detail) };
 
+    // The instructor who sent the invitation, and their school, who is told who sent it (D-301).
     case 'learner.joined':
-      return { title: `${them} joined you`, body: sentence(facts.detail ?? 'They can be booked in now') };
+      if (audience === 'school') {
+        return {
+          title: `${them} joined`,
+          body: facts.instructorName
+            ? sentence(`${facts.instructorName} invited them.`, 'They can be booked in now')
+            : 'They accepted an invitation and can be booked in now.',
+        };
+      }
+      return { title: `${them} joined you`, body: 'They accepted your invitation and can be booked in now.' };
 
     // What is next depends on the side they signed up for; the way to ask for help does not.
     case 'account.welcome':
       return { title: `Welcome to ${brand.name}`, body: sentence(welcomeNext[audience], helpLine) };
+
+    // A school's own arrangements (M9-28, D-295).
+    case 'pupil.offered':
+      return {
+        title: `${school} has a pupil for you`,
+        body: sentence(closed(facts.detail), facts.when ? `Answer by ${facts.when}` : 'Answer it in the app'),
+      };
+
+    case 'pupil.taken':
+      return {
+        title: `${facts.learnerName ?? 'Your pupil'} has an instructor`,
+        body: sentence(`${facts.instructorName ?? 'A linked instructor'} took them, and has their details to get in touch`),
+      };
+
+    case 'school_fee.terms_set':
+      return { title: `${school} set your fees`, body: sentence(facts.detail ?? 'See them in the app') };
+
+    // Nothing is collected here yet (M9-14): the fee is paid as the two of them agreed.
+    case 'school_fee.due':
+      return { title: `A fee to ${school} is due`, body: sentence(closed(facts.detail), 'Pay it as you agreed, and they mark it paid') };
+
+    case 'school_fee.settled':
+      return facts.outcome === 'written_off'
+        ? { title: `${school} wrote off a fee`, body: sentence(closed(facts.detail), 'You do not owe it') }
+        : { title: `${school} marked a fee paid`, body: sentence(facts.detail ?? 'See your fees in the app') };
+
+    // The same words as the choice on their home screen (D-292).
+    case 'learner.move_asked': {
+      if (facts.outcome === 'left_school') {
+        const from = facts.businessName ?? facts.instructorName ?? 'Your instructor';
+        return {
+          title: `${from} no longer works with ${school}`,
+          body: sentence(`${school} introduced you. Go back to it and it will find you an instructor, or keep learning with ${from}`),
+        };
+      }
+      return {
+        title: `${facts.instructorName ?? 'Your instructor'} now teaches for ${school}`,
+        body: sentence(`Move to ${school} to keep learning with them, or not now. Nothing changes until you choose`),
+      };
+    }
+
+    case 'school.left':
+      if (audience === 'school') {
+        return {
+          title: `${facts.instructorName ?? 'A linked instructor'} stopped working with you`,
+          body: 'No new fees are raised for them. Pupils you introduced to them are asked whether to come back to you.',
+        };
+      }
+      if (facts.outcome === 'switched_off') {
+        return {
+          title: `${school} switched you off`,
+          body: sentence(
+            'You no longer teach under it.',
+            facts.businessName ? `Open ${facts.businessName} again, and its profile and booking link come back with the learners who stayed with it` : undefined,
+          ),
+        };
+      }
+      return {
+        title: `${school} stopped working with you`,
+        body: 'You keep your business and your learners, and no new fees are raised. Pupils it introduced are asked whether to go back to it.',
+      };
   }
 }

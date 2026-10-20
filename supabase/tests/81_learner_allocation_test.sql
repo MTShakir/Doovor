@@ -88,8 +88,8 @@ select results_eq(
 );
 select results_eq(
   format($$ select i ->> 'name', i ->> 'badge' from jsonb_array_elements((select %L::jsonb) -> 'instructors') as i $$, :'facts'),
-  $$ values ('Ada'::text, 'expired'::text), ('Ian'::text, 'checked'::text), ('Ivy'::text, 'unchecked'::text) $$,
-  'with whether each badge is checked and in date: Ada''s ran out on 1 October, and Ivy''s was never checked'
+  $$ values ('Ada'::text, 'expired'::text), ('Ian'::text, 'checked'::text), ('Ivy'::text, 'checked'::text) $$,
+  'with whether each badge is checked and in date: Ada''s ran out on 1 October, and Ivy''s the school vouches for (D-280)'
 );
 select results_eq(
   format($$ select i ->> 'transmission', (i ->> 'radius_miles')::int, (i ->> 'open_minutes')::int, (i ->> 'free_minutes')::int

@@ -1,6 +1,6 @@
 import { expect, test, type Browser, type Page } from '@playwright/test';
 import { authFile } from '../support/accounts';
-import { learnerInstructorName } from '../support/database';
+import { learnerInstructorName, learnerJoinedEvent, notificationChannels } from '../support/database';
 import { expectAccessible, snap, tapUntil } from '../support/helpers';
 import { linkFromEmail } from '../support/mailpit';
 import { agreeToTerms, uniqueEmail } from '../support/sign-up';
@@ -100,6 +100,31 @@ test.describe('inviting a learner (AUTH-07, M2-03)', () => {
     await expect(page).toHaveURL(/\/app\/learner$/);
 
     expect(await learnerInstructorName(email)).toBe('Sarah Khan');
+
+    // Sarah is told her learner has joined (NTF-03, Appendix B, D-301). The job runner is not part of
+    // a local run, so the test hands the job the event the database wrote.
+    const joined = await learnerJoinedEvent(email);
+    expect(joined, 'accepting the invitation queued the news').not.toBeNull();
+    expect(await (await page.request.post('/dev/events', { data: joined })).json()).toEqual({ written: 1 });
+    // The same event again, as a job tried twice: nobody is told twice.
+    expect(await (await page.request.post('/dev/events', { data: joined })).json()).toEqual({ written: 0 });
+    const invitationId = String(joined?.payload.invitation_id);
+    expect(await notificationChannels('sarah.khan@example.com', 'learner.joined', invitationId)).toEqual(['in_app', 'push']);
+    const sarah = await browser.newContext({ storageState: authFile('instructor') });
+    try {
+      const inbox = await sarah.newPage();
+      await inbox.goto('/notifications');
+      // Both widths invite a Priya Patel at once, so either of hers will do.
+      const news = inbox.getByRole('article').filter({ hasText: 'Priya Patel joined you' }).first();
+      await expect(news).toContainText('They accepted your invitation and can be booked in now.');
+      await snap(inbox, testInfo, 'learner-joined-notice', { fullPage: false });
+      // Opening it goes to the learner's card, ready to book them in.
+      await news.getByRole('link', { name: 'Open' }).click();
+      await expect(inbox).toHaveURL(/\/app\/instructor\/learners\/[0-9a-f-]{36}$/);
+      await expect(inbox.getByRole('heading', { level: 1, name: 'Priya Patel' })).toBeVisible();
+    } finally {
+      await sarah.close();
+    }
 
     // One use only: the same link opened again says so.
     await page.goto(link);

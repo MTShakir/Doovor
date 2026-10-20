@@ -303,6 +303,72 @@ out of scope for M7.
 M7 Definition of Done: every task green, end to end at 390 and 1440 px, and a worked example of a year's
 trading produces the SA103 boxes an accountant would write by hand.
 
+## M9 Schools
+
+Goal: a school can run on Doovor the way UK schools really do (D-278). Most school instructors are
+self-employed and sell their own lessons while the school sends them pupils and charges a weekly fee;
+some schools sell every lesson themselves. Doovor supports both, a school can have both, and nothing
+makes a franchise school the seller of its instructors' lessons by accident. Researched in "How UK
+Driving Schools Work" (20 Oct 2026, https://claude.ai/artifact/FoFZFsV7GgCzb5CDuoBf2Q).
+
+Two kinds of instructor at a school:
+
+- **Members** teach under the school's own Business: the school sells the lessons, takes the money, sets
+  the prices and pays the instructor outside Doovor. This is what M5 built.
+- **Linked instructors** keep their own Business: their own Stripe account, learners, prices, packages
+  and receipts. The school sends them pupils, sees when they are free, recommends or caps prices, and
+  charges them a fee.
+
+Branch: `m9-schools`, in its own worktree, so fixes on `beta-prep` can still be released.
+
+| ID | Task | PRD | Done when |
+|---|---|---|---|
+| M9-01 | The plan, the owner's decisions and the PRD rows they change | SCH-05, SCH-09 | Docs committed |
+| M9-02 | The School plan: £15 a month for the school plus £6 for each instructor, or £150 and £60 a year | 9.18 | Unit test of the price; the pricing page end to end |
+| M9-03 | A school's instructors need no badge check by Doovor: the school vouches; expiry reminders stay | INS-02, INS-03 | pgTAP for listing and allocation; end to end on the profile |
+| M9-04 | A school says who sells its lessons (the school, its instructors, or both) at setup and in Settings, in plain words | SCH-05 | pgTAP; end to end at both widths |
+| M9-05 | `school_links`: a school and an instructor's own Business, invited, active or ended, with RLS | SCH-09 | pgTAP for RLS and every constraint |
+| M9-06 | Linking: the owner sends a link; an instructor with an account links in one tap; a new one sets up their own Business, then links | SCH-09, AUTH-05 | pgTAP for the accept RPC; end to end |
+| M9-07 | The school's Instructors screen shows linked instructors beside members | SCH-02 | End to end at both widths |
+| M9-08 | The school sees when a linked instructor is free and busy, never their money or their learners' details | SCH-02 | pgTAP proves what the school cannot read |
+| M9-09 | Public pages: a linked instructor's profile names the school, and the school's page lists them | PUB-01 | End to end |
+| M9-10 | Recommended and maximum prices for linked instructors, never fixed or a minimum | SCH-04 | pgTAP: a price above a cap is refused; end to end |
+| M9-11 | Fee settings for each linked instructor: weekly or monthly fee, start date, free weeks, a fee per introduced pupil | SCH-09, MNY-06 | pgTAP |
+| M9-12 | Fees fall due on their schedule, by a database job, and each is owed, paid or written off | SCH-09 | pgTAP across a month with a free week |
+| M9-13 | A fee statement each linked instructor and the school both see; the school marks a fee paid outside Doovor | MNY-06 | End to end at both widths |
+| M9-14 | Collecting fees by card or Direct Debit through the school's Stripe account | SCH-09 | Waits for the accountant and solicitor (D-278 answer 8) |
+| M9-15 | `school_enquiries`: new pupils from the school's public page, or added by the office, with consent | GAP-01, SCH-03 | pgTAP for RLS and the public RPC |
+| M9-16 | The school's inbox of new pupils: new, offered, taken, closed | SCH-03 | End to end at both widths |
+| M9-17 | Offer a pupil to one or more linked instructors: the first to accept gets them, and offers lapse | SCH-03 | pgTAP for two accepting at once; end to end |
+| M9-18 | Give a pupil to a member, with the suggestions already built | SCH-03, LRN-06 | End to end |
+| M9-19 | Where each learner came from, the school or the instructor, kept on the relationship | SCH-09 | pgTAP |
+| M9-20 | A fee per introduced pupil falls due when their first lesson is booked | SCH-09 | pgTAP |
+| M9-21 | Pay settings for a member: an hourly rate or a share of the lesson price | MNY-06 | pgTAP |
+| M9-22 | A weekly statement for each member: lessons taught, hours and pay, with a CSV | MNY-06, SCH-05 | End to end downloads and reads it |
+| M9-23 | Joining as a member with an account: their own Business pauses, and their learners choose whether to move | AUTH-05, LRN-07 | pgTAP; end to end |
+| M9-24 | A linked instructor leaves or is let go: the link ends, fees stop, introduced learners choose | SCH-09, LRN-07 | pgTAP; end to end |
+| M9-25 | A member leaves: switched off as in D-120, and their own Business can open again | SCH-02 | End to end |
+| M9-26 | Invite managers, with a manager's permissions | SCH-02 | pgTAP; end to end |
+| M9-27 | The school adds and imports learners | LRN-01 | End to end |
+| M9-28 | Words and a kind for every new audit action, and the notifications for offers, fees and leaving | ADM-07, NTF-03 | Unit tests |
+| M9-29 | The privacy notice and both sets of terms cover linked instructors, school fees and introduced learners | NFR-PRV-01 | Copy guards pass |
+| M9-30 | The M9 report | | Published |
+| M9-31 | Send "New learner invite accepted", found unsent while writing M9-28 | NTF-03 | Withdrawn: `beta-prep` sent it first (D-301) |
+
+Never built, whatever the school asks (D-278): a school holding learners' money to pay instructors
+later; fixed or minimum prices for linked instructors; anything that books, changes or watches DVSA
+tests.
+
+Next, after M9: tests across the school under the 2026 rules (TST-01 to TST-04); the code of practice's
+records (terms before the first lesson, a complaints log); the trainee supervision screen (INS-04);
+insurance, MOT and DBS dates (SCH-06); pausing packages and refunding them pro rata; holiday cover;
+and the Stripe account type, once the advisers have answered.
+
+M9 Definition of Done: every task green except M9-14, which waits for the advisers; end to end at
+390 and 1440 px with axe for both kinds of school: a franchise school links an instructor who already
+has an account, sets a weekly fee, offers a new pupil who is accepted, and both sides see the fee
+statement; a school that sells gives a pupil to a member and downloads that member's weekly statement.
+
 ## Phase 1 requirement coverage
 
 | PRD area | IDs | Tasks |

@@ -71,6 +71,11 @@ select is_empty(
 --   and the pricing page print. Five numbers and nothing about whose places they are (D-243).
 --   current_profile_slug: where an address a profile used to have leads now, so an old link to a
 --   profile or a booking link still arrives. Both ends are public addresses already (D-269).
+--   submit_school_enquiry: somebody asks a school for lessons from its public page, only with their
+--   agreement in words kept with it; it answers nothing about the inbox, and is limited to ten an
+--   hour from one place (M9-15, D-288).
+--   cancellation_policy: the policy a learner books under, shown on the booking link before they
+--   book. Two numbers, for an instructor whose link takes bookings (BOK-09, D-300).
 select is_empty(
   $$ select distinct routine_name from information_schema.routine_privileges
       where routine_schema = 'public' and grantee in ('PUBLIC', 'anon')
@@ -80,7 +85,8 @@ select is_empty(
                                  'city_page', 'sitemap_entries', 'coming_soon_area', 'join_area_waiting_list',
                                  'post_lesson_request', 'learner_capture_by_token', 'leave_learner_capture',
                                  'feature_flags', 'instructor_gallery', 'school_gallery',
-                                 'founding_places', 'current_profile_slug') $$,
+                                 'founding_places', 'current_profile_slug', 'submit_school_enquiry',
+                                 'cancellation_policy') $$,
   'no public function is executable by anon unless allowlisted'
 );
 

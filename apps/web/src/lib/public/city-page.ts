@@ -26,6 +26,8 @@ const cityPageSchema = z.object({
       car: z.string().nullable(),
       areaName: z.string().nullable(),
       hourlyFromPence: z.number().nullable(),
+      /** The platform checked the badge itself, rather than a school vouching for it (D-280, D-285). */
+      platformChecked: z.boolean().default(false),
     }),
   ),
 });

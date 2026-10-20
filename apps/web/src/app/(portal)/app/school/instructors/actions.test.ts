@@ -9,10 +9,14 @@ const chain = { select: () => chain, eq: () => chain, maybeSingle };
 const from = vi.fn(() => chain);
 vi.mock('@/lib/supabase/server', () => ({ createSupabaseServerClient: () => Promise.resolve({ rpc, from }) }));
 vi.mock('@/lib/auth/session', () => ({ requirePortal: () => requirePortal() }));
-vi.mock('@/lib/public/instructor-profile', () => ({ expireInstructorProfile: (id: string) => { expireInstructorProfile(id); } }));
+const expireAll = vi.fn<() => void>();
+vi.mock('@/lib/public/instructor-profile', () => ({
+  expireInstructorProfile: (id: string) => { expireInstructorProfile(id); },
+  expireAllInstructorProfiles: () => { expireAll(); },
+}));
 vi.mock('@/lib/app-url', () => ({ getAppUrl: () => 'https://app.example.test' }));
 
-const { cancelInvitation, changePermission, inviteToSchool, switchMember } = await import('./actions');
+const { cancelInvitation, changePermission, inviteToSchool, letGo, switchMember } = await import('./actions');
 
 const school = { businessId: 'school-1', businessName: 'Quayside Driving School', businessType: 'school', role: 'manager' };
 const membershipId = '6f1c3a52-9d8e-4b7a-8c61-2f0e9b4d7a13';
@@ -28,9 +32,17 @@ describe('inviting from the Instructors screen (SCH-02, M5-13)', () => {
   it('makes a link for the school the manager runs', async () => {
     expect(await inviteToSchool({ channel: 'link', fullName: 'Nia', email: '', phone: '' })).toEqual({
       ok: true,
-      data: { link: 'https://app.example.test/invite/tok_1', schoolName: 'Quayside Driving School', fullName: 'Nia', email: null, phone: null },
+      data: { kind: 'member', link: 'https://app.example.test/invite/tok_1', schoolName: 'Quayside Driving School', fullName: 'Nia', email: null, phone: null },
     });
     expect(rpc).toHaveBeenCalledWith('invite_member', expect.objectContaining({ p_business_id: 'school-1', p_role: 'instructor', p_channel: 'link' }));
+  });
+
+  it('makes a link for a manager, which the database lets only the owner make (D-293)', async () => {
+    expect(await inviteToSchool({ kind: 'manager', channel: 'link', fullName: 'Maya', email: '', phone: '' })).toMatchObject({
+      ok: true,
+      data: { kind: 'manager', fullName: 'Maya' },
+    });
+    expect(rpc).toHaveBeenCalledWith('invite_member', expect.objectContaining({ p_business_id: 'school-1', p_role: 'manager', p_channel: 'link' }));
   });
 
   it('is only for somebody running a school', async () => {
@@ -79,5 +91,45 @@ describe('switching somebody off or on (SCH-02, M5-13)', () => {
     rpc.mockResolvedValueOnce({ data: null, error: { code: '42501', message: 'NOT_ALLOWED' } });
     expect(await changePermission({ membershipId, permission: 'view_revenue', allowed: true })).toMatchObject({ ok: false, message: 'Only the owner decides that.' });
     expect(await changePermission({ membershipId, permission: 'manage_billing', allowed: true })).toMatchObject({ ok: false, code: 'VALIDATION_FAILED' });
+  });
+});
+
+describe('instructors who sell their own lessons (D-282)', () => {
+  const linkId = '0a1b2c3d-4e5f-4061-8728-394a5b6c7d8e';
+
+  it('makes a link for an instructor to link their own business', async () => {
+    expect(await inviteToSchool({ kind: 'link', channel: 'link', fullName: 'Oli', email: '', phone: '' })).toMatchObject({
+      ok: true,
+      data: { kind: 'link', link: 'https://app.example.test/invite/tok_1', schoolName: 'Quayside Driving School' },
+    });
+    expect(rpc).toHaveBeenCalledWith('invite_linked_instructor', {
+      p_school_id: 'school-1',
+      p_channel: 'link',
+      p_full_name: 'Oli',
+      p_email: undefined,
+      p_phone: undefined,
+    });
+  });
+
+  it('says to tell Settings first, for a school that sells every lesson itself', async () => {
+    rpc.mockReturnValueOnce({ single: () => Promise.resolve({ data: null, error: { code: 'P0001', message: 'VALIDATION_FAILED', details: '{"reason": "school_sells"}' } }) });
+    expect(await inviteToSchool({ kind: 'link', channel: 'link', fullName: '', email: '', phone: '' })).toMatchObject({
+      ok: false,
+      message: 'Say in Settings that your instructors sell their own lessons, then link them.',
+    });
+  });
+
+  it('stops linking one, and the public pages are read fresh', async () => {
+    rpc.mockResolvedValueOnce({ data: null, error: null });
+    expect(await letGo(linkId)).toEqual({ ok: true, data: null });
+    expect(rpc).toHaveBeenCalledWith('end_school_link', { p_link_id: linkId });
+    expect(expireAll).toHaveBeenCalled();
+  });
+
+  it('refuses a link that is not one, and passes on a refusal', async () => {
+    expect(await letGo('nope')).toMatchObject({ ok: false, code: 'NOT_FOUND' });
+    rpc.mockResolvedValueOnce({ data: null, error: { code: '42501', message: 'NOT_ALLOWED' } });
+    expect(await letGo(linkId)).toMatchObject({ ok: false, code: 'NOT_ALLOWED' });
+    expect(expireAll).not.toHaveBeenCalled();
   });
 });

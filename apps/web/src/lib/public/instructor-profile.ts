@@ -56,6 +56,13 @@ const profileSchema = z.object({
   inSearch: z.boolean(),
   takingBookings: z.boolean(),
   instantBook: z.boolean(),
+  /** The platform checked the badge itself, rather than a school vouching for it (D-280, D-285). */
+  platformChecked: z.boolean().default(false),
+  /** The school the instructor's own Business is linked to, if any (D-285). */
+  linkedSchool: z
+    .object({ name: z.string(), slug: z.string(), citySlug: z.string().nullable() })
+    .nullable()
+    .default(null),
   business: z.object({
     name: z.string(),
     type: z.enum(['independent', 'school']),

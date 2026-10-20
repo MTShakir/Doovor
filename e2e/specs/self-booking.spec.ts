@@ -24,12 +24,16 @@ test.describe('booking from a shared link (BOK-02, M2-17)', () => {
     ).toBeVisible();
   };
 
-  test('shows who a visitor would be booking with, and what it costs', async ({ page }, testInfo) => {
+  test('shows who a visitor would be booking with, what it costs, and what cancelling costs', async ({ page }, testInfo) => {
     await openLink(page);
 
     await expect(page.getByRole('heading', { level: 1, name: 'Sarah Khan' })).toBeVisible();
     await expect(page.getByText('Volkswagen Polo')).toBeVisible();
     await expect(page.getByLabel('Which lesson?')).toContainText('Standard lesson, 1 hour, £42');
+    // The policy her lessons are booked under, before anything is booked (BOK-09, R-06).
+    await expect(
+      page.getByText('You can cancel for free up to 48 hours before the lesson. After that, cancelling or missing it costs the full price.'),
+    ).toBeVisible();
 
     // A day she actually teaches, so the times are the point of the picture.
     await chooseDate(page.getByLabel('Which day?'), openDay(testInfo.project.name));

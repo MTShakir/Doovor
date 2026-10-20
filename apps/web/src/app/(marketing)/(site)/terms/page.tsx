@@ -29,6 +29,16 @@ export default function LearnerTermsPage() {
         </LegalText>
       </LegalSection>
 
+      <LegalSection title="If you learn through a school">
+        <LegalList
+          items={[
+            'If you ask a driving school for lessons, it may pass you to an instructor who works with it. That instructor may run their own business, and then your lessons are with them, at their prices and under their rules about cancelling.',
+            'If your instructor joins a school, or stops working with the school that introduced you, we ask whether you want to move. Nothing changes until you choose, and the lessons you have had stay on your record.',
+            'Hours you bought in advance are with the Business you bought them from, and stay with it if you move.',
+          ]}
+        />
+      </LegalSection>
+
       <LegalSection title="Booking and cancelling">
         <LegalList
           items={[

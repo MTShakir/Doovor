@@ -46,8 +46,8 @@ export async function placeMetadata(params: PlaceParams): Promise<Metadata> {
     title: heading,
     description:
       count === 0
-        ? `Driving lessons in ${where} on ${brand.name}. Instructors checked by us, with their prices and free times.`
-        : `${String(count)} driving ${count === 1 ? 'instructor' : 'instructors'} in ${where}, checked by us. See prices and free times, and book a lesson.`,
+        ? `Driving lessons in ${where} on ${brand.name}. Instructors with checked badges, their prices and free times.`
+        : `${String(count)} driving ${count === 1 ? 'instructor' : 'instructors'} in ${where}, each with a checked badge. See prices and free times, and book a lesson.`,
     path,
     indexable: !isThinPlace(count),
     card: placeCard(page, params.automatic),
@@ -91,7 +91,7 @@ export async function PlaceContent({ params }: { params: Promise<PlaceParams> })
         <p className="max-w-prose text-body text-grey-700">
           {count === 0
             ? 'No instructors are listed here yet.'
-            : `${String(count)} driving ${count === 1 ? 'instructor' : 'instructors'} checked by us, with their prices. Choose one to see their free times and book.`}
+            : `${String(count)} driving ${count === 1 ? 'instructor' : 'instructors'}, each with a checked badge, and their prices. Choose one to see their free times and book.`}
         </p>
       </div>
       <SchoolInstructors
@@ -111,6 +111,8 @@ export async function PlaceContent({ params }: { params: Promise<PlaceParams> })
             car: instructor.car,
             takingBookings: true,
             hourlyFromPence: instructor.hourlyFromPence,
+            // The platform's tick is for a badge it checked: a school vouches for its own and its linked instructors (D-280).
+            platformChecked: instructor.platformChecked,
           };
         })}
       />

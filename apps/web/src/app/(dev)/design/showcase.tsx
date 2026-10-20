@@ -2,6 +2,7 @@
 
 import { brand, type ColourToken } from '@repo/config/brand';
 import { horizontalLogo } from '@repo/config/logo/horizontal';
+import type { UseFormRegisterReturn } from 'react-hook-form';
 import { stackedLogo } from '@repo/config/logo/stacked';
 import { taglineLogo } from '@repo/config/logo/tagline';
 import { wheelLogo } from '@repo/config/logo/wheel';
@@ -25,6 +26,7 @@ import {
 } from '@/components/public/instructor-profile';
 import { Breadcrumbs, PlaceLinks } from '@/components/public/place-links';
 import { SchoolHeader, SchoolInstructors } from '@/components/public/school-profile';
+import { LessonSellerCards } from '@/components/school/lesson-seller-cards';
 import { BookingLinkCard } from '@/components/share/booking-link-card';
 import { AreaPanel, CaptureDone } from '@/components/capture/coming-soon';
 import { BookingGlimpse, GlimpseAlone, GlimpsePair, MoneyGlimpse, ProfileGlimpse, ProgressGlimpse, SchoolGlimpse, TaxYearGlimpse, TodayGlimpse } from '@/components/site/glimpses';
@@ -79,8 +81,27 @@ import { AuditEntries, AuditFiltersForm, AuditLogSkeleton, AuditPager } from '@/
 import type { AuditEntry } from '@/lib/admin/audit';
 import type { PlatformDashboard } from '@/lib/admin/dashboard';
 import type { SchoolOverview } from '@/lib/school/overview';
-import { SwitchOffDialog, TeamSections } from '@/components/school/team';
+import { LetGoDialog, SwitchOffDialog, TeamSections } from '@/components/school/team';
 import { AllocationChoices } from '@/components/school/allocation-choices';
+import { LinkedFreeBusy } from '@/components/school/linked-free-busy';
+import { EnquiryForm } from '@/components/school/enquiry-form';
+import { EnquiryInbox } from '@/components/school/enquiry-inbox';
+import { GivePupilSheet } from '@/components/school/give-pupil-sheet';
+import { OfferPupilSheet } from '@/components/school/offer-pupil-sheet';
+import { PupilOffers } from '@/components/school/pupil-offers';
+import { ManualLearnerForm } from '@/app/(portal)/app/instructor/learners/manual-form';
+import { MemberPayForm } from '@/components/school/member-pay-form';
+import { PayWeekView } from '@/components/school/pay-week';
+import type { PayWeek } from '@/lib/school/pay';
+import type { PupilOffer } from '@/lib/school/pupil-offers';
+import type { Enquiry } from '@/lib/school/enquiries';
+import { FeeList } from '@/components/school/fee-list';
+import { FeeTermsForm } from '@/components/school/fee-terms-form';
+import { LinkedFeesCard } from '@/components/school/linked-fees';
+import type { FeeLine, LinkedFees } from '@/lib/school/fees';
+import { PriceGuideForm } from '@/components/school/price-guide-form';
+import { PriceGuideNote } from '@/components/school/price-guide-note';
+import type { LinkedDay } from '@/lib/school/linked-diary';
 import { PackagesEditor } from '@/components/catalogue/packages-editor';
 import { PricesForm } from '@/components/catalogue/prices-form';
 import type { SchoolTeam } from '@/lib/school/team';
@@ -433,6 +454,162 @@ const exampleRegions: AdminRegion[] = [
   { area: 'SK', label: 'SK, Stockport', instructors: 12, freeHours: 96, waiting: 17, requests: 2, open: false, switchedOn: null, meetsRule: false, instructorsShort: 13, hoursShort: 54 },
 ];
 
+// People who asked a school for lessons, written out as the server would (D-288).
+const exampleEnquiries: Enquiry[] = [
+  {
+    enquiryId: 'design-enquiry-1',
+    fullName: 'Pat Pupil',
+    email: 'pat@example.com',
+    phone: '07700 900123',
+    postcode: 'M1 1AE',
+    transmission: 'automatic',
+    note: 'Weekday evenings, after six',
+    source: 'public',
+    status: 'new',
+    receivedOn: 'Tue 20 Oct',
+    closedReason: null,
+    offeredTo: 'Offered to Khan Driving and Price Driving, until Wed 21 Oct, 14:00',
+    takenBy: null,
+  },
+  {
+    enquiryId: 'design-enquiry-2',
+    fullName: 'Sam Caller',
+    email: null,
+    phone: '07700 900124',
+    postcode: 'M14 5RL',
+    transmission: null,
+    note: null,
+    source: 'office',
+    status: 'new',
+    receivedOn: 'Mon 19 Oct',
+    closedReason: null,
+    offeredTo: null,
+    takenBy: null,
+  },
+];
+const exampleEnquiryCounts = { new: 2, offered: 1, taken: 4, closed: 3 };
+// A week of pay for a school's own instructors, written out as the server would (D-291).
+const examplePayWeek: PayWeek = {
+  weekStart: '2026-10-12',
+  label: 'Mon 12 Oct to Sun 18 Oct',
+  previous: '2026-10-05',
+  next: '2026-10-19',
+  members: [
+    {
+      membershipId: 'design-member-1',
+      name: 'Emma Clarke',
+      active: true,
+      basis: 'hourly',
+      hourlyPence: 1800,
+      sharePercent: null,
+      payWords: '£18 an hour',
+      now: { basis: 'hourly', hourlyPence: 2000, sharePercent: null, words: '£20 an hour' },
+      lessons: [
+        { bookingId: 'design-pay-1', startsAt: '2026-10-13T09:00:00Z', when: 'Tue 13 Oct, 10:00', length: '1h', minutes: 60, learnerName: 'Lee One', noShow: false, pricePence: 4200, payPence: 1800 },
+        { bookingId: 'design-pay-2', startsAt: '2026-10-15T09:00:00Z', when: 'Thu 15 Oct, 10:00', length: '1.5h', minutes: 90, learnerName: 'Lee One', noShow: true, pricePence: 6000, payPence: 2700 },
+      ],
+      taught: '2 hours 30 minutes',
+      minutes: 150,
+      pricePence: 10200,
+      payPence: 4500,
+    },
+    {
+      membershipId: 'design-member-2',
+      name: 'Tom Walsh',
+      active: true,
+      basis: null,
+      hourlyPence: null,
+      sharePercent: null,
+      payWords: 'No pay set',
+      now: { basis: null, hourlyPence: null, sharePercent: null, words: null },
+      lessons: [],
+      taught: 'Nothing taught',
+      minutes: 0,
+      pricePence: 0,
+      payPence: null,
+    },
+  ],
+};
+
+// What a linked instructor sees of pupils offered and accepted (D-289).
+const examplePupilOffers: PupilOffer[] = [
+  {
+    offerId: 'design-offer-1',
+    enquiryId: 'design-enquiry-1',
+    status: 'open',
+    schoolName: 'Quayside Driving School',
+    answerBy: 'Wed 21 Oct, 14:00',
+    firstName: 'Pat',
+    district: 'M1',
+    transmission: 'automatic',
+    note: 'Weekday evenings',
+    contact: null,
+    learnerAdded: false,
+  },
+  {
+    offerId: 'design-offer-2',
+    enquiryId: 'design-enquiry-2',
+    status: 'accepted',
+    schoolName: 'Quayside Driving School',
+    answerBy: 'Tue 20 Oct, 09:00',
+    firstName: 'Sam',
+    district: 'M14',
+    transmission: null,
+    note: null,
+    contact: { fullName: 'Sam Caller', email: null, phone: '07700 900124', phoneE164: '+447700900124', postcode: 'M14 5RL' },
+    learnerAdded: false,
+  },
+];
+const exampleAllocation = {
+  suggestions: [{ instructorId: 'design-ian', name: 'Emma Clarke', area: 'covers' as const, freeMinutes: 600, reasons: ['Teaches automatic', 'Covers M1', '10 hours free in the next fortnight'] }],
+  everybody: [
+    { id: 'design-ian', name: 'Emma Clarke' },
+    { id: 'design-tom', name: 'Tom Walsh' },
+  ],
+};
+
+// Fees a linked instructor owes, written out as the server would (D-287).
+const exampleFees: FeeLine[] = [
+  { feeId: 'design-fee-3', label: 'Week from Mon 23 Nov', due: 'Mon 23 Nov', amountPence: 5000, status: 'owed', note: null },
+  { feeId: 'design-fee-2', label: 'Week from Mon 16 Nov', due: 'Mon 16 Nov', amountPence: 5000, status: 'paid', note: 'Bank transfer' },
+  { feeId: 'design-fee-1', label: 'Week from Mon 9 Nov', due: 'Mon 9 Nov', amountPence: 5000, status: 'written_off', note: null },
+];
+const exampleLinkedFees: LinkedFees = {
+  linkId: '0a1b2c3d-4e5f-4061-8728-394a5b6c7d8e',
+  name: 'Sarah Khan',
+  businessName: 'Khan Driving',
+  terms: { period: 'weekly', feePence: 5000, startsOn: '2026-11-02', freeWeeks: 1, pupilFeePence: 2000 },
+  typed: { period: 'weekly', fee: '50', startsOn: '2026-11-02', freeWeeks: '1', pupilFee: '20' },
+  words: ['£50 a week, the first due Mon 9 Nov, after 1 free week', '£20 for each pupil the school introduces'],
+  owedPence: 5000,
+  fees: exampleFees,
+};
+
+// A Tuesday, with the times written out as the server would.
+const exampleLinkedDays: LinkedDay[] = [
+  {
+    instructorId: 'design-linked-1',
+    name: 'Sarah Khan',
+    businessName: 'Sarah Khan Driving',
+    allDay: null,
+    busyMinutes: 330,
+    parts: [
+      { key: 'a', kind: 'lesson', allDay: false, from: '09:00', to: '10:30' },
+      { key: 'b', kind: 'lesson', allDay: false, from: '11:00', to: '12:00' },
+      { key: 'c', kind: 'away', allDay: false, from: '14:00', to: '17:00' },
+    ],
+  },
+  { instructorId: 'design-linked-2', name: 'Tom Price', businessName: 'Price Driving', allDay: null, busyMinutes: 0, parts: [] },
+  {
+    instructorId: 'design-linked-3',
+    name: 'Ama Owusu',
+    businessName: 'Ama Owusu Driving',
+    allDay: 'away',
+    busyMinutes: 1440,
+    parts: [{ key: 'a', kind: 'away', allDay: true, from: '00:00', to: '00:00' }],
+  },
+];
+
 const exampleTeam: SchoolTeam = {
   members: [
     { membershipId: 'team-1', isYou: false, role: 'instructor', active: true, name: 'Emma Clarke', email: null, phone: null, instructorId: 'team-p1', photoPath: null, setOwnPrices: false, viewRevenue: false, lessonsToCome: 18 },
@@ -441,7 +618,13 @@ const exampleTeam: SchoolTeam = {
     { membershipId: 'team-4', isYou: false, role: 'manager', active: true, name: 'Omar Hussain', email: null, phone: null, instructorId: null, photoPath: null, setOwnPrices: false, viewRevenue: true, lessonsToCome: 0 },
     { membershipId: 'team-5', isYou: false, role: 'instructor', active: false, name: 'Ravi Patel', email: null, phone: null, instructorId: 'team-p5', photoPath: null, setOwnPrices: false, viewRevenue: false, lessonsToCome: 3 },
   ],
-  invitations: [{ invitationId: 'team-i1', fullName: 'Nia Newcomer', email: null, phone: '+447700900555', expiresAt: '2026-09-30T10:00:00Z', expiresOn: 'Wed 30 Sep' }],
+  linked: [
+    { linkId: 'link-1', businessId: 'link-b1', businessName: 'Khan Driving', name: 'Sarah Khan', email: null, phone: '+447700900111', instructorId: 'link-p1', photoPath: null, qualification: 'adi', badgeExpiresOn: 'Wed 30 Jun 2027', linkedOn: 'Tue 20 Oct' },
+  ],
+  invitations: [
+    { invitationId: 'team-i1', kind: 'member', fullName: 'Nia Newcomer', email: null, phone: '+447700900555', expiresAt: '2026-09-30T10:00:00Z', expiresOn: 'Wed 30 Sep' },
+    { invitationId: 'team-i2', kind: 'link', fullName: 'Oli Own', email: 'oli@example.test', phone: null, expiresAt: '2026-10-02T10:00:00Z', expiresOn: 'Fri 2 Oct' },
+  ],
 };
 
 const exampleEverybody = [
@@ -531,6 +714,7 @@ const iconNames: Record<keyof typeof icons, string> = {
   verification: 'Badges to check',
   learners: 'Learners',
   instructors: 'Instructors',
+  school: 'Your school',
   pickupPoints: 'Pickup points',
   bookkeeping: 'Bookkeeping',
   refer: 'Refer an instructor',
@@ -705,6 +889,11 @@ const slots = ['09:00', '10:30', '12:00', '13:30', '15:00', '16:30', '18:00'].ma
 /** Where the app is, as the Install the app page names it to somebody in another browser on an iPhone. */
 const appHost = new URL(brand.appUrl).host;
 
+/** A form's hold on a field, for one shown on its own: the design page saves nothing. */
+function showcaseField(name: string): UseFormRegisterReturn {
+  return { name, onChange: () => Promise.resolve(), onBlur: () => Promise.resolve(), ref: () => undefined };
+}
+
 export function DesignShowcase() {
   const [postcode, setPostcode] = useState('LS6 3HN');
   const [otp, setOtp] = useState('1234');
@@ -721,6 +910,7 @@ export function DesignShowcase() {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [picked, setPicked] = useState<string | undefined>(undefined);
   const [switchingOff, setSwitchingOff] = useState<SchoolTeam['members'][number] | null>(null);
+  const [lettingGo, setLettingGo] = useState<SchoolTeam['linked'][number] | null>(null);
   const [document, setDocument] = useState<string | undefined>(undefined);
   const [pickup, setPickup] = useState<string | undefined>(undefined);
   const [suspendingBusiness, setSuspendingBusiness] = useState<AdminBusiness | null>(null);
@@ -933,6 +1123,12 @@ export function DesignShowcase() {
           <Checkbox label="Disabled option" disabled />
           <Switch label="Lesson reminders" description="Email and push, 24 hours before." checked={notify} onCheckedChange={setNotify} />
           <Switch label="Instant book" disabled />
+        </div>
+        <Label>Who sells a school&apos;s lessons: nothing chosen for them, an answer, and what to fix (D-281)</Label>
+        <div className="grid items-start gap-6 md:grid-cols-3">
+          <LessonSellerCards idPrefix="design-a-" field={showcaseField('design-seller-a')} defaultValue={null} />
+          <LessonSellerCards idPrefix="design-b-" field={showcaseField('design-seller-b')} defaultValue="instructors" />
+          <LessonSellerCards idPrefix="design-c-" field={showcaseField('design-seller-c')} defaultValue={null} error="Choose who sells your lessons" />
         </div>
         <Label>Skill rating, 1 to 5 (M4-05)</Label>
         <div className="grid max-w-md gap-4">
@@ -1340,8 +1536,9 @@ export function DesignShowcase() {
           <GalleryHeader name="Quayside Driving School" profileHref="/design" shown={120} total={134} />
         </div>
         <Label>
-          Header: an independent instructor by their Business name, with their own name above it and prices, and a trainee
-          at a school by their own name, with no car or prices yet (PUB-01, M5-02, D-269)
+          Header: an independent instructor by their Business name, with their own name above it and prices, a trainee
+          at a school by their own name, with no car or prices yet, and an instructor whose Business is linked to a
+          school that vouched for them (PUB-01, M5-02, D-269, D-285)
         </Label>
         <div className="grid items-start gap-6 md:grid-cols-2">
           <ProfileHeader
@@ -1349,6 +1546,7 @@ export function DesignShowcase() {
             personalName="Sarah Khan"
             qualification="adi"
             school={null}
+            platformChecked
             transmission="manual"
             car="Volkswagen Polo"
             dualControls
@@ -1358,10 +1556,22 @@ export function DesignShowcase() {
             name="Aisha Rahman"
             qualification="pdi"
             school={{ name: 'Quayside Driving School', href: '#school' }}
+            platformChecked={false}
             transmission="both"
             car={null}
             dualControls={false}
             lessons={[]}
+          />
+          <ProfileHeader
+            name="Owusu Driving"
+            personalName="Ama Owusu"
+            qualification="adi"
+            school={{ name: 'Quayside Driving School', href: '#school', linked: true }}
+            platformChecked={false}
+            transmission="automatic"
+            car="Toyota Yaris"
+            dualControls
+            lessons={[{ durationMinutes: 60, pricePence: 4000 }]}
           />
         </div>
         <Label>Booking: open, a badge out of date (INS-03), and in a Business's own colour (D-229)</Label>
@@ -1423,18 +1633,18 @@ export function DesignShowcase() {
           <SchoolInstructors
             idPrefix="school-"
             instructors={[
-              { href: '#emma', name: 'Emma Clarke', qualification: 'adi', transmission: 'automatic', car: 'Toyota Yaris Hybrid', takingBookings: true, hourlyFromPence: 4400 },
-              { href: '#tom', name: 'Tom Walsh', qualification: 'adi', transmission: 'manual', car: 'Ford Fiesta', takingBookings: false, hourlyFromPence: 4200 },
+              { href: '#emma', name: 'Emma Clarke', qualification: 'adi', transmission: 'automatic', car: 'Toyota Yaris Hybrid', takingBookings: true, hourlyFromPence: 4400, platformChecked: false },
+              { href: '#tom', name: 'Tom Walsh', qualification: 'adi', transmission: 'manual', car: 'Ford Fiesta', takingBookings: false, hourlyFromPence: 4200, platformChecked: false },
             ]}
           />
         </div>
-        <Label>On a city page: somebody running their own Business by its name, with theirs above, beside a school&apos;s instructor (D-269)</Label>
+        <Label>On a city page: somebody running their own Business by its name, with theirs above, beside a school&apos;s instructor (D-269); the platform&apos;s tick only for the badge it checked (D-280)</Label>
         <div className="max-w-xl">
           <SchoolInstructors
             idPrefix="city-list-"
             instructors={[
-              { href: '#khan', name: 'Khan Driving', personalName: 'Sarah Khan', qualification: 'adi', transmission: 'manual', car: 'Volkswagen Polo', takingBookings: true, hourlyFromPence: 4200 },
-              { href: '#emma-city', name: 'Emma Clarke', qualification: 'adi', transmission: 'automatic', car: 'Toyota Yaris Hybrid', takingBookings: true, hourlyFromPence: 4400 },
+              { href: '#khan', name: 'Khan Driving', personalName: 'Sarah Khan', qualification: 'adi', transmission: 'manual', car: 'Volkswagen Polo', takingBookings: true, hourlyFromPence: 4200, platformChecked: true },
+              { href: '#emma-city', name: 'Emma Clarke', qualification: 'adi', transmission: 'automatic', car: 'Toyota Yaris Hybrid', takingBookings: true, hourlyFromPence: 4400, platformChecked: false },
             ]}
           />
         </div>
@@ -1599,7 +1809,7 @@ export function DesignShowcase() {
               tone="grey"
               features={[
                 { icon: CreditCard, title: 'Paid, not chased', description: 'Cards, packages of hours, and cash recorded in two taps.' },
-                { icon: BadgeCheck, title: 'Instructors checked by us', description: 'The blue tick means we have checked the badge.' },
+                { icon: BadgeCheck, title: 'Badges checked', description: 'The blue tick means we have checked the badge.' },
                 { icon: WifiOff, title: 'Works without signal', description: 'Today and lesson records work offline.' },
               ]}
             />
@@ -1704,16 +1914,126 @@ export function DesignShowcase() {
         <InstructorWeeks instructors={[]} week={exampleWeek} idPrefix="design-weeks-empty" />
         <Label>Loading</Label>
         <OverviewSkeleton />
-        <Label>Team, as the owner sees it, with an invitation waiting and somebody switched off</Label>
+        <Label>Asking a school for lessons, on its page and from the office (D-288)</Label>
+        <div className="grid items-start gap-6 md:grid-cols-2">
+          <EnquiryForm
+            mode="public"
+            idPrefix="design-ask-"
+            consentWords="I agree to Quayside Driving School keeping these details and passing them to one of its instructors, who will contact me about lessons."
+            onSave={savedNothing}
+            onSaved={() => undefined}
+          />
+          <EnquiryForm
+            mode="office"
+            idPrefix="design-office-"
+            consentWords="They agreed to Quayside Driving School keeping these details and passing them to one of its instructors, who will contact them about lessons."
+            onSave={savedNothing}
+            onSaved={() => undefined}
+          />
+        </div>
+        <Label>New pupils: two waiting, one from the page and one added by the office, and a part with nobody in it</Label>
+        <EnquiryInbox
+          status="new"
+          counts={exampleEnquiryCounts}
+          enquiries={exampleEnquiries}
+          consentWords="They agreed to Quayside Driving School keeping these details."
+          handlers={{ add: savedNothing, close: savedNothing, reopen: savedNothing, refresh: () => undefined }}
+        />
+        <EnquiryInbox
+          status="closed"
+          counts={{ ...exampleEnquiryCounts, closed: 0 }}
+          enquiries={[]}
+          consentWords="They agreed to Quayside Driving School keeping these details."
+          handlers={{ add: savedNothing, close: savedNothing, reopen: savedNothing, refresh: () => undefined }}
+        />
+        <Label>A week of instructor pay, as the school sees it, with a way to change pay, and as an instructor sees their own (D-291)</Label>
+        <PayWeekView week={examplePayWeek} base="/design" csvHref="#csv" handlers={{ savePay: savedNothing, refresh: () => undefined }} />
+        <PayWeekView week={{ ...examplePayWeek, members: examplePayWeek.members.slice(0, 1) }} base="/design" csvHref="#csv" />
+        <Label>The pay form: nothing set, and £18 an hour</Label>
+        <div className="grid items-start gap-6 md:grid-cols-2">
+          <MemberPayForm idPrefix="design-pay-a-" membershipId="0a1b2c3d-4e5f-4061-8728-394a5b6c7d8e" basis={null} hourlyPence={null} sharePercent={null} onSave={savedNothing} onSaved={() => undefined} />
+          <MemberPayForm idPrefix="design-pay-b-" membershipId="0a1b2c3d-4e5f-4061-8728-394a5b6c7d8e" basis="hourly" hourlyPence={1800} sharePercent={null} onSave={savedNothing} onSaved={() => undefined} />
+        </div>
+        <Label>Offering a pupil to linked instructors, and giving one to the school&apos;s own, each opened from a button (D-289)</Label>
+        <ShowcaseOfferAndGive />
+        <Label>A learner the school already teaches, added by the office with one of its instructors or nobody yet (D-294)</Label>
+        <div className="md:max-w-md">
+          <ManualLearnerForm
+            add={() => Promise.resolve({ ok: true as const, data: { learnerId: 'design-learner-1' } })}
+            instructors={exampleEverybody}
+            onAdded={() => undefined}
+          />
+        </div>
+        <Label>Pupils a school offers a linked instructor: one to answer, and one accepted with their details (D-289)</Label>
+        <PupilOffers school="Quayside Driving School" offers={examplePupilOffers} handlers={{ answer: savedNothing, refresh: () => undefined }} />
+        <PupilOffers school="Quayside Driving School" offers={[]} handlers={{ answer: savedNothing, refresh: () => undefined }} />
+        <Label>Fees from a linked instructor, as the school sees them: the terms, what is owed, and each fee to mark paid or write off (D-287)</Label>
+        <LinkedFeesCard
+          idPrefix="design-"
+          linked={exampleLinkedFees}
+          handlers={{ saveTerms: savedNothing, settle: savedNothing, refresh: () => undefined }}
+        />
+        <Label>The same fees as the instructor sees them, and none yet</Label>
+        <div className="grid items-start gap-6 md:grid-cols-2">
+          <FeeList fees={exampleFees} />
+          <FeeList fees={[]} />
+        </div>
+        <Label>The fees form: none yet, and a weekly fee with free weeks and a fee for each pupil</Label>
+        <div className="grid items-start gap-6 md:grid-cols-2">
+          <FeeTermsForm
+            idPrefix="design-fees-a-"
+            linkId="0a1b2c3d-4e5f-4061-8728-394a5b6c7d8e"
+            current={{ period: '', fee: '', startsOn: '', freeWeeks: '0', pupilFee: '' }}
+            onSave={savedNothing}
+          />
+          <FeeTermsForm idPrefix="design-fees-b-" linkId="0a1b2c3d-4e5f-4061-8728-394a5b6c7d8e" current={exampleLinkedFees.typed} onSave={savedNothing} />
+        </div>
+        <Label>Prices for linked instructors: none yet, and a recommended price with a most (D-286)</Label>
+        <div className="grid items-start gap-6 md:grid-cols-2">
+          <PriceGuideForm idPrefix="design-a-" recommendedPence={null} maxPence={null} onSave={savedNothing} />
+          <PriceGuideForm idPrefix="design-b-" recommendedPence={4000} maxPence={4500} onSave={savedNothing} />
+        </div>
+        <Label>What a linked instructor is told: both, a recommendation alone, and prices above the most (D-286)</Label>
+        <div className="grid items-start gap-4 md:grid-cols-3">
+          <PriceGuideNote school="Quayside Driving School" recommendedHourlyPence={4000} maxHourlyPence={4500} />
+          <PriceGuideNote school="Quayside Driving School" recommendedHourlyPence={4000} maxHourlyPence={null} />
+          <PriceGuideNote
+            school="Quayside Driving School"
+            recommendedHourlyPence={null}
+            maxHourlyPence={4500}
+            above={['Standard lesson, 1 hour, £50', '10 hours, £480']}
+          />
+        </div>
+        <Label>The diary&apos;s linked instructors: busy with lessons and time off, free all day, and away all week (D-284)</Label>
+        <LinkedFreeBusy instructors={exampleLinkedDays} />
+        <Label>Team, as the owner of a school that sells some lessons and links instructors who sell their own sees it, with invitations of both kinds and somebody switched off (D-282)</Label>
         <TeamSections
           members={exampleTeam.members}
+          linked={exampleTeam.linked}
           invitations={exampleTeam.invitations}
+          lessonSeller="both"
           handlers={{
             viewerIsOwner: true,
             busyId: 'team-2',
             onPermission: () => undefined,
             onSwitch: (member, active) => { if (!active) setSwitchingOff(member); },
             onCancelInvitation: () => undefined,
+            onLetGo: setLettingGo,
+          }}
+        />
+        <Label>A school whose instructors all sell their own lessons, with nobody linked yet</Label>
+        <TeamSections
+          members={[]}
+          linked={[]}
+          invitations={[]}
+          lessonSeller="instructors"
+          handlers={{
+            viewerIsOwner: true,
+            busyId: null,
+            onPermission: () => undefined,
+            onSwitch: () => undefined,
+            onCancelInvitation: () => undefined,
+            onLetGo: () => undefined,
           }}
         />
         <div>
@@ -1751,6 +2071,17 @@ export function DesignShowcase() {
           pending={false}
           onConfirm={() => { setSwitchingOff(null); }}
           onCancel={() => { setSwitchingOff(null); }}
+        />
+        <div>
+          <Button variant="secondary" onClick={() => { setLettingGo(exampleTeam.linked[0] ?? null); }}>
+            Stop linking Sarah Khan
+          </Button>
+        </div>
+        <LetGoDialog
+          linked={lettingGo}
+          pending={false}
+          onConfirm={() => { setLettingGo(null); }}
+          onCancel={() => { setLettingGo(null); }}
         />
       </Section>
 
@@ -2054,8 +2385,9 @@ export function DesignShowcase() {
           <NotificationBell href="/notifications" unread={12} />
         </div>
         <div className="max-w-sm overflow-hidden rounded-2xl border border-grey-200">
-          <div className="flex min-h-14 items-center justify-between gap-2 border-b border-grey-200 bg-white pr-2 pl-4">
-            <Logo art={horizontalLogo} label={brand.name} className="block h-8 text-black" />
+          {/* Sized as MobileTopBar is, in pixels, so it keeps its size at any text size (D-304). */}
+          <div className="flex min-h-[56px] items-center justify-between gap-[8px] border-b border-grey-200 bg-white pr-[8px] pl-[16px]">
+            <Logo art={horizontalLogo} label={brand.name} className="block h-[32px] text-black" />
             <NotificationBell href="/notifications" unread={3} />
           </div>
           <p className="px-4 py-6 text-small text-grey-700">The top bar as it looks on a phone, above the screen&apos;s own title.</p>
@@ -2076,5 +2408,39 @@ export function DesignShowcase() {
         </div>
       </Section>
     </main>
+  );
+}
+
+/** The two sheets for a new pupil, each opened from its own button (D-289). */
+function ShowcaseOfferAndGive() {
+  const [offering, setOffering] = useState<{ enquiryId: string; fullName: string } | null>(null);
+  const [giving, setGiving] = useState<{ enquiryId: string; fullName: string } | null>(null);
+  const pat = { enquiryId: 'design-enquiry-1', fullName: 'Pat Pupil' };
+  return (
+    <div className="flex flex-wrap gap-2">
+      <Button variant="secondary" onClick={() => { setOffering(pat); }}>
+        Offer to instructors
+      </Button>
+      <Button variant="secondary" onClick={() => { setGiving(pat); }}>
+        Give to an instructor
+      </Button>
+      <OfferPupilSheet
+        pupil={offering}
+        linked={[
+          { linkId: 'design-link-1', name: 'Sarah Khan', businessName: 'Khan Driving' },
+          { linkId: 'design-link-2', name: 'Tom Price', businessName: 'Price Driving' },
+        ]}
+        onOffer={savedNothing}
+        onClose={() => { setOffering(null); }}
+        onOffered={() => { setOffering(null); }}
+      />
+      <GivePupilSheet
+        pupil={giving}
+        loadAllocation={() => Promise.resolve({ ok: true as const, data: exampleAllocation })}
+        onGive={savedNothing}
+        onClose={() => { setGiving(null); }}
+        onGiven={() => { setGiving(null); }}
+      />
+    </div>
   );
 }

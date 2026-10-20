@@ -33,6 +33,25 @@ const schoolSchema = z.object({
       hourlyFromPence: z.number().nullable(),
     }),
   ),
+  /** Instructors who run their own Business, linked to the school (D-282, D-285). */
+  linked: z
+    .array(
+      z.object({
+        instructorId: z.string(),
+        slug: z.string(),
+        name: z.string(),
+        business: z.object({ name: z.string(), type: z.enum(['independent', 'school']) }),
+        photoPath: z.string().nullable(),
+        qualification: qualificationSchema,
+        transmission: z.enum(['manual', 'automatic', 'both']),
+        car: z.string().nullable(),
+        citySlug: z.string().nullable(),
+        takingBookings: z.boolean(),
+        hourlyFromPence: z.number().nullable(),
+        platformChecked: z.boolean(),
+      }),
+    )
+    .default([]),
   lessons: z.array(z.object({ name: z.string(), durationMinutes: z.number(), pricePence: z.number() })),
   packages: z.array(
     z.object({ name: z.string(), minutes: z.number(), pricePence: z.number(), expiryDays: z.number().nullable() }),
@@ -69,6 +88,6 @@ export async function schoolProfile(slug: string): Promise<SchoolProfilePage | n
 
   const school = schoolSchema.parse(data);
   cacheLife('hours');
-  for (const instructor of school.instructors) cacheTag(profileTags.instructor(instructor.instructorId));
+  for (const instructor of [...school.instructors, ...school.linked]) cacheTag(profileTags.instructor(instructor.instructorId));
   return school;
 }

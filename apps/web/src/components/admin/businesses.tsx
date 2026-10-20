@@ -24,7 +24,7 @@ const badgeWords = {
   approved: 'verified',
   rejected: 'badge not approved',
 } as const;
-const standingWords = { pending: 'Being set up', active: 'In good standing', suspended: 'Suspended' } as const;
+const standingWords = { pending: 'Being set up', active: 'In good standing', suspended: 'Suspended', paused: 'Paused while its owner teaches under a school' } as const;
 
 function rowSummary(row: AdminBusinessRow): string {
   return [

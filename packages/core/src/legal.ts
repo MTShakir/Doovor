@@ -10,9 +10,9 @@ import { parseLocalDate, type LocalDate } from './time/calendar.ts';
  * and everybody is shown the privacy notice.
  */
 export const legalDocuments = {
-  learnerTerms: { title: 'Terms for learners', path: '/terms', updated: '2026-09-30' },
-  businessTerms: { title: 'Terms for instructors', path: '/business-terms', updated: '2026-09-30' },
-  privacy: { title: 'Privacy notice', path: '/privacy', updated: '2026-09-30' },
+  learnerTerms: { title: 'Terms for learners', path: '/terms', updated: '2026-10-20' },
+  businessTerms: { title: 'Terms for instructors', path: '/business-terms', updated: '2026-10-20' },
+  privacy: { title: 'Privacy notice', path: '/privacy', updated: '2026-10-20' },
 } as const satisfies Record<string, { title: string; path: string; updated: LocalDate }>;
 
 export type LegalDocument = (typeof legalDocuments)[keyof typeof legalDocuments];

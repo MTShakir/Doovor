@@ -11,8 +11,11 @@ export interface InvitationMessage {
   link: string;
   /** Who is inviting them, for the message itself: the instructor, or the school. */
   instructorName: string;
-  /** A learner invited to book, unless this invites an instructor to teach for a school. */
-  kind?: 'learner' | 'member';
+  /**
+   * A learner invited to book, unless this invites an instructor to teach for a school (member)
+   * or to link the business they run themselves to one (link, D-282).
+   */
+  kind?: 'learner' | 'member' | 'link' | 'manager';
   /** The learner's name, when the instructor gave one. */
   learnerName?: string | null;
   /** Where to send it, for the channels that need an address. */
@@ -26,11 +29,20 @@ export function invitationText(message: InvitationMessage): string {
   if (message.kind === 'member') {
     return `${greeting}you are invited to teach with ${message.instructorName}. Set up your instructor account here: ${message.link}`;
   }
+  if (message.kind === 'link') {
+    return `${greeting}${message.instructorName} would like to send you pupils. Link your instructor business here, and keep your own prices, payments and learners: ${message.link}`;
+  }
+  if (message.kind === 'manager') {
+    return `${greeting}${message.instructorName} would like you to help run it. Set up your account here: ${message.link}`;
+  }
   return `${greeting}it is ${message.instructorName}. Book your driving lessons with me here: ${message.link}`;
 }
 
 export function invitationSubject(message: InvitationMessage): string {
-  return message.kind === 'member' ? `Teach with ${message.instructorName}` : `Your driving lessons with ${message.instructorName}`;
+  if (message.kind === 'member') return `Teach with ${message.instructorName}`;
+  if (message.kind === 'link') return `Link your business to ${message.instructorName}`;
+  if (message.kind === 'manager') return `Help run ${message.instructorName}`;
+  return `Your driving lessons with ${message.instructorName}`;
 }
 
 /** wa.me takes the text as a query; the person picks the contact in WhatsApp. */

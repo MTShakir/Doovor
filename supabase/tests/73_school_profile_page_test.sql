@@ -35,7 +35,7 @@ select tests.authenticate_as_anon();
 -- Private fields absent: the page and each instructor on it are exactly these lists.
 select is(
   (select array_agg(k order by k) from jsonb_object_keys(public.school_profile_page('bee-school')) as k),
-  array['instructors', 'lessons', 'logoPath', 'name', 'outcode', 'packages', 'place', 'slug'],
+  array['instructors', 'lessons', 'linked', 'logoPath', 'name', 'outcode', 'packages', 'place', 'slug'],
   'the school profile is these fields and no others'
 );
 select is(

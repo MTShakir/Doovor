@@ -1,7 +1,8 @@
 'use client';
 
 import { formatUkMobile } from '@repo/core/phone';
-import type { MemberPermission } from '@repo/core/schemas/school';
+import { brand } from '@repo/config/brand';
+import type { LessonSeller, MemberPermission } from '@repo/core/schemas/school';
 import { Avatar } from '@repo/ui/avatar';
 import { Button } from '@repo/ui/button';
 import { Card, CardDescription, CardTitle } from '@repo/ui/card';
@@ -11,11 +12,11 @@ import { ListDivider, ListRow } from '@repo/ui/list-row';
 import { Sheet } from '@repo/ui/sheet';
 import { StatusPill } from '@repo/ui/status-pill';
 import { Switch } from '@repo/ui/switch';
-import { CalendarDays, Users } from 'lucide-react';
+import { CalendarDays, Handshake, Users } from 'lucide-react';
 import type { Route } from 'next';
 import Link from 'next/link';
 import { useState, type ReactNode } from 'react';
-import type { TeamMember, WaitingInvitation } from '@/lib/school/team';
+import type { LinkedInstructor, TeamMember, WaitingInvitation } from '@/lib/school/team';
 import { avatarUrl } from '@/lib/storage/images';
 
 export interface TeamHandlers {
@@ -26,6 +27,8 @@ export interface TeamHandlers {
   onPermission: (member: TeamMember, permission: MemberPermission, allowed: boolean) => void;
   onSwitch: (member: TeamMember, active: boolean) => void;
   onCancelInvitation: (invitation: WaitingInvitation) => void;
+  /** Stop linking an instructor who sells their own lessons (D-282). */
+  onLetGo: (linked: LinkedInstructor) => void;
 }
 
 function lessonsToCome(count: number): string {
@@ -168,17 +171,85 @@ function MemberSheet({ member, handlers, onClose }: { member: TeamMember | null;
   );
 }
 
+/** The line under a linked instructor's name: their own Business, and since when (D-282). */
+function linkedSummary(linked: LinkedInstructor): string {
+  return `${linked.businessName}, linked since ${linked.linkedOn}`;
+}
+
+/** One instructor who sells their own lessons, opening what the school can do about them. */
+function LinkedRow({ linked, onOpen }: { linked: LinkedInstructor; onOpen: () => void }) {
+  const leading = <Avatar name={linked.name} src={avatarUrl(linked.photoPath)} size="md" decorative />;
+  return (
+    <ListRow asChild title={linked.name} subtitle={linkedSummary(linked)} leading={leading} chevron>
+      <button type="button" aria-label={`${linked.name}, ${linkedSummary(linked)}`} onClick={onOpen} />
+    </ListRow>
+  );
+}
+
+/** What the school knows about an instructor linked to it, and the one thing it can end (D-282). */
+function LinkedSheet({ linked, handlers, onClose }: { linked: LinkedInstructor | null; handlers: TeamHandlers; onClose: () => void }) {
+  const [shown, setShown] = useState<LinkedInstructor | null>(linked);
+  // Keep the last person while the sheet closes, so it does not empty as it slides away.
+  if (linked !== null && linked !== shown) setShown(linked);
+  if (shown === null) return null;
+
+  const contact = contactOf(shown);
+  return (
+    <Sheet
+      open={linked !== null}
+      onOpenChange={(open) => { if (!open) onClose(); }}
+      title={shown.name}
+      description={linkedSummary(shown)}
+      footer={
+        <Button
+          variant="secondary"
+          width="full"
+          pending={handlers.busyId === shown.linkId}
+          onClick={() => {
+            onClose();
+            handlers.onLetGo(shown);
+          }}
+        >
+          Stop linking
+        </Button>
+      }
+    >
+      <div className="flex flex-col gap-4">
+        {contact ? <p className="text-body text-ink">{contact}</p> : null}
+        <p className="text-small text-grey-700">
+          {shown.businessName} sells its own lessons: its learners, prices and payments are theirs. You send them pupils.
+        </p>
+        <p className="text-small text-grey-700">
+          {shown.qualification === 'pdi' ? 'Trainee instructor' : 'Approved driving instructor'}
+          {shown.badgeExpiresOn ? `, badge runs out ${shown.badgeExpiresOn}` : ', no badge expiry date yet'}. The school vouches for them while they are linked.
+        </p>
+      </div>
+    </Sheet>
+  );
+}
+
 /** SCH-02: the school's instructors, invitations still waiting, managers, and anybody switched off. */
 export function TeamSections({
   members,
+  linked = [],
   invitations,
+  lessonSeller = 'school',
   handlers,
 }: {
   members: TeamMember[];
+  /** Instructors who sell their own lessons, linked to the school (D-282). */
+  linked?: LinkedInstructor[];
   invitations: WaitingInvitation[];
+  /** Who sells the school's lessons, which says which instructors it has (D-281). */
+  lessonSeller?: LessonSeller | null;
   handlers: TeamHandlers;
 }) {
   const [openId, setOpenId] = useState<string | null>(null);
+  const [openLinkId, setOpenLinkId] = useState<string | null>(null);
+  const seller = lessonSeller ?? 'school';
+  const showMembers = seller !== 'instructors' || members.some((one) => one.role === 'instructor');
+  const showLinked = seller !== 'school' || linked.length > 0;
+  const openLinked = linked.find((one) => one.linkId === openLinkId) ?? null;
   const instructors = members.filter((one) => one.active && one.role === 'instructor');
   const managers = members.filter((one) => one.active && one.role === 'manager');
   const switchedOff = members.filter((one) => !one.active);
@@ -195,13 +266,41 @@ export function TeamSections({
 
   return (
     <div className="flex flex-col gap-4">
-      <Section id="team-instructors" title="Instructors" description="Everybody teaching for the school.">
-        {instructors.length === 0 ? (
-          <EmptyState icon={Users} title="No instructors yet" description="Invite your instructors and they will appear here once they join." />
-        ) : (
-          <Rows items={instructors} keyOf={(one) => one.membershipId} render={row} />
-        )}
-      </Section>
+      {showMembers ? (
+        <Section
+          id="team-instructors"
+          title={seller === 'both' ? 'Teaching under the school' : 'Instructors'}
+          description={seller === 'both' ? 'Instructors whose lessons the school sells.' : 'Everybody teaching for the school.'}
+        >
+          {instructors.length === 0 ? (
+            <EmptyState icon={Users} title="No instructors yet" description="Invite your instructors and they will appear here once they join." />
+          ) : (
+            <Rows items={instructors} keyOf={(one) => one.membershipId} render={row} />
+          )}
+        </Section>
+      ) : null}
+
+      {showLinked ? (
+        <Section
+          id="team-linked"
+          title="Linked instructors"
+          description="They sell their own lessons, with a business of their own. You send them pupils."
+        >
+          {linked.length === 0 ? (
+            <EmptyState
+              icon={Handshake}
+              title="Nobody linked yet"
+              description="Invite an instructor to link their business. They keep their prices, payments and learners."
+            />
+          ) : (
+            <Rows
+              items={linked}
+              keyOf={(one) => one.linkId}
+              render={(one) => <LinkedRow linked={one} onOpen={() => { setOpenLinkId(one.linkId); }} />}
+            />
+          )}
+        </Section>
+      ) : null}
 
       {invitations.length > 0 ? (
         <Section id="team-invitations" title="Invitations waiting" description="Links sent that nobody has used yet.">
@@ -214,7 +313,13 @@ export function TeamSections({
                 <div className="flex items-center gap-3 px-4 py-2">
                   <div className="flex min-w-0 flex-1 flex-col">
                     <span className="truncate text-body font-medium text-ink">{who}</span>
-                    <span className="truncate text-small text-grey-700">Works until {one.expiresOn}</span>
+                    <span className="truncate text-small text-grey-700">
+                      {one.kind === 'link'
+                        ? `To link their business, works until ${one.expiresOn}`
+                        : one.kind === 'manager'
+                          ? `To help run the school, works until ${one.expiresOn}`
+                          : `Works until ${one.expiresOn}`}
+                    </span>
                   </div>
                   <StatusPill status="pending">Waiting</StatusPill>
                   <Button
@@ -246,7 +351,45 @@ export function TeamSections({
       ) : null}
 
       <MemberSheet member={open} handlers={handlers} onClose={() => { setOpenId(null); }} />
+      <LinkedSheet linked={openLinked} handlers={handlers} onClose={() => { setOpenLinkId(null); }} />
     </div>
+  );
+}
+
+/** Before the school stops linking an instructor: what stays theirs, and what ends (D-282). */
+export function LetGoDialog({
+  linked,
+  pending,
+  onConfirm,
+  onCancel,
+}: {
+  linked: LinkedInstructor | null;
+  pending: boolean;
+  onConfirm: () => void;
+  onCancel: () => void;
+}) {
+  const [shown, setShown] = useState<LinkedInstructor | null>(linked);
+  // Keep the words while the dialog closes, so it does not empty as it fades.
+  if (linked !== null && linked !== shown) setShown(linked);
+  const who = shown?.name ?? '';
+
+  return (
+    <Dialog
+      open={linked !== null}
+      onOpenChange={(open) => { if (!open) onCancel(); }}
+      title={`Stop linking ${who}?`}
+      description={`Their business stays theirs, with its learners, prices and payments. You stop sending them pupils, ${brand.name} checks their badge again, and the Pro your school gave them ends.`}
+      footer={
+        <>
+          <Button variant="secondary" onClick={onCancel}>
+            Keep them
+          </Button>
+          <Button pending={pending} onClick={onConfirm}>
+            Stop linking
+          </Button>
+        </>
+      }
+    />
   );
 }
 

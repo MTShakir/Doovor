@@ -5,12 +5,15 @@ import { Card } from '@repo/ui/card';
 import { EmptyState } from '@repo/ui/empty-state';
 import { ListDivider } from '@repo/ui/list-row';
 import { SkeletonRow } from '@repo/ui/skeleton';
-import { Users } from 'lucide-react';
+import { Inbox, Users } from 'lucide-react';
+import Link from 'next/link';
+import { Button } from '@repo/ui/button';
 import { Fragment, Suspense } from 'react';
 import { LearnerBrowser } from '@/app/(portal)/app/instructor/learners/learner-browser';
 import { requirePortal } from '@/lib/auth/session';
 import { listLearners } from '@/lib/learners/list';
 import { schoolTeam } from '@/lib/school/team';
+import { AddSchoolLearner } from './add-learner';
 import { SchoolLearnerRow } from './school-learner-row';
 
 export const metadata: Metadata = { title: 'Learners' };
@@ -22,7 +25,19 @@ interface SchoolLearnersProps {
 export default function SchoolLearnersPage({ searchParams }: SchoolLearnersProps) {
   return (
     <main className="flex flex-col gap-4 pb-8">
-      <PageHeader title="Learners" subtitle="Everybody the school teaches." />
+      <PageHeader
+        title="Learners"
+        subtitle="Everybody the school teaches."
+        actions={
+          // M9-16, D-288: the people who asked for lessons, waiting for an instructor.
+          <Button variant="secondary" className="px-4" asChild>
+            <Link href="/app/school/pupils">
+              <Inbox className="size-5 shrink-0" aria-hidden />
+              New pupils
+            </Link>
+          </Button>
+        }
+      />
       <div className="flex flex-col gap-4 px-4 md:px-8">
         <Suspense fallback={<SkeletonRow />}>
           <Learners searchParams={searchParams} />
@@ -52,8 +67,16 @@ async function Learners({ searchParams }: SchoolLearnersProps) {
   );
   const searching = search.trim() !== '' || filter !== 'all';
 
+  // M9-27, D-294: the office adds learners by hand or from a spreadsheet.
   return (
-    <LearnerBrowser search={search} filter={filter} total={learners.length} path="/app/school/learners" canAdd={false}>
+    <LearnerBrowser
+      search={search}
+      filter={filter}
+      total={learners.length}
+      path="/app/school/learners"
+      canAdd={false}
+      action={<AddSchoolLearner instructors={instructors} />}
+    >
       <Card padding="none">
         {learners.length === 0 ? (
           <EmptyState
@@ -62,7 +85,7 @@ async function Learners({ searchParams }: SchoolLearnersProps) {
             description={
               searching
                 ? 'Try another spelling, or a different filter.'
-                : 'Learners appear here as your instructors add them.'
+                : 'Add them here, import them from a spreadsheet, or they appear as your instructors add them.'
             }
           />
         ) : (

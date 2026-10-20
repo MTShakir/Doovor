@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import { brand } from '@repo/config/brand';
+import { cancellationPolicyWords } from '@repo/core/cancellation';
 import { instructorProfilePath, profileNames } from '@repo/core/public-profile';
 import { todayInZone } from '@repo/core/time';
 import { EmptyState } from '@repo/ui/empty-state';
@@ -9,7 +10,7 @@ import type { Route } from 'next';
 import { permanentRedirect } from 'next/navigation';
 import { Suspense } from 'react';
 import { getAccess } from '@/lib/auth/session';
-import { bookingPage } from '@/lib/booking/public';
+import { bookingPage, cancellationPolicy } from '@/lib/booking/public';
 import { currentProfileSlug, instructorProfile, nextOpenTimes } from '@/lib/public/instructor-profile';
 import { sharedLinkMetadata } from '@/lib/public/metadata';
 import { instructorCard } from '@/lib/public/share-cards';
@@ -79,8 +80,9 @@ async function Instructor({ params, searchParams }: BookPageProps) {
 
   const { slot } = await searchParams;
   const access = await getAccess();
-  // The full profile, for somebody who wants to know more before booking (PUB-03).
-  const published = await instructorProfile(slug);
+  // The full profile, for somebody who wants to know more before booking (PUB-03), and what
+  // cancelling costs, which they are told before they book (BOK-09, R-06).
+  const [published, policy] = await Promise.all([instructorProfile(slug), cancellationPolicy(page.instructorId)]);
   const profileUrl = published
     ? `${getSiteUrl()}${instructorProfilePath(published.place?.citySlug ?? null, published.slug)}`
     : null;
@@ -96,6 +98,7 @@ async function Instructor({ params, searchParams }: BookPageProps) {
       profileUrl={profileUrl}
       firstFreeDay={soonest === undefined ? null : todayInZone(new Date(soonest))}
       chosen={slot ?? null}
+      cancellation={policy === null ? null : cancellationPolicyWords(policy)}
       learner={access?.access.isLearner === true ? { id: access.session.userId } : null}
       signedIn={access !== null}
     />

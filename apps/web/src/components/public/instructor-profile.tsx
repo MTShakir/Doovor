@@ -23,8 +23,13 @@ export interface ProfileHeaderProps {
   personalName?: string | null;
   photoUrl?: string;
   qualification: Qualification;
-  /** The school the instructor teaches with, and its page; nothing for somebody who runs their own Business. */
-  school: { name: string; href: string } | null;
+  /**
+   * The school the instructor teaches with, and its page, or the one their own Business is linked
+   * to (D-285); nothing for somebody on their own.
+   */
+  school: { name: string; href: string; linked?: boolean } | null;
+  /** The platform checked the badge itself; a school vouches for its own and its linked instructors (D-280). */
+  platformChecked: boolean;
   transmission: 'manual' | 'automatic' | 'both';
   car: string | null;
   dualControls: boolean;
@@ -38,6 +43,7 @@ export function ProfileHeader({
   photoUrl,
   qualification,
   school,
+  platformChecked,
   transmission,
   car,
   dualControls,
@@ -54,16 +60,18 @@ export function ProfileHeader({
     <header className="flex flex-col gap-4">
       <div className="flex items-center gap-4">
         {/* The photo is of the person, so the letters standing in for it are theirs too. */}
-        <Avatar name={personalName ?? name} src={photoUrl} verified size="xl" decorative />
+        {/* The platform's tick is for a badge it checked: a school vouches for its own instructors (D-280). */}
+        <Avatar name={personalName ?? name} src={photoUrl} verified={platformChecked} size="xl" decorative />
         <div className="flex min-w-0 flex-col gap-1">
           {personalName === null ? null : <p className="text-caption text-grey-700">{personalName}</p>}
           <h1 className="text-h1 text-black">{name}</h1>
           <p className="text-small text-grey-700">
-            {qualificationWords(qualification)}, checked by {brand.name}
+            {qualificationWords(qualification)}
+            {platformChecked ? `, checked by ${brand.name}` : ''}
           </p>
           {school === null ? null : (
             <p className="text-small text-grey-700">
-              Teaches with{' '}
+              {school.linked === true ? 'Works with' : 'Teaches with'}{' '}
               <a href={school.href} className="font-semibold text-blue underline underline-offset-4">
                 {school.name}
               </a>

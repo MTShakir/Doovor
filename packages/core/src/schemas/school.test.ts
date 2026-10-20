@@ -1,11 +1,39 @@
 import { describe, expect, it } from 'vitest';
-import { instructorInviteSchema, invitationIdSchema, memberPermissionSchema, memberSwitchSchema, schoolDetailsSchema } from './school.ts';
+import {
+  answerOfferSchema,
+  enquiryConsentWords,
+  giveEnquirySchema,
+  instructorInviteSchema,
+  invitationIdSchema,
+  inviteKindsFor,
+  lessonSellerChoiceSchema,
+  memberPermissionSchema,
+  memberSwitchSchema,
+  offerEnquirySchema,
+  officeEnquiryConsentWords,
+  officeEnquirySchema,
+  schoolDetailsSchema,
+  schoolEnquirySchema,
+} from './school.ts';
 
-const details = { name: '  Northern Lights Driving ', postcode: 'm1 1ae', expectedInstructors: ' 6 ' };
+const details = { name: '  Northern Lights Driving ', postcode: 'm1 1ae', expectedInstructors: ' 6 ', lessonSeller: 'both' };
 
 describe('setting up a school (AUTH-05, M5-11)', () => {
-  it('takes the name, the main postcode and roughly how many instructors', () => {
-    expect(schoolDetailsSchema.parse(details)).toEqual({ name: 'Northern Lights Driving', postcode: 'M1 1AE', expectedInstructors: 6 });
+  it('takes the name, the main postcode, roughly how many instructors and who sells the lessons', () => {
+    expect(schoolDetailsSchema.parse(details)).toEqual({
+      name: 'Northern Lights Driving',
+      postcode: 'M1 1AE',
+      expectedInstructors: 6,
+      lessonSeller: 'both',
+    });
+  });
+
+  it('asks who sells the lessons, the school, its instructors or both, and chooses nothing for them (D-281)', () => {
+    for (const lessonSeller of ['school', 'instructors', 'both']) {
+      expect(lessonSellerChoiceSchema.parse({ lessonSeller })).toEqual({ lessonSeller });
+    }
+    expect(lessonSellerChoiceSchema.safeParse({}).error?.issues[0]?.message).toBe('Choose who sells your lessons');
+    expect(lessonSellerChoiceSchema.safeParse({ lessonSeller: 'learners' }).error?.issues[0]?.message).toBe('Choose who sells your lessons');
   });
 
   it('keeps the logo path it was given, and null removes the logo', () => {
@@ -16,7 +44,7 @@ describe('setting up a school (AUTH-05, M5-11)', () => {
   });
 
   it('says what to fix', () => {
-    const result = schoolDetailsSchema.safeParse({ name: ' ', postcode: 'nowhere', expectedInstructors: '' });
+    const result = schoolDetailsSchema.safeParse({ name: ' ', postcode: 'nowhere', expectedInstructors: '', lessonSeller: 'both' });
     expect(result.success).toBe(false);
     const messages = result.error?.issues.map((issue) => [issue.path.join('.'), issue.message]);
     expect(messages).toEqual([
@@ -44,14 +72,29 @@ describe('inviting an instructor to the school (AUTH-05)', () => {
     expect(noEmail.error?.issues[0]?.path).toEqual(['email']);
   });
 
+  it('invites the instructors the school has, from who sells its lessons (D-281)', () => {
+    expect(inviteKindsFor('school')).toEqual(['member']);
+    expect(inviteKindsFor(null)).toEqual(['member']);
+    expect(inviteKindsFor('instructors')).toEqual(['link']);
+    expect(inviteKindsFor('both')).toEqual(['member', 'link']);
+  });
+
+  it('invites to teach under the school unless asked to link a business of their own (D-282)', () => {
+    expect(instructorInviteSchema.parse({ channel: 'link', fullName: '', email: '', phone: '' }).kind).toBe('member');
+    expect(instructorInviteSchema.parse({ kind: 'link', channel: 'link', fullName: '', email: '', phone: '' }).kind).toBe('link');
+    expect(instructorInviteSchema.safeParse({ kind: 'learner', channel: 'link', fullName: '', email: '', phone: '' }).success).toBe(false);
+  });
+
   it('needs nothing but the channel for a plain link, and tidies what it is given', () => {
     expect(instructorInviteSchema.parse({ channel: 'link', fullName: '', email: '', phone: '' })).toEqual({
+      kind: 'member',
       channel: 'link',
       fullName: '',
       email: null,
       phone: null,
     });
     expect(instructorInviteSchema.parse({ channel: 'whatsapp', fullName: ' Nia ', email: '', phone: '07700 900555' })).toEqual({
+      kind: 'member',
       channel: 'whatsapp',
       fullName: 'Nia',
       email: null,
@@ -78,5 +121,54 @@ describe('managing the team (SCH-02, M5-13)', () => {
     expect(memberSwitchSchema.safeParse({ membershipId: 'not-an-id', active: false }).success).toBe(false);
     expect(invitationIdSchema.safeParse(membershipId).success).toBe(true);
     expect(invitationIdSchema.safeParse('').success).toBe(false);
+  });
+});
+
+describe('somebody asking a school for lessons (M9-15, D-288)', () => {
+  const asked = { fullName: 'Pat Pupil', email: 'Pat@Example.com', phone: '', postcode: 'm1 1ae', transmission: 'automatic', note: 'Evenings', agreed: true };
+
+  it('takes a name, a way to reach them, their postcode and what they want', () => {
+    expect(schoolEnquirySchema.parse(asked)).toEqual({
+      fullName: 'Pat Pupil',
+      email: 'pat@example.com',
+      phone: null,
+      postcode: 'M1 1AE',
+      transmission: 'automatic',
+      note: 'Evenings',
+      agreed: true,
+    });
+    expect(schoolEnquirySchema.parse({ ...asked, email: '', phone: '07700 900123' }).phone).toBe('+447700900123');
+  });
+
+  it('needs one way to reach them, and their agreement', () => {
+    const none = schoolEnquirySchema.safeParse({ ...asked, email: '', phone: '' });
+    expect(none.error?.issues.map((issue) => [issue.path[0], issue.message])).toEqual([['email', 'Enter an email address or a mobile number']]);
+    expect(schoolEnquirySchema.safeParse({ ...asked, agreed: false }).error?.issues[0]?.message).toBe(
+      'Tick this so the school can pass your details to an instructor',
+    );
+    expect(officeEnquirySchema.safeParse({ ...asked, agreed: false }).error?.issues[0]?.message).toBe('Tick this once they have agreed');
+  });
+
+  it('says what they agree to in the school\'s name', () => {
+    expect(enquiryConsentWords('Bee School')).toBe(
+      'I agree to Bee School keeping these details and passing them to one of its instructors, who will contact me about lessons.',
+    );
+    expect(officeEnquiryConsentWords('Bee School')).toContain('They agreed to Bee School');
+  });
+});
+
+describe('offering and giving a new pupil (M9-17, M9-18, D-289)', () => {
+  const enquiryId = '0a1b2c3d-4e5f-4061-8728-394a5b6c7d8e';
+  const linkId = '1b2c3d4e-5f60-4718-8a9b-0c1d2e3f4a5b';
+
+  it('offers to at least one linked instructor, for a while they choose from', () => {
+    expect(offerEnquirySchema.parse({ enquiryId, linkIds: [linkId], hours: '24' })).toEqual({ enquiryId, linkIds: [linkId], hours: 24 });
+    expect(offerEnquirySchema.safeParse({ enquiryId, linkIds: [], hours: '24' }).error?.issues[0]?.message).toBe('Choose at least one instructor');
+    expect(offerEnquirySchema.safeParse({ enquiryId, linkIds: [linkId], hours: '5' }).error?.issues[0]?.message).toBe('Choose how long they have to answer');
+  });
+
+  it('gives to one instructor, and takes a yes or a no', () => {
+    expect(giveEnquirySchema.safeParse({ enquiryId, instructorId: '' }).error?.issues[0]?.message).toBe('Choose an instructor');
+    expect(answerOfferSchema.parse({ offerId: linkId, accept: false })).toEqual({ offerId: linkId, accept: false });
   });
 });

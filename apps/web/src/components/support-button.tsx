@@ -38,8 +38,9 @@ export function SupportButton({ userId }: { userId: string }) {
         onClick={() => {
           setOpen(true);
         }}
+        // 48 pixels whatever the text size, beside the bell in the phone's top bar (D-304).
         className={[
-          'inline-flex size-12 shrink-0 items-center justify-center rounded-full text-black',
+          'inline-flex size-[48px] shrink-0 items-center justify-center rounded-full text-black',
           'transition-colors duration-200 ease-out hover:bg-quiet',
           'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-black',
         ].join(' ')}

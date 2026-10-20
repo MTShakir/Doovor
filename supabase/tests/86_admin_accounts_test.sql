@@ -42,8 +42,8 @@ select tests.authenticate_as(:'support', 'aal2');
 select results_eq(
   $$ select user_id, display_name, account_name, business_name, verification_status::text, suspended
        from public.admin_instructors('Ian On') $$,
-  format($$ values (%L::uuid, 'Ian', 'Ian One', 'Bee School', 'unsubmitted', false) $$, :'ian_user'),
-  'support staff find an instructor by their account name, with where they teach (ADM-02)'
+  format($$ values (%L::uuid, 'Ian', 'Ian One', 'Bee School', 'approved', false) $$, :'ian_user'),
+  'support staff find an instructor by their account name, with where they teach and their badge, which the school vouches for (ADM-02, D-280)'
 );
 select results_eq(
   $$ select display_name from public.admin_instructors('234567') $$,

@@ -51,8 +51,18 @@ describe("a school's team (SCH-02, M5-13)", () => {
           lessonsToCome: 12,
         },
       ],
+      // A school that links nobody, as one from before linking existed reads (D-282).
+      linked: [],
       invitations: [
-        { invitationId: 'i-1', fullName: 'Nia', email: null, phone: '+447700900555', expiresAt: '2026-09-30T10:00:00+00:00', expiresOn: 'Wed 30 Sep' },
+        {
+          invitationId: 'i-1',
+          kind: 'member',
+          fullName: 'Nia',
+          email: null,
+          phone: '+447700900555',
+          expiresAt: '2026-09-30T10:00:00+00:00',
+          expiresOn: 'Wed 30 Sep',
+        },
       ],
     });
     expect(rpc).toHaveBeenCalledWith('school_team', { p_business_id: 'school-1' });

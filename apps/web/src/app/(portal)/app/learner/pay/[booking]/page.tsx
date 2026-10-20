@@ -1,3 +1,4 @@
+import { cancellationPolicyWords } from '@repo/core/cancellation';
 import { cardExpiry, describeCard } from '@repo/core/cards';
 import { formatPence } from '@repo/core/money';
 import { formatDate, formatMinutes, formatTime } from '@repo/core/time';
@@ -15,6 +16,7 @@ import type { ReactNode } from 'react';
 import { Suspense } from 'react';
 import { serverEnv } from '@/env/server';
 import { requirePortal } from '@/lib/auth/session';
+import { cancellationPolicy } from '@/lib/booking/public';
 import { keptCardsWith } from '@/lib/payments/cards';
 import { checkoutLesson, type CheckoutLesson } from '@/lib/payments/checkout';
 import { PayLesson } from './pay-lesson';
@@ -123,7 +125,12 @@ async function Checkout({ params }: { params: Promise<{ booking: string }> }) {
 
   // Cards kept with this Business, which only the provider holds (PAY-02, M3-07).
   const payable = (stage === 'due' || stage === 'request' || stage === 'before' || stage === 'fee') && lesson.accountId !== null;
-  const kept = payable ? await keptCardsWith(lesson.businessId) : null;
+  const ahead = stage === 'due' || stage === 'request' || stage === 'before';
+  const [kept, policy] = await Promise.all([
+    payable ? keptCardsWith(lesson.businessId) : null,
+    // What cancelling costs, said again before it is paid for, as it was before it was booked (BOK-09, R-06).
+    ahead ? cancellationPolicy(lesson.instructorId) : null,
+  ]);
   const savedCards = (kept?.cards ?? []).map((card) => ({
     paymentMethodId: card.paymentMethodId,
     label: describeCard(card),
@@ -181,6 +188,8 @@ async function Checkout({ params }: { params: Promise<{ booking: string }> }) {
       {heldUntil === null ? null : (
         <p className="text-small text-grey-700">This slot is held for you until {formatTime(heldUntil)}.</p>
       )}
+
+      {policy === null ? null : <p className="text-small text-grey-700">{cancellationPolicyWords(policy)}</p>}
 
       {stage === 'fee' ? (
         <div className="flex flex-col gap-3">

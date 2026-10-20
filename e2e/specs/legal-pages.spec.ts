@@ -15,7 +15,8 @@ const pages = [
   { path: '/cookies', title: 'Cookies', gaps: 1 },
   // Four: the fourth is the pass photograph and the consent behind it (B-77, D-218).
   { path: '/terms', title: 'Terms for learners', gaps: 4 },
-  { path: '/business-terms', title: 'Terms for instructors and schools', gaps: 3 },
+  // Four: the fourth is working with a school, its fees and the instructors it vouches for (D-296).
+  { path: '/business-terms', title: 'Terms for instructors and schools', gaps: 4 },
 ];
 
 test.describe('the legal pages (NFR-PRV-02, M6-07)', () => {

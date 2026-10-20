@@ -18,6 +18,8 @@ interface SendBadgeProps {
   badgeExpiry: string | null;
   badgePreview?: string;
   hasBadgePhoto: boolean;
+  /** The school that vouches for them, where there is one: details to keep, nothing to check (D-280). */
+  vouchedBy?: string | null;
 }
 
 /**
@@ -25,7 +27,7 @@ interface SendBadgeProps {
  * or a new one after the old one ran out. The same form as onboarding, in a sheet, so the rules
  * and the words cannot drift between the two.
  */
-export function SendBadge({ label, reason, ...badge }: SendBadgeProps) {
+export function SendBadge({ label, reason, vouchedBy = null, ...badge }: SendBadgeProps) {
   const [open, setOpen] = useState(false);
 
   return (
@@ -43,7 +45,11 @@ export function SendBadge({ label, reason, ...badge }: SendBadgeProps) {
         open={open}
         onOpenChange={setOpen}
         title={label}
-        description="A person checks it against the DVSA register. Nobody else can see the photo."
+        description={
+          vouchedBy === null
+            ? 'A person checks it against the DVSA register. Nobody else can see the photo.'
+            : 'No photo needed.'
+        }
       >
         <div className="flex flex-col gap-5">
           {reason ? (
@@ -54,12 +60,13 @@ export function SendBadge({ label, reason, ...badge }: SendBadgeProps) {
           ) : null}
           <BadgeForm
             {...badge}
+            vouchedBy={vouchedBy}
             onSave={resubmitBadge}
             onSaved={() => {
               setOpen(false);
-              toast('Sent for checking');
+              toast(vouchedBy === null ? 'Sent for checking' : 'Badge details saved');
             }}
-            submitLabel="Send for checking"
+            submitLabel={vouchedBy === null ? 'Send for checking' : 'Save'}
           />
         </div>
       </Sheet>
