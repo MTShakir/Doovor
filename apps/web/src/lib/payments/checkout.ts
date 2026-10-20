@@ -7,6 +7,8 @@ export interface CheckoutLesson {
   businessId: string;
   businessName: string;
   accountId: string | null;
+  /** Whose rules the lesson is called off under (R-06). */
+  instructorId: string;
   instructorName: string;
   lessonType: string;
   startsAt: string;
@@ -51,7 +53,7 @@ export async function checkoutLesson(bookingId: string): Promise<CheckoutLesson 
   const { data } = await supabase
     .from('bookings')
     .select(
-      'id, business_id, starts_at, ends_at, price_pence, credit_minutes, fee_pence, status, payment_status, payment_mode, hold_expires_at, expires_at, instructor_profiles(display_name), lesson_types(name), businesses!bookings_business_id_fkey(name, stripe_account_id)',
+      'id, business_id, instructor_id, starts_at, ends_at, price_pence, credit_minutes, fee_pence, status, payment_status, payment_mode, hold_expires_at, expires_at, instructor_profiles(display_name), lesson_types(name), businesses!bookings_business_id_fkey(name, stripe_account_id)',
     )
     .eq('id', bookingId)
     .maybeSingle();
@@ -80,6 +82,7 @@ export async function checkoutLesson(bookingId: string): Promise<CheckoutLesson 
     businessId: data.business_id,
     businessName: data.businesses.name,
     accountId: data.businesses.stripe_account_id,
+    instructorId: data.instructor_id,
     instructorName: data.instructor_profiles.display_name,
     lessonType: data.lesson_types.name,
     startsAt: data.starts_at,

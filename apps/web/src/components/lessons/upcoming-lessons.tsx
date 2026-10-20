@@ -43,7 +43,9 @@ export function UpcomingLessons({ lessons, more, shown }: { lessons: TeachingLes
                   </span>
                   <LessonLength startsAt={startsAt} endsAt={new Date(lesson.endsAt)} />
                 </span>
-                <span className="flex min-w-0 flex-1 flex-col gap-1">
+                {/* As wide as the date at least, or on a line of its own: at 200% text the date left
+                    it a sliver, and a pickup of one word ran past the edge of a phone (D-304). */}
+                <span className="flex min-w-0 grow basis-24 flex-col gap-1">
                   <span className="text-body font-semibold text-black">{lesson.learnerName}</span>
                   <span className="text-small text-grey-700">{lesson.lessonType}</span>
                   {lesson.pickup ? (

@@ -4128,6 +4128,7 @@ export type Database = {
         Args: { p_booking_id: string; p_reason?: string }
         Returns: Json
       }
+      cancellation_policy: { Args: { p_instructor_id: string }; Returns: Json }
       city_page: {
         Args: { p_area?: string; p_city: string; p_transmission?: string }
         Returns: Json
@@ -4820,6 +4821,10 @@ export type Database = {
       system_lapse_enquiry_offers: { Args: never; Returns: number }
       system_learner_capture_confirmation: {
         Args: { p_id: string; p_kind: string }
+        Returns: Json
+      }
+      system_learner_joined_notice: {
+        Args: { p_invitation_id: string }
         Returns: Json
       }
       system_lesson_record_notice: {

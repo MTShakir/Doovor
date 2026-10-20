@@ -161,6 +161,33 @@ function goesBack(paidWith: PaidWith): string {
   return paidWith === 'card' ? 'goes back to your card' : 'is owed back to you';
 }
 
+function share(percent: number): string {
+  if (percent >= 100) return 'the full price';
+  if (percent === 50) return 'half the price';
+  return `${String(percent)}% of the price`;
+}
+
+/** A Business's cancellation policy (R-06): free up to so long before a lesson, and the fee after. */
+export interface CancellationPolicy {
+  /** Free cancellation up to this long before the lesson. */
+  windowHours: number;
+  /** What cancelling later, or not coming, costs as a percentage of the lesson (0, 50 or 100). */
+  lateFeePercent: number;
+}
+
+/**
+ * The policy in words, for somebody before they book or pay (R-06, R-09, BOK-09): how long before
+ * a lesson it is free to call off, and what calling it off later costs. Missing a lesson counts as
+ * cancelling late (R-09), so one sentence says both.
+ */
+export function cancellationPolicyWords(policy: CancellationPolicy): string {
+  const percent = Math.min(100, Math.max(0, policy.lateFeePercent));
+  if (percent === 0) return 'You can cancel for free at any time.';
+  const hours = Math.max(0, policy.windowHours);
+  const free = hours === 0 ? 'until the lesson starts' : `up to ${formatMinutes(hours * 60)} before the lesson`;
+  return `You can cancel for free ${free}. After that, cancelling or missing it costs ${share(percent)}.`;
+}
+
 /** What the screen says before somebody presses cancel. */
 export function cancellationWarning(outcome: CancellationOutcome, formatMoney: Money): string {
   const back = outcome.refundPence > 0 ? `the ${formatMoney(outcome.refundPence)} you paid ${goesBack(outcome.paidWith)}` : null;
@@ -228,12 +255,6 @@ export interface NoShowMoney extends FeeMoney {
 
 /** Who is reading: the learner, or somebody at the Business, who is told the learner's name. */
 export type CancelledReader = { kind: 'learner' } | { kind: 'business'; learnerName: string };
-
-function share(percent: number): string {
-  if (percent >= 100) return 'the full price';
-  if (percent === 50) return 'half the price';
-  return `${String(percent)}% of the price`;
-}
 
 function before(minutes: number): string {
   if (minutes < 0) return 'You cancelled after it had started';

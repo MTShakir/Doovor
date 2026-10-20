@@ -8,6 +8,7 @@ import { isCaptureKind, sendCaptureConfirmation } from '@/jobs/capture';
 import { tellRegionOpened } from '@/jobs/regions';
 import { sendRefund } from '@/jobs/payments';
 import { sendFeedbackEmail } from '@/jobs/feedback';
+import { notifyLearnerJoined } from '@/jobs/learner-notices';
 import { sendReceipt } from '@/jobs/receipts';
 import { notifyLessonRecordAdded } from '@/jobs/record-notices';
 import { remindByHand } from '@/jobs/reminders';
@@ -75,6 +76,11 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
   }
   if (name === 'booking.reminder_requested') {
     return NextResponse.json(await remindByHand(payload));
+  }
+  // A learner accepted an invitation: the instructor who sent it, and their school, are told (D-301).
+  if (name === 'learner.joined') {
+    const invitationId = typeof payload.invitation_id === 'string' ? payload.invitation_id : '';
+    return NextResponse.json(await notifyLearnerJoined(invitationId));
   }
   if (name.startsWith('booking.') || name === 'payment.charge_failed') {
     return NextResponse.json(await notifyAboutBooking({ name, payload }));

@@ -200,8 +200,17 @@ export function notificationCopy(
     case 'subscription.renewing':
       return { title: 'Your Pro renews soon', body: sentence(facts.detail) };
 
+    // The instructor who sent the invitation, and their school, who is told who sent it (D-301).
     case 'learner.joined':
-      return { title: `${them} joined you`, body: sentence(facts.detail ?? 'They can be booked in now') };
+      if (audience === 'school') {
+        return {
+          title: `${them} joined`,
+          body: facts.instructorName
+            ? sentence(`${facts.instructorName} invited them.`, 'They can be booked in now')
+            : 'They accepted an invitation and can be booked in now.',
+        };
+      }
+      return { title: `${them} joined you`, body: 'They accepted your invitation and can be booked in now.' };
 
     // What is next depends on the side they signed up for; the way to ask for help does not.
     case 'account.welcome':

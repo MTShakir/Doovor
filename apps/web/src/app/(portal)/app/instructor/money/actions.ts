@@ -115,7 +115,12 @@ export async function setPaymentMode(input: unknown): Promise<Result<{ mode: Pay
 
   const supabase = await createSupabaseServerClient();
   const { error } = await supabase.rpc('set_payment_mode', { p_business_id: business.id, p_mode: parsed.data.mode });
-  if (error) return err(parsePostgresError(error).code);
+  if (error) {
+    const { code } = parsePostgresError(error);
+    // Charging the day before is Pro, which the database checks too (D-302).
+    if (code === 'PLAN_REQUIRED') return err(code, 'Charging the saved card the day before the lesson is part of Pro.');
+    return err(code);
+  }
 
   // The mode is set on the setup page, and the Money screen reads it too.
   for (const path of Object.values(moneyScreens)) {

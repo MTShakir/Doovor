@@ -1,3 +1,4 @@
+import { cancellationPolicyWords } from '@repo/core/cancellation';
 import { cardExpiry, describeCard } from '@repo/core/cards';
 import { formatPence } from '@repo/core/money';
 import { packageExpiryText, pricePerHourPence } from '@repo/core/packages';
@@ -15,6 +16,7 @@ import { Suspense } from 'react';
 import { z } from '@repo/core/zod';
 import { serverEnv } from '@/env/server';
 import { requirePortal } from '@/lib/auth/session';
+import { businessCancellationPolicy } from '@/lib/booking/rules';
 import { learnerBalance } from '@/lib/payments/balance';
 import { keptCardsWith } from '@/lib/payments/cards';
 import { packageOffer } from '@/lib/payments/packages';
@@ -56,9 +58,11 @@ async function Purchase({ params }: { params: Promise<{ package: string }> }) {
 
   const buyable = !offer.suspended && offer.onSale && offer.accountId !== null;
   // The same balance the Payments screen and the instructor's learner card show (M3-16).
-  const [credit, kept] = await Promise.all([
+  const [credit, kept, policy] = await Promise.all([
     learnerBalance(offer.businessId, session.userId),
     buyable ? keptCardsWith(offer.businessId) : Promise.resolve(null),
+    // What cancelling a lesson costs, said before paying, as on the booking link (BOK-09, R-06).
+    buyable ? businessCancellationPolicy(offer.businessId) : Promise.resolve(null),
   ]);
   const balance = credit?.creditMinutes ?? 0;
   const savedCards = (kept?.cards ?? []).map((card) => ({
@@ -90,6 +94,7 @@ async function Purchase({ params }: { params: Promise<{ package: string }> }) {
         <li>Your lessons with {offer.businessName} are paid from this credit first.</li>
         <li>It is for lessons with {offer.businessName} only.</li>
         <li>{packageExpiryText(offer.expiryDays)}</li>
+        {policy === null ? null : <li>{cancellationPolicyWords(policy)}</li>}
       </ul>
 
       {balance > 0 ? (

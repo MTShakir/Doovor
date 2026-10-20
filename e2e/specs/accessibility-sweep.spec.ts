@@ -27,21 +27,27 @@ async function textAtDoubleSize(page: Page): Promise<void> {
 }
 
 /**
- * What the page would need scrolled sideways to read, if anything.
+ * What the page would need scrolled sideways to read, if anything: what reaches past the window,
+ * and how far the window has grown past the screen.
  *
- * The scrollbar is taken off. A page long enough to scroll down gets a classic scrollbar in a
- * headless browser, and anything fixed across the width of the screen, which here is the bottom
- * tab bar, is drawn to the width of the window rather than to the width of the content. That put
- * the tab bar nine pixels past the edge on whichever screen happened to be long enough at the
- * time, which is a measurement of the scrollbar and not of anything a person could scroll to
- * (D-219).
+ * Past the window, not past the content. A page long enough to scroll down gets a classic
+ * scrollbar in a headless browser, and anything fixed across the width of the screen is drawn to
+ * the width of the window, scrollbar included, rather than to the width of the content. Measured
+ * against the content, that is the scrollbar's pixels on whichever screen happens to be long
+ * enough, and not anything a person could scroll to (D-219).
+ *
+ * Past the screen, because a phone shows a page that is too wide by zooming out until all of it
+ * fits: the window grows to the page's width and nothing reaches past it. The portal's top bar ran
+ * 87 pixels past the edge of a phone at 200% text, and a pickup on the instructor's home 9, while
+ * this measured nothing (D-304).
  */
 async function sidewaysOverflow(page: Page): Promise<number> {
-  return page.evaluate(() => {
-    const root = document.documentElement;
-    const scrollbar = Math.max(0, window.innerWidth - root.clientWidth);
-    return Math.max(0, Math.max(root.scrollWidth, document.body.scrollWidth) - root.clientWidth - scrollbar);
-  });
+  const screen = page.viewportSize()?.width ?? null;
+  return page.evaluate((width) => {
+    const pastWindow = Math.max(document.documentElement.scrollWidth, document.body.scrollWidth) - window.innerWidth;
+    const pastScreen = width === null ? 0 : window.innerWidth - width;
+    return Math.max(0, pastWindow) + Math.max(0, pastScreen);
+  }, screen);
 }
 
 test.describe('every screen passes the scan (M6-06)', () => {

@@ -814,6 +814,25 @@ export async function lessonRequestEntry(
   });
 }
 
+/**
+ * The event that tells an instructor a learner they invited has joined, found by the learner who
+ * accepted, as the job runner would be sent it (D-301).
+ */
+export async function learnerJoinedEvent(learnerEmail: string): Promise<OutboxEvent | null> {
+  return withDatabase(async (sql) => {
+    const [row] = await sql<{ name: string; payload: Record<string, unknown> }[]>`
+      select e.name, e.payload
+        from public.outbox_events e
+        join public.invitations i on i.id = (e.payload ->> 'invitation_id')::uuid
+        join public.users u on u.id = i.accepted_by
+       where e.name = 'learner.joined'
+         and lower(u.email) = lower(${learnerEmail})
+       order by e.created_at desc
+       limit 1`;
+    return row ? { name: row.name, payload: row.payload } : null;
+  });
+}
+
 /** The event that asks for a capture's confirmation email, as the job runner would be sent it. */
 export async function captureEvent(id: string): Promise<OutboxEvent | null> {
   return withDatabase(async (sql) => {

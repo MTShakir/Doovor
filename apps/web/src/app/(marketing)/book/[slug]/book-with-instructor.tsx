@@ -27,6 +27,8 @@ export interface BookWithInstructorProps {
   slug: string;
   /** A time carried back from signing up, already chosen (BOK-02). */
   chosen: string | null;
+  /** The cancellation policy in words, said before booking (BOK-09, R-06). Null when it cannot be read. */
+  cancellation: string | null;
   learner: { id: string } | null;
   signedIn: boolean;
   /** The instructor's public profile, in full, when there is one. */
@@ -36,7 +38,7 @@ export interface BookWithInstructorProps {
 }
 
 /** BOK-02: choose how long, choose when, book. On a phone, in under a minute. */
-export function BookWithInstructor({ page, names, slug, chosen, learner, signedIn, profileUrl, firstFreeDay }: BookWithInstructorProps) {
+export function BookWithInstructor({ page, names, slug, chosen, cancellation, learner, signedIn, profileUrl, firstFreeDay }: BookWithInstructorProps) {
   const [pending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
   const [booked, setBooked] = useState<string | null>(null);
@@ -194,6 +196,8 @@ export function BookWithInstructor({ page, names, slug, chosen, learner, signedI
       {signedIn && learner === null ? (
         <FormAlert>You are signed in as somebody who is not a learner, so you cannot book here.</FormAlert>
       ) : null}
+
+      {cancellation === null ? null : <p className="text-small text-grey-700">{cancellation}</p>}
 
       <Button
         width="full"

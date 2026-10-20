@@ -1,4 +1,5 @@
 import 'server-only';
+import type { CancellationPolicy } from '@repo/core/cancellation';
 import { z } from '@repo/core/zod';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
 
@@ -35,6 +36,22 @@ export async function bookingPage(slug: string): Promise<BookingPage | null> {
   if (error || data === null) return null;
 
   const parsed = pageSchema.safeParse(data);
+  return parsed.success ? parsed.data : null;
+}
+
+const policySchema = z.object({ windowHours: z.number(), lateFeePercent: z.number() });
+
+/**
+ * The cancellation policy a learner books this instructor under, to say before they book (BOK-09,
+ * R-06). Null when the link takes no bookings, or the policy cannot be read: the page books as it
+ * did, without the line.
+ */
+export async function cancellationPolicy(instructorId: string): Promise<CancellationPolicy | null> {
+  const supabase = await createSupabaseServerClient();
+  const { data, error } = await supabase.rpc('cancellation_policy', { p_instructor_id: instructorId });
+  if (error || data === null) return null;
+
+  const parsed = policySchema.safeParse(data);
   return parsed.success ? parsed.data : null;
 }
 
