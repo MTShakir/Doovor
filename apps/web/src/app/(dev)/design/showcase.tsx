@@ -2,6 +2,7 @@
 
 import { brand, type ColourToken } from '@repo/config/brand';
 import { horizontalLogo } from '@repo/config/logo/horizontal';
+import type { UseFormRegisterReturn } from 'react-hook-form';
 import { stackedLogo } from '@repo/config/logo/stacked';
 import { taglineLogo } from '@repo/config/logo/tagline';
 import { wheelLogo } from '@repo/config/logo/wheel';
@@ -25,6 +26,7 @@ import {
 } from '@/components/public/instructor-profile';
 import { Breadcrumbs, PlaceLinks } from '@/components/public/place-links';
 import { SchoolHeader, SchoolInstructors } from '@/components/public/school-profile';
+import { LessonSellerCards } from '@/components/school/lesson-seller-cards';
 import { BookingLinkCard } from '@/components/share/booking-link-card';
 import { AreaPanel, CaptureDone } from '@/components/capture/coming-soon';
 import { BookingGlimpse, GlimpseAlone, GlimpsePair, MoneyGlimpse, ProfileGlimpse, ProgressGlimpse, SchoolGlimpse, TaxYearGlimpse, TodayGlimpse } from '@/components/site/glimpses';
@@ -705,6 +707,11 @@ const slots = ['09:00', '10:30', '12:00', '13:30', '15:00', '16:30', '18:00'].ma
 /** Where the app is, as the Install the app page names it to somebody in another browser on an iPhone. */
 const appHost = new URL(brand.appUrl).host;
 
+/** A form's hold on a field, for one shown on its own: the design page saves nothing. */
+function showcaseField(name: string): UseFormRegisterReturn {
+  return { name, onChange: () => Promise.resolve(), onBlur: () => Promise.resolve(), ref: () => undefined };
+}
+
 export function DesignShowcase() {
   const [postcode, setPostcode] = useState('LS6 3HN');
   const [otp, setOtp] = useState('1234');
@@ -933,6 +940,12 @@ export function DesignShowcase() {
           <Checkbox label="Disabled option" disabled />
           <Switch label="Lesson reminders" description="Email and push, 24 hours before." checked={notify} onCheckedChange={setNotify} />
           <Switch label="Instant book" disabled />
+        </div>
+        <Label>Who sells a school&apos;s lessons: nothing chosen for them, an answer, and what to fix (D-281)</Label>
+        <div className="grid items-start gap-6 md:grid-cols-3">
+          <LessonSellerCards idPrefix="design-a-" field={showcaseField('design-seller-a')} defaultValue={null} />
+          <LessonSellerCards idPrefix="design-b-" field={showcaseField('design-seller-b')} defaultValue="instructors" />
+          <LessonSellerCards idPrefix="design-c-" field={showcaseField('design-seller-c')} defaultValue={null} error="Choose who sells your lessons" />
         </div>
         <Label>Skill rating, 1 to 5 (M4-05)</Label>
         <div className="grid max-w-md gap-4">

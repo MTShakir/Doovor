@@ -1,11 +1,31 @@
 import { describe, expect, it } from 'vitest';
-import { instructorInviteSchema, invitationIdSchema, memberPermissionSchema, memberSwitchSchema, schoolDetailsSchema } from './school.ts';
+import {
+  instructorInviteSchema,
+  invitationIdSchema,
+  lessonSellerChoiceSchema,
+  memberPermissionSchema,
+  memberSwitchSchema,
+  schoolDetailsSchema,
+} from './school.ts';
 
-const details = { name: '  Northern Lights Driving ', postcode: 'm1 1ae', expectedInstructors: ' 6 ' };
+const details = { name: '  Northern Lights Driving ', postcode: 'm1 1ae', expectedInstructors: ' 6 ', lessonSeller: 'both' };
 
 describe('setting up a school (AUTH-05, M5-11)', () => {
-  it('takes the name, the main postcode and roughly how many instructors', () => {
-    expect(schoolDetailsSchema.parse(details)).toEqual({ name: 'Northern Lights Driving', postcode: 'M1 1AE', expectedInstructors: 6 });
+  it('takes the name, the main postcode, roughly how many instructors and who sells the lessons', () => {
+    expect(schoolDetailsSchema.parse(details)).toEqual({
+      name: 'Northern Lights Driving',
+      postcode: 'M1 1AE',
+      expectedInstructors: 6,
+      lessonSeller: 'both',
+    });
+  });
+
+  it('asks who sells the lessons, the school, its instructors or both, and chooses nothing for them (D-281)', () => {
+    for (const lessonSeller of ['school', 'instructors', 'both']) {
+      expect(lessonSellerChoiceSchema.parse({ lessonSeller })).toEqual({ lessonSeller });
+    }
+    expect(lessonSellerChoiceSchema.safeParse({}).error?.issues[0]?.message).toBe('Choose who sells your lessons');
+    expect(lessonSellerChoiceSchema.safeParse({ lessonSeller: 'learners' }).error?.issues[0]?.message).toBe('Choose who sells your lessons');
   });
 
   it('keeps the logo path it was given, and null removes the logo', () => {
@@ -16,7 +36,7 @@ describe('setting up a school (AUTH-05, M5-11)', () => {
   });
 
   it('says what to fix', () => {
-    const result = schoolDetailsSchema.safeParse({ name: ' ', postcode: 'nowhere', expectedInstructors: '' });
+    const result = schoolDetailsSchema.safeParse({ name: ' ', postcode: 'nowhere', expectedInstructors: '', lessonSeller: 'both' });
     expect(result.success).toBe(false);
     const messages = result.error?.issues.map((issue) => [issue.path.join('.'), issue.message]);
     expect(messages).toEqual([

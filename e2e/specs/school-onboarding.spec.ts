@@ -43,6 +43,13 @@ test.describe('school onboarding (AUTH-05, M5-11)', () => {
     await expect(page.getByRole('button', { name: 'Continue' })).toBeEnabled();
     await page.getByLabel('Main postcode').fill('m1 2qf');
     await page.getByLabel('How many instructors teach for you?').fill('6');
+    // Nothing is chosen for the school: who sells its lessons is its own to say (D-281). This one
+    // sells them itself, through the instructors it invites next.
+    for (const answer of ['We sell the lessons', 'Our instructors sell their own', 'Some of each']) {
+      await expect(page.getByRole('radio', { name: new RegExp(`^${answer}`) })).not.toBeChecked();
+    }
+    await page.getByText('We sell the lessons').click();
+    await expect(page.getByRole('radio', { name: /^We sell the lessons/ })).toBeChecked();
     await expectAccessible(page);
     await snap(page, testInfo, 'school-setup-details');
     await page.getByRole('button', { name: 'Continue' }).click();

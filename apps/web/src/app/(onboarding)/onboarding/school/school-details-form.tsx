@@ -13,7 +13,9 @@ import { ClientForm, SubmitButton } from '@/components/client-form';
 import { FormAlert } from '@/components/form-alert';
 import { prepareAvatar, type ImageProblem } from '@/lib/images/prepare';
 import { avatarsBucket, avatarUrl, removeProfileImage, uploadBusinessLogo } from '@/lib/storage/images';
+import { LessonSellerCards } from '@/components/school/lesson-seller-cards';
 import { getSupabaseBrowserClient } from '@/lib/supabase/browser';
+import type { LessonSeller } from '@repo/core/schemas/school';
 import { saveSchoolDetails } from './actions';
 
 const logoProblem: Record<ImageProblem, string> = {
@@ -30,6 +32,8 @@ interface SchoolDetailsFormProps {
   initialLogoPath: string | null;
   initialPostcode: string | null;
   initialExpectedInstructors: number | null;
+  /** Null until the owner has said, so nothing is chosen for them (D-281). */
+  initialLessonSeller: LessonSeller | null;
 }
 
 export function SchoolDetailsForm({
@@ -38,6 +42,7 @@ export function SchoolDetailsForm({
   initialLogoPath,
   initialPostcode,
   initialExpectedInstructors,
+  initialLessonSeller,
 }: SchoolDetailsFormProps) {
   const [pending, startTransition] = useTransition();
   const [formError, setFormError] = useState<string | null>(null);
@@ -49,7 +54,11 @@ export function SchoolDetailsForm({
   // An upload this page made but has not saved yet, so a replaced one is not left behind.
   const unsaved = useRef<string | null>(null);
   // No default values: the fields keep anything typed before hydration (ClientForm, D-043).
-  const form = useForm<Values, unknown, z.output<typeof schoolDetailsSchema>>({ resolver: zodResolver(schoolDetailsSchema) });
+  // The radios are the one exception: their answer is set, not typed, so it starts from what was saved.
+  const form = useForm<Values, unknown, z.output<typeof schoolDetailsSchema>>({
+    resolver: zodResolver(schoolDetailsSchema),
+    defaultValues: initialLessonSeller === null ? {} : { lessonSeller: initialLessonSeller },
+  });
 
   useEffect(() => {
     // The preview is an address for bytes in this tab; let go of it when it changes.
@@ -152,6 +161,11 @@ export function SchoolDetailsForm({
           {...form.register('expectedInstructors')}
         />
       </Field>
+      <LessonSellerCards
+        field={form.register('lessonSeller')}
+        defaultValue={initialLessonSeller}
+        error={errors.lessonSeller?.message}
+      />
       <SubmitButton width="full" size="lg" pending={pending} disabled={working}>
         Continue
       </SubmitButton>

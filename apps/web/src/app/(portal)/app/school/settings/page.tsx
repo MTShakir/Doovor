@@ -6,11 +6,12 @@ import type { Metadata } from 'next';
 import { Suspense } from 'react';
 import { PackagesEditor } from '@/components/catalogue/packages-editor';
 import { PricesForm } from '@/components/catalogue/prices-form';
+import { LessonSellerForm } from '@/components/school/lesson-seller-form';
 import { BookingRulesForm } from '@/components/settings/booking-rules-form';
 import { requirePortal } from '@/lib/auth/session';
 import { businessCatalogue } from '@/lib/catalogue/catalogue';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
-import { saveSchoolPackage, saveSchoolPrices, saveSchoolRules } from './actions';
+import { saveLessonSeller, saveSchoolPackage, saveSchoolPrices, saveSchoolRules } from './actions';
 
 export const metadata: Metadata = { title: 'Settings' };
 
@@ -40,13 +41,22 @@ async function Settings() {
   const supabase = await createSupabaseServerClient();
   const [catalogue, { data: business }, { data: platform }] = await Promise.all([
     businessCatalogue(school.businessId),
-    supabase.from('businesses').select('settings').eq('id', school.businessId).single(),
+    supabase.from('businesses').select('settings, lesson_seller').eq('id', school.businessId).single(),
     supabase.from('platform_settings').select('value').eq('key', 'booking_defaults').maybeSingle(),
   ]);
   const rules = resolveBookingRules(isRecord(platform?.value) ? platform.value : null, isRecord(business?.settings) ? business.settings : null, null);
 
   return (
     <>
+      {school.role === 'owner' ? (
+        <Card className="flex flex-col gap-4" role="region" aria-labelledby="school-seller-title">
+          <div className="flex flex-col gap-1">
+            <CardTitle id="school-seller-title">How your school works</CardTitle>
+            <CardDescription>Who your learners buy their lessons from.</CardDescription>
+          </div>
+          <LessonSellerForm current={business?.lesson_seller ?? null} onSave={saveLessonSeller} />
+        </Card>
+      ) : null}
       <Card className="flex flex-col gap-4" role="region" aria-labelledby="school-prices-title">
         <div className="flex flex-col gap-1">
           <CardTitle id="school-prices-title">Prices</CardTitle>

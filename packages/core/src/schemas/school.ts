@@ -19,8 +19,16 @@ export const schoolNameSchema = z
 /** The database takes 1 to 500, which covers the largest schools there are. */
 export const maxExpectedInstructors = 500;
 
+/** Who sells a school's lessons: the school, its instructors each through their own Business, or both (D-281). */
+export const lessonSellerSchema = z.enum(['school', 'instructors', 'both'], { error: 'Choose who sells your lessons' });
+export type LessonSeller = z.infer<typeof lessonSellerSchema>;
+
+/** The owner's answer on its own, from Settings. */
+export const lessonSellerChoiceSchema = z.object({ lessonSeller: lessonSellerSchema });
+
 export const schoolDetailsSchema = z.object({
   name: schoolNameSchema,
+  lessonSeller: lessonSellerSchema,
   /**
    * Where the prepared logo was stored. Absent leaves the logo alone, null removes it. The
    * server checks the path is in the school's own folder before saving it.

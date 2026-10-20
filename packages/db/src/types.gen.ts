@@ -521,6 +521,7 @@ export type Database = {
           expected_instructors: number | null
           founding_offer: boolean
           id: string
+          lesson_seller: Database["public"]["Enums"]["lesson_seller"] | null
           logo_url: string | null
           name: string
           onboarding_completed_at: string | null
@@ -556,6 +557,7 @@ export type Database = {
           expected_instructors?: number | null
           founding_offer?: boolean
           id?: string
+          lesson_seller?: Database["public"]["Enums"]["lesson_seller"] | null
           logo_url?: string | null
           name: string
           onboarding_completed_at?: string | null
@@ -591,6 +593,7 @@ export type Database = {
           expected_instructors?: number | null
           founding_offer?: boolean
           id?: string
+          lesson_seller?: Database["public"]["Enums"]["lesson_seller"] | null
           logo_url?: string | null
           name?: string
           onboarding_completed_at?: string | null
@@ -3906,6 +3909,13 @@ export type Database = {
         }
         Returns: undefined
       }
+      set_lesson_seller: {
+        Args: {
+          p_business_id: string
+          p_seller: Database["public"]["Enums"]["lesson_seller"]
+        }
+        Returns: undefined
+      }
       set_member_active: {
         Args: { p_active: boolean; p_membership_id: string }
         Returns: undefined
@@ -4423,6 +4433,7 @@ export type Database = {
         | "test_day"
         | "custom"
       lesson_record_visibility: "learner" | "business"
+      lesson_seller: "school" | "instructors" | "both"
       membership_role: "owner" | "manager" | "instructor"
       membership_status: "invited" | "active" | "deactivated"
       no_show_dispute_outcome: "waived" | "kept"
@@ -4673,6 +4684,7 @@ export const Constants = {
         "custom",
       ],
       lesson_record_visibility: ["learner", "business"],
+      lesson_seller: ["school", "instructors", "both"],
       membership_role: ["owner", "manager", "instructor"],
       membership_status: ["invited", "active", "deactivated"],
       no_show_dispute_outcome: ["waived", "kept"],

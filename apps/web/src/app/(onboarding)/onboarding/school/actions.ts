@@ -22,7 +22,7 @@ export async function saveSchoolDetails(input: unknown): Promise<Result<null>> {
   if (!parsed.success) return err('VALIDATION_FAILED', undefined, fieldErrors(parsed.error));
 
   const session = await requireSchoolSetup('/onboarding/school');
-  const { name, logoPath, postcode, expectedInstructors } = parsed.data;
+  const { name, logoPath, postcode, expectedInstructors, lessonSeller } = parsed.data;
   // Storage refuses a folder that is not the school's, and so does this: the browser sends the path.
   if (typeof logoPath === 'string' && !isBusinessObjectPath(logoPath, session.businessId)) {
     return err('NOT_ALLOWED', 'That logo could not be saved. Try choosing it again.');
@@ -53,6 +53,9 @@ export async function saveSchoolDetails(input: unknown): Promise<Result<null>> {
     })
     .eq('id', session.businessId);
   if (error) return err('UNKNOWN', 'We could not save your school. Try again.');
+  // Who sells its lessons is the owner's to say, through the one door that checks and records it (D-281).
+  const seller = await supabase.rpc('set_lesson_seller', { p_business_id: session.businessId, p_seller: lessonSeller });
+  if (seller.error) return err('UNKNOWN', 'We could not save your school. Try again.');
 
   // The logo it replaced is nobody's now.
   if (logoPath !== undefined && session.logoPath && session.logoPath !== logoPath) {

@@ -90,11 +90,13 @@ async function main(): Promise<void> {
       for (const b of businesses) {
         const [row] = await tx<{ id: string }[]>`
           insert into public.businesses (type, name, slug, base_postcode, base_location, address, plan, plan_expires_at, founding_offer, created_by,
-                                         onboarding_completed_at)
+                                         onboarding_completed_at, lesson_seller)
           values (${b.type}, ${b.name}, ${b.slug}, ${b.postcode},
                   (select location from public.postcodes where postcode = ${b.postcode}),
                   ${tx.json({ line1: b.name, town: b.town, postcode: b.postcode })},
-                  ${b.plan}, now() + interval '12 months', true, ${id(b.owner)}, now())
+                  ${b.plan}, now() + interval '12 months', true, ${id(b.owner)}, now(),
+                  -- Quayside sells its own lessons through the instructors who teach under it (D-281).
+                  ${b.type === 'school' ? 'school' : null})
           returning id`;
         if (!row) throw new Error(`Business ${b.name} was not created`);
         businessIds.set(b.key, row.id);

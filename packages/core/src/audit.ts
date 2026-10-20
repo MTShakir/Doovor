@@ -18,6 +18,7 @@ export const auditCategoryKeys = [
   'housekeeping',
   'bookings',
   'businesses',
+  'schools',
 ] as const;
 
 export type AuditCategoryKey = (typeof auditCategoryKeys)[number];
@@ -40,6 +41,7 @@ export const auditActionWords: Readonly<Record<string, string>> = {
   'member.invited': 'Invited to work for a Business',
   'member.invitation_accepted': 'Accepted an invitation to work for a Business',
   'member.invitation_revoked': 'Invitation to work for a Business cancelled',
+  'school.lesson_seller_set': "Who sells the school's lessons changed",
   'staff.added': 'Made platform staff',
   'staff.removed': 'Removed from the platform staff',
   'staff.role_changed': 'Platform staff role changed',
@@ -202,6 +204,7 @@ export const auditCategories: readonly AuditCategory[] = [
   },
   // What the nightly sweep does on its own, so it is never mistaken for a person's doing (D-158).
   { key: 'housekeeping', label: 'Housekeeping', required: false, actions: ['audit_log.pruned'] },
+  { key: 'schools', label: 'Schools and their instructors', required: false, actions: ['school.lesson_seller_set'] },
   {
     key: 'bookings',
     label: 'Lessons',
