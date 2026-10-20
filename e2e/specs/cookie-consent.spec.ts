@@ -88,6 +88,35 @@ test.describe('the cookie question (NFR-PRV-02, M6-08)', () => {
     await expect(page.getByText('You have said no to being counted, and nothing is.')).toBeVisible();
   });
 
+  test('leaves the page room to scroll clear of it, so the last button is never under it (WCAG 2.4.11)', async ({ page }, testInfo) => {
+    await page.goto('/start');
+    const question = page.getByRole('dialog', { name: 'Cookies' });
+    await expect(question).toBeVisible();
+    // The page gains the question's height at its end, measured once it is running.
+    await expect
+      .poll(async () => {
+        const [room, height] = await page.evaluate(() => [
+          Number.parseFloat(getComputedStyle(document.body).paddingBottom),
+          document.querySelector<HTMLElement>('[data-cookie-banner]')?.offsetHeight ?? 0,
+        ]);
+        return height > 0 && Math.abs(room - height) < 1;
+      })
+      .toBe(true);
+    // Scrolled to the end, the last button sits clear of the question.
+    await page.evaluate(() => {
+      window.scrollTo(0, document.documentElement.scrollHeight);
+    });
+    const last = page.locator('main button, main a').last();
+    const [end, over] = await Promise.all([last.boundingBox(), question.boundingBox()]);
+    expect(end && over ? end.y + end.height <= over.y : false, 'the last control is clear of the cookie question').toBe(true);
+    await snap(page, testInfo, 'cookie-question-room', { fullPage: false });
+
+    // Answered, the room goes with it.
+    await question.getByRole('button', { name: 'No thanks' }).click();
+    await expect(question).toBeHidden();
+    await expect.poll(() => page.evaluate(() => getComputedStyle(document.body).paddingBottom)).toBe('0px');
+  });
+
   test('and it can be asked again', async ({ page }) => {
     await page.goto('/cookies');
     await page.getByRole('dialog', { name: 'Cookies' }).getByRole('button', { name: 'No thanks' }).click();

@@ -147,6 +147,14 @@
   :root[data-cookie-answer='unanswered'] [data-cookie-banner] {
     display: block;
   }
+  /* While it is asked, the page has the question's height to spare at its end, and the browser keeps
+     what it scrolls to clear of it, so nothing is left underneath it (WCAG 2.4.11). */
+  :root[data-cookie-answer='unanswered'] {
+    scroll-padding-bottom: var(--cookie-banner-height, 0px);
+  }
+  :root[data-cookie-answer='unanswered'] body {
+    padding-bottom: var(--cookie-banner-height, 0px);
+  }
   :focus-visible {
     outline: 2px solid var(--color-black);
     outline-offset: 2px;
