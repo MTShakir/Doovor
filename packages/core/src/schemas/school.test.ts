@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
   instructorInviteSchema,
   invitationIdSchema,
+  inviteKindsFor,
   lessonSellerChoiceSchema,
   memberPermissionSchema,
   memberSwitchSchema,
@@ -64,14 +65,29 @@ describe('inviting an instructor to the school (AUTH-05)', () => {
     expect(noEmail.error?.issues[0]?.path).toEqual(['email']);
   });
 
+  it('invites the instructors the school has, from who sells its lessons (D-281)', () => {
+    expect(inviteKindsFor('school')).toEqual(['member']);
+    expect(inviteKindsFor(null)).toEqual(['member']);
+    expect(inviteKindsFor('instructors')).toEqual(['link']);
+    expect(inviteKindsFor('both')).toEqual(['member', 'link']);
+  });
+
+  it('invites to teach under the school unless asked to link a business of their own (D-282)', () => {
+    expect(instructorInviteSchema.parse({ channel: 'link', fullName: '', email: '', phone: '' }).kind).toBe('member');
+    expect(instructorInviteSchema.parse({ kind: 'link', channel: 'link', fullName: '', email: '', phone: '' }).kind).toBe('link');
+    expect(instructorInviteSchema.safeParse({ kind: 'learner', channel: 'link', fullName: '', email: '', phone: '' }).success).toBe(false);
+  });
+
   it('needs nothing but the channel for a plain link, and tidies what it is given', () => {
     expect(instructorInviteSchema.parse({ channel: 'link', fullName: '', email: '', phone: '' })).toEqual({
+      kind: 'member',
       channel: 'link',
       fullName: '',
       email: null,
       phone: null,
     });
     expect(instructorInviteSchema.parse({ channel: 'whatsapp', fullName: ' Nia ', email: '', phone: '07700 900555' })).toEqual({
+      kind: 'member',
       channel: 'whatsapp',
       fullName: 'Nia',
       email: null,

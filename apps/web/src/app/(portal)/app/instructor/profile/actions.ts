@@ -15,6 +15,7 @@ import { fieldErrors } from '@/lib/forms';
 import { expireAllInstructorProfiles, expireInstructorProfile } from '@/lib/public/instructor-profile';
 import { avatarsBucket, removeProfileImage } from '@/lib/storage/images';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
+import { vouchingSchool } from '@/lib/school/link';
 import { submitBadge } from '@/lib/verification/submit-badge';
 
 /** INS-01: the profile a learner reads. Badge and verification are not editable here. */
@@ -119,7 +120,7 @@ export async function resubmitBadge(input: unknown): Promise<Result<null>> {
   const membership = access.memberships.find((m) => m.instructorProfileId !== null);
   if (!membership?.instructorProfileId) return err('NOT_ALLOWED');
   const profileId = membership.instructorProfileId;
-  const vouched = membership.businessType === 'school';
+  const vouched = (await vouchingSchool(membership)) !== null;
 
   const supabase = await createSupabaseServerClient();
   const { data: current } = await supabase

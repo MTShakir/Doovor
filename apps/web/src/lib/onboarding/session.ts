@@ -5,14 +5,15 @@ import { getAccess, requireAgreedTerms } from '@/lib/auth/session';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
 import { redirectTo } from '@/lib/redirect-to';
 import { landingPath } from '@/lib/auth/portals';
+import { vouchingSchool } from '@/lib/school/link';
 
 export interface OnboardingSession {
   profileId: string;
   businessId: string;
   /** A school sets its instructors' prices, so they have no prices step (D-118). */
   businessType: 'independent' | 'school';
-  /** The Business's name: at a school, the one that vouches for them (D-280). */
-  businessName: string;
+  /** The school that vouches for their badge, theirs or the one their Business is linked to (D-280). */
+  vouchedBy: string | null;
   step: number;
   completed: boolean;
   /** What they are called today: the name step starts from this. */
@@ -55,7 +56,7 @@ export async function requireOnboarding(): Promise<OnboardingSession> {
     profileId: membership.instructorProfileId,
     businessId: membership.businessId,
     businessType: membership.businessType,
-    businessName: membership.businessName,
+    vouchedBy: await vouchingSchool(membership),
     step: membership.onboarding.step,
     completed: membership.onboarding.completed,
     displayName: profile?.display_name ?? '',

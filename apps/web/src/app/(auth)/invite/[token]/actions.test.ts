@@ -13,13 +13,14 @@ const completeSignIn = vi.fn<() => Promise<string>>();
 vi.mock('@/lib/supabase/server', () => ({ createSupabaseServerClient: () => Promise.resolve({ rpc }) }));
 vi.mock('@/lib/auth/session', () => ({ getAccess: () => getAccess() }));
 vi.mock('@/lib/auth/complete-sign-in', () => ({ completeSignIn: () => completeSignIn() }));
+vi.mock('@/lib/public/instructor-profile', () => ({ expireAllInstructorProfiles: () => undefined }));
 vi.mock('@/lib/redirect-to', () => ({
   redirectTo: (path: string) => {
     throw new Redirected(path);
   },
 }));
 
-const { acceptInvitation, acceptMemberInvitation } = await import('./actions');
+const { acceptInvitation, acceptLinkInvitation, acceptMemberInvitation } = await import('./actions');
 
 const signedIn = { session: { userId: 'user-1' }, access: { isLearner: false, memberships: [] } };
 
@@ -63,5 +64,33 @@ describe('a learner accepting an instructor (AUTH-07)', () => {
     getAccess.mockResolvedValueOnce({ ...signedIn, access: { isLearner: true, memberships: [] } });
     await expect(acceptInvitation('tok_abc-123')).rejects.toMatchObject({ path: '/app/learner' });
     expect(rpc).toHaveBeenCalledWith('accept_invitation', { p_token: 'tok_abc-123' });
+  });
+});
+
+describe('linking a business of their own to a school (D-282)', () => {
+  it('links it, and goes to Your school', async () => {
+    getAccess.mockResolvedValue({ access: { isLearner: false, memberships: [] } });
+    rpc.mockResolvedValueOnce({ data: 'link-1', error: null });
+    await expect(acceptLinkInvitation('tok_link')).rejects.toMatchObject({ path: '/app/instructor/school' });
+    expect(rpc).toHaveBeenCalledWith('accept_link_invitation', { p_token: 'tok_link' });
+  });
+
+  it('says what stands in the way', async () => {
+    getAccess.mockResolvedValue({ access: { isLearner: false, memberships: [] } });
+    const refusal = (reason: string) => ({ data: null, error: { code: 'P0001', message: 'VALIDATION_FAILED', details: `{"reason": "${reason}"}` } });
+    rpc.mockResolvedValueOnce(refusal('no_business'));
+    expect(await acceptLinkInvitation('tok_link')).toMatchObject({ ok: false, message: 'Linking needs an instructor business of your own. Sign out and create an instructor account to link one.' });
+    rpc.mockResolvedValueOnce(refusal('linked_elsewhere'));
+    expect(await acceptLinkInvitation('tok_link')).toMatchObject({ ok: false, message: 'Your business is linked to another school. Leave it first, from Your school under More.' });
+    rpc.mockResolvedValueOnce(refusal('member_here'));
+    expect(await acceptLinkInvitation('tok_link')).toMatchObject({ ok: false, message: 'You already work for this school.' });
+    rpc.mockResolvedValueOnce(refusal('expired'));
+    expect(await acceptLinkInvitation('tok_link')).toMatchObject({ ok: false, message: 'This link has already been used or has expired.' });
+  });
+
+  it('asks somebody signed out to sign in', async () => {
+    getAccess.mockResolvedValue(null);
+    expect(await acceptLinkInvitation('tok_link')).toMatchObject({ ok: false, code: 'NOT_AUTHENTICATED' });
+    expect(rpc).not.toHaveBeenCalled();
   });
 });

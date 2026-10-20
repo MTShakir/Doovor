@@ -119,6 +119,7 @@ describe('inviting an instructor to the school (AUTH-05, M5-11)', () => {
     expect(await inviteInstructor({ channel: 'sms', fullName: 'Nia Newcomer', email: '', phone: '07700 900555' })).toEqual({
       ok: true,
       data: {
+        kind: 'member',
         link: 'https://app.example.test/invite/tok_abc-123',
         schoolName: 'Northern Lights Driving',
         fullName: 'Nia Newcomer',

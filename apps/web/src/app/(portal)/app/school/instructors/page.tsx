@@ -4,6 +4,7 @@ import type { Metadata } from 'next';
 import { Suspense } from 'react';
 import { requirePortal } from '@/lib/auth/session';
 import { schoolTeam } from '@/lib/school/team';
+import { createSupabaseServerClient } from '@/lib/supabase/server';
 import { TeamScreen } from './team-screen';
 
 export const metadata: Metadata = { title: 'Instructors' };
@@ -29,6 +30,10 @@ async function Team() {
   );
   if (!membership) return null;
 
-  const team = await schoolTeam(membership.businessId);
-  return <TeamScreen team={team} viewerIsOwner={membership.role === 'owner'} />;
+  const supabase = await createSupabaseServerClient();
+  const [team, { data: school }] = await Promise.all([
+    schoolTeam(membership.businessId),
+    supabase.from('businesses').select('lesson_seller').eq('id', membership.businessId).single(),
+  ]);
+  return <TeamScreen team={team} viewerIsOwner={membership.role === 'owner'} lessonSeller={school?.lesson_seller ?? null} />;
 }

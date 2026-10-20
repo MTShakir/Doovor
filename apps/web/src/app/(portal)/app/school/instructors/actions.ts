@@ -5,7 +5,7 @@ import { err, ok, type Result } from '@repo/core/result';
 import { instructorInviteSchema, invitationIdSchema, memberPermissionSchema, memberSwitchSchema } from '@repo/core/schemas/school';
 import { requirePortal } from '@/lib/auth/session';
 import { fieldErrors } from '@/lib/forms';
-import { expireInstructorProfile } from '@/lib/public/instructor-profile';
+import { expireAllInstructorProfiles, expireInstructorProfile } from '@/lib/public/instructor-profile';
 import { createInstructorInvitation, type InstructorInvitation } from '@/lib/school/invitations';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
 
@@ -26,6 +26,25 @@ export async function inviteToSchool(input: unknown): Promise<Result<InstructorI
   const school = await runningSchool();
   if (!school) return err('NOT_ALLOWED');
   return createInstructorInvitation(school, parsed.data);
+}
+
+const linkIdSchema = invitationIdSchema;
+
+/**
+ * D-282: the school stops linking an instructor who sells their own lessons. Their Business stays
+ * theirs; the school stops vouching for them and the Pro its seat paid for ends, so the kept copies
+ * of the public pages are read fresh.
+ */
+export async function letGo(linkId: unknown): Promise<Result<null>> {
+  const parsed = linkIdSchema.safeParse(linkId);
+  if (!parsed.success) return err('NOT_FOUND', 'That instructor could not be found.');
+
+  if (!(await runningSchool())) return err('NOT_ALLOWED');
+  const supabase = await createSupabaseServerClient();
+  const { error } = await supabase.rpc('end_school_link', { p_link_id: parsed.data });
+  if (error) return err(parsePostgresError(error).code);
+  expireAllInstructorProfiles();
+  return ok(null);
 }
 
 /** SCH-02: an invitation sent to the wrong person stops working at once. */

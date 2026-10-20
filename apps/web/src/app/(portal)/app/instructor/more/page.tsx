@@ -10,6 +10,7 @@ import {
 import { icons } from '@/lib/icons';
 import { installAppLink, MoreMenu } from '@/components/more-menu';
 import { businessPlanKey } from '@/lib/billing/plan';
+import { ownSchoolLink } from '@/lib/school/link';
 
 /**
  * The More menu, in the order somebody reaches for things (D-209): what learners see first, then
@@ -23,7 +24,7 @@ import { businessPlanKey } from '@/lib/billing/plan';
  * nobody buys.
  */
 export default async function InstructorMorePage() {
-  const plan = await businessPlanKey();
+  const [plan, linked] = await Promise.all([businessPlanKey(), ownSchoolLink()]);
   const locked = plan === null || !hasEntitlement(plan, 'expensesAndExports');
 
   return (
@@ -31,6 +32,8 @@ export default async function InstructorMorePage() {
       title="More"
       links={[
         { href: '/app/instructor/profile', icon: UserRound, title: 'Profile', subtitle: 'Your public profile and booking link' },
+        // Only for an instructor whose own business is linked to a school (D-282).
+        ...(linked ? [{ href: '/app/instructor/school' as const, icon: icons.school, title: 'Your school', subtitle: linked.link.schoolName }] : []),
         { href: '/app/instructor/settings', icon: Settings, title: 'Settings', subtitle: 'Booking rules and working hours' },
         { href: '/app/instructor/money/setup', icon: icons.paymentSetup, title: 'Payment setup', subtitle: 'Card payments, how learners pay, receipts' },
         { href: '/app/instructor/messages', icon: icons.messages, title: 'Messages', subtitle: 'In-app chat with your learners, on the way' },

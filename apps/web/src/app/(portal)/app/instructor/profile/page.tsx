@@ -11,6 +11,7 @@ import { StatusPill } from '@repo/ui/status-pill';
 import { Suspense } from 'react';
 import { FormAlert } from '@/components/form-alert';
 import { BookingLinkCard } from '@/components/share/booking-link-card';
+import { vouchingSchool } from '@/lib/school/link';
 import { getAppUrl } from '@/lib/app-url';
 import { requirePortal } from '@/lib/auth/session';
 import { getGeoProvider } from '@/lib/geo/provider';
@@ -113,7 +114,8 @@ async function Profile() {
 
   const today = todayInZone();
   const expired = profile.badge_expiry !== null && isBadgeExpired(profile.badge_expiry, today);
-  const school = membership.businessType === 'school' ? membership.businessName : null;
+  // The school that vouches for them: the one they teach under, or the one they are linked to (D-280).
+  const school = await vouchingSchool(membership);
   const badge =
     school === null ? verification(profile.verification_status, expired) : vouched(school, expired, profile.badge_number !== null);
   const sendable = school !== null || canSendBadge(profile.verification_status, profile.badge_expiry, today);

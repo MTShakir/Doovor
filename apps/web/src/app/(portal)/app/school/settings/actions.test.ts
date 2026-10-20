@@ -14,7 +14,7 @@ vi.mock('@/lib/catalogue/save', () => ({
 }));
 vi.mock('@/lib/public/instructor-profile', () => ({ expireAllInstructorProfiles: () => { expireAll(); } }));
 
-const { saveSchoolPackage, saveSchoolPrices, saveSchoolRules } = await import('./actions');
+const { saveLessonSeller, saveSchoolPackage, saveSchoolPrices, saveSchoolRules } = await import('./actions');
 
 const manager = { businessId: 'school-1', businessType: 'school', role: 'manager' };
 const rules = { noticeHours: '24', horizonWeeks: '8', cancellationWindowHours: '24', lateFeePercent: '50', requestExpiryHours: '12', reminderHoursBefore: '24,2' };
@@ -63,5 +63,30 @@ describe('the school settings (SCH-04, M5-15)', () => {
       fields: { lateFeePercent: 'Choose 0, 50 or 100 per cent' },
     });
     expect(rpc).not.toHaveBeenCalled();
+  });
+});
+
+describe('who sells the school\'s lessons (D-281)', () => {
+  const owner = { businessId: 'school-1', businessType: 'school', role: 'owner' };
+
+  it('is said by the owner, through the database\'s own door', async () => {
+    requirePortal.mockResolvedValue({ access: { memberships: [owner] } });
+    expect(await saveLessonSeller({ lessonSeller: 'both' })).toEqual({ ok: true, data: null });
+    expect(rpc).toHaveBeenCalledWith('set_lesson_seller', { p_business_id: 'school-1', p_seller: 'both' });
+  });
+
+  it('is not the manager\'s to say, and needs an answer', async () => {
+    expect(await saveLessonSeller({ lessonSeller: 'both' })).toMatchObject({ ok: false, code: 'NOT_ALLOWED' });
+    expect(await saveLessonSeller({})).toMatchObject({ code: 'VALIDATION_FAILED', fields: { lessonSeller: 'Choose who sells your lessons' } });
+    expect(rpc).not.toHaveBeenCalled();
+  });
+
+  it('says why the instructors cannot sell every lesson while some teach under the school', async () => {
+    requirePortal.mockResolvedValue({ access: { memberships: [owner] } });
+    rpc.mockResolvedValueOnce({ data: null, error: { code: 'P0001', message: 'VALIDATION_FAILED', details: '{"field": "seller", "reason": "instructors_teach_here"}' } });
+    expect(await saveLessonSeller({ lessonSeller: 'instructors' })).toMatchObject({
+      code: 'VALIDATION_FAILED',
+      fields: { lessonSeller: 'Some of your instructors still teach under the school. Choose Some of each while they move to their own.' },
+    });
   });
 });

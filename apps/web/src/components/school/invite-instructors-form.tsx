@@ -2,7 +2,7 @@
 
 import { emailShareUrl, invitationText, smsShareUrl, whatsappShareUrl, type InvitationMessage } from '@repo/core/invitations';
 import type { Result } from '@repo/core/result';
-import type { InviteChannel } from '@repo/core/schemas/school';
+import type { InstructorInviteKind, InviteChannel } from '@repo/core/schemas/school';
 import { Button } from '@repo/ui/button';
 import { Field } from '@repo/ui/field';
 import { Input } from '@repo/ui/input';
@@ -26,18 +26,34 @@ function isChannel(value: string): value is InviteChannel {
   return channels.some((channel) => channel.value === value);
 }
 
+/** How an invited instructor works with the school (D-282). */
+const kindOptions: { value: InstructorInviteKind; label: string }[] = [
+  { value: 'member', label: 'Teaches under the school' },
+  { value: 'link', label: 'Sells their own lessons, with their own business' },
+];
+
+function isKind(value: string): value is InstructorInviteKind {
+  return kindOptions.some((kind) => kind.value === value);
+}
+
 export interface InviteInstructorsFormProps {
   /** The Server Action that makes the link: while setting the school up, or from its Instructors screen. */
   invite: (input: unknown) => Promise<Result<InstructorInvitation>>;
+  /**
+   * The kinds of invitation the school sends, from who sells its lessons (D-281): to teach under
+   * it, to link a business of their own (D-282), or either, when it asks which.
+   */
+  kinds?: InstructorInviteKind[];
 }
 
 /** AUTH-05, SCH-02: a link for one instructor, sent from the owner's or a manager's own phone (D-118). */
-export function InviteInstructorsForm({ invite }: InviteInstructorsFormProps) {
+export function InviteInstructorsForm({ invite, kinds = ['member'] }: InviteInstructorsFormProps) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [formError, setFormError] = useState<string | null>(null);
   const [channel, setChannel] = useState<InviteChannel>('sms');
+  const [kind, setKind] = useState<InstructorInviteKind>(kinds[0] ?? 'member');
   const [fullName, setFullName] = useState('');
   const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
@@ -50,6 +66,7 @@ export function InviteInstructorsForm({ invite }: InviteInstructorsFormProps) {
     startTransition(async () => {
       // Only the address the chosen way needs: a number typed before switching to email is not sent.
       const result = await invite({
+        kind,
         channel,
         fullName,
         email: channel === 'email' ? email : '',
@@ -68,7 +85,7 @@ export function InviteInstructorsForm({ invite }: InviteInstructorsFormProps) {
 
   if (invitation) {
     const message: InvitationMessage = {
-      kind: 'member',
+      kind: invitation.kind,
       link: invitation.link,
       instructorName: invitation.schoolName,
       learnerName: invitation.fullName,
@@ -82,7 +99,14 @@ export function InviteInstructorsForm({ invite }: InviteInstructorsFormProps) {
     return (
       <div className="flex flex-col gap-4">
         <FormAlert tone="success">The link for {who} is ready. It works once, and stops working in 14 days.</FormAlert>
-        <Field label="Their link" hint="Whoever opens this link can join your school, so send it to them only.">
+        <Field
+          label="Their link"
+          hint={
+            invitation.kind === 'link'
+              ? 'Whoever opens this link can link their business to your school, so send it to them only.'
+              : 'Whoever opens this link can join your school, so send it to them only.'
+          }
+        >
           <Input readOnly value={invitation.link} onFocus={(event) => { event.target.select(); }} />
         </Field>
         <div className="flex flex-wrap gap-2">
@@ -133,6 +157,17 @@ export function InviteInstructorsForm({ invite }: InviteInstructorsFormProps) {
       <Field label="Their name" hint="Optional, and only so the message reads properly." error={errors.fullName}>
         <Input autoComplete="off" value={fullName} onChange={(event) => { setFullName(event.target.value); }} />
       </Field>
+      {kinds.length > 1 ? (
+        <Field label="How will they work with you?" hint="Under the school, or with their own business linked to it.">
+          <Select
+            options={kindOptions.filter((option) => kinds.includes(option.value))}
+            value={kind}
+            onChange={(event) => {
+              if (isKind(event.target.value)) setKind(event.target.value);
+            }}
+          />
+        </Field>
+      ) : null}
       <Field label="How will you send it?">
         <Select
           options={channels}

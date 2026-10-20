@@ -5,6 +5,7 @@ import { SkeletonRow } from '@repo/ui/skeleton';
 import { StatusPill } from '@repo/ui/status-pill';
 import type { Metadata } from 'next';
 import { Suspense } from 'react';
+import { inviteKindsFor } from '@repo/core/schemas/school';
 import { requireSchoolSetup } from '@/lib/onboarding/school-session';
 import { redirectTo } from '@/lib/redirect-to';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
@@ -28,14 +29,21 @@ async function InviteInstructors() {
   const session = await requireSchoolSetup('/onboarding/school/invite');
   // The school's details come first: nothing here works without knowing which school it is.
   if (session.basePostcode === null) redirectTo('/onboarding/school');
+  const kinds = inviteKindsFor(session.lessonSeller);
+  const lead =
+    kinds.length === 2
+      ? `Each one gets a link to join ${session.name}, or to link their own business to it. Send it from your phone, the way you already talk to them.`
+      : kinds.includes('link')
+        ? `Each one gets a link to link their own business to ${session.name}, keeping their prices, payments and learners. Send it from your phone, the way you already talk to them.`
+        : `Each one gets a link to join ${session.name}, then sets up their profile in four short steps. Send it from your phone, the way you already talk to them.`;
 
   return (
     <SchoolStep
       current={2}
       title="Invite your instructors"
-      lead={`Each one gets a link to join ${session.name}, then sets up their profile in four short steps. Send it from your phone, the way you already talk to them.`}
+      lead={lead}
     >
-      <InviteInstructorsForm invite={inviteInstructor} />
+      <InviteInstructorsForm invite={inviteInstructor} kinds={kinds} />
       <Suspense fallback={<SkeletonRow />}>
         <Invited businessId={session.businessId} expected={session.expectedInstructors} />
       </Suspense>

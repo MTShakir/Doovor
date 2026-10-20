@@ -62,8 +62,20 @@ export type InviteChannel = z.infer<typeof inviteChannelSchema>;
  * One instructor invited to the school. The link is sent from the owner's own phone, so a
  * number or an address is needed only to open the message already addressed (D-118).
  */
+/** How an invited instructor works with the school: under it, or with their own Business linked (D-282). */
+export const instructorInviteKindSchema = z.enum(['member', 'link']);
+export type InstructorInviteKind = z.infer<typeof instructorInviteKindSchema>;
+
+/** Which instructors a school invites, from who sells its lessons (D-281, D-282). */
+export function inviteKindsFor(seller: LessonSeller | null): InstructorInviteKind[] {
+  if (seller === 'instructors') return ['link'];
+  if (seller === 'both') return ['member', 'link'];
+  return ['member'];
+}
+
 export const instructorInviteSchema = z
   .object({
+    kind: instructorInviteKindSchema.default('member'),
     channel: inviteChannelSchema,
     fullName: z.string().trim().max(120, { error: 'Use 120 characters or fewer' }),
     email: z.union([z.literal('').transform(() => null), emailSchema]),

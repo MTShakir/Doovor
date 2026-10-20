@@ -81,7 +81,7 @@ import { AuditEntries, AuditFiltersForm, AuditLogSkeleton, AuditPager } from '@/
 import type { AuditEntry } from '@/lib/admin/audit';
 import type { PlatformDashboard } from '@/lib/admin/dashboard';
 import type { SchoolOverview } from '@/lib/school/overview';
-import { SwitchOffDialog, TeamSections } from '@/components/school/team';
+import { LetGoDialog, SwitchOffDialog, TeamSections } from '@/components/school/team';
 import { AllocationChoices } from '@/components/school/allocation-choices';
 import { PackagesEditor } from '@/components/catalogue/packages-editor';
 import { PricesForm } from '@/components/catalogue/prices-form';
@@ -443,7 +443,13 @@ const exampleTeam: SchoolTeam = {
     { membershipId: 'team-4', isYou: false, role: 'manager', active: true, name: 'Omar Hussain', email: null, phone: null, instructorId: null, photoPath: null, setOwnPrices: false, viewRevenue: true, lessonsToCome: 0 },
     { membershipId: 'team-5', isYou: false, role: 'instructor', active: false, name: 'Ravi Patel', email: null, phone: null, instructorId: 'team-p5', photoPath: null, setOwnPrices: false, viewRevenue: false, lessonsToCome: 3 },
   ],
-  invitations: [{ invitationId: 'team-i1', fullName: 'Nia Newcomer', email: null, phone: '+447700900555', expiresAt: '2026-09-30T10:00:00Z', expiresOn: 'Wed 30 Sep' }],
+  linked: [
+    { linkId: 'link-1', businessId: 'link-b1', businessName: 'Khan Driving', name: 'Sarah Khan', email: null, phone: '+447700900111', instructorId: 'link-p1', photoPath: null, qualification: 'adi', badgeExpiresOn: 'Wed 30 Jun 2027', linkedOn: 'Tue 20 Oct' },
+  ],
+  invitations: [
+    { invitationId: 'team-i1', kind: 'member', fullName: 'Nia Newcomer', email: null, phone: '+447700900555', expiresAt: '2026-09-30T10:00:00Z', expiresOn: 'Wed 30 Sep' },
+    { invitationId: 'team-i2', kind: 'link', fullName: 'Oli Own', email: 'oli@example.test', phone: null, expiresAt: '2026-10-02T10:00:00Z', expiresOn: 'Fri 2 Oct' },
+  ],
 };
 
 const exampleEverybody = [
@@ -533,6 +539,7 @@ const iconNames: Record<keyof typeof icons, string> = {
   verification: 'Badges to check',
   learners: 'Learners',
   instructors: 'Instructors',
+  school: 'Your school',
   pickupPoints: 'Pickup points',
   bookkeeping: 'Bookkeeping',
   refer: 'Refer an instructor',
@@ -728,6 +735,7 @@ export function DesignShowcase() {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [picked, setPicked] = useState<string | undefined>(undefined);
   const [switchingOff, setSwitchingOff] = useState<SchoolTeam['members'][number] | null>(null);
+  const [lettingGo, setLettingGo] = useState<SchoolTeam['linked'][number] | null>(null);
   const [document, setDocument] = useState<string | undefined>(undefined);
   const [pickup, setPickup] = useState<string | undefined>(undefined);
   const [suspendingBusiness, setSuspendingBusiness] = useState<AdminBusiness | null>(null);
@@ -1717,16 +1725,34 @@ export function DesignShowcase() {
         <InstructorWeeks instructors={[]} week={exampleWeek} idPrefix="design-weeks-empty" />
         <Label>Loading</Label>
         <OverviewSkeleton />
-        <Label>Team, as the owner sees it, with an invitation waiting and somebody switched off</Label>
+        <Label>Team, as the owner of a school that sells some lessons and links instructors who sell their own sees it, with invitations of both kinds and somebody switched off (D-282)</Label>
         <TeamSections
           members={exampleTeam.members}
+          linked={exampleTeam.linked}
           invitations={exampleTeam.invitations}
+          lessonSeller="both"
           handlers={{
             viewerIsOwner: true,
             busyId: 'team-2',
             onPermission: () => undefined,
             onSwitch: (member, active) => { if (!active) setSwitchingOff(member); },
             onCancelInvitation: () => undefined,
+            onLetGo: setLettingGo,
+          }}
+        />
+        <Label>A school whose instructors all sell their own lessons, with nobody linked yet</Label>
+        <TeamSections
+          members={[]}
+          linked={[]}
+          invitations={[]}
+          lessonSeller="instructors"
+          handlers={{
+            viewerIsOwner: true,
+            busyId: null,
+            onPermission: () => undefined,
+            onSwitch: () => undefined,
+            onCancelInvitation: () => undefined,
+            onLetGo: () => undefined,
           }}
         />
         <div>
@@ -1764,6 +1790,17 @@ export function DesignShowcase() {
           pending={false}
           onConfirm={() => { setSwitchingOff(null); }}
           onCancel={() => { setSwitchingOff(null); }}
+        />
+        <div>
+          <Button variant="secondary" onClick={() => { setLettingGo(exampleTeam.linked[0] ?? null); }}>
+            Stop linking Sarah Khan
+          </Button>
+        </div>
+        <LetGoDialog
+          linked={lettingGo}
+          pending={false}
+          onConfirm={() => { setLettingGo(null); }}
+          onCancel={() => { setLettingGo(null); }}
         />
       </Section>
 
