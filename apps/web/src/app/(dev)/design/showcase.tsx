@@ -84,6 +84,9 @@ import type { SchoolOverview } from '@/lib/school/overview';
 import { LetGoDialog, SwitchOffDialog, TeamSections } from '@/components/school/team';
 import { AllocationChoices } from '@/components/school/allocation-choices';
 import { LinkedFreeBusy } from '@/components/school/linked-free-busy';
+import { EnquiryForm } from '@/components/school/enquiry-form';
+import { EnquiryInbox } from '@/components/school/enquiry-inbox';
+import type { Enquiry } from '@/lib/school/enquiries';
 import { FeeList } from '@/components/school/fee-list';
 import { FeeTermsForm } from '@/components/school/fee-terms-form';
 import { LinkedFeesCard } from '@/components/school/linked-fees';
@@ -442,6 +445,37 @@ const exampleRegions: AdminRegion[] = [
   { area: 'M', label: 'M, Manchester', instructors: 41, freeHours: 380, waiting: 0, requests: 3, open: true, switchedOn: 'Tue 15 Sep 2026', meetsRule: true, instructorsShort: 0, hoursShort: 0 },
   { area: 'SK', label: 'SK, Stockport', instructors: 12, freeHours: 96, waiting: 17, requests: 2, open: false, switchedOn: null, meetsRule: false, instructorsShort: 13, hoursShort: 54 },
 ];
+
+// People who asked a school for lessons, written out as the server would (D-288).
+const exampleEnquiries: Enquiry[] = [
+  {
+    enquiryId: 'design-enquiry-1',
+    fullName: 'Pat Pupil',
+    email: 'pat@example.com',
+    phone: '07700 900123',
+    postcode: 'M1 1AE',
+    transmission: 'automatic',
+    note: 'Weekday evenings, after six',
+    source: 'public',
+    status: 'new',
+    receivedOn: 'Tue 20 Oct',
+    closedReason: null,
+  },
+  {
+    enquiryId: 'design-enquiry-2',
+    fullName: 'Sam Caller',
+    email: null,
+    phone: '07700 900124',
+    postcode: 'M14 5RL',
+    transmission: null,
+    note: null,
+    source: 'office',
+    status: 'new',
+    receivedOn: 'Mon 19 Oct',
+    closedReason: null,
+  },
+];
+const exampleEnquiryCounts = { new: 2, offered: 1, taken: 4, closed: 3 };
 
 // Fees a linked instructor owes, written out as the server would (D-287).
 const exampleFees: FeeLine[] = [
@@ -1789,6 +1823,38 @@ export function DesignShowcase() {
         <InstructorWeeks instructors={[]} week={exampleWeek} idPrefix="design-weeks-empty" />
         <Label>Loading</Label>
         <OverviewSkeleton />
+        <Label>Asking a school for lessons, on its page and from the office (D-288)</Label>
+        <div className="grid items-start gap-6 md:grid-cols-2">
+          <EnquiryForm
+            mode="public"
+            idPrefix="design-ask-"
+            consentWords="I agree to Quayside Driving School keeping these details and passing them to one of its instructors, who will contact me about lessons."
+            onSave={savedNothing}
+            onSaved={() => undefined}
+          />
+          <EnquiryForm
+            mode="office"
+            idPrefix="design-office-"
+            consentWords="They agreed to Quayside Driving School keeping these details and passing them to one of its instructors, who will contact them about lessons."
+            onSave={savedNothing}
+            onSaved={() => undefined}
+          />
+        </div>
+        <Label>New pupils: two waiting, one from the page and one added by the office, and a part with nobody in it</Label>
+        <EnquiryInbox
+          status="new"
+          counts={exampleEnquiryCounts}
+          enquiries={exampleEnquiries}
+          consentWords="They agreed to Quayside Driving School keeping these details."
+          handlers={{ add: savedNothing, close: savedNothing, reopen: savedNothing, refresh: () => undefined }}
+        />
+        <EnquiryInbox
+          status="closed"
+          counts={{ ...exampleEnquiryCounts, closed: 0 }}
+          enquiries={[]}
+          consentWords="They agreed to Quayside Driving School keeping these details."
+          handlers={{ add: savedNothing, close: savedNothing, reopen: savedNothing, refresh: () => undefined }}
+        />
         <Label>Fees from a linked instructor, as the school sees them: the terms, what is owed, and each fee to mark paid or write off (D-287)</Label>
         <LinkedFeesCard
           idPrefix="design-"

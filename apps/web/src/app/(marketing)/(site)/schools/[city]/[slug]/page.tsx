@@ -18,6 +18,7 @@ import { schoolProfile } from '@/lib/public/school-profile';
 import { schoolCard } from '@/lib/public/share-cards';
 import { getSiteUrl } from '@/lib/site-url';
 import { avatarUrl } from '@/lib/storage/images';
+import { AskSchool } from './ask-school';
 
 type Props = PageProps<'/schools/[city]/[slug]'>;
 
@@ -134,6 +135,8 @@ async function SchoolProfile({ params }: Pick<Props, 'params'>) {
             }),
           ]}
         />
+        {/* M9-15, D-288: somebody who wants lessons leaves their details, and the school finds them an instructor. */}
+        <AskSchool slug={school.slug} school={school.name} />
         {/* D-218: the school's wall is every instructor's, because it is the school's page. */}
         <Suspense fallback={null}>
           <Passes slug={school.slug} galleryHref={schoolGalleryPath(school.place?.citySlug ?? null, school.slug)} />

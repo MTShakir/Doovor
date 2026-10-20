@@ -1,12 +1,16 @@
 import { describe, expect, it } from 'vitest';
 import {
+  enquiryConsentWords,
   instructorInviteSchema,
   invitationIdSchema,
   inviteKindsFor,
   lessonSellerChoiceSchema,
   memberPermissionSchema,
   memberSwitchSchema,
+  officeEnquiryConsentWords,
+  officeEnquirySchema,
   schoolDetailsSchema,
+  schoolEnquirySchema,
 } from './school.ts';
 
 const details = { name: '  Northern Lights Driving ', postcode: 'm1 1ae', expectedInstructors: ' 6 ', lessonSeller: 'both' };
@@ -114,5 +118,38 @@ describe('managing the team (SCH-02, M5-13)', () => {
     expect(memberSwitchSchema.safeParse({ membershipId: 'not-an-id', active: false }).success).toBe(false);
     expect(invitationIdSchema.safeParse(membershipId).success).toBe(true);
     expect(invitationIdSchema.safeParse('').success).toBe(false);
+  });
+});
+
+describe('somebody asking a school for lessons (M9-15, D-288)', () => {
+  const asked = { fullName: 'Pat Pupil', email: 'Pat@Example.com', phone: '', postcode: 'm1 1ae', transmission: 'automatic', note: 'Evenings', agreed: true };
+
+  it('takes a name, a way to reach them, their postcode and what they want', () => {
+    expect(schoolEnquirySchema.parse(asked)).toEqual({
+      fullName: 'Pat Pupil',
+      email: 'pat@example.com',
+      phone: null,
+      postcode: 'M1 1AE',
+      transmission: 'automatic',
+      note: 'Evenings',
+      agreed: true,
+    });
+    expect(schoolEnquirySchema.parse({ ...asked, email: '', phone: '07700 900123' }).phone).toBe('+447700900123');
+  });
+
+  it('needs one way to reach them, and their agreement', () => {
+    const none = schoolEnquirySchema.safeParse({ ...asked, email: '', phone: '' });
+    expect(none.error?.issues.map((issue) => [issue.path[0], issue.message])).toEqual([['email', 'Enter an email address or a mobile number']]);
+    expect(schoolEnquirySchema.safeParse({ ...asked, agreed: false }).error?.issues[0]?.message).toBe(
+      'Tick this so the school can pass your details to an instructor',
+    );
+    expect(officeEnquirySchema.safeParse({ ...asked, agreed: false }).error?.issues[0]?.message).toBe('Tick this once they have agreed');
+  });
+
+  it('says what they agree to in the school\'s name', () => {
+    expect(enquiryConsentWords('Bee School')).toBe(
+      'I agree to Bee School keeping these details and passing them to one of its instructors, who will contact me about lessons.',
+    );
+    expect(officeEnquiryConsentWords('Bee School')).toContain('They agreed to Bee School');
   });
 });

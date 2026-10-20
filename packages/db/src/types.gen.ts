@@ -2817,6 +2817,120 @@ export type Database = {
           },
         ]
       }
+      school_enquiries: {
+        Row: {
+          closed_at: string | null
+          closed_reason: string | null
+          consent_wording: string
+          consented_at: string
+          created_at: string
+          created_by: string | null
+          email: string | null
+          full_name: string
+          id: string
+          note: string | null
+          phone: string | null
+          postcode: string
+          school_id: string
+          source: string
+          status: Database["public"]["Enums"]["school_enquiry_status"]
+          taken_at: string | null
+          taken_business_id: string | null
+          taken_instructor_id: string | null
+          taken_learner_id: string | null
+          transmission:
+            | Database["public"]["Enums"]["learner_transmission"]
+            | null
+          updated_at: string
+        }
+        Insert: {
+          closed_at?: string | null
+          closed_reason?: string | null
+          consent_wording: string
+          consented_at?: string
+          created_at?: string
+          created_by?: string | null
+          email?: string | null
+          full_name: string
+          id?: string
+          note?: string | null
+          phone?: string | null
+          postcode: string
+          school_id: string
+          source: string
+          status?: Database["public"]["Enums"]["school_enquiry_status"]
+          taken_at?: string | null
+          taken_business_id?: string | null
+          taken_instructor_id?: string | null
+          taken_learner_id?: string | null
+          transmission?:
+            | Database["public"]["Enums"]["learner_transmission"]
+            | null
+          updated_at?: string
+        }
+        Update: {
+          closed_at?: string | null
+          closed_reason?: string | null
+          consent_wording?: string
+          consented_at?: string
+          created_at?: string
+          created_by?: string | null
+          email?: string | null
+          full_name?: string
+          id?: string
+          note?: string | null
+          phone?: string | null
+          postcode?: string
+          school_id?: string
+          source?: string
+          status?: Database["public"]["Enums"]["school_enquiry_status"]
+          taken_at?: string | null
+          taken_business_id?: string | null
+          taken_instructor_id?: string | null
+          taken_learner_id?: string | null
+          transmission?:
+            | Database["public"]["Enums"]["learner_transmission"]
+            | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "school_enquiries_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "school_enquiries_school_id_fkey"
+            columns: ["school_id"]
+            isOneToOne: false
+            referencedRelation: "businesses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "school_enquiries_taken_business_id_fkey"
+            columns: ["taken_business_id"]
+            isOneToOne: false
+            referencedRelation: "businesses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "school_enquiries_taken_instructor_id_fkey"
+            columns: ["taken_instructor_id"]
+            isOneToOne: false
+            referencedRelation: "instructor_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "school_enquiries_taken_learner_id_fkey"
+            columns: ["taken_learner_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       school_fees: {
         Row: {
           amount_pence: number
@@ -3543,6 +3657,19 @@ export type Database = {
         }
         Returns: string
       }
+      add_school_enquiry: {
+        Args: {
+          p_consent: string
+          p_email?: string
+          p_full_name: string
+          p_note?: string
+          p_phone?: string
+          p_postcode: string
+          p_school_id: string
+          p_transmission?: string
+        }
+        Returns: string
+      }
       add_vehicle: {
         Args: {
           p_business_id: string
@@ -3747,6 +3874,10 @@ export type Database = {
       city_page: {
         Args: { p_area?: string; p_city: string; p_transmission?: string }
         Returns: Json
+      }
+      close_school_enquiry: {
+        Args: { p_enquiry_id: string; p_reason?: string }
+        Returns: undefined
       }
       coming_soon_area: { Args: { p_postcode: string }; Returns: Json }
       complete_booking: { Args: { p_booking_id: string }; Returns: string }
@@ -4045,6 +4176,10 @@ export type Database = {
       remove_expense: { Args: { p_expense_id: string }; Returns: Json }
       remove_gallery_photo: { Args: { p_photo_id: string }; Returns: string }
       remove_mileage: { Args: { p_mileage_id: string }; Returns: undefined }
+      reopen_school_enquiry: {
+        Args: { p_enquiry_id: string }
+        Returns: undefined
+      }
       request_account_deletion: { Args: { p_reason?: string }; Returns: string }
       request_lesson_reminder: {
         Args: { p_booking_id: string; p_channel: string }
@@ -4260,6 +4395,19 @@ export type Database = {
         }
         Returns: Json
       }
+      submit_school_enquiry: {
+        Args: {
+          p_consent: string
+          p_email?: string
+          p_full_name: string
+          p_note?: string
+          p_phone?: string
+          p_postcode: string
+          p_slug: string
+          p_transmission?: string
+        }
+        Returns: undefined
+      }
       submit_verification: {
         Args: {
           p_badge_expiry: string
@@ -4363,6 +4511,7 @@ export type Database = {
         Args: { p_request_id: string }
         Returns: undefined
       }
+      system_forget_school_enquiries: { Args: never; Returns: number }
       system_hold_cancellations: {
         Args: { p_booking_id: string }
         Returns: Json
@@ -4709,6 +4858,7 @@ export type Database = {
         | "other"
       refund_kind: "card" | "credit" | "offline"
       refund_status: "pending" | "succeeded" | "failed" | "cancelled"
+      school_enquiry_status: "new" | "offered" | "taken" | "closed"
       school_fee_period: "weekly" | "monthly"
       school_fee_status: "owed" | "paid" | "written_off"
       school_link_status: "active" | "ended"
@@ -4965,6 +5115,7 @@ export const Constants = {
       ],
       refund_kind: ["card", "credit", "offline"],
       refund_status: ["pending", "succeeded", "failed", "cancelled"],
+      school_enquiry_status: ["new", "offered", "taken", "closed"],
       school_fee_period: ["weekly", "monthly"],
       school_fee_status: ["owed", "paid", "written_off"],
       school_link_status: ["active", "ended"],
