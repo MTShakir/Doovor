@@ -75,7 +75,7 @@ test.describe('instructor profile (INS-01, M1-11)', () => {
     // Something that is not a district is refused (M1-15 definition of done).
     await page.getByLabel('Postcode district').fill('Leeds');
     await page.getByRole('button', { name: 'Add', exact: true }).click();
-    await expect(page.getByText('Enter a district like LS17')).toBeVisible();
+    await expect(page.getByText('Enter a postcode district, the first half of a postcode')).toBeVisible();
 
     // Put it back for the next test.
     await page.getByRole('button', { name: 'Remove YO1' }).click();

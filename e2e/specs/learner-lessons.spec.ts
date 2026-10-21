@@ -1,6 +1,6 @@
 import { expect, test } from '@playwright/test';
 import { authFile } from '../support/accounts';
-import { bookLesson, clearDiary, removeLesson } from '../support/database';
+import { bookLesson, clearDiary, removeLesson, requestLesson, withDatabase } from '../support/database';
 import { dayLabel, expectAccessible, snap, tapUntil } from '../support/helpers';
 
 /** What a learner opens the app for: their own lessons, cancelling one, and asking to move one. */
@@ -25,6 +25,28 @@ test.describe('my lessons (BOK-08, BOK-09, M2-26)', () => {
     while (day.getDay() !== 1) day.setDate(day.getDate() + 1);
     return new Intl.DateTimeFormat('en-CA', { timeZone: 'Europe/London' }).format(day);
   };
+
+  test('puts a lesson still to come that is not going ahead apart from what has happened (D-323)', async ({ page }, testInfo) => {
+    const day = ownDay(testInfo.project.name, 8);
+    await clearDiary('Sarah Khan', day);
+    await requestLesson('Sarah Khan', 'jack.taylor@example.com', day, '09:00');
+    await withDatabase(async (sql) => {
+      await sql`
+        update public.bookings b set status = 'declined', expires_at = null
+          from public.instructor_profiles p
+         where p.id = b.instructor_id and p.display_name = 'Sarah Khan'
+           and (b.starts_at at time zone 'Europe/London')::date = ${day}::date`;
+    });
+    try {
+      await page.goto('/app/learner/lessons');
+      const off = page.getByRole('region', { name: 'Not going ahead' });
+      await expect(off.getByRole('article').filter({ hasText: dayLabel(day) })).toBeVisible();
+      await expect(page.getByRole('region', { name: 'Before now' }).getByRole('article').filter({ hasText: dayLabel(day) })).toHaveCount(0);
+      await expectAccessible(page);
+    } finally {
+      await clearDiary('Sarah Khan', day);
+    }
+  });
 
   test('shows what is booked and what has happened', async ({ page }, testInfo) => {
     await page.goto('/app/learner/lessons');

@@ -1,4 +1,5 @@
 import type { Metadata, Route } from 'next';
+import { brand } from '@repo/config/brand';
 import { Button } from '@repo/ui/button';
 import { Skeleton } from '@repo/ui/skeleton';
 import Link from 'next/link';
@@ -216,13 +217,32 @@ async function SchoolInvitation({
   );
 }
 
-/** What linking to a school means for the instructor, said before they agree to it (D-282). */
-function WhatLinkingMeans({ school }: { school: string }) {
+/** Whether the platform has checked this instructor's badge itself, so no school vouches for it (D-280). */
+async function checkedByUs(profileId: string | null): Promise<boolean> {
+  if (profileId === null) return false;
+  const supabase = await createSupabaseServerClient();
+  const { data } = await supabase.from('instructor_profiles').select('verification_status, vouched_at').eq('id', profileId).maybeSingle();
+  return data?.verification_status === 'approved' && data.vouched_at === null;
+}
+
+/**
+ * What linking to a school means for the instructor, said before they agree to it (D-282). A school
+ * vouches for a badge only where the platform has not checked it, so the line on the badge says
+ * which, or says both for somebody not signed in yet (D-280, D-323).
+ */
+function WhatLinkingMeans({ school, checked }: { school: string; checked: boolean | null }) {
   return (
     <ul className="flex list-disc flex-col gap-1 pl-5 text-body text-ink">
       <li>You keep your own prices, payments and learners.</li>
       <li>{school} sends you pupils and sees when you are free, never your money.</li>
-      <li>{school} vouches for your badge, and your plan includes Pro while you are linked.</li>
+      <li>
+        {checked === true
+          ? `${brand.name} has checked your badge, and your profile keeps its tick.`
+          : checked === false
+            ? `${school} vouches for your badge, so ${brand.name} does not check it while you are linked.`
+            : `${school} vouches for your badge, unless ${brand.name} has checked it already.`}
+      </li>
+      <li>Your plan includes Pro while you are linked.</li>
       <li>You can leave whenever you like.</li>
     </ul>
   );
@@ -255,11 +275,12 @@ async function LinkInvitation({
   if (access) {
     const own = ownBusiness(access.access.memberships);
     if (own) {
+      const checked = await checkedByUs(own.instructorProfileId);
       return (
         <div className="flex flex-col gap-4">
           <h1 className="text-h1 text-black">{heading}</h1>
           <p className="text-body text-grey-700">Link {own.businessName} to {school}. Nothing moves, and nothing is lost.</p>
-          <WhatLinkingMeans school={school} />
+          <WhatLinkingMeans school={school} checked={checked} />
           <LinkButton token={token} business={own.businessName} school={school} />
         </div>
       );
@@ -290,7 +311,7 @@ async function LinkInvitation({
         Link your instructor business to {school}. New here? Create your account and it is linked as soon as your business is
         set up.
       </p>
-      <WhatLinkingMeans school={school} />
+      <WhatLinkingMeans school={school} checked={null} />
       {signUp.prefilled ? <FormAlert tone="success">Your details are already filled in. It takes a minute.</FormAlert> : null}
       <Button asChild width="responsive" size="lg">
         <Link href={signUp.href as Route}>Create my account</Link>

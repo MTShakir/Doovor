@@ -7,6 +7,7 @@ export default function NotFound() {
   return (
     <main className="flex min-h-dvh items-center justify-center">
       <EmptyState
+        headingLevel={1}
         icon={MapPinOff}
         title="Page not found"
         description="The link may be old or mistyped."

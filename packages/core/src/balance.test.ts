@@ -143,22 +143,29 @@ describe('a line of history', () => {
   const day = new Date('2026-09-15T09:00:00Z');
 
   it('says what a payment was for, how it was paid and what came back', () => {
-    expect(historyLine({ kind: 'payment', at: day, amountPence: 4200, method: 'cash', refundedPence: 0, pendingRefundPence: 0, hasReceipt: false, lessonAt: day, creditMinutes: null })).toEqual({
+    expect(historyLine({ kind: 'payment', at: day, amountPence: 4200, method: 'cash', refundedPence: 0, pendingRefundPence: 0, hasReceipt: false, lessonAt: day, creditMinutes: null, feeFor: null })).toEqual({
       title: 'Lesson on Tue 15 Sep',
       detail: 'Cash',
       amount: '£42',
     });
-    expect(historyLine({ kind: 'payment', at: day, amountPence: 38000, method: 'card', refundedPence: 0, pendingRefundPence: 0, hasReceipt: false, lessonAt: null, creditMinutes: 600 })).toEqual({
+    expect(historyLine({ kind: 'payment', at: day, amountPence: 38000, method: 'card', refundedPence: 0, pendingRefundPence: 0, hasReceipt: false, lessonAt: null, creditMinutes: 600, feeFor: null })).toEqual({
       title: '10 hours of credit bought',
       detail: 'Card',
       amount: '£380',
     });
-    expect(historyLine({ kind: 'payment', at: day, amountPence: 4200, method: 'card', refundedPence: 4200, pendingRefundPence: 0, hasReceipt: false, lessonAt: day, creditMinutes: null }).detail).toBe(
+    expect(historyLine({ kind: 'payment', at: day, amountPence: 4200, method: 'card', refundedPence: 4200, pendingRefundPence: 0, hasReceipt: false, lessonAt: day, creditMinutes: null, feeFor: null }).detail).toBe(
       'Card, refunded',
     );
-    expect(historyLine({ kind: 'payment', at: day, amountPence: 4200, method: 'bank', refundedPence: 2100, pendingRefundPence: 0, hasReceipt: false, lessonAt: day, creditMinutes: null }).detail).toBe(
+    expect(historyLine({ kind: 'payment', at: day, amountPence: 4200, method: 'bank', refundedPence: 2100, pendingRefundPence: 0, hasReceipt: false, lessonAt: day, creditMinutes: null, feeFor: null }).detail).toBe(
       'Bank transfer, £21 refunded',
     );
+  });
+
+  it('names a fee paid as the fee, as its receipt does, not as the lesson (D-323)', () => {
+    const fee = { kind: 'payment', at: day, amountPence: 2100, method: 'card', refundedPence: 0, pendingRefundPence: 0, hasReceipt: true, lessonAt: day, creditMinutes: null } as const;
+    expect(historyLine({ ...fee, feeFor: 'cancelled' }).title).toBe('Late cancellation fee for the lesson on Tue 15 Sep');
+    expect(historyLine({ ...fee, feeFor: 'no_show' }).title).toBe('No-show fee for the lesson on Tue 15 Sep');
+    expect(historyLine({ ...fee, feeFor: 'no_show', lessonAt: null }).title).toBe('No-show fee');
   });
 
   it('says where a refund has got to', () => {

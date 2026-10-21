@@ -180,6 +180,8 @@ export type HistoryEntry =
       lessonAt: Date | null;
       /** The minutes of credit it bought, when it bought a package. */
       creditMinutes: number | null;
+      /** The fee it paid, for a lesson called off late or missed, rather than the lesson (D-323). */
+      feeFor: 'cancelled' | 'no_show' | null;
     }
   | { kind: 'refund'; at: Date; amountPence: number; status: RefundStatus; refundKind: RefundKind }
   | { kind: 'credit'; at: Date; move: Exclude<LedgerKind, 'purchase'>; minutes: number; lessonAt: Date | null };
@@ -202,6 +204,12 @@ function lessonOn(at: Date | null): string {
   return at === null ? 'A lesson' : `Lesson on ${formatDate(at)}`;
 }
 
+/** As a receipt names it (PAY-08). */
+function feeOn(fee: 'cancelled' | 'no_show', at: Date | null): string {
+  const name = fee === 'no_show' ? 'No-show fee' : 'Late cancellation fee';
+  return at === null ? name : `${name} for the lesson on ${formatDate(at)}`;
+}
+
 /**
  * One line of history in words both people can read: nothing here says "you", because the
  * learner and their instructor see the same lines.
@@ -210,7 +218,11 @@ export function historyLine(entry: HistoryEntry): HistoryLine {
   switch (entry.kind) {
     case 'payment': {
       const title =
-        entry.creditMinutes !== null ? `${formatMinutes(entry.creditMinutes)} of credit bought` : lessonOn(entry.lessonAt);
+        entry.creditMinutes !== null
+          ? `${formatMinutes(entry.creditMinutes)} of credit bought`
+          : entry.feeFor === null
+            ? lessonOn(entry.lessonAt)
+            : feeOn(entry.feeFor, entry.lessonAt);
       const refunded =
         entry.refundedPence <= 0
           ? ''

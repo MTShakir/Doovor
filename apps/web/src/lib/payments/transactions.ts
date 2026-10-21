@@ -19,6 +19,7 @@ const transactionSchema = z.object({
   status: z.string().nullable(),
   lesson_at: iso.nullable(),
   credit_minutes: pence.nullable(),
+  fee_for: z.enum(['cancelled', 'no_show']).nullable().catch(null),
 });
 
 const pageSchema = z.object({ more: z.boolean(), rows: z.array(transactionSchema) });
@@ -53,6 +54,8 @@ export interface Transaction {
   lessonAt: Date | null;
   /** The minutes a package bought, when the payment was for one. */
   creditMinutes: number | null;
+  /** The fee it paid, for a lesson called off late or missed, rather than the lesson (D-323). */
+  feeFor: 'cancelled' | 'no_show' | null;
 }
 
 export interface TransactionPage {
@@ -91,6 +94,7 @@ export async function moneyTransactions(businessId: string, limit: number, offse
       status: row.status,
       lessonAt: row.lesson_at,
       creditMinutes: row.credit_minutes,
+      feeFor: row.fee_for,
     })),
   };
 }

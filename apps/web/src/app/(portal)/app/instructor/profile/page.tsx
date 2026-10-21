@@ -3,6 +3,7 @@ import type { Metadata } from 'next';
 import { instructorProfilePath } from '@repo/core/public-profile';
 import type { Specialism } from '@repo/core/schemas/profile';
 import { canSendBadge, isBadgeExpired } from '@repo/core/badge-expiry';
+import { outcodeOf } from '@repo/core/postcode';
 import { formatCalendarDate, todayInZone } from '@repo/core/time';
 import { PageHeader } from '@repo/ui/app-shell';
 import { Card, CardDescription, CardTitle } from '@repo/ui/card';
@@ -192,7 +193,7 @@ async function Profile() {
           <CardDescription>The circle around your base, and any exceptions to it.</CardDescription>
         </div>
         <CoverageForm postcode={profile.base_postcode} radiusMiles={profile.radius_miles} centre={centre} />
-        <CoverageEditor districts={districts ?? []} />
+        <CoverageEditor districts={districts ?? []} example={profile.base_postcode === null ? null : outcodeOf(profile.base_postcode)} />
       </Card>
       {/*
         Everything a learner reads about them, on a surface of its own (D-226). It sat straight on
