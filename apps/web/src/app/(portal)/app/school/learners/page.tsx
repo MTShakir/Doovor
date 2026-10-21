@@ -65,6 +65,8 @@ async function Learners({ searchParams }: SchoolLearnersProps) {
   const instructors = team.members.flatMap((one) =>
     one.active && one.instructorId !== null ? [{ id: one.instructorId, name: one.name }] : [],
   );
+  // Somebody switched off keeps their learners until they are given to somebody else (D-317).
+  const switchedOff = new Set(team.members.flatMap((one) => (!one.active && one.instructorId !== null ? [one.instructorId] : [])));
   const searching = search.trim() !== '' || filter !== 'all';
 
   // M9-27, D-294: the office adds learners by hand or from a spreadsheet.
@@ -92,7 +94,11 @@ async function Learners({ searchParams }: SchoolLearnersProps) {
           learners.map((learner, index) => (
             <Fragment key={learner.id}>
               {index === 0 ? null : <ListDivider />}
-              <SchoolLearnerRow learner={learner} instructors={instructors} />
+              <SchoolLearnerRow
+                learner={learner}
+                instructors={instructors}
+                teacherSwitchedOff={learner.instructorId !== null && switchedOff.has(learner.instructorId)}
+              />
             </Fragment>
           ))
         )}

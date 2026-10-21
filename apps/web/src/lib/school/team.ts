@@ -19,6 +19,7 @@ const teamSchema = z.object({
       set_own_prices: z.boolean(),
       view_revenue: z.boolean(),
       lessons_to_come: z.number().int(),
+      learners: z.number().int().default(0),
     }),
   ),
   linked: z
@@ -66,6 +67,8 @@ export interface TeamMember {
   setOwnPrices: boolean;
   viewRevenue: boolean;
   lessonsToCome: number;
+  /** The learners they teach at the school, who stay with them when they are switched off (D-317). */
+  learners: number;
 }
 
 /** An instructor who sells their own lessons, by the Business they run, linked to the school (D-282). */
@@ -125,6 +128,7 @@ export async function schoolTeam(businessId: string): Promise<SchoolTeam> {
       setOwnPrices: one.set_own_prices,
       viewRevenue: one.view_revenue,
       lessonsToCome: one.lessons_to_come,
+      learners: one.learners,
     })),
     linked: team.linked.map((one) => ({
       linkId: one.link_id,

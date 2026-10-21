@@ -18,6 +18,7 @@ const member = {
   set_own_prices: true,
   view_revenue: false,
   lessons_to_come: 12,
+  learners: 3,
 };
 
 beforeEach(() => {
@@ -49,6 +50,8 @@ describe("a school's team (SCH-02, M5-13)", () => {
           setOwnPrices: true,
           viewRevenue: false,
           lessonsToCome: 12,
+          // Who stays with them if they are switched off (D-317).
+          learners: 3,
         },
       ],
       // A school that links nobody, as one from before linking existed reads (D-282).
