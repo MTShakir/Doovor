@@ -357,6 +357,7 @@ Branch: `m9-schools`, in its own worktree, so fixes on `beta-prep` can still be 
 | M9-32 | A deep test of the school side after release, as new people would go through it | NFR-A11Y, SCH-09, LRN-07 | Fixes tested (D-305) |
 | M9-33 | The second deep test's four suggestions: the school told when a learner moves to it, stopping a link said in full, no miles without a base, and the pages for schools and pricing | NTF-03, LRN-07, SCH-09, PUB-01, 8.3, 9.18 | pgTAP; unit tests; marketing and profile specs |
 | M9-34 | The third deep test's fifteen findings, and the instructor told when the school gives them a learner | PAY-04, BOK-02, LRN-05, PRG-01, SCH-02, SCH-03, AUTH-05, INS-02, NTF-03 | pgTAP; unit tests; the full end to end suite |
+| M9-35 | The final round of testing's seven findings: hours from a paused Business, the confirmation under each way of paying, a school's first price, the office at work on its learners, claiming an account made by hand, somebody switched off, and a learner's no to moving | PAY-03, PAY-04, SCH-02, SCH-04, LRN-02, LRN-03, 6.2, 10.5 | Unit tests; pgTAP; the full end to end suite |
 
 Never built, whatever the school asks (D-278): a school holding learners' money to pay instructors
 later; fixed or minimum prices for linked instructors; anything that books, changes or watches DVSA
