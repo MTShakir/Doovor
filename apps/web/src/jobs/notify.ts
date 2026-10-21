@@ -1,5 +1,6 @@
 import 'server-only';
-import { notificationCatalogue, type NotificationCategory, type NotificationChannel } from '@repo/core/notifications';
+import { usableCards } from '@repo/core/cards';
+import { notificationCatalogue, type NotificationCategory, type NotificationChannel, type NotificationKind } from '@repo/core/notifications';
 import { getSupabaseServiceClient } from '@/lib/supabase/service';
 import {
   kindForEvent,
@@ -58,7 +59,43 @@ export async function notifyAboutBooking(event: BookingEvent): Promise<NotifyRes
   const kind = kindForEvent(event, notice);
   if (kind === null) return { written: 0 };
 
+  // A fee is said to be charged to a saved card only when there is one to charge it to (D-310).
+  const told =
+    feeKinds.includes(kind) && event.payload.charging === true && !(await feeComesOffACard(bookingId, notice))
+      ? { ...event, payload: { ...event.payload, charging: false } }
+      : event;
+
   const muted = await mutedChannels(peopleInvolved(notice), notificationCatalogue[kind].category);
-  const planned = planBookingNotifications({ event, notice, muted });
+  const planned = planBookingNotifications({ event: told, notice, muted });
   return { written: await writeNotifications(notificationRows(planned, rowContextFor(notice))) };
+}
+
+/** The notices that can say a fee is being charged to a kept card. */
+const feeKinds: readonly NotificationKind[] = ['booking.cancelled', 'booking.no_show', 'booking.dispute_decided'];
+
+/**
+ * Whether a fee the database asked to be charged really comes off a card: one already charged, or
+ * a usable card the Business keeps for the learner. The database knows only that the learner is a
+ * customer of the Business, which any card payment makes them, saved card or not; the cards
+ * themselves are the provider's to list (D-310). Without one, the fee is owed and they are told so.
+ */
+export async function feeComesOffACard(bookingId: string, notice: BookingNotice, now = new Date()): Promise<boolean> {
+  if (notice.payment_status === 'paid_card') return true;
+  const { data, error } = await getSupabaseServiceClient().rpc('system_fee_to_charge', { p_booking_id: bookingId });
+  if (error) throw new Error(`Could not read the fee to charge: ${error.message}`);
+  if (data === null) return false;
+  const fee = data as unknown as { account_id: string; customer_id: string | null };
+  if (fee.customer_id === null) return false;
+
+  // Loaded only once there is a fee to ask about: the provider reads the server's keys, which every
+  // other notice, and every test of one, has no need of.
+  const { paymentsProvider } = await import('@/lib/payments/provider');
+  const listed = await paymentsProvider().listSavedCards({ accountId: fee.account_id, customerId: fee.customer_id });
+  if (!listed.ok) {
+    if (listed.reason === 'UNAVAILABLE' || listed.reason === 'NOT_CONFIGURED') {
+      throw new Error(`Could not read a learner's cards: ${listed.message}`);
+    }
+    return false;
+  }
+  return usableCards(listed.data, now).length > 0;
 }
