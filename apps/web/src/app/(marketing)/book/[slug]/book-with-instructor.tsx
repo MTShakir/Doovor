@@ -43,6 +43,7 @@ const payWords: Record<BookedNext, string | null> = {
   pay: 'Pay for it now',
   pay_to_confirm: 'Pay to confirm it',
   authorise: 'Authorise the payment',
+  save_card: 'Save a card',
 };
 
 /** BOK-02: choose how long, choose when, book. On a phone, in under a minute. */
@@ -138,6 +139,12 @@ export function BookWithInstructor({ page, names, slug, chosen, cancellation, le
         {lesson.paidWithCredit ? <p className="text-small text-ink">Paid from your lesson credit.</p> : null}
         {lesson.next === 'authorise' ? (
           <p className="text-small text-ink">Authorise the payment now. Your card is only charged if they accept.</p>
+        ) : lesson.next === 'save_card' ? (
+          <p className="text-small text-ink">Save a card and it is charged the day before the lesson. Nothing is taken until then.</p>
+        ) : lesson.paidLater === 'day_before' ? (
+          <p className="text-small text-ink">It is charged to your saved card the day before the lesson.</p>
+        ) : lesson.paidLater === 'after' ? (
+          <p className="text-small text-ink">You pay after the lesson, by a link we send you when it is done.</p>
         ) : null}
         {pay === null ? (
           <Button asChild width="responsive">

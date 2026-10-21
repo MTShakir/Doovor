@@ -3,11 +3,13 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 const rpc = vi.fn();
 const maybeSingle = vi.fn();
 const getAccess = vi.fn<() => Promise<unknown>>();
+const keptCardsWith = vi.fn<(businessId: string) => Promise<unknown>>();
 
 vi.mock('@/lib/supabase/server', () => ({
   createSupabaseServerClient: () => Promise.resolve({ rpc, from: () => ({ select: () => ({ eq: () => ({ maybeSingle }) }) }) }),
 }));
 vi.mock('@/lib/auth/session', () => ({ getAccess: () => getAccess() }));
+vi.mock('@/lib/payments/cards', () => ({ keptCardsWith: (businessId: string) => keptCardsWith(businessId) }));
 vi.mock('@/lib/booking/public', () => ({ openSlots: () => Promise.resolve([]) }));
 vi.mock('@/lib/redirect-to', () => ({ redirectTo: () => undefined }));
 vi.mock('next/headers', () => ({ cookies: () => Promise.resolve({ set: () => undefined }) }));
@@ -22,12 +24,18 @@ const input = {
 };
 
 /** The lesson as the database has it once it is made, at a Business that takes cards unless said otherwise. */
-function lessonIs(lesson: { status: string; payment_status: string; hold_expires_at?: string | null }, takesCards = true) {
+function lessonIs(
+  lesson: { status: string; payment_status: string; payment_mode?: string; hold_expires_at?: string | null },
+  takesCards = true,
+) {
+  const mode = lesson.payment_mode ?? 'at_booking';
   maybeSingle.mockResolvedValue({
     data: {
+      business_id: 'business-1',
       hold_expires_at: null,
       ...lesson,
-      businesses: { stripe_charges_enabled: takesCards, settings: { payment_mode: 'at_booking' } },
+      payment_mode: mode,
+      businesses: { stripe_charges_enabled: takesCards, settings: { payment_mode: mode } },
     },
     error: null,
   });
@@ -37,6 +45,7 @@ beforeEach(() => {
   vi.clearAllMocks();
   getAccess.mockResolvedValue({ session: { userId: 'learner-1' }, access: { isLearner: true } });
   rpc.mockResolvedValue({ data: 'booking-1', error: null });
+  keptCardsWith.mockResolvedValue(null);
 });
 
 describe('what is left to do once a learner books on a link (BOK-02, PAY-03, D-318)', () => {
@@ -44,8 +53,23 @@ describe('what is left to do once a learner books on a link (BOK-02, PAY-03, D-3
     lessonIs({ status: 'confirmed', payment_status: 'paid_credit' });
     expect(await bookAsLearner(input)).toEqual({
       ok: true,
-      data: { bookingId: 'booking-1', status: 'confirmed', next: 'nothing', paidWithCredit: true, holdUntil: null },
+      data: { bookingId: 'booking-1', status: 'confirmed', next: 'nothing', paidWithCredit: true, holdUntil: null, paidLater: null },
     });
+  });
+
+  it('is keeping a card, for a lesson charged the day before, until one is kept (D-328)', async () => {
+    lessonIs({ status: 'confirmed', payment_status: 'unpaid', payment_mode: 'before_lesson' });
+    expect(await bookAsLearner(input)).toMatchObject({ ok: true, data: { next: 'save_card', paidLater: 'day_before' } });
+    expect(keptCardsWith).toHaveBeenCalledWith('business-1');
+
+    keptCardsWith.mockResolvedValue({ cards: [{ paymentMethodId: 'pm_1' }] });
+    expect(await bookAsLearner(input)).toMatchObject({ ok: true, data: { next: 'nothing', paidLater: 'day_before' } });
+  });
+
+  it('is nothing now, for a lesson paid for by a link once it is done (D-328)', async () => {
+    lessonIs({ status: 'confirmed', payment_status: 'unpaid', payment_mode: 'after_lesson' });
+    expect(await bookAsLearner(input)).toMatchObject({ ok: true, data: { next: 'nothing', paidLater: 'after' } });
+    expect(keptCardsWith).not.toHaveBeenCalled();
   });
 
   it('is paying to confirm a time held for it, by when it is held', async () => {

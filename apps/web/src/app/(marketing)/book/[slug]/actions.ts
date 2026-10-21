@@ -9,6 +9,7 @@ import { z } from '@repo/core/zod';
 import { getAccess } from '@/lib/auth/session';
 import { openSlots } from '@/lib/booking/public';
 import { owesForLesson } from '@/lib/learner/lessons';
+import { keptCardsWith } from '@/lib/payments/cards';
 import { redirectTo } from '@/lib/redirect-to';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
 
@@ -33,8 +34,8 @@ const bookSchema = z.object({
   durationMinutes: z.coerce.number().int().min(15).max(480),
 });
 
-/** What the learner does next with the lesson they have just booked (PAY-03, R-12, D-318). */
-export type BookedNext = 'nothing' | 'pay' | 'pay_to_confirm' | 'authorise';
+/** What the learner does next with the lesson they have just booked (PAY-03, R-12, D-318, D-328). */
+export type BookedNext = 'nothing' | 'pay' | 'pay_to_confirm' | 'authorise' | 'save_card';
 
 export interface Booked {
   bookingId: string;
@@ -45,6 +46,8 @@ export interface Booked {
   paidWithCredit: boolean;
   /** Until when a time held while it is paid for stays theirs. */
   holdUntil: string | null;
+  /** Paid for later rather than now: charged to a kept card the day before, or by a link once it is done. */
+  paidLater: 'day_before' | 'after' | null;
 }
 
 /** BOK-02: the learner books the slot themselves. The RPC holds them to the rules (R-04). */
@@ -71,7 +74,7 @@ export async function bookAsLearner(input: unknown): Promise<Result<Booked>> {
   // later (PAY-03, D-318).
   const { data: lesson } = await supabase
     .from('bookings')
-    .select('status, payment_status, hold_expires_at, businesses!bookings_business_id_fkey(stripe_charges_enabled, settings)')
+    .select('business_id, status, payment_status, payment_mode, hold_expires_at, businesses!bookings_business_id_fkey(stripe_charges_enabled, settings)')
     .eq('id', data)
     .maybeSingle();
   const status = lesson?.status === 'requested' || lesson?.status === 'pending_payment' ? lesson.status : 'confirmed';
@@ -79,7 +82,23 @@ export async function bookAsLearner(input: unknown): Promise<Result<Booked>> {
     lesson !== null &&
     asksForCard({ chargesEnabled: lesson.businesses.stripe_charges_enabled, mode: chosenPaymentMode(lesson.businesses.settings) }) &&
     owesForLesson(lesson.status, lesson.payment_status);
-  const next: BookedNext = !card ? 'nothing' : status === 'requested' ? 'authorise' : status === 'pending_payment' ? 'pay_to_confirm' : 'pay';
+  // A booked lesson the Business charges the day before, or asks for once it is done, has nothing
+  // to pay now. The day before needs a card kept with the Business, so keeping one is what is left
+  // until there is one (PAY-03, D-328).
+  const paidLater =
+    !card || status !== 'confirmed' ? null : lesson.payment_mode === 'before_lesson' ? 'day_before' : lesson.payment_mode === 'after_lesson' ? 'after' : null;
+  const cardKept = lesson !== null && paidLater === 'day_before' && ((await keptCardsWith(lesson.business_id))?.cards.length ?? 0) > 0;
+  const next: BookedNext = !card
+    ? 'nothing'
+    : status === 'requested'
+      ? 'authorise'
+      : status === 'pending_payment'
+        ? 'pay_to_confirm'
+        : paidLater === 'after' || cardKept
+          ? 'nothing'
+          : paidLater === 'day_before'
+            ? 'save_card'
+            : 'pay';
 
   return ok({
     bookingId: data,
@@ -87,6 +106,7 @@ export async function bookAsLearner(input: unknown): Promise<Result<Booked>> {
     next,
     paidWithCredit: lesson?.payment_status === 'paid_credit',
     holdUntil: status === 'pending_payment' ? (lesson?.hold_expires_at ?? null) : null,
+    paidLater,
   });
 }
 
