@@ -192,73 +192,84 @@ export function BookWithInstructor({ page, names, slug, chosen, cancellation, le
 
       {error ? <FormAlert>{error}</FormAlert> : null}
 
-      <Card className="flex flex-col gap-4">
-        <Field label="Which lesson?">
-          <Select
-            value={lessonKey}
-            onChange={(event) => { setLessonKey(event.target.value); }}
-            options={page.lessons.map((one) => ({
-              value: `${one.lessonTypeId}:${String(one.durationMinutes)}`,
-              label: `${one.name}, ${formatMinutes(one.durationMinutes)}, ${formatPence(one.pricePence)}`,
-            }))}
-          />
-        </Field>
+      {/* Nothing priced yet, as at a school that has still to set its prices: said plainly, rather
+          than a list with nothing in it and times that never come (R-05, D-329). */}
+      {page.lessons.length === 0 ? (
+        <Card className="flex flex-col gap-1">
+          <CardTitle>Not taking bookings yet</CardTitle>
+          <CardDescription>Lessons can be booked here once their prices are set. Try again soon.</CardDescription>
+        </Card>
+      ) : (
+        <>
+          <Card className="flex flex-col gap-4">
+            <Field label="Which lesson?">
+              <Select
+                value={lessonKey}
+                onChange={(event) => { setLessonKey(event.target.value); }}
+                options={page.lessons.map((one) => ({
+                  value: `${one.lessonTypeId}:${String(one.durationMinutes)}`,
+                  label: `${one.name}, ${formatMinutes(one.durationMinutes)}, ${formatPence(one.pricePence)}`,
+                }))}
+              />
+            </Field>
 
-        <Field label="Which day?">
-          {/* The browser owns what is in the box; this only listens (D-043). */}
-          <Input ref={readDay} type="date" defaultValue={day} min={todayInZone()} onChange={(event) => { setDay(event.target.value); }} />
-        </Field>
+            <Field label="Which day?">
+              {/* The browser owns what is in the box; this only listens (D-043). */}
+              <Input ref={readDay} type="date" defaultValue={day} min={todayInZone()} onChange={(event) => { setDay(event.target.value); }} />
+            </Field>
 
-        {loading || times === null ? (
-          <Skeleton className="h-28 w-full" />
-        ) : times.slots.length === 0 ? (
-          <p className="text-small text-grey-700">
-            Nothing free on {formatDate(new Date(`${day}T12:00:00Z`))}. Try another day.
-          </p>
-        ) : (
-          <div className="flex flex-col gap-2">
-            {/* Said as well as announced, so the times are plainly the day in the box (D-319). */}
-            <p className="text-small font-semibold text-black" aria-hidden>
-              Times on {formatDate(new Date(`${day}T12:00:00Z`))}
+            {loading || times === null ? (
+              <Skeleton className="h-28 w-full" />
+            ) : times.slots.length === 0 ? (
+              <p className="text-small text-grey-700">
+                Nothing free on {formatDate(new Date(`${day}T12:00:00Z`))}. Try another day.
+              </p>
+            ) : (
+              <div className="flex flex-col gap-2">
+                {/* Said as well as announced, so the times are plainly the day in the box (D-319). */}
+                <p className="text-small font-semibold text-black" aria-hidden>
+                  Times on {formatDate(new Date(`${day}T12:00:00Z`))}
+                </p>
+                <TimeSlotGrid
+                  label={`Times on ${formatDate(new Date(`${day}T12:00:00Z`))}`}
+                  value={slot}
+                  onChange={setChosenSlot}
+                  slots={times.slots.map((one) => ({ id: one, label: formatTime(new Date(one)) }))}
+                />
+              </div>
+            )}
+          </Card>
+
+          {signedIn && learner === null ? (
+            <FormAlert>You are signed in as somebody who is not a learner, so you cannot book here.</FormAlert>
+          ) : null}
+
+          {cancellation === null ? null : <p className="text-small text-grey-700">{cancellation}</p>}
+
+          <Button
+            width="full"
+            size="lg"
+            pending={pending}
+            disabled={slot === null || !lesson || (signedIn && learner === null)}
+            onClick={confirm}
+            style={page.brandColour === null ? undefined : { backgroundColor: page.brandColour }}
+          >
+            {slot === null || !lesson
+              ? 'Choose a time'
+              : learner === null
+                ? `Continue with ${formatTime(new Date(slot))}`
+                : page.instantBook
+                  ? `Book ${formatTime(new Date(slot))} for ${formatPence(lesson.pricePence)}`
+                  : `Ask for ${formatTime(new Date(slot))}`}
+          </Button>
+
+          {learner === null && !signedIn ? (
+            <p className="text-small text-grey-700">
+              You will make an account in a moment, then come straight back to finish.
             </p>
-            <TimeSlotGrid
-              label={`Times on ${formatDate(new Date(`${day}T12:00:00Z`))}`}
-              value={slot}
-              onChange={setChosenSlot}
-              slots={times.slots.map((one) => ({ id: one, label: formatTime(new Date(one)) }))}
-            />
-          </div>
-        )}
-      </Card>
-
-      {signedIn && learner === null ? (
-        <FormAlert>You are signed in as somebody who is not a learner, so you cannot book here.</FormAlert>
-      ) : null}
-
-      {cancellation === null ? null : <p className="text-small text-grey-700">{cancellation}</p>}
-
-      <Button
-        width="full"
-        size="lg"
-        pending={pending}
-        disabled={slot === null || !lesson || (signedIn && learner === null)}
-        onClick={confirm}
-        style={page.brandColour === null ? undefined : { backgroundColor: page.brandColour }}
-      >
-        {slot === null || !lesson
-          ? 'Choose a time'
-          : learner === null
-            ? `Continue with ${formatTime(new Date(slot))}`
-            : page.instantBook
-              ? `Book ${formatTime(new Date(slot))} for ${formatPence(lesson.pricePence)}`
-              : `Ask for ${formatTime(new Date(slot))}`}
-      </Button>
-
-      {learner === null && !signedIn ? (
-        <p className="text-small text-grey-700">
-          You will make an account in a moment, then come straight back to finish.
-        </p>
-      ) : null}
+          ) : null}
+        </>
+      )}
     </div>
   );
 }

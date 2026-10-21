@@ -2,6 +2,7 @@
 
 import { businessBookingRulesSchema } from '@repo/core/booking-rules';
 import { linkedPriceGuideSchema } from '@repo/core/catalogue';
+import { onboardingPricesSchema } from '@repo/core/schemas/onboarding';
 import { lessonSellerChoiceSchema } from '@repo/core/schemas/school';
 import { parsePostgresError } from '@repo/core/errors';
 import { err, ok, type Result } from '@repo/core/result';
@@ -79,6 +80,30 @@ export async function saveSchoolPrices(input: unknown): Promise<Result<null>> {
   const businessId = await runningSchool();
   if (!businessId) return err('NOT_ALLOWED');
   return savePrices(businessId, null, input);
+}
+
+/**
+ * PRD 10.5, SCH-04, D-329: the school's first price, an hour and a block of hours if it sells one,
+ * which the database turns into a standard lesson at 1, 1.5 and 2 hours. Until then nothing can be
+ * booked with its instructors.
+ */
+export async function saveSchoolFirstPrices(input: unknown): Promise<Result<null>> {
+  const parsed = onboardingPricesSchema.safeParse(input);
+  if (!parsed.success) return err('VALIDATION_FAILED', undefined, fieldErrors(parsed.error));
+
+  const businessId = await runningSchool();
+  if (!businessId) return err('NOT_ALLOWED');
+  const supabase = await createSupabaseServerClient();
+  const { error } = await supabase.rpc('set_onboarding_prices', {
+    p_business_id: businessId,
+    p_hourly_price_pence: parsed.data.hourlyPrice,
+    p_package_price_pence: parsed.data.packagePrice ?? undefined,
+  });
+  if (error) return err(parsePostgresError(error).code);
+
+  // Its instructors' profiles and links show what a lesson costs.
+  expireAllInstructorProfiles();
+  return ok(null);
 }
 
 /** SCH-04, PAY-04: a package of hours the school sells. */

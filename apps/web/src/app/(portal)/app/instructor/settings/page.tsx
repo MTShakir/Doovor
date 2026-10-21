@@ -9,6 +9,7 @@ import { Card, CardDescription, CardTitle } from '@repo/ui/card';
 import { SkeletonRow } from '@repo/ui/skeleton';
 import { connection } from 'next/server';
 import { Suspense } from 'react';
+import { FirstPrices } from '@/components/catalogue/first-prices';
 import { PackagesEditor } from '@/components/catalogue/packages-editor';
 import { PricesForm } from '@/components/catalogue/prices-form';
 import { PriceGuideNote } from '@/components/school/price-guide-note';
@@ -17,8 +18,7 @@ import { requirePortal } from '@/lib/auth/session';
 import { businessCatalogue } from '@/lib/catalogue/catalogue';
 import { schoolLinkOf } from '@/lib/school/link';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
-import { saveBookingRules, saveBusinessPackage, saveBusinessPrices, saveInstructorRules, saveOwnPrices } from './actions';
-import { FirstPrices } from './first-prices';
+import { saveBookingRules, saveBusinessPackage, saveBusinessPrices, saveFirstPrices, saveInstructorRules, saveOwnPrices } from './actions';
 import { Exceptions, type ExceptionRow } from './exceptions';
 import { WorkingWeek, type WorkingDayValue } from './working-week';
 
@@ -201,7 +201,7 @@ async function Availability() {
             {catalogue.rows.length > 0 ? (
               <PricesForm rows={catalogue.rows} mode="business" save={saveBusinessPrices} />
             ) : (
-              <FirstPrices />
+              <FirstPrices save={saveFirstPrices} />
             )}
           </Card>
           <Card className="flex flex-col gap-4" role="region" aria-labelledby="business-packages-title">

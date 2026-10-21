@@ -14,7 +14,7 @@ vi.mock('@/lib/catalogue/save', () => ({
 }));
 vi.mock('@/lib/public/instructor-profile', () => ({ expireAllInstructorProfiles: () => { expireAll(); } }));
 
-const { saveLessonSeller, saveLinkedPriceGuide, saveSchoolPackage, saveSchoolPrices, saveSchoolRules } = await import('./actions');
+const { saveLessonSeller, saveLinkedPriceGuide, saveSchoolFirstPrices, saveSchoolPackage, saveSchoolPrices, saveSchoolRules } = await import('./actions');
 
 const manager = { businessId: 'school-1', businessType: 'school', role: 'manager' };
 const rules = { noticeHours: '24', horizonWeeks: '8', cancellationWindowHours: '24', lateFeePercent: '50', requestExpiryHours: '12', reminderHoursBefore: '24,2' };
@@ -62,6 +62,28 @@ describe('the school settings (SCH-04, M5-15)', () => {
       ok: false,
       fields: { lateFeePercent: 'Choose 0, 50 or 100 per cent' },
     });
+    expect(rpc).not.toHaveBeenCalled();
+  });
+});
+
+describe("the school's first price (PRD 10.5, D-329)", () => {
+  it('makes the standard lesson from an hour and the block of hours, for the school the person runs', async () => {
+    expect(await saveSchoolFirstPrices({ hourlyPrice: '45', packagePrice: '420' })).toEqual({ ok: true, data: null });
+    expect(rpc).toHaveBeenCalledWith('set_onboarding_prices', { p_business_id: 'school-1', p_hourly_price_pence: 4500, p_package_price_pence: 42000 });
+    expect(expireAll).toHaveBeenCalled();
+
+    await saveSchoolFirstPrices({ hourlyPrice: '45', packagePrice: '' });
+    expect(rpc).toHaveBeenLastCalledWith('set_onboarding_prices', { p_business_id: 'school-1', p_hourly_price_pence: 4500, p_package_price_pence: undefined });
+  });
+
+  it('says what to fix, passes on what the database refused, and is for somebody running the school', async () => {
+    expect(await saveSchoolFirstPrices({ hourlyPrice: '', packagePrice: '' })).toMatchObject({ ok: false, code: 'VALIDATION_FAILED' });
+    expect(rpc).not.toHaveBeenCalled();
+    rpc.mockResolvedValueOnce({ data: null, error: { code: '42501', message: 'NOT_ALLOWED' } });
+    expect(await saveSchoolFirstPrices({ hourlyPrice: '45', packagePrice: '' })).toMatchObject({ ok: false, code: 'NOT_ALLOWED' });
+    requirePortal.mockResolvedValue({ access: { memberships: [{ ...manager, role: 'instructor' }] } });
+    rpc.mockClear();
+    expect(await saveSchoolFirstPrices({ hourlyPrice: '45', packagePrice: '' })).toMatchObject({ ok: false, code: 'NOT_ALLOWED' });
     expect(rpc).not.toHaveBeenCalled();
   });
 });
