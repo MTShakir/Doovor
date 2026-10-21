@@ -126,6 +126,8 @@ export function learnerEventLine(event: LearnerEvent): string | null {
     if (was === null || now === null) return null;
     const label = (status: string): string =>
       isLearnerStatus(status) ? learnerStatusLabels[status].toLowerCase() : status;
+    // Moved on by a lesson being booked, not by anybody choosing to (D-315).
+    if (text(event.after, 'because') === 'booked') return `Moved from ${label(was)} to ${label(now)} when a lesson was booked`;
     const reason = text(event.after, 'reason');
     const line = `Moved from ${label(was)} to ${label(now)} by ${event.actorName}`;
     return reason === null ? line : `${line}: ${reason}`;
