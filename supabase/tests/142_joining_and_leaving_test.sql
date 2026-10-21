@@ -71,11 +71,12 @@ select is(
 select is((select count(*)::int from public.audit_log where action = 'business.paused' and entity_id = :'asha_biz'), 1, 'which is written down');
 
 -- Liz is asked whether to move with her, and chooses; Lee, at the school already, is not asked.
+-- Her school profile carries the name her own one had (D-324).
 select tests.authenticate_as(:'liz');
 select is(
   (select jsonb_build_object('reason', x ->> 'reason', 'from', x ->> 'fromName', 'to', x ->> 'toName', 'with', x ->> 'instructorName')
      from jsonb_array_elements(public.learner_moves_for_me()) as x),
-  '{"reason": "joined_school", "from": "Asha Driving", "to": "Bee School", "with": "Asha Instructor"}'::jsonb,
+  '{"reason": "joined_school", "from": "Asha Driving", "to": "Bee School", "with": "Asha"}'::jsonb,
   'Liz is asked whether to move to the school with Asha'
 );
 select tests.authenticate_as(:'lee');

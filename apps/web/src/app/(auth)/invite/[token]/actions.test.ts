@@ -9,11 +9,13 @@ class Redirected extends Error {
 const rpc = vi.fn();
 const getAccess = vi.fn<() => Promise<unknown>>();
 const completeSignIn = vi.fn<() => Promise<string>>();
+const carryPhotoOver = vi.fn<(supabase: unknown, userId: string, schoolId: string) => Promise<void>>();
 
 vi.mock('@/lib/supabase/server', () => ({ createSupabaseServerClient: () => Promise.resolve({ rpc }) }));
 vi.mock('@/lib/auth/session', () => ({ getAccess: () => getAccess() }));
 vi.mock('@/lib/auth/complete-sign-in', () => ({ completeSignIn: () => completeSignIn() }));
 vi.mock('@/lib/public/instructor-profile', () => ({ expireAllInstructorProfiles: () => undefined }));
+vi.mock('@/lib/school/carry-photo', () => ({ carryPhotoOver: (supabase: unknown, userId: string, schoolId: string) => carryPhotoOver(supabase, userId, schoolId) }));
 vi.mock('@/lib/redirect-to', () => ({
   redirectTo: (path: string) => {
     throw new Redirected(path);
@@ -35,6 +37,8 @@ describe('joining a school from its link (AUTH-05, M5-11)', () => {
   it('joins, then carries on as a new instructor would: mobile first, then onboarding', async () => {
     await expect(acceptMemberInvitation('tok_abc-123')).rejects.toMatchObject({ path: '/verify-phone?next=%2Fonboarding' });
     expect(rpc).toHaveBeenCalledWith('accept_member_invitation', { p_token: 'tok_abc-123' });
+    // Their photo comes with the rest of their profile (D-324).
+    expect(carryPhotoOver).toHaveBeenCalledWith(expect.anything(), 'user-1', 'school-1');
   });
 
   it('says why an account that teaches elsewhere cannot join, and that a used link is spent', async () => {
