@@ -105,7 +105,7 @@ select is(
 );
 select throws_ok(
   format($$ select pg_temp.save(gen_random_uuid(), %L, %L) $$, :'tomorrow', :'two_skills'),
-  'P0001', 'TOO_CLOSE',
+  'P0001', 'LESSON_NOT_STARTED',
   'a lesson that has not started has nothing to record'
 );
 select throws_ok(

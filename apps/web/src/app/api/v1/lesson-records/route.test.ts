@@ -82,7 +82,7 @@ describe('saving a lesson record from the phone (PRG-01, PRG-09, M4-05)', () => 
   it('passes on what the database refused, with a status that says whether trying again could help', async () => {
     const cases: [string, string, number][] = [
       ['42501', 'NOT_FOUND', 404],
-      ['P0001', 'TOO_CLOSE', 422],
+      ['P0001', 'LESSON_NOT_STARTED', 422],
       ['P0001', 'VALIDATION_FAILED', 422],
       ['08006', 'connection failure', 500],
     ];
