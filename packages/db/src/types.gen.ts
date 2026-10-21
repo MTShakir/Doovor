@@ -4076,6 +4076,10 @@ export type Database = {
         Args: { p_move: boolean; p_move_id: string }
         Returns: undefined
       }
+      answer_learner_move_for: {
+        Args: { p_move: boolean; p_move_id: string }
+        Returns: undefined
+      }
       assign_learner: {
         Args: { p_instructor_id: string; p_learner_id: string }
         Returns: string
@@ -4308,6 +4312,7 @@ export type Database = {
       learner_moves_for_me: { Args: never; Returns: Json }
       leave_learner_capture: { Args: { p_token: string }; Returns: number }
       lesson_reminder_options: { Args: { p_booking_id: string }; Returns: Json }
+      links_still_owing: { Args: { p_business_id: string }; Returns: Json }
       list_my_sessions: {
         Args: never
         Returns: {
@@ -4340,6 +4345,7 @@ export type Database = {
         Args: { p_business_id: string; p_limit: number; p_offset: number }
         Returns: Json
       }
+      my_learners_asked_to_move: { Args: never; Returns: Json }
       my_paused_business: { Args: never; Returns: Json }
       my_referrals: { Args: { p_business_id: string }; Returns: Json }
       my_subscription: { Args: { p_business_id: string }; Returns: Json }

@@ -77,6 +77,9 @@ export const notificationKinds = [
   // A learner who chose to move, told to the school they moved to and the instructor they came
   // with (D-306): somebody back from a linked instructor has nobody teaching them until it chooses.
   'learner.moved',
+  // A learner the school gave one of its instructors, who has somebody new to get in touch with
+  // (D-325). The product owner asked for it once Mona found a learner on her list by chance.
+  'learner.assigned',
   'school.left',
 ] as const;
 
@@ -301,6 +304,14 @@ export const notificationCatalogue: Record<NotificationKind, NotificationSpec> =
     kind: 'learner.moved',
     category: 'account',
     audiences: ['instructor', 'school'],
+    channels: PUSH_AND_EMAIL,
+    essential: true,
+  },
+  // Somebody new to teach, which the instructor acts on: by email too, and always in the inbox (D-325).
+  'learner.assigned': {
+    kind: 'learner.assigned',
+    category: 'account',
+    audiences: ['instructor'],
     channels: PUSH_AND_EMAIL,
     essential: true,
   },

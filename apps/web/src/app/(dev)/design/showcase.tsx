@@ -99,6 +99,8 @@ import { FeeList } from '@/components/school/fee-list';
 import { FeeTermsForm } from '@/components/school/fee-terms-form';
 import { LinkedFeesCard } from '@/components/school/linked-fees';
 import type { FeeLine, LinkedFees } from '@/lib/school/fees';
+import type { MoveAsked } from '@/lib/learners/moves';
+import { MovesAskedCard } from '@/components/learners/moves-asked';
 import { PriceGuideForm } from '@/components/school/price-guide-form';
 import { PriceGuideNote } from '@/components/school/price-guide-note';
 import type { LinkedDay } from '@/lib/school/linked-diary';
@@ -574,6 +576,14 @@ const exampleFees: FeeLine[] = [
   { feeId: 'design-fee-2', label: 'Week from Mon 16 Nov', due: 'Mon 16 Nov', amountPence: 5000, status: 'paid', note: 'Bank transfer' },
   { feeId: 'design-fee-1', label: 'Week from Mon 9 Nov', due: 'Mon 9 Nov', amountPence: 5000, status: 'written_off', note: null },
 ];
+/** Learners an instructor's own business asked to move with them to the school they joined (D-322). */
+const exampleMovesAsked: MoveAsked[] = [
+  { moveId: 'move-1', learnerName: 'Noah Wilson', status: 'asked', fromName: 'Sarah Khan Driving', toName: 'Leeds School of Motoring', canAnswer: true },
+  { moveId: 'move-4', learnerName: 'Ella Hughes', status: 'asked', fromName: 'Sarah Khan Driving', toName: 'Leeds School of Motoring', canAnswer: false },
+  { moveId: 'move-2', learnerName: 'Olivia Brown', status: 'moved', fromName: 'Sarah Khan Driving', toName: 'Leeds School of Motoring', canAnswer: true },
+  { moveId: 'move-3', learnerName: 'Amelia Evans', status: 'stayed', fromName: 'Sarah Khan Driving', toName: 'Leeds School of Motoring', canAnswer: false },
+];
+
 const exampleLinkedFees: LinkedFees = {
   linkId: '0a1b2c3d-4e5f-4061-8728-394a5b6c7d8e',
   name: 'Sarah Khan',
@@ -583,6 +593,7 @@ const exampleLinkedFees: LinkedFees = {
   words: ['£50 a week, the first due Mon 9 Nov, after 1 free week', '£20 for each pupil the school introduces'],
   owedPence: 5000,
   fees: exampleFees,
+  endedOn: null,
 };
 
 // A Tuesday, with the times written out as the server would.
@@ -612,11 +623,11 @@ const exampleLinkedDays: LinkedDay[] = [
 
 const exampleTeam: SchoolTeam = {
   members: [
-    { membershipId: 'team-1', isYou: false, role: 'instructor', active: true, name: 'Emma Clarke', email: null, phone: null, instructorId: 'team-p1', photoPath: null, setOwnPrices: false, viewRevenue: false, lessonsToCome: 18 },
-    { membershipId: 'team-2', isYou: false, role: 'instructor', active: true, name: 'Tom Walsh', email: null, phone: null, instructorId: 'team-p2', photoPath: null, setOwnPrices: true, viewRevenue: false, lessonsToCome: 1 },
-    { membershipId: 'team-3', isYou: true, role: 'manager', active: true, name: 'Lucy Grant', email: null, phone: null, instructorId: null, photoPath: null, setOwnPrices: false, viewRevenue: false, lessonsToCome: 0 },
-    { membershipId: 'team-4', isYou: false, role: 'manager', active: true, name: 'Omar Hussain', email: null, phone: null, instructorId: null, photoPath: null, setOwnPrices: false, viewRevenue: true, lessonsToCome: 0 },
-    { membershipId: 'team-5', isYou: false, role: 'instructor', active: false, name: 'Ravi Patel', email: null, phone: null, instructorId: 'team-p5', photoPath: null, setOwnPrices: false, viewRevenue: false, lessonsToCome: 3 },
+    { membershipId: 'team-1', isYou: false, role: 'instructor', active: true, name: 'Emma Clarke', email: null, phone: null, instructorId: 'team-p1', photoPath: null, setOwnPrices: false, viewRevenue: false, lessonsToCome: 18, learners: 24 },
+    { membershipId: 'team-2', isYou: false, role: 'instructor', active: true, name: 'Tom Walsh', email: null, phone: null, instructorId: 'team-p2', photoPath: null, setOwnPrices: true, viewRevenue: false, lessonsToCome: 1, learners: 6 },
+    { membershipId: 'team-3', isYou: true, role: 'manager', active: true, name: 'Lucy Grant', email: null, phone: null, instructorId: null, photoPath: null, setOwnPrices: false, viewRevenue: false, lessonsToCome: 0, learners: 0 },
+    { membershipId: 'team-4', isYou: false, role: 'manager', active: true, name: 'Omar Hussain', email: null, phone: null, instructorId: null, photoPath: null, setOwnPrices: false, viewRevenue: true, lessonsToCome: 0, learners: 0 },
+    { membershipId: 'team-5', isYou: false, role: 'instructor', active: false, name: 'Ravi Patel', email: null, phone: null, instructorId: 'team-p5', photoPath: null, setOwnPrices: false, viewRevenue: false, lessonsToCome: 3, learners: 4 },
   ],
   linked: [
     { linkId: 'link-1', businessId: 'link-b1', businessName: 'Khan Driving', name: 'Sarah Khan', email: null, phone: '+447700900111', instructorId: 'link-p1', photoPath: null, qualification: 'adi', badgeExpiresOn: 'Wed 30 Jun 2027', linkedOn: 'Tue 20 Oct' },
@@ -1974,6 +1985,17 @@ export function DesignShowcase() {
           linked={exampleLinkedFees}
           handlers={{ saveTerms: savedNothing, settle: savedNothing, refresh: () => undefined }}
         />
+        <Label>An instructor no longer linked, with a fee still owed under the link (D-313)</Label>
+        <LinkedFeesCard
+          idPrefix="design-ended-"
+          linked={{ ...exampleLinkedFees, linkId: '1b2c3d4e-5f60-4172-8839-4a5b6c7d8e9f', endedOn: 'Wed 21 Oct' }}
+          handlers={{ saveTerms: savedNothing, settle: savedNothing, refresh: () => undefined }}
+        />
+        <Label>Learners asked to move with an instructor who joined the school: two still to answer, one of whom has never signed in, and everybody answered (D-322)</Label>
+        <div className="grid items-start gap-4 md:grid-cols-2">
+          <MovesAskedCard idPrefix="design-moves-" moves={exampleMovesAsked} answer={savedNothing} />
+          <MovesAskedCard idPrefix="design-moves-answered-" moves={exampleMovesAsked.filter((one) => one.status !== 'asked')} answer={savedNothing} />
+        </div>
         <Label>The same fees as the instructor sees them, and none yet</Label>
         <div className="grid items-start gap-6 md:grid-cols-2">
           <FeeList fees={exampleFees} />

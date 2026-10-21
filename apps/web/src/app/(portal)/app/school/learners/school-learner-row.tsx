@@ -16,13 +16,16 @@ export interface SchoolLearnerRowProps {
   learner: LearnerRow;
   /** Everybody still teaching at the school, for choosing by hand if suggestions cannot be read. */
   instructors: { id: string; name: string }[];
+  /** Whether the instructor they are with is switched off, so somebody else should have them (D-317). */
+  teacherSwitchedOff: boolean;
 }
 
 /** LRN-06, SCH-03: one learner at a school, the instructor they are with, and who else suits them. */
-export function SchoolLearnerRow({ learner, instructors }: SchoolLearnerRowProps) {
+export function SchoolLearnerRow({ learner, instructors, teacherSwitchedOff }: SchoolLearnerRowProps) {
   const [open, setOpen] = useState(false);
   const [pending, startTransition] = useTransition();
   const [teacher, setTeacher] = useState(learner.instructorName);
+  const [teacherOff, setTeacherOff] = useState(teacherSwitchedOff);
   const [error, setError] = useState<string | null>(null);
   const [allocation, setAllocation] = useState<AllocationState>({ kind: 'loading' });
   // Only the newest opening's answer counts, however the answers arrive.
@@ -57,6 +60,7 @@ export function SchoolLearnerRow({ learner, instructors }: SchoolLearnerRowProps
         return;
       }
       setTeacher(instructor.name);
+      setTeacherOff(false);
       setOpen(false);
       toast(`${learner.fullName} is with ${instructor.name} now`);
     });
@@ -72,7 +76,8 @@ export function SchoolLearnerRow({ learner, instructors }: SchoolLearnerRowProps
           </StatusPill>
         </span>
         <span className="text-small text-grey-700">
-          {teacher === null ? 'Nobody yet' : `With ${teacher}`} · {lessonsTakenLine(learner.lessonsTaken)}
+          {teacher === null ? 'Nobody yet' : teacherOff ? `With ${teacher}, who is switched off` : `With ${teacher}`} ·{' '}
+          {lessonsTakenLine(learner.lessonsTaken)}
         </span>
       </span>
       <Button variant="secondary" pending={pending} onClick={openSheet}>

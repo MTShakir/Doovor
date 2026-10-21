@@ -44,22 +44,31 @@ export function LinkedFeesCard({ linked, handlers, idPrefix = '' }: { linked: Li
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div className="flex min-w-0 flex-col gap-1">
           <CardTitle id={titleId}>{linked.name}</CardTitle>
-          <CardDescription>{linked.businessName}</CardDescription>
+          <CardDescription>
+            {linked.endedOn === null ? linked.businessName : `${linked.businessName}, no longer linked since ${linked.endedOn}`}
+          </CardDescription>
         </div>
         <span className="text-body font-semibold tabular-nums text-black">
           {linked.owedPence === 0 ? 'Nothing owed' : `${formatPence(linked.owedPence)} owed`}
         </span>
       </div>
-      <ul className="flex flex-col gap-1 text-small text-ink">
-        {linked.words.map((line) => (
-          <li key={line}>{line}</li>
-        ))}
-      </ul>
-      <div>
-        <Button variant="secondary" onClick={() => { setChanging(true); }}>
-          {linked.words[0] === 'No fees' ? 'Set fees' : 'Change fees'}
-        </Button>
-      </div>
+      {/* An ended link raises nothing new; what it raised is still owed, and settled here (D-313). */}
+      {linked.endedOn === null ? (
+        <>
+          <ul className="flex flex-col gap-1 text-small text-ink">
+            {linked.words.map((line) => (
+              <li key={line}>{line}</li>
+            ))}
+          </ul>
+          <div>
+            <Button variant="secondary" onClick={() => { setChanging(true); }}>
+              {linked.words[0] === 'No fees' ? 'Set fees' : 'Change fees'}
+            </Button>
+          </div>
+        </>
+      ) : (
+        <p className="text-small text-ink">No new fees are raised. Mark what is still owed paid, or write it off.</p>
+      )}
       <FeeList
         idPrefix={`${titleId}-`}
         fees={linked.fees}

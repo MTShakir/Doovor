@@ -138,6 +138,30 @@ describe("telling people about a school's own arrangements (M9-28, NTF-03, D-295
     expect(schoolNoticeLink({ ...moved, learner_id: null }, 'instructor')).toBe('/app/instructor/learners');
   });
 
+  it('tells an instructor who the school gave them, opening their card, once for each time it does (D-325)', () => {
+    const given: SchoolNotice = {
+      ...school,
+      kind: 'learner.assigned',
+      business_id: 'school-1',
+      entity_type: 'learner_relationship',
+      version: '1761055200000000',
+      recipients: [{ user_id: 'mona-1', audience: 'instructor' }],
+      learner_id: 'pat-1',
+      learner_name: 'Pat Pupil',
+    };
+    expect(planSchoolNotice(given)).toEqual([
+      expect.objectContaining({
+        userId: 'mona-1',
+        channels: ['in_app', 'push', 'email'],
+        title: 'Pat Pupil is with you now',
+        body: 'Quayside Driving School chose you to teach them. Open their card to get in touch.',
+        link: '/app/instructor/learners/pat-1',
+        dedupeKey: 'learner.assigned:row-1:1761055200000000:mona-1',
+      }),
+    ]);
+    expect(schoolNoticeLink({ ...given, learner_id: null }, 'instructor')).toBe('/app/instructor/learners');
+  });
+
   it('takes each side of a parting to the screen that answers it', () => {
     const parted: SchoolNotice = { ...school, kind: 'school.left', entity_type: 'school_link', outcome: 'let_go' };
     expect(schoolNoticeLink(parted, 'instructor')).toBe('/app/instructor');

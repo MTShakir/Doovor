@@ -7,6 +7,7 @@ import { completeSignIn } from '@/lib/auth/complete-sign-in';
 import { getAccess } from '@/lib/auth/session';
 import { expireAllInstructorProfiles } from '@/lib/public/instructor-profile';
 import { redirectTo } from '@/lib/redirect-to';
+import { carryPhotoOver } from '@/lib/school/carry-photo';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
 
 const tokenSchema = z.string().min(1).max(200);
@@ -43,7 +44,7 @@ export async function acceptMemberInvitation(token: unknown): Promise<Result<nul
   if (!access) return err('NOT_AUTHENTICATED', 'Sign in to join the school.');
 
   const supabase = await createSupabaseServerClient();
-  const { error } = await supabase.rpc('accept_member_invitation', { p_token: parsed.data });
+  const { data: schoolId, error } = await supabase.rpc('accept_member_invitation', { p_token: parsed.data });
   if (error) {
     const { code, context } = parsePostgresError(error);
     if (code === 'VALIDATION_FAILED' && context.reason === 'teaches_elsewhere') {
@@ -62,6 +63,9 @@ export async function acceptMemberInvitation(token: unknown): Promise<Result<nul
     if (code === 'VALIDATION_FAILED') return err('NOT_FOUND', 'This link has already been used or has expired.');
     return err(code);
   }
+
+  // Their profile came with them; their photo comes too (D-324).
+  await carryPhotoOver(supabase, access.session.userId, schoolId);
 
   // Joined, so this redirects and never resolves.
   return redirectTo(await completeSignIn());

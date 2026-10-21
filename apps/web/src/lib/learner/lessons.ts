@@ -27,6 +27,14 @@ export interface MyLesson {
   dispute: { outcome: 'waived' | 'kept' | null; note: string | null } | null;
 }
 
+/**
+ * Whether a lesson still has money to take, at a Business that takes cards. A request is paid for
+ * with an authorisation, and one already authorised has nothing left to do until it is answered (R-12).
+ */
+export function owesForLesson(status: string, paymentStatus: string): boolean {
+  return (status === 'requested' ? ['unpaid', 'failed'] : ['unpaid', 'pending', 'failed']).includes(paymentStatus);
+}
+
 /** The learner's own lessons (PRD 8.2). Row-level security answers for them, not this. */
 export async function myLessons(): Promise<{ upcoming: MyLesson[]; past: MyLesson[] }> {
   const supabase = await createSupabaseServerClient();
@@ -57,14 +65,11 @@ export async function myLessons(): Promise<{ upcoming: MyLesson[]; past: MyLesso
     disputeUntil: row.dispute_until,
     dispute: row.no_show_disputes === null ? null : { outcome: row.no_show_disputes.outcome, note: row.no_show_disputes.note },
     durationMinutes: Math.round((new Date(row.ends_at).getTime() - new Date(row.starts_at).getTime()) / 60_000),
-    // A request is paid for with an authorisation, and one already authorised has nothing left
-    // to do until it is answered (R-12).
     canPayNow:
       asksForCard({
         chargesEnabled: row.businesses.stripe_charges_enabled,
         mode: chosenPaymentMode(row.businesses.settings),
-      }) &&
-      (row.status === 'requested' ? ['unpaid', 'failed'] : ['unpaid', 'pending', 'failed']).includes(row.payment_status),
+      }) && owesForLesson(row.status, row.payment_status),
   }));
 
   return {
@@ -130,7 +135,7 @@ export async function myLesson(bookingId: string): Promise<MyLessonDetails | nul
     durationMinutes: Math.round((new Date(data.ends_at).getTime() - new Date(data.starts_at).getTime()) / 60_000),
     canPayNow:
       asksForCard({ chargesEnabled: business.stripe_charges_enabled, mode: chosenPaymentMode(business.settings) }) &&
-      (data.status === 'requested' ? ['unpaid', 'failed'] : ['unpaid', 'pending', 'failed']).includes(data.payment_status),
+      owesForLesson(data.status, data.payment_status),
     // A profile exists once the platform has checked them, and while their Business is in good
     // standing: the same rule the public page itself keeps, so a link never leads to nothing.
     instructorProfile:

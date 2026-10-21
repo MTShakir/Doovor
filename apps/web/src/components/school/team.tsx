@@ -410,6 +410,7 @@ export function SwitchOffDialog({
   if (member !== null && member !== shown) setShown(member);
   const who = shown?.name ?? '';
   const lessons = shown?.lessonsToCome ?? 0;
+  const learners = shown?.learners ?? 0;
 
   return (
     <Dialog
@@ -432,11 +433,22 @@ export function SwitchOffDialog({
         </>
       }
     >
-      {shown?.role === 'instructor' && lessons > 0 ? (
-        <p className="text-body text-ink">
-          {lessons === 1 ? 'Their 1 lesson to come stays' : `Their ${String(lessons)} lessons to come stay`} in the diary for you to give to
-          another instructor or call off.
-        </p>
+      {shown?.role === 'instructor' && (lessons > 0 || learners > 0) ? (
+        <div className="flex flex-col gap-2">
+          {/* Their learners stay theirs until somebody else is given them (D-317). */}
+          {learners > 0 ? (
+            <p className="text-body text-ink">
+              {learners === 1 ? 'Their 1 learner stays' : `Their ${String(learners)} learners stay`} with them until you give{' '}
+              {learners === 1 ? 'them' : 'each one'} to another instructor on Learners.
+            </p>
+          ) : null}
+          {lessons > 0 ? (
+            <p className="text-body text-ink">
+              {lessons === 1 ? 'Their 1 lesson to come stays' : `Their ${String(lessons)} lessons to come stay`} in the diary for you to give to
+              another instructor or call off.
+            </p>
+          ) : null}
+        </div>
       ) : null}
     </Dialog>
   );

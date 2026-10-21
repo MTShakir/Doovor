@@ -21,9 +21,10 @@ const rules = [
 
 /**
  * The exceptions to the circle (COV-02). Most instructors need none; the ones who do usually
- * have one or two, so this is a short list and a box, not a screen of its own.
+ * have one or two, so this is a short list and a box, not a screen of its own. The example is
+ * the district of their own base, so nobody in Manchester is shown one in Leeds (D-323).
  */
-export function CoverageEditor({ districts }: { districts: District[] }) {
+export function CoverageEditor({ districts, example }: { districts: District[]; example: string | null }) {
   const [pending, startTransition] = useTransition();
   const [error, setError] = useState<string | undefined>(undefined);
   const [outcode, setOutcode] = useState('');
@@ -80,12 +81,17 @@ export function CoverageEditor({ districts }: { districts: District[] }) {
       ) : null}
 
       <ClientForm onSubmit={submit} pending={pending} className="flex flex-col gap-3 md:flex-row md:items-end">
-        <Field label="Postcode district" hint="For example LS17." error={error} className="md:flex-1">
+        <Field
+          label="Postcode district"
+          hint={example === null ? 'The first half of a postcode.' : `The first half of a postcode, for example ${example}.`}
+          error={error}
+          className="md:flex-1"
+        >
           <Input
             autoCapitalize="characters"
             spellCheck={false}
             className="uppercase"
-            placeholder="LS17"
+            placeholder={example ?? undefined}
             value={outcode}
             onChange={(event) => { setOutcode(event.target.value); }}
           />

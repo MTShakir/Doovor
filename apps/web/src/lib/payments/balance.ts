@@ -46,6 +46,8 @@ const factsSchema = z.object({
       has_receipt: z.boolean(),
       lesson_at: iso.nullable(),
       credit_minutes: z.number().int().nullable(),
+      /** The fee it paid, for a lesson called off late or missed (D-323). */
+      fee_for: z.enum(['cancelled', 'no_show']).nullable().catch(null),
     }),
   ),
   refunds: z.array(
@@ -140,6 +142,7 @@ export async function learnerBalance(businessId: string, learnerId: string, now 
       hasReceipt: payment.has_receipt,
       lessonAt: payment.lesson_at,
       creditMinutes: payment.credit_minutes,
+      feeFor: payment.fee_for,
     })),
     ...facts.refunds.map((refund) => ({
       id: refund.id,

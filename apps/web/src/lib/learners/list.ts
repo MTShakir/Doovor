@@ -11,6 +11,7 @@ export interface LearnerRow {
   phone: string | null;
   status: LearnerStatus;
   transmission: LearnerTransmission | null;
+  instructorId: string | null;
   instructorName: string | null;
   nextLessonAt: string | null;
   lessonsTaken: number;
@@ -32,7 +33,7 @@ export async function listLearners(query: LearnerListQuery): Promise<LearnerRow[
   const supabase = await createSupabaseServerClient();
   let request = supabase
     .from('learner_list')
-    .select('id, learner_id, full_name, phone, status, transmission, instructor_name, next_lesson_at, lessons_taken')
+    .select('id, learner_id, full_name, phone, status, transmission, instructor_id, instructor_name, next_lesson_at, lessons_taken')
     .eq('business_id', query.businessId)
     .in('status', [...statusesForFilter(query.filter)]);
 
@@ -54,6 +55,7 @@ export async function listLearners(query: LearnerListQuery): Promise<LearnerRow[
     phone: row.phone === null ? null : (normaliseUkMobile(row.phone) ?? row.phone),
     status: row.status ?? 'enquiry',
     transmission: row.transmission,
+    instructorId: row.instructor_id,
     instructorName: row.instructor_name,
     nextLessonAt: row.next_lesson_at,
     lessonsTaken: row.lessons_taken ?? 0,

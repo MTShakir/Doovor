@@ -254,10 +254,10 @@ test('acceptance-12 with Stripe: a learner books from a shared link and pays by 
   const times = page.getByRole('group', { name: /^Times on/ });
   await expect(times).toBeVisible();
   await times.getByRole('button', { name: '11:00' }).click();
-  await page.getByRole('button', { name: /^Book 11:00 for £\d+$/ }).click();
-  await expect(page.getByRole('heading', { name: /^Lesson (booked|requested)$/ })).toBeVisible();
+  await page.getByRole('button', { name: /^(Book 11:00 for £\d+|Ask for 11:00)$/ }).click();
+  await expect(page.getByRole('heading', { name: /^Lesson (booked|requested|held)$/ })).toBeVisible();
 
-  await page.getByRole('link', { name: 'Pay for it now' }).click();
+  await page.getByRole('link', { name: /^(Pay for it now|Pay to confirm it|Authorise the payment)$/ }).click();
   const checkout = page.getByRole('region', { name: /at \d\d:\d\d$/ });
   await checkout.getByRole('button', { name: /^(Pay|Authorise) £/ }).click();
   await payInCardForm(page, /^(Pay|Authorise) £/);

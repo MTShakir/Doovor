@@ -279,6 +279,12 @@ export function notificationCopy(
       };
     }
 
+    case 'learner.assigned':
+      return {
+        title: `${facts.learnerName ?? 'A learner'} is with you now`,
+        body: sentence(`${facts.schoolName ?? 'Your school'} chose you to teach them.`, 'Open their card to get in touch'),
+      };
+
     case 'school.left':
       if (audience === 'school') {
         return {

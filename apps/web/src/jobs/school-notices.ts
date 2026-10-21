@@ -24,6 +24,7 @@ export const schoolNoticeEvents = [
   'school_fee.settled',
   'learner.move_asked',
   'learner.moved',
+  'learner.assigned',
   'school.link_ended',
   'school.member_left',
 ] as const;
@@ -43,13 +44,14 @@ export interface SchoolNotice {
     | 'school_fee.settled'
     | 'learner.move_asked'
     | 'learner.moved'
+    | 'learner.assigned'
     | 'school.left';
   business_id: string | null;
   entity_type: string;
   entity_id: string;
   version: string | null;
   recipients: { user_id: string; audience: NotificationAudience }[];
-  /** A learner who moved: whose card the instructor they came with opens (D-306). */
+  /** A learner who moved, or one the school gave an instructor: whose card they open (D-306, D-325). */
   learner_id?: string | null;
   school_name?: string | null;
   learner_name?: string | null;
@@ -139,6 +141,11 @@ export function schoolNoticeLink(notice: SchoolNotice, audience: NotificationAud
       const learner = given(notice.learner_id);
       return learner === undefined ? '/app/instructor/learners' : `/app/instructor/learners/${learner}`;
     }
+    case 'learner.assigned': {
+      // Their card, where they reach them and book the first lesson (D-325).
+      const learner = given(notice.learner_id);
+      return learner === undefined ? '/app/instructor/learners' : `/app/instructor/learners/${learner}`;
+    }
     case 'school.left':
       if (audience === 'school') return '/app/school/instructors';
       if (notice.outcome !== 'switched_off') return '/app/instructor';
@@ -152,9 +159,9 @@ export function schoolNoticeLink(notice: SchoolNotice, audience: NotificationAud
 
 /**
  * A school's own arrangements (M9-28, D-295): a pupil offered and taken, a linked instructor's
- * fees, a learner asked whether to move and one who moved (D-306), and an instructor and a school
- * parting. One notice for
- * each change, however often the event arrives.
+ * fees, a learner asked whether to move and one who moved (D-306), a learner the school gave an
+ * instructor (D-325), and an instructor and a school parting. One notice for each change, however
+ * often the event arrives.
  */
 export function planSchoolNotice(notice: SchoolNotice, muted?: Map<string, NotificationChannel[]>): PlannedNotification[] {
   return planNotifications({

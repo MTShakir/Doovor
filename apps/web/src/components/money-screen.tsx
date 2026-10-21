@@ -250,8 +250,17 @@ function transactionLine(one: Transaction): { title: string; detail: string; amo
   }
 
   const how = one.method === 'card' ? 'Card' : one.method === 'cash' ? 'Cash' : one.method === 'bank' ? 'Bank transfer' : 'Paid';
-  // A payment is for a lesson or for a package. Say which, and say nothing when it is neither.
-  const what = one.creditMinutes === null ? (one.lessonAt === null ? null : 'Lesson') : `Package, ${formatMinutes(one.creditMinutes)}`;
+  // A payment is for a lesson, a fee or a package (D-323). Say which, and say nothing when it is none of them.
+  const what =
+    one.creditMinutes !== null
+      ? `Package, ${formatMinutes(one.creditMinutes)}`
+      : one.feeFor !== null
+        ? one.feeFor === 'no_show'
+          ? 'No-show fee'
+          : 'Late cancellation fee'
+        : one.lessonAt === null
+          ? null
+          : 'Lesson';
   const back = one.refundedPence > 0 ? `${formatPence(one.refundedPence)} refunded` : null;
   const detail = [formatDate(one.at), what, how, back].filter((part) => part !== null).join(' · ');
   return { title: one.learnerName, detail, amount: formatPence(one.amountPence) };

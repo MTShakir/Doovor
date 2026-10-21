@@ -39,6 +39,10 @@ async function Lessons() {
   const { upcoming, past } = await myLessons();
   const now = new Date();
   const rules = await rulesFor(upcoming[0] ?? past[0]);
+  const notGoingAhead = past
+    .filter((lesson) => new Date(lesson.startsAt).getTime() >= now.getTime())
+    .sort((a, b) => a.startsAt.localeCompare(b.startsAt));
+  const before = past.filter((lesson) => new Date(lesson.startsAt).getTime() < now.getTime());
   // Keyed, since the calendar is handed these in a list of its own.
   const toCome = (lesson: MyLesson) => (
     <MyLessonRow key={lesson.id} lesson={lesson} rules={rules} now={now.toISOString()} canChange />
@@ -84,13 +88,30 @@ async function Lessons() {
         </TabsContent>
       </Tabs>
 
-      {past.length === 0 ? null : (
+      {/* Called off, declined or never answered, and still to come: not before now (D-323). */}
+      {notGoingAhead.length === 0 ? null : (
+        <section className="flex flex-col gap-2" aria-labelledby="off-lessons">
+          <h2 id="off-lessons" className="text-h3 text-black">
+            Not going ahead
+          </h2>
+          <Card padding="none">
+            {notGoingAhead.map((lesson, index) => (
+              <Fragment key={lesson.id}>
+                {index === 0 ? null : <ListDivider />}
+                <MyLessonRow lesson={lesson} rules={rules} now={now.toISOString()} canChange={false} />
+              </Fragment>
+            ))}
+          </Card>
+        </section>
+      )}
+
+      {before.length === 0 ? null : (
         <section className="flex flex-col gap-2" aria-labelledby="past-lessons">
           <h2 id="past-lessons" className="text-h3 text-black">
             Before now
           </h2>
           <Card padding="none">
-            {past.slice(0, 20).map((lesson, index) => (
+            {before.slice(0, 20).map((lesson, index) => (
               <Fragment key={lesson.id}>
                 {index === 0 ? null : <ListDivider />}
                 <MyLessonRow lesson={lesson} rules={rules} now={now.toISOString()} canChange={false} />

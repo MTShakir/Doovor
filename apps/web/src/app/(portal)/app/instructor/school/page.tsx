@@ -9,7 +9,7 @@ import { requirePortal } from '@/lib/auth/session';
 import { FeeList } from '@/components/school/fee-list';
 import { PriceGuideNote } from '@/components/school/price-guide-note';
 import { icons } from '@/lib/icons';
-import { ownFees, owedWords } from '@/lib/school/fees';
+import { feesStillOwed, ownFees, owedWords, type FeesStillOwed } from '@/lib/school/fees';
 import { ownSchoolLink } from '@/lib/school/link';
 import { pupilOffersFor } from '@/lib/school/pupil-offers';
 import { PupilOffersScreen } from './pupil-offers-screen';
@@ -32,18 +32,22 @@ export default function InstructorSchoolPage() {
 }
 
 async function School() {
-  await requirePortal('instructor');
-  const linked = await ownSchoolLink();
+  const { access } = await requirePortal('instructor');
+  const own = access.memberships.find((one) => one.businessType === 'independent' && one.role === 'owner');
+  const [linked, owed] = await Promise.all([ownSchoolLink(), own ? feesStillOwed(own.businessId) : Promise.resolve([])]);
 
   if (linked === null) {
     return (
-      <Card>
-        <EmptyState
-          icon={icons.school}
-          title="You are not linked to a school"
-          description="A driving school that sends pupils to instructors with their own business can send you a link to join it. You keep your own prices, payments and learners."
-        />
-      </Card>
+      <>
+        <Card>
+          <EmptyState
+            icon={icons.school}
+            title="You are not linked to a school"
+            description="A driving school that sends pupils to instructors with their own business can send you a link to join it. You keep your own prices, payments and learners."
+          />
+        </Card>
+        <StillOwed owed={owed} />
+      </>
     );
   }
 
@@ -93,6 +97,23 @@ async function School() {
         <FeeList fees={fees.fees} />
       </Card>
     )}
+    <StillOwed owed={owed} />
     </>
   );
+}
+
+/** D-313: fees still owed to a school the business is no longer linked to, as that school records them. */
+function StillOwed({ owed }: { owed: FeesStillOwed[] }) {
+  return owed.map((one) => (
+    <Card key={one.linkId} className="flex flex-col gap-4" role="region" aria-labelledby={`still-owed-${one.linkId}`}>
+      <div className="flex flex-col gap-1">
+        <CardTitle id={`still-owed-${one.linkId}`}>Still owed to {one.schoolName}</CardTitle>
+        <CardDescription>
+          {owedWords(one.owedPence)}. Linked until {one.endedOn}, so no new fees are raised. You pay what is still owed yourself, and{' '}
+          {one.schoolName} marks each fee paid.
+        </CardDescription>
+      </div>
+      <FeeList fees={one.fees} />
+    </Card>
+  ));
 }

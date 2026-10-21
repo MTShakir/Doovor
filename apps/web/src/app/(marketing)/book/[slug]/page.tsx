@@ -71,6 +71,7 @@ async function Instructor({ params, searchParams }: BookPageProps) {
     }
     return (
       <EmptyState
+        headingLevel={1}
         icon={CalendarX}
         title="This link is not taking bookings"
         description="The instructor may have paused it, or the link may be old. Ask them for a new one."

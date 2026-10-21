@@ -36,6 +36,12 @@ export async function saveLessonSeller(input: unknown): Promise<Result<null>> {
         lessonSeller: 'Some of your instructors still teach under the school. Choose Some of each while they move to their own.',
       });
     }
+    // Instructors linked to the school sell their own lessons, so it cannot sell every one (D-282, D-320).
+    if (context.reason === 'linked_instructors') {
+      return err('VALIDATION_FAILED', undefined, {
+        lessonSeller: 'Some instructors linked to the school sell their own lessons. Choose Some of each while they are linked.',
+      });
+    }
     return err(code);
   }
   return ok(null);

@@ -18,7 +18,7 @@ const districtSchema = z.object({
     .transform((value, context) => {
       const outcode = normaliseOutcode(value);
       if (outcode === null) {
-        context.addIssue({ code: 'custom', message: 'Enter a district like LS17' });
+        context.addIssue({ code: 'custom', message: 'Enter a postcode district, the first half of a postcode' });
         return z.NEVER;
       }
       return outcode;
@@ -79,7 +79,7 @@ export async function saveCoverage(input: unknown): Promise<Result<null>> {
 export async function addDistrict(input: unknown): Promise<Result<null>> {
   const parsed = districtSchema.safeParse(input);
   if (!parsed.success) {
-    return err('VALIDATION_FAILED', parsed.error.issues[0]?.message ?? 'Enter a district like LS17');
+    return err('VALIDATION_FAILED', parsed.error.issues[0]?.message ?? 'Enter a postcode district, the first half of a postcode');
   }
 
   const who = await instructor();
@@ -112,7 +112,7 @@ export async function addDistrict(input: unknown): Promise<Result<null>> {
 export async function removeDistrict(outcode: unknown): Promise<Result<null>> {
   const parsed = z.string().safeParse(outcode);
   const tidy = parsed.success ? normaliseOutcode(parsed.data) : null;
-  if (tidy === null) return err('VALIDATION_FAILED', 'Enter a district like LS17');
+  if (tidy === null) return err('VALIDATION_FAILED', 'Enter a postcode district, the first half of a postcode');
 
   const who = await instructor();
   if (!who) return err('NOT_ALLOWED');

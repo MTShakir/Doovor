@@ -1,6 +1,6 @@
 import { expect, test, type Locator, type Page } from '@playwright/test';
 import { authFile } from '../support/accounts';
-import { makeSchoolInstructor, schoolMemberState } from '../support/database';
+import { makeSchool, makeSchoolInstructor, schoolMemberState, withDatabase } from '../support/database';
 import { expectAccessible, snap } from '../support/helpers';
 import { signInThroughForm } from '../support/sign-in';
 
@@ -96,6 +96,44 @@ test.describe('school instructors (SCH-02, M5-13)', () => {
     } finally {
       await context.close();
       await nia.remove();
+    }
+  });
+
+  test('switching an instructor off says their learners stay with them, and the learner list says so (D-317)', async ({ browser }, testInfo) => {
+    test.setTimeout(120_000);
+    const label = `Off ${testInfo.project.name}`;
+    const school = await makeSchool(label);
+    const learnerId = crypto.randomUUID();
+    const lara = `Lara ${label}`;
+    await withDatabase(async (sql) => {
+      await sql`select tests.create_user_with_id(${learnerId}::uuid, ${`lara.${learnerId.slice(0, 8)}@example.com`}, ${lara})`;
+      await sql`insert into public.learner_profiles (user_id, transmission) values (${learnerId}, 'manual')`;
+      await sql`
+        insert into public.learner_relationships (business_id, learner_id, instructor_id)
+        select ${school.businessId}, ${learnerId}, p.id from public.instructor_profiles p where p.public_slug = ${school.instructor.slug}`;
+    });
+    const context = await browser.newContext();
+    try {
+      const page = await context.newPage();
+      await signInThroughForm(page, school.managerEmail, { next: '/app/school/instructors' });
+      const ines = await openMember(page, page.getByRole('region', { name: 'Instructors', exact: true }), school.instructor.name);
+      await ines.getByRole('button', { name: 'Switch off' }).click();
+      const confirm = page.getByRole('dialog', { name: `Switch off ${school.instructor.name}?` });
+      await expect(confirm).toContainText('Their 1 learner stays with them until you give them to another instructor on Learners.');
+      await confirm.getByRole('button', { name: 'Switch off' }).click();
+      await expect(page.getByText(`${school.instructor.name} is switched off`)).toBeVisible();
+
+      await page.goto('/app/school/learners');
+      const row = page.getByRole('article').filter({ hasText: lara });
+      await expect(row).toContainText(`With ${school.instructor.name}, who is switched off`);
+      await expectAccessible(page);
+      await snap(page, testInfo, 'school-learner-switched-off-instructor');
+    } finally {
+      await context.close();
+      await withDatabase(async (sql) => {
+        await sql`delete from auth.users where id = ${learnerId}`;
+      });
+      await school.remove();
     }
   });
 

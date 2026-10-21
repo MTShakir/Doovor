@@ -121,6 +121,12 @@ describe('learnerEventLine (LRN-06)', () => {
     ).toBe('Moved from active to left by Lucy Grant: Moved away');
   });
 
+  it('says a booked lesson moved them on, rather than whoever booked it (D-315)', () => {
+    expect(learnerEventLine(event('learner.status_changed', { status: 'enquiry' }, { status: 'active', because: 'booked' }))).toBe(
+      'Moved from enquiry to active when a lesson was booked',
+    );
+  });
+
   it('leaves out anything it has no sentence for', () => {
     expect(learnerEventLine(event('learner.exploded', null, null))).toBeNull();
     expect(learnerEventLine(event('learner.status_changed', null, null))).toBeNull();

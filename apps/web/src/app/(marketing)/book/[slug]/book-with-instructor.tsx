@@ -2,7 +2,7 @@
 
 import { formatPence } from '@repo/core/money';
 import type { ProfileNames } from '@repo/core/public-profile';
-import { formatDate, formatMinutes, formatTime, todayInZone } from '@repo/core/time';
+import { formatDate, formatMinutes, formatTime, isValidLocalDate, todayInZone } from '@repo/core/time';
 import { Avatar } from '@repo/ui/avatar';
 import { Button } from '@repo/ui/button';
 import { Card, CardDescription, CardTitle } from '@repo/ui/card';
@@ -13,12 +13,12 @@ import { Skeleton } from '@repo/ui/skeleton';
 import { TimeSlotGrid } from '@repo/ui/time-slot-grid';
 import { CheckCircle2 } from 'lucide-react';
 import Link from 'next/link';
-import { useEffect, useState, useTransition } from 'react';
+import { useCallback, useEffect, useState, useTransition } from 'react';
 import { track } from '@/lib/analytics/track';
 import { FormAlert } from '@/components/form-alert';
 import { avatarUrl } from '@/lib/storage/images';
 import type { BookingPage } from '@/lib/booking/public';
-import { bookAsLearner, rememberSlot, slotsOnDay } from './actions';
+import { bookAsLearner, rememberSlot, slotsOnDay, type Booked, type BookedNext } from './actions';
 
 export interface BookWithInstructorProps {
   page: BookingPage;
@@ -37,13 +37,20 @@ export interface BookWithInstructorProps {
   firstFreeDay: string | null;
 }
 
+/** The button to what is left to pay, by what is left to do (PAY-03, R-12, D-318). Null for nothing. */
+const payWords: Record<BookedNext, string | null> = {
+  nothing: null,
+  pay: 'Pay for it now',
+  pay_to_confirm: 'Pay to confirm it',
+  authorise: 'Authorise the payment',
+};
+
 /** BOK-02: choose how long, choose when, book. On a phone, in under a minute. */
 export function BookWithInstructor({ page, names, slug, chosen, cancellation, learner, signedIn, profileUrl, firstFreeDay }: BookWithInstructorProps) {
   const [pending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
-  const [booked, setBooked] = useState<string | null>(null);
-  /** The booking to pay for, when this Business takes the money at booking (PAY-03). */
-  const [payNow, setPayNow] = useState<string | null>(null);
+  /** The time booked, and what is left to do with it (PAY-03, D-318). */
+  const [booked, setBooked] = useState<{ at: string; lesson: Booked } | null>(null);
 
   const first = page.lessons[0];
   const [lessonKey, setLessonKey] = useState(
@@ -52,6 +59,11 @@ export function BookWithInstructor({ page, names, slug, chosen, cancellation, le
   const [day, setDay] = useState(chosen === null ? (firstFreeDay ?? todayInZone()) : chosen.slice(0, 10));
   const [times, setTimes] = useState<{ asked: string; slots: string[] } | null>(null);
   const [chosenSlot, setChosenSlot] = useState<string | null>(chosen);
+  // A day picked before the page was ready fired no change, so the box is read once it is, and
+  // the times follow what it shows (D-319).
+  const readDay = useCallback((box: HTMLInputElement | null) => {
+    if (box !== null && box.value !== '' && isValidLocalDate(box.value)) setDay(box.value);
+  }, []);
 
   const lesson = page.lessons.find((one) => `${one.lessonTypeId}:${String(one.durationMinutes)}` === lessonKey);
   const asked = lesson ? `${day}:${String(lesson.durationMinutes)}` : '';
@@ -98,30 +110,43 @@ export function BookWithInstructor({ page, names, slug, chosen, cancellation, le
         return;
       }
       track('booking_created', { source: 'self', recurring: false });
-      setBooked(slot);
-      setPayNow(result.data.payNow ? result.data.bookingId : null);
+      setBooked({ at: slot, lesson: result.data });
     });
   };
 
   if (booked !== null) {
+    const { lesson } = booked;
+    const pay = payWords[lesson.next];
     return (
       <Card className="flex flex-col gap-4">
         <div className="flex items-center gap-3">
           <CheckCircle2 className="size-6 shrink-0 text-black" aria-hidden />
-          <CardTitle>{page.instantBook ? 'Lesson booked' : 'Lesson requested'}</CardTitle>
+          <CardTitle>
+            {lesson.status === 'requested' ? 'Lesson requested' : lesson.status === 'pending_payment' ? 'Lesson held' : 'Lesson booked'}
+          </CardTitle>
         </div>
         <CardDescription>
-          {formatDate(new Date(booked))} at {formatTime(new Date(booked))} with {page.name}.
-          {page.instantBook ? ' It is in their diary.' : ' They will confirm it shortly.'}
+          {formatDate(new Date(booked.at))} at {formatTime(new Date(booked.at))} with {page.name}.
+          {lesson.status === 'requested'
+            ? ' They will confirm it shortly.'
+            : lesson.status === 'pending_payment'
+              ? lesson.holdUntil === null
+                ? ' Pay for it to confirm it.'
+                : ` It is yours until ${formatTime(new Date(lesson.holdUntil))}: pay by then to confirm it.`
+              : ' It is in their diary.'}
         </CardDescription>
-        {payNow === null ? (
+        {lesson.paidWithCredit ? <p className="text-small text-ink">Paid from your lesson credit.</p> : null}
+        {lesson.next === 'authorise' ? (
+          <p className="text-small text-ink">Authorise the payment now. Your card is only charged if they accept.</p>
+        ) : null}
+        {pay === null ? (
           <Button asChild width="responsive">
             <Link href="/app/learner">See my lessons</Link>
           </Button>
         ) : (
           <div className="flex flex-col gap-2">
             <Button asChild width="responsive">
-              <Link href={`/app/learner/pay/${payNow}`}>Pay for it now</Link>
+              <Link href={`/app/learner/pay/${lesson.bookingId}`}>{pay}</Link>
             </Button>
             <Button asChild variant="secondary" width="responsive">
               <Link href="/app/learner">See my lessons</Link>
@@ -174,7 +199,7 @@ export function BookWithInstructor({ page, names, slug, chosen, cancellation, le
 
         <Field label="Which day?">
           {/* The browser owns what is in the box; this only listens (D-043). */}
-          <Input type="date" defaultValue={day} min={todayInZone()} onChange={(event) => { setDay(event.target.value); }} />
+          <Input ref={readDay} type="date" defaultValue={day} min={todayInZone()} onChange={(event) => { setDay(event.target.value); }} />
         </Field>
 
         {loading || times === null ? (
@@ -184,12 +209,18 @@ export function BookWithInstructor({ page, names, slug, chosen, cancellation, le
             Nothing free on {formatDate(new Date(`${day}T12:00:00Z`))}. Try another day.
           </p>
         ) : (
-          <TimeSlotGrid
-            label={`Times on ${formatDate(new Date(`${day}T12:00:00Z`))}`}
-            value={slot}
-            onChange={setChosenSlot}
-            slots={times.slots.map((one) => ({ id: one, label: formatTime(new Date(one)) }))}
-          />
+          <div className="flex flex-col gap-2">
+            {/* Said as well as announced, so the times are plainly the day in the box (D-319). */}
+            <p className="text-small font-semibold text-black" aria-hidden>
+              Times on {formatDate(new Date(`${day}T12:00:00Z`))}
+            </p>
+            <TimeSlotGrid
+              label={`Times on ${formatDate(new Date(`${day}T12:00:00Z`))}`}
+              value={slot}
+              onChange={setChosenSlot}
+              slots={times.slots.map((one) => ({ id: one, label: formatTime(new Date(one)) }))}
+            />
+          </div>
         )}
       </Card>
 
@@ -211,7 +242,9 @@ export function BookWithInstructor({ page, names, slug, chosen, cancellation, le
           ? 'Choose a time'
           : learner === null
             ? `Continue with ${formatTime(new Date(slot))}`
-            : `Book ${formatTime(new Date(slot))} for ${formatPence(lesson.pricePence)}`}
+            : page.instantBook
+              ? `Book ${formatTime(new Date(slot))} for ${formatPence(lesson.pricePence)}`
+              : `Ask for ${formatTime(new Date(slot))}`}
       </Button>
 
       {learner === null && !signedIn ? (

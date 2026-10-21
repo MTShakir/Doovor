@@ -89,6 +89,15 @@ describe('who sells the school\'s lessons (D-281)', () => {
       fields: { lessonSeller: 'Some of your instructors still teach under the school. Choose Some of each while they move to their own.' },
     });
   });
+
+  it('says why the school cannot sell every lesson while instructors are linked to it (D-320)', async () => {
+    requirePortal.mockResolvedValue({ access: { memberships: [owner] } });
+    rpc.mockResolvedValueOnce({ data: null, error: { code: 'P0001', message: 'VALIDATION_FAILED', details: '{"field": "seller", "reason": "linked_instructors"}' } });
+    expect(await saveLessonSeller({ lessonSeller: 'school' })).toMatchObject({
+      code: 'VALIDATION_FAILED',
+      fields: { lessonSeller: 'Some instructors linked to the school sell their own lessons. Choose Some of each while they are linked.' },
+    });
+  });
 });
 
 describe('prices for linked instructors (M9-10, D-286)', () => {

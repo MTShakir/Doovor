@@ -15,7 +15,7 @@ const statusFor: Partial<Record<DomainErrorCode, number>> = {
   NOT_FOUND: 404,
   ALREADY_RECORDED: 409,
   VALIDATION_FAILED: 422,
-  TOO_CLOSE: 422,
+  LESSON_NOT_STARTED: 422,
 };
 
 function refuse(code: DomainErrorCode, status: number, message = defaultErrorCopy[code]): Response {

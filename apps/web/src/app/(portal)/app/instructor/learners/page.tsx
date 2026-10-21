@@ -8,11 +8,14 @@ import { SkeletonRow } from '@repo/ui/skeleton';
 import { Users } from 'lucide-react';
 import { Fragment, Suspense } from 'react';
 import { LearnerAllowanceNote } from '@/components/learner-allowance-note';
+import { MovesAskedCard } from '@/components/learners/moves-asked';
 import { requirePortal } from '@/lib/auth/session';
 import { learnerAllowance } from '@/lib/learners/allowance';
 import { listLearners } from '@/lib/learners/list';
+import { movesAsked } from '@/lib/learners/moves';
 import { LearnerBrowser } from './learner-browser';
 import { LearnerListRow } from './learner-row';
+import { answerMoveFor } from './move-actions';
 
 export const metadata: Metadata = { title: 'Learners' };
 
@@ -43,7 +46,7 @@ async function Learners({ searchParams }: LearnersPageProps) {
   const membership = access.memberships.find((one) => one.instructorProfileId !== null);
   if (!membership?.instructorProfileId) return null;
 
-  const [learners, allowance] = await Promise.all([
+  const [learners, allowance, moves] = await Promise.all([
     listLearners({
       businessId: membership.businessId,
       instructorProfileId: membership.instructorProfileId,
@@ -51,6 +54,8 @@ async function Learners({ searchParams }: LearnersPageProps) {
       search,
     }),
     learnerAllowance(membership.businessId),
+    // Somebody who paused their own Business to join a school sees who it asked to come with them (D-322).
+    access.pausedBusinesses.length > 0 ? movesAsked() : Promise.resolve([]),
   ]);
   const searching = search.trim() !== '' || filter !== 'all';
 
@@ -58,6 +63,7 @@ async function Learners({ searchParams }: LearnersPageProps) {
     <LearnerBrowser search={search} filter={filter} total={learners.length} startAdding={params.add === '1'}>
       {/* Only Free has a number, so this is nothing at all on a paid plan (D-208). */}
       {allowance ? <LearnerAllowanceNote allowance={allowance} /> : null}
+      <MovesAskedCard moves={moves} answer={answerMoveFor} />
       {learners.length === 0 ? (
         <Card padding="none">
           <EmptyState
