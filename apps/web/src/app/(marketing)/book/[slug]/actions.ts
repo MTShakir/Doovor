@@ -6,7 +6,7 @@ import { err, ok, type Result } from '@repo/core/result';
 import { isValidLocalDate } from '@repo/core/time';
 import { cookies } from 'next/headers';
 import { z } from '@repo/core/zod';
-import { getAccess } from '@/lib/auth/session';
+import { getAccess, needsToAgree } from '@/lib/auth/session';
 import { openSlots } from '@/lib/booking/public';
 import { owesForLesson } from '@/lib/learner/lessons';
 import { keptCardsWith } from '@/lib/payments/cards';
@@ -57,6 +57,8 @@ export async function bookAsLearner(input: unknown): Promise<Result<Booked>> {
 
   const access = await getAccess();
   if (!access?.access.isLearner) return err('NOT_ALLOWED', 'Sign in as a learner to book a lesson.');
+  // The page sends them to agree first; this is for a page left open while the terms changed (D-265).
+  if (await needsToAgree(access)) return err('NOT_ALLOWED', 'Agree to our terms before you book. Open the link again to do it.');
 
   const supabase = await createSupabaseServerClient();
   const { data, error } = await supabase.rpc('create_booking', {

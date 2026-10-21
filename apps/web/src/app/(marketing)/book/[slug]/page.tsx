@@ -9,12 +9,13 @@ import { CalendarX } from 'lucide-react';
 import type { Route } from 'next';
 import { permanentRedirect } from 'next/navigation';
 import { Suspense } from 'react';
-import { getAccess } from '@/lib/auth/session';
+import { getAccess, needsToAgree } from '@/lib/auth/session';
 import { bookingPage, cancellationPolicy } from '@/lib/booking/public';
 import { currentProfileSlug, instructorProfile, nextOpenTimes } from '@/lib/public/instructor-profile';
 import { sharedLinkMetadata } from '@/lib/public/metadata';
 import { instructorCard } from '@/lib/public/share-cards';
 import { getAppUrl } from '@/lib/app-url';
+import { redirectTo } from '@/lib/redirect-to';
 import { getSiteUrl } from '@/lib/site-url';
 import { BookWithInstructor } from './book-with-instructor';
 
@@ -81,6 +82,13 @@ async function Instructor({ params, searchParams }: BookPageProps) {
 
   const { slot } = await searchParams;
   const access = await getAccess();
+  // A learner books under the terms like anything else of theirs: somebody who has not agreed to
+  // the current ones, as after claiming an account made for them, agrees first and comes straight
+  // back to the time they chose (D-265, D-331).
+  if (access?.access.isLearner === true && (await needsToAgree(access))) {
+    const here = `/book/${slug}${slot === undefined ? '' : `?slot=${encodeURIComponent(slot)}`}`;
+    redirectTo(`/agree?next=${encodeURIComponent(here)}`);
+  }
   // The full profile, for somebody who wants to know more before booking (PUB-03), and what
   // cancelling costs, which they are told before they book (BOK-09, R-06).
   const [published, policy] = await Promise.all([instructorProfile(slug), cancellationPolicy(page.instructorId)]);

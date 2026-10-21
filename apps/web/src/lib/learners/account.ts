@@ -24,7 +24,9 @@ export async function createUnclaimedLearnerAccount(learner: UnclaimedLearner): 
     // Unconfirmed on purpose: confirming it is how the learner takes the account over.
     email_confirm: false,
     phone_confirm: false,
-    user_metadata: { full_name: learner.fullName, intended_role: 'learner' },
+    // Made for them, so it has no password of theirs until they choose one: confirming it by email
+    // asks them for it, and choosing it takes the mark away (D-331).
+    user_metadata: { full_name: learner.fullName, intended_role: 'learner', made_for_them: true },
   });
 
   if (error) {

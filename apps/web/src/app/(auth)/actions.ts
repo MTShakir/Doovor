@@ -163,7 +163,13 @@ export async function updatePassword(input: unknown): Promise<Result<null>> {
   const parsed = newPasswordSchema.safeParse(input);
   if (!parsed.success) return err('VALIDATION_FAILED', undefined, fieldErrors(parsed.error));
   const supabase = await createSupabaseServerClient();
-  const { error } = await supabase.auth.updateUser({ password: parsed.data.password });
+  // An account made for somebody has a password of theirs from now on, so no link asks for one again (D-331).
+  const { data } = await supabase.auth.getUser();
+  const claimed = data.user?.user_metadata.made_for_them === true;
+  const { error } = await supabase.auth.updateUser({
+    password: parsed.data.password,
+    ...(claimed ? { data: { made_for_them: false } } : {}),
+  });
   if (error) return failed(error.code);
   redirectTo(await completeSignIn());
 }

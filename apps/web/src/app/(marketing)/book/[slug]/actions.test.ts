@@ -3,12 +3,13 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 const rpc = vi.fn();
 const maybeSingle = vi.fn();
 const getAccess = vi.fn<() => Promise<unknown>>();
+const needsToAgree = vi.fn<() => Promise<boolean>>();
 const keptCardsWith = vi.fn<(businessId: string) => Promise<unknown>>();
 
 vi.mock('@/lib/supabase/server', () => ({
   createSupabaseServerClient: () => Promise.resolve({ rpc, from: () => ({ select: () => ({ eq: () => ({ maybeSingle }) }) }) }),
 }));
-vi.mock('@/lib/auth/session', () => ({ getAccess: () => getAccess() }));
+vi.mock('@/lib/auth/session', () => ({ getAccess: () => getAccess(), needsToAgree: () => needsToAgree() }));
 vi.mock('@/lib/payments/cards', () => ({ keptCardsWith: (businessId: string) => keptCardsWith(businessId) }));
 vi.mock('@/lib/booking/public', () => ({ openSlots: () => Promise.resolve([]) }));
 vi.mock('@/lib/redirect-to', () => ({ redirectTo: () => undefined }));
@@ -46,6 +47,7 @@ beforeEach(() => {
   getAccess.mockResolvedValue({ session: { userId: 'learner-1' }, access: { isLearner: true } });
   rpc.mockResolvedValue({ data: 'booking-1', error: null });
   keptCardsWith.mockResolvedValue(null);
+  needsToAgree.mockResolvedValue(false);
 });
 
 describe('what is left to do once a learner books on a link (BOK-02, PAY-03, D-318)', () => {
@@ -106,6 +108,12 @@ describe('what is left to do once a learner books on a link (BOK-02, PAY-03, D-3
 
     rpc.mockResolvedValueOnce({ data: null, error: { code: '23P01', message: 'SLOT_TAKEN' } });
     expect(await bookAsLearner(input)).toMatchObject({ ok: false, code: 'SLOT_TAKEN' });
+  });
+
+  it('books nothing for a learner who has still to agree to the current terms (D-265)', async () => {
+    needsToAgree.mockResolvedValue(true);
+    expect(await bookAsLearner(input)).toMatchObject({ ok: false, code: 'NOT_ALLOWED', message: 'Agree to our terms before you book. Open the link again to do it.' });
+    expect(rpc).not.toHaveBeenCalled();
   });
 
   it('books nothing for somebody who is not a learner, or for what is not a lesson', async () => {

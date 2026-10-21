@@ -30,6 +30,19 @@ export async function GET(request: NextRequest) {
   }
 
   if (!ok) return NextResponse.redirect(new URL('/sign-in?error=link', request.url));
-  const destination = type === 'recovery' ? '/account/password' : await completeSignIn();
+  const destination =
+    type === 'recovery' ? '/account/password' : (await madeForThem(supabase)) ? '/account/password?claimed=1' : await completeSignIn();
   return NextResponse.redirect(new URL(destination, request.url));
+}
+
+/**
+ * Signing up with the email of an account an instructor or a school made for somebody confirms
+ * that account, and is how they claim it (LRN-03, D-068). Supabase keeps nothing else the sign-up
+ * form said, as it never changes an account it cannot be sure is the asker's, so the password typed
+ * there was not kept, and a link to sign in sets none either: it is asked for now, until they have
+ * chosen one (D-331). The account says it was made for them from the moment it is made.
+ */
+async function madeForThem(supabase: Awaited<ReturnType<typeof createSupabaseServerClient>>): Promise<boolean> {
+  const { data } = await supabase.auth.getUser();
+  return data.user?.user_metadata.made_for_them === true;
 }
