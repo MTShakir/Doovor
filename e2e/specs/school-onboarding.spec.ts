@@ -85,6 +85,22 @@ test.describe('school onboarding (AUTH-05, M5-11)', () => {
     await page.getByRole('button', { name: 'Go to my school' }).click();
     await expect(page).toHaveURL(/\/app\/school$/);
     await expect(page.getByRole('heading', { level: 1, name: 'Overview' })).toBeVisible();
+
+    // Nothing can be booked with the school's instructors until it sets the prices it was never
+    // asked for, so the Overview says so first and the Prices card asks for an hour (PRD 10.5, D-329).
+    const setPrices = page.getByRole('region', { name: 'Set your prices' });
+    await expect(setPrices).toBeVisible();
+    await setPrices.getByRole('link', { name: 'Set your prices' }).click();
+    await expect(page).toHaveURL(/\/app\/school\/settings$/);
+    const prices = page.getByRole('region', { name: 'Prices', exact: true });
+    await expect(prices).toContainText('You have not set your prices yet, so nothing can be booked with your instructors.');
+    await prices.getByLabel('Price for an hour').fill('45');
+    await prices.getByRole('button', { name: 'Save prices' }).click();
+    await expect(page.getByText('Prices saved')).toBeVisible();
+    await expect(prices.getByLabel('Price for 1 hour', { exact: true })).toHaveValue('45');
+    await page.goto('/app/school');
+    await expect(page.getByRole('heading', { level: 1, name: 'Overview' })).toBeVisible();
+    await expect(page.getByRole('region', { name: 'Set your prices' })).toHaveCount(0);
     await page.goto('/onboarding/school');
     await expect(page).toHaveURL(/\/app\/school$/);
 

@@ -4,6 +4,7 @@ import { Card, CardDescription, CardTitle } from '@repo/ui/card';
 import { SkeletonRow } from '@repo/ui/skeleton';
 import type { Metadata } from 'next';
 import { Suspense } from 'react';
+import { FirstPrices } from '@/components/catalogue/first-prices';
 import { PackagesEditor } from '@/components/catalogue/packages-editor';
 import { PricesForm } from '@/components/catalogue/prices-form';
 import { LessonSellerForm } from '@/components/school/lesson-seller-form';
@@ -12,7 +13,7 @@ import { BookingRulesForm } from '@/components/settings/booking-rules-form';
 import { requirePortal } from '@/lib/auth/session';
 import { businessCatalogue } from '@/lib/catalogue/catalogue';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
-import { saveLessonSeller, saveLinkedPriceGuide, saveSchoolPackage, saveSchoolPrices, saveSchoolRules } from './actions';
+import { saveLessonSeller, saveLinkedPriceGuide, saveSchoolFirstPrices, saveSchoolPackage, saveSchoolPrices, saveSchoolRules } from './actions';
 
 export const metadata: Metadata = { title: 'Settings' };
 
@@ -65,9 +66,19 @@ async function Settings() {
       <Card className="flex flex-col gap-4" role="region" aria-labelledby="school-prices-title">
         <div className="flex flex-col gap-1">
           <CardTitle id="school-prices-title">Prices</CardTitle>
-          <CardDescription>What learners pay for each lesson, with any of your instructors you have not let set their own.</CardDescription>
+          <CardDescription>
+            {catalogue.rows.length > 0
+              ? 'What learners pay for each lesson, with any of your instructors you have not let set their own.'
+              : 'You have not set your prices yet, so nothing can be booked with your instructors. Start with an hour, and longer lessons follow from it.'}
+          </CardDescription>
         </div>
-        <PricesForm rows={catalogue.rows} mode="business" save={saveSchoolPrices} />
+        {/* A school is never asked its prices when it signs up, so the first is asked here, the way an
+            instructor's onboarding asks it, rather than a button with nothing above it (PRD 10.5, D-329). */}
+        {catalogue.rows.length > 0 ? (
+          <PricesForm rows={catalogue.rows} mode="business" save={saveSchoolPrices} />
+        ) : (
+          <FirstPrices save={saveSchoolFirstPrices} />
+        )}
       </Card>
       {business?.lesson_seller === 'instructors' || business?.lesson_seller === 'both' ? (
         <Card className="flex flex-col gap-4" role="region" aria-labelledby="school-guide-title">

@@ -53,6 +53,11 @@ export interface BookLessonProps {
   date?: string;
   label?: string;
   variant?: 'primary' | 'secondary';
+  /**
+   * One of a school's instructors, for its office booking in their diary (PRD 6.2, D-330). Left out,
+   * the lesson goes in the diary of the instructor booking it.
+   */
+  instructor?: { id: string; name: string };
 }
 
 /**
@@ -60,8 +65,12 @@ export interface BookLessonProps {
  * instructor's own hours are offered separately, with a warning, because an instructor is
  * allowed to teach outside them and a learner is not (R-04).
  */
-export function BookLesson({ learners, learnerId, date, label = 'Book a lesson', variant = 'primary' }: BookLessonProps) {
+export function BookLesson({ learners, learnerId, date, label = 'Book a lesson', variant = 'primary', instructor }: BookLessonProps) {
   const router = useRouter();
+  const instructorId = instructor?.id;
+  // The hours the times are inside or outside: the reader's own, or the instructor's they book for.
+  const whose = instructor === undefined ? 'your hours' : `${instructor.name}'s hours`;
+  const Whose = instructor === undefined ? 'Your hours' : whose;
   const [open, setOpen] = useState(false);
   const [pending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
@@ -105,7 +114,7 @@ export function BookLesson({ learners, learnerId, date, label = 'Book a lesson',
   // What this instructor teaches, once, the first time the sheet is opened.
   useEffect(() => {
     if (!open || lessons.length > 0) return;
-    void bookableLessons().then((result) => {
+    void bookableLessons({ instructorId }).then((result) => {
       if (!result.ok) {
         setError(result.message);
         return;
@@ -117,13 +126,13 @@ export function BookLesson({ learners, learnerId, date, label = 'Book a lesson',
       // mark should not have their choice taken back by an answer that arrives after it.
       if (first) setLessonKey((current) => (current === '' ? `${first.lessonTypeId}:${String(first.durationMinutes)}` : current));
     });
-  }, [open, lessons.length, learner, learners]);
+  }, [open, lessons.length, learner, learners, instructorId]);
 
   // The times on the chosen day, whenever the day or the length changes.
   useEffect(() => {
     if (!open || !chosen || times?.asked === asked) return;
     let current = true;
-    void slotsForDay({ date: day, durationMinutes: chosen.durationMinutes, ignoreGap }).then((result) => {
+    void slotsForDay({ date: day, durationMinutes: chosen.durationMinutes, ignoreGap, instructorId }).then((result) => {
       if (!current) return;
       if (!result.ok) {
         setError(result.message);
@@ -134,7 +143,7 @@ export function BookLesson({ learners, learnerId, date, label = 'Book a lesson',
     return () => {
       current = false;
     };
-  }, [open, day, chosen, asked, times?.asked, ignoreGap]);
+  }, [open, day, chosen, asked, times?.asked, ignoreGap, instructorId]);
 
   /** Picking a learner picks the length they usually book, which is usually the right one. */
   const changeLearner = (id: string) => {
@@ -158,6 +167,7 @@ export function BookLesson({ learners, learnerId, date, label = 'Book a lesson',
       startsAt: slot,
       durationMinutes: chosen.durationMinutes,
       ignoreGap,
+      instructorId,
     };
 
     startTransition(async () => {
@@ -223,7 +233,7 @@ export function BookLesson({ learners, learnerId, date, label = 'Book a lesson',
         open={open}
         onOpenChange={setOpen}
         title="Book a lesson"
-        description="Who it is for, when it is, and that is it."
+        description={instructor === undefined ? 'Who it is for, when it is, and that is it.' : `In ${instructor.name}'s diary.`}
         footer={
           <Button
             width="full"
@@ -247,7 +257,8 @@ export function BookLesson({ learners, learnerId, date, label = 'Book a lesson',
               onChange={(event) => { changeLearner(event.target.value); }}
               options={[
                 ...learners.map((one) => ({ value: one.id, label: one.name })),
-                { value: addLearner, label: 'Add a new learner' },
+                // The office books from a learner's own card, so there is nobody else to add here.
+                ...(instructor === undefined ? [{ value: addLearner, label: 'Add a new learner' }] : []),
               ]}
             />
           </Field>
@@ -305,12 +316,15 @@ export function BookLesson({ learners, learnerId, date, label = 'Book a lesson',
             <Select value={repeat} onChange={(event) => { setRepeat(event.target.value); }} options={repeats} />
           </Field>
 
-          <Checkbox
-            label="No gap needed after the lesson before"
-            description="For a lesson that starts where the last one finished. It frees the times the travel gap was holding, on both sides."
-            checked={ignoreGap}
-            onCheckedChange={(checked) => { setIgnoreGap(checked === true); }}
-          />
+          {/* The gap is the instructor's own travel time, so only they say it is not needed (D-187). */}
+          {instructor === undefined ? (
+            <Checkbox
+              label="No gap needed after the lesson before"
+              description="For a lesson that starts where the last one finished. It frees the times the travel gap was holding, on both sides."
+              checked={ignoreGap}
+              onCheckedChange={(checked) => { setIgnoreGap(checked === true); }}
+            />
+          ) : null}
 
           <Field label="Which day?">
             {/* The browser owns what is in the box; this only listens (D-043). */}
@@ -327,14 +341,14 @@ export function BookLesson({ learners, learnerId, date, label = 'Book a lesson',
             <div className="flex flex-col gap-4">
               {times.open.length > 0 ? (
                 <div className="flex flex-col gap-2">
-                  <p className="text-small font-semibold text-ink">Your hours</p>
+                  <p className="text-small font-semibold text-ink">{Whose}</p>
                   {grid(times.open, `Times on ${formatDate(new Date(`${day}T12:00:00Z`))}`)}
                 </div>
               ) : null}
               {times.outOfHours.length > 0 ? (
                 <div className="flex flex-col gap-2">
-                  <p className="text-small font-semibold text-ink">Outside your hours</p>
-                  {grid(times.outOfHours, 'Times outside your hours')}
+                  <p className="text-small font-semibold text-ink">Outside {whose}</p>
+                  {grid(times.outOfHours, `Times outside ${whose}`)}
                 </div>
               ) : null}
             </div>
@@ -349,7 +363,7 @@ export function BookLesson({ learners, learnerId, date, label = 'Book a lesson',
 
           {outside ? (
             <FormAlert tone="warning">
-              {formatTime(new Date(slot))} is outside the hours you teach. You can still book it.
+              {formatTime(new Date(slot))} is outside {instructor === undefined ? 'the hours you teach' : `the hours ${instructor.name} teaches`}. You can still book it.
             </FormAlert>
           ) : null}
 

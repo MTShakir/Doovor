@@ -5,6 +5,7 @@ import { Button } from '@repo/ui/button';
 import { Sheet } from '@repo/ui/sheet';
 import { StatusPill } from '@repo/ui/status-pill';
 import { toast } from '@repo/ui/toast';
+import Link from 'next/link';
 import { useRef, useState, useTransition } from 'react';
 import { FormAlert } from '@/components/form-alert';
 import { AllocationChoices, type AllocationState } from '@/components/school/allocation-choices';
@@ -67,10 +68,17 @@ export function SchoolLearnerRow({ learner, instructors, teacherSwitchedOff }: S
   };
 
   return (
-    <article className="flex flex-wrap items-center gap-3 px-4 py-3">
+    <article className="relative flex flex-wrap items-center gap-3 px-4 py-3 transition-colors duration-200 hover:bg-grey-100 focus-within:bg-grey-100">
       <span className="flex min-w-0 flex-1 flex-col gap-1">
         <span className="flex items-center gap-2">
-          <span className="truncate text-body font-semibold text-black">{learner.fullName}</span>
+          {/* The whole row opens their card, as the instructor's list does, and Assign stays a button
+              of its own above it (LRN-02, PRD 6.2, D-330). */}
+          <Link
+            href={`/app/school/learners/${learner.learnerId}`}
+            className="truncate text-body font-semibold text-black after:absolute after:inset-0 focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-black"
+          >
+            {learner.fullName}
+          </Link>
           <StatusPill status={statusPill(learner.status)} className="shrink-0">
             {learnerStatusLabels[learner.status]}
           </StatusPill>
@@ -80,7 +88,7 @@ export function SchoolLearnerRow({ learner, instructors, teacherSwitchedOff }: S
           {lessonsTakenLine(learner.lessonsTaken)}
         </span>
       </span>
-      <Button variant="secondary" pending={pending} onClick={openSheet}>
+      <Button variant="secondary" className="relative" pending={pending} onClick={openSheet}>
         Assign
       </Button>
 

@@ -19,7 +19,7 @@ export async function addLearnerNote(input: unknown): Promise<Result<null>> {
   const parsed = learnerNoteSchema.safeParse(input);
   if (!parsed.success) return err('VALIDATION_FAILED', undefined, fieldErrors(parsed.error));
 
-  const { session } = await requirePortal('instructor');
+  const { session } = await requirePortal(['instructor', 'school']);
   const supabase = await createSupabaseServerClient();
 
   // Which Business the note belongs to is not the caller's to choose: it is the one this
@@ -40,6 +40,7 @@ export async function addLearnerNote(input: unknown): Promise<Result<null>> {
   if (error) return err(parsePostgresError(error).code);
 
   revalidatePath(`/app/instructor/learners/${parsed.data.learnerId}`);
+  revalidatePath(`/app/school/learners/${parsed.data.learnerId}`);
   return ok(null);
 }
 
@@ -53,7 +54,7 @@ export async function setLearnerStatus(input: unknown): Promise<Result<null>> {
   const parsed = statusSchema.safeParse(input);
   if (!parsed.success) return err('VALIDATION_FAILED', undefined, fieldErrors(parsed.error));
 
-  await requirePortal('instructor');
+  await requirePortal(['instructor', 'school']);
   const supabase = await createSupabaseServerClient();
   const { error } = await supabase.rpc('set_learner_status', {
     p_learner_id: parsed.data.learnerId,
@@ -62,7 +63,9 @@ export async function setLearnerStatus(input: unknown): Promise<Result<null>> {
   if (error) return err(parsePostgresError(error).code);
 
   revalidatePath(`/app/instructor/learners/${parsed.data.learnerId}`);
+  revalidatePath(`/app/school/learners/${parsed.data.learnerId}`);
   revalidatePath('/app/instructor/learners');
+  revalidatePath('/app/school/learners');
   return ok(null);
 }
 
@@ -73,12 +76,13 @@ export async function deleteLearnerNote(input: unknown): Promise<Result<null>> {
   const parsed = removalSchema.safeParse(input);
   if (!parsed.success) return err('VALIDATION_FAILED');
 
-  await requirePortal('instructor');
+  await requirePortal(['instructor', 'school']);
   const supabase = await createSupabaseServerClient();
   const { error } = await supabase.from('learner_notes').delete().eq('id', parsed.data.id);
   if (error) return err(parsePostgresError(error).code);
 
   revalidatePath(`/app/instructor/learners/${parsed.data.learnerId}`);
+  revalidatePath(`/app/school/learners/${parsed.data.learnerId}`);
   return ok(null);
 }
 
@@ -93,7 +97,7 @@ export async function addLearnerPickup(input: unknown): Promise<Result<null>> {
   const parsed = learnerPickupSchema.safeParse(input);
   if (!parsed.success) return err('VALIDATION_FAILED');
 
-  await requirePortal('instructor');
+  await requirePortal(['instructor', 'school']);
   const supabase = await createSupabaseServerClient();
   const { data: relationship } = await supabase
     .from('learner_relationships')
@@ -109,6 +113,7 @@ export async function addLearnerPickup(input: unknown): Promise<Result<null>> {
   if (!saved.ok) return saved;
 
   revalidatePath(`/app/instructor/learners/${parsed.data.learnerId}`);
+  revalidatePath(`/app/school/learners/${parsed.data.learnerId}`);
   return ok(null);
 }
 
@@ -119,11 +124,12 @@ export async function updateLearnerPickup(input: unknown): Promise<Result<null>>
   const parsed = pickupChangeSchema.safeParse(input);
   if (!parsed.success) return err('VALIDATION_FAILED');
 
-  await requirePortal('instructor');
+  await requirePortal(['instructor', 'school']);
   const updated = await updatePickupPoint(parsed.data.pickupId, parsed.data.pickup);
   if (!updated.ok) return updated;
 
   revalidatePath(`/app/instructor/learners/${parsed.data.learnerId}`);
+  revalidatePath(`/app/school/learners/${parsed.data.learnerId}`);
   return ok(null);
 }
 
@@ -134,10 +140,11 @@ export async function removeLearnerPickup(input: unknown): Promise<Result<null>>
   const parsed = pickupRemovalSchema.safeParse(input);
   if (!parsed.success) return err('VALIDATION_FAILED');
 
-  await requirePortal('instructor');
+  await requirePortal(['instructor', 'school']);
   const removed = await removePickupPoint(parsed.data.pickupId);
   if (!removed.ok) return removed;
 
   revalidatePath(`/app/instructor/learners/${parsed.data.learnerId}`);
+  revalidatePath(`/app/school/learners/${parsed.data.learnerId}`);
   return ok(null);
 }

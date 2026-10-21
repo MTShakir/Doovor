@@ -48,7 +48,9 @@ export function landingPath(context: AccessContext): string {
   if (first) return portalRoots[first];
   if (context.suspendedBusinesses.length > 0) return '/suspended';
   // Their own Business, paused while they taught under a school, is opened again, not replaced (D-292).
-  return context.pausedBusinesses.length > 0 ? '/paused' : '/start';
+  if (context.pausedBusinesses.length > 0) return '/paused';
+  // A school switched them off: told so, never shown the start of a new account (D-332).
+  return context.switchedOffBy.length > 0 ? '/switched-off' : '/start';
 }
 
 /**

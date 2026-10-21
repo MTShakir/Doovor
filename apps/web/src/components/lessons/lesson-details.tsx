@@ -55,6 +55,13 @@ const addPickupValue = '__add__';
 type Action = 'move' | 'cancel' | 'paid';
 type Channel = 'email' | 'sms';
 
+/**
+ * Where the sheet is opened: an instructor's own diary, or a school's office, which moves, calls
+ * off and marks paid its instructors' lessons but never starts one, because a lesson's record is
+ * the instructor's to write (PRD 6.2, D-330).
+ */
+export type LessonPortal = 'instructor' | 'school';
+
 /** What the sheet has to show: on its way, not to be had without signal, or the lesson itself. */
 export type LessonDetailsState =
   | { kind: 'loading' }
@@ -75,6 +82,7 @@ export function LessonDetailsBody({
   movingPickup = false,
   onAddPickup,
   onCard = false,
+  portal = 'instructor',
 }: {
   state: LessonDetailsState;
   /** The reminder on its way, if one is. */
@@ -91,6 +99,8 @@ export function LessonDetailsBody({
   onAddPickup?: () => void;
   /** Opened from the learner's own card, where the way to it is a link to this page (D-214). */
   onCard?: boolean;
+  /** Whose card the link opens: the instructor's, or the school office's (D-330). */
+  portal?: LessonPortal;
 }) {
   // Whether the list of places is open. Before any of the returns below, because a hook has to
   // run on every render.
@@ -297,7 +307,7 @@ export function LessonDetailsBody({
 
       {onCard ? null : (
         <Link
-          href={`/app/instructor/learners/${details.learner.id}` as Route}
+          href={`/app/${portal}/learners/${details.learner.id}` as Route}
           className="flex h-12 w-fit items-center gap-2 rounded-full text-body font-semibold text-black underline-offset-4 hover:underline"
         >
           <UserRound className="size-5" aria-hidden />
@@ -317,11 +327,14 @@ export function LessonDetailsSheet({
   lesson,
   onClose,
   onCard = false,
+  portal = 'instructor',
 }: {
   lesson: LessonAtAGlance;
   onClose: () => void;
   /** Opened from the learner's own card (D-214). */
   onCard?: boolean;
+  /** An instructor's diary, or a school's office (D-330). */
+  portal?: LessonPortal;
 }) {
   const router = useRouter();
   const [state, setState] = useState<LessonDetailsState>({ kind: 'loading' });
@@ -354,8 +367,9 @@ export function LessonDetailsSheet({
           ahead: one.startsAt.getTime() > Date.now(),
           // Until it is over, not until it starts: extending a lesson is decided during it (D-190).
           editable: one.endsAt.getTime() > Date.now(),
-          // The same quarter of an hour the card on Today uses (D-178, D-184).
-          startable: lessonToStart([one], new Date()) !== null,
+          // The same quarter of an hour the card on Today uses (D-178, D-184). Only the instructor
+          // starts a lesson, since its record is theirs to write (PRD 6.2, D-330).
+          startable: portal === 'instructor' && lessonToStart([one], new Date()) !== null,
         });
       })
       // No signal: the card said what it knows, and the rest waits for a connection.
@@ -363,7 +377,7 @@ export function LessonDetailsSheet({
     return () => {
       current = false;
     };
-  }, [lesson.id]);
+  }, [lesson.id, portal]);
 
   if (state.kind === 'ready' && action) {
     const { details } = state;
@@ -449,11 +463,12 @@ export function LessonDetailsSheet({
             ? () => {
                 // Their own pickup points, with the add form already open, because somebody who
                 // picked "add an address" has already said what they came to do (D-222).
-                router.push(`/app/instructor/learners/${state.details.learner.id}?add=pickup` as Route);
+                router.push(`/app/${portal}/learners/${state.details.learner.id}?add=pickup` as Route);
               }
             : undefined
         }
         onCard={onCard}
+        portal={portal}
       />
     </Sheet>
   );
@@ -467,12 +482,15 @@ export function OpenLesson({
   lesson,
   className,
   shouldOpen,
+  portal = 'instructor',
   children,
 }: {
   lesson: LessonAtAGlance;
   className?: string;
   /** Asked first: a lesson held down on a phone has just opened Move instead. */
   shouldOpen?: () => boolean;
+  /** An instructor's diary, or a school's office (D-330). */
+  portal?: LessonPortal;
   children: ReactNode;
 }) {
   const [open, setOpen] = useState(false);
@@ -489,7 +507,7 @@ export function OpenLesson({
       >
         {children}
       </button>
-      {open ? <LessonDetailsSheet lesson={lesson} onClose={() => { setOpen(false); }} /> : null}
+      {open ? <LessonDetailsSheet lesson={lesson} portal={portal} onClose={() => { setOpen(false); }} /> : null}
     </>
   );
 }

@@ -76,11 +76,23 @@ test.describe('school instructors (SCH-02, M5-13)', () => {
       await expect(off.getByText(nia.name, { exact: true })).toBeVisible();
       expect(await schoolMemberState(nia.email)).toMatchObject({ status: 'deactivated', slug: null });
 
-      // Nia signs in and the school has gone: no diary, nothing to open.
+      // Nia signs in and the school has gone: no diary, nothing to open, and she is told why. Signed
+      // up as an instructor, as everybody who joins by a school's link is, she is never made a
+      // Business of her own for it (D-332).
+      await withDatabase(async (sql) => {
+        await sql`update public.users set intended_role = 'instructor' where email = ${nia.email}`;
+      });
       const niaContext = await browser.newContext();
       const niaPage = await niaContext.newPage();
       await signInThroughForm(niaPage, nia.email);
-      await expect(niaPage).toHaveURL(/\/start$/);
+      await expect(niaPage).toHaveURL(/\/switched-off$/);
+      await expect(niaPage.getByRole('heading', { level: 1, name: 'Quayside Driving School switched you off' })).toBeVisible();
+      await expect(niaPage.getByRole('button', { name: 'Set up my own business' })).toBeVisible();
+      await expectAccessible(niaPage);
+      await snap(niaPage, testInfo, 'school-instructor-switched-off');
+      const businesses = await withDatabase(async (sql) => sql`
+        select 1 from public.memberships m join public.users u on u.id = m.user_id where u.email = ${nia.email}`);
+      expect(businesses.length).toBe(1);
       await niaPage.goto('/app/instructor');
       await expect(niaPage).not.toHaveURL(/\/app\/instructor/);
       await niaContext.close();

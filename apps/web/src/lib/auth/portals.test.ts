@@ -13,7 +13,7 @@ import {
 } from './portals';
 
 function context(overrides: Partial<AccessContext> = {}): AccessContext {
-  return { userId: 'u1', staffRole: null, isLearner: false, learnerOnboarded: true, memberships: [], suspendedBusinesses: [], pausedBusinesses: [], ...overrides };
+  return { userId: 'u1', staffRole: null, isLearner: false, learnerOnboarded: true, memberships: [], suspendedBusinesses: [], pausedBusinesses: [], switchedOffBy: [], ...overrides };
 }
 
 function membership(overrides: Partial<AccessMembership>): AccessMembership {
@@ -45,6 +45,13 @@ describe('portal access', () => {
   it('sends somebody whose own Business is paused to open it again, not to start another (D-292)', () => {
     expect(landingPath(context({ pausedBusinesses: ['Asha Driving'] }))).toBe('/paused');
     expect(landingPath(context({ pausedBusinesses: ['Asha Driving'], isLearner: true }))).toBe('/app/learner');
+  });
+
+  it('tells somebody a school switched off, rather than starting them a new account (D-332)', () => {
+    expect(landingPath(context({ switchedOffBy: ['Quayside Driving School'] }))).toBe('/switched-off');
+    // Their own Business paused comes first, and a portal of their own before either.
+    expect(landingPath(context({ switchedOffBy: ['Quayside Driving School'], pausedBusinesses: ['Asha Driving'] }))).toBe('/paused');
+    expect(landingPath(context({ switchedOffBy: ['Quayside Driving School'], isLearner: true }))).toBe('/app/learner');
   });
 
   it('lands an independent instructor on Today', () => {

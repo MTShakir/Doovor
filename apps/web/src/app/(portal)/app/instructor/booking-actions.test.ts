@@ -2,22 +2,26 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const rpc = vi.fn();
 const revalidatePath = vi.fn();
+/** One row a table gives back, by table: the instructor asked for, or the lesson being moved. */
+const rows = new Map<string, unknown>();
+const from = vi.fn((table: string) => ({ select: () => ({ eq: () => ({ maybeSingle: () => Promise.resolve({ data: rows.get(table) ?? null }) }) }) }));
 
-vi.mock('@/lib/supabase/server', () => ({ createSupabaseServerClient: () => Promise.resolve({ rpc }) }));
-vi.mock('@/lib/auth/session', () => ({
-  requirePortal: () =>
-    Promise.resolve({
-      session: { userId: 'instructor-1' },
-      access: { memberships: [{ instructorProfileId: 'profile-1', businessId: 'business-1' }] },
-    }),
-}));
-vi.mock('@/lib/booking/day', () => ({ bookingDay: vi.fn(), lessonOptions: vi.fn() }));
+const instructor = { session: { userId: 'instructor-1' }, access: { memberships: [{ instructorProfileId: 'profile-1', businessId: 'business-1', role: 'owner' }] } };
+/** Somebody who runs a school and teaches nobody themselves (PRD 6.2, D-330). */
+const office = { session: { userId: 'owner-1' }, access: { memberships: [{ instructorProfileId: null, businessId: 'school-1', role: 'owner' }] } };
+const signedIn = { current: instructor as unknown };
+const requirePortal = vi.fn<(portals: unknown) => Promise<unknown>>(() => Promise.resolve(signedIn.current));
+
+vi.mock('@/lib/supabase/server', () => ({ createSupabaseServerClient: () => Promise.resolve({ rpc, from }) }));
+vi.mock('@/lib/auth/session', () => ({ requirePortal: (portals: unknown) => requirePortal(portals) }));
+const bookingDay = vi.fn<(...args: unknown[]) => Promise<unknown>>();
+vi.mock('@/lib/booking/day', () => ({ bookingDay: (...args: unknown[]) => bookingDay(...args), lessonOptions: vi.fn() }));
 vi.mock('@/lib/forms', () => ({ fieldErrors: vi.fn() }));
 const lessonDetails = vi.fn<(bookingId: string) => Promise<unknown>>();
 vi.mock('@/lib/lessons/details', () => ({ lessonDetails: (bookingId: string) => lessonDetails(bookingId) }));
 vi.mock('next/cache', () => ({ revalidatePath: (...args: unknown[]) => { revalidatePath(...args); } }));
 
-const { bookLesson, lessonDetailsFor, recordOfflinePayment, sendReminder, setLessonPickup, undoOfflinePayment } =
+const { bookLesson, cancelLesson, lessonDetailsFor, recordOfflinePayment, sendReminder, setLessonPickup, slotsForDay, undoOfflinePayment } =
   await import('./booking-actions');
 
 const bookingId = '6f1c3a52-9d8e-4b7a-8c61-2f0e9b4d7a13';
@@ -26,6 +30,8 @@ const paymentId = '2b7e1d44-3c9a-4f0e-9a1b-5d6c7e8f9a0b';
 beforeEach(() => {
   vi.clearAllMocks();
   rpc.mockResolvedValue({ data: paymentId, error: null });
+  signedIn.current = instructor;
+  rows.clear();
 });
 
 describe('recording a lesson paid in person (PAY-05, M3-15)', () => {
@@ -151,5 +157,49 @@ describe('where a lesson goes instead, for one lesson (COV-04, D-215)', () => {
   it('refuses anything that is not a lesson and a place', async () => {
     const result = await setLessonPickup({ bookingId: 'not a lesson', pickupPointId: chosen });
     expect(result).toEqual(expect.objectContaining({ ok: false, code: 'VALIDATION_FAILED' }));
+  });
+});
+
+describe("the office of a school, with its instructors' lessons (PRD 6.2, D-330)", () => {
+  const learnerId = '4e1f8a2b-6c3d-4e5f-8a9b-0c1d2e3f4a5b';
+  const mona = '8c5d2e6f-0a7b-4c9d-8e3f-4a5b6c7d8e9f';
+  const lesson = { learnerId, lessonTypeId: '5f2a9b3c-7d4e-4f6a-9b0c-1d2e3f4a5b6c', startsAt: '2026-10-01T09:00:00Z', durationMinutes: 60 };
+
+  beforeEach(() => {
+    signedIn.current = office;
+  });
+
+  it('books a lesson in the diary of one of its instructors, and redraws both portals', async () => {
+    rows.set('instructor_profiles', { id: mona, business_id: 'school-1' });
+    rpc.mockResolvedValue({ data: bookingId, error: null });
+    expect(await bookLesson({ ...lesson, instructorId: mona })).toEqual({ ok: true, data: { bookingId } });
+    expect(rpc).toHaveBeenCalledWith('create_booking', expect.objectContaining({ p_instructor_id: mona, p_learner_id: learnerId }));
+    expect(requirePortal).toHaveBeenCalledWith(['instructor', 'school']);
+    expect(revalidatePath).toHaveBeenCalledWith('/app/school/diary');
+    expect(revalidatePath).toHaveBeenCalledWith(`/app/school/learners/${learnerId}`);
+  });
+
+  it('books nothing with an instructor of a business it does not run, or with nobody', async () => {
+    rows.set('instructor_profiles', { id: mona, business_id: 'school-2' });
+    expect(await bookLesson({ ...lesson, instructorId: mona })).toMatchObject({ ok: false, code: 'NOT_ALLOWED' });
+    expect(await bookLesson(lesson)).toMatchObject({ ok: false, code: 'NOT_ALLOWED' });
+    signedIn.current = { ...office, access: { memberships: [{ instructorProfileId: null, businessId: 'school-1', role: 'instructor' }] } };
+    expect(await bookLesson({ ...lesson, instructorId: mona })).toMatchObject({ ok: false, code: 'NOT_ALLOWED' });
+    expect(rpc).not.toHaveBeenCalled();
+  });
+
+  it('moves a lesson in the diary of the instructor it is with', async () => {
+    rows.set('bookings', { instructor_id: mona });
+    rows.set('instructor_profiles', { id: mona, business_id: 'school-1' });
+    bookingDay.mockResolvedValue({ slots: [] });
+    expect(await slotsForDay({ date: '2026-10-01', durationMinutes: 60, exceptBookingId: bookingId })).toEqual({ ok: true, data: { slots: [] } });
+    expect(bookingDay).toHaveBeenCalledWith(mona, '2026-10-01', 60, 'instructor', expect.any(Date), bookingId, false);
+  });
+
+  it('calls a lesson off through the same door, which decides whether it may', async () => {
+    rpc.mockResolvedValue({ data: null, error: null });
+    expect(await cancelLesson({ bookingId, reason: 'Instructor unwell' })).toEqual({ ok: true, data: null });
+    expect(rpc).toHaveBeenCalledWith('cancel_booking', { p_booking_id: bookingId, p_reason: 'Instructor unwell' });
+    expect(revalidatePath).toHaveBeenCalledWith('/app/school/diary');
   });
 });

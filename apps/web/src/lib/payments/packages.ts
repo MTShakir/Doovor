@@ -21,7 +21,7 @@ export interface PackageOffer {
   expiryDays: number | null;
   /** Still sold. A package taken off sale can still be looked at, not bought. */
   onSale: boolean;
-  /** The Business is suspended, and sells nothing meanwhile (ADM-02). */
+  /** The Business is suspended (ADM-02) or paused (D-292), and sells nothing meanwhile. */
   suspended: boolean;
 }
 
@@ -50,7 +50,9 @@ function offerFrom(row: OfferRow): PackageOffer {
     pricePence: row.price_pence,
     expiryDays: row.expiry_days,
     onSale: row.is_active,
-    suspended: row.businesses.status === 'suspended',
+    // Paused while its instructor teaches under a school, it takes no bookings, so hours bought
+    // from it could never be used (D-292, D-311, D-327).
+    suspended: row.businesses.status === 'suspended' || row.businesses.status === 'paused',
   };
 }
 

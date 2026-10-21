@@ -121,8 +121,12 @@ export async function currentPath(): Promise<string> {
 /**
  * Gate for portal layouts. Sends signed-out people to sign in, people without this role
  * to their own portal, and staff or school owners without TOTP to /mfa (AUTH-08).
+ *
+ * An action two portals share, as the learner card the school's office opens as well as the
+ * instructor (PRD 6.2, D-330), names both: it is for somebody who can use either, and the first
+ * of them they can use is the one whose setup they must have finished.
  */
-export async function requirePortal(portal: Portal): Promise<{ session: Session; access: AccessContext }> {
+export async function requirePortal(portals: Portal | readonly Portal[]): Promise<{ session: Session; access: AccessContext }> {
   const path = await currentPath();
   const result = await getAccess();
   if (!result) redirectTo(`/sign-in?next=${encodeURIComponent(path)}`);
@@ -130,7 +134,8 @@ export async function requirePortal(portal: Portal): Promise<{ session: Session;
     redirectTo(`/mfa?next=${encodeURIComponent(path)}`);
   }
   await requireAgreedTerms(result, path);
-  if (!canUsePortal(result.access, portal)) redirectTo(landingPath(result.access));
+  const portal = (typeof portals === 'string' ? [portals] : portals).find((one) => canUsePortal(result.access, one));
+  if (portal === undefined) redirectTo(landingPath(result.access));
   if (portal === 'school' && needsSchoolOnboarding(result.access)) redirectTo('/onboarding/school');
   if (portal === 'instructor' && needsOnboarding(result.access)) redirectTo('/onboarding');
   if (portal === 'learner' && needsLearnerOnboarding(result.access)) redirectTo('/onboarding/about-you');

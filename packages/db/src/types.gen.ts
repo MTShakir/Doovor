@@ -4349,6 +4349,7 @@ export type Database = {
       my_paused_business: { Args: never; Returns: Json }
       my_referrals: { Args: { p_business_id: string }; Returns: Json }
       my_subscription: { Args: { p_business_id: string }; Returns: Json }
+      my_switched_off_by: { Args: never; Returns: string[] }
       next_open_slots: {
         Args: {
           p_duration_minutes: number

@@ -21,7 +21,7 @@ export async function recordOfflinePackage(input: unknown): Promise<Result<{ lot
   const parsed = packageSaleSchema.safeParse(input);
   if (!parsed.success) return err('VALIDATION_FAILED');
 
-  await requirePortal('instructor');
+  await requirePortal(['instructor', 'school']);
   const supabase = await createSupabaseServerClient();
   const { data, error } = await supabase.rpc('record_offline_package', {
     p_learner_id: parsed.data.learnerId,
@@ -31,6 +31,7 @@ export async function recordOfflinePackage(input: unknown): Promise<Result<{ lot
   if (error) return err(parsePostgresError(error).code);
 
   revalidatePath(`/app/instructor/learners/${parsed.data.learnerId}`);
+  revalidatePath(`/app/school/learners/${parsed.data.learnerId}`);
   return ok({ lotId: data });
 }
 
@@ -44,13 +45,15 @@ export async function markHandedBack(input: unknown): Promise<Result<null>> {
   const parsed = handBackSchema.safeParse(input);
   if (!parsed.success) return err('VALIDATION_FAILED');
 
-  await requirePortal('instructor');
+  await requirePortal(['instructor', 'school']);
   const supabase = await createSupabaseServerClient();
   const { error } = await supabase.rpc('settle_offline_refund', { p_refund_id: parsed.data.refundId });
   if (error) return err(parsePostgresError(error).code);
 
   revalidatePath(`/app/instructor/learners/${parsed.data.learnerId}`);
+  revalidatePath(`/app/school/learners/${parsed.data.learnerId}`);
   revalidatePath('/app/instructor/diary');
+  revalidatePath('/app/school/diary');
   // The Money screen counts what is still owed back, and the list it links to is this refund (D-195).
   for (const screen of ['/app/instructor/money', '/app/school/money']) {
     revalidatePath(screen);
@@ -74,7 +77,7 @@ export async function decideNoShowDispute(input: unknown): Promise<Result<null>>
   const parsed = decisionSchema.safeParse(input);
   if (!parsed.success) return err('VALIDATION_FAILED');
 
-  await requirePortal('instructor');
+  await requirePortal(['instructor', 'school']);
   const supabase = await createSupabaseServerClient();
   const { error } = await supabase.rpc('decide_no_show_dispute', {
     p_dispute_id: parsed.data.disputeId,
@@ -84,7 +87,9 @@ export async function decideNoShowDispute(input: unknown): Promise<Result<null>>
   if (error) return err(parsePostgresError(error).code);
 
   revalidatePath(`/app/instructor/learners/${parsed.data.learnerId}`);
+  revalidatePath(`/app/school/learners/${parsed.data.learnerId}`);
   revalidatePath('/app/instructor/diary');
+  revalidatePath('/app/school/diary');
   return ok(null);
 }
 
@@ -125,7 +130,7 @@ export async function refundOptions(input: unknown): Promise<Result<RefundOption
   const parsed = optionsSchema.safeParse(input);
   if (!parsed.success) return err('VALIDATION_FAILED');
 
-  await requirePortal('instructor');
+  await requirePortal(['instructor', 'school']);
   const supabase = await createSupabaseServerClient();
   const { data, error } = await supabase.rpc('refund_options', { p_payment_id: parsed.data.paymentId });
   if (error) return err(parsePostgresError(error).code);
@@ -167,7 +172,7 @@ export async function issueRefund(input: unknown): Promise<Result<{ refundId: st
   const parsed = refundSchema.safeParse(input);
   if (!parsed.success) return err('VALIDATION_FAILED', 'Say why, and how much to give back.');
 
-  await requirePortal('instructor');
+  await requirePortal(['instructor', 'school']);
   const supabase = await createSupabaseServerClient();
   const { data, error } = await supabase.rpc('issue_refund', {
     p_payment_id: parsed.data.paymentId,
@@ -179,5 +184,6 @@ export async function issueRefund(input: unknown): Promise<Result<{ refundId: st
   if (error) return err(parsePostgresError(error).code);
 
   revalidatePath(`/app/instructor/learners/${parsed.data.learnerId}`);
+  revalidatePath(`/app/school/learners/${parsed.data.learnerId}`);
   return ok({ refundId: data });
 }

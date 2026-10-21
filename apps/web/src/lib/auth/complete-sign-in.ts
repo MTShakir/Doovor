@@ -55,8 +55,9 @@ export async function completeSignIn(next?: string | null): Promise<string> {
 
   // A business set up now, for an instructor who came from a school's link to link one (D-282).
   let businessSetUp = false;
-  // Somebody whose own Business is paused opens it again rather than being given another (D-292).
-  if (availablePortals(access).length === 0 && access.pausedBusinesses.length === 0) {
+  // Somebody whose own Business is paused opens it again rather than being given another (D-292), and
+  // somebody a school switched off is told so, and is never made a Business they did not ask for (D-332).
+  if (availablePortals(access).length === 0 && access.pausedBusinesses.length === 0 && access.switchedOffBy.length === 0) {
     const { data: profile } = await supabase.from('users').select('intended_role, full_name').eq('id', user.id).single();
     const metadata = user.user_metadata as Record<string, unknown>;
     const schoolName = typeof metadata.school_name === 'string' ? metadata.school_name.trim() : '';

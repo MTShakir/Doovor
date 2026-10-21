@@ -15,7 +15,8 @@ function words(move: LearnerMove): { title: string; body: string; yes: string; n
       title: `${who} now teaches for ${move.toName}`,
       body: `Move to ${move.toName} to keep learning with them. The lessons you have had stay on your record.`,
       yes: `Move to ${move.toName}`,
-      no: 'Not now',
+      // Saying no is an answer, kept as it is, so it does not promise to ask again (D-333).
+      no: 'No, thanks',
     };
   }
   return {

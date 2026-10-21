@@ -38,7 +38,8 @@ async function RoleChoice() {
     result &&
     (availablePortals(result.access).length > 0 ||
       result.access.suspendedBusinesses.length > 0 ||
-      result.access.pausedBusinesses.length > 0)
+      result.access.pausedBusinesses.length > 0 ||
+      result.access.switchedOffBy.length > 0)
   ) {
     redirectTo(landingPath(result.access));
   }

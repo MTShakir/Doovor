@@ -1654,6 +1654,15 @@ export async function makeSchool(label: string): Promise<MadeSchool> {
     instructor,
     remove: () =>
       withDatabase(async (sql) => {
+        // Lessons and the money for them first, for a test that booked, paid or refunded here: they
+        // keep their rows when the Business goes, as a real Business's records would.
+        await sql`delete from public.credit_ledger where business_id = ${businessId}`;
+        await sql`delete from public.receipts where payment_id in (select id from public.payments where business_id = ${businessId})`;
+        await sql`delete from public.refunds where business_id = ${businessId}`;
+        await sql`delete from public.credit_lots where business_id = ${businessId}`;
+        await sql`delete from public.payments where business_id = ${businessId}`;
+        await sql`delete from public.lesson_records where business_id = ${businessId}`;
+        await sql`delete from public.bookings where business_id = ${businessId}`;
         await sql`delete from public.businesses where id = ${businessId}`;
         await sql`delete from auth.users where id in (${managerId}, ${instructorId})`;
       }),
