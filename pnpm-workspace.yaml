@@ -52,6 +52,11 @@ overrides:
   # An event loop denial of service through a source map's section offsets (GHSA-68fv-2mgg-jv7q).
   # Under vitest, through vite and postcss: it reads source maps our own build wrote.
   source-map-js: '>=1.2.2 <2'
+  # Its dev server's open-in-editor check can be got round on Windows (GHSA-587h-7wmj-h5pm). It
+  # reaches us only under vitest, which runs our own tests on a developer's machine and in CI: the
+  # app is built and served by Next, not vite. Held to the patch line the fix landed in, because a
+  # test tool's new minor is a change to read, not a fix.
+  vite: '>=8.3.3 <8.4'
   # Path traversal through a prefix, under Lighthouse CI.
   tmp: '>=0.2.6'
   # Missing bounds check when given a buffer, under Lighthouse CI.
