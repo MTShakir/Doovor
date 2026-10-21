@@ -1,6 +1,6 @@
 -- An instructor is told when the school gives them a learner, and only then (NTF-03, SCH-03, D-325).
 begin;
-select plan(7);
+select plan(8);
 
 select tests.create_fixture();
 
@@ -64,6 +64,15 @@ reset role;
 select is(private.given_by_the_office(:'school', :'ivy'), true, 'the owner giving one is');
 select is(private.given_by_the_office('aaaa0000-0000-0000-0000-000000000000', 'a1000000-0000-0000-0000-000000000001'), false,
   'and nobody is given learners at a Business that is not a school');
+
+-- A write by a role that may not call private functions is not refused for a notice's sake.
+select tests.clear_authentication();
+set local role service_role;
+select lives_ok(
+  format($$ update public.learner_relationships set instructor_id = %L where id = %L $$, :'ivy', :'lee_link'),
+  'the service role can still give a learner to an instructor'
+);
+reset role;
 
 select * from finish();
 rollback;
