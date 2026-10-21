@@ -1633,3 +1633,84 @@ Every decision made without the product owner, newest last. Format: date, decisi
 - **Found:** CI on `m9-schools` at 4795e2b passed every job but "Dependency advisories (high and above)", on a push with no dependency change: GHSA-587h-7wmj-h5pm, high, had been published against vite 8.3.0 to 8.3.2. The check vite's dev server makes before opening a file in an editor can be got round on Windows. Fixed in 8.3.3.
 - **Decision:** `vite` is overridden to `>=8.3.3 <8.4`, which resolves to 8.3.4, out for 13 days. It reaches us only under vitest, which runs our own tests on a developer's machine and in CI; the app is built and served by Next, so nothing a visitor reaches runs vite. Every package's unit tests pass on it.
 - **Options:** adding it to `ignoreGhsas` (a fixed version exists, which is what separates an override from an ignore, D-240); an open `>=8.3.3` (it would let vite's next minor in with the fix, and a test tool's minor is a change to read).
+
+## D-310 | 2026-10-21 | A fee is said to come off a saved card only when there is one | Claude
+- **Found:** in the third deep test. After a no-show or a late cancellation, a learner who had once paid by card was told "the £21 fee is being charged to your saved card". With no card kept, nothing was charged, the fee stayed unpaid, and nobody told them to pay it.
+- **Decision:** before a notice about a fee says it is being charged, the job asks the payments provider whether the learner has a card kept with that Business that has not run out. With none, the notice says the fee is owed, and the learner's money screen offers to pay it, as for any fee. A lesson paid by card is charged on that card, as before. The provider being unreachable fails the job, which tries again, rather than guessing either way.
+- **Options:** keeping cards in our own database (the provider is the only record of them, D-198); saying nothing about how the fee is paid (the learner needs to know whether to act).
+
+## D-311 | 2026-10-21 | A paused Business takes no bookings | Claude
+- **Found:** in the third deep test. An instructor who joined a school paused their own Business, as the joining page promises, but its booking link still took bookings.
+- **Decision:** a paused Business is treated as a suspended one for booking: its link says "This link is not taking bookings", and every way of booking refuses it with `BUSINESS_SUSPENDED`. Its profile was already offline.
+- **Options:** a message of its own on the link (the learner can do nothing with the reason, and the instructor's school page is where to find them now).
+
+## D-312 | 2026-10-21 | An instructor whose own Business is paused can be switched back on | Claude
+- **Found:** in the third deep test. A school could not switch a member back on while their own Business was paused: "They teach for another driving business now". The other Business was theirs, paused to teach at the school.
+- **Decision:** switching back on looks past a Business of the member's own that is paused. One they still run, or another school, still refuses it.
+
+## D-313 | 2026-10-21 | Fees still owed when a link ends stay on both Fees screens | Claude
+- **Found:** in the third deep test. When a link ended, the fees still owed under it disappeared from the school's Fees screen and from the instructor's school page, while the school's Money screen still said "£45 owed". Nobody could mark them paid.
+- **Decision:** an ended link with fees still owed stays on the school's Fees screen, after the linked instructors, as "Sam Driving, no longer linked since Wed 21 Oct", with no terms to change: "No new fees are raised. Mark what is still owed paid, or write it off." The instructor's school page shows "Still owed to Explore School", with each fee. Once everything is settled the card goes. `links_still_owing` answers each side for its own links only.
+
+## D-314 | 2026-10-21 | Signing in from a school's invitation goes back to the invitation | Claude
+- **Found:** in the third deep test. "Sign in" on a school's "teach with us" invitation dropped it without a word: the instructor landed on Today, with their own Business untouched. Had nothing been in the way, it would have joined them and paused their Business with no warning.
+- **Decision:** only an account made to join, with nothing of its own yet, joins as it signs in (AUTH-05, D-118). Anybody who already teaches, learns or has a Business of their own, paused or not, is taken back to the invitation once signed in. It says what joining does, or why it cannot yet, and they join with their own yes.
+- **Options:** a `next` on the sign-in link (a learner's invitation is used as they sign in, so the page it went back to would say the link no longer works).
+
+## D-315 | 2026-10-21 | A booked lesson makes an enquiry or a waiting learner active | Claude
+- **Found:** in the third deep test. An invited learner starts as an enquiry and nothing moved them on: with lessons booked and paid for they still read "Enquiry", never counted towards Free's ten (D-208) and never showed under Active.
+- **Decision:** once a lesson with them is confirmed, however it was booked, an enquiry or somebody waiting is active, written down as "Moved from enquiry to active when a lesson was booked". A trigger does it, for the reason the Free limit is one. On Free with no room left an enquiry stays an enquiry and the lesson stands: a lesson, or a payment for one, is never refused over a count. Somebody who has passed or left is not moved back. Everybody already booked was moved on the same way, oldest first.
+- **Options:** refusing the booking at the limit (a payment confirming a lesson could then fail); moving them when a request is made (a request may be declined).
+
+## D-316 | 2026-10-21 | A lesson started early has its record | Claude
+- **Found:** in the third deep test. A lesson's card offers to start it a quarter of an hour early (D-178), but its record was refused until the minute it was due, as "Too close to another lesson".
+- **Decision:** a record is taken from the same quarter of an hour before the start. One for a lesson further off is refused as `LESSON_NOT_STARTED`: "This lesson has not started yet. Save its record once it has."
+
+## D-317 | 2026-10-21 | A switched-off instructor's learners are plain to see | Claude
+- **Found:** in the third deep test. Switching an instructor off keeps their learners with them, and nothing said so: the school's list went on saying "With Sam", and nothing prompted anybody to give them to somebody else.
+- **Decision:** the switch-off box says "Their 3 learners stay with them until you give each one to another instructor on Learners.", beside what it already says about lessons to come. The school's learner list says "With Sam, who is switched off" until the learner is given to somebody else. The team carries how many learners each member teaches.
+- **Options:** giving them to nobody as the instructor is switched off (switching back on would then lose who taught whom).
+
+## D-318 | 2026-10-21 | The booking confirmation says what is left to do | Claude
+- **Found:** in the third deep test. After booking on a link, the confirmation said "Pay for it now" when credit had paid for the lesson and when it was only a request, and "Lesson booked" while the time was only held until it was paid for.
+- **Decision:** what is left to do is read from the lesson as it now is. Paid from credit: "Paid from your lesson credit." and no button to pay. Held while it is paid for: "Lesson held", "It is yours until 14:47: pay by then to confirm it." and "Pay to confirm it". A request at a Business that takes cards: "Authorise the payment", with "Your card is only charged if they accept." A lesson to pay for later keeps "Pay for it now". With instant booking off, the button says "Ask for 12:00", not "Book 12:00 for £42".
+
+## D-319 | 2026-10-21 | A day picked before the booking link is ready counts | Claude
+- **Found:** in the third deep test. A day picked before the page had finished loading was ignored: the box showed the new day while the times were another day's.
+- **Decision:** the box is read once the page is ready, and the times follow what it shows. "Times on Tue 27 Oct" is now said above the times as well as announced, so it is plain which day they are for.
+
+## D-320 | 2026-10-21 | Why a school cannot sell every lesson while instructors are linked | Claude
+- **Found:** in the third deep test. Choosing "We sell the lessons" while instructors were linked said only "Check the highlighted fields", with nothing highlighted.
+- **Decision:** the choice says "Some instructors linked to the school sell their own lessons. Choose Some of each while they are linked."
+
+## D-321 | 2026-10-21 | A franchise school sees the instructors it asked to link | Claude
+- **Found:** in the third deep test. "Invited so far" in a school's setup listed invitations to join only, so a school whose instructors sell their own lessons saw nothing there.
+- **Decision:** it lists invitations to link a business too: "Link to link their business works until Wed 4 Nov", then "Has linked their business" with a "Linked" pill once used.
+
+## D-322 | 2026-10-21 | Learners who have never signed in can be answered for | Claude
+- **Found:** in the third deep test. Joining a school asks each of the instructor's learners whether to move with them. A learner added by hand or imported has an account they have never claimed (D-068), so could never answer, and nobody was told: ten of the twelve.
+- **Decision:** the instructor's Learners screen shows "Asked to move with you": each learner their own Business asked, how each answered, and how many have still to. For a learner who has never signed in, "Answer for them" asks the instructor to ask them, then say what they chose ("Only say they are moving once they have agreed"), as the office does for somebody who agreed on the phone (D-288). The answer moves them exactly as the learner's own would, and the record says the instructor gave it. A learner who has signed in answers for themselves.
+- **Options:** moving them without asking (moving is the learner's choice, D-292); leaving them with the paused Business and nobody told (what happened).
+
+## D-323 | 2026-10-21 | The third deep test's wording | Claude
+- **Found and decided:**
+  - A link invitation said the school "vouches for your badge" to an instructor whose badge the platform had already checked. Signed in, it now says which is true; signed out, "vouches for your badge, unless Doovor has checked it already". Pro while linked is a line of its own.
+  - A declined request, or a lesson called off, still to come sat under "Before now". It is under "Not going ahead".
+  - A late cancellation fee paid on its own showed as "Lesson on Thu 22 Oct" in the history and as a lesson on the Money screen. A payment of a fee's own amount for a lesson called off late or missed is that fee, named as its receipt names it: "Late cancellation fee for the lesson on Thu 22 Oct". A lesson paid for before it was called off is still the lesson.
+  - The page for a link that takes no bookings, and the page not found, which a profile not yet checked or a paused Business shows, had no main heading. They do.
+  - The district example on the coverage form was LS17 for everybody, Manchester too. It is the instructor's own district, and the refusal says "Enter a postcode district, the first half of a postcode".
+  - With instant booking off, the button says "Ask for 12:00" (D-318).
+
+## D-324 | 2026-10-21 | Joining a school carries the profile over, and a badge belongs to a person | Claude
+- **Found:** in the third deep test. An instructor with a Business of their own who joined a school was given an empty profile and sent through setting up again, with their photo left behind. Worse, their badge could not be typed again at all: one badge number, one profile (D-230), and their paused profile held it.
+- **Decision:** the school profile starts from their own: the name they teach under, about them, languages, years teaching, their car, where they teach, their badge (which the school vouches for, D-280) and their hours. The app copies the photo as a picture of its own, so replacing either never removes the other. Having finished setting up their own, they are set up at the school too; part way through, they carry on where they were, the prices being the school's. Coming back to a school they left, they keep the profile they had there. A badge number now belongs to a person: two profiles of one account may hold it, somebody else's still may not, which an exclusion constraint guarantees in place of the unique index, whatever writes the row.
+- **Options:** moving the badge to the school profile and back (leaving the school and opening their own again needs it moved back, and one missed move locks them out); a lock taken in a trigger (the constraint says the same with nothing to get wrong).
+
+## D-325 | 2026-10-21 | An instructor is told when the school gives them a learner | Product owner, Claude
+- **Found:** in the third deep test. The office chose who teaches a learner, and the instructor it chose heard nothing: Mona found a learner on her list by chance. The product owner decided she should be told (21 October).
+- **Decision:** the office giving an instructor a learner, from its learner list, its new pupils or adding one by hand, queues `learner.assigned`. Whoever has them by the time it is sent hears "Pat Pupil is with you now. Explore School chose you to teach them. Open their card to get in touch.", opening their card. In the inbox, by push and by email, under "Your account", and always in the inbox. An instructor adding their own learner, a learner moving with the instructor they came with (who hears `learner.moved`, D-306), and a learner put on a list with nobody signed in are not news. Only at a school.
+- **Not in the PRD:** Appendix B has no row for it; it is the instructor's side of the school's allocation (SCH-03).
+
+## D-326 | 2026-10-21 | A learner who goes back to the school keeps the lessons already booked | Product owner
+- **Asked:** a learner who goes back to the school, after a linked instructor leaves, keeps any lesson already booked with that instructor. Should it be cancelled automatically?
+- **Decision:** the product owner decided they keep the lessons (21 October). Nothing changes: the lesson, its payment and its rules stay with the Business it was booked with, and either side can cancel it as usual.
