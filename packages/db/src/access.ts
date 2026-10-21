@@ -28,6 +28,11 @@ export interface AccessContext {
    * suspended one, a paused Business opens no portal; leaving the school, they open it again.
    */
   pausedBusinesses: string[];
+  /**
+   * The Businesses that switched this person off (SCH-02, D-332), by name. The membership opens no
+   * portal, and signing in says so rather than making them a Business of their own.
+   */
+  switchedOffBy: string[];
 }
 
 export class AccessContextError extends Error {
@@ -65,8 +70,16 @@ export async function getAccessContext(client: DbClient, userId: string): Promis
   if (failed) throw new AccessContextError(failed.message);
 
   const profileByBusiness = new Map((instructors.data ?? []).map((p) => [p.business_id, p]));
-  const suspended = (memberships.data ?? []).filter((m) => m.businesses.status === 'suspended');
-  const paused = (memberships.data ?? []).filter((m) => m.businesses.status === 'paused' && m.role === 'owner');
+  const active = memberships.data ?? [];
+  const suspended = active.filter((m) => m.businesses.status === 'suspended');
+  const paused = active.filter((m) => m.businesses.status === 'paused' && m.role === 'owner');
+  // Who switched them off decides only where somebody with nothing else lands, so only they are
+  // asked, and nobody else's request waits on it. A switched-off member cannot read the school
+  // itself, so the database says its name (D-332).
+  const nothingElse = staff.data === null && learner.data === null && active.length === 0;
+  const switchedOff = nothingElse ? await client.rpc('my_switched_off_by') : null;
+  if (switchedOff?.error?.code === 'SESSION_ENDED') throw new SessionEndedError();
+  if (switchedOff?.error) throw new AccessContextError(switchedOff.error.message);
 
   return {
     userId,
@@ -74,7 +87,7 @@ export async function getAccessContext(client: DbClient, userId: string): Promis
     isLearner: learner.data !== null,
     // The row is created at sign-up; the answers are what say they have been through it.
     learnerOnboarded: typeof learner.data?.transmission === 'string',
-    memberships: (memberships.data ?? [])
+    memberships: active
       .filter((m) => m.businesses.status !== 'suspended' && m.businesses.status !== 'paused')
       .map((m) => ({
         businessId: m.business_id,
@@ -92,5 +105,6 @@ export async function getAccessContext(client: DbClient, userId: string): Promis
       })),
     suspendedBusinesses: suspended.map((m) => m.businesses.name),
     pausedBusinesses: paused.map((m) => m.businesses.name),
+    switchedOffBy: switchedOff?.data ?? [],
   };
 }
