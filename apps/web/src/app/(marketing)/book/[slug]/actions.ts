@@ -1,12 +1,14 @@
 'use server';
 
 import { parsePostgresError } from '@repo/core/errors';
+import { asksForCard, chosenPaymentMode } from '@repo/core/payment-modes';
 import { err, ok, type Result } from '@repo/core/result';
 import { isValidLocalDate } from '@repo/core/time';
 import { cookies } from 'next/headers';
 import { z } from '@repo/core/zod';
 import { getAccess } from '@/lib/auth/session';
 import { openSlots } from '@/lib/booking/public';
+import { owesForLesson } from '@/lib/learner/lessons';
 import { redirectTo } from '@/lib/redirect-to';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
 
@@ -31,8 +33,22 @@ const bookSchema = z.object({
   durationMinutes: z.coerce.number().int().min(15).max(480),
 });
 
+/** What the learner does next with the lesson they have just booked (PAY-03, R-12, D-318). */
+export type BookedNext = 'nothing' | 'pay' | 'pay_to_confirm' | 'authorise';
+
+export interface Booked {
+  bookingId: string;
+  /** Booked, asked for, or held while it is paid for. */
+  status: 'confirmed' | 'requested' | 'pending_payment';
+  next: BookedNext;
+  /** Paid for in full from their lesson credit. */
+  paidWithCredit: boolean;
+  /** Until when a time held while it is paid for stays theirs. */
+  holdUntil: string | null;
+}
+
 /** BOK-02: the learner books the slot themselves. The RPC holds them to the rules (R-04). */
-export async function bookAsLearner(input: unknown): Promise<Result<{ bookingId: string; payNow: boolean }>> {
+export async function bookAsLearner(input: unknown): Promise<Result<Booked>> {
   const parsed = bookSchema.safeParse(input);
   if (!parsed.success) return err('VALIDATION_FAILED');
 
@@ -49,15 +65,29 @@ export async function bookAsLearner(input: unknown): Promise<Result<{ bookingId:
   });
   if (error) return err(parsePostgresError(error).code);
 
-  // A Business that takes cards wants paying at booking, so the learner is sent to do that
-  // rather than left to find it later (PAY-03).
-  const business = await supabase
-    .from('instructor_profiles')
-    .select('businesses!instructor_profiles_business_id_fkey(stripe_charges_enabled)')
-    .eq('id', parsed.data.instructorId)
+  // What is left to do is read from the lesson as it now is: credit may have paid for it, a
+  // request is authorised rather than paid, and a time held while it is paid for is held only so
+  // long. A Business that takes cards sends the learner to pay rather than leave them to find it
+  // later (PAY-03, D-318).
+  const { data: lesson } = await supabase
+    .from('bookings')
+    .select('status, payment_status, hold_expires_at, businesses!bookings_business_id_fkey(stripe_charges_enabled, settings)')
+    .eq('id', data)
     .maybeSingle();
+  const status = lesson?.status === 'requested' || lesson?.status === 'pending_payment' ? lesson.status : 'confirmed';
+  const card =
+    lesson !== null &&
+    asksForCard({ chargesEnabled: lesson.businesses.stripe_charges_enabled, mode: chosenPaymentMode(lesson.businesses.settings) }) &&
+    owesForLesson(lesson.status, lesson.payment_status);
+  const next: BookedNext = !card ? 'nothing' : status === 'requested' ? 'authorise' : status === 'pending_payment' ? 'pay_to_confirm' : 'pay';
 
-  return ok({ bookingId: data, payNow: business.data?.businesses.stripe_charges_enabled === true });
+  return ok({
+    bookingId: data,
+    status,
+    next,
+    paidWithCredit: lesson?.payment_status === 'paid_credit',
+    holdUntil: status === 'pending_payment' ? (lesson?.hold_expires_at ?? null) : null,
+  });
 }
 
 const holdSchema = z.object({
