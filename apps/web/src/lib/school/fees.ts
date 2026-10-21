@@ -43,6 +43,23 @@ export interface FeeStatement {
 export interface LinkedFees extends FeeStatement {
   name: string;
   businessName: string;
+  /** "Wed 21 Oct" for a link that has ended with fees still owed under it (D-313); null while linked. */
+  endedOn: string | null;
+}
+
+/** Fees still owed to a school the instructor's own Business is no longer linked to (D-313). */
+export interface FeesStillOwed extends FeeStatement {
+  schoolName: string;
+  endedOn: string;
+}
+
+/** What `links_still_owing` answers for each ended link. */
+interface StillOwing {
+  linkId: string;
+  schoolName: string;
+  businessName: string;
+  instructorName: string | null;
+  endedOn: string;
 }
 
 interface LinkRow {
@@ -114,16 +131,57 @@ function statement(link: LinkRow, fees: FeeRow[]): FeeStatement {
  */
 export async function schoolFees(schoolId: string): Promise<LinkedFees[]> {
   const supabase = await createSupabaseServerClient();
-  const [team, { data: links }, { data: fees }] = await Promise.all([
+  const [team, { data: links }, { data: fees }, ended] = await Promise.all([
     schoolTeam(schoolId),
-    supabase.from('school_links').select(linkColumns).eq('school_id', schoolId).eq('status', 'active'),
+    supabase.from('school_links').select(linkColumns).eq('school_id', schoolId).in('status', ['active', 'ended']),
     supabase.from('school_fees').select(feeColumns).eq('school_id', schoolId).order('due_on', { ascending: false }).limit(500),
+    stillOwing(schoolId),
   ]);
   const byId = new Map((links ?? []).map((link) => [link.id, link]));
-  return team.linked.flatMap((linked) => {
-    const link = byId.get(linked.linkId);
+  const linked = team.linked.flatMap((one) => {
+    const link = byId.get(one.linkId);
     if (!link) return [];
-    return [{ ...statement(link, fees ?? []), name: linked.name, businessName: linked.businessName }];
+    return [{ ...statement(link, fees ?? []), name: one.name, businessName: one.businessName, endedOn: null }];
+  });
+  // Links that have ended with fees still owed come after, so they can still be marked paid (D-313).
+  const owing = ended.flatMap((one) => {
+    const link = byId.get(one.linkId);
+    if (!link) return [];
+    return [
+      {
+        ...statement(link, fees ?? []),
+        name: one.instructorName ?? one.businessName,
+        businessName: one.businessName,
+        endedOn: formatCalendarDate(one.endedOn, { year: false }),
+      },
+    ];
+  });
+  return [...linked, ...owing];
+}
+
+/** The ended links of a school, or of an instructor's own Business, with fees still owed (D-313). */
+async function stillOwing(businessId: string): Promise<StillOwing[]> {
+  const supabase = await createSupabaseServerClient();
+  const { data, error } = await supabase.rpc('links_still_owing', { p_business_id: businessId });
+  if (error) throw new Error(`Could not read the fees still owed: ${error.message}`);
+  return data as unknown as StillOwing[];
+}
+
+/** What the instructor's own Business still owes schools it is no longer linked to (D-313). */
+export async function feesStillOwed(businessId: string): Promise<FeesStillOwed[]> {
+  const ended = await stillOwing(businessId);
+  if (ended.length === 0) return [];
+  const supabase = await createSupabaseServerClient();
+  const ids = ended.map((one) => one.linkId);
+  const [{ data: links }, { data: fees }] = await Promise.all([
+    supabase.from('school_links').select(linkColumns).in('id', ids),
+    supabase.from('school_fees').select(feeColumns).in('link_id', ids).order('due_on', { ascending: false }).limit(500),
+  ]);
+  const byId = new Map((links ?? []).map((link) => [link.id, link]));
+  return ended.flatMap((one) => {
+    const link = byId.get(one.linkId);
+    if (!link) return [];
+    return [{ ...statement(link, fees ?? []), schoolName: one.schoolName, endedOn: formatCalendarDate(one.endedOn, { year: false }) }];
   });
 }
 

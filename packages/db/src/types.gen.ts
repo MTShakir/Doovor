@@ -4308,6 +4308,7 @@ export type Database = {
       learner_moves_for_me: { Args: never; Returns: Json }
       leave_learner_capture: { Args: { p_token: string }; Returns: number }
       lesson_reminder_options: { Args: { p_booking_id: string }; Returns: Json }
+      links_still_owing: { Args: { p_business_id: string }; Returns: Json }
       list_my_sessions: {
         Args: never
         Returns: {

@@ -583,6 +583,7 @@ const exampleLinkedFees: LinkedFees = {
   words: ['£50 a week, the first due Mon 9 Nov, after 1 free week', '£20 for each pupil the school introduces'],
   owedPence: 5000,
   fees: exampleFees,
+  endedOn: null,
 };
 
 // A Tuesday, with the times written out as the server would.
@@ -1972,6 +1973,12 @@ export function DesignShowcase() {
         <LinkedFeesCard
           idPrefix="design-"
           linked={exampleLinkedFees}
+          handlers={{ saveTerms: savedNothing, settle: savedNothing, refresh: () => undefined }}
+        />
+        <Label>An instructor no longer linked, with a fee still owed under the link (D-313)</Label>
+        <LinkedFeesCard
+          idPrefix="design-ended-"
+          linked={{ ...exampleLinkedFees, linkId: '1b2c3d4e-5f60-4172-8839-4a5b6c7d8e9f', endedOn: 'Wed 21 Oct' }}
           handlers={{ saveTerms: savedNothing, settle: savedNothing, refresh: () => undefined }}
         />
         <Label>The same fees as the instructor sees them, and none yet</Label>
