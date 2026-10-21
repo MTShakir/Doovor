@@ -20,7 +20,7 @@ const lesson = { learnerName: 'Jack Taylor', instructorName: 'Sarah Khan', when:
 
 describe('the catalogue (PRD Appendix B, NTF-03)', () => {
   it('has every kind of notification Phase 1 sends', () => {
-    expect(notificationKinds).toHaveLength(30);
+    expect(notificationKinds).toHaveLength(31);
     for (const kind of notificationKinds) expect(notificationCatalogue[kind].kind).toBe(kind);
   });
 
@@ -443,6 +443,19 @@ describe("a school's own arrangements (M9-28, D-295)", () => {
     expect(notificationCopy('learner.moved', 'school', { outcome: 'left_school' }).title).toBe('A learner came back to you');
     // Nobody teaches them until the school chooses, so it reaches the inbox whatever is switched off.
     expect(channelsFor('learner.moved', { userId: 'ben-1', audience: 'school', muted: ['in_app', 'email', 'push'] })).toEqual(['in_app']);
+  });
+
+  it('tells an instructor who the school gave them, and how to reach them (D-325)', () => {
+    expect(notificationCopy('learner.assigned', 'instructor', { ...school, learnerName: 'Pat Pupil' })).toEqual({
+      title: 'Pat Pupil is with you now',
+      body: 'Quayside Driving School chose you to teach them. Open their card to get in touch.',
+    });
+    expect(notificationCopy('learner.assigned', 'instructor', {})).toEqual({
+      title: 'A learner is with you now',
+      body: 'Your school chose you to teach them. Open their card to get in touch.',
+    });
+    // Somebody new to teach reaches the inbox whatever is switched off.
+    expect(channelsFor('learner.assigned', { userId: 'ian-1', audience: 'instructor', muted: ['in_app', 'email', 'push'] })).toEqual(['in_app']);
   });
 
   it('tells each side what changes when they part, and somebody switched off how to open their own again', () => {
