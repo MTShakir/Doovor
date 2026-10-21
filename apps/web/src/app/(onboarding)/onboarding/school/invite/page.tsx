@@ -52,14 +52,17 @@ async function InviteInstructors() {
   );
 }
 
-/** Who has a link so far. Only a hash of each link is kept, so a lost one is sent again as new. */
+/**
+ * Who has a link so far, to join the school or to link their own business to it (D-282, D-321).
+ * Only a hash of each link is kept, so a lost one is sent again as new.
+ */
 async function Invited({ businessId, expected }: { businessId: string; expected: number | null }) {
   const supabase = await createSupabaseServerClient();
   const { data, error } = await supabase
     .from('invitations')
-    .select('id, full_name, email, phone, accepted_at, expires_at, revoked_at')
+    .select('id, kind, full_name, email, phone, accepted_at, expires_at, revoked_at')
     .eq('business_id', businessId)
-    .eq('kind', 'member')
+    .in('kind', ['member', 'link'])
     .order('created_at', { ascending: false })
     .limit(100);
   if (error) throw new Error(`Could not read the school's invitations: ${error.message}`);
@@ -77,6 +80,7 @@ async function Invited({ businessId, expected }: { businessId: string; expected:
         {data.map((invitation, index) => {
           const expires = new Date(invitation.expires_at);
           const joined = invitation.accepted_at !== null;
+          const linking = invitation.kind === 'link';
           const ended = !joined && (invitation.revoked_at !== null || expires <= now);
           const contact = invitation.phone ? formatUkMobile(invitation.phone) : invitation.email;
           return (
@@ -84,10 +88,18 @@ async function Invited({ businessId, expected }: { businessId: string; expected:
               {index > 0 ? <ListDivider /> : null}
               <ListRow
                 title={invitation.full_name ?? contact ?? 'Shared as a link'}
-                subtitle={joined ? 'Has joined' : ended ? 'The link has stopped working' : `Link works until ${formatDate(expires)}`}
+                subtitle={
+                  joined
+                    ? linking
+                      ? 'Has linked their business'
+                      : 'Has joined'
+                    : ended
+                      ? 'The link has stopped working'
+                      : `${linking ? 'Link to link their business' : 'Link'} works until ${formatDate(expires)}`
+                }
                 trailing={
                   joined ? (
-                    <StatusPill status="completed">Joined</StatusPill>
+                    <StatusPill status="completed">{linking ? 'Linked' : 'Joined'}</StatusPill>
                   ) : ended ? (
                     <StatusPill status="cancelled">Expired</StatusPill>
                   ) : (
