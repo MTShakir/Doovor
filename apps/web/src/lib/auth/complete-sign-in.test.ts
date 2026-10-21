@@ -73,6 +73,26 @@ describe('finishing sign-up with an invitation to teach for a school (AUTH-05, M
     expect(rpc).not.toHaveBeenCalledWith('create_business', expect.anything());
   });
 
+  it('takes somebody who already teaches back to the invitation, which says what joining does (D-314)', async () => {
+    const independent: AccessMembership = { ...schoolInstructor, businessId: 'biz-1', businessName: 'Sam Driving', businessType: 'independent', role: 'owner' };
+    readInvitation.mockResolvedValue('tok_school');
+    invitationIs({ kind: 'member', expired: false });
+    getAccessContext.mockResolvedValue({ ...nobody, memberships: [independent] });
+
+    expect(await completeSignIn()).toBe('/invite/tok_school');
+    expect(rpc).not.toHaveBeenCalledWith('accept_member_invitation', expect.anything());
+    expect(forgetInvitation).toHaveBeenCalled();
+  });
+
+  it('and somebody whose own Business is paused, who says yes there too', async () => {
+    readInvitation.mockResolvedValue('tok_school');
+    invitationIs({ kind: 'member', expired: false });
+    getAccessContext.mockResolvedValue({ ...nobody, pausedBusinesses: ['Oli Driving'] });
+
+    expect(await completeSignIn()).toBe('/invite/tok_school');
+    expect(rpc).not.toHaveBeenCalledWith('accept_member_invitation', expect.anything());
+  });
+
   it('sends an instructor who joined without a verified mobile to verify it first (AUTH-02)', async () => {
     getUser.mockResolvedValue({ data: { user: { id: 'user-1', user_metadata: {}, phone_confirmed_at: null } } });
     readInvitation.mockResolvedValue('tok_school');

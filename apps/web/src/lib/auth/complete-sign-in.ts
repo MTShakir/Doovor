@@ -42,6 +42,13 @@ export async function completeSignIn(next?: string | null): Promise<string> {
   const token = await readInvitation();
   const invitation = token === null ? null : await openInvitation(supabase, token);
   if (invitation?.kind === 'member' && invitation.usable) {
+    // Only an account made to join, with nothing of its own yet, joins as it signs in. Somebody who
+    // already teaches, learns or has a Business of their own, paused or not, goes back to the
+    // invitation, which says what joining does or why it cannot yet, and says yes there (D-292, D-314).
+    if (availablePortals(access).length > 0 || access.pausedBusinesses.length > 0) {
+      await forgetInvitation();
+      return `/invite/${encodeURIComponent(invitation.token)}`;
+    }
     await supabase.rpc('accept_member_invitation', { p_token: invitation.token });
     access = await getAccessContext(supabase, user.id);
   }
