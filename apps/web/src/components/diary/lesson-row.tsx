@@ -8,10 +8,10 @@ import { LessonLength } from '@/components/lessons/lesson-length';
 import { Button } from '@repo/ui/button';
 import { Banknote, CalendarClock, Check, MapPin, X } from 'lucide-react';
 import type { DiaryEntry } from '@/lib/diary/lessons';
-import { OpenLesson } from '@/components/lessons/lesson-details';
+import { OpenLesson, type LessonPortal } from '@/components/lessons/lesson-details';
 import { RequestActions } from './request-actions';
 
-/** A lesson nobody is being asked anything about: the school diary, which only reads. */
+/** A lesson nobody is being asked anything about: the school diary, whose lessons open a sheet. */
 const nothingToSay: LessonAnswers = { move: false, mark: false, noShow: false };
 
 /**
@@ -30,6 +30,7 @@ export function LessonRow({
   onMarkPaid,
   openable = false,
   shouldOpen,
+  portal = 'instructor',
 }: {
   lesson: DiaryEntry;
   showInstructor?: boolean;
@@ -48,6 +49,8 @@ export function LessonRow({
   openable?: boolean;
   /** Asked before it opens: a hold on a phone has just opened Move instead. */
   shouldOpen?: () => boolean;
+  /** An instructor's diary, or a school's office, which opens the same sheet (D-330). */
+  portal?: LessonPortal;
 }) {
   const state = lessonState(lesson.facts);
   const off = state === 'cancelled';
@@ -113,6 +116,7 @@ export function LessonRow({
             lessonType: lesson.lessonType,
           }}
           shouldOpen={shouldOpen}
+          portal={portal}
         >
           {summary}
         </OpenLesson>

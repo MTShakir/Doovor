@@ -6,7 +6,7 @@ import { Card } from '@repo/ui/card';
 import { ListDivider, ListRow } from '@repo/ui/list-row';
 import { StatusPill } from '@repo/ui/status-pill';
 import { Fragment, useState } from 'react';
-import { LessonDetailsSheet } from '@/components/lessons/lesson-details';
+import { LessonDetailsSheet, type LessonPortal } from '@/components/lessons/lesson-details';
 
 /** What a row needs. The same fields as `LearnerLesson`, said here so this stays a client file. */
 export interface LessonRow {
@@ -32,11 +32,14 @@ export function LessonRows({
   label,
   empty,
   learnerName,
+  portal = 'instructor',
 }: {
   lessons: LessonRow[];
   label: string;
   empty: string;
   learnerName: string;
+  /** The instructor's card, or the school office's (D-330). */
+  portal?: LessonPortal;
 }) {
   const [open, setOpen] = useState<LessonRow | null>(null);
   if (lessons.length === 0) return <p className="px-1 text-small text-grey-700">{empty}</p>;
@@ -80,6 +83,7 @@ export function LessonRows({
           }}
           // The card they would be sent to is the one they are on.
           onCard
+          portal={portal}
           onClose={() => { setOpen(null); }}
         />
       )}

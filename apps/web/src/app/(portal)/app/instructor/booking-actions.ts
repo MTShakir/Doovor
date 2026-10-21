@@ -11,12 +11,46 @@ import { bookingDay, lessonOptions, type BookingDay, type LessonOption } from '@
 import { lessonDetails, type LessonDetails } from '@/lib/lessons/details';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
 
-/** Where the caller teaches. Every booking screen in this portal is about one instructor. */
-async function place(): Promise<{ instructorProfileId: string; businessId: string } | null> {
-  const { access } = await requirePortal('instructor');
-  const membership = access.memberships.find((one) => one.instructorProfileId !== null);
-  if (!membership?.instructorProfileId) return null;
-  return { instructorProfileId: membership.instructorProfileId, businessId: membership.businessId };
+/**
+ * The portals these actions serve: an instructor's own diary, and the office of a school, which
+ * books, moves, calls off and marks paid its instructors' lessons (PRD 6.2, D-330). Every RPC
+ * decides again whether the person asking may.
+ */
+const portals = ['instructor', 'school'] as const;
+
+/**
+ * Whose diary a lesson goes in: the caller's own, or, for somebody who runs a school, one of its
+ * instructors' (PRD 6.2, D-330). Null for an instructor the caller does not teach as or run.
+ */
+async function place(instructorId?: string): Promise<{ instructorProfileId: string; businessId: string } | null> {
+  const { access } = await requirePortal(portals);
+  const own = access.memberships.find((one) => one.instructorProfileId !== null);
+  if (instructorId === undefined || instructorId === own?.instructorProfileId) {
+    return own?.instructorProfileId ? { instructorProfileId: own.instructorProfileId, businessId: own.businessId } : null;
+  }
+  const runs = access.memberships.filter((one) => one.role === 'owner' || one.role === 'manager').map((one) => one.businessId);
+  if (runs.length === 0) return null;
+  const supabase = await createSupabaseServerClient();
+  const { data } = await supabase.from('instructor_profiles').select('id, business_id').eq('id', instructorId).maybeSingle();
+  return data !== null && runs.includes(data.business_id) ? { instructorProfileId: data.id, businessId: data.business_id } : null;
+}
+
+/** The instructor a lesson is with, for moving it from the school's office rather than their diary. */
+async function instructorOfLesson(bookingId: string): Promise<string | undefined> {
+  const supabase = await createSupabaseServerClient();
+  const { data } = await supabase.from('bookings').select('instructor_id').eq('id', bookingId).maybeSingle();
+  return data?.instructor_id ?? undefined;
+}
+
+/** What a lesson changing redraws, in each portal that shows it (D-330). */
+function redraw(learnerId?: string): void {
+  revalidatePath('/app/instructor/diary');
+  revalidatePath('/app/instructor');
+  revalidatePath('/app/school/diary');
+  if (learnerId !== undefined) {
+    revalidatePath(`/app/instructor/learners/${learnerId}`);
+    revalidatePath(`/app/school/learners/${learnerId}`);
+  }
 }
 
 const daySchema = z.object({
@@ -25,6 +59,8 @@ const daySchema = z.object({
   /** A lesson being moved, which does not count as being in the way (BOK-08). */
   exceptBookingId: z.uuid().optional(),
   ignoreGap: z.boolean().default(false),
+  /** One of a school's instructors, for its office; the caller's own diary otherwise (D-330). */
+  instructorId: z.uuid().optional(),
 });
 
 /** BOK-03: the times on one day, and the times only an instructor may take (R-04). */
@@ -32,7 +68,9 @@ export async function slotsForDay(input: unknown): Promise<Result<BookingDay>> {
   const parsed = daySchema.safeParse(input);
   if (!parsed.success) return err('VALIDATION_FAILED');
 
-  const where = await place();
+  // A lesson being moved is moved in its own instructor's diary, whoever is moving it.
+  const { instructorId, exceptBookingId } = parsed.data;
+  const where = await place(instructorId ?? (exceptBookingId === undefined ? undefined : await instructorOfLesson(exceptBookingId)));
   if (!where) return err('NOT_ALLOWED');
 
   return ok(
@@ -48,9 +86,14 @@ export async function slotsForDay(input: unknown): Promise<Result<BookingDay>> {
   );
 }
 
+const lessonsSchema = z.object({ instructorId: z.uuid().optional() });
+
 /** The lessons this instructor offers, with what each length costs (R-05). */
-export async function bookableLessons(): Promise<Result<LessonOption[]>> {
-  const where = await place();
+export async function bookableLessons(input: unknown = {}): Promise<Result<LessonOption[]>> {
+  const parsed = lessonsSchema.safeParse(input);
+  if (!parsed.success) return err('VALIDATION_FAILED');
+
+  const where = await place(parsed.data.instructorId);
   if (!where) return err('NOT_ALLOWED');
   return ok(await lessonOptions(where.instructorProfileId, where.businessId));
 }
@@ -63,6 +106,8 @@ const bookingSchema = z.object({
   pickupPointId: z.union([z.literal('').transform(() => null), z.uuid()]).nullable().default(null),
   // The instructor saying the travel gap is not needed here (BOK-07, D-187).
   ignoreGap: z.boolean().default(false),
+  /** One of a school's instructors, for its office; the caller's own diary otherwise (D-330). */
+  instructorId: z.uuid().optional(),
 });
 
 /** BOK-01: the instructor books a lesson. The RPC decides whether it may happen. */
@@ -70,7 +115,7 @@ export async function bookLesson(input: unknown): Promise<Result<{ bookingId: st
   const parsed = bookingSchema.safeParse(input);
   if (!parsed.success) return err('VALIDATION_FAILED');
 
-  const where = await place();
+  const where = await place(parsed.data.instructorId);
   if (!where) return err('NOT_ALLOWED');
 
   const supabase = await createSupabaseServerClient();
@@ -87,9 +132,7 @@ export async function bookLesson(input: unknown): Promise<Result<{ bookingId: st
   });
   if (error) return err(parsePostgresError(error).code);
 
-  revalidatePath('/app/instructor/diary');
-  revalidatePath('/app/instructor');
-  revalidatePath(`/app/instructor/learners/${parsed.data.learnerId}`);
+  redraw(parsed.data.learnerId);
   return ok({ bookingId: data });
 }
 
@@ -104,7 +147,7 @@ export async function decideRequest(input: unknown): Promise<Result<{ status: st
   const parsed = decisionSchema.safeParse(input);
   if (!parsed.success) return err('VALIDATION_FAILED', undefined, fieldErrors(parsed.error));
 
-  await requirePortal('instructor');
+  await requirePortal(portals);
   const supabase = await createSupabaseServerClient();
   const { data, error } = await supabase.rpc('decide_booking_request', {
     p_booking_id: parsed.data.bookingId,
@@ -113,8 +156,7 @@ export async function decideRequest(input: unknown): Promise<Result<{ status: st
   });
   if (error) return err(parsePostgresError(error).code);
 
-  revalidatePath('/app/instructor/diary');
-  revalidatePath('/app/instructor');
+  redraw();
   return ok({ status: data });
 }
 
@@ -134,7 +176,7 @@ export async function bookWeekly(input: unknown): Promise<Result<WeeklyOutcome>>
   const parsed = weeklySchema.safeParse(input);
   if (!parsed.success) return err('VALIDATION_FAILED');
 
-  const where = await place();
+  const where = await place(parsed.data.instructorId);
   if (!where) return err('NOT_ALLOWED');
 
   const supabase = await createSupabaseServerClient();
@@ -153,8 +195,7 @@ export async function bookWeekly(input: unknown): Promise<Result<WeeklyOutcome>>
   });
   if (error) return err(parsePostgresError(error).code);
 
-  revalidatePath('/app/instructor/diary');
-  revalidatePath('/app/instructor');
+  redraw(parsed.data.learnerId);
   // A week that clashed comes back with no booking and a reason; the generated types have
   // no way of knowing that a column of a set returning function can be null.
   const weeks = data as { starts_at: string; booking_id: string | null; problem: string | null }[];
@@ -176,7 +217,7 @@ export async function cancelLesson(input: unknown): Promise<Result<null>> {
   const parsed = cancelSchema.safeParse(input);
   if (!parsed.success) return err('VALIDATION_FAILED', undefined, fieldErrors(parsed.error));
 
-  await requirePortal('instructor');
+  await requirePortal(portals);
   const supabase = await createSupabaseServerClient();
   const { error } = await supabase.rpc('cancel_booking', {
     p_booking_id: parsed.data.bookingId,
@@ -184,8 +225,7 @@ export async function cancelLesson(input: unknown): Promise<Result<null>> {
   });
   if (error) return err(parsePostgresError(error).code);
 
-  revalidatePath('/app/instructor/diary');
-  revalidatePath('/app/instructor');
+  redraw();
   return ok(null);
 }
 
@@ -201,7 +241,7 @@ export async function moveLesson(input: unknown): Promise<Result<null>> {
   const parsed = moveSchema.safeParse(input);
   if (!parsed.success) return err('VALIDATION_FAILED');
 
-  await requirePortal('instructor');
+  await requirePortal(portals);
   const supabase = await createSupabaseServerClient();
   const { error } = await supabase.rpc('reschedule_booking', {
     p_booking_id: parsed.data.bookingId,
@@ -211,8 +251,7 @@ export async function moveLesson(input: unknown): Promise<Result<null>> {
   });
   if (error) return err(parsePostgresError(error).code);
 
-  revalidatePath('/app/instructor/diary');
-  revalidatePath('/app/instructor');
+  redraw();
   return ok(null);
 }
 
@@ -228,7 +267,7 @@ export async function sendReminder(input: unknown): Promise<Result<null>> {
   const parsed = reminderSchema.safeParse(input);
   if (!parsed.success) return err('VALIDATION_FAILED');
 
-  await requirePortal('instructor');
+  await requirePortal(portals);
   const supabase = await createSupabaseServerClient();
   const { error } = await supabase.rpc('request_lesson_reminder', {
     p_booking_id: parsed.data.bookingId,
@@ -246,7 +285,7 @@ export async function lessonDetailsFor(input: unknown): Promise<Result<LessonDet
   const parsed = lessonSchema.safeParse(input);
   if (!parsed.success) return err('VALIDATION_FAILED');
 
-  await requirePortal('instructor');
+  await requirePortal(portals);
   const details = await lessonDetails(parsed.data.bookingId);
   return details === null ? err('NOT_FOUND') : ok(details);
 }
@@ -256,13 +295,12 @@ export async function completeLesson(input: unknown): Promise<Result<null>> {
   const parsed = lessonSchema.safeParse(input);
   if (!parsed.success) return err('VALIDATION_FAILED');
 
-  await requirePortal('instructor');
+  await requirePortal(portals);
   const supabase = await createSupabaseServerClient();
   const { error } = await supabase.rpc('complete_booking', { p_booking_id: parsed.data.bookingId });
   if (error) return err(parsePostgresError(error).code);
 
-  revalidatePath('/app/instructor/diary');
-  revalidatePath('/app/instructor');
+  redraw();
   return ok(null);
 }
 
@@ -275,7 +313,7 @@ export async function markNoShow(input: unknown): Promise<Result<null>> {
   const parsed = noShowSchema.safeParse(input);
   if (!parsed.success) return err('VALIDATION_FAILED');
 
-  await requirePortal('instructor');
+  await requirePortal(portals);
   const supabase = await createSupabaseServerClient();
   const { error } = await supabase.rpc('mark_no_show', {
     p_booking_id: parsed.data.bookingId,
@@ -283,8 +321,7 @@ export async function markNoShow(input: unknown): Promise<Result<null>> {
   });
   if (error) return err(parsePostgresError(error).code);
 
-  revalidatePath('/app/instructor/diary');
-  revalidatePath('/app/instructor');
+  redraw();
   return ok(null);
 }
 
@@ -295,7 +332,7 @@ export async function recordOfflinePayment(input: unknown): Promise<Result<{ pay
   const parsed = offlineSchema.safeParse(input);
   if (!parsed.success) return err('VALIDATION_FAILED');
 
-  await requirePortal('instructor');
+  await requirePortal(portals);
   const supabase = await createSupabaseServerClient();
   const { data, error } = await supabase.rpc('record_offline_payment', {
     p_booking_id: parsed.data.bookingId,
@@ -303,9 +340,9 @@ export async function recordOfflinePayment(input: unknown): Promise<Result<{ pay
   });
   if (error) return err(parsePostgresError(error).code);
 
-  revalidatePath('/app/instructor/diary');
-  revalidatePath('/app/instructor');
+  redraw();
   revalidatePath('/app/instructor/learners', 'layout');
+  revalidatePath('/app/school/learners', 'layout');
   return ok({ paymentId: data });
 }
 
@@ -316,14 +353,14 @@ export async function undoOfflinePayment(input: unknown): Promise<Result<null>> 
   const parsed = undoPaymentSchema.safeParse(input);
   if (!parsed.success) return err('VALIDATION_FAILED');
 
-  await requirePortal('instructor');
+  await requirePortal(portals);
   const supabase = await createSupabaseServerClient();
   const { error } = await supabase.rpc('undo_offline_payment', { p_payment_id: parsed.data.paymentId });
   if (error) return err(parsePostgresError(error).code);
 
-  revalidatePath('/app/instructor/diary');
-  revalidatePath('/app/instructor');
+  redraw();
   revalidatePath('/app/instructor/learners', 'layout');
+  revalidatePath('/app/school/learners', 'layout');
   return ok(null);
 }
 
@@ -337,7 +374,7 @@ export async function priceForLength(input: unknown): Promise<Result<number | nu
   const parsed = lengthSchema.safeParse(input);
   if (!parsed.success) return err('VALIDATION_FAILED');
 
-  await requirePortal('instructor');
+  await requirePortal(portals);
   const supabase = await createSupabaseServerClient();
   const { data, error } = await supabase.rpc('price_for_booking_length', {
     p_booking_id: parsed.data.bookingId,
@@ -361,7 +398,7 @@ export async function setLessonPickup(input: unknown): Promise<Result<null>> {
   const parsed = lessonPickupSchema.safeParse(input);
   if (!parsed.success) return err('VALIDATION_FAILED');
 
-  await requirePortal('instructor');
+  await requirePortal(portals);
   const supabase = await createSupabaseServerClient();
   const { error } = await supabase.rpc('set_booking_pickup', {
     p_booking_id: parsed.data.bookingId,
@@ -370,8 +407,8 @@ export async function setLessonPickup(input: unknown): Promise<Result<null>> {
   });
   if (error) return err(parsePostgresError(error).code);
 
-  revalidatePath('/app/instructor/diary');
-  revalidatePath('/app/instructor');
+  redraw();
   revalidatePath('/app/instructor/learners', 'layout');
+  revalidatePath('/app/school/learners', 'layout');
   return ok(null);
 }
