@@ -99,6 +99,8 @@ import { FeeList } from '@/components/school/fee-list';
 import { FeeTermsForm } from '@/components/school/fee-terms-form';
 import { LinkedFeesCard } from '@/components/school/linked-fees';
 import type { FeeLine, LinkedFees } from '@/lib/school/fees';
+import type { MoveAsked } from '@/lib/learners/moves';
+import { MovesAskedCard } from '@/components/learners/moves-asked';
 import { PriceGuideForm } from '@/components/school/price-guide-form';
 import { PriceGuideNote } from '@/components/school/price-guide-note';
 import type { LinkedDay } from '@/lib/school/linked-diary';
@@ -574,6 +576,14 @@ const exampleFees: FeeLine[] = [
   { feeId: 'design-fee-2', label: 'Week from Mon 16 Nov', due: 'Mon 16 Nov', amountPence: 5000, status: 'paid', note: 'Bank transfer' },
   { feeId: 'design-fee-1', label: 'Week from Mon 9 Nov', due: 'Mon 9 Nov', amountPence: 5000, status: 'written_off', note: null },
 ];
+/** Learners an instructor's own business asked to move with them to the school they joined (D-322). */
+const exampleMovesAsked: MoveAsked[] = [
+  { moveId: 'move-1', learnerName: 'Noah Wilson', status: 'asked', fromName: 'Sarah Khan Driving', toName: 'Leeds School of Motoring', canAnswer: true },
+  { moveId: 'move-4', learnerName: 'Ella Hughes', status: 'asked', fromName: 'Sarah Khan Driving', toName: 'Leeds School of Motoring', canAnswer: false },
+  { moveId: 'move-2', learnerName: 'Olivia Brown', status: 'moved', fromName: 'Sarah Khan Driving', toName: 'Leeds School of Motoring', canAnswer: true },
+  { moveId: 'move-3', learnerName: 'Amelia Evans', status: 'stayed', fromName: 'Sarah Khan Driving', toName: 'Leeds School of Motoring', canAnswer: false },
+];
+
 const exampleLinkedFees: LinkedFees = {
   linkId: '0a1b2c3d-4e5f-4061-8728-394a5b6c7d8e',
   name: 'Sarah Khan',
@@ -1981,6 +1991,11 @@ export function DesignShowcase() {
           linked={{ ...exampleLinkedFees, linkId: '1b2c3d4e-5f60-4172-8839-4a5b6c7d8e9f', endedOn: 'Wed 21 Oct' }}
           handlers={{ saveTerms: savedNothing, settle: savedNothing, refresh: () => undefined }}
         />
+        <Label>Learners asked to move with an instructor who joined the school: two still to answer, one of whom has never signed in, and everybody answered (D-322)</Label>
+        <div className="grid items-start gap-4 md:grid-cols-2">
+          <MovesAskedCard idPrefix="design-moves-" moves={exampleMovesAsked} answer={savedNothing} />
+          <MovesAskedCard idPrefix="design-moves-answered-" moves={exampleMovesAsked.filter((one) => one.status !== 'asked')} answer={savedNothing} />
+        </div>
         <Label>The same fees as the instructor sees them, and none yet</Label>
         <div className="grid items-start gap-6 md:grid-cols-2">
           <FeeList fees={exampleFees} />
