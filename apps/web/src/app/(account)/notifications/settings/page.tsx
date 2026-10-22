@@ -4,6 +4,8 @@ import {
   channelCopy,
   channelsInCategory,
   notificationCategories,
+  textMessageCopy,
+  type NotificationAudience,
 } from '@repo/core/notifications';
 import { Card, CardDescription, CardTitle } from '@repo/ui/card';
 import { SkeletonRow } from '@repo/ui/skeleton';
@@ -39,8 +41,17 @@ export default function NotificationSettingsPage() {
 async function Settings() {
   // Somebody's own switches, which a prerendered shell cannot know.
   await connection();
-  await requireAccess();
+  const { access } = await requireAccess();
   const [off, browsers] = await Promise.all([myNotificationPreferences(), mySubscribedBrowsers()]);
+  // Who they are, so each card offers only what they can be sent (D-344). Platform staff, who are
+  // none of these, are shown everything.
+  const audiences: NotificationAudience[] = [
+    ...(access.isLearner ? (['learner'] as const) : []),
+    ...(access.memberships.some((one) => one.instructorProfileId !== null) ? (['instructor'] as const) : []),
+    ...(access.memberships.some((one) => one.businessType === 'school' && (one.role === 'owner' || one.role === 'manager'))
+      ? (['school'] as const)
+      : []),
+  ];
 
   return (
     <div className="flex flex-col gap-6">
@@ -71,14 +82,17 @@ async function Settings() {
       </Card>
 
       {notificationCategories.map((category) => {
-        const fixed = alwaysOnChannels(category);
+        const fixed = alwaysOnChannels(category, audiences);
+        const channels = channelsInCategory(category, audiences);
+        // A group with nothing in it for them is not offered at all.
+        if (channels.length === 0) return null;
         return (
           <Card key={category} className="flex flex-col gap-1" role="region" aria-labelledby={`${category}-title`}>
             <CardTitle id={`${category}-title`}>{categoryCopy[category].title}</CardTitle>
             <CardDescription>{categoryCopy[category].description}</CardDescription>
             {/* The same channels in the same order in every card, switch or not. */}
             <div className="mt-2 flex flex-col divide-y divide-grey-200">
-              {channelsInCategory(category).map((channel) =>
+              {channels.map((channel) =>
                 fixed.includes(channel) ? (
                   <p key={channel} className="flex min-h-12 items-center justify-between gap-4 py-2 text-body text-ink">
                     {channelCopy[channel].title}
@@ -90,7 +104,7 @@ async function Settings() {
                     category={category}
                     channel={channel}
                     label={channelCopy[channel].title}
-                    description={channelCopy[channel].description}
+                    description={channel === 'sms' ? textMessageCopy(category, audiences) : channelCopy[channel].description}
                     enabled={!(off.get(category) ?? []).includes(channel)}
                   />
                 ),
