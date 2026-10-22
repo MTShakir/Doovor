@@ -19,6 +19,7 @@ import { useEffect, useState, useTransition } from 'react';
 import { FormAlert } from '@/components/form-alert';
 import { MarkPaidSheet } from '@/components/money/mark-paid';
 import { cancelLesson, moveLesson, priceForLength, slotsForDay } from '@/app/(portal)/app/instructor/booking-actions';
+import type { LessonPortal } from '@/components/lessons/lesson-details';
 
 export interface ChosenLesson {
   bookingId: string;
@@ -40,6 +41,12 @@ export interface LessonSheetsProps {
   rules: { cancellationWindowHours: number; lateFeePercent: number };
   action: 'move' | 'cancel' | 'paid';
   onClose: () => void;
+  /**
+   * The instructor's own diary, or the school's office moving one of its instructor's lessons,
+   * whose hours are theirs and whose travel gap only they say is not needed (D-187, D-330).
+   */
+  portal?: LessonPortal;
+  instructorName?: string;
 }
 
 /**
@@ -86,7 +93,9 @@ function priceWords(
 }
 
 /** BOK-08, BOK-09, PAY-05: what an instructor does to a lesson that is already in. */
-export function LessonSheets({ lesson, rules, action, onClose }: LessonSheetsProps) {
+export function LessonSheets({ lesson, rules, action, onClose, portal = 'instructor', instructorName }: LessonSheetsProps) {
+  const office = portal === 'school';
+  const whose = office && instructorName !== undefined ? `${instructorName}'s hours` : 'your hours';
   const { bookingId, learnerId, learnerName, startsAt, durationMinutes, pricePence, creditMinutes, paymentStatus } = lesson;
   const { cancellationWindowHours, lateFeePercent } = rules;
   // Credit pays for what it covers and the rest is paid the usual way, so what is owed in money is
@@ -273,12 +282,14 @@ export function LessonSheets({ lesson, rules, action, onClose }: LessonSheetsPro
             <Input type="date" defaultValue={day} min={todayInZone()} onChange={(event) => { setDay(event.target.value); }} />
           </Field>
 
-          <Checkbox
-            label="No gap needed after the lesson before"
-            description="For a lesson that starts where the last one finished. It frees the times the travel gap was holding, on both sides."
-            checked={ignoreGap}
-            onCheckedChange={(checked) => { setIgnoreGap(checked === true); }}
-          />
+          {office ? null : (
+            <Checkbox
+              label="No gap needed after the lesson before"
+              description="For a lesson that starts where the last one finished. It frees the times the travel gap was holding, on both sides."
+              checked={ignoreGap}
+              onCheckedChange={(checked) => { setIgnoreGap(checked === true); }}
+            />
+          )}
 
           {loading || times === null ? (
             <Skeleton className="h-28 w-full" />
@@ -296,9 +307,9 @@ export function LessonSheets({ lesson, rules, action, onClose }: LessonSheetsPro
               ) : null}
               {times.outOfHours.length > 0 ? (
                 <div className="flex flex-col gap-2">
-                  <p className="text-small font-semibold text-ink">Outside your hours</p>
+                  <p className="text-small font-semibold text-ink">Outside {whose}</p>
                   <TimeSlotGrid
-                    label="Times outside your hours"
+                    label={`Times outside ${whose}`}
                     value={slot}
                     onChange={setSlot}
                     slots={times.outOfHours.map((one) => ({ id: one, label: formatTime(new Date(one)) }))}
@@ -331,7 +342,7 @@ export function LessonSheets({ lesson, rules, action, onClose }: LessonSheetsPro
           </Button>
           {learnerId === undefined ? null : (
             <Button variant="secondary" width="full" asChild>
-              <Link href={`/app/instructor/learners/${learnerId}`}>Contact them now</Link>
+              <Link href={`/app/${portal}/learners/${learnerId}`}>Contact them now</Link>
             </Button>
           )}
           {/* Discard is discarding the change, so it puts the whole thing away rather than

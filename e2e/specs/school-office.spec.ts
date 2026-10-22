@@ -90,6 +90,20 @@ test.describe("the school's office (PRD 6.2, LRN-02, D-330)", () => {
       await expectAccessible(page);
       await snap(page, testInfo, 'school-lesson-sheet');
 
+      // Moving it: the instructor's hours by name, no travel gap to waive (the instructor's own, D-187),
+      // and the way to contact the learner stays in the school's portal.
+      await lesson.getByRole('button', { name: 'Edit lesson' }).click();
+      const edit = page.getByRole('dialog', { name: `Edit ${learner.name}'s lesson` });
+      await expect(edit.getByRole('group', { name: /^Times on/ })).toBeVisible();
+      await expect(edit.getByRole('checkbox', { name: 'No gap needed after the lesson before' })).toHaveCount(0);
+      await edit.getByRole('group', { name: /^Times on/ }).getByRole('button', { name: '11:00', exact: true }).click();
+      await edit.getByRole('button', { name: 'Move to 11:00' }).click();
+      const told = page.getByRole('dialog', { name: `Have you told ${learner.name} about the change?` });
+      await expect(told.getByRole('link', { name: 'Contact them now' })).toHaveAttribute('href', /^\/app\/school\/learners\/[0-9a-f-]+$/);
+      await told.getByRole('button', { name: 'Discard' }).click();
+      await expect(told).toBeHidden();
+
+      await open.click();
       await lesson.getByRole('button', { name: 'Mark paid' }).click();
       await page.getByRole('dialog', { name: `How did ${learner.name} pay?` }).getByRole('button', { name: 'Cash' }).click();
       await expect(page.getByText('Marked paid (cash)')).toBeVisible();

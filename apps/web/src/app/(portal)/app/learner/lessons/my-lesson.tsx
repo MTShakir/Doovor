@@ -117,6 +117,7 @@ export function MyLessonRow({ lesson, rules, now, canChange }: MyLessonRowProps)
               paymentStatus: lesson.paymentStatus as never,
               kind: 'standard',
               creditMinutes: lesson.creditMinutes,
+              declined: lesson.declined,
             })}
           </StatusPill>
           <span className="text-small text-grey-700 tabular-nums">{formatPence(lesson.pricePence)}</span>

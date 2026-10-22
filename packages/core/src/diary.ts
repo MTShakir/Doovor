@@ -42,6 +42,11 @@ export interface LessonFacts {
   source?: string;
   /** Minutes of it paid for from credit (D-225). Zero or absent for a lesson that used none. */
   creditMinutes?: number;
+  /**
+   * A request the instructor turned down. Its status is cancelled, as every rule about lessons
+   * that are off needs it to be, and this is how its pill tells the two apart (D-340).
+   */
+  declined?: boolean;
 }
 
 /**
@@ -68,6 +73,10 @@ export function lessonState(facts: LessonFacts): LessonState {
 export function lessonStateLabel(facts: LessonFacts): string | undefined {
   // Off like a cancellation, but nobody called it off: nobody came (R-09).
   if (facts.status === 'no_show') return 'No-show';
+  // A request the instructor turned down, and one nobody answered or paid for in time, were never
+  // booked, so neither was cancelled (BOK-06, R-12, D-336, D-340).
+  if (facts.status === 'declined' || (facts.status === 'cancelled' && facts.declined === true)) return 'Declined';
+  if (facts.status === 'expired') return 'Expired';
   if (lessonState(facts) !== 'paid') return undefined;
   // Part of it came from credit and the rest was paid, so the pill says both. "Paid (cash)" on a
   // lesson an hour of credit went into is not what happened (D-225). Every method names itself,

@@ -1,4 +1,4 @@
-import { byDay, isOff, lessonState, teachingMinutes } from '@repo/core/diary';
+import { byDay, isOff, lessonState, lessonStateLabel, teachingMinutes } from '@repo/core/diary';
 import { addDaysToLocalDate, formatTime, parseLocalDate, type LocalDate } from '@repo/core/time';
 import { StatusPill } from '@repo/ui/status-pill';
 import { LessonLength } from '@/components/lessons/lesson-length';
@@ -66,7 +66,11 @@ export function WeekView({ from, lessons, dayOf, today, showInstructor = false, 
                     {showInstructor ? (
                       <span className="truncate text-caption text-grey-700">{lesson.instructorName}</span>
                     ) : null}
-                    <StatusPill status={state} className="self-start" />
+                    {/* The day's own words, as the day view says them: a request turned down is
+                        declined, and a lesson paid in cash says so (D-233, D-340). */}
+                    <StatusPill status={state} className="self-start">
+                      {lessonStateLabel(lesson.facts)}
+                    </StatusPill>
                   </>
                 );
                 return (

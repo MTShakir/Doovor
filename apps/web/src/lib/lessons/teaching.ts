@@ -27,7 +27,7 @@ export function teachingProfiles(access: AccessContext): string[] {
 }
 
 const columns =
-  'id, starts_at, ends_at, status, payment_status, source, credit_minutes, users!bookings_learner_id_fkey(full_name), lesson_types(name, kind), pickup_points(label, address, postcode), lesson_records(id)';
+  'id, starts_at, ends_at, status, payment_status, source, credit_minutes, declined_at, users!bookings_learner_id_fkey(full_name), lesson_types(name, kind), pickup_points(label, address, postcode), lesson_records(id)';
 
 interface Row {
   id: string;
@@ -37,6 +37,7 @@ interface Row {
   payment_status: PaymentStatus;
   source: string;
   credit_minutes: number;
+  declined_at: string | null;
   users: { full_name: string } | null;
   lesson_types: { name: string; kind: string };
   pickup_points: { label: string; address: string | null; postcode: string | null } | null;
@@ -59,6 +60,7 @@ function teachingLesson(row: Row): TeachingLesson {
       kind: row.lesson_types.kind,
       source: row.source,
       creditMinutes: row.credit_minutes,
+      declined: row.declined_at !== null,
     },
     recorded: row.lesson_records !== null,
   };

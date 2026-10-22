@@ -126,6 +126,7 @@ export function LessonDetailsBody({
     kind: details.kind,
     source: details.source,
     creditMinutes: details.creditMinutes,
+    declined: details.declined,
   };
   const off = details.status === 'cancelled' || details.status === 'declined' || details.status === 'expired';
   const asked = details.status === 'requested';
@@ -396,6 +397,8 @@ export function LessonDetailsSheet({
         rules={details.rules}
         action={action}
         onClose={onClose}
+        portal={portal}
+        instructorName={details.instructorName}
       />
     );
   }

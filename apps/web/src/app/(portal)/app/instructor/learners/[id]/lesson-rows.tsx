@@ -16,6 +16,8 @@ export interface LessonRow {
   status: string;
   paymentStatus: string;
   creditMinutes: number;
+  /** A request the instructor turned down, whose status is cancelled (D-340). */
+  declined: boolean;
   lessonType: string;
   instructorName: string;
 }
@@ -53,6 +55,7 @@ export function LessonRows({
             paymentStatus: lesson.paymentStatus as never,
             kind: 'standard' as const,
             creditMinutes: lesson.creditMinutes,
+            declined: lesson.declined,
           };
           const minutes = Math.round((new Date(lesson.endsAt).getTime() - new Date(lesson.startsAt).getTime()) / 60_000);
           const when = formatDateTime(new Date(lesson.startsAt));

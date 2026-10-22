@@ -369,6 +369,7 @@ export type Database = {
           created_at: string
           created_by: string | null
           credit_minutes: number
+          declined_at: string | null
           dispute_until: string | null
           ends_at: string
           expires_at: string | null
@@ -402,6 +403,7 @@ export type Database = {
           created_at?: string
           created_by?: string | null
           credit_minutes?: number
+          declined_at?: string | null
           dispute_until?: string | null
           ends_at: string
           expires_at?: string | null
@@ -435,6 +437,7 @@ export type Database = {
           created_at?: string
           created_by?: string | null
           credit_minutes?: number
+          declined_at?: string | null
           dispute_until?: string | null
           ends_at?: string
           expires_at?: string | null

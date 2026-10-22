@@ -18,10 +18,14 @@ export interface LessonDetails {
   paymentStatus: PaymentStatus;
   /** Minutes of it already paid for from credit (D-225). */
   creditMinutes: number;
+  /** A request the instructor turned down, whose status is cancelled (D-340). */
+  declined: boolean;
   kind: string;
   source: string;
   lessonType: string;
   pricePence: number;
+  /** Who teaches it, so the school's office can say whose diary it is moving it in (D-330). */
+  instructorName: string;
   learner: { id: string; name: string; phone: string | null; email: string | null };
   pickup: { label: string; address: string | null; postcode: string | null } | null;
   /** Everywhere this learner is collected from, so the sheet can move the lesson (COV-04, D-215). */
@@ -40,12 +44,14 @@ interface Row {
   status: BookingStatus;
   payment_status: PaymentStatus;
   credit_minutes: number;
+  declined_at: string | null;
   source: string;
   price_pence: number;
   learner_id: string;
   instructor_id: string;
   pickup_point_id: string | null;
   lesson_types: { name: string; kind: string };
+  instructor_profiles: { display_name: string };
   pickup_points: { label: string; address: string | null; postcode: string | null } | null;
 }
 
@@ -55,7 +61,7 @@ export async function lessonDetails(bookingId: string): Promise<LessonDetails | 
   const { data, error } = await supabase
     .from('bookings')
     .select(
-      'id, starts_at, ends_at, status, payment_status, source, price_pence, credit_minutes, learner_id, instructor_id, pickup_point_id, lesson_types(name, kind), pickup_points(label, address, postcode)',
+      'id, starts_at, ends_at, status, payment_status, source, price_pence, credit_minutes, declined_at, learner_id, instructor_id, pickup_point_id, lesson_types(name, kind), instructor_profiles(display_name), pickup_points(label, address, postcode)',
     )
     .eq('id', bookingId)
     .maybeSingle();
@@ -77,10 +83,12 @@ export async function lessonDetails(bookingId: string): Promise<LessonDetails | 
     status: row.status,
     paymentStatus: row.payment_status,
     creditMinutes: row.credit_minutes,
+    declined: row.declined_at !== null,
     kind: row.lesson_types.kind,
     source: row.source,
     lessonType: row.lesson_types.name,
     pricePence: row.price_pence,
+    instructorName: row.instructor_profiles.display_name,
     learner: {
       id: row.learner_id,
       name: card?.fullName ?? 'Unnamed learner',
