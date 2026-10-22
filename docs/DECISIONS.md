@@ -1898,3 +1898,12 @@ Every decision made without the product owner, newest last. Format: date, decisi
 ## D-370 | 2026-10-22 | Staff are not welcomed, or warned, as learners | Claude
 - **Found:** in the same round. A super admin's first notice was the learners' welcome ("Find an instructor, book your lessons..."), because an account with no side said is welcomed as a learner, and staff accounts have none; and their account screen told them that money owed for a lesson to come was "between you and your instructor".
 - **Decision:** platform staff are not sent the welcome, and the screen for deleting an account says nothing about lessons to somebody who neither teaches nor learns (NTF-03, AUTH-09).
+
+## D-371 | 2026-10-22 | Cancelling an invitation to the school asks first | Claude
+- **Found:** in the A to Z round. On the school's Instructors screen, "Cancel" beside an invitation waiting stopped its link at once, with nothing to undo it, though the person may already have it on their phone. Letting a linked instructor go and switching somebody off both ask first.
+- **Decision:** cancelling asks first ("Cancel the invitation for Tara? The link stops working straight away, even if they have it already. You can send a new one at any time."), as those do (SCH-02).
+
+## D-372 | 2026-10-22 | A founding school is told it was one of the first 50 | Claude
+- **Found:** in the same round. A school with a founding place read "You were one of the first 100 to join" on its plan, which is the number of founding places for instructors; schools have 50 (D-027). The first onboarding step was also named "Your name and business" in the tab for somebody teaching at a school, who is never asked for a business name (D-196).
+- **Decision:** the plan says the number for the side the Business is on, and the step is named "Your name" for everybody.
+
