@@ -2295,6 +2295,7 @@ export type Database = {
           business_id: string | null
           category: Database["public"]["Enums"]["notification_category"]
           channels: Database["public"]["Enums"]["notification_channel"][]
+          claimed_at: string | null
           created_at: string
           dedupe_key: string
           entity_id: string | null
@@ -2314,6 +2315,7 @@ export type Database = {
           business_id?: string | null
           category: Database["public"]["Enums"]["notification_category"]
           channels?: Database["public"]["Enums"]["notification_channel"][]
+          claimed_at?: string | null
           created_at?: string
           dedupe_key: string
           entity_id?: string | null
@@ -2333,6 +2335,7 @@ export type Database = {
           business_id?: string | null
           category?: Database["public"]["Enums"]["notification_category"]
           channels?: Database["public"]["Enums"]["notification_channel"][]
+          claimed_at?: string | null
           created_at?: string
           dedupe_key?: string
           entity_id?: string | null
@@ -2359,6 +2362,7 @@ export type Database = {
       outbox_events: {
         Row: {
           attempts: number
+          claimed_at: string | null
           created_at: string
           id: string
           last_error: string | null
@@ -2368,6 +2372,7 @@ export type Database = {
         }
         Insert: {
           attempts?: number
+          claimed_at?: string | null
           created_at?: string
           id?: string
           last_error?: string | null
@@ -2377,6 +2382,7 @@ export type Database = {
         }
         Update: {
           attempts?: number
+          claimed_at?: string | null
           created_at?: string
           id?: string
           last_error?: string | null
@@ -4762,6 +4768,7 @@ export type Database = {
         Args: { p_limit?: number }
         Returns: {
           attempts: number
+          claimed_at: string | null
           created_at: string
           id: string
           last_error: string | null
