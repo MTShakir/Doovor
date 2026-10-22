@@ -1,3 +1,4 @@
+import type { Metadata } from 'next';
 import { setupComplete, type SetupState } from '@repo/core/setup-checklist';
 import { formatDateWithYear } from '@repo/core/time';
 import { todayInZone } from '@repo/core/time';
@@ -16,6 +17,8 @@ import { requirePortal } from '@/lib/auth/session';
 import { teachingProfiles, todaysLessons, upcomingLessons } from '@/lib/lessons/teaching';
 import { upcomingCount } from '@/lib/lessons/upcoming';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
+
+export const metadata: Metadata = { title: 'Today' };
 
 interface TodayProps {
   searchParams: Promise<{ upcoming?: string; stats?: string }>;

@@ -81,7 +81,7 @@ import { AuditEntries, AuditFiltersForm, AuditLogSkeleton, AuditPager } from '@/
 import type { AuditEntry } from '@/lib/admin/audit';
 import type { PlatformDashboard } from '@/lib/admin/dashboard';
 import type { SchoolOverview } from '@/lib/school/overview';
-import { LetGoDialog, SwitchOffDialog, TeamSections } from '@/components/school/team';
+import { CancelInvitationDialog, LetGoDialog, SwitchOffDialog, TeamSections } from '@/components/school/team';
 import { AllocationChoices } from '@/components/school/allocation-choices';
 import { LinkedFreeBusy } from '@/components/school/linked-free-busy';
 import { EnquiryForm } from '@/components/school/enquiry-form';
@@ -927,6 +927,7 @@ export function DesignShowcase() {
   const [picked, setPicked] = useState<string | undefined>(undefined);
   const [switchingOff, setSwitchingOff] = useState<SchoolTeam['members'][number] | null>(null);
   const [lettingGo, setLettingGo] = useState<SchoolTeam['linked'][number] | null>(null);
+  const [cancellingInvite, setCancellingInvite] = useState<SchoolTeam['invitations'][number] | null>(null);
   const [document, setDocument] = useState<string | undefined>(undefined);
   const [pickup, setPickup] = useState<string | undefined>(undefined);
   const [suspendingBusiness, setSuspendingBusiness] = useState<AdminBusiness | null>(null);
@@ -2116,6 +2117,17 @@ export function DesignShowcase() {
           pending={false}
           onConfirm={() => { setLettingGo(null); }}
           onCancel={() => { setLettingGo(null); }}
+        />
+        <div>
+          <Button variant="secondary" onClick={() => { setCancellingInvite(exampleTeam.invitations[0] ?? null); }}>
+            Cancel an invitation
+          </Button>
+        </div>
+        <CancelInvitationDialog
+          invitation={cancellingInvite}
+          pending={false}
+          onConfirm={() => { setCancellingInvite(null); }}
+          onCancel={() => { setCancellingInvite(null); }}
         />
       </Section>
 

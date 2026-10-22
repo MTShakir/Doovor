@@ -20,8 +20,11 @@ export interface OutboxStore {
   markFailed: (ids: string[], error: string) => Promise<void>;
 }
 
-/** What the dispatcher needs from the job runner. */
-export type SendEvents = (events: { name: string; data: Record<string, unknown> }[]) => Promise<void>;
+/**
+ * What the dispatcher needs from the job runner. Each event goes with its outbox id, which the job
+ * runner keeps for a day and drops a second of, so an event sent twice runs once (D-367).
+ */
+export type SendEvents = (events: { id: string; name: string; data: Record<string, unknown> }[]) => Promise<void>;
 
 export interface DispatchResult {
   sent: number;
@@ -39,7 +42,7 @@ export async function dispatchOutbox(store: OutboxStore, send: SendEvents, limit
 
   const ids = events.map((event) => event.id);
   try {
-    await send(events.map((event) => ({ name: event.name, data: event.payload })));
+    await send(events.map((event) => ({ id: event.id, name: event.name, data: event.payload })));
   } catch (error) {
     await store.markFailed(ids, error instanceof Error ? error.message : 'The job runner refused the events.');
     return { sent: 0, failed: events.length };

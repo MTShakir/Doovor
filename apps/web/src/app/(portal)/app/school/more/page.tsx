@@ -1,6 +1,9 @@
+import type { Metadata } from 'next';
 import { Images, Layers, PoundSterling, Settings, UserPlus, Wallet } from 'lucide-react';
 import { icons } from '@/lib/icons';
 import { installAppLink, MoreMenu } from '@/components/more-menu';
+
+export const metadata: Metadata = { title: 'More' };
 
 /**
  * The school's More menu, in the same order as the instructor's (D-209): the money, then the

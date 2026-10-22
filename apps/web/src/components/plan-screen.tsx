@@ -97,8 +97,9 @@ export function PlanScreen({
             <div className="flex flex-col gap-1">
               <p className="text-body font-semibold text-black">Founding member</p>
               <p className="text-small text-black">
-                You were one of the first {foundingOffer.instructorLimit} to join. That stays yours for good, whatever plan you
-                are on later.
+                {/* Schools and instructors each have founding places of their own (D-027, D-372). */}
+                You were one of the first {plan.school ? foundingOffer.schoolLimit : foundingOffer.instructorLimit} to join.
+                That stays yours for good, whatever plan you are on later.
               </p>
             </div>
           </div>

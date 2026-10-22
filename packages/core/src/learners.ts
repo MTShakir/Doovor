@@ -128,6 +128,10 @@ export function learnerEventLine(event: LearnerEvent): string | null {
       isLearnerStatus(status) ? learnerStatusLabels[status].toLowerCase() : status;
     // Moved on by a lesson being booked, not by anybody choosing to (D-315).
     if (text(event.after, 'because') === 'booked') return `Moved from ${label(was)} to ${label(now)} when a lesson was booked`;
+    // Put back by us, as no lesson they booked ever went ahead (D-368).
+    if (text(event.after, 'because') === 'no_lesson_went_ahead') {
+      return `Moved from ${label(was)} to ${label(now)}, as no lesson they booked went ahead`;
+    }
     const reason = text(event.after, 'reason');
     const line = `Moved from ${label(was)} to ${label(now)} by ${event.actorName}`;
     return reason === null ? line : `${line}: ${reason}`;

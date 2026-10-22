@@ -91,11 +91,18 @@ export function TurnOffTwoStep({ factorId }: { factorId: string }) {
   );
 }
 
+/** What waiting for the account to go means, to whoever is reading (D-361, D-370). */
+const waitingWords = {
+  teaches: 'We will confirm by email. Your profile stays up until your account goes, seven days from now.',
+  learns: 'We will confirm by email. Lessons already booked stay with your instructor until we finish.',
+  neither: 'We will confirm by email, and it goes seven days from now.',
+} as const;
+
 /**
- * `warning`: what they would give up, said again where they confirm (D-353). `teaches`: somebody at a
- * Business, whose lessons are the ones they teach rather than an instructor's (D-361).
+ * `warning`: what they would give up, said again where they confirm (D-353). `who`: whether they teach
+ * at a Business, learn with one, or neither, as staff (D-361, D-370).
  */
-export function DeleteAccount({ warning = null, teaches = false }: { warning?: string | null; teaches?: boolean }) {
+export function DeleteAccount({ warning = null, who = 'learns' }: { warning?: string | null; who?: keyof typeof waitingWords }) {
   const [open, setOpen] = useState(false);
   const [reason, setReason] = useState('');
   const [error, setError] = useState<string | null>(null);
@@ -110,11 +117,7 @@ export function DeleteAccount({ warning = null, teaches = false }: { warning?: s
         open={open}
         onOpenChange={setOpen}
         title="Delete your account?"
-        description={
-          teaches
-            ? 'We will confirm by email. Your profile stays up until your account goes, seven days from now.'
-            : 'We will confirm by email. Lessons already booked stay with your instructor until we finish.'
-        }
+        description={waitingWords[who]}
         footer={
           <div className="flex flex-col gap-2">
             <Button

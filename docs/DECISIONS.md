@@ -1865,8 +1865,45 @@ Every decision made without the product owner, newest last. Format: date, decisi
 
 ## D-362 | 2026-10-22 | Two-step verification can be turned off by somebody whose role does not need it | Claude
 - **Found:** in the last round, after D-351. Two-step verification somebody turned on is asked for at every sign-in now, but the account screen showed "On" with no way back: a learner or an instructor who tried it was held to it until support reset it.
-- **Decision:** somebody whose role does not need it has "Turn off" beside it, which asks once and takes the authenticator away; the next sign-in asks for the password, link or text code alone (AUTH-08, AUTH-09). Only a session that has passed the code can do it, so somebody who only knows the password cannot. A role that needs it (staff, a school's owner and managers) still has no way to turn it off.
+- **Decision:** somebody whose role does not need it has "Turn off" beside it, which asks once and takes the authenticator away; the next sign-in asks for the password, link or text code alone (AUTH-08, AUTH-09). Only a session that has passed the code can do it, so somebody who only knows the password cannot. A role that needs it (platform staff and a school's owner, AUTH-08) still has no way to turn it off; a school's managers, for whom it is optional, can.
 
 ## D-363 | 2026-10-22 | Lifting a suspension puts a paused Business back to paused | Claude
 - **Found:** noted in the third final round and fixed in the last. A Business is paused while its owner teaches under a school, so that its link and profile take nobody while the school's do (D-292, D-311). A super admin suspending it in that time and then lifting the suspension brought it back active, with its booking link open beside the school's, though its owner still taught there.
 - **Decision:** lifting a suspension puts the Business back as it was before: paused if it was paused, which only its owner lifts by leaving the school or reopening it, and active otherwise (ADM-02).
+
+## D-364 | 2026-10-22 | A link to part of a page goes to it | Claude
+- **Found:** in the A to Z round, walking the public site from scratch. "Find an instructor" on the learners page, "Find another instructor near you" on a profile and on a booking link, and "See pricing" on the instructors page all point at a part of a page (#find-an-instructor, #instructor-plans), but the bands those parts are drawn with put the name only on their heading, as #find-an-instructor-heading, so every one of those links opened the top of the page instead. The page a mistyped address lands on was also named only "Doovor" in the browser tab.
+- **Decision:** each band carries its own name, so a link to it goes to it, and the page for an address that does not exist is named "Page not found" (PUB-01, NFR-A11Y).
+
+## D-365 | 2026-10-22 | Every page says what it is, and what is held says which year | Claude
+- **Found:** in the same round. Today, More (for an instructor and for a school) and a learner's Account were named only "Doovor" in the tab; a lesson that is not on the phone had no main heading; and "Your data" wrote every date without its year, so a badge that runs out in 2028 read "Sun 5 Mar".
+- **Decision:** those pages are named for what they are, the lesson not on the phone says so as the page's heading, and Your data writes every date with its year (NFR-A11Y, NFR-PRV-03).
+
+## D-366 | 2026-10-22 | An instructor opening their own link before it takes bookings is told why | Claude
+- **Found:** in the same round. A new instructor opening their own booking link before their badge was checked, often the first thing they do, read "The instructor may have paused it, or the link may be old. Ask them for a new one."
+- **Decision:** an instructor opening their own link that is not taking bookings yet is told "Your link is not taking bookings yet. Today says what is left to do first, such as your badge being checked.", with a way to Today. Anybody else reads what they did before (BOK-02).
+
+## D-367 | 2026-10-22 | A notification is sent by one run at a time | Claude
+- **Found:** in the same round, reading what the local server sent. Every seeded account had its welcome email five times. Every job that writes notifications sends what is waiting in the same run (D-271), and several run at once; claiming a notification only counted an attempt, so one claimed by one run could be claimed by the next while the first was still sending it, up to the five attempts allowed. Email was saved in production by the provider's idempotency key; a push notification or a text message was not, and every repeated text came out of the plan's monthly allowance. The outbox's events were claimed the same way, and sent to the job runner without an id it could recognise a second time by.
+- **Decision:** a claim holds the notification for ten minutes: nobody else claims it until it is sent, it fails (and is free for the next run), or the run that claimed it has plainly died. The outbox's events are claimed the same way, and go to the job runner with their own id, which it drops a second of (NTF-01, D-017, D-271).
+
+## D-368 | 2026-10-22 | Somebody who books themselves is on the books from their first lesson that goes ahead | Claude
+- **Found:** in the same round. A visitor who chose a time on a booking link and never paid, or whose request ran out, stayed on the instructor's list as an active learner for good, counted among those they teach and, on Free, taking one of the ten places (D-208).
+- **Decision:** somebody new booking themselves joins as an enquiry, as an invited learner does (D-315), and the trigger that makes a learner active when a lesson with them is confirmed does the rest: at once for a lesson booked outright, on paying for one held, on the instructor saying yes to one asked for. A full list on Free still refuses somebody new before anything is held (D-357). Those already left active by bookings that never went ahead were put back to enquiry, and their history says so ("as no lesson they booked went ahead") (LRN-05).
+
+## D-369 | 2026-10-22 | The admin's plans say what the School plan costs | Claude
+- **Found:** in the same round. The platform's Payments screen gave the School plan as "£6 a month when charged", which is only what each instructor adds to it.
+- **Decision:** it says "£15 a month and £6 for each instructor, when charged", as the pricing page does (ADM-01, D-279).
+
+## D-370 | 2026-10-22 | Staff are not welcomed, or warned, as learners | Claude
+- **Found:** in the same round. A super admin's first notice was the learners' welcome ("Find an instructor, book your lessons..."), because an account with no side said is welcomed as a learner, and staff accounts have none; and their account screen told them that money owed for a lesson to come was "between you and your instructor".
+- **Decision:** platform staff are not sent the welcome, and the screen for deleting an account says nothing about lessons to somebody who neither teaches nor learns (NTF-03, AUTH-09).
+
+## D-371 | 2026-10-22 | Cancelling an invitation to the school asks first | Claude
+- **Found:** in the A to Z round. On the school's Instructors screen, "Cancel" beside an invitation waiting stopped its link at once, with nothing to undo it, though the person may already have it on their phone. Letting a linked instructor go and switching somebody off both ask first.
+- **Decision:** cancelling asks first ("Cancel the invitation for Tara? The link stops working straight away, even if they have it already. You can send a new one at any time."), as those do (SCH-02).
+
+## D-372 | 2026-10-22 | A founding school is told it was one of the first 50 | Claude
+- **Found:** in the same round. A school with a founding place read "You were one of the first 100 to join" on its plan, which is the number of founding places for instructors; schools have 50 (D-027). The first onboarding step was also named "Your name and business" in the tab for somebody teaching at a school, who is never asked for a business name (D-196).
+- **Decision:** the plan says the number for the side the Business is on, and the step is named "Your name" for everybody.
+

@@ -12,6 +12,8 @@ export interface BusinessPlan {
   planLabel: string;
   /** A founding place, kept for good whatever happens to the plan afterwards (D-203). */
   founding: boolean;
+  /** A school, whose founding places are counted apart from instructors' (D-027, D-372). */
+  school: boolean;
   /** Started on a free trial rather than a founding place (D-204). */
   trial: boolean;
   /** "Thu 24 Dec 2026", or null where nothing runs out. */
@@ -50,6 +52,7 @@ export async function businessPlan(now = new Date()): Promise<BusinessPlan | nul
     plan,
     planLabel: plans[plan].label,
     founding: data?.founding_offer ?? false,
+    school: membership.businessType === 'school',
     trial: data?.trial_given ?? false,
     runsTo: expires === null ? null : formatDateWithYear(expires),
     daysLeft: expires === null ? null : Math.ceil((expires.getTime() - now.getTime()) / DAY_MS),

@@ -1,3 +1,4 @@
+import type { Metadata } from 'next';
 import { hasEntitlement } from '@repo/config/plans';
 import {
   CalendarSync,
@@ -13,6 +14,8 @@ import { installAppLink, MoreMenu } from '@/components/more-menu';
 import { businessPlanKey } from '@/lib/billing/plan';
 import { requirePortal } from '@/lib/auth/session';
 import { ownSchoolLink } from '@/lib/school/link';
+
+export const metadata: Metadata = { title: 'More' };
 
 /**
  * The More menu, in the order somebody reaches for things (D-209): what learners see first, then

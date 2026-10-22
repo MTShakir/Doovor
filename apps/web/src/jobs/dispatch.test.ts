@@ -31,7 +31,8 @@ describe('outbox dispatcher (M1-01, D-017)', () => {
 
     const result = await dispatchOutbox(store, send);
 
-    expect(send).toHaveBeenCalledWith([{ name: 'booking/confirmed', data: booking.payload }]);
+    // With its outbox id, so the job runner drops a second send of it (D-367).
+    expect(send).toHaveBeenCalledWith([{ id: booking.id, name: 'booking/confirmed', data: booking.payload }]);
     expect(marked.sent).toEqual([booking.id]);
     expect(result).toEqual({ sent: 1, failed: 0 });
   });
@@ -63,8 +64,8 @@ describe('outbox dispatcher (M1-01, D-017)', () => {
 
     expect(await dispatchOutbox(store, send, 2)).toEqual({ sent: 2, failed: 0 });
     expect(send).toHaveBeenCalledWith([
-      { name: 'booking/confirmed', data: booking.payload },
-      { name: 'booking/confirmed', data: booking.payload },
+      { id: 'id-0', name: 'booking/confirmed', data: booking.payload },
+      { id: 'id-1', name: 'booking/confirmed', data: booking.payload },
     ]);
   });
 });

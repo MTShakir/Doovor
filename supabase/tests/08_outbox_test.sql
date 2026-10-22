@@ -1,6 +1,6 @@
 -- Transactional outbox for background jobs (M1-01, D-017, PRD 14.5).
 begin;
-select plan(12);
+select plan(13);
 
 select tests.create_user('outbox@test.local', 'Oscar Outbox') as user \gset
 
@@ -65,14 +65,20 @@ select is(
 );
 select is(public.system_mark_outbox_sent(array[:'first'::uuid]), 1, 'sent events are marked');
 select is(
-  (select count(*)::int from public.system_claim_outbox_events(10)),
-  1,
+  (select count(*)::int from public.system_claim_outbox_events(10) where id = :'first'),
+  0,
   'a sent event is never claimed again'
 );
 select is(
   public.system_mark_outbox_failed(array[:'second'::uuid], 'connection refused'),
   1,
   'a failed send records why'
+);
+-- An event claimed is held while it is sent; failing frees it for the next run (D-367).
+select is(
+  (select count(*)::int from public.system_claim_outbox_events(10) where id = :'second'),
+  1,
+  'and a failed one is tried again by the next run'
 );
 
 select * from finish();

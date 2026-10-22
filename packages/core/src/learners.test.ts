@@ -127,6 +127,12 @@ describe('learnerEventLine (LRN-06)', () => {
     );
   });
 
+  it('says when they were put back because no lesson they booked went ahead (D-368)', () => {
+    expect(
+      learnerEventLine(event('learner.status_changed', { status: 'active' }, { status: 'enquiry', because: 'no_lesson_went_ahead' })),
+    ).toBe('Moved from active to enquiry, as no lesson they booked went ahead');
+  });
+
   it('leaves out anything it has no sentence for', () => {
     expect(learnerEventLine(event('learner.exploded', null, null))).toBeNull();
     expect(learnerEventLine(event('learner.status_changed', null, null))).toBeNull();

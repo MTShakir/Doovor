@@ -87,7 +87,10 @@ export function PlatformIncomeScreen({ income, label }: { income: PlatformIncome
               detail={
                 planDetails[key].monthlyPricePence === 0
                   ? 'No monthly charge'
-                  : `${formatPence(planDetails[key].monthlyPricePence)} a month when charged`
+                  : // The School plan is the school's own fee and so much an instructor, as the pricing page says (D-369).
+                    planDetails[key].schoolFee
+                    ? `${formatPence(planDetails[key].schoolFee.monthlyPricePence)} a month and ${formatPence(planDetails[key].monthlyPricePence)} for each instructor, when charged`
+                    : `${formatPence(planDetails[key].monthlyPricePence)} a month when charged`
               }
             />
           ))}

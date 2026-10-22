@@ -73,6 +73,8 @@ export function KeptLessonScreen() {
   if (id === null || found.state !== 'found') {
     return (
       <EmptyState
+        // It is the whole page when nothing was kept, so it is the page's heading (D-365).
+        headingLevel={1}
         icon={CloudOff}
         title="This lesson is not on this phone"
         description="Today's and tomorrow's lessons are kept when Today opens with signal. Open it again once you have some."
