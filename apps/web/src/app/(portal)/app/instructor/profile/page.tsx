@@ -165,7 +165,7 @@ async function Profile() {
         profileUrl={profileUrl}
         unavailable={paused ?? 'approval'}
       />
-      {published ? <SearchListing listed={profile.is_listed} badgeExpired={paused === 'badge-expired'} /> : null}
+      {published ? <SearchListing listed={profile.is_listed} outOfSearch={paused} /> : null}
       <Card className="flex flex-col gap-2">
         <div className="flex flex-wrap items-start justify-between gap-3">
           <CardTitle>{profile.qualification === 'pdi' ? 'Trainee instructor' : 'Approved driving instructor'}</CardTitle>
