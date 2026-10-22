@@ -1787,4 +1787,20 @@ Every decision made without the product owner, newest last. Format: date, decisi
 
 ## D-343 | 2026-10-22 | A trainee nobody supervises takes no bookings, and the pages say so first | Claude
 - **Found:** with D-342. A booking for a trainee nobody supervises is refused where it is written, but the profile said they were taking bookings and the link offered their free times, so a learner chose a time, made an account and was turned away at the end with "Trainee instructors need a supervising school or instructor first."
-- **Decision:** wherever a badge decides whether somebody can be booked, supervision decides it too: the profile and the school's page say "Not taking new bookings", the link says it is not taking bookings, and no free times are offered, as for an expired badge (INS-03). The trainee's own booking link card says it is paused until a school or an approved instructor supervises them, rather than blaming the badge, and Today's checklist waits for that rather than saying the link is live. Search is unchanged.
+- **Decision:** wherever a badge decides whether somebody can be booked, supervision decides it too: the profile and the school's page say "Not taking new bookings", the link says it is not taking bookings, and no free times are offered, as for an expired badge (INS-03). The trainee's own booking link card says it is paused until a school or an approved instructor supervises them, rather than blaming the badge, and Today's checklist waits for that rather than saying the link is live. Search followed later the same day (D-347).
+
+## D-344 | 2026-10-22 | The notification settings offer what each person can be sent | Claude
+- **Found:** in the third final round. A learner's settings offered a "Text message" switch under Money, said to be "Reminders only, on the Pro plan". The only money text is the warning before an instructor's yearly plan renews (D-231), so a learner could never be sent one, and what the switch said contradicted the card it sat on. The page offered every person every switch, whatever they could be sent.
+- **Decision:** each card offers only the channels used by what this person can be sent: as a learner, an instructor, a school's owner or manager, or more than one of these. A card with nothing in it for them is left out. A text is described for where it sits and who is reading: "Reminders only, on the Pro plan." for somebody who teaches, "Reminders only, when your instructor sends them by text." for a learner, and "Only to warn you before a yearly plan renews." under Money. Platform staff are shown everything, as before.
+
+## D-345 | 2026-10-22 | The school's learner list says when the next lesson is | Claude
+- **Found:** in the third final round. A learner with two lessons booked at a school read "With Ines Walk · No lessons yet" in the school's list, which counts the lessons already had. The instructor's own list adds "Next Wed 28 Oct, 11:00" beside the same words, and the school's did not.
+- **Decision:** the school's list says when the next lesson is, as the instructor's does (LRN-01).
+
+## D-346 | 2026-10-22 | Today names a badge that has run out | Claude
+- **Found:** in the third final round. When an instructor's badge ran out, Today's checklist said the booking link was "Ready as soon as your badge is approved", as it says to somebody whose badge has never been checked.
+- **Decision:** it says "Paused while your badge is out of date. Send your new one from your profile." The profile already said so.
+
+## D-347 | 2026-10-22 | A trainee nobody supervises is out of search | Claude
+- **Found:** after D-343, in the third final round. A trainee nobody supervises said "Not taking new bookings" on their profile, but the city pages and the sitemap still listed them, so search sent learners to a profile they could not book from. Somebody whose badge has run out leaves search (INS-03, acceptance-10).
+- **Decision:** being in search asks whether a trainee is supervised too, on the city pages, the sitemap and the profile's own answer. The trainee's Search card says their profile is out of search until a school or an approved instructor supervises them, as it says of a badge that has run out.
