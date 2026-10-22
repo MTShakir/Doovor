@@ -43,7 +43,9 @@ test.describe('who sells a school\'s lessons (SCH-05, D-281)', { tag: '@desktop-
 
     test('does not see it: it is the owner\'s to say', async ({ page }) => {
       await page.goto('/app/school/settings');
-      await expect(page.getByRole('region', { name: 'Prices' })).toBeVisible();
+      // Exact: a school that sells some of each has "Prices for linked instructors" beside it, which
+      // another spec in the same run may have made it.
+      await expect(page.getByRole('region', { name: 'Prices', exact: true })).toBeVisible();
       await expect(page.getByRole('region', { name: 'How your school works' })).toHaveCount(0);
     });
   });
