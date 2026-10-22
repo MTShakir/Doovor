@@ -14,7 +14,7 @@ import { saveLearnerProfile } from './actions';
 
 type Values = z.input<typeof learnerOnboardingSchema>;
 
-export function AboutYouForm({ initialName }: { initialName: string }) {
+export function AboutYouForm({ initialName, next }: { initialName: string; next: string }) {
   const [pending, startTransition] = useTransition();
   const [formError, setFormError] = useState<string | null>(null);
   // No default values on the text fields: they keep anything typed before hydration (D-043).
@@ -27,7 +27,7 @@ export function AboutYouForm({ initialName }: { initialName: string }) {
     setFormError(null);
     startTransition(async () => {
       // Saving redirects, so this only resolves when something needs fixing.
-      const result = await saveLearnerProfile(values);
+      const result = await saveLearnerProfile(values, next);
       if (!result.ok) {
         setFormError(result.fields ? null : result.message);
         for (const [field, message] of Object.entries(result.fields ?? {})) {

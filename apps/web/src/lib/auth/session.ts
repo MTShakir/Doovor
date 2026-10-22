@@ -7,7 +7,7 @@ import { redirectTo } from '@/lib/redirect-to';
 import { cache } from 'react';
 import { z } from '@repo/core/zod';
 import { viewingId } from './view-as';
-import type { Portal } from '@/lib/navigation';
+import { portalRoots, type Portal } from '@/lib/navigation';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
 import { canUsePortal, landingPath, needsLearnerOnboarding, needsOnboarding, needsSchoolOnboarding, requiresMfa } from './portals';
 
@@ -123,8 +123,9 @@ export async function currentPath(): Promise<string> {
  * to their own portal, and staff or school owners without TOTP to /mfa (AUTH-08).
  *
  * An action two portals share, as the learner card the school's office opens as well as the
- * instructor (PRD 6.2, D-330), names both: it is for somebody who can use either, and the first
- * of them they can use is the one whose setup they must have finished.
+ * instructor (PRD 6.2, D-330), names both: it is for somebody who can use either. The one whose
+ * screen it was pressed on is the one whose setup they must have finished, so a school's owner who
+ * also teaches is never sent to finish setting up as an instructor from the school's diary.
  */
 export async function requirePortal(portals: Portal | readonly Portal[]): Promise<{ session: Session; access: AccessContext }> {
   const path = await currentPath();
@@ -134,11 +135,13 @@ export async function requirePortal(portals: Portal | readonly Portal[]): Promis
     redirectTo(`/mfa?next=${encodeURIComponent(path)}`);
   }
   await requireAgreedTerms(result, path);
-  const portal = (typeof portals === 'string' ? [portals] : portals).find((one) => canUsePortal(result.access, one));
+  const usable = (typeof portals === 'string' ? [portals] : portals).filter((one) => canUsePortal(result.access, one));
+  const portal = usable.find((one) => path.startsWith(portalRoots[one])) ?? usable[0];
   if (portal === undefined) redirectTo(landingPath(result.access));
   if (portal === 'school' && needsSchoolOnboarding(result.access)) redirectTo('/onboarding/school');
   if (portal === 'instructor' && needsOnboarding(result.access)) redirectTo('/onboarding');
-  if (portal === 'learner' && needsLearnerOnboarding(result.access)) redirectTo('/onboarding/about-you');
+  // Back to where they were going once it is done: the payment for a time held only so long (D-337).
+  if (portal === 'learner' && needsLearnerOnboarding(result.access)) redirectTo(`/onboarding/about-you?next=${encodeURIComponent(path)}`);
   return result;
 }
 

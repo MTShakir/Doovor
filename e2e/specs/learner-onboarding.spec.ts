@@ -40,6 +40,28 @@ test.describe('learner onboarding (AUTH-06, M2-01)', () => {
     await expect(page).toHaveURL(/\/app\/learner$/);
   });
 
+  test('goes on to where they were going once they have answered (D-337)', async ({ page }, testInfo) => {
+    const email = uniqueEmail(testInfo, 'learner-next');
+    await chooseRoleAndCreateAccount(
+      page,
+      { card: "I'm learning to drive", heading: 'Create your learner account' },
+      { fullName: 'Nell Next', email },
+    );
+    await page.goto(await linkFromEmail(email, 'Confirm your email'));
+    await expect(page).toHaveURL(/\/onboarding\/about-you$/);
+
+    // Sent somewhere first, as the link to pay for a time held only so long sends them.
+    await page.goto('/app/learner/payments');
+    await expect(page).toHaveURL(/\/onboarding\/about-you\?next=%2Fapp%2Flearner%2Fpayments$/);
+    await page.getByLabel('Your name').fill('Nell Next');
+    await page.getByLabel('Your postcode').fill('ls6 3qs');
+    await page.getByLabel('Which gearbox?').selectOption('manual');
+    await page.getByLabel('How far along are you?').selectOption('none');
+    await page.getByLabel('Date of birth').fill('2007-05-05');
+    await page.getByRole('button', { name: 'Finish' }).click();
+    await expect(page).toHaveURL(/\/app\/learner\/payments$/);
+  });
+
   test('a learner who has answered is not asked again', async ({ browser }) => {
     const context = await browser.newContext({ storageState: authFile('learner') });
     const page = await context.newPage();
