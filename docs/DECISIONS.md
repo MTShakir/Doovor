@@ -1816,3 +1816,11 @@ Every decision made without the product owner, newest last. Format: date, decisi
 ## D-350 | 2026-10-22 | A skill's level wraps under its name | Claude
 - **Found:** in the third final round, running the 200% text sweep on data a walk had left. A learner whose skill map had an area at "Under full instruction" had a Progress screen 179 pixels wider than a phone: the level beside the area's name was told never to shrink, in a row that could not wrap. The sweep had passed until then only because the seeded learner's levels were short ones.
 - **Decision:** the level goes under the area's name when the two do not fit on one line, everywhere the skill bar is drawn: the learner's Progress, the instructor's map and a lesson's record (PRG-03, M6-06).
+
+## D-351 | 2026-10-22 | A second step somebody turned on is asked for | Claude
+- **Found:** in the third final round. A learner turned on two-step verification from her account, which then said "On", and signed in again with her password alone: she was never asked for the code. Only the people whose role needs it, platform staff and school owners, were ever asked (AUTH-08), so for everybody who chose it themselves it protected nothing. The set-up screen also told her "Your role needs a second step", which hers does not.
+- **Decision:** whoever has a second step is asked for it when they sign in, by password, by an email link or by a text, before anything of theirs opens: the portals, the account, its password and devices, and the notices. A new function says whether somebody has one, read with the rest of what they can open. The screens that take the second step, and the mobile number before it, still open without it. The set-up screen tells somebody who chose it that signing in will ask for a code as well as the password. Turning it off again is still a request to support, who can reset it, as before.
+
+## D-352 | 2026-10-22 | The mobile screen says who uses the number, to whoever is reading | Claude
+- **Found:** in the third final round. A learner adding her mobile from her account was told "Learners and schools use it to reach you about lessons", words written for an instructor.
+- **Decision:** a learner is told "Your instructor uses it to reach you about lessons"; somebody who teaches is told what they were before (AUTH-02).
