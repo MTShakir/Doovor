@@ -1,6 +1,8 @@
 import { hasEntitlement } from '@repo/config/plans';
 import { PageHeader } from '@repo/ui/app-shell';
+import { EmptyState } from '@repo/ui/empty-state';
 import { SkeletonRow } from '@repo/ui/skeleton';
+import { Palette } from 'lucide-react';
 import type { Metadata } from 'next';
 import { Suspense } from 'react';
 import { BackLink } from '@/components/back-link';
@@ -29,7 +31,16 @@ export default function BookingColoursPage() {
 async function Colours() {
   await requirePortal('instructor');
   const current = await brandColour();
-  if (!current) return null;
+  // The colour is the Business's: an instructor teaching under a school was shown an empty page (D-374).
+  if (!current) {
+    return (
+      <EmptyState
+        icon={Palette}
+        title="Your school looks after this"
+        description="Your booking page is in the Business's colour, so whoever owns it chooses it."
+      />
+    );
+  }
 
   if (!hasEntitlement(current.plan, 'customBookingColours')) {
     return (

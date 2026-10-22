@@ -41,7 +41,19 @@ export default function BooksPage({ searchParams }: { searchParams: Promise<{ ye
 async function Books({ searchParams }: { searchParams: Promise<{ year?: string | string[] }> }) {
   await connection();
   const access = await booksAccess();
-  if (!access) return null;
+  // An instructor teaching under a school owns no Business to keep books for, and was shown an
+  // empty page (D-374).
+  if (!access) {
+    return (
+      <Card padding="none">
+        <EmptyState
+          icon={icons.bookkeeping}
+          title="Your school looks after this"
+          description="The books are the Business's, so whoever owns it keeps them."
+        />
+      </Card>
+    );
+  }
 
   if (!access.solo) {
     return (
