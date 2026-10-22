@@ -15,6 +15,8 @@ interface TaskCopy {
   blocked?: string;
   /** What to say while a trainee waits for somebody to supervise them (D-343). */
   waitingForSupervisor?: string;
+  /** What to say while a badge that has run out waits for the new one (D-346). */
+  waitingForRenewal?: string;
 }
 
 const copy: Record<SetupTaskId, TaskCopy> = {
@@ -36,6 +38,7 @@ const copy: Record<SetupTaskId, TaskCopy> = {
     done: 'Your booking link is live.',
     blocked: 'Ready as soon as your badge is approved.',
     waitingForSupervisor: 'Ready as soon as a school or an approved instructor supervises you.',
+    waitingForRenewal: 'Paused while your badge is out of date. Send your new one from your profile.',
     section: 'profile',
   },
 };
@@ -66,7 +69,9 @@ export function SetupChecklist({ state }: { state: SetupState }) {
             ? text.done
             : task.blockedBy === 'supervision'
               ? text.waitingForSupervisor
-              : task.blockedBy
+              : task.blockedBy === 'renewal'
+                ? text.waitingForRenewal
+                : task.blockedBy
                 ? text.blocked
                 : text.todo;
           return (

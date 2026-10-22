@@ -33,14 +33,15 @@ export interface SetupTask {
   id: SetupTaskId;
   done: boolean;
   /** Why it cannot be done yet, when something else has to happen first. */
-  blockedBy?: 'verification' | 'supervision';
+  blockedBy?: 'verification' | 'renewal' | 'supervision';
 }
 
 export function setupTasks(state: SetupState): SetupTask[] {
   const linkLive = state.verified && state.badgeInDate && state.supervised !== false;
   // A link nobody can book is not worth sharing, so this waits for the badge check, and for a
   // trainee for somebody to supervise them (D-343).
-  const waitsFor = !state.verified || !state.badgeInDate ? 'verification' : 'supervision';
+  // A badge that has run out was approved once, so it waits for the new one (D-346).
+  const waitsFor = !state.verified ? 'verification' : !state.badgeInDate ? 'renewal' : 'supervision';
   return [
     { id: 'first-learner', done: state.learners > 0 },
     ...(state.paymentsAreTheSchools ? [] : [{ id: 'connect-payments' as const, done: state.paymentsConnected }]),
