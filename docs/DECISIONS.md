@@ -1747,3 +1747,44 @@ Every decision made without the product owner, newest last. Format: date, decisi
 ## D-333 | 2026-10-21 | The final round's wording | Claude
 - **Found:** in the final round of testing. A learner asked whether to move to the school their instructor joined could answer "Not now", which was a final no: the question went for good, and the toast said "Kept as it is".
 - **Decision:** the answer says "No, thanks". The instructor still sees them as staying (D-322), and the school or another instructor can invite them later as anybody would.
+
+## D-334 | 2026-10-22 | Coming back by a new link gives the profile its address back | Claude
+- **Found:** in the second final round, from the first one's notes. A school switched Mona off and later sent her a new link; she joined again and kept the profile she had there (D-324), but its public address stayed withdrawn, so she had no profile page and no booking link. Switching somebody back on gives the address back (D-120); joining again by a link did not.
+- **Decision:** joining a school again by a new link gives the profile its public address back, made from their name, as switching them back on does. A follow-up migration replaces `accept_member_invitation` with that one step added. The link itself says "Join Explore School again with the profile you had there. Your profile and booking link come back as they were." rather than offering four steps of setting up they have already done.
+
+## D-335 | 2026-10-22 | The office's lesson sheets speak about the instructor | Claude
+- **Found:** in the second final round. Moving one of its instructor's lessons, the school's office was shown "Outside your hours", offered "No gap needed after the lesson before", and sent by "Contact them now" to the instructor's portal, which it cannot open.
+- **Decision:** for the office the sheet names the instructor's hours ("Outside Mona Member's hours"), leaves out the travel gap, which is the instructor's own time to waive (D-187), and opens the learner's card in the school's portal. The lesson's details now carry the instructor's name for it. The instructor's own sheet is as it was.
+
+## D-336 | 2026-10-22 | A request turned down says declined | Claude
+- **Found:** in the second final round. A request the instructor turned down showed "Cancelled" in the learner's lessons and the diary, as did one nobody answered in time, though neither was ever booked and nobody cancelled anything.
+- **Decision:** the pill says "Declined" for a request turned down and "Expired" for one that lapsed, a request nobody answered in time or a time held while nobody paid. Both still sit with the lessons that are not going ahead (D-323).
+
+## D-337 | 2026-10-22 | Answering about yourself goes on to where you were going | Claude
+- **Found:** in the second final round. A visitor booked a time on an instructor's profile, made an account and pressed "Pay to confirm it". They were asked about themselves first, as every new learner is (AUTH-06), and then sent home instead of to the payment, while the time was only held for fifteen minutes. The home screen showed the lesson with nothing to say it was waiting to be paid for.
+- **Decision:** a learner sent to "A few things about you" goes on, once it is done, to the page they were going to. Their home screen's next lesson says what is left to do about its money, as its row on Lessons does: "This time is held for you while you pay for it." with "Pay to confirm it", the authorisation for a request, setting up the day-before payment, or "Pay £42".
+
+## D-338 | 2026-10-22 | A shared action is judged by the screen it was pressed on | Claude
+- **Found:** reviewing D-330 in the second final round. An action the instructor's and the school's portals share named both, and the first the person could use decided whose setup they had to have finished, so a school's owner who also teaches and had not finished setting up as an instructor could be sent to that setup by pressing something in the school's diary.
+- **Decision:** of the portals an action names, the one whose screen it was pressed on decides; the first they can use only when it was pressed elsewhere.
+
+## D-339 | 2026-10-22 | A week that could not be booked is said at the top | Claude
+- **Found:** in the second final round. Booking a learner every week where one week clashed, the toast said "3 lessons booked, 17:00 every week" and the sheet stayed open to say which week could not go in, at its very bottom, under every time in the day and outside it, out of sight on a phone.
+- **Decision:** the warning sits at the top of the sheet, under any error, where it is seen as the toast goes. Nothing else about weekly booking changes (BOK-05, R-13).
+
+## D-340 | 2026-10-22 | A request turned down remembers it | Claude
+- **Found:** running the full end to end suite on D-336. A request the instructor declined still said "Cancelled" in the diary: declining has always written the booking off as cancelled, and D-336 looked for a declined status that nothing sets. Its test passed only because it wrote that status into the database itself.
+- **Decision:** the booking keeps its cancelled status, which every rule about lessons that are off, their fees, refunds and card holds reads, and gains `declined_at`, set when the request is turned down and filled in from the audit trail for those turned down already. Every pill that can show it says "Declined", the diary's week included, which until now showed only the pill's one word and so said "Paid" where the day said "Paid (cash)" (D-233). The test now declines a request as the instructor does.
+- **Options:** set the declined status instead, which more than a dozen functions about money do not read as off, so a declined request with a card set aside risked keeping it set aside.
+
+## D-341 | 2026-10-22 | The notices' two buttons wrap | Claude
+- **Found:** the end to end run at 200% text. On a phone, "Mark all as read (28)" beside Settings was 114 pixels wider than the screen. The sweep had passed until now only because the people it signs in as had nothing unread.
+- **Decision:** the two buttons wrap onto a second line when they do not fit, and the sweep gives each person something unread first, so the button is always there to measure (M6-06).
+
+## D-342 | 2026-10-22 | A school supervises its trainees from its team, and only a school can | Claude
+- **Found:** in the third final round, reading how a trainee instructor gets a supervisor. Supervision was the school's to give through `set_supervisor` (D-061), but no screen called it, so a trainee who joined a school could never be booked. And `set_supervisor` asked only for permission to manage the Business's members, which a trainee running a business of their own has, so they could have supervised themselves by calling it (R-18).
+- **Decision:** the school's team says "Trainee not supervised yet" under a trainee's name, and their sheet has a "Supervised by the school" switch for the owner or a manager. `set_supervisor` now takes a school and somebody other than the trainee. The trainee's own profile says who supervises them, or, while nobody does, that learners cannot book them until their school switches it on, naming the school and where the switch is. A trainee on their own still gets in touch, as before: an approved instructor supervising somebody in another Business is an agreement between the two, and waits for its own screens (D-061).
+
+## D-343 | 2026-10-22 | A trainee nobody supervises takes no bookings, and the pages say so first | Claude
+- **Found:** with D-342. A booking for a trainee nobody supervises is refused where it is written, but the profile said they were taking bookings and the link offered their free times, so a learner chose a time, made an account and was turned away at the end with "Trainee instructors need a supervising school or instructor first."
+- **Decision:** wherever a badge decides whether somebody can be booked, supervision decides it too: the profile and the school's page say "Not taking new bookings", the link says it is not taking bookings, and no free times are offered, as for an expired badge (INS-03). The trainee's own booking link card says it is paused until a school or an approved instructor supervises them, rather than blaming the badge, and Today's checklist waits for that rather than saying the link is live. Search is unchanged.
