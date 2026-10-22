@@ -57,8 +57,10 @@ export class SessionEndedError extends AccessContextError {
 
 export async function getAccessContext(client: DbClient, userId: string): Promise<AccessContext> {
   const [flags, memberships, learner, instructors] = await Promise.all([
-    // Their staff role and whether they have a second step, in one request (D-351).
-    client.rpc('my_access_flags'),
+    // Their staff role and whether they have a second step, in one request (D-351). Read as a
+    // GET, as the other three are: a gateway retries a read whose connection drops, and a POST it
+    // must not, so a dropped POST here failed the whole screen.
+    client.rpc('my_access_flags', undefined, { get: true }),
     client
       .from('memberships')
       .select('business_id, role, businesses!inner(name, type, status, onboarding_completed_at)')
