@@ -1,4 +1,4 @@
-import { gapsBetween, teachingMinutes } from '@repo/core/diary';
+import { gapsBetween, isOff, teachingMinutes } from '@repo/core/diary';
 import { formatMinutes } from '@repo/core/time';
 import { EmptyState } from '@repo/ui/empty-state';
 import { CalendarX } from 'lucide-react';
@@ -40,11 +40,21 @@ export function DayView({ lessons, opens, closes, showInstructor = false, canAns
 
   const gaps = opens && closes ? gapsBetween(lessons, opens, closes) : [];
   const taught = teachingMinutes(lessons);
+  // What is on, and beside it what is not: a day whose one lesson lapsed is not "1 lesson, nothing
+  // booked" (D-348).
+  const on = lessons.filter((lesson) => !isOff(lesson.facts.status)).length;
+  const off = lessons.length - on;
+  const summary = [
+    on === 0 ? 'Nothing booked' : `${on === 1 ? '1 lesson' : `${String(on)} lessons`}, ${hoursTaught(taught).toLowerCase()}`,
+    off === 0 ? null : `${String(off)} not going ahead`,
+  ]
+    .filter((part) => part !== null)
+    .join(', ');
 
   return (
     <div className="flex flex-col gap-3">
       <p className="px-4 text-small text-grey-700 md:px-0">
-        {lessons.length === 1 ? '1 lesson' : `${String(lessons.length)} lessons`}, {hoursTaught(taught).toLowerCase()}
+        {summary}
       </p>
       <DayLessons
         lessons={lessons}
