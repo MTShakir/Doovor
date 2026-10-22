@@ -74,6 +74,15 @@ describe('suggesting an instructor (SCH-03, M5-14)', () => {
     expect(ranked[0]?.reasons).toHaveLength(3);
   });
 
+  it('puts a trainee nobody supervises after those who can be booked, and says so (R-18, D-356)', () => {
+    const ranked = suggestInstructors(learner, [
+      instructor({ name: 'Trainee Near', badge: 'unsupervised', distanceMiles: 1, freeMinutes: 3000 }),
+      instructor({ name: 'Checked Far', distanceMiles: 20, freeMinutes: 60 }),
+    ]);
+    expect(ranked.map((one) => one.name)).toEqual(['Checked Far', 'Trainee Near']);
+    expect(ranked[1]?.reasons[0]).toBe('Trainee nobody supervises yet, so cannot be booked');
+  });
+
   it('says what it does not know rather than guessing', () => {
     const [noBase] = suggestInstructors(learner, [instructor({ name: 'Nia', distanceMiles: null })]);
     expect(noBase?.reasons[0]).toBe('No base postcode set yet');

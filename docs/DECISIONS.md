@@ -1836,3 +1836,7 @@ Every decision made without the product owner, newest last. Format: date, decisi
 ## D-355 | 2026-10-22 | A fee is owed from when the lesson was called off | Claude
 - **Found:** in the third final round, checking that the money screens add up. A learner called off a lesson with the school 34 hours ahead and owed its £40 as a late fee, which her Payments said at once. The school's Overview said "Unpaid £0, Nothing owed", and the Money screens' Unpaid the same, because they counted what is owed only for lessons whose time had come.
 - **Decision:** a fee is owed from when the lesson was called off, on the Overview and the Money screens as on the learner's Payments; a lesson itself is owed for once it has started, as before (PAY-06, SCH-01, R-06).
+
+## D-356 | 2026-10-22 | Suggesting who teaches a learner says a trainee cannot be booked yet | Claude
+- **Found:** with D-343, in the third final round. When a school gives a learner or a new pupil to one of its instructors, the suggestions put a trainee whose badge was checked among those ready to teach, with nothing to say nobody could book them, so a school could give a learner to somebody nobody could book.
+- **Decision:** a trainee nobody supervises is marked "Trainee nobody supervises yet, so cannot be booked" and comes after those who can be booked, as a badge not yet checked does, for learners and new pupils alike (SCH-03, R-18).
