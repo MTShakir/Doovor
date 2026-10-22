@@ -25,10 +25,13 @@ select public.system_notify(jsonb_build_array(
 -- ---------------------------------------------------------------------------------------
 -- Claiming.
 -- ---------------------------------------------------------------------------------------
--- Scoped to this fixture's own rows: the database this runs against has a seed in it.
+-- Scoped to this fixture's own rows: the database this runs against has a seed in it. One claim,
+-- kept: a claimed row is not claimed again while it is being sent (D-367).
+create temp table first_claim as
+  select * from public.system_claim_notifications(200)
+   where dedupe_key in ('booking.cancelled:b1:2:lee', 'learner.joined:l1:1:ian');
 select is(
-  (select count(*)::int from public.system_claim_notifications(200)
-    where dedupe_key in ('booking.cancelled:b1:2:lee', 'learner.joined:l1:1:ian')),
+  (select count(*)::int from first_claim),
   1,
   'only what has somewhere to be sent is claimed: the inbox needs no sending'
 );
@@ -40,8 +43,7 @@ select is(
 );
 
 select is(
-  (select email from public.system_claim_notifications(200)
-    where dedupe_key = 'booking.cancelled:b1:2:lee'),
+  (select email from first_claim where dedupe_key = 'booking.cancelled:b1:2:lee'),
   'learner.1@test.local',
   'and the claim says where to send it'
 );
