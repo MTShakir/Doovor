@@ -1,7 +1,10 @@
+import type { Metadata } from 'next';
 import { ClipboardList, CreditCard } from 'lucide-react';
 import { icons } from '@/lib/icons';
 import { installAppLink, MoreMenu } from '@/components/more-menu';
 import { notificationsMenuLink } from '@/lib/notifications/inbox';
+
+export const metadata: Metadata = { title: 'Account' };
 
 export default async function LearnerAccountPage() {
   return (

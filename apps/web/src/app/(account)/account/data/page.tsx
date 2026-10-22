@@ -1,5 +1,5 @@
 import { formatPence } from '@repo/core/money';
-import { formatDate, formatDateTime } from '@repo/core/time';
+import { formatDateWithYear, formatTime } from '@repo/core/time';
 import { Button } from '@repo/ui/button';
 import { SkeletonRow } from '@repo/ui/skeleton';
 import { ChevronLeft } from 'lucide-react';
@@ -133,10 +133,11 @@ function said(key: string, value: unknown): string {
   if (typeof value === 'boolean') return value ? 'Yes' : 'No';
   if (typeof value === 'number') return key.endsWith('_pence') ? formatPence(value) : String(value);
   if (typeof value !== 'string') return JSON.stringify(value);
-  if (/^\d{4}-\d{2}-\d{2}$/.test(value)) return formatDate(new Date(`${value}T12:00:00Z`));
+  // With the year: what is held runs across years, as a badge that runs out in two years' time does (D-365).
+  if (/^\d{4}-\d{2}-\d{2}$/.test(value)) return formatDateWithYear(new Date(`${value}T12:00:00Z`));
   if (/^\d{4}-\d{2}-\d{2}T/.test(value)) {
     const when = new Date(value);
-    return Number.isNaN(when.getTime()) ? value : formatDateTime(when);
+    return Number.isNaN(when.getTime()) ? value : `${formatDateWithYear(when)}, ${formatTime(when)}`;
   }
   return value;
 }
