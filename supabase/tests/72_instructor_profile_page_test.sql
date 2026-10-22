@@ -42,8 +42,8 @@ select is(
   (select array_agg(k order by k) from jsonb_object_keys(public.instructor_profile_page('ian-one')) as k),
   array['alsoCovers', 'areaCentre', 'bio', 'business', 'car', 'dualControls', 'inSearch', 'instantBook', 'instructorId',
         'languages', 'lessons', 'linkedSchool', 'listed', 'name', 'outcode', 'packages', 'photoPath', 'place',
-        'platformChecked', 'qualification', 'radiusMiles', 'slug', 'specialisms', 'takingBookings', 'transmission',
-        'yearsTeaching'],
+        'platformChecked', 'qualification', 'radiusMiles', 'slug', 'specialisms', 'takingBookings', 'takingNewLearners',
+        'transmission', 'yearsTeaching'],
   'the profile is these fields and no others'
 );
 select ok(
