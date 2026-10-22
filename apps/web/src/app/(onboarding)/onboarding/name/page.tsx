@@ -9,7 +9,8 @@ import { StepShell } from '../step-shell';
 
 const step = stepBySlug('name');
 
-export const metadata: Metadata = { title: 'Your name and business' };
+// "Your name" for everybody: somebody teaching at a school is never asked for a business name (D-196, D-372).
+export const metadata: Metadata = { title: 'Your name' };
 
 export default function NameStepPage() {
   return (
