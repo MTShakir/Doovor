@@ -1,5 +1,6 @@
 import { expect, test, type Page } from '@playwright/test';
-import { authFile, type RoleKey } from '../support/accounts';
+import { authFile, roles, type RoleKey } from '../support/accounts';
+import { notify } from '../support/database';
 import { expectAccessible, settled } from '../support/helpers';
 import { portals, publicPages } from '../support/screens';
 
@@ -109,6 +110,17 @@ test.describe('text at twice the size (WCAG 1.4.4, M6-06)', () => {
 
   for (const [role, paths] of portals) {
     test(`the ${role} screens`, async ({ browser }) => {
+      // Something still to read, so the notices carry the button that marks it all read beside
+      // Settings: the two side by side were wider than a phone, and an inbox read to the end
+      // never showed it (M6-06, D-341).
+      if (paths.includes('/notifications')) {
+        await notify(roles[role].email, {
+          kind: 'booking.confirmed',
+          category: 'bookings',
+          title: `Lesson booked ${String(Date.now())}`,
+          body: 'Read at twice the size.',
+        });
+      }
       const context = await browser.newContext({ storageState: authFile(role) });
       try {
         await allFit(await context.newPage(), paths);

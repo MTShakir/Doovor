@@ -52,7 +52,8 @@ async function Inbox() {
 
       <div className="flex flex-wrap items-center justify-between gap-3">
         <h1 className="text-h1 text-black">Notifications</h1>
-        <div className="flex items-center gap-2">
+        {/* Wraps: at 200% text the two buttons side by side are wider than a phone (M6-06). */}
+        <div className="flex flex-wrap items-center gap-2">
           {unread > 0 ? <MarkAllRead count={unread} /> : null}
           <Button asChild variant="secondary">
             <Link href="/notifications/settings">
