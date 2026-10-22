@@ -21,7 +21,7 @@ import { createSupabaseServerClient } from '@/lib/supabase/server';
 import { describeUserAgent } from '@/lib/user-agent';
 import { signOut } from '../../(auth)/actions';
 import { signOutEverywhere } from './actions';
-import { DeleteAccount, KeepMyAccount, RevokeDeviceButton } from './account-client';
+import { DeleteAccount, KeepMyAccount, RevokeDeviceButton, TurnOffTwoStep } from './account-client';
 
 export const metadata: Metadata = { title: 'Account and security', robots: { index: false } };
 
@@ -57,6 +57,7 @@ async function AccountContent() {
   ]);
   // listFactors().totp only ever contains verified factors.
   const totpOn = (factors?.totp.length ?? 0) > 0;
+  const totpFactor = factors?.totp[0]?.id ?? null;
   // Hours a learner bought and has not used, which their account takes with it (PAY-12, D-353).
   const givesUp = access.isLearner ? await creditGivenUp(session.userId) : undefined;
   const mfaRequired = requiresMfa(access);
@@ -138,10 +139,17 @@ async function AccountContent() {
         <ListRow
           leading={rowIcon(ShieldCheck)}
           title="Two-step verification"
-          subtitle={mfaRequired ? 'Required for your role' : 'An extra step with an authenticator app'}
+          subtitle={
+            mfaRequired ? 'Required for your role' : totpOn ? 'On, with your authenticator app' : 'An extra step with an authenticator app'
+          }
           trailing={
             totpOn ? (
-              <StatusPill status="confirmed">On</StatusPill>
+              // Somebody whose role does not need it can stop (D-362).
+              mfaRequired || totpFactor === null ? (
+                <StatusPill status="confirmed">On</StatusPill>
+              ) : (
+                <TurnOffTwoStep factorId={totpFactor} />
+              )
             ) : (
               <Link href="/mfa?next=/account" className="text-small font-semibold text-blue underline underline-offset-4">
                 Set up

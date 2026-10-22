@@ -197,7 +197,7 @@ test.describe('sign-in (AUTH-01)', () => {
     await snap(page, testInfo, 'sign-in-error');
   });
 
-  test('somebody who turned two-step verification on is asked for the code, though their role does not need it (AUTH-08, D-351)', async ({ page }, testInfo) => {
+  test('somebody who turned two-step verification on is asked for the code, though their role does not need it, and can turn it off (AUTH-08, D-351, D-362)', async ({ page }, testInfo) => {
     const learner = await makeSchoolLearner(`Two Step ${testInfo.project.name}`, { postcode: 'M13 9PL', transmission: 'manual' });
     await giveAuthenticator(learner.email);
     try {
@@ -215,6 +215,25 @@ test.describe('sign-in (AUTH-01)', () => {
       await expect(page).toHaveURL(/\/account$/, { timeout: 20_000 });
       await page.goto('/app/learner');
       await expect(page).toHaveURL(/\/app\/learner$/);
+
+      // Their role does not need it, so they can turn it off again (D-362).
+      await page.goto('/account');
+      const signingIn = page.getByRole('region', { name: 'Signing in' });
+      await signingIn.scrollIntoViewIfNeeded();
+      await snap(page, testInfo, 'account-two-step-on', { fullPage: false });
+      const sheet = page.getByRole('dialog', { name: 'Turn off two-step verification?' });
+      await tapUntil(signingIn.getByRole('button', { name: 'Turn off' }), sheet);
+      await expectAccessible(page);
+      await sheet.getByRole('button', { name: 'Turn it off' }).click();
+      await expect(signingIn.getByRole('link', { name: 'Set up' })).toBeVisible({ timeout: 20_000 });
+
+      // And the next sign-in asks for the password alone.
+      await page.context().clearCookies();
+      await page.goto('/sign-in?next=%2Fapp%2Flearner');
+      await page.getByLabel('Email').fill(learner.email);
+      await page.getByLabel('Password', { exact: true }).fill(seedAccounts().password);
+      await page.getByRole('button', { name: 'Sign in', exact: true }).click();
+      await expect(page).toHaveURL(/\/app\/learner$/, { timeout: 20_000 });
     } finally {
       await learner.remove();
     }
