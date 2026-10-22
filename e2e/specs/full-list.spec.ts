@@ -1,6 +1,7 @@
 import { expect, test } from '@playwright/test';
 import { fillLearnerList, makeInstructor, openEveryDay } from '../support/database';
 import { expectAccessible, snap } from '../support/helpers';
+import { signInThroughForm } from '../support/sign-in';
 
 const inDays = (days: number): string =>
   new Intl.DateTimeFormat('en-CA', { timeZone: 'Europe/London' }).format(new Date(Date.now() + days * 86_400_000));
@@ -30,9 +31,16 @@ test.describe('a full list (D-357, D-358)', () => {
       await expectAccessible(page);
       await snap(page, testInfo, 'booking-link-full-list');
 
+      // The instructor is told what their link and profile now say.
+      await signInThroughForm(page, instructor.email, { next: '/app/instructor/learners' });
+      await expect(page.getByRole('region', { name: '10 of 10 learners' })).toContainText(
+        'your booking link and profile tell anybody new you are not taking new learners',
+      );
+      await page.context().clearCookies();
+
       // A place comes free, and the link takes somebody new again.
       await list.freeOne();
-      await page.reload();
+      await page.goto(`/book/${instructor.slug}`);
       const times = page.getByRole('group', { name: /^Times on/ });
       await times.getByRole('button').first().click();
       await page.getByRole('button', { name: /^Continue with \d\d:\d\d$/ }).click();
