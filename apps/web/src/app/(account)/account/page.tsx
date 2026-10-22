@@ -216,10 +216,13 @@ async function AccountContent() {
         <CardDescription className="mt-1">
           Your name, contact details and anything written about you go. Payment records stay for 6 years without you
           in them, because the law requires it.{' '}
-          {/* Said to whoever is reading: somebody who teaches has lessons to see to, not an instructor (D-361). */}
+          {/* Said to whoever is reading: somebody who teaches has lessons to see to, not an instructor (D-361), and
+              somebody who does neither, as staff, has no lessons at all (D-370). */}
           {access.memberships.length > 0
             ? 'Your profile and booking link go too. If you teach on your own, call off your lessons still to come first.'
-            : 'Lessons still to come are cancelled, and any money owed for one is between you and your instructor.'}
+            : access.isLearner
+              ? 'Lessons still to come are cancelled, and any money owed for one is between you and your instructor.'
+              : null}
         </CardDescription>
         <div className="mt-4">
           {deletion ? (
@@ -233,7 +236,10 @@ async function AccountContent() {
           ) : (
             <div className="flex flex-col gap-3">
               {givesUp ? <FormAlert tone="warning">{givesUp}</FormAlert> : null}
-              <DeleteAccount warning={givesUp ?? null} teaches={access.memberships.length > 0} />
+              <DeleteAccount
+                warning={givesUp ?? null}
+                who={access.memberships.length > 0 ? 'teaches' : access.isLearner ? 'learns' : 'neither'}
+              />
             </div>
           )}
         </div>

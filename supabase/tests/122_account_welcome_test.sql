@@ -1,6 +1,6 @@
 -- A welcome, once somebody's email is confirmed (NTF-03, NTF-06, D-259).
 begin;
-select plan(9);
+select plan(10);
 
 delete from public.outbox_events;
 
@@ -69,6 +69,10 @@ select is(
 );
 select is(public.system_welcome_notice(:'gita') ->> 'audience', 'learner', 'and somebody who never chose a side is a learner');
 select is(public.system_welcome_notice(gen_random_uuid()), null, 'and nothing for an account that is not there');
+
+-- Staff are not welcomed as learners, or at all (D-370).
+insert into public.platform_staff (user_id, role) values (:'gita', 'support_admin');
+select is(public.system_welcome_notice(:'gita'), null, 'nobody on the platform staff is welcomed');
 
 -- Only the service role reads it.
 select tests.authenticate_as(:'ian');
