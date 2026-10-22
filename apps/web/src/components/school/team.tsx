@@ -369,6 +369,43 @@ export function TeamSections({
   );
 }
 
+/** Before an invitation is cancelled: its link stops working, even for somebody who has it already (D-371). */
+export function CancelInvitationDialog({
+  invitation,
+  pending,
+  onConfirm,
+  onCancel,
+}: {
+  invitation: WaitingInvitation | null;
+  pending: boolean;
+  onConfirm: () => void;
+  onCancel: () => void;
+}) {
+  const [shown, setShown] = useState<WaitingInvitation | null>(invitation);
+  // Keep the words while the dialog closes, so it does not empty as it fades.
+  if (invitation !== null && invitation !== shown) setShown(invitation);
+  const who = shown === null ? '' : (shown.fullName ?? contactOf(shown) ?? 'this link');
+
+  return (
+    <Dialog
+      open={invitation !== null}
+      onOpenChange={(open) => { if (!open) onCancel(); }}
+      title={`Cancel the invitation for ${who}?`}
+      description="The link stops working straight away, even if they have it already. You can send a new one at any time."
+      footer={
+        <>
+          <Button variant="secondary" onClick={onCancel}>
+            Keep it
+          </Button>
+          <Button pending={pending} onClick={onConfirm}>
+            Cancel the invitation
+          </Button>
+        </>
+      }
+    />
+  );
+}
+
 /** Before the school stops linking an instructor: what stays theirs, and what ends (D-282). */
 export function LetGoDialog({
   linked,

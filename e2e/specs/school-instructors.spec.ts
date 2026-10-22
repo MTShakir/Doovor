@@ -47,6 +47,10 @@ test.describe('school instructors (SCH-02, M5-13)', () => {
       await expect(invite).toBeHidden();
       const waiting = page.getByRole('region', { name: 'Invitations waiting', exact: true });
       await waiting.getByRole('button', { name: `Cancel the invitation for ${wrong}` }).click();
+      // Asked first, as a link already sent stops working (D-371).
+      const sure = page.getByRole('dialog', { name: `Cancel the invitation for ${wrong}?` });
+      await expect(sure).toContainText('The link stops working straight away, even if they have it already.');
+      await sure.getByRole('button', { name: 'Cancel the invitation', exact: true }).click();
       await expect(page.getByText('Invitation cancelled. The link no longer works')).toBeVisible();
       await expect(page.getByText(wrong, { exact: true })).toHaveCount(0);
       const stranger = await browser.newContext();

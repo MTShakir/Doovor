@@ -8,8 +8,8 @@ import { UserPlus } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useState, useTransition } from 'react';
 import { InviteInstructorsForm } from '@/components/school/invite-instructors-form';
-import { LetGoDialog, SwitchOffDialog, TeamSections } from '@/components/school/team';
-import type { LinkedInstructor, SchoolTeam, TeamMember } from '@/lib/school/team';
+import { CancelInvitationDialog, LetGoDialog, SwitchOffDialog, TeamSections } from '@/components/school/team';
+import type { LinkedInstructor, SchoolTeam, TeamMember, WaitingInvitation } from '@/lib/school/team';
 import { cancelInvitation, changePermission, inviteToSchool, letGo, superviseTrainee, switchMember } from './actions';
 
 /** SCH-02: the school's team, and the one button that invites somebody to it. */
@@ -29,6 +29,7 @@ export function TeamScreen({
   const [busyId, setBusyId] = useState<string | null>(null);
   const [switchingOff, setSwitchingOff] = useState<TeamMember | null>(null);
   const [lettingGo, setLettingGo] = useState<LinkedInstructor | null>(null);
+  const [cancelling, setCancelling] = useState<WaitingInvitation | null>(null);
   const kinds = inviteKindsFor(lessonSeller);
   const teaching = team.members.filter((one) => one.active && one.role === 'instructor').length + team.linked.length;
 
@@ -41,6 +42,7 @@ export function TeamScreen({
       setBusyId(null);
       setSwitchingOff(null);
       setLettingGo(null);
+      setCancelling(null);
       router.refresh();
     });
   };
@@ -105,10 +107,20 @@ export function TeamScreen({
           onPermission,
           onSwitch,
           onSupervise,
-          onCancelInvitation: (invitation) => {
-            change(invitation.invitationId, () => cancelInvitation(invitation.invitationId), 'Invitation cancelled. The link no longer works');
-          },
+          // Asked first, as switching somebody off is: a link already sent stops working (D-371).
+          onCancelInvitation: setCancelling,
           onLetGo: setLettingGo,
+        }}
+      />
+
+      <CancelInvitationDialog
+        invitation={cancelling}
+        pending={cancelling !== null && busyId === cancelling.invitationId}
+        onCancel={() => { setCancelling(null); }}
+        onConfirm={() => {
+          if (!cancelling) return;
+          const invitation = cancelling;
+          change(invitation.invitationId, () => cancelInvitation(invitation.invitationId), 'Invitation cancelled. The link no longer works');
         }}
       />
 
