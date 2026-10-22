@@ -250,6 +250,14 @@ export function BookLesson({ learners, learnerId, date, label = 'Book a lesson',
       >
         <div className="flex flex-col gap-4">
           {error ? <FormAlert>{error}</FormAlert> : null}
+          {/* At the top, where it is seen: below every time in the day, a week that could not go in was
+              out of sight on a phone while the toast said the lessons were booked (D-339). */}
+          {clashes.length > 0 ? (
+            <FormAlert tone="warning">
+              {clashes.length === 1 ? 'One week could not be booked: ' : `${String(clashes.length)} weeks could not be booked: `}
+              {clashes.map((clash) => formatDate(new Date(clash.startsAt))).join(', ')}. The rest are in the diary.
+            </FormAlert>
+          ) : null}
 
           <Field label="Who is it for?">
             <Select
@@ -353,13 +361,6 @@ export function BookLesson({ learners, learnerId, date, label = 'Book a lesson',
               ) : null}
             </div>
           )}
-
-          {clashes.length > 0 ? (
-            <FormAlert tone="warning">
-              {clashes.length === 1 ? 'One week could not be booked: ' : `${String(clashes.length)} weeks could not be booked: `}
-              {clashes.map((clash) => formatDate(new Date(clash.startsAt))).join(', ')}. The rest are in the diary.
-            </FormAlert>
-          ) : null}
 
           {outside ? (
             <FormAlert tone="warning">
