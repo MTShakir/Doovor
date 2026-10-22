@@ -1,7 +1,11 @@
 import { Button } from '@repo/ui/button';
 import { EmptyState } from '@repo/ui/empty-state';
 import { MapPinOff } from 'lucide-react';
+import type { Metadata } from 'next';
 import Link from 'next/link';
+
+/** Named in the tab and in history for what it is, as a place that does not exist already is (D-364). */
+export const metadata: Metadata = { title: 'Page not found' };
 
 export default function NotFound() {
   return (

@@ -88,7 +88,7 @@ export function FeatureStory({
   tone?: 'white' | 'grey';
 }) {
   return (
-    <section aria-labelledby={`${id}-heading`} className={tone === 'grey' ? 'bg-grey-100' : 'bg-white'}>
+    <section id={id} aria-labelledby={`${id}-heading`} className={tone === 'grey' ? 'bg-grey-100' : 'bg-white'}>
       <div className="mx-auto grid w-full max-w-6xl grid-cols-[minmax(0,1fr)] items-center gap-10 px-4 py-14 md:grid-cols-2 md:gap-16 md:px-6 md:py-20">
         <div className={cn('flex flex-col gap-4', flip && 'md:order-2')}>
           <p className="text-small font-semibold text-grey-700">{eyebrow}</p>
@@ -130,7 +130,10 @@ export function QuestionList({ questions }: { questions: readonly { question: st
   );
 }
 
-/** A band of the page, with a heading of its own. Grey bands separate what sits either side. */
+/**
+ * A band of the page, with a heading of its own. Grey bands separate what sits either side. Its id
+ * is what a link to it goes to, as "Find an instructor" and "See pricing" do (D-364).
+ */
 export function Band({
   id,
   title,
@@ -145,7 +148,7 @@ export function Band({
   children: ReactNode;
 }) {
   return (
-    <section aria-labelledby={`${id}-heading`} className={tone === 'grey' ? 'bg-grey-100' : 'bg-white'}>
+    <section id={id} aria-labelledby={`${id}-heading`} className={tone === 'grey' ? 'bg-grey-100' : 'bg-white'}>
       <div className="mx-auto flex w-full max-w-6xl flex-col gap-8 px-4 py-14 md:px-6 md:py-20">
         <div className="flex max-w-2xl flex-col gap-3">
           <h2 id={`${id}-heading`} className="text-h1 text-balance text-black">
