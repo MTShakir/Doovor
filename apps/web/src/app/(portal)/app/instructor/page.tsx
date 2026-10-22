@@ -109,7 +109,7 @@ async function Setup() {
   const [{ data: profile }, { data: business }, { count: learners }] = await Promise.all([
     supabase
       .from('instructor_profiles')
-      .select('verification_status, badge_expiry')
+      .select('verification_status, badge_expiry, qualification, supervisor_business_id, supervisor_instructor_id')
       .eq('id', membership.instructorProfileId)
       .maybeSingle(),
     supabase
@@ -129,6 +129,9 @@ async function Setup() {
     paymentsConnected: business?.stripe_charges_enabled ?? false,
     verified: profile?.verification_status === 'approved',
     badgeInDate: !profile?.badge_expiry || profile.badge_expiry >= todayInZone(),
+    // A trainee is booked only while somebody supervises them (R-18, D-343).
+    supervised:
+      profile?.qualification !== 'pdi' || profile.supervisor_business_id !== null || profile.supervisor_instructor_id !== null,
     // The school takes the payments for somebody teaching under it; its owner connects them.
     paymentsAreTheSchools: membership.businessType === 'school' && membership.role !== 'owner',
   };

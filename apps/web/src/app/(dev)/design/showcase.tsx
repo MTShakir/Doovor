@@ -623,11 +623,13 @@ const exampleLinkedDays: LinkedDay[] = [
 
 const exampleTeam: SchoolTeam = {
   members: [
-    { membershipId: 'team-1', isYou: false, role: 'instructor', active: true, name: 'Emma Clarke', email: null, phone: null, instructorId: 'team-p1', photoPath: null, setOwnPrices: false, viewRevenue: false, lessonsToCome: 18, learners: 24 },
-    { membershipId: 'team-2', isYou: false, role: 'instructor', active: true, name: 'Tom Walsh', email: null, phone: null, instructorId: 'team-p2', photoPath: null, setOwnPrices: true, viewRevenue: false, lessonsToCome: 1, learners: 6 },
-    { membershipId: 'team-3', isYou: true, role: 'manager', active: true, name: 'Lucy Grant', email: null, phone: null, instructorId: null, photoPath: null, setOwnPrices: false, viewRevenue: false, lessonsToCome: 0, learners: 0 },
-    { membershipId: 'team-4', isYou: false, role: 'manager', active: true, name: 'Omar Hussain', email: null, phone: null, instructorId: null, photoPath: null, setOwnPrices: false, viewRevenue: true, lessonsToCome: 0, learners: 0 },
-    { membershipId: 'team-5', isYou: false, role: 'instructor', active: false, name: 'Ravi Patel', email: null, phone: null, instructorId: 'team-p5', photoPath: null, setOwnPrices: false, viewRevenue: false, lessonsToCome: 3, learners: 4 },
+    { membershipId: 'team-1', isYou: false, role: 'instructor', active: true, name: 'Emma Clarke', email: null, phone: null, instructorId: 'team-p1', photoPath: null, setOwnPrices: false, viewRevenue: false, lessonsToCome: 18, learners: 24, trainee: false, supervised: false },
+    { membershipId: 'team-2', isYou: false, role: 'instructor', active: true, name: 'Tom Walsh', email: null, phone: null, instructorId: 'team-p2', photoPath: null, setOwnPrices: true, viewRevenue: false, lessonsToCome: 1, learners: 6, trainee: false, supervised: false },
+    { membershipId: 'team-3', isYou: true, role: 'manager', active: true, name: 'Lucy Grant', email: null, phone: null, instructorId: null, photoPath: null, setOwnPrices: false, viewRevenue: false, lessonsToCome: 0, learners: 0, trainee: false, supervised: false },
+    { membershipId: 'team-4', isYou: false, role: 'manager', active: true, name: 'Omar Hussain', email: null, phone: null, instructorId: null, photoPath: null, setOwnPrices: false, viewRevenue: true, lessonsToCome: 0, learners: 0, trainee: false, supervised: false },
+    // A trainee the school has not said it supervises yet, whom nobody can book (R-18, D-342).
+    { membershipId: 'team-6', isYou: false, role: 'instructor', active: true, name: 'Aisha Rahman', email: null, phone: null, instructorId: 'team-p6', photoPath: null, setOwnPrices: false, viewRevenue: false, lessonsToCome: 0, learners: 0, trainee: true, supervised: false },
+    { membershipId: 'team-5', isYou: false, role: 'instructor', active: false, name: 'Ravi Patel', email: null, phone: null, instructorId: 'team-p5', photoPath: null, setOwnPrices: false, viewRevenue: false, lessonsToCome: 3, learners: 4, trainee: false, supervised: false },
   ],
   linked: [
     { linkId: 'link-1', businessId: 'link-b1', businessName: 'Khan Driving', name: 'Sarah Khan', email: null, phone: '+447700900111', instructorId: 'link-p1', photoPath: null, qualification: 'adi', badgeExpiresOn: 'Wed 30 Jun 2027', linkedOn: 'Tue 20 Oct' },
@@ -1454,6 +1456,8 @@ export function DesignShowcase() {
         <div className="grid gap-4 md:grid-cols-2">
           <SetupChecklist state={{ learners: 0, paymentsConnected: false, verified: false, badgeInDate: true }} />
           <SetupChecklist state={{ learners: 3, paymentsConnected: false, verified: true, badgeInDate: true }} />
+          {/* A trainee checked, whom nobody supervises yet (D-343). */}
+          <SetupChecklist state={{ learners: 1, paymentsConnected: true, verified: true, badgeInDate: true, supervised: false }} />
         </div>
         <Label>Install offer: the browser&apos;s own prompt, and the steps on an iPhone or iPad (M4-08)</Label>
         <div className="grid items-start gap-4 md:grid-cols-2">
@@ -1676,6 +1680,7 @@ export function DesignShowcase() {
           <div className="flex flex-col gap-6">
             <BookingLinkCard instructorName="Aisha Rahman" bookingUrl={null} profileUrl={null} />
             <BookingLinkCard instructorName="Emma Clarke" bookingUrl={null} profileUrl={null} unavailable="badge-expired" />
+            <BookingLinkCard instructorName="Aisha Rahman" bookingUrl={null} profileUrl={null} unavailable="not-supervised" />
           </div>
         </div>
         <Label>
@@ -2043,6 +2048,7 @@ export function DesignShowcase() {
             busyId: 'team-2',
             onPermission: () => undefined,
             onSwitch: (member, active) => { if (!active) setSwitchingOff(member); },
+            onSupervise: () => undefined,
             onCancelInvitation: () => undefined,
             onLetGo: setLettingGo,
           }}
@@ -2058,6 +2064,7 @@ export function DesignShowcase() {
             busyId: null,
             onPermission: () => undefined,
             onSwitch: () => undefined,
+            onSupervise: () => undefined,
             onCancelInvitation: () => undefined,
             onLetGo: () => undefined,
           }}

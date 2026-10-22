@@ -2,7 +2,13 @@
 
 import { parsePostgresError } from '@repo/core/errors';
 import { err, ok, type Result } from '@repo/core/result';
-import { instructorInviteSchema, invitationIdSchema, memberPermissionSchema, memberSwitchSchema } from '@repo/core/schemas/school';
+import {
+  instructorInviteSchema,
+  invitationIdSchema,
+  memberPermissionSchema,
+  memberSuperviseSchema,
+  memberSwitchSchema,
+} from '@repo/core/schemas/school';
 import { requirePortal } from '@/lib/auth/session';
 import { fieldErrors } from '@/lib/forms';
 import { expireAllInstructorProfiles, expireInstructorProfile } from '@/lib/public/instructor-profile';
@@ -100,6 +106,26 @@ export async function switchMember(input: unknown): Promise<Result<null>> {
       .maybeSingle();
     if (profile) expireInstructorProfile(profile.id);
   }
+  return ok(null);
+}
+
+/**
+ * INS-04, R-18: the school answers for a trainee who teaches for it, and they can be booked, or it
+ * stops and they cannot (D-342). Whether they take bookings shows on their profile, the place pages
+ * and the school's page, so the kept copies are read fresh (D-343).
+ */
+export async function superviseTrainee(input: unknown): Promise<Result<null>> {
+  const parsed = memberSuperviseSchema.safeParse(input);
+  if (!parsed.success) return err('VALIDATION_FAILED');
+
+  if (!(await runningSchool())) return err('NOT_ALLOWED');
+  const supabase = await createSupabaseServerClient();
+  const { error } = await supabase.rpc('set_supervisor', {
+    p_instructor_id: parsed.data.instructorId,
+    p_supervised: parsed.data.supervised,
+  });
+  if (error) return err(parsePostgresError(error).code);
+  expireInstructorProfile(parsed.data.instructorId);
   return ok(null);
 }
 

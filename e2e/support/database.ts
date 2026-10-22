@@ -1450,6 +1450,8 @@ export interface MadeSchoolInstructor {
   name: string;
   /** Signs in with the seed's password (supabase/seeds/test_helpers.sql). */
   email: string;
+  /** Their profile's address, and their booking link's (/book/<slug>). */
+  slug: string;
   remove: () => Promise<void>;
 }
 
@@ -1460,7 +1462,7 @@ export interface MadeSchoolInstructor {
 export async function makeSchoolInstructor(
   name: string,
   schoolName = 'Quayside Driving School',
-  options: { transmission?: 'manual' | 'automatic' | 'both'; postcode?: string; workingHours?: boolean } = {},
+  options: { transmission?: 'manual' | 'automatic' | 'both'; postcode?: string; workingHours?: boolean; trainee?: boolean } = {},
 ): Promise<MadeSchoolInstructor> {
   const userId = crypto.randomUUID();
   const slug = `${name.toLowerCase().replace(/[^a-z0-9]+/g, '-')}-${userId.slice(0, 8)}`;
@@ -1481,8 +1483,11 @@ export async function makeSchoolInstructor(
       with school as (select id from public.businesses where name = ${schoolName} and type = 'school'),
            member as (insert into public.memberships (business_id, user_id, role) select id, ${userId}, 'instructor' from school returning business_id)
       insert into public.instructor_profiles (user_id, business_id, display_name, public_slug, verification_status, verified_at, onboarding_completed_at,
-                                              transmission, base_postcode, base_location, is_listed)
-      select ${userId}, business_id, ${name}, ${slug}, 'approved', now(), now(), ${options.transmission ?? 'manual'}::public.transmission,
+                                              qualification, transmission, base_postcode, base_location, is_listed)
+      select ${userId}, business_id, ${name}, ${slug}, 'approved', now(), now(),
+             -- A trainee nobody supervises yet, as one is when they join (INS-04, R-18).
+             ${options.trainee === true ? 'pdi' : 'adi'}::public.instructor_qualification,
+             ${options.transmission ?? 'manual'}::public.transmission,
              ${options.postcode ?? null}, (select location from public.postcodes where postcode = ${options.postcode ?? null}),
              -- Out of search, so the city pages and sitemaps other tests count stay as the seed has them.
              false
@@ -1500,6 +1505,7 @@ export async function makeSchoolInstructor(
   return {
     name,
     email,
+    slug,
     remove: () =>
       withDatabase(async (sql) => {
         await sql`delete from public.instructor_profiles where user_id = ${userId}`;

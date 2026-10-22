@@ -16,6 +16,8 @@ const teamSchema = z.object({
       phone: z.string().nullable(),
       instructor_id: z.string().nullable(),
       photo_path: z.string().nullable(),
+      qualification: z.enum(['adi', 'pdi']).nullable().default(null),
+      supervised: z.boolean().default(false),
       set_own_prices: z.boolean(),
       view_revenue: z.boolean(),
       lessons_to_come: z.number().int(),
@@ -69,6 +71,10 @@ export interface TeamMember {
   lessonsToCome: number;
   /** The learners they teach at the school, who stay with them when they are switched off (D-317). */
   learners: number;
+  /** A trainee, who can be booked only while somebody supervises them (INS-04, R-18). */
+  trainee: boolean;
+  /** Whether the school answers for them as a trainee (D-342). */
+  supervised: boolean;
 }
 
 /** An instructor who sells their own lessons, by the Business they run, linked to the school (D-282). */
@@ -129,6 +135,8 @@ export async function schoolTeam(businessId: string): Promise<SchoolTeam> {
       viewRevenue: one.view_revenue,
       lessonsToCome: one.lessons_to_come,
       learners: one.learners,
+      trainee: one.qualification === 'pdi',
+      supervised: one.supervised,
     })),
     linked: team.linked.map((one) => ({
       linkId: one.link_id,

@@ -167,4 +167,41 @@ test.describe('school instructors (SCH-02, M5-13)', () => {
     await expect(page).toHaveURL(/\/app\/school\/diary\?instructor=[0-9a-f-]{36}$/);
     await context.close();
   });
+
+  test('a trainee is booked only once the school says it supervises them (INS-04, R-18, D-342, D-343)', async ({ browser }, testInfo) => {
+    const trainee = await makeSchoolInstructor(`Tia Trainee ${testInfo.project.name}`, 'Quayside Driving School', {
+      trainee: true,
+      workingHours: true,
+    });
+    const context = await browser.newContext({ storageState: authFile('schoolOwner') });
+    const visitor = await browser.newContext();
+    try {
+      // Nobody supervises her yet, so her link says it is not taking bookings rather than offering times.
+      const link = await visitor.newPage();
+      await link.goto(`/book/${trainee.slug}`);
+      await expect(link.getByRole('heading', { level: 1, name: 'This link is not taking bookings' })).toBeVisible();
+
+      const page = await context.newPage();
+      await page.goto('/app/school/instructors');
+      const instructors = page.getByRole('region', { name: 'Instructors', exact: true });
+      await expect(instructors.getByText('Trainee not supervised yet', { exact: false })).toBeVisible();
+      const sheet = await openMember(page, instructors, trainee.name);
+      const supervised = sheet.getByRole('switch', { name: /Supervised by the school/ });
+      await expect(supervised).not.toBeChecked();
+      await expectAccessible(page);
+      await snap(page, testInfo, 'school-trainee-not-supervised');
+
+      await supervised.click();
+      await expect(page.getByText(`${trainee.name} can be booked, supervised by the school`)).toBeVisible();
+      await expect(supervised).toBeChecked();
+
+      // Her link takes bookings now.
+      await link.goto(`/book/${trainee.slug}`);
+      await expect(link.getByLabel('Which day?')).toBeVisible();
+    } finally {
+      await visitor.close();
+      await context.close();
+      await trainee.remove();
+    }
+  });
 });
