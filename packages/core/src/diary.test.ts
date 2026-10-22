@@ -72,6 +72,13 @@ describe('one word for a lesson (DIA-04, M1-19)', () => {
     expect(lessonStateLabel({ ...standard, status: 'cancelled', paymentStatus: 'paid_cash' })).toBeUndefined();
   });
 
+  it('says a lesson asked for is requested, with its card authorised or not (BOK-06, D-377)', () => {
+    expect(lessonStateLabel({ ...standard, status: 'requested' })).toBe('Requested');
+    expect(lessonStateLabel({ ...standard, status: 'requested', paymentStatus: 'pending' })).toBe('Requested');
+    // A time held while it is paid for keeps the pill's own word.
+    expect(lessonStateLabel({ ...standard, status: 'pending_payment' })).toBeUndefined();
+  });
+
   it('calls a lesson nobody came to a no-show, not a cancellation (R-09)', () => {
     expect(lessonState({ ...standard, status: 'no_show' })).toBe('cancelled');
     expect(lessonStateLabel({ ...standard, status: 'no_show', paymentStatus: 'paid_card' })).toBe('No-show');

@@ -82,6 +82,8 @@ describe('what everybody is told about a lesson (PRD Appendix B)', () => {
 
     const answered = planBookingNotifications({ event: { name: 'booking.accepted', payload: {} }, notice });
     expect(answered.map((one) => one.userId)).toEqual(['learner-1']);
+    // Which way it went is the title, so the email's subject says it too (D-377).
+    expect(answered[0]?.title).toBe(`${notice.instructor_name} accepted your lesson`);
     expect(answered[0]?.body).toContain('It is in the diary');
   });
 
@@ -90,7 +92,18 @@ describe('what everybody is told about a lesson (PRD Appendix B)', () => {
       event: { name: 'booking.declined', payload: {} },
       notice: { ...notice, cancel_reason: 'Away that afternoon' },
     });
+    expect(planned[0]?.title).toBe(`${notice.instructor_name} could not take your lesson`);
     expect(planned[0]?.body).toContain('Reason: Away that afternoon');
+  });
+
+  it('tells the learner a request that ran out was not booked, and nobody else (R-12, D-377)', () => {
+    const planned = planBookingNotifications({
+      event: { name: 'booking.declined', payload: { booking_id: 'booking-1', lapsed: true } },
+      notice: { ...notice, status: 'expired' },
+    });
+    expect(planned.map((one) => one.userId)).toEqual(['learner-1']);
+    expect(planned[0]?.title).toBe(`${notice.instructor_name} did not answer in time`);
+    expect(planned[0]?.body).toContain('It was not booked, and nothing is taken for it');
   });
 
   it('says what a late cancellation cost', () => {

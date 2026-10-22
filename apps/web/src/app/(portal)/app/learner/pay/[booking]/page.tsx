@@ -38,7 +38,7 @@ export default function PayPage({ params }: { params: Promise<{ booking: string 
 }
 
 /** Where a lesson stands with its money, which decides everything else on the screen. */
-type Stage = 'fee' | 'gone' | 'paid' | 'authorised' | 'capturing' | 'request' | 'before' | 'due';
+type Stage = 'fee' | 'gone' | 'paid' | 'authorised' | 'capturing' | 'request' | 'later' | 'before' | 'due';
 
 function stageOf(lesson: CheckoutLesson): Stage {
   // A lesson called off late, or nobody came to, whose fee nothing has paid: the fee is what to pay (PAY-09).
@@ -47,7 +47,13 @@ function stageOf(lesson: CheckoutLesson): Stage {
   if (['expired', 'cancelled', 'declined', 'no_show'].includes(lesson.status)) return 'gone';
   if (lesson.paid) return 'paid';
   if (lesson.authorised) return lesson.status === 'requested' ? 'authorised' : 'capturing';
-  if (lesson.status === 'requested') return 'request';
+  if (lesson.status === 'requested') {
+    // Only a request paid for when it is booked is authorised. One paid for the day before keeps a
+    // card, and one paid for afterwards has nothing to do yet: both were being authorised (D-378).
+    if (lesson.paymentMode === 'before_lesson' && lesson.paymentStatus === 'unpaid') return 'before';
+    if (lesson.paymentMode === 'after_lesson') return 'later';
+    return 'request';
+  }
   // Charged the day before, and not yet: nothing to pay now, only a card to have ready (PAY-03).
   if (lesson.paymentMode === 'before_lesson' && lesson.paymentStatus === 'unpaid') return 'before';
   return 'due';
@@ -125,7 +131,7 @@ async function Checkout({ params }: { params: Promise<{ booking: string }> }) {
 
   // Cards kept with this Business, which only the provider holds (PAY-02, M3-07).
   const payable = (stage === 'due' || stage === 'request' || stage === 'before' || stage === 'fee') && lesson.accountId !== null;
-  const ahead = stage === 'due' || stage === 'request' || stage === 'before';
+  const ahead = stage === 'due' || stage === 'request' || stage === 'later' || stage === 'before';
   const [kept, policy] = await Promise.all([
     payable ? keptCardsWith(lesson.businessId) : null,
     // What cancelling costs, said again before it is paid for, as it was before it was booked (BOK-09, R-06).
@@ -144,7 +150,8 @@ async function Checkout({ params }: { params: Promise<{ booking: string }> }) {
     authorised: <StatusPill status="pending">Request sent</StatusPill>,
     capturing: <StatusPill status="confirmed">Accepted</StatusPill>,
     request: <StatusPill status="pending">Request</StatusPill>,
-    before: <StatusPill status="confirmed">Booked</StatusPill>,
+    later: <StatusPill status="pending">Request sent</StatusPill>,
+    before: lesson.status === 'requested' ? <StatusPill status="pending">Request sent</StatusPill> : <StatusPill status="confirmed">Booked</StatusPill>,
     due: <StatusPill status="unpaid">To pay</StatusPill>,
   }[stage];
 
@@ -219,7 +226,9 @@ async function Checkout({ params }: { params: Promise<{ booking: string }> }) {
         <div className="flex flex-col gap-3">
           <Note icon={<CalendarX className={iconClass} aria-hidden />}>
             {lesson.status === 'expired'
-              ? 'This slot is no longer held for you, so the lesson is not booked.'
+              ? lesson.wasRequest
+                ? `${lesson.instructorName} did not answer in time, so the lesson is not booked.`
+                : 'This slot is no longer held for you, so the lesson is not booked.'
               : lesson.status === 'no_show'
                 ? 'This lesson was marked as a no-show.'
                 : 'This lesson is not going ahead.'}{' '}
@@ -242,8 +251,24 @@ async function Checkout({ params }: { params: Promise<{ booking: string }> }) {
           </Note>
           <LessonsButton />
         </div>
+      ) : stage === 'later' ? (
+        <div className="flex flex-col gap-3">
+          <Note icon={<Clock className={iconClass} aria-hidden />}>
+            {lesson.instructorName} has
+            {answerBy === null ? ' a little while' : ` until ${formatTime(answerBy)} on ${formatDate(answerBy)}`} to
+            accept. You pay after the lesson, by a link we send you when it is done, so there is nothing to pay now.
+          </Note>
+          <LessonsButton />
+        </div>
       ) : stage === 'before' ? (
         <div className="flex flex-col gap-3">
+          {lesson.status === 'requested' ? (
+            <Note icon={<Clock className={iconClass} aria-hidden />}>
+              {lesson.instructorName} has
+              {answerBy === null ? ' a little while' : ` until ${formatTime(answerBy)} on ${formatDate(answerBy)}`} to
+              accept.
+            </Note>
+          ) : null}
           <Note icon={<Clock className={iconClass} aria-hidden />}>
             {card
               ? `${price} is charged to your ${card.label} ${chargeSoon ? 'shortly' : `at ${formatTime(chargeAt)} on ${formatDate(chargeAt)}`}, a day before the lesson.`

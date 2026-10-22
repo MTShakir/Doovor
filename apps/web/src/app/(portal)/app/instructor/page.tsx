@@ -8,13 +8,14 @@ import { connection } from 'next/server';
 import { Suspense } from 'react';
 import { TodayLessonsLive } from '@/components/lessons/today-lessons-live';
 import { UpcomingLessons } from '@/components/lessons/upcoming-lessons';
+import { WaitingRequests } from '@/components/lessons/waiting-requests';
 import { InstructorStatsCard } from '@/components/instructor/stats';
 import { instructorStats } from '@/lib/instructor/dashboard';
 import { statsSpanFrom } from '@/lib/instructor/spans';
 import { InstallPrompt } from '@/components/pwa/install-prompt';
 import { SetupChecklist } from '@/components/setup-checklist';
 import { requirePortal } from '@/lib/auth/session';
-import { teachingProfiles, todaysLessons, upcomingLessons } from '@/lib/lessons/teaching';
+import { requestsWaiting, teachingProfiles, todaysLessons, upcomingLessons } from '@/lib/lessons/teaching';
 import { upcomingCount } from '@/lib/lessons/upcoming';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
 
@@ -38,6 +39,10 @@ export default function InstructorHomePage({ searchParams }: TodayProps) {
       <div className="flex flex-col gap-4 px-4 md:px-8">
         <Suspense fallback={<SkeletonRow />}>
           <Setup />
+        </Suspense>
+        {/* A request nobody answers runs out, so the ones waiting come first (BOK-06, D-379). */}
+        <Suspense fallback={null}>
+          <Requests />
         </Suspense>
         {/*
           UX: today's lessons come before the week's takings.
@@ -79,6 +84,12 @@ async function Lessons() {
   const lessons = await todaysLessons(teachingProfiles(access), now);
   // With no signal, the list draws itself from the phone's copy of the day (M4-10).
   return <TodayLessonsLive lessons={lessons} now={now.toISOString()} />;
+}
+
+/** Lessons asked for and not answered yet (BOK-06, R-12, D-379). */
+async function Requests() {
+  const { access } = await requirePortal('instructor');
+  return <WaitingRequests requests={await requestsWaiting(teachingProfiles(access))} />;
 }
 
 /** The next lessons after today, five at a time (DIA-04, D-167). */

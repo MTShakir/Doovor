@@ -112,7 +112,10 @@ function payFor(lesson: MyLesson): { line: string | null; button: string } | nul
 
 function NextLessonMoney({ lesson }: { lesson: MyLesson }) {
   const pay = payFor(lesson);
-  if (pay === null) return null;
+  // A request whose card is already authorised has nothing to pay, and is still not booked (D-377).
+  if (pay === null) {
+    return lesson.status === 'requested' ? <p className="text-body text-ink">{lesson.instructorName} has still to accept.</p> : null;
+  }
   return (
     <>
       {pay.line === null ? null : <p className="text-body text-ink">{pay.line}</p>}

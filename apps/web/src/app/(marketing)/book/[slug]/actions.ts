@@ -89,27 +89,29 @@ export async function bookAsLearner(input: unknown): Promise<Result<Booked>> {
     .eq('id', data)
     .maybeSingle();
   const status = lesson?.status === 'requested' || lesson?.status === 'pending_payment' ? lesson.status : 'confirmed';
-  const card =
+  const takesCards =
     lesson !== null &&
-    asksForCard({ chargesEnabled: lesson.businesses.stripe_charges_enabled, mode: chosenPaymentMode(lesson.businesses.settings) }) &&
-    owesForLesson(lesson.status, lesson.payment_status);
-  // A booked lesson the Business charges the day before, or asks for once it is done, has nothing
-  // to pay now. The day before needs a card kept with the Business, so keeping one is what is left
-  // until there is one (PAY-03, D-328).
-  const paidLater =
-    !card || status !== 'confirmed' ? null : lesson.payment_mode === 'before_lesson' ? 'day_before' : lesson.payment_mode === 'after_lesson' ? 'after' : null;
+    asksForCard({ chargesEnabled: lesson.businesses.stripe_charges_enabled, mode: chosenPaymentMode(lesson.businesses.settings) });
+  const card = takesCards && owesForLesson(lesson.status, lesson.payment_status, lesson.payment_mode);
+  // A lesson the Business charges the day before, or asks for once it is done, has nothing to pay
+  // now, asked for or booked. The day before needs a card kept with the Business, so keeping one is
+  // what is left until there is one (PAY-03, D-328). Only a request paid for when it is booked is
+  // authorised: one paid for afterwards was being authorised, and charged when it was accepted (D-378).
+  const later = lesson?.payment_mode === 'before_lesson' ? 'day_before' : lesson?.payment_mode === 'after_lesson' ? 'after' : null;
+  const paidLater = !takesCards || status === 'pending_payment' || lesson.payment_status !== 'unpaid' ? null : later;
   const cardKept = lesson !== null && paidLater === 'day_before' && ((await keptCardsWith(lesson.business_id))?.cards.length ?? 0) > 0;
-  const next: BookedNext = !card
-    ? 'nothing'
-    : status === 'requested'
-      ? 'authorise'
-      : status === 'pending_payment'
-        ? 'pay_to_confirm'
-        : paidLater === 'after' || cardKept
+  const next: BookedNext =
+    paidLater === 'after' || cardKept
+      ? 'nothing'
+      : paidLater === 'day_before'
+        ? 'save_card'
+        : !card
           ? 'nothing'
-          : paidLater === 'day_before'
-            ? 'save_card'
-            : 'pay';
+          : status === 'requested'
+            ? 'authorise'
+            : status === 'pending_payment'
+              ? 'pay_to_confirm'
+              : 'pay';
 
   return ok({
     bookingId: data,

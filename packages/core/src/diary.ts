@@ -77,6 +77,8 @@ export function lessonStateLabel(facts: LessonFacts): string | undefined {
   // booked, so neither was cancelled (BOK-06, R-12, D-336, D-340).
   if (facts.status === 'declined' || (facts.status === 'cancelled' && facts.declined === true)) return 'Declined';
   if (facts.status === 'expired') return 'Expired';
+  // Asked for and not answered yet: not booked, whatever the card has done (BOK-06, D-377).
+  if (facts.status === 'requested') return 'Requested';
   if (lessonState(facts) !== 'paid') return undefined;
   // Part of it came from credit and the rest was paid, so the pill says both. "Paid (cash)" on a
   // lesson an hour of credit went into is not what happened (D-225). Every method names itself,

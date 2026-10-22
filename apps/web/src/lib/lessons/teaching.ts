@@ -137,3 +137,37 @@ export async function lessonTaughtBy(bookingId: string, profileIds: string[]): P
 export function lessonHasEnded(lesson: TeachingLesson, now = new Date()): boolean {
   return new Date(lesson.endsAt).getTime() <= now.getTime();
 }
+
+/** A lesson somebody asked for, still waiting on an answer (BOK-06, R-12, D-379). */
+export interface WaitingRequest {
+  id: string;
+  startsAt: string;
+  learnerName: string;
+  /** When it runs out if nobody answers. */
+  answerBy: string | null;
+}
+
+/**
+ * Lessons asked for and not answered yet, the soonest to run out first. Today shows them, because
+ * one nobody answers runs out, and they were only to be found by opening the diary on their day.
+ */
+export async function requestsWaiting(profileIds: string[], now = new Date()): Promise<WaitingRequest[]> {
+  if (profileIds.length === 0) return [];
+  const supabase = await createSupabaseServerClient();
+  const { data, error } = await supabase
+    .from('bookings')
+    .select('id, starts_at, expires_at, users!bookings_learner_id_fkey(full_name)')
+    .in('instructor_id', profileIds)
+    .eq('status', 'requested')
+    .gte('starts_at', now.toISOString())
+    .order('expires_at', { ascending: true, nullsFirst: false })
+    .limit(10);
+  if (error) throw error;
+  const rows = data as unknown as { id: string; starts_at: string; expires_at: string | null; users: { full_name: string } | null }[];
+  return rows.map((row) => ({
+    id: row.id,
+    startsAt: new Date(row.starts_at).toISOString(),
+    learnerName: row.users?.full_name || 'Unnamed learner',
+    answerBy: row.expires_at === null ? null : new Date(row.expires_at).toISOString(),
+  }));
+}

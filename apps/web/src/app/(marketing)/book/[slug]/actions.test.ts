@@ -90,6 +90,32 @@ describe('what is left to do once a learner books on a link (BOK-02, PAY-03, D-3
   it('is authorising a request, which is charged only if accepted', async () => {
     lessonIs({ status: 'requested', payment_status: 'unpaid' });
     expect(await bookAsLearner(input)).toMatchObject({ ok: true, data: { status: 'requested', next: 'authorise', holdUntil: null } });
+
+    // As the database makes one at a Business paid when it is booked: no terms of its own until
+    // the card is authorised, and the Business's choice decides.
+    maybeSingle.mockResolvedValue({
+      data: {
+        business_id: 'business-1',
+        hold_expires_at: null,
+        status: 'requested',
+        payment_status: 'unpaid',
+        payment_mode: 'offline',
+        businesses: { stripe_charges_enabled: true, settings: { payment_mode: 'at_booking' } },
+      },
+      error: null,
+    });
+    expect(await bookAsLearner(input)).toMatchObject({ ok: true, data: { status: 'requested', next: 'authorise', paidLater: null } });
+  });
+
+  it('is what the lesson will need, for a request paid for the day before or afterwards, never authorising it (D-378)', async () => {
+    lessonIs({ status: 'requested', payment_status: 'unpaid', payment_mode: 'after_lesson' });
+    expect(await bookAsLearner(input)).toMatchObject({ ok: true, data: { status: 'requested', next: 'nothing', paidLater: 'after' } });
+
+    lessonIs({ status: 'requested', payment_status: 'unpaid', payment_mode: 'before_lesson' });
+    expect(await bookAsLearner(input)).toMatchObject({ ok: true, data: { status: 'requested', next: 'save_card', paidLater: 'day_before' } });
+
+    keptCardsWith.mockResolvedValue({ cards: [{ paymentMethodId: 'pm_1' }] });
+    expect(await bookAsLearner(input)).toMatchObject({ ok: true, data: { status: 'requested', next: 'nothing', paidLater: 'day_before' } });
   });
 
   it('is paying for a booked lesson, now or later, or nothing where no card is taken', async () => {

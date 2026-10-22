@@ -26,11 +26,14 @@ export function LessonPickup({
   chosen,
   places,
   changeable,
+  notGoingAhead = false,
 }: {
   bookingId: string;
   chosen: string | null;
   places: PickupChoice[];
   changeable: boolean;
+  /** Turned down, run out or called off: a lesson that is not happening, rather than one that has been. */
+  notGoingAhead?: boolean;
 }) {
   const [picked, setPicked] = useState(chosen ?? '');
   const [error, setError] = useState<string | null>(null);
@@ -50,7 +53,14 @@ export function LessonPickup({
   };
 
   if (!changeable) {
-    return <p className="text-small text-grey-700">This lesson has been and gone, so where it started cannot be changed.</p>;
+    // A request turned down for next week has not been and gone, and was told it had (D-377).
+    return (
+      <p className="text-small text-grey-700">
+        {notGoingAhead
+          ? 'This lesson is not going ahead, so it has nowhere to start.'
+          : 'This lesson has been and gone, so where it started cannot be changed.'}
+      </p>
+    );
   }
 
   return (

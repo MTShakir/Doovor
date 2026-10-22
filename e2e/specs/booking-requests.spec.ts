@@ -22,7 +22,7 @@ test.describe('answering a request (BOK-06, M2-18)', () => {
 
     await page.goto(`/app/instructor/diary?view=day&date=${day}`);
     const lesson = page.getByRole('article').filter({ hasText: 'Jack Taylor' });
-    await expect(lesson).toContainText('Pending');
+    await expect(lesson).toContainText('Requested');
     await expectAccessible(page);
     await snap(page, testInfo, 'booking-request');
 
@@ -32,6 +32,24 @@ test.describe('answering a request (BOK-06, M2-18)', () => {
     await expect(lesson.getByRole('button', { name: 'Accept' })).toBeHidden();
   });
 
+  test('waits on Today until it is answered, and opens its day (D-379)', async ({ page }, testInfo) => {
+    const day = askOn(testInfo.project.name, 4);
+    await clearDiary('Sarah Khan', day);
+    await requestLesson('Sarah Khan', 'jack.taylor@example.com', day, '11:00');
+    try {
+      await page.goto('/app/instructor');
+      const row = page.getByRole('list', { name: 'Lessons asked for' }).getByRole('link').filter({ hasText: 'Jack Taylor' }).filter({ hasText: '11:00' });
+      await expect(row).toContainText('Answer by');
+      await expect(row).toContainText('Requested');
+      await expectAccessible(page);
+      await row.click();
+      await expect(page).toHaveURL((url) => url.pathname === '/app/instructor/diary' && url.searchParams.get('date') === day);
+      await expect(page.getByRole('article').filter({ hasText: 'Jack Taylor' }).getByRole('button', { name: 'Accept' })).toBeVisible();
+    } finally {
+      await clearDiary('Sarah Khan', day);
+    }
+  });
+
   test('declines one with a word about why @desktop-only', async ({ page }, testInfo) => {
     const day = askOn(testInfo.project.name, 1);
     await clearDiary('Sarah Khan', day);
@@ -39,7 +57,7 @@ test.describe('answering a request (BOK-06, M2-18)', () => {
 
     await page.goto(`/app/instructor/diary?view=day&date=${day}`);
     const lesson = page.getByRole('article').filter({ hasText: 'Olivia Brown' });
-    await expect(lesson).toContainText('Pending');
+    await expect(lesson).toContainText('Requested');
 
     await tapUntil(
       lesson.getByRole('button', { name: 'Decline' }),
