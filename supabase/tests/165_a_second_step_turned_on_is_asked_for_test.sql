@@ -1,6 +1,6 @@
 -- A second step somebody turned on is asked for when they sign in (AUTH-08, D-351).
 begin;
-select plan(4);
+select plan(6);
 
 select tests.create_fixture();
 
@@ -13,18 +13,25 @@ values (gen_random_uuid(), :'lee', 'Phone', 'totp', 'verified', now(), now(), 'J
        (gen_random_uuid(), :'lou', 'Phone', 'totp', 'unverified', now(), now(), 'JBSWY3DPEHPK3PXQ');
 
 select tests.authenticate_as(:'lee');
-select is(public.my_second_step_on(), true, 'a learner who turned it on has a second step to be asked for');
+select is((public.my_access_flags() ->> 'second_step_on')::boolean, true, 'a learner who turned it on has a second step to be asked for');
+select is(public.my_access_flags() ->> 'staff_role', null, 'and is not platform staff');
 select tests.authenticate_as(:'lou');
-select is(public.my_second_step_on(), false, 'one never finished does not count');
+select is((public.my_access_flags() ->> 'second_step_on')::boolean, false, 'one never finished does not count');
+select tests.clear_authentication();
+
+-- Staff are told their role, as the policy on their row lets them read it.
+insert into public.platform_staff (user_id, role) values (:'lou', 'support_admin');
+select tests.authenticate_as(:'lou');
+select is(public.my_access_flags() ->> 'staff_role', 'support_admin', 'staff read their own role with it');
 select tests.clear_authentication();
 
 select tests.authenticate_as_anon();
-select throws_ok($$ select public.my_second_step_on() $$, '42501', null, 'nobody signed out can ask');
+select throws_ok($$ select public.my_access_flags() $$, '42501', null, 'nobody signed out can ask');
 select tests.clear_authentication();
 
 select is(
   (select count(*)::int from information_schema.routine_privileges
-    where routine_schema = 'public' and routine_name = 'my_second_step_on' and grantee = 'authenticated'),
+    where routine_schema = 'public' and routine_name = 'my_access_flags' and grantee = 'authenticated'),
   1,
   'somebody signed in asks about themselves'
 );

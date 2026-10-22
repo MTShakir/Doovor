@@ -56,8 +56,9 @@ export class SessionEndedError extends AccessContextError {
 }
 
 export async function getAccessContext(client: DbClient, userId: string): Promise<AccessContext> {
-  const [staff, memberships, learner, instructors, secondStep] = await Promise.all([
-    client.from('platform_staff').select('role').eq('user_id', userId).maybeSingle(),
+  const [flags, memberships, learner, instructors] = await Promise.all([
+    // Their staff role and whether they have a second step, in one request (D-351).
+    client.rpc('my_access_flags'),
     client
       .from('memberships')
       .select('business_id, role, businesses!inner(name, type, status, onboarding_completed_at)')
@@ -68,13 +69,13 @@ export async function getAccessContext(client: DbClient, userId: string): Promis
       .from('instructor_profiles')
       .select('id, business_id, onboarding_step, onboarding_completed_at')
       .eq('user_id', userId),
-    client.rpc('my_second_step_on'),
   ]);
 
-  const failed = [staff.error, memberships.error, learner.error, instructors.error, secondStep.error].find(Boolean);
+  const failed = [flags.error, memberships.error, learner.error, instructors.error].find(Boolean);
   if (failed?.code === 'SESSION_ENDED') throw new SessionEndedError();
   if (failed) throw new AccessContextError(failed.message);
 
+  const { staffRole, secondStepOn } = accessFlags(flags.data);
   const profileByBusiness = new Map((instructors.data ?? []).map((p) => [p.business_id, p]));
   const active = memberships.data ?? [];
   const suspended = active.filter((m) => m.businesses.status === 'suspended');
@@ -82,14 +83,14 @@ export async function getAccessContext(client: DbClient, userId: string): Promis
   // Who switched them off decides only where somebody with nothing else lands, so only they are
   // asked, and nobody else's request waits on it. A switched-off member cannot read the school
   // itself, so the database says its name (D-332).
-  const nothingElse = staff.data === null && learner.data === null && active.length === 0;
+  const nothingElse = staffRole === null && learner.data === null && active.length === 0;
   const switchedOff = nothingElse ? await client.rpc('my_switched_off_by') : null;
   if (switchedOff?.error?.code === 'SESSION_ENDED') throw new SessionEndedError();
   if (switchedOff?.error) throw new AccessContextError(switchedOff.error.message);
 
   return {
     userId,
-    staffRole: staff.data?.role ?? null,
+    staffRole,
     isLearner: learner.data !== null,
     // The row is created at sign-up; the answers are what say they have been through it.
     learnerOnboarded: typeof learner.data?.transmission === 'string',
@@ -112,6 +113,18 @@ export async function getAccessContext(client: DbClient, userId: string): Promis
     suspendedBusinesses: suspended.map((m) => m.businesses.name),
     pausedBusinesses: paused.map((m) => m.businesses.name),
     switchedOffBy: switchedOff?.data ?? [],
-    secondStepOn: secondStep.data === true,
+    secondStepOn,
+  };
+}
+
+const platformRoles: readonly PlatformRole[] = ['super_admin', 'support_admin'];
+
+/** What `my_access_flags` answers, read as any input is (D-351). */
+function accessFlags(data: unknown): { staffRole: PlatformRole | null; secondStepOn: boolean } {
+  const flags = typeof data === 'object' && data !== null ? (data as Record<string, unknown>) : {};
+  const role = flags.staff_role;
+  return {
+    staffRole: platformRoles.find((one) => one === role) ?? null,
+    secondStepOn: flags.second_step_on === true,
   };
 }
