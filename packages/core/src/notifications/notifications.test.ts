@@ -204,6 +204,13 @@ describe('the words (NTF-03)', () => {
     expect(notificationCopy('booking.confirmed', 'school', lesson).body).toBe('Wed 16 Sep at 09:00 with Sarah Khan.');
   });
 
+  it('says once for lessons booked every week in one go (D-349)', () => {
+    const series = { ...lesson, detail: 'The first of 4, every Wednesday at 09:00 until Wed 7 Oct' };
+    expect(notificationCopy('booking.confirmed', 'learner', series).body).toBe(
+      'Wed 16 Sep at 09:00 with Sarah Khan. The first of 4, every Wednesday at 09:00 until Wed 7 Oct.',
+    );
+  });
+
   it('leaves out what it was not told', () => {
     expect(notificationCopy('booking.cancelled', 'learner', { when: 'Wed 16 Sep at 09:00' })).toEqual({
       title: 'Lesson cancelled',

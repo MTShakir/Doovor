@@ -38,6 +38,22 @@ describe('which notification an event comes to (NTF-03)', () => {
     );
   });
 
+  it('tells about lessons booked every week in one go once, from the first of them (D-349)', () => {
+    const first = { ...notice, series: { count: 4, first: true, last_starts_at: '2026-10-07T08:00:00+00:00' } };
+    const later = { ...notice, starts_at: '2026-09-23T08:00:00+00:00', series: { count: 4, first: false, last_starts_at: '2026-10-07T08:00:00+00:00' } };
+    const created = { name: 'booking.created', payload: { status: 'confirmed' } };
+    expect(kindForEvent(created, first)).toBe('booking.confirmed');
+    expect(kindForEvent(created, later)).toBeNull();
+    // A plan that books a week at a time later is a lesson on its own, told about as one.
+    expect(kindForEvent(created, { ...notice, series: { count: 0, first: null, last_starts_at: null } })).toBe('booking.confirmed');
+    // Moving or cancelling one of them is still news about that one.
+    expect(kindForEvent({ name: 'booking.cancelled', payload: {} }, later)).toBe('booking.cancelled');
+
+    const planned = planBookingNotifications({ event: created, notice: first });
+    expect(planned[0]?.body).toBe('Wed 16 Sep at 09:00 with Sarah Khan. The first of 4, every Wednesday at 09:00 until Wed 7 Oct.');
+    expect(planBookingNotifications({ event: created, notice: later })).toEqual([]);
+  });
+
   it('says nothing about a lesson waiting to be paid for, or one marked done that owes nothing', () => {
     expect(kindForEvent({ name: 'booking.created', payload: { status: 'pending_payment' } }, notice)).toBeNull();
     expect(kindForEvent({ name: 'booking.completed', payload: {} }, notice)).toBeNull();
