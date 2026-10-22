@@ -78,7 +78,9 @@ async function InstructorProfile({ params }: Pick<Props, 'params'>) {
   if (city !== (profile.place?.citySlug ?? 'uk')) permanentRedirect(path as Route);
 
   const bookingUrl = `${getAppUrl()}/book/${profile.slug}`;
-  const canBook = profile.takingBookings && profile.lessons.length > 0;
+  // A full list on Free takes nobody new, and the page is for somebody new (D-208, D-357).
+  const full = profile.takingBookings && !profile.takingNewLearners;
+  const canBook = profile.takingBookings && !full && profile.lessons.length > 0;
   // What the page is drawn with: the Business's own colour where they chose one (D-229).
   const colour = profile.business.colour;
   const site = getSiteUrl();
@@ -129,7 +131,7 @@ async function InstructorProfile({ params }: Pick<Props, 'params'>) {
           lessons={profile.lessons}
         />
         <div className="md:hidden">
-          <BookAction bookingUrl={bookingUrl} canBook={canBook} colour={colour} />
+          <BookAction bookingUrl={bookingUrl} canBook={canBook} colour={colour} full={full} />
         </div>
         {canBook ? (
           <Suspense fallback={<NextTimesSkeleton />}>
@@ -175,7 +177,7 @@ async function InstructorProfile({ params }: Pick<Props, 'params'>) {
       >
         <PriceList lessons={profile.lessons} packages={profile.packages} />
         <div className="hidden md:block">
-          <BookAction bookingUrl={bookingUrl} canBook={canBook} colour={colour} />
+          <BookAction bookingUrl={bookingUrl} canBook={canBook} colour={colour} full={full} />
         </div>
       </aside>
     </div>

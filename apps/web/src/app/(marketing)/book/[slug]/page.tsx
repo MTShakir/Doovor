@@ -105,6 +105,7 @@ async function Instructor({ params, searchParams }: BookPageProps) {
       names={published ? profileNames(published.name, published.business) : { main: page.name, personal: null }}
       slug={slug}
       profileUrl={profileUrl}
+      findUrl={`${getSiteUrl()}/learners#find-an-instructor`}
       firstFreeDay={soonest === undefined ? null : todayInZone(new Date(soonest))}
       chosen={slot ?? null}
       cancellation={policy === null ? null : cancellationPolicyWords(policy)}

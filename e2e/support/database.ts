@@ -1766,6 +1766,36 @@ export async function openEveryDay(slug: string): Promise<void> {
 }
 
 /**
+ * Ten learners on the books of an instructor made for a test, which is a full list on Free (D-208).
+ * Gives back a way to free one place, and to remove the learners again.
+ */
+export async function fillLearnerList(slug: string): Promise<{ freeOne: () => Promise<void>; remove: () => Promise<void> }> {
+  const ids = Array.from({ length: 10 }, () => crypto.randomUUID());
+  const business = await withDatabase(async (sql) => {
+    const [profile] = await sql<{ id: string; business: string }[]>`
+      select id, business_id as business from public.instructor_profiles where public_slug = ${slug}`;
+    if (!profile) throw new Error(`No instructor at ${slug}`);
+    for (const [n, id] of ids.entries()) {
+      await sql`select tests.create_user_with_id(${id}::uuid, ${`full.${id.slice(0, 8)}@example.com`}, ${`Full List ${String(n + 1)}`})`;
+      await sql`
+        insert into public.learner_relationships (business_id, learner_id, instructor_id, status)
+        values (${profile.business}, ${id}, ${profile.id}, 'active')`;
+    }
+    return profile.business;
+  });
+  return {
+    freeOne: () =>
+      withDatabase(async (sql) => {
+        await sql`update public.learner_relationships set status = 'passed' where business_id = ${business} and learner_id = ${ids[0] ?? ''}`;
+      }),
+    remove: () =>
+      withDatabase(async (sql) => {
+        await sql`delete from auth.users where id = any(${ids}::uuid[])`;
+      }),
+  };
+}
+
+/**
  * Keeps one platform setting to one test at a time, from before it is read until it is put back.
  *
  * A test that changes a setting puts back what it found, and the Regions and Settings specs both

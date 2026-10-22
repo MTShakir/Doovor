@@ -33,6 +33,8 @@ export interface BookWithInstructorProps {
   signedIn: boolean;
   /** The instructor's public profile, in full, when there is one. */
   profileUrl: string | null;
+  /** Where to find another instructor, on the public site, for a list that is full (D-357). */
+  findUrl: string;
   /** The first day with a free time, to open on when nothing is chosen yet. */
   firstFreeDay: string | null;
 }
@@ -47,7 +49,7 @@ const payWords: Record<BookedNext, string | null> = {
 };
 
 /** BOK-02: choose how long, choose when, book. On a phone, in under a minute. */
-export function BookWithInstructor({ page, names, slug, chosen, cancellation, learner, signedIn, profileUrl, firstFreeDay }: BookWithInstructorProps) {
+export function BookWithInstructor({ page, names, slug, chosen, cancellation, learner, signedIn, profileUrl, findUrl, firstFreeDay }: BookWithInstructorProps) {
   const [pending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
   /** The time booked, and what is left to do with it (PAY-03, D-318). */
@@ -198,6 +200,27 @@ export function BookWithInstructor({ page, names, slug, chosen, cancellation, le
         <Card className="flex flex-col gap-1">
           <CardTitle>Not taking bookings yet</CardTitle>
           <CardDescription>Lessons can be booked here once their prices are set. Try again soon.</CardDescription>
+        </Card>
+      ) : !page.takingNewLearners ? (
+        // A full list takes nobody new, said before anybody makes an account for it (D-208, D-357).
+        <Card className="flex flex-col gap-3">
+          <div className="flex flex-col gap-1">
+            <CardTitle>Not taking new learners</CardTitle>
+            <CardDescription>
+              {signedIn
+                ? `${page.name} has no room for anybody new at the moment.`
+                : `${page.name} has no room for anybody new at the moment. Already learning with them? Sign in to book.`}
+            </CardDescription>
+          </div>
+          {signedIn ? null : (
+            <Button asChild width="responsive">
+              <Link href={`/sign-in?next=${encodeURIComponent(`/book/${slug}`)}`}>Sign in to book</Link>
+            </Button>
+          )}
+          {/* The Business's own waiting list is Phase 2 (GAP-01); until then, the area's, as the profile does (MKT-10, D-110). */}
+          <a href={findUrl} className="inline-flex min-h-12 items-center text-body font-semibold text-blue underline underline-offset-4">
+            Find another instructor near you
+          </a>
         </Card>
       ) : (
         <>

@@ -1596,6 +1596,7 @@ export function DesignShowcase() {
         <div className="grid max-w-xl gap-4 md:grid-cols-2">
           <BookAction bookingUrl="#book" canBook />
           <BookAction bookingUrl="#book" canBook={false} />
+          <BookAction bookingUrl="#book" canBook={false} full />
           <BookAction bookingUrl="#book" canBook colour="#0F6E4C" />
         </div>
         <Label>Next free times: three to choose from, and none in the next two weeks</Label>

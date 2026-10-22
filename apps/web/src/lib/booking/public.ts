@@ -23,6 +23,11 @@ const pageSchema = z.object({
   logoUrl: z.string().nullable().default(null),
   /** The platform checked the badge itself, rather than a school vouching for the instructor (D-280). */
   platformChecked: z.boolean().default(false),
+  /**
+   * Whether the person looking can start with them: not while a Free list is full, unless they are
+   * already with the Business (D-208, D-357). True where the database has yet to say.
+   */
+  takingNewLearners: z.boolean().default(true),
   lessons: z.array(lessonSchema),
 });
 
