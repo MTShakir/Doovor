@@ -28,8 +28,11 @@ export function RevokeDeviceButton({ sessionId, device }: { sessionId: string; d
   );
 }
 
-/** `warning`: what they would give up, said again where they confirm (D-353). */
-export function DeleteAccount({ warning = null }: { warning?: string | null }) {
+/**
+ * `warning`: what they would give up, said again where they confirm (D-353). `teaches`: somebody at a
+ * Business, whose lessons are the ones they teach rather than an instructor's (D-361).
+ */
+export function DeleteAccount({ warning = null, teaches = false }: { warning?: string | null; teaches?: boolean }) {
   const [open, setOpen] = useState(false);
   const [reason, setReason] = useState('');
   const [error, setError] = useState<string | null>(null);
@@ -44,7 +47,11 @@ export function DeleteAccount({ warning = null }: { warning?: string | null }) {
         open={open}
         onOpenChange={setOpen}
         title="Delete your account?"
-        description="We will confirm by email. Lessons already booked stay with your instructor until we finish."
+        description={
+          teaches
+            ? 'We will confirm by email. Your profile stays up until your account goes, seven days from now.'
+            : 'We will confirm by email. Lessons already booked stay with your instructor until we finish.'
+        }
         footer={
           <div className="flex flex-col gap-2">
             <Button

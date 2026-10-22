@@ -1796,6 +1796,45 @@ export async function fillLearnerList(slug: string): Promise<{ freeOne: () => Pr
 }
 
 /**
+ * A lesson three days on with a learner made for it, at the Business of an instructor made for a
+ * test, found by their profile address (D-361). Gives back a way to call it off, and to remove it
+ * and the learner again, before the instructor is.
+ */
+export async function lessonToComeFor(slug: string): Promise<{ callOff: () => Promise<void>; remove: () => Promise<void> }> {
+  const learner = crypto.randomUUID();
+  const booking = await withDatabase(async (sql) => {
+    const [profile] = await sql<{ id: string; business: string; type: string }[]>`
+      select p.id, p.business_id as business, t.id as type
+        from public.instructor_profiles p join public.lesson_types t on t.business_id = p.business_id
+       where p.public_slug = ${slug}
+       limit 1`;
+    if (!profile) throw new Error(`No instructor at ${slug}`);
+    await sql`select tests.create_user_with_id(${learner}::uuid, ${`lesson.${learner.slice(0, 8)}@example.com`}, 'Lesson To Come')`;
+    await sql`insert into public.learner_relationships (business_id, learner_id, instructor_id) values (${profile.business}, ${learner}, ${profile.id})`;
+    const [made] = await sql<{ id: string }[]>`
+      insert into public.bookings (business_id, instructor_id, learner_id, lesson_type_id, starts_at, ends_at, buffer_minutes,
+                                   status, payment_status, price_pence, source)
+      values (${profile.business}, ${profile.id}, ${learner}, ${profile.type},
+              date_trunc('hour', now()) + interval '3 days', date_trunc('hour', now()) + interval '3 days 1 hour', 30,
+              'confirmed', 'unpaid', 4000, 'self')
+      returning id`;
+    if (!made) throw new Error('No lesson was made');
+    return made.id;
+  });
+  return {
+    callOff: () =>
+      withDatabase(async (sql) => {
+        await sql`update public.bookings set status = 'cancelled', cancelled_at = now() where id = ${booking}`;
+      }),
+    remove: () =>
+      withDatabase(async (sql) => {
+        await sql`delete from public.bookings where id = ${booking}`;
+        await sql`delete from auth.users where id = ${learner}`;
+      }),
+  };
+}
+
+/**
  * Keeps one platform setting to one test at a time, from before it is read until it is put back.
  *
  * A test that changes a setting puts back what it found, and the Regions and Settings specs both

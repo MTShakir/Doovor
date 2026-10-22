@@ -1,6 +1,15 @@
 import { expect, test } from '@playwright/test';
 import { seedAccounts } from '../support/accounts';
-import { accountIdOf, ageDeletionRequest, eraseDueAccountsNow, giveThemAHistory, makeSchoolLearner, whatIsLeftOf } from '../support/database';
+import {
+  accountIdOf,
+  ageDeletionRequest,
+  eraseDueAccountsNow,
+  giveThemAHistory,
+  lessonToComeFor,
+  makeInstructor,
+  makeSchoolLearner,
+  whatIsLeftOf,
+} from '../support/database';
 import { expectAccessible, settled, snap } from '../support/helpers';
 import { signInThroughForm } from '../support/sign-in';
 
@@ -69,5 +78,31 @@ test.describe('deleting your account (NFR-PRV-03, AUTH-09, M6-12)', () => {
     await page.getByRole('button', { name: 'Sign in', exact: true }).click();
     await expect(page.getByRole('alert').filter({ hasText: 'Email or password' })).toBeVisible();
     await expect(page).toHaveURL(/\/sign-in/);
+  });
+
+  test('an instructor on their own calls off their lessons still to come first (D-361)', async ({ page }, testInfo) => {
+    const ahead = new Intl.DateTimeFormat('en-CA', { timeZone: 'Europe/London' }).format(new Date(Date.now() + 400 * 86_400_000));
+    const instructor = await makeInstructor(`Ida Leaving ${testInfo.project.name}`, ahead, { listed: false });
+    const lesson = await lessonToComeFor(instructor.slug);
+    try {
+      await signInThroughForm(page, instructor.email, { next: '/account' });
+      const card = page.getByRole('region', { name: 'Delete your account' });
+      // Said to somebody who teaches, not as if they had an instructor of their own.
+      await expect(card).toContainText('If you teach on your own, call off your lessons still to come first.');
+      await card.getByRole('button', { name: 'Ask to delete my account' }).click();
+      const sheet = page.getByRole('dialog', { name: 'Delete your account?' });
+      await sheet.getByRole('button', { name: 'Ask to delete my account' }).click();
+      await expect(sheet.getByRole('alert')).toContainText('You still have lessons booked with your learners. Call them off in your diary first');
+      await expectAccessible(page);
+
+      // Called off, the request goes through.
+      await lesson.callOff();
+      await sheet.getByRole('button', { name: 'Ask to delete my account' }).click();
+      await expect(page.getByText('Request received. We will email you.')).toBeVisible();
+      await expect(card).toContainText('Your account goes seven days later');
+    } finally {
+      await lesson.remove();
+      await instructor.remove();
+    }
   });
 });
