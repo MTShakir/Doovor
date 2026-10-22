@@ -1804,3 +1804,15 @@ Every decision made without the product owner, newest last. Format: date, decisi
 ## D-347 | 2026-10-22 | A trainee nobody supervises is out of search | Claude
 - **Found:** after D-343, in the third final round. A trainee nobody supervises said "Not taking new bookings" on their profile, but the city pages and the sitemap still listed them, so search sent learners to a profile they could not book from. Somebody whose badge has run out leaves search (INS-03, acceptance-10).
 - **Decision:** being in search asks whether a trainee is supervised too, on the city pages, the sitemap and the profile's own answer. The trainee's Search card says their profile is out of search until a school or an approved instructor supervises them, as it says of a badge that has run out.
+
+## D-348 | 2026-10-22 | A day's summary counts the lessons going ahead | Claude
+- **Found:** in the third final round. An instructor's day whose one lesson had lapsed while nobody paid for it read "1 lesson, nothing booked": the count took in lessons that are off, and the hours beside it did not.
+- **Decision:** the line counts the lessons going ahead and their hours, and says how many are not going ahead beside them: "1 lesson, 1 hour, 1 not going ahead", or "Nothing booked, 1 not going ahead" (DIA-03).
+
+## D-349 | 2026-10-22 | Lessons booked every week in one go are told about once | Claude
+- **Found:** in the third final round. An instructor booked a learner every week for four weeks, and the learner was sent four "Lesson booked" notices at once, each by email and push as well, one for every week; the instructor and the school's managers were told the same way when the office booked them. Twelve weeks was twelve of each.
+- **Decision:** the notice for a lesson says whether it went in with others every week in one go. The first of them tells everybody about all of them: "Fri 23 Oct at 15:00 with Ines. The first of 4, every Friday at 15:00 until Fri 13 Nov." The rest say nothing. A week an open-ended plan books later, on its own, is still told about on its own, and moving or cancelling any one of them is news about that one (NTF-03, BOK-05).
+
+## D-350 | 2026-10-22 | A skill's level wraps under its name | Claude
+- **Found:** in the third final round, running the 200% text sweep on data a walk had left. A learner whose skill map had an area at "Under full instruction" had a Progress screen 179 pixels wider than a phone: the level beside the area's name was told never to shrink, in a row that could not wrap. The sweep had passed until then only because the seeded learner's levels were short ones.
+- **Decision:** the level goes under the area's name when the two do not fit on one line, everywhere the skill bar is drawn: the learner's Progress, the instructor's map and a lesson's record (PRG-03, M6-06).
