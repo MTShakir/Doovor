@@ -3,10 +3,12 @@ import { brand } from '@repo/config/brand';
 import { cancellationPolicyWords } from '@repo/core/cancellation';
 import { instructorProfilePath, profileNames } from '@repo/core/public-profile';
 import { todayInZone } from '@repo/core/time';
+import { Button } from '@repo/ui/button';
 import { EmptyState } from '@repo/ui/empty-state';
 import { Skeleton } from '@repo/ui/skeleton';
 import { CalendarX } from 'lucide-react';
 import type { Route } from 'next';
+import Link from 'next/link';
 import { permanentRedirect } from 'next/navigation';
 import { Suspense } from 'react';
 import { getAccess, needsToAgree } from '@/lib/auth/session';
@@ -17,6 +19,7 @@ import { instructorCard } from '@/lib/public/share-cards';
 import { getAppUrl } from '@/lib/app-url';
 import { redirectTo } from '@/lib/redirect-to';
 import { getSiteUrl } from '@/lib/site-url';
+import { createSupabaseServerClient } from '@/lib/supabase/server';
 import { BookWithInstructor } from './book-with-instructor';
 
 /** Named for the instructor, and kept out of search: the profile is the page to find (D-109). */
@@ -70,6 +73,23 @@ async function Instructor({ params, searchParams }: BookPageProps) {
       const { slot } = await searchParams;
       permanentRedirect(`/book/${now}${slot === undefined ? '' : `?slot=${encodeURIComponent(slot)}`}` as Route);
     }
+    // An instructor opening their own link, often the first thing they do, is told what it waits
+    // for rather than to ask themselves for a new one (D-366).
+    if (await isOwnLink(slug)) {
+      return (
+        <EmptyState
+          headingLevel={1}
+          icon={CalendarX}
+          title="Your link is not taking bookings yet"
+          description="Today says what is left to do first, such as your badge being checked."
+          action={
+            <Button asChild width="full">
+              <Link href="/app/instructor">Open Today</Link>
+            </Button>
+          }
+        />
+      );
+    }
     return (
       <EmptyState
         headingLevel={1}
@@ -113,4 +133,18 @@ async function Instructor({ params, searchParams }: BookPageProps) {
       signedIn={access !== null}
     />
   );
+}
+
+/** Whether the person looking is the instructor whose link this is (D-366). */
+async function isOwnLink(slug: string): Promise<boolean> {
+  const access = await getAccess();
+  if (!access) return false;
+  const supabase = await createSupabaseServerClient();
+  const { data } = await supabase
+    .from('instructor_profiles')
+    .select('id')
+    .eq('user_id', access.session.userId)
+    .eq('public_slug', slug)
+    .maybeSingle();
+  return data !== null;
 }
