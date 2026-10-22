@@ -5,6 +5,7 @@ const maybeSingle = vi.fn();
 const getAccess = vi.fn<() => Promise<unknown>>();
 const needsToAgree = vi.fn<() => Promise<boolean>>();
 const keptCardsWith = vi.fn<(businessId: string) => Promise<unknown>>();
+const redirectTo = vi.fn<(path: string) => undefined>();
 
 vi.mock('@/lib/supabase/server', () => ({
   createSupabaseServerClient: () => Promise.resolve({ rpc, from: () => ({ select: () => ({ eq: () => ({ maybeSingle }) }) }) }),
@@ -12,10 +13,14 @@ vi.mock('@/lib/supabase/server', () => ({
 vi.mock('@/lib/auth/session', () => ({ getAccess: () => getAccess(), needsToAgree: () => needsToAgree() }));
 vi.mock('@/lib/payments/cards', () => ({ keptCardsWith: (businessId: string) => keptCardsWith(businessId) }));
 vi.mock('@/lib/booking/public', () => ({ openSlots: () => Promise.resolve([]) }));
-vi.mock('@/lib/redirect-to', () => ({ redirectTo: () => undefined }));
+vi.mock('@/lib/redirect-to', () => ({
+  redirectTo: (path: string) => {
+    redirectTo(path);
+  },
+}));
 vi.mock('next/headers', () => ({ cookies: () => Promise.resolve({ set: () => undefined }) }));
 
-const { bookAsLearner } = await import('./actions');
+const { bookAsLearner, rememberSlot } = await import('./actions');
 
 const input = {
   instructorId: '3f1c7a52-8d4e-4b6a-9c2f-5e8d7b1a0c34',
@@ -108,6 +113,20 @@ describe('what is left to do once a learner books on a link (BOK-02, PAY-03, D-3
 
     rpc.mockResolvedValueOnce({ data: null, error: { code: '23P01', message: 'SLOT_TAKEN' } });
     expect(await bookAsLearner(input)).toMatchObject({ ok: false, code: 'SLOT_TAKEN' });
+  });
+
+  it('tells somebody a full list cannot take that nobody new is being taken on, never about a plan (D-357)', async () => {
+    rpc.mockResolvedValueOnce({ data: null, error: { code: 'P0001', message: 'LEARNER_LIMIT' } });
+    expect(await bookAsLearner(input)).toMatchObject({
+      ok: false,
+      code: 'LEARNER_LIMIT',
+      message: 'This instructor is not taking new learners at the moment, so this cannot be booked.',
+    });
+  });
+
+  it('keeps a time chosen with no account and goes straight to making a learner one (D-358)', async () => {
+    await rememberSlot({ slug: 'sarah-khan-driving', startsAt: input.startsAt });
+    expect(redirectTo).toHaveBeenCalledWith('/sign-up?role=learner');
   });
 
   it('books nothing for a learner who has still to agree to the current terms (D-265)', async () => {

@@ -41,7 +41,7 @@ function enrolAuthenticator(): Promise<Enrolment | null> {
   return enrolling;
 }
 
-export function MfaForm({ verifiedFactorId }: { verifiedFactorId: string | null }) {
+export function MfaForm({ verifiedFactorId, required = true }: { verifiedFactorId: string | null; required?: boolean }) {
   const next = safeNextPath(useSearchParams().get('next'), '/');
   const [enrolment, setEnrolment] = useState<Enrolment | null>(null);
   const [code, setCode] = useState('');
@@ -89,7 +89,9 @@ export function MfaForm({ verifiedFactorId }: { verifiedFactorId: string | null 
         <p className="text-body text-grey-700">
           {verifiedFactorId
             ? 'Open your authenticator app and enter the 6-digit code.'
-            : 'Your role needs a second step when you sign in. Scan the code with an authenticator app such as Google Authenticator or 1Password.'}
+            : required
+              ? 'Your role needs a second step when you sign in. Scan the code with an authenticator app such as Google Authenticator or 1Password.'
+              : 'Once it is on, signing in asks for a code from your phone as well as your password. Scan the code with an authenticator app such as Google Authenticator or 1Password.'}
         </p>
       </div>
       {error ? <FormAlert>{error}</FormAlert> : null}

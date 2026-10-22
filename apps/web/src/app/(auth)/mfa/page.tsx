@@ -2,7 +2,8 @@ import { Button } from '@repo/ui/button';
 import { Skeleton } from '@repo/ui/skeleton';
 import type { Metadata } from 'next';
 import { Suspense } from 'react';
-import { requireSession } from '@/lib/auth/session';
+import { requiresMfa } from '@/lib/auth/portals';
+import { requireSecondStepScreen } from '@/lib/auth/session';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
 import { signOut } from '../actions';
 import { MfaForm } from './mfa-form';
@@ -34,9 +35,10 @@ export default function MfaPage() {
 }
 
 async function Gate() {
-  await requireSession();
+  // This screen is where the second step is taken, so it cannot wait for it (D-351).
+  const { access } = await requireSecondStepScreen();
   const supabase = await createSupabaseServerClient();
   const { data } = await supabase.auth.mfa.listFactors();
   // listFactors().totp only ever contains verified factors.
-  return <MfaForm verifiedFactorId={data?.totp[0]?.id ?? null} />;
+  return <MfaForm verifiedFactorId={data?.totp[0]?.id ?? null} required={requiresMfa(access)} />;
 }

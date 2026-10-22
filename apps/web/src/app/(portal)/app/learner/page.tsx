@@ -1,4 +1,6 @@
 import type { Metadata } from 'next';
+import { splitByCredit } from '@repo/core/credit';
+import { formatPence } from '@repo/core/money';
 import { formatDate, formatMinutes, formatTime } from '@repo/core/time';
 import { PageHeader } from '@repo/ui/app-shell';
 import { Button } from '@repo/ui/button';
@@ -14,7 +16,7 @@ import { SetupCard } from './setup-card';
 import { Moves } from './moves';
 import { learnerMoves } from '@/lib/learners/moves';
 import { requirePortal } from '@/lib/auth/session';
-import { myLessons } from '@/lib/learner/lessons';
+import { myLessons, type MyLesson } from '@/lib/learner/lessons';
 import { learnerSetup } from '@/lib/learner/setup';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
 
@@ -59,7 +61,8 @@ async function Home() {
                 {next.pickup}
               </p>
             )}
-            <Button asChild width="responsive">
+            <NextLessonMoney lesson={next} />
+            <Button asChild width="responsive" variant={payFor(next) === null ? 'primary' : 'secondary'}>
               <Link href="/app/learner/lessons">
                 <CalendarDays className="size-5" aria-hidden />
                 See all my lessons
@@ -87,6 +90,35 @@ async function Home() {
         {upcoming.length === 0 && past.length === 0 ? <FindAnInstructor userId={session.userId} email={session.email} /> : null}
         <InstallPrompt why="Your lessons, payments and progress, one tap away." />
       </div>
+    </>
+  );
+}
+
+/**
+ * What is left to do about the next lesson's money, in the words its own row on Lessons uses
+ * (PAY-03, D-318, D-337): a time held only while it is paid for is lost if nobody pays, so the
+ * home screen says so rather than leaving it to be found. Null when there is nothing to do.
+ */
+function payFor(lesson: MyLesson): { line: string | null; button: string } | null {
+  if (!lesson.canPayNow) return null;
+  const owed = formatPence(
+    splitByCredit({ minutes: lesson.durationMinutes, pricePence: lesson.pricePence, availableMinutes: lesson.creditMinutes }).owedPence,
+  );
+  if (lesson.status === 'pending_payment') return { line: 'This time is held for you while you pay for it.', button: 'Pay to confirm it' };
+  if (lesson.status === 'requested') return { line: `${lesson.instructorName} has still to accept.`, button: `Authorise ${owed}` };
+  if (lesson.paymentMode === 'before_lesson' && lesson.paymentStatus === 'unpaid') return { line: null, button: 'Set up payment' };
+  return { line: null, button: `Pay ${owed}` };
+}
+
+function NextLessonMoney({ lesson }: { lesson: MyLesson }) {
+  const pay = payFor(lesson);
+  if (pay === null) return null;
+  return (
+    <>
+      {pay.line === null ? null : <p className="text-body text-ink">{pay.line}</p>}
+      <Button asChild width="responsive">
+        <Link href={`/app/learner/pay/${lesson.id}`}>{pay.button}</Link>
+      </Button>
     </>
   );
 }

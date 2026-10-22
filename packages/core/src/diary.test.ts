@@ -76,6 +76,21 @@ describe('one word for a lesson (DIA-04, M1-19)', () => {
     expect(lessonState({ ...standard, status: 'no_show' })).toBe('cancelled');
     expect(lessonStateLabel({ ...standard, status: 'no_show', paymentStatus: 'paid_card' })).toBe('No-show');
   });
+
+  it('calls a request turned down declined, and one nobody answered in time expired (BOK-06, R-12, D-336)', () => {
+    expect(lessonState({ ...standard, status: 'declined' })).toBe('cancelled');
+    expect(lessonStateLabel({ ...standard, status: 'declined' })).toBe('Declined');
+    expect(lessonStateLabel({ ...standard, status: 'expired' })).toBe('Expired');
+  });
+
+  it('knows a request turned down by its marker, its status being cancelled as every rule needs (D-340)', () => {
+    const turnedDown = { ...standard, status: 'cancelled' as const, declined: true };
+    expect(lessonState(turnedDown)).toBe('cancelled');
+    expect(lessonStateLabel(turnedDown)).toBe('Declined');
+    // A lesson somebody called off is still cancelled, marker or none.
+    expect(lessonStateLabel({ ...standard, status: 'cancelled' })).toBeUndefined();
+    expect(lessonStateLabel({ ...standard, status: 'cancelled', declined: false })).toBeUndefined();
+  });
 });
 
 describe('the shape of a day (DIA-03, M1-19)', () => {

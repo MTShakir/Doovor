@@ -10,7 +10,7 @@ import { useState, useTransition } from 'react';
 import { InviteInstructorsForm } from '@/components/school/invite-instructors-form';
 import { LetGoDialog, SwitchOffDialog, TeamSections } from '@/components/school/team';
 import type { LinkedInstructor, SchoolTeam, TeamMember } from '@/lib/school/team';
-import { cancelInvitation, changePermission, inviteToSchool, letGo, switchMember } from './actions';
+import { cancelInvitation, changePermission, inviteToSchool, letGo, superviseTrainee, switchMember } from './actions';
 
 /** SCH-02: the school's team, and the one button that invites somebody to it. */
 export function TeamScreen({
@@ -65,6 +65,16 @@ export function TeamScreen({
     change(member.membershipId, () => switchMember({ membershipId: member.membershipId, active: true }), `${member.name} is switched back on`);
   };
 
+  const onSupervise = (member: TeamMember, supervised: boolean) => {
+    const instructorId = member.instructorId;
+    if (instructorId === null) return;
+    change(
+      member.membershipId,
+      () => superviseTrainee({ instructorId, supervised }),
+      supervised ? `${member.name} can be booked, supervised by the school` : `${member.name} cannot be booked until somebody supervises them`,
+    );
+  };
+
   return (
     <div className="flex flex-col gap-4">
       <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
@@ -94,6 +104,7 @@ export function TeamScreen({
           busyId,
           onPermission,
           onSwitch,
+          onSupervise,
           onCancelInvitation: (invitation) => {
             change(invitation.invitationId, () => cancelInvitation(invitation.invitationId), 'Invitation cancelled. The link no longer works');
           },

@@ -12,7 +12,7 @@ const factsSchema = z.object({
     z.object({
       instructor_id: z.string(),
       name: z.string(),
-      badge: z.enum(['checked', 'unchecked', 'expired']),
+      badge: z.enum(['checked', 'unchecked', 'expired', 'unsupervised']),
       transmission: z.enum(['manual', 'automatic', 'both']),
       distance_miles: z.number().nullable(),
       radius_miles: minutes,

@@ -329,27 +329,45 @@ export function isNotificationKind(value: string): value is NotificationKind {
   return Object.hasOwn(notificationCatalogue, value);
 }
 
-const specsIn = (category: NotificationCategory): NotificationSpec[] =>
-  Object.values(notificationCatalogue).filter((spec) => spec.category === category);
+/**
+ * The kinds in a group, or only those somebody can be sent: a learner is never sent the text
+ * before a yearly plan renews, so their settings do not offer to switch it off (D-344). Nobody
+ * named means everybody.
+ */
+const specsIn = (category: NotificationCategory, audiences: readonly NotificationAudience[] = []): NotificationSpec[] =>
+  Object.values(notificationCatalogue).filter(
+    (spec) => spec.category === category && (audiences.length === 0 || spec.audiences.some((one) => audiences.includes(one))),
+  );
 
-/** Every channel anything in this group can use, in the catalogue's order. */
-export function channelsInCategory(category: NotificationCategory): NotificationChannel[] {
-  const used = new Set(specsIn(category).flatMap((spec) => spec.channels));
+/** Every channel anything in this group can use, for the people named, in the catalogue's order. */
+export function channelsInCategory(category: NotificationCategory, audiences: readonly NotificationAudience[] = []): NotificationChannel[] {
+  const used = new Set(specsIn(category, audiences).flatMap((spec) => spec.channels));
   return notificationChannels.filter((channel) => used.has(channel));
+}
+
+/**
+ * What a text message carries in this group, for the people looking (NTF-01, D-231, D-344). Texts
+ * are reminders on the Pro plan, which for a learner is their instructor's to choose, and the
+ * warning before a yearly plan renews, which only an instructor is sent.
+ */
+export function textMessageCopy(category: NotificationCategory, audiences: readonly NotificationAudience[] = []): string {
+  if (category === 'money') return 'Only to warn you before a yearly plan renews.';
+  const learnerOnly = audiences.length > 0 && audiences.every((one) => one === 'learner');
+  return learnerOnly ? 'Reminders only, when your instructor sends them by text.' : 'Reminders only, on the Pro plan.';
 }
 
 /**
  * The channels somebody cannot switch off for this group. A service message always reaches
  * the inbox, so offering a switch that does nothing would be a lie (NFR-PRV-05).
  */
-export function alwaysOnChannels(category: NotificationCategory): NotificationChannel[] {
-  return specsIn(category).some((spec) => spec.essential) ? ['in_app'] : [];
+export function alwaysOnChannels(category: NotificationCategory, audiences: readonly NotificationAudience[] = []): NotificationChannel[] {
+  return specsIn(category, audiences).some((spec) => spec.essential) ? ['in_app'] : [];
 }
 
 /** What the settings screen actually offers for this group (NTF-04). */
-export function switchableChannels(category: NotificationCategory): NotificationChannel[] {
-  const fixed = new Set(alwaysOnChannels(category));
-  return channelsInCategory(category).filter((channel) => !fixed.has(channel));
+export function switchableChannels(category: NotificationCategory, audiences: readonly NotificationAudience[] = []): NotificationChannel[] {
+  const fixed = new Set(alwaysOnChannels(category, audiences));
+  return channelsInCategory(category, audiences).filter((channel) => !fixed.has(channel));
 }
 
 /** What the settings screen calls each group, and what it says it covers (NTF-04). */

@@ -4,6 +4,7 @@ import { parsePostgresError } from '@repo/core/errors';
 import { err, type Result } from '@repo/core/result';
 import { learnerOnboardingSchema } from '@repo/core/schemas/learner';
 import { fieldErrors } from '@/lib/forms';
+import { safeNextPath } from '@/lib/auth/portals';
 import { getAccess } from '@/lib/auth/session';
 import { getGeoProvider } from '@/lib/geo/provider';
 import { redirectTo } from '@/lib/redirect-to';
@@ -13,7 +14,7 @@ import { createSupabaseServerClient } from '@/lib/supabase/server';
  * AUTH-06: the five things a learner is asked once. The date of birth goes to the private
  * table, which only they can read, and the database keeps the age rule as well (R-16, M2-01).
  */
-export async function saveLearnerProfile(input: unknown): Promise<Result<null>> {
+export async function saveLearnerProfile(input: unknown, next?: unknown): Promise<Result<null>> {
   const parsed = learnerOnboardingSchema.safeParse(input);
   if (!parsed.success) return err('VALIDATION_FAILED', undefined, fieldErrors(parsed.error));
 
@@ -86,8 +87,9 @@ export async function saveLearnerProfile(input: unknown): Promise<Result<null>> 
     if (told) return saveFailed('disability answer', told);
   }
 
-  // Saving succeeded, so this redirects and never resolves.
-  return redirectTo('/app/learner');
+  // Saving succeeded, so this redirects and never resolves: on to where they were going, as a
+  // payment for a time held only so long (D-337), or home.
+  return redirectTo(safeNextPath(typeof next === 'string' ? next : null, '/app/learner'));
 }
 
 /**

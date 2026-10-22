@@ -36,6 +36,7 @@ export const domainErrorCodes = [
   'VIEW_AS_ENDED',
   'PLAN_REQUIRED',
   'LEARNER_LIMIT',
+  'LESSONS_TO_COME',
   'BADGE_TAKEN',
   'UNKNOWN',
 ] as const;
@@ -82,6 +83,7 @@ export const defaultErrorCopy: Record<DomainErrorCode, string> = {
   VIEW_AS_ENDED: 'Viewing as somebody else has ended.',
   PLAN_REQUIRED: 'That is not part of your plan.',
   LEARNER_LIMIT: 'Free carries ten learners at a time. Move one to passed or left, or go Pro for as many as you like.',
+  LESSONS_TO_COME: 'You still have lessons booked with your learners. Call them off in your diary first, which gives each learner their money back, then ask again.',
   // The screen says this one with the support address in it (rule 8 keeps that in brand.ts), so
   // this is the plain version for anywhere that has no room for it.
   BADGE_TAKEN: 'There is already an account with this badge number.',

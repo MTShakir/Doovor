@@ -13,6 +13,10 @@ interface TaskCopy {
   section: string;
   /** What to say while something else has to happen first. */
   blocked?: string;
+  /** What to say while a trainee waits for somebody to supervise them (D-343). */
+  waitingForSupervisor?: string;
+  /** What to say while a badge that has run out waits for the new one (D-346). */
+  waitingForRenewal?: string;
 }
 
 const copy: Record<SetupTaskId, TaskCopy> = {
@@ -33,6 +37,8 @@ const copy: Record<SetupTaskId, TaskCopy> = {
     todo: 'Put it in your bio, your car and your messages.',
     done: 'Your booking link is live.',
     blocked: 'Ready as soon as your badge is approved.',
+    waitingForSupervisor: 'Ready as soon as a school or an approved instructor supervises you.',
+    waitingForRenewal: 'Paused while your badge is out of date. Send your new one from your profile.',
     section: 'profile',
   },
 };
@@ -59,7 +65,15 @@ export function SetupChecklist({ state }: { state: SetupState }) {
       <ul className="border-t border-grey-200">
         {tasks.map((task) => {
           const text = copy[task.id];
-          const subtitle = task.done ? text.done : (task.blockedBy ? text.blocked : text.todo);
+          const subtitle = task.done
+            ? text.done
+            : task.blockedBy === 'supervision'
+              ? text.waitingForSupervisor
+              : task.blockedBy === 'renewal'
+                ? text.waitingForRenewal
+                : task.blockedBy
+                ? text.blocked
+                : text.todo;
           return (
             <li key={task.id} className="border-b border-grey-200 last:border-b-0">
               <NavLink

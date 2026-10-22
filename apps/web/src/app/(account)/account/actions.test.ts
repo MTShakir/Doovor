@@ -18,7 +18,7 @@ vi.mock('@/lib/public/instructor-profile', () => ({
   },
 }));
 
-const { saveAccountName } = await import('./actions');
+const { requestDeletion, saveAccountName } = await import('./actions');
 
 function signedInAs(role: 'owner' | 'instructor', businessType: 'independent' | 'school' = 'independent') {
   requireAccess.mockResolvedValue({
@@ -85,5 +85,22 @@ describe('the name on the account (AUTH-09, D-217)', () => {
     const result = await saveAccountName({ firstName: '   ', lastName: 'Khan' });
     expect(result).toMatchObject({ ok: false, code: 'VALIDATION_FAILED' });
     expect(result.ok ? null : result.fields?.firstName).toBe('Enter your first name');
+  });
+});
+
+describe('asking for the account to go (AUTH-09, D-149, D-361)', () => {
+  it('asks the database, and says so when an instructor on their own still has lessons to come', async () => {
+    expect(await requestDeletion({ reason: 'Retiring' })).toEqual({ ok: true, data: null });
+    expect(rpc).toHaveBeenCalledWith('request_account_deletion', { p_reason: 'Retiring' });
+
+    rpc.mockResolvedValueOnce({ data: null, error: { code: 'P0001', message: 'LESSONS_TO_COME' } });
+    expect(await requestDeletion({ reason: '' })).toMatchObject({
+      ok: false,
+      code: 'LESSONS_TO_COME',
+      message: 'You still have lessons booked with your learners. Call them off in your diary first, which gives each learner their money back, then ask again.',
+    });
+
+    rpc.mockResolvedValueOnce({ data: null, error: { code: '42501', message: 'NOT_AUTHENTICATED' } });
+    expect(await requestDeletion({})).toMatchObject({ ok: false, code: 'UNKNOWN' });
   });
 });

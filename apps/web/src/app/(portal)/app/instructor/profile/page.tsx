@@ -86,14 +86,18 @@ function vouched(school: string, expired: boolean, hasBadge: boolean) {
   };
 }
 
-/** R-18: a trainee teaches only under a school or an approved instructor (INS-04). */
-function Supervision({ supervised }: { supervised: boolean }) {
-  return supervised ? (
-    <CardDescription>A school is supervising you, so you can take bookings.</CardDescription>
-  ) : (
+/**
+ * R-18: a trainee teaches only under a school or an approved instructor (INS-04). Who supervises
+ * them, or what to ask for and of whom while nobody does (D-342).
+ */
+function Supervision({ by, school }: { by: 'school' | 'instructor' | null; school: string | null }) {
+  if (by === 'school') return <CardDescription>{school ?? 'Your school'} supervises you, so you can take bookings.</CardDescription>;
+  if (by === 'instructor') return <CardDescription>An approved instructor supervises you, so you can take bookings.</CardDescription>;
+  return (
     <FormAlert>
-      You need a supervising school or approved instructor before you can take bookings. Ask the school you teach for
-      to add you, or get in touch and we will help.
+      {school === null
+        ? 'Learners cannot book you until a school or an approved instructor supervises you. Get in touch and we will help.'
+        : `Learners cannot book you until ${school} supervises you. Ask them to switch it on: it is on your card on their Instructors screen.`}
     </FormAlert>
   );
 }
@@ -132,13 +136,23 @@ async function Profile() {
     .select('outcode, rule')
     .eq('instructor_id', membership.instructorProfileId)
     .order('outcode');
-  const supervised = profile.supervisor_business_id !== null || profile.supervisor_instructor_id !== null;
+  const supervisedBy =
+    profile.supervisor_business_id !== null ? 'school' : profile.supervisor_instructor_id !== null ? 'instructor' : null;
+  // The school they teach under is the one to ask (D-342).
+  const teachingSchool = membership.businessType === 'school' ? membership.businessName : null;
 
   // PUB-03: the link and the profile exist once the platform has approved the badge (INS-05), and
   // the link takes bookings while the badge is in date (INS-03). The card says which.
   const published =
     profile.verification_status === 'approved' && profile.public_slug ? await instructorProfile(profile.public_slug) : null;
   const bookingUrl = published?.takingBookings ? `${getAppUrl()}/book/${published.slug}` : null;
+  // Why a published link takes no bookings: a trainee nobody supervises (D-343), or the badge.
+  const paused =
+    published === null || published.takingBookings
+      ? null
+      : profile.qualification === 'pdi' && supervisedBy === null && !expired
+        ? 'not-supervised'
+        : 'badge-expired';
   const profileUrl = published
     ? `${getSiteUrl()}${instructorProfilePath(published.place?.citySlug ?? null, published.slug)}`
     : null;
@@ -149,9 +163,9 @@ async function Profile() {
         instructorName={profile.display_name}
         bookingUrl={bookingUrl}
         profileUrl={profileUrl}
-        unavailable={published && !published.takingBookings ? 'badge-expired' : 'approval'}
+        unavailable={paused ?? 'approval'}
       />
-      {published ? <SearchListing listed={profile.is_listed} badgeExpired={!published.takingBookings} /> : null}
+      {published ? <SearchListing listed={profile.is_listed} outOfSearch={paused} /> : null}
       <Card className="flex flex-col gap-2">
         <div className="flex flex-wrap items-start justify-between gap-3">
           <CardTitle>{profile.qualification === 'pdi' ? 'Trainee instructor' : 'Approved driving instructor'}</CardTitle>
@@ -170,7 +184,7 @@ async function Profile() {
             {profile.verification_decision_reason}
           </p>
         ) : null}
-        {profile.qualification === 'pdi' ? <Supervision supervised={supervised} /> : null}
+        {profile.qualification === 'pdi' ? <Supervision by={supervisedBy} school={teachingSchool} /> : null}
         {sendable && badge.action ? (
           <div className="pt-2">
             <SendBadge

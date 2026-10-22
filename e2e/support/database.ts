@@ -1450,6 +1450,8 @@ export interface MadeSchoolInstructor {
   name: string;
   /** Signs in with the seed's password (supabase/seeds/test_helpers.sql). */
   email: string;
+  /** Their profile's address, and their booking link's (/book/<slug>). */
+  slug: string;
   remove: () => Promise<void>;
 }
 
@@ -1460,7 +1462,7 @@ export interface MadeSchoolInstructor {
 export async function makeSchoolInstructor(
   name: string,
   schoolName = 'Quayside Driving School',
-  options: { transmission?: 'manual' | 'automatic' | 'both'; postcode?: string; workingHours?: boolean } = {},
+  options: { transmission?: 'manual' | 'automatic' | 'both'; postcode?: string; workingHours?: boolean; trainee?: boolean } = {},
 ): Promise<MadeSchoolInstructor> {
   const userId = crypto.randomUUID();
   const slug = `${name.toLowerCase().replace(/[^a-z0-9]+/g, '-')}-${userId.slice(0, 8)}`;
@@ -1481,8 +1483,11 @@ export async function makeSchoolInstructor(
       with school as (select id from public.businesses where name = ${schoolName} and type = 'school'),
            member as (insert into public.memberships (business_id, user_id, role) select id, ${userId}, 'instructor' from school returning business_id)
       insert into public.instructor_profiles (user_id, business_id, display_name, public_slug, verification_status, verified_at, onboarding_completed_at,
-                                              transmission, base_postcode, base_location, is_listed)
-      select ${userId}, business_id, ${name}, ${slug}, 'approved', now(), now(), ${options.transmission ?? 'manual'}::public.transmission,
+                                              qualification, transmission, base_postcode, base_location, is_listed)
+      select ${userId}, business_id, ${name}, ${slug}, 'approved', now(), now(),
+             -- A trainee nobody supervises yet, as one is when they join (INS-04, R-18).
+             ${options.trainee === true ? 'pdi' : 'adi'}::public.instructor_qualification,
+             ${options.transmission ?? 'manual'}::public.transmission,
              ${options.postcode ?? null}, (select location from public.postcodes where postcode = ${options.postcode ?? null}),
              -- Out of search, so the city pages and sitemaps other tests count stay as the seed has them.
              false
@@ -1500,6 +1505,7 @@ export async function makeSchoolInstructor(
   return {
     name,
     email,
+    slug,
     remove: () =>
       withDatabase(async (sql) => {
         await sql`delete from public.instructor_profiles where user_id = ${userId}`;
@@ -1757,6 +1763,75 @@ export async function openEveryDay(slug: string): Promise<void> {
        where p.public_slug = ${slug}`;
     if (made.count !== 7) throw new Error(`No instructor at ${slug}`);
   });
+}
+
+/**
+ * Ten learners on the books of an instructor made for a test, which is a full list on Free (D-208).
+ * Gives back a way to free one place, and to remove the learners again.
+ */
+export async function fillLearnerList(slug: string): Promise<{ freeOne: () => Promise<void>; remove: () => Promise<void> }> {
+  const ids = Array.from({ length: 10 }, () => crypto.randomUUID());
+  const business = await withDatabase(async (sql) => {
+    const [profile] = await sql<{ id: string; business: string }[]>`
+      select id, business_id as business from public.instructor_profiles where public_slug = ${slug}`;
+    if (!profile) throw new Error(`No instructor at ${slug}`);
+    for (const [n, id] of ids.entries()) {
+      await sql`select tests.create_user_with_id(${id}::uuid, ${`full.${id.slice(0, 8)}@example.com`}, ${`Full List ${String(n + 1)}`})`;
+      await sql`
+        insert into public.learner_relationships (business_id, learner_id, instructor_id, status)
+        values (${profile.business}, ${id}, ${profile.id}, 'active')`;
+    }
+    return profile.business;
+  });
+  return {
+    freeOne: () =>
+      withDatabase(async (sql) => {
+        await sql`update public.learner_relationships set status = 'passed' where business_id = ${business} and learner_id = ${ids[0] ?? ''}`;
+      }),
+    remove: () =>
+      withDatabase(async (sql) => {
+        await sql`delete from auth.users where id = any(${ids}::uuid[])`;
+      }),
+  };
+}
+
+/**
+ * A lesson three days on with a learner made for it, at the Business of an instructor made for a
+ * test, found by their profile address (D-361). Gives back a way to call it off, and to remove it
+ * and the learner again, before the instructor is.
+ */
+export async function lessonToComeFor(slug: string): Promise<{ callOff: () => Promise<void>; remove: () => Promise<void> }> {
+  const learner = crypto.randomUUID();
+  const booking = await withDatabase(async (sql) => {
+    const [profile] = await sql<{ id: string; business: string; type: string }[]>`
+      select p.id, p.business_id as business, t.id as type
+        from public.instructor_profiles p join public.lesson_types t on t.business_id = p.business_id
+       where p.public_slug = ${slug}
+       limit 1`;
+    if (!profile) throw new Error(`No instructor at ${slug}`);
+    await sql`select tests.create_user_with_id(${learner}::uuid, ${`lesson.${learner.slice(0, 8)}@example.com`}, 'Lesson To Come')`;
+    await sql`insert into public.learner_relationships (business_id, learner_id, instructor_id) values (${profile.business}, ${learner}, ${profile.id})`;
+    const [made] = await sql<{ id: string }[]>`
+      insert into public.bookings (business_id, instructor_id, learner_id, lesson_type_id, starts_at, ends_at, buffer_minutes,
+                                   status, payment_status, price_pence, source)
+      values (${profile.business}, ${profile.id}, ${learner}, ${profile.type},
+              date_trunc('hour', now()) + interval '3 days', date_trunc('hour', now()) + interval '3 days 1 hour', 30,
+              'confirmed', 'unpaid', 4000, 'self')
+      returning id`;
+    if (!made) throw new Error('No lesson was made');
+    return made.id;
+  });
+  return {
+    callOff: () =>
+      withDatabase(async (sql) => {
+        await sql`update public.bookings set status = 'cancelled', cancelled_at = now() where id = ${booking}`;
+      }),
+    remove: () =>
+      withDatabase(async (sql) => {
+        await sql`delete from public.bookings where id = ${booking}`;
+        await sql`delete from auth.users where id = ${learner}`;
+      }),
+  };
 }
 
 /**

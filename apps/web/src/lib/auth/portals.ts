@@ -64,6 +64,14 @@ export function requiresMfa(context: AccessContext): boolean {
   );
 }
 
+/**
+ * Whether signing in takes the second step: everybody whose role needs it, and anybody who turned
+ * it on themselves. Turned on and never asked for, it protected nothing (AUTH-08, D-351).
+ */
+export function secondStepRequired(context: AccessContext): boolean {
+  return requiresMfa(context) || context.secondStepOn;
+}
+
 /** Only relative paths inside the app are allowed as post-sign-in destinations. */
 export function safeNextPath(next: string | null | undefined, fallback = '/'): string {
   if (!next || !next.startsWith('/') || next.startsWith('//') || next.startsWith('/\\')) return fallback;

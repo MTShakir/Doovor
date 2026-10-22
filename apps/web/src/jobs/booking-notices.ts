@@ -22,7 +22,7 @@ import {
   type NotificationKind,
   type PlannedNotification,
 } from '@repo/core/notifications';
-import { formatDate, formatTime, utcToLocal } from '@repo/core/time';
+import { formatDate, formatTime, formatWeekday, utcToLocal } from '@repo/core/time';
 
 /** What `system_booking_notice` answers. */
 export interface BookingNotice {
@@ -43,6 +43,17 @@ export interface BookingNotice {
   payment_status?: string;
   late_cancellation?: boolean;
   cancel_reason?: string | null;
+  /**
+   * Lessons booked every week in one go, which the first of them tells about for all (D-349): how
+   * many went in together, whether this is the first, and when the last is. A count under two is
+   * a lesson on its own.
+   */
+  series?: { count: number; first: boolean | null; last_starts_at: string | null } | null;
+}
+
+/** One of several lessons booked every week in one go, which the first of them speaks for. */
+function inSeries(notice: BookingNotice): boolean {
+  return (notice.series?.count ?? 0) > 1;
 }
 
 export interface BookingEvent {
@@ -57,6 +68,8 @@ export interface BookingEvent {
 export function kindForEvent(event: BookingEvent, notice: BookingNotice): NotificationKind | null {
   switch (event.name) {
     case 'booking.created': {
+      // The rest of lessons booked every week in one go: the first has told everybody (D-349).
+      if (inSeries(notice) && notice.series?.first !== true) return null;
       const status = typeof event.payload.status === 'string' ? event.payload.status : notice.status;
       if (status === 'requested') return 'booking.requested';
       return status === 'confirmed' ? 'booking.confirmed' : null;
@@ -165,6 +178,12 @@ function detailFor(event: BookingEvent, notice: BookingNotice): string | undefin
       return sentences([`The ${formatPence(notice.fee_pence)} ${feeName(notice)} could not be charged`, why]);
     }
     return why;
+  }
+  // The first of lessons booked every week in one go, for all of them (D-349).
+  if (event.name === 'booking.created' && inSeries(notice) && notice.series?.last_starts_at) {
+    const first = new Date(notice.starts_at);
+    const last = new Date(notice.series.last_starts_at);
+    return `The first of ${String(notice.series.count)}, every ${formatWeekday(first)} at ${formatTime(first)} until ${formatDate(last)}`;
   }
   const reason = notice.cancel_reason?.trim();
   if (event.name === 'booking.accepted') return 'It is in the diary';

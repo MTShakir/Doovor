@@ -98,10 +98,14 @@ const ok = <T>(data: T): PaymentResult<T> => ({ ok: true, data });
 
 export function fakePaymentsProvider(options: FakePaymentsOptions = {}): FakePaymentsProvider {
   const prefix = options.prefix ?? 'fake';
+  // Each run of the process numbers from one again, while the payments it recorded stay in the
+  // database: a restarted app handing out fake_pi_9 a second time had the new payment recorded
+  // against the old one, and the lesson never confirmed. So every id carries when the fake began.
+  const run = Date.now().toString(36);
   let counter = 0;
   const next = (kind: string): string => {
     counter += 1;
-    return `${prefix}_${kind}_${String(counter)}`;
+    return `${prefix}_${kind}_${run}_${String(counter)}`;
   };
 
   const state: FakeState = {

@@ -30,9 +30,10 @@ test.describe('my lessons (BOK-08, BOK-09, M2-26)', () => {
     const day = ownDay(testInfo.project.name, 8);
     await clearDiary('Sarah Khan', day);
     await requestLesson('Sarah Khan', 'jack.taylor@example.com', day, '09:00');
+    // Turned down as the instructor's Decline leaves it: cancelled, with when it was turned down (D-340).
     await withDatabase(async (sql) => {
       await sql`
-        update public.bookings b set status = 'declined', expires_at = null
+        update public.bookings b set status = 'cancelled', cancelled_at = now(), declined_at = now(), expires_at = null
           from public.instructor_profiles p
          where p.id = b.instructor_id and p.display_name = 'Sarah Khan'
            and (b.starts_at at time zone 'Europe/London')::date = ${day}::date`;
@@ -41,6 +42,8 @@ test.describe('my lessons (BOK-08, BOK-09, M2-26)', () => {
       await page.goto('/app/learner/lessons');
       const off = page.getByRole('region', { name: 'Not going ahead' });
       await expect(off.getByRole('article').filter({ hasText: dayLabel(day) })).toBeVisible();
+      // Turned down, not cancelled: it was never booked (D-336).
+      await expect(off.getByRole('article').filter({ hasText: dayLabel(day) })).toContainText('Declined');
       await expect(page.getByRole('region', { name: 'Before now' }).getByRole('article').filter({ hasText: dayLabel(day) })).toHaveCount(0);
       await expectAccessible(page);
     } finally {

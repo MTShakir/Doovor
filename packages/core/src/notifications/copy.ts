@@ -101,10 +101,11 @@ export function notificationCopy(
   const school = facts.schoolName ?? 'Your school';
 
   switch (kind) {
+    // The first of lessons booked every week in one go says so for all of them (D-349).
     case 'booking.confirmed':
       return audience === 'learner'
-        ? { title: 'Lesson booked', body: line }
-        : { title: `${them} has a lesson booked`, body: line };
+        ? { title: 'Lesson booked', body: sentence(line, facts.detail) }
+        : { title: `${them} has a lesson booked`, body: sentence(line, facts.detail) };
 
     case 'booking.requested':
       return { title: `${them} asked for a lesson`, body: sentence(closed(facts.when), 'Accept it or decline it') };

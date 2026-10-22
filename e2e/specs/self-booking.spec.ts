@@ -58,8 +58,10 @@ test.describe('booking from a shared link (BOK-02, M2-17)', () => {
     await expect(page.getByRole('button', { name: /^Continue with \d\d:\d\d$/ })).toBeEnabled();
     await page.getByRole('button', { name: /^Continue with \d\d:\d\d$/ }).click();
 
-    // They are sent to make an account, and the time waits for them.
-    await expect(page).toHaveURL(/\/start/);
+    // They are sent to make an account, and the time waits for them. Choosing a time said what they
+    // are here for, so they are not asked again (D-358).
+    await expect(page).toHaveURL(/\/sign-up\?role=learner$/);
+    await expect(page.getByRole('heading', { level: 1, name: 'Create your learner account' })).toBeVisible();
   });
 
   test('acceptance-12: a learner books in under a minute', async ({ browser }, testInfo) => {

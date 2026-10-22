@@ -55,6 +55,8 @@ const profileSchema = z.object({
   listed: z.boolean(),
   inSearch: z.boolean(),
   takingBookings: z.boolean(),
+  /** Whether somebody new can start: not while a Free list is full (D-208, D-357). True where the database has yet to say. */
+  takingNewLearners: z.boolean().default(true),
   instantBook: z.boolean(),
   /** The platform checked the badge itself, rather than a school vouching for it (D-280, D-285). */
   platformChecked: z.boolean().default(false),

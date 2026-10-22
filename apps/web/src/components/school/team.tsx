@@ -26,6 +26,8 @@ export interface TeamHandlers {
   busyId: string | null;
   onPermission: (member: TeamMember, permission: MemberPermission, allowed: boolean) => void;
   onSwitch: (member: TeamMember, active: boolean) => void;
+  /** The school answers for a trainee, so they can be booked, or stops (INS-04, R-18, D-342). */
+  onSupervise: (member: TeamMember, supervised: boolean) => void;
   onCancelInvitation: (invitation: WaitingInvitation) => void;
   /** Stop linking an instructor who sells their own lessons (D-282). */
   onLetGo: (linked: LinkedInstructor) => void;
@@ -48,6 +50,8 @@ function memberSummary(member: TeamMember): string {
   }
   return sentence([
     member.active ? '' : 'switched off',
+    // Nobody can book a trainee the school does not supervise, so the list says so (R-18, D-342).
+    member.trainee ? (member.supervised ? 'trainee' : 'trainee not supervised yet') : '',
     lessonsToCome(member.lessonsToCome),
     member.setOwnPrices ? 'sets their own prices' : '',
   ]);
@@ -150,6 +154,15 @@ function MemberSheet({ member, handlers, onClose }: { member: TeamMember | null;
             checked={shown.setOwnPrices}
             disabled={busy}
             onCheckedChange={(allowed) => { handlers.onPermission(shown, 'set_own_prices', allowed); }}
+          />
+        ) : null}
+        {shown.active && shown.role === 'instructor' && shown.trainee && shown.instructorId ? (
+          <Switch
+            label="Supervised by the school"
+            description="A trainee instructor can be booked only while a school or an approved instructor supervises them."
+            checked={shown.supervised}
+            disabled={busy}
+            onCheckedChange={(supervised) => { handlers.onSupervise(shown, supervised); }}
           />
         ) : null}
         {shown.active && shown.role === 'manager' ? (

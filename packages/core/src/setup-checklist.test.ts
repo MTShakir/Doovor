@@ -37,6 +37,18 @@ describe('setup checklist (PRD 10.1, M1-10)', () => {
     expect(doneIds({ ...fresh, verified: true })).toEqual(['booking-link']);
   });
 
+  it('waits for a trainee to be supervised before asking them to share a link nobody can book (R-18, D-343)', () => {
+    const [, , link] = setupTasks({ ...fresh, verified: true, supervised: false });
+    expect(link).toEqual({ id: 'booking-link', done: false, blockedBy: 'supervision' });
+    expect(doneIds({ ...fresh, verified: true, supervised: true })).toEqual(['booking-link']);
+    // The badge check comes first: nobody is asked about a supervisor before it.
+    expect(setupTasks({ ...fresh, supervised: false })[2]).toEqual({ id: 'booking-link', done: false, blockedBy: 'verification' });
+  });
+
+  it('waits for a new badge, not an approval, when the badge has run out (D-346)', () => {
+    expect(setupTasks({ ...fresh, verified: true, badgeInDate: false })[2]).toEqual({ id: 'booking-link', done: false, blockedBy: 'renewal' });
+  });
+
   it('does not tick a link the instructor has hidden', () => {
     expect(doneIds({ ...fresh, verified: true, badgeInDate: false })).toEqual([]);
   });

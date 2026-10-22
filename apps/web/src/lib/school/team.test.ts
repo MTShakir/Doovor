@@ -52,6 +52,8 @@ describe("a school's team (SCH-02, M5-13)", () => {
           lessonsToCome: 12,
           // Who stays with them if they are switched off (D-317).
           learners: 3,
+          trainee: false,
+          supervised: false,
         },
       ],
       // A school that links nobody, as one from before linking existed reads (D-282).
@@ -69,6 +71,22 @@ describe("a school's team (SCH-02, M5-13)", () => {
       ],
     });
     expect(rpc).toHaveBeenCalledWith('school_team', { p_business_id: 'school-1' });
+  });
+
+  it('says who is a trainee, and whether the school supervises them (R-18, D-342)', async () => {
+    rpc.mockResolvedValueOnce({
+      data: {
+        members: [{ ...member, qualification: 'pdi', supervised: false }, { ...member, membership_id: 'm-2', qualification: 'pdi', supervised: true }],
+        invitations: [],
+      },
+      error: null,
+    });
+
+    const team = await schoolTeam('school-1');
+    expect(team.members.map((one) => [one.trainee, one.supervised])).toEqual([
+      [true, false],
+      [true, true],
+    ]);
   });
 
   it('fails loudly rather than showing a school with nobody in it', async () => {

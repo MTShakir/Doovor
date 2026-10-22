@@ -13,7 +13,7 @@ import {
 } from './portals';
 
 function context(overrides: Partial<AccessContext> = {}): AccessContext {
-  return { userId: 'u1', staffRole: null, isLearner: false, learnerOnboarded: true, memberships: [], suspendedBusinesses: [], pausedBusinesses: [], switchedOffBy: [], ...overrides };
+  return { userId: 'u1', staffRole: null, isLearner: false, learnerOnboarded: true, memberships: [], suspendedBusinesses: [], pausedBusinesses: [], switchedOffBy: [], secondStepOn: false, ...overrides };
 }
 
 function membership(overrides: Partial<AccessMembership>): AccessMembership {

@@ -51,6 +51,7 @@ async function Lesson({ params }: LessonPageProps) {
     kind: 'standard' as const,
     // So the pill can say a lesson was paid two ways (D-225).
     creditMinutes: lesson.creditMinutes,
+    declined: lesson.declined,
   };
 
   return (

@@ -14,8 +14,11 @@ export interface BookingLinkCardProps {
   instructorName: string;
   /** The booking link, in full. Null while it takes no bookings, for the reason given. */
   bookingUrl: string | null;
-  /** Why there is no link yet: the badge is still to be approved, or has run out (INS-03). */
-  unavailable?: 'approval' | 'badge-expired';
+  /**
+   * Why there is no link yet: the badge is still to be approved, or has run out (INS-03), or a
+   * trainee has nobody supervising them (R-18, D-343).
+   */
+  unavailable?: 'approval' | 'badge-expired' | 'not-supervised';
   /** The public profile, in full, when there is one. */
   profileUrl: string | null;
 }
@@ -45,7 +48,9 @@ export function BookingLinkCard({ instructorName, bookingUrl, profileUrl, unavai
         <CardDescription>
           {unavailable === 'badge-expired'
             ? 'Paused until your badge is renewed. Learners who open it are told you are not taking new bookings.'
-            : 'Ready as soon as your badge is approved.'}
+            : unavailable === 'not-supervised'
+              ? 'Paused until a school or an approved instructor supervises you. Learners who open it are told you are not taking new bookings.'
+              : 'Ready as soon as your badge is approved.'}
         </CardDescription>
       </Card>
     );

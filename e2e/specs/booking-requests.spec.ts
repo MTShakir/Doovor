@@ -50,6 +50,6 @@ test.describe('answering a request (BOK-06, M2-18)', () => {
     await page.getByRole('button', { name: 'Decline the lesson' }).click();
 
     await expect(page.getByText('Lesson with Olivia Brown declined')).toBeVisible();
-    await expect(lesson).toContainText('Cancelled', { timeout: 30_000 });
+    await expect(lesson).toContainText('Declined', { timeout: 30_000 });
   });
 });

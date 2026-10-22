@@ -77,7 +77,11 @@ export async function requestDeletion(input: unknown): Promise<Result<null>> {
   if (!parsed.success) return err('VALIDATION_FAILED');
   const supabase = await createSupabaseServerClient();
   const { error } = await supabase.rpc('request_account_deletion', parsed.data.reason ? { p_reason: parsed.data.reason } : {});
-  if (error) return err('UNKNOWN');
+  if (error) {
+    // An instructor on their own with lessons still to come calls them off first (D-361).
+    const { code } = parsePostgresError(error);
+    return err(code === 'LESSONS_TO_COME' ? code : 'UNKNOWN');
+  }
   revalidatePath('/account');
   return ok(null);
 }

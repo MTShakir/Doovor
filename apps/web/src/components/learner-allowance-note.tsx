@@ -29,7 +29,8 @@ export function LearnerAllowanceNote({ allowance }: { allowance: LearnerAllowanc
             </CardTitle>
             <CardDescription className={full ? 'text-ink' : undefined}>
               {full
-                ? 'Free carries ten at a time. To take somebody new on, move one to passed or left, or go Pro for as many as you like.'
+                ? // What a full list does to their link and profile, which they would not otherwise see (D-357).
+                  `Free carries ${String(allowance.limit)} at a time, so your booking link and profile tell anybody new you are not taking new learners. To take somebody new on, move one to passed or left, or go Pro for as many as you like.`
                 : `Free carries ${String(allowance.limit)} at a time. Counting the ones you are teaching, waiting or with a test booked.`}
             </CardDescription>
           </div>

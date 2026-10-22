@@ -1747,3 +1747,126 @@ Every decision made without the product owner, newest last. Format: date, decisi
 ## D-333 | 2026-10-21 | The final round's wording | Claude
 - **Found:** in the final round of testing. A learner asked whether to move to the school their instructor joined could answer "Not now", which was a final no: the question went for good, and the toast said "Kept as it is".
 - **Decision:** the answer says "No, thanks". The instructor still sees them as staying (D-322), and the school or another instructor can invite them later as anybody would.
+
+## D-334 | 2026-10-22 | Coming back by a new link gives the profile its address back | Claude
+- **Found:** in the second final round, from the first one's notes. A school switched Mona off and later sent her a new link; she joined again and kept the profile she had there (D-324), but its public address stayed withdrawn, so she had no profile page and no booking link. Switching somebody back on gives the address back (D-120); joining again by a link did not.
+- **Decision:** joining a school again by a new link gives the profile its public address back, made from their name, as switching them back on does. A follow-up migration replaces `accept_member_invitation` with that one step added. The link itself says "Join Explore School again with the profile you had there. Your profile and booking link come back as they were." rather than offering four steps of setting up they have already done.
+
+## D-335 | 2026-10-22 | The office's lesson sheets speak about the instructor | Claude
+- **Found:** in the second final round. Moving one of its instructor's lessons, the school's office was shown "Outside your hours", offered "No gap needed after the lesson before", and sent by "Contact them now" to the instructor's portal, which it cannot open.
+- **Decision:** for the office the sheet names the instructor's hours ("Outside Mona Member's hours"), leaves out the travel gap, which is the instructor's own time to waive (D-187), and opens the learner's card in the school's portal. The lesson's details now carry the instructor's name for it. The instructor's own sheet is as it was.
+
+## D-336 | 2026-10-22 | A request turned down says declined | Claude
+- **Found:** in the second final round. A request the instructor turned down showed "Cancelled" in the learner's lessons and the diary, as did one nobody answered in time, though neither was ever booked and nobody cancelled anything.
+- **Decision:** the pill says "Declined" for a request turned down and "Expired" for one that lapsed, a request nobody answered in time or a time held while nobody paid. Both still sit with the lessons that are not going ahead (D-323).
+
+## D-337 | 2026-10-22 | Answering about yourself goes on to where you were going | Claude
+- **Found:** in the second final round. A visitor booked a time on an instructor's profile, made an account and pressed "Pay to confirm it". They were asked about themselves first, as every new learner is (AUTH-06), and then sent home instead of to the payment, while the time was only held for fifteen minutes. The home screen showed the lesson with nothing to say it was waiting to be paid for.
+- **Decision:** a learner sent to "A few things about you" goes on, once it is done, to the page they were going to. Their home screen's next lesson says what is left to do about its money, as its row on Lessons does: "This time is held for you while you pay for it." with "Pay to confirm it", the authorisation for a request, setting up the day-before payment, or "Pay £42".
+
+## D-338 | 2026-10-22 | A shared action is judged by the screen it was pressed on | Claude
+- **Found:** reviewing D-330 in the second final round. An action the instructor's and the school's portals share named both, and the first the person could use decided whose setup they had to have finished, so a school's owner who also teaches and had not finished setting up as an instructor could be sent to that setup by pressing something in the school's diary.
+- **Decision:** of the portals an action names, the one whose screen it was pressed on decides; the first they can use only when it was pressed elsewhere.
+
+## D-339 | 2026-10-22 | A week that could not be booked is said at the top | Claude
+- **Found:** in the second final round. Booking a learner every week where one week clashed, the toast said "3 lessons booked, 17:00 every week" and the sheet stayed open to say which week could not go in, at its very bottom, under every time in the day and outside it, out of sight on a phone.
+- **Decision:** the warning sits at the top of the sheet, under any error, where it is seen as the toast goes. Nothing else about weekly booking changes (BOK-05, R-13).
+
+## D-340 | 2026-10-22 | A request turned down remembers it | Claude
+- **Found:** running the full end to end suite on D-336. A request the instructor declined still said "Cancelled" in the diary: declining has always written the booking off as cancelled, and D-336 looked for a declined status that nothing sets. Its test passed only because it wrote that status into the database itself.
+- **Decision:** the booking keeps its cancelled status, which every rule about lessons that are off, their fees, refunds and card holds reads, and gains `declined_at`, set when the request is turned down and filled in from the audit trail for those turned down already. Every pill that can show it says "Declined", the diary's week included, which until now showed only the pill's one word and so said "Paid" where the day said "Paid (cash)" (D-233). The test now declines a request as the instructor does.
+- **Options:** set the declined status instead, which more than a dozen functions about money do not read as off, so a declined request with a card set aside risked keeping it set aside.
+
+## D-341 | 2026-10-22 | The notices' two buttons wrap | Claude
+- **Found:** the end to end run at 200% text. On a phone, "Mark all as read (28)" beside Settings was 114 pixels wider than the screen. The sweep had passed until now only because the people it signs in as had nothing unread.
+- **Decision:** the two buttons wrap onto a second line when they do not fit, and the sweep gives each person something unread first, so the button is always there to measure (M6-06).
+
+## D-342 | 2026-10-22 | A school supervises its trainees from its team, and only a school can | Claude
+- **Found:** in the third final round, reading how a trainee instructor gets a supervisor. Supervision was the school's to give through `set_supervisor` (D-061), but no screen called it, so a trainee who joined a school could never be booked. And `set_supervisor` asked only for permission to manage the Business's members, which a trainee running a business of their own has, so they could have supervised themselves by calling it (R-18).
+- **Decision:** the school's team says "Trainee not supervised yet" under a trainee's name, and their sheet has a "Supervised by the school" switch for the owner or a manager. `set_supervisor` now takes a school and somebody other than the trainee. The trainee's own profile says who supervises them, or, while nobody does, that learners cannot book them until their school switches it on, naming the school and where the switch is. A trainee on their own still gets in touch, as before: an approved instructor supervising somebody in another Business is an agreement between the two, and waits for its own screens (D-061).
+
+## D-343 | 2026-10-22 | A trainee nobody supervises takes no bookings, and the pages say so first | Claude
+- **Found:** with D-342. A booking for a trainee nobody supervises is refused where it is written, but the profile said they were taking bookings and the link offered their free times, so a learner chose a time, made an account and was turned away at the end with "Trainee instructors need a supervising school or instructor first."
+- **Decision:** wherever a badge decides whether somebody can be booked, supervision decides it too: the profile and the school's page say "Not taking new bookings", the link says it is not taking bookings, and no free times are offered, as for an expired badge (INS-03). The trainee's own booking link card says it is paused until a school or an approved instructor supervises them, rather than blaming the badge, and Today's checklist waits for that rather than saying the link is live. Search followed later the same day (D-347).
+
+## D-344 | 2026-10-22 | The notification settings offer what each person can be sent | Claude
+- **Found:** in the third final round. A learner's settings offered a "Text message" switch under Money, said to be "Reminders only, on the Pro plan". The only money text is the warning before an instructor's yearly plan renews (D-231), so a learner could never be sent one, and what the switch said contradicted the card it sat on. The page offered every person every switch, whatever they could be sent.
+- **Decision:** each card offers only the channels used by what this person can be sent: as a learner, an instructor, a school's owner or manager, or more than one of these. A card with nothing in it for them is left out. A text is described for where it sits and who is reading: "Reminders only, on the Pro plan." for somebody who teaches, "Reminders only, when your instructor sends them by text." for a learner, and "Only to warn you before a yearly plan renews." under Money. Platform staff are shown everything, as before.
+
+## D-345 | 2026-10-22 | The school's learner list says when the next lesson is | Claude
+- **Found:** in the third final round. A learner with two lessons booked at a school read "With Ines Walk · No lessons yet" in the school's list, which counts the lessons already had. The instructor's own list adds "Next Wed 28 Oct, 11:00" beside the same words, and the school's did not.
+- **Decision:** the school's list says when the next lesson is, as the instructor's does (LRN-01).
+
+## D-346 | 2026-10-22 | Today names a badge that has run out | Claude
+- **Found:** in the third final round. When an instructor's badge ran out, Today's checklist said the booking link was "Ready as soon as your badge is approved", as it says to somebody whose badge has never been checked.
+- **Decision:** it says "Paused while your badge is out of date. Send your new one from your profile." The profile already said so.
+
+## D-347 | 2026-10-22 | A trainee nobody supervises is out of search | Claude
+- **Found:** after D-343, in the third final round. A trainee nobody supervises said "Not taking new bookings" on their profile, but the city pages and the sitemap still listed them, so search sent learners to a profile they could not book from. Somebody whose badge has run out leaves search (INS-03, acceptance-10).
+- **Decision:** being in search asks whether a trainee is supervised too, on the city pages, the sitemap and the profile's own answer. The trainee's Search card says their profile is out of search until a school or an approved instructor supervises them, as it says of a badge that has run out.
+
+## D-348 | 2026-10-22 | A day's summary counts the lessons going ahead | Claude
+- **Found:** in the third final round. An instructor's day whose one lesson had lapsed while nobody paid for it read "1 lesson, nothing booked": the count took in lessons that are off, and the hours beside it did not.
+- **Decision:** the line counts the lessons going ahead and their hours, and says how many are not going ahead beside them: "1 lesson, 1 hour, 1 not going ahead", or "Nothing booked, 1 not going ahead" (DIA-03).
+
+## D-349 | 2026-10-22 | Lessons booked every week in one go are told about once | Claude
+- **Found:** in the third final round. An instructor booked a learner every week for four weeks, and the learner was sent four "Lesson booked" notices at once, each by email and push as well, one for every week; the instructor and the school's managers were told the same way when the office booked them. Twelve weeks was twelve of each.
+- **Decision:** the notice for a lesson says whether it went in with others every week in one go. The first of them tells everybody about all of them: "Fri 23 Oct at 15:00 with Ines. The first of 4, every Friday at 15:00 until Fri 13 Nov." The rest say nothing. A week an open-ended plan books later, on its own, is still told about on its own, and moving or cancelling any one of them is news about that one (NTF-03, BOK-05).
+
+## D-350 | 2026-10-22 | A skill's level wraps under its name | Claude
+- **Found:** in the third final round, running the 200% text sweep on data a walk had left. A learner whose skill map had an area at "Under full instruction" had a Progress screen 179 pixels wider than a phone: the level beside the area's name was told never to shrink, in a row that could not wrap. The sweep had passed until then only because the seeded learner's levels were short ones.
+- **Decision:** the level goes under the area's name when the two do not fit on one line, everywhere the skill bar is drawn: the learner's Progress, the instructor's map and a lesson's record (PRG-03, M6-06).
+
+## D-351 | 2026-10-22 | A second step somebody turned on is asked for | Claude
+- **Found:** in the third final round. A learner turned on two-step verification from her account, which then said "On", and signed in again with her password alone: she was never asked for the code. Only the people whose role needs it, platform staff and school owners, were ever asked (AUTH-08), so for everybody who chose it themselves it protected nothing. The set-up screen also told her "Your role needs a second step", which hers does not.
+- **Decision:** whoever has a second step is asked for it when they sign in, by password, by an email link or by a text, before anything of theirs opens: the portals, the account, its password and devices, and the notices. A new function says whether somebody has one, in the request that already read their staff role, so what they can open still takes four requests, as before, and it is read as a GET like the other three: a gateway retries a read whose connection drops, and must not retry a POST, so read by POST on every screen it failed whole screens under load. The screens that take the second step, and the mobile number before it, still open without it. The set-up screen tells somebody who chose it that signing in will ask for a code as well as the password. Turning it off again is still a request to support, who can reset it, as before.
+
+## D-352 | 2026-10-22 | The mobile screen says who uses the number, to whoever is reading | Claude
+- **Found:** in the third final round. A learner adding her mobile from her account was told "Learners and schools use it to reach you about lessons", words written for an instructor.
+- **Decision:** a learner is told "Your instructor uses it to reach you about lessons"; somebody who teaches is told what they were before (AUTH-02).
+
+## D-353 | 2026-10-22 | Somebody deleting their account is told about the credit they would give up | Claude
+- **Found:** in the third final round. A learner with ten hours of credit bought from her instructor, £380 of lessons she had paid for and not had, was told nothing about it when she asked to delete her account: only that payment records are kept and lessons to come are cancelled. Credit is a prepaid package with one Business (PAY-12), so it went with her account, and the money stayed with the Business.
+- **Decision:** before somebody asks to delete their account, and again where they confirm it, they are told the credit they have with each Business, and that deleting the account gives it up, so to ask each Business about a refund first. Refunding the hours themselves is between the learner and the Business, as it was; a refund of unused hours from the product waits for its own screens (PLAN, after M9).
+
+## D-354 | 2026-10-22 | Time off added over booked lessons says which are still booked | Claude
+- **Found:** in the third final round. An instructor added a day's time off over a day with a lesson booked in it. The screen said "Time off added" and nothing else: the lesson stayed booked, the learner was still expecting them, and nothing reminded the instructor it was there.
+- **Decision:** time off still never moves or cancels anybody's lesson on its own, which only the instructor decides (BOK-08, BOK-09). Added over lessons still booked, it says which ("A lesson is still booked in that time off: 10:00 with Lily Two. It stays booked until you move or call it off.") with a link to that day in the diary (DIA-02).
+
+## D-355 | 2026-10-22 | A fee is owed from when the lesson was called off | Claude
+- **Found:** in the third final round, checking that the money screens add up. A learner called off a lesson with the school 34 hours ahead and owed its £40 as a late fee, which her Payments said at once. The school's Overview said "Unpaid £0, Nothing owed", and the Money screens' Unpaid the same, because they counted what is owed only for lessons whose time had come.
+- **Decision:** a fee is owed from when the lesson was called off, on the Overview and the Money screens as on the learner's Payments; a lesson itself is owed for once it has started, as before (PAY-06, SCH-01, R-06).
+
+## D-356 | 2026-10-22 | Suggesting who teaches a learner says a trainee cannot be booked yet | Claude
+- **Found:** with D-343, in the third final round. When a school gives a learner or a new pupil to one of its instructors, the suggestions put a trainee whose badge was checked among those ready to teach, with nothing to say nobody could book them, so a school could give a learner to somebody nobody could book.
+- **Decision:** a trainee nobody supervises is marked "Trainee nobody supervises yet, so cannot be booked" and comes after those who can be booked, as a badge not yet checked does, for learners and new pupils alike (SCH-03, R-18).
+
+## D-357 | 2026-10-22 | A full list on Free is said before anybody makes an account to book | Claude
+- **Found:** in the last round, walking the Free plan's ten learners (D-208) from the learner's side. An instructor on Free with ten learners on the books takes nobody new, but their booking link offered every free time to a visitor. The visitor chose one, made an account, confirmed their email, came back and pressed Book, and only then was refused, in words written for the instructor: "Free carries ten learners at a time. Move one to passed or left, or go Pro for as many as you like." The profile offered the same times.
+- **Options:** let a new learner book and come as an enquiry, as an invited one does (D-315), which would make the limit nothing at all; or keep refusing somebody new, as D-208 decided, and say so before they start.
+- **Decision:** the limit stands. The booking link knows who is looking: somebody new sees "Not taking new learners" in place of the times, with "Already learning with them? Sign in to book." for somebody signed out, and for everybody a way to find another instructor near them, as the profile gives (MKT-10, D-110); anybody already with the Business books as ever. The profile says "Not taking new learners" in place of Book a lesson and shows no free times, and the instructor's Learners page, full, says that this is what their link and profile now tell anybody new. A learner refused in the moment between (a place taken while they chose) is told "This instructor is not taking new learners at the moment, so this cannot be booked.", never about a plan. The profile is kept for up to an hour like the rest of it, so a list that has just filled or emptied can take that long to show there; the link is never kept.
+
+## D-358 | 2026-10-22 | A visitor who chose a time is not asked again what they are here for | Claude
+- **Found:** in the same walk. A visitor who chose a time on a booking link and pressed "Continue with 10:00" landed on "Get started: What brings you here?" with nothing chosen, though the address said they were a learner, and had to say "I'm learning to drive" before they could make an account.
+- **Decision:** they go straight to making a learner account, as somebody invited does (BOK-02, AUTH-03). The time they chose waits for them as before.
+
+## D-359 | 2026-10-22 | Somebody already on the books books on a full list | Claude
+- **Found:** in the same walk, and the worst of it. On a full list, the instructor's own learners could not book themselves either: booking on the link adds the learner to the Business "on conflict do nothing", so that somebody already with it is left alone, but the Free limit is a trigger before the insert, and Postgres runs that before it finds the conflict. Every one of the ten was refused the lessons they booked themselves, which D-208 promised would never happen ("Nobody loses a learner they already have").
+- **Decision:** the limit is for somebody new, so a row for somebody the Business already has goes through to the conflict, which leaves what stands there as it is (BOK-02, D-208). The same holds wherever the database adds somebody that way.
+
+## D-360 | 2026-10-22 | A learner moving with their instructor to a full list comes as an enquiry | Claude
+- **Found:** reading every way a learner is added to a Business after D-359. A learner saying yes to moving with their instructor (LRN-07), to the instructor's own Business on Free with ten learners already, was refused, and told about a plan that is not theirs. They stayed at the school with nobody to teach them.
+- **Decision:** moving with their own instructor is never refused over the limit. With room they come as active, as before; with none they come as an enquiry, as somebody invited does (D-315), their lessons stand, and they are counted once there is room (LRN-07, D-208).
+
+## D-361 | 2026-10-22 | An instructor on their own calls off their lessons before their account goes | Claude
+- **Found:** in the last round, reading what deleting an account does for each kind of person. Deleting calls off the lessons the person was to take, so that no diary promises a lesson nobody will take (D-149), but never the lessons they were to teach. At a school that is right: its instructors' lessons stay for the school to give to somebody else or call off (D-120). An instructor running a Business on their own, though, left every lesson they had booked in place once their account went, with nobody to teach them and nobody left to call them off, and a learner paying the day before would still have been charged for one. The delete screen also told an instructor that money for a lesson was "between you and your instructor".
+- **Options:** call their lessons off when the account goes, refunding as an instructor's cancellation does (R-08), which would put a second way of refunding inside the job that erases accounts; or ask them to call the lessons off themselves first, through the cancelling that already refunds every learner in full.
+- **Decision:** somebody who is the only one left at a Business with lessons still to come is asked to call them off first ("You still have lessons booked with your learners. Call them off in your diary first, which gives each learner their money back, then ask again."), and can ask once they have. A school's owner, with others there to see to its lessons, and a learner ask as before. The delete screen speaks to somebody who teaches as such. **For the product owner:** lessons booked on their link during the seven days the request waits are still left behind, and credit a learner bought and has not used stays with the Business as it is (PAY-12, D-353). Whether the account should wait while anything is still owed to a learner, and whether unused credit should be refunded when an instructor goes, are yours to decide.
+
+## D-362 | 2026-10-22 | Two-step verification can be turned off by somebody whose role does not need it | Claude
+- **Found:** in the last round, after D-351. Two-step verification somebody turned on is asked for at every sign-in now, but the account screen showed "On" with no way back: a learner or an instructor who tried it was held to it until support reset it.
+- **Decision:** somebody whose role does not need it has "Turn off" beside it, which asks once and takes the authenticator away; the next sign-in asks for the password, link or text code alone (AUTH-08, AUTH-09). Only a session that has passed the code can do it, so somebody who only knows the password cannot. A role that needs it (staff, a school's owner and managers) still has no way to turn it off.
+
+## D-363 | 2026-10-22 | Lifting a suspension puts a paused Business back to paused | Claude
+- **Found:** noted in the third final round and fixed in the last. A Business is paused while its owner teaches under a school, so that its link and profile take nobody while the school's do (D-292, D-311). A super admin suspending it in that time and then lifting the suspension brought it back active, with its booking link open beside the school's, though its owner still taught there.
+- **Decision:** lifting a suspension puts the Business back as it was before: paused if it was paused, which only its owner lifts by leaving the school or reopening it, and active otherwise (ADM-02).

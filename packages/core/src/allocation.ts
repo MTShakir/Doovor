@@ -20,7 +20,8 @@ export interface AllocationLearner {
   outcode: string | null;
 }
 
-export type BadgeState = 'checked' | 'unchecked' | 'expired';
+/** `unsupervised`: a trainee whom nobody supervises yet, who cannot be booked (R-18, D-356). */
+export type BadgeState = 'checked' | 'unchecked' | 'expired' | 'unsupervised';
 
 export interface AllocationInstructor {
   instructorId: string;
@@ -84,6 +85,7 @@ function areaReason(instructor: AllocationInstructor, learner: AllocationLearner
 function badgeReason(badge: BadgeState): string | null {
   if (badge === 'unchecked') return 'Badge not checked yet';
   if (badge === 'expired') return 'Badge out of date';
+  if (badge === 'unsupervised') return 'Trainee nobody supervises yet, so cannot be booked';
   return null;
 }
 

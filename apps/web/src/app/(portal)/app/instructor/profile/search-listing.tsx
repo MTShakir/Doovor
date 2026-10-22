@@ -8,8 +8,11 @@ import { saveListing } from './actions';
 
 export interface SearchListingProps {
   listed: boolean;
-  /** The badge has run out, so search leaves the profile out whatever the switch says (INS-03). */
-  badgeExpired: boolean;
+  /**
+   * Why search leaves the profile out whatever the switch says: the badge has run out (INS-03),
+   * or a trainee has nobody supervising them (R-18, D-347). Null when nothing does.
+   */
+  outOfSearch: 'badge-expired' | 'not-supervised' | null;
 }
 
 /**
@@ -17,7 +20,7 @@ export interface SearchListingProps {
  * link works either way, so an instructor who fills their diary from their own learners can stay
  * out of sight (M5-06).
  */
-export function SearchListing({ listed, badgeExpired }: SearchListingProps) {
+export function SearchListing({ listed, outOfSearch }: SearchListingProps) {
   const [shown, setShown] = useState(listed);
   const [pending, startTransition] = useTransition();
 
@@ -44,8 +47,10 @@ export function SearchListing({ listed, badgeExpired }: SearchListingProps) {
         disabled={pending}
         onCheckedChange={change}
       />
-      {badgeExpired ? (
+      {outOfSearch === 'badge-expired' ? (
         <CardDescription>Your profile is out of search until your badge is renewed.</CardDescription>
+      ) : outOfSearch === 'not-supervised' ? (
+        <CardDescription>Your profile is out of search until a school or an approved instructor supervises you.</CardDescription>
       ) : null}
     </Card>
   );

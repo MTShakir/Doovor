@@ -311,16 +311,18 @@ export interface BookActionProps {
    * same sum. Black where none was chosen.
    */
   colour?: string | null;
+  /** Not booking because a Free list is full, said as such rather than as not taking bookings (D-357). */
+  full?: boolean;
 }
 
 /** The one thing to do on the page: book, or be told why not. */
-export function BookAction({ bookingUrl, canBook, colour = null }: BookActionProps) {
+export function BookAction({ bookingUrl, canBook, colour = null, full = false }: BookActionProps) {
   if (!canBook) {
     return (
       <div className="flex flex-col items-center gap-2">
         <p className="flex min-h-12 w-full items-center justify-center gap-2 rounded-full bg-grey-100 px-5 text-body font-semibold text-grey-700">
           <Car className="size-5 shrink-0" aria-hidden />
-          Not taking new bookings
+          {full ? 'Not taking new learners' : 'Not taking new bookings'}
         </p>
         {/* The Business's own waiting list is Phase 2 (GAP-01); until then, the area's (MKT-10, D-110). */}
         <a href="/learners#find-an-instructor" className="inline-flex min-h-12 items-center text-body font-semibold text-blue underline underline-offset-4">

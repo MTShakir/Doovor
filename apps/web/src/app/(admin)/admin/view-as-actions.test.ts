@@ -32,7 +32,7 @@ const viewing = '6f1c3a52-9d8e-4b7a-8c61-2f0e9b4d7a13';
 beforeEach(() => {
   vi.clearAllMocks();
   requirePortal.mockResolvedValue({ access: { staffRole: 'support_admin' } });
-  getAccessContext.mockResolvedValue({ userId, staffRole: null, isLearner: true, learnerOnboarded: true, memberships: [], suspendedBusinesses: [], pausedBusinesses: [], switchedOffBy: [] });
+  getAccessContext.mockResolvedValue({ userId, staffRole: null, isLearner: true, learnerOnboarded: true, memberships: [], suspendedBusinesses: [], pausedBusinesses: [], switchedOffBy: [], secondStepOn: false });
 });
 
 describe('viewing as somebody (ADM-06, M5-21)', () => {

@@ -5,8 +5,10 @@ import { Field } from '@repo/ui/field';
 import { Textarea } from '@repo/ui/input';
 import { Sheet } from '@repo/ui/sheet';
 import { toast } from '@repo/ui/toast';
+import { useRouter } from 'next/navigation';
 import { useState, useTransition } from 'react';
 import { FormAlert } from '@/components/form-alert';
+import { getSupabaseBrowserClient } from '@/lib/supabase/browser';
 import { cancelDeletion, requestDeletion, revokeDevice } from './actions';
 
 /** The visible label is "Sign out"; screen readers also hear which device, as a list has several. */
@@ -28,7 +30,72 @@ export function RevokeDeviceButton({ sessionId, device }: { sessionId: string; d
   );
 }
 
-export function DeleteAccount() {
+/**
+ * Turning two-step verification off, for somebody whose role does not need it. Once on it is asked
+ * for at every sign-in (D-351), so somebody who tried it must be able to stop (AUTH-08, D-362).
+ * The code they signed in with is what lets them: the authenticator goes only from a session that
+ * has passed it.
+ */
+export function TurnOffTwoStep({ factorId }: { factorId: string }) {
+  const router = useRouter();
+  const [open, setOpen] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [pending, startTransition] = useTransition();
+
+  return (
+    <>
+      {/* As Set up and Add and verify are beside it: a row has no room for a button and its words. */}
+      <button
+        type="button"
+        className="inline-flex min-h-12 items-center text-small font-semibold text-blue underline underline-offset-4"
+        onClick={() => { setOpen(true); }}
+      >
+        Turn off
+      </button>
+      <Sheet
+        open={open}
+        onOpenChange={setOpen}
+        title="Turn off two-step verification?"
+        description="Signing in will ask for your password, or a link or code we send you, and not for a code from your app."
+        footer={
+          <div className="flex flex-col gap-2">
+            <Button
+              variant="destructive"
+              width="full"
+              pending={pending}
+              onClick={() => {
+                setError(null);
+                startTransition(async () => {
+                  const { error: failed } = await getSupabaseBrowserClient().auth.mfa.unenroll({ factorId });
+                  if (failed) {
+                    setError('It could not be turned off. Sign out, sign in again with your code, and try once more.');
+                    return;
+                  }
+                  setOpen(false);
+                  toast('Two-step verification turned off');
+                  router.refresh();
+                });
+              }}
+            >
+              Turn it off
+            </Button>
+            <Button variant="secondary" width="full" onClick={() => { setOpen(false); }}>
+              Keep it on
+            </Button>
+          </div>
+        }
+      >
+        {error ? <FormAlert>{error}</FormAlert> : <p className="text-body text-grey-700">You can set it up again whenever you like.</p>}
+      </Sheet>
+    </>
+  );
+}
+
+/**
+ * `warning`: what they would give up, said again where they confirm (D-353). `teaches`: somebody at a
+ * Business, whose lessons are the ones they teach rather than an instructor's (D-361).
+ */
+export function DeleteAccount({ warning = null, teaches = false }: { warning?: string | null; teaches?: boolean }) {
   const [open, setOpen] = useState(false);
   const [reason, setReason] = useState('');
   const [error, setError] = useState<string | null>(null);
@@ -43,7 +110,11 @@ export function DeleteAccount() {
         open={open}
         onOpenChange={setOpen}
         title="Delete your account?"
-        description="We will confirm by email. Lessons already booked stay with your instructor until we finish."
+        description={
+          teaches
+            ? 'We will confirm by email. Your profile stays up until your account goes, seven days from now.'
+            : 'We will confirm by email. Lessons already booked stay with your instructor until we finish.'
+        }
         footer={
           <div className="flex flex-col gap-2">
             <Button
@@ -73,6 +144,7 @@ export function DeleteAccount() {
       >
         <div className="flex flex-col gap-4">
           {error ? <FormAlert>{error}</FormAlert> : null}
+          {warning ? <FormAlert tone="warning">{warning}</FormAlert> : null}
           <Field label="Why are you leaving?" hint="You do not have to say. If you tell us, we may be able to put it right first.">
             <Textarea value={reason} onChange={(e) => { setReason(e.target.value); }} maxLength={500} />
           </Field>

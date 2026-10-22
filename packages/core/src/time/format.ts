@@ -33,6 +33,11 @@ export function formatDateTime(instant: Date, timeZone: string = DEFAULT_TIME_ZO
   return `${formatDate(instant, timeZone)}, ${formatTime(instant, timeZone)}`;
 }
 
+/** The day of the week in full, for something that happens on it every week: "Friday" (D-349). */
+export function formatWeekday(instant: Date, timeZone: string = DEFAULT_TIME_ZONE): string {
+  return format(inZone(instant, timeZone), 'EEEE');
+}
+
 /** A length of time in words: "45 minutes", "1 hour", "12 hours 30 minutes". */
 /**
  * A lesson's length, short enough for a badge on a card: 1h, 1.5h, 2h, 45m (D-211).

@@ -10,6 +10,7 @@ import {
   formatLessonLength,
   formatMinutes,
   formatTime,
+  formatWeekday,
   isoWeekday,
   isValidLocalDate,
   isValidLocalTime,
@@ -28,6 +29,9 @@ describe('formatting in Europe/London (PRD 7.6)', () => {
     expect(formatTime(instant)).toBe('14:30');
     expect(formatDateTime(instant)).toBe('Tue 15 Sep, 14:30');
     expect(formatDateWithYear(instant)).toBe('Tue 15 Sep 2026');
+    expect(formatWeekday(instant)).toBe('Tuesday');
+    // Late on a Saturday in UTC is already Sunday in London in the summer.
+    expect(formatWeekday(new Date('2026-09-19T23:30:00Z'))).toBe('Sunday');
   });
 
   it('uses GMT in winter', () => {

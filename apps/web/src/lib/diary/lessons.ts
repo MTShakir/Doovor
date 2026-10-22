@@ -24,7 +24,7 @@ export async function lessonsBetween(from: Date, to: Date, instructorIds?: strin
   let query = supabase
     .from('bookings')
     .select(
-      'id, instructor_id, learner_id, starts_at, ends_at, status, payment_status, source, price_pence, credit_minutes, users!bookings_learner_id_fkey(full_name), lesson_types(name, kind), instructor_profiles(display_name), pickup_points(label)',
+      'id, instructor_id, learner_id, starts_at, ends_at, status, payment_status, source, price_pence, credit_minutes, declined_at, users!bookings_learner_id_fkey(full_name), lesson_types(name, kind), instructor_profiles(display_name), pickup_points(label)',
     )
     .gte('starts_at', from.toISOString())
     .lt('starts_at', to.toISOString())
@@ -50,6 +50,8 @@ export async function lessonsBetween(from: Date, to: Date, instructorIds?: strin
       creditMinutes: row.credit_minutes,
       kind: row.lesson_types.kind,
       source: row.source,
+      // A request turned down says so, though its status is cancelled (D-340).
+      declined: row.declined_at !== null,
     },
   }));
 }

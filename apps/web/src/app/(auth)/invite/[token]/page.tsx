@@ -189,6 +189,19 @@ async function SchoolInvitation({
         </div>
       );
     }
+    // Switched off by this school and asked back: the profile they had there is waiting for them,
+    // address and all (D-324, D-334), so there is nothing to set up.
+    if (access.access.switchedOffBy.includes(school)) {
+      return (
+        <div className="flex flex-col gap-4">
+          <h1 className="text-h1 text-black">{heading}</h1>
+          <p className="text-body text-grey-700">
+            Join {school} again with the profile you had there. Your profile and booking link come back as they were.
+          </p>
+          <JoinButton token={token} school={school} />
+        </div>
+      );
+    }
     return (
       <div className="flex flex-col gap-4">
         <h1 className="text-h1 text-black">{heading}</h1>

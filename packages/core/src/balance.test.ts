@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   amountOwedPence,
+  creditGivenUpWords,
   historyLine,
   moneyDueAt,
   owedLessons,
@@ -237,5 +238,31 @@ describe('what is owed for a lesson part paid by credit (D-225)', () => {
       creditMinutes: 60,
     };
     expect(amountOwedPence(late)).toBe(4100);
+  });
+});
+
+describe('what deleting an account gives up (PAY-12, D-353)', () => {
+  const hours = (minutes: number) => (minutes === 60 ? '1 hour' : `${String(minutes / 60)} hours`);
+
+  it('names the hours left with each Business that sold them', () => {
+    expect(creditGivenUpWords([{ businessName: 'Sam Driving', minutes: 600 }], hours)).toBe(
+      'You have 10 hours of credit with Sam Driving. Deleting your account gives it up, so ask them about a refund first.',
+    );
+    expect(
+      creditGivenUpWords(
+        [
+          { businessName: 'Sam Driving', minutes: 600 },
+          { businessName: 'Quayside Driving School', minutes: 60 },
+        ],
+        hours,
+      ),
+    ).toBe(
+      'You have 10 hours of credit with Sam Driving and 1 hour of credit with Quayside Driving School. Deleting your account gives it up, so ask each of them about a refund first.',
+    );
+  });
+
+  it('says nothing when there is nothing to give up', () => {
+    expect(creditGivenUpWords([], hours)).toBeUndefined();
+    expect(creditGivenUpWords([{ businessName: 'Sam Driving', minutes: 0 }], hours)).toBeUndefined();
   });
 });

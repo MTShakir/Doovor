@@ -50,6 +50,9 @@ export interface Booked {
   paidLater: 'day_before' | 'after' | null;
 }
 
+/** Said to a learner a full list cannot take, as the link says it before they choose (D-357). */
+const LIST_FULL = 'This instructor is not taking new learners at the moment, so this cannot be booked.';
+
 /** BOK-02: the learner books the slot themselves. The RPC holds them to the rules (R-04). */
 export async function bookAsLearner(input: unknown): Promise<Result<Booked>> {
   const parsed = bookSchema.safeParse(input);
@@ -68,7 +71,13 @@ export async function bookAsLearner(input: unknown): Promise<Result<Booked>> {
     p_starts_at: parsed.data.startsAt,
     p_duration_minutes: parsed.data.durationMinutes,
   });
-  if (error) return err(parsePostgresError(error).code);
+  if (error) {
+    const { code } = parsePostgresError(error);
+    // The limit is the instructor's plan, which is nothing to do with the learner: they are told
+    // only that nobody new can start just now (D-208, D-357).
+    if (code === 'LEARNER_LIMIT') return err(code, LIST_FULL);
+    return err(code);
+  }
 
   // What is left to do is read from the lesson as it now is: credit may have paid for it, a
   // request is authorised rather than paid, and a time held while it is paid for is held only so
@@ -137,5 +146,6 @@ export async function rememberSlot(input: unknown): Promise<Result<null>> {
     maxAge: 60 * 60 * 2,
   });
 
-  return redirectTo('/start?role=learner');
+  // They have said what they are here for by choosing a time, so they are not asked again (D-358).
+  return redirectTo('/sign-up?role=learner');
 }

@@ -15,6 +15,8 @@ export interface MyLesson {
   pricePence: number;
   /** Minutes of it already paid for from credit, so what is left to pay is less (D-225). */
   creditMinutes: number;
+  /** A request the instructor turned down, whose status is cancelled (D-340). */
+  declined: boolean;
   pickup: string | null;
   durationMinutes: number;
   /** True when this Business can take a card, so an unpaid lesson can be paid for now. */
@@ -41,7 +43,7 @@ export async function myLessons(): Promise<{ upcoming: MyLesson[]; past: MyLesso
   const { data, error } = await supabase
     .from('bookings')
     .select(
-      'id, starts_at, ends_at, status, payment_status, payment_mode, price_pence, credit_minutes, dispute_until, instructor_id, instructor_profiles(display_name), lesson_types(name), pickup_points(label), businesses!bookings_business_id_fkey(stripe_charges_enabled, settings), no_show_disputes(outcome, note)',
+      'id, starts_at, ends_at, status, payment_status, payment_mode, price_pence, credit_minutes, declined_at, dispute_until, instructor_id, instructor_profiles(display_name), lesson_types(name), pickup_points(label), businesses!bookings_business_id_fkey(stripe_charges_enabled, settings), no_show_disputes(outcome, note)',
     )
     .order('starts_at', { ascending: false })
     .limit(200);
@@ -61,6 +63,7 @@ export async function myLessons(): Promise<{ upcoming: MyLesson[]; past: MyLesso
     lessonType: row.lesson_types.name,
     pricePence: row.price_pence,
     creditMinutes: row.credit_minutes,
+    declined: row.declined_at !== null,
     pickup: row.pickup_points?.label ?? null,
     disputeUntil: row.dispute_until,
     dispute: row.no_show_disputes === null ? null : { outcome: row.no_show_disputes.outcome, note: row.no_show_disputes.note },
@@ -104,7 +107,7 @@ export async function myLesson(bookingId: string): Promise<MyLessonDetails | nul
   const { data, error } = await supabase
     .from('bookings')
     .select(
-      'id, starts_at, ends_at, status, payment_status, payment_mode, price_pence, credit_minutes, dispute_until, instructor_id, pickup_point_id, instructor_profiles(display_name, public_slug, verification_status), lesson_types(name), pickup_points(label, address, postcode), businesses!bookings_business_id_fkey(name, type, slug, status, stripe_charges_enabled, settings), no_show_disputes(outcome, note)',
+      'id, starts_at, ends_at, status, payment_status, payment_mode, price_pence, credit_minutes, declined_at, dispute_until, instructor_id, pickup_point_id, instructor_profiles(display_name, public_slug, verification_status), lesson_types(name), pickup_points(label, address, postcode), businesses!bookings_business_id_fkey(name, type, slug, status, stripe_charges_enabled, settings), no_show_disputes(outcome, note)',
     )
     .eq('id', bookingId)
     .maybeSingle();
@@ -126,6 +129,7 @@ export async function myLesson(bookingId: string): Promise<MyLessonDetails | nul
     lessonType: data.lesson_types.name,
     pricePence: data.price_pence,
     creditMinutes: data.credit_minutes,
+    declined: data.declined_at !== null,
     pickup: data.pickup_points?.label ?? null,
     pickupPointId: data.pickup_point_id,
     pickupAddress: data.pickup_points?.address ?? null,

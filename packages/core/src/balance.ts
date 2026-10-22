@@ -129,6 +129,18 @@ export interface MoneyRefund {
   kind: RefundKind;
 }
 
+/**
+ * What somebody gives up with their account: the hours they bought and have not used, with each
+ * Business that sold them (PAY-12, D-353). Undefined when there are none.
+ */
+export function creditGivenUpWords(credit: { businessName: string; minutes: number }[], hours: (minutes: number) => string): string | undefined {
+  const left = credit.filter((one) => one.minutes > 0);
+  if (left.length === 0) return undefined;
+  const parts = left.map((one) => `${hours(one.minutes)} of credit with ${one.businessName}`);
+  const listed = parts.length === 1 ? parts[0] : `${parts.slice(0, -1).join(', ')} and ${parts.at(-1) ?? ''}`;
+  return `You have ${listed ?? ''}. Deleting your account gives it up, so ask ${left.length === 1 ? 'them' : 'each of them'} about a refund first.`;
+}
+
 export interface BalanceSummary {
   /** Minutes of credit to book with (PAY-04). */
   creditMinutes: number;

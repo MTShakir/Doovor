@@ -1,5 +1,6 @@
 import { formatUkMobile } from '@repo/core/phone';
-import { formatDate, formatDateTime } from '@repo/core/time';
+import { creditGivenUpWords } from '@repo/core/balance';
+import { formatDate, formatDateTime, formatMinutes } from '@repo/core/time';
 import { Button } from '@repo/ui/button';
 import { platformId } from '@repo/core/platform-id';
 import { Card, CardDescription, CardTitle } from '@repo/ui/card';
@@ -10,14 +11,17 @@ import { Building2, ChevronLeft, IdCard, KeyRound, LogOut, Mail, MonitorSmartpho
 import type { Metadata, Route } from 'next';
 import Link from 'next/link';
 import { Suspense } from 'react';
+import { FormAlert } from '@/components/form-alert';
 import { landingPath, requiresMfa } from '@/lib/auth/portals';
 import { businessNameLabel, myBusiness, ownBusiness } from '@/lib/auth/own-business';
 import { requireAccess } from '@/lib/auth/session';
+import { learnerBalance } from '@/lib/payments/balance';
+import { learnerBusinesses } from '@/lib/payments/packages';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
 import { describeUserAgent } from '@/lib/user-agent';
 import { signOut } from '../../(auth)/actions';
 import { signOutEverywhere } from './actions';
-import { DeleteAccount, KeepMyAccount, RevokeDeviceButton } from './account-client';
+import { DeleteAccount, KeepMyAccount, RevokeDeviceButton, TurnOffTwoStep } from './account-client';
 
 export const metadata: Metadata = { title: 'Account and security', robots: { index: false } };
 
@@ -53,6 +57,9 @@ async function AccountContent() {
   ]);
   // listFactors().totp only ever contains verified factors.
   const totpOn = (factors?.totp.length ?? 0) > 0;
+  const totpFactor = factors?.totp[0]?.id ?? null;
+  // Hours a learner bought and has not used, which their account takes with it (PAY-12, D-353).
+  const givesUp = access.isLearner ? await creditGivenUp(session.userId) : undefined;
   const mfaRequired = requiresMfa(access);
   // Who they work for, and whether that name is theirs to change (D-196, D-217).
   const business = myBusiness(access);
@@ -132,10 +139,17 @@ async function AccountContent() {
         <ListRow
           leading={rowIcon(ShieldCheck)}
           title="Two-step verification"
-          subtitle={mfaRequired ? 'Required for your role' : 'An extra step with an authenticator app'}
+          subtitle={
+            mfaRequired ? 'Required for your role' : totpOn ? 'On, with your authenticator app' : 'An extra step with an authenticator app'
+          }
           trailing={
             totpOn ? (
-              <StatusPill status="confirmed">On</StatusPill>
+              // Somebody whose role does not need it can stop (D-362).
+              mfaRequired || totpFactor === null ? (
+                <StatusPill status="confirmed">On</StatusPill>
+              ) : (
+                <TurnOffTwoStep factorId={totpFactor} />
+              )
             ) : (
               <Link href="/mfa?next=/account" className="text-small font-semibold text-blue underline underline-offset-4">
                 Set up
@@ -201,8 +215,11 @@ async function AccountContent() {
         <CardTitle id="delete-title">Delete your account</CardTitle>
         <CardDescription className="mt-1">
           Your name, contact details and anything written about you go. Payment records stay for 6 years without you
-          in them, because the law requires it. Lessons still to come are cancelled, and any money owed for one is
-          between you and your instructor.
+          in them, because the law requires it.{' '}
+          {/* Said to whoever is reading: somebody who teaches has lessons to see to, not an instructor (D-361). */}
+          {access.memberships.length > 0
+            ? 'Your profile and booking link go too. If you teach on your own, call off your lessons still to come first.'
+            : 'Lessons still to come are cancelled, and any money owed for one is between you and your instructor.'}
         </CardDescription>
         <div className="mt-4">
           {deletion ? (
@@ -214,7 +231,10 @@ async function AccountContent() {
               <KeepMyAccount />
             </div>
           ) : (
-            <DeleteAccount />
+            <div className="flex flex-col gap-3">
+              {givesUp ? <FormAlert tone="warning">{givesUp}</FormAlert> : null}
+              <DeleteAccount warning={givesUp ?? null} teaches={access.memberships.length > 0} />
+            </div>
           )}
         </div>
       </Card>
@@ -231,5 +251,15 @@ async function AccountContent() {
         </Button>
       </form>
     </div>
+  );
+}
+
+/** The credit a learner would give up with their account, in words, or undefined for none (D-353). */
+async function creditGivenUp(userId: string): Promise<string | undefined> {
+  const businesses = await learnerBusinesses(userId);
+  const balances = await Promise.all(businesses.map((one) => learnerBalance(one.businessId, userId)));
+  return creditGivenUpWords(
+    businesses.map((one, index) => ({ businessName: one.businessName, minutes: balances[index]?.creditMinutes ?? 0 })),
+    formatMinutes,
   );
 }

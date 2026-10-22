@@ -8,6 +8,7 @@ import {
   inviteKindsFor,
   lessonSellerChoiceSchema,
   memberPermissionSchema,
+  memberSuperviseSchema,
   memberSwitchSchema,
   offerEnquirySchema,
   officeEnquiryConsentWords,
@@ -121,6 +122,12 @@ describe('managing the team (SCH-02, M5-13)', () => {
     expect(memberSwitchSchema.safeParse({ membershipId: 'not-an-id', active: false }).success).toBe(false);
     expect(invitationIdSchema.safeParse(membershipId).success).toBe(true);
     expect(invitationIdSchema.safeParse('').success).toBe(false);
+  });
+
+  it('takes the trainee the school answers for, and whether it does (INS-04, R-18, D-342)', () => {
+    expect(memberSuperviseSchema.parse({ instructorId: membershipId, supervised: true })).toEqual({ instructorId: membershipId, supervised: true });
+    expect(memberSuperviseSchema.safeParse({ instructorId: 'not-an-id', supervised: true }).success).toBe(false);
+    expect(memberSuperviseSchema.safeParse({ instructorId: membershipId }).success).toBe(false);
   });
 });
 

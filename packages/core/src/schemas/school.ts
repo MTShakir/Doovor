@@ -114,6 +114,12 @@ export const memberSwitchSchema = z.object({
   active: z.boolean(),
 });
 
+/** The school answering for a trainee who teaches for it, or no longer (INS-04, R-18, D-342). */
+export const memberSuperviseSchema = z.object({
+  instructorId: z.uuid(),
+  supervised: z.boolean(),
+});
+
 /** An invitation the school cancels. */
 export const invitationIdSchema = z.uuid();
 

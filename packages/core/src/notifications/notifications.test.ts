@@ -10,6 +10,7 @@ import {
   notificationCategories,
   notificationKinds,
   switchableChannels,
+  textMessageCopy,
   type NotificationAudience,
   type NotificationChannel,
 } from './catalogue.ts';
@@ -156,6 +157,23 @@ describe('what the settings screen offers (NTF-04)', () => {
     expect(alwaysOnChannels('reminders')).toEqual([]);
     expect(switchableChannels('reminders')).toEqual(['in_app', 'email', 'push', 'sms']);
   });
+
+  it('offers each person only what they can be sent (D-344)', () => {
+    // The only money text is the warning before an instructor's yearly plan renews.
+    expect(channelsInCategory('money', ['learner'])).toEqual(['in_app', 'email', 'push']);
+    expect(channelsInCategory('money', ['instructor'])).toEqual(['in_app', 'email', 'push', 'sms']);
+    expect(switchableChannels('money', ['learner'])).toEqual(['email', 'push']);
+    // Somebody who both learns and teaches is offered both.
+    expect(channelsInCategory('money', ['learner', 'instructor'])).toEqual(['in_app', 'email', 'push', 'sms']);
+    expect(channelsInCategory('reminders', ['learner'])).toEqual(['in_app', 'email', 'push', 'sms']);
+  });
+
+  it('says what a text carries, for whoever is reading (D-344)', () => {
+    expect(textMessageCopy('reminders', ['learner'])).toBe('Reminders only, when your instructor sends them by text.');
+    expect(textMessageCopy('reminders', ['instructor'])).toBe('Reminders only, on the Pro plan.');
+    expect(textMessageCopy('reminders', ['learner', 'instructor'])).toBe('Reminders only, on the Pro plan.');
+    expect(textMessageCopy('money', ['instructor'])).toBe('Only to warn you before a yearly plan renews.');
+  });
 });
 
 describe('the words (NTF-03)', () => {
@@ -184,6 +202,13 @@ describe('the words (NTF-03)', () => {
     });
     // A manager wants to know which of their instructors it was.
     expect(notificationCopy('booking.confirmed', 'school', lesson).body).toBe('Wed 16 Sep at 09:00 with Sarah Khan.');
+  });
+
+  it('says once for lessons booked every week in one go (D-349)', () => {
+    const series = { ...lesson, detail: 'The first of 4, every Wednesday at 09:00 until Wed 7 Oct' };
+    expect(notificationCopy('booking.confirmed', 'learner', series).body).toBe(
+      'Wed 16 Sep at 09:00 with Sarah Khan. The first of 4, every Wednesday at 09:00 until Wed 7 Oct.',
+    );
   });
 
   it('leaves out what it was not told', () => {
