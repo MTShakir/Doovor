@@ -1832,3 +1832,7 @@ Every decision made without the product owner, newest last. Format: date, decisi
 ## D-354 | 2026-10-22 | Time off added over booked lessons says which are still booked | Claude
 - **Found:** in the third final round. An instructor added a day's time off over a day with a lesson booked in it. The screen said "Time off added" and nothing else: the lesson stayed booked, the learner was still expecting them, and nothing reminded the instructor it was there.
 - **Decision:** time off still never moves or cancels anybody's lesson on its own, which only the instructor decides (BOK-08, BOK-09). Added over lessons still booked, it says which ("A lesson is still booked in that time off: 10:00 with Lily Two. It stays booked until you move or call it off.") with a link to that day in the diary (DIA-02).
+
+## D-355 | 2026-10-22 | A fee is owed from when the lesson was called off | Claude
+- **Found:** in the third final round, checking that the money screens add up. A learner called off a lesson with the school 34 hours ahead and owed its £40 as a late fee, which her Payments said at once. The school's Overview said "Unpaid £0, Nothing owed", and the Money screens' Unpaid the same, because they counted what is owed only for lessons whose time had come.
+- **Decision:** a fee is owed from when the lesson was called off, on the Overview and the Money screens as on the learner's Payments; a lesson itself is owed for once it has started, as before (PAY-06, SCH-01, R-06).
