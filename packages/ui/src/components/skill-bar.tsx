@@ -18,9 +18,11 @@ export function SkillBar({ skill, rating, className }: SkillBarProps) {
   const levelLabel = rating === null ? 'Not started' : skillRatingLabels[rating];
   return (
     <div role="img" aria-label={`${skill}: ${String(level)} of 5, ${levelLabel}`} className={cn('flex flex-col gap-1.5', className)}>
-      <div className="flex items-baseline justify-between gap-3">
-        <span className="text-body font-medium text-ink">{skill}</span>
-        <span className="shrink-0 text-small text-grey-700">{levelLabel}</span>
+      {/* Wraps: at 200% text "Under full instruction" beside the area's name is wider than a phone
+          (M6-06, D-350). The level goes under the name instead. */}
+      <div className="flex flex-wrap items-baseline justify-between gap-x-3">
+        <span className="min-w-0 text-body font-medium text-ink">{skill}</span>
+        <span className="min-w-0 text-small text-grey-700">{levelLabel}</span>
       </div>
       <div className="flex gap-1">
         {Array.from({ length: 5 }, (_, index) => (
