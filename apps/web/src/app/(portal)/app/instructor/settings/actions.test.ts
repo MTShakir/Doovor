@@ -5,7 +5,13 @@ const savePrices = vi.fn<(...args: unknown[]) => Promise<unknown>>();
 const savePackage = vi.fn<(...args: unknown[]) => Promise<unknown>>();
 const rpc = vi.fn<(name: string, args: Record<string, unknown>) => Promise<{ data: unknown; error: { message: string } | null }>>();
 
-vi.mock('@/lib/supabase/server', () => ({ createSupabaseServerClient: () => Promise.resolve({ rpc }) }));
+// The lessons a query finds, for time off added over them (D-354).
+let bookingsFound: { starts_at: string; users: { full_name: string } | null }[] = [];
+const query: Record<string, unknown> = {};
+for (const step of ['select', 'eq', 'in', 'lt', 'gt']) query[step] = () => query;
+query.order = () => Promise.resolve({ data: bookingsFound, error: null });
+const from = vi.fn(() => query);
+vi.mock('@/lib/supabase/server', () => ({ createSupabaseServerClient: () => Promise.resolve({ rpc, from }) }));
 vi.mock('@/lib/auth/session', () => ({ requirePortal: () => requirePortal() }));
 vi.mock('@/lib/catalogue/save', () => ({
   savePrices: (...args: unknown[]) => savePrices(...args),
@@ -14,7 +20,7 @@ vi.mock('@/lib/catalogue/save', () => ({
 vi.mock('@/lib/public/instructor-profile', () => ({ expireAllInstructorProfiles: vi.fn(), expireInstructorProfile: vi.fn() }));
 vi.mock('next/cache', () => ({ revalidatePath: vi.fn() }));
 
-const { saveBusinessPackage, saveBusinessPrices, saveFirstPrices, saveOwnPrices } = await import('./actions');
+const { saveBusinessPackage, saveBusinessPrices, saveException, saveFirstPrices, saveOwnPrices } = await import('./actions');
 
 function teachingFor(businessType: 'independent' | 'school') {
   requirePortal.mockResolvedValue({
@@ -83,5 +89,30 @@ describe('prices from the instructor settings (R-05, SCH-04, M5-15)', () => {
     expect(await saveBusinessPrices({ prices: [] })).toMatchObject({ ok: false, code: 'NOT_ALLOWED' });
     expect(await saveBusinessPackage({})).toMatchObject({ ok: false, code: 'NOT_ALLOWED' });
     expect(savePackage).not.toHaveBeenCalled();
+  });
+});
+
+describe('time off over lessons still booked (DIA-02, D-354)', () => {
+  it('keeps them, and says which', async () => {
+    teachingFor('independent');
+    bookingsFound = [{ starts_at: '2026-10-27T10:00:00Z', users: { full_name: 'Lily Two' } }];
+    const result = await saveException({ kind: 'blocked', date: '2026-10-27', startTime: '09:00', endTime: '17:00', reason: 'Car in for a service' });
+    expect(result).toEqual({ ok: true, data: { lessonsInside: ['10:00 with Lily Two'] } });
+    expect(from).toHaveBeenCalledWith('bookings');
+  });
+
+  it('has nothing to say about extra hours, or time off with nothing in it', async () => {
+    teachingFor('independent');
+    bookingsFound = [];
+    expect(await saveException({ kind: 'blocked', date: '2026-10-27', startTime: '09:00', endTime: '17:00', reason: '' })).toEqual({
+      ok: true,
+      data: { lessonsInside: [] },
+    });
+    from.mockClear();
+    expect(await saveException({ kind: 'open', date: '2026-10-28', startTime: '18:00', endTime: '20:00', reason: '' })).toEqual({
+      ok: true,
+      data: { lessonsInside: [] },
+    });
+    expect(from).not.toHaveBeenCalled();
   });
 });

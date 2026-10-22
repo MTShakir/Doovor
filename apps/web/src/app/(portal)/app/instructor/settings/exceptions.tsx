@@ -8,6 +8,8 @@ import { Select } from '@repo/ui/select';
 import { StatusPill } from '@repo/ui/status-pill';
 import { toast } from '@repo/ui/toast';
 import { Trash2 } from 'lucide-react';
+import type { Route } from 'next';
+import Link from 'next/link';
 import { useState, useTransition } from 'react';
 import { ClientForm, SubmitButton } from '@/components/client-form';
 import { FormAlert } from '@/components/form-alert';
@@ -36,16 +38,20 @@ export function Exceptions({ rows, today }: { rows: ExceptionRow[]; today: strin
   const [startTime, setStartTime] = useState('09:00');
   const [endTime, setEndTime] = useState('17:00');
   const [reason, setReason] = useState('');
+  // Lessons still booked inside time off just added, and the day they are on (D-354).
+  const [inside, setInside] = useState<{ date: string; lessons: string[] } | null>(null);
 
   const onSubmit = (event: { preventDefault: () => void }) => {
     event.preventDefault();
     setErrors({});
     setFormError(null);
+    setInside(null);
     startTransition(async () => {
       const result = await saveException({ kind, date, startTime, endTime, reason });
       if (result.ok) {
         toast(kind === 'blocked' ? 'Time off added' : 'Extra hours added');
         setReason('');
+        if (result.data.lessonsInside.length > 0) setInside({ date, lessons: result.data.lessonsInside });
         return;
       }
       setErrors(result.fields ?? {});
@@ -91,6 +97,19 @@ export function Exceptions({ rows, today }: { rows: ExceptionRow[]; today: strin
 
       <ClientForm onSubmit={onSubmit} pending={pending} className="flex flex-col gap-3">
         {formError ? <FormAlert>{formError}</FormAlert> : null}
+        {inside ? (
+          <FormAlert tone="warning">
+            {inside.lessons.length === 1 ? 'A lesson is still booked in that time off: ' : 'Lessons are still booked in that time off: '}
+            {inside.lessons.join(', ')}. {inside.lessons.length === 1 ? 'It stays' : 'They stay'} booked until you move or call{' '}
+            {inside.lessons.length === 1 ? 'it' : 'them'} off.{' '}
+            <Link
+              href={`/app/instructor/diary?view=day&date=${inside.date}` as Route}
+              className="font-semibold text-black underline underline-offset-4"
+            >
+              Open that day
+            </Link>
+          </FormAlert>
+        ) : null}
         <div className="grid grid-cols-[minmax(0,1fr)] gap-3 md:grid-cols-2">
           <Field label="What is it?">
             <Select

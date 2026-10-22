@@ -5,7 +5,7 @@ import { err, ok, type Result } from '@repo/core/result';
 import { businessBookingRulesSchema, instructorBookingRulesSchema } from '@repo/core/booking-rules';
 import { availabilityExceptionSchema, workingWeekSchema } from '@repo/core/schemas/availability';
 import { onboardingPricesSchema } from '@repo/core/schemas/onboarding';
-import { localToUtc } from '@repo/core/time';
+import { formatTime, localToUtc } from '@repo/core/time';
 import { revalidatePath } from 'next/cache';
 import { z } from '@repo/core/zod';
 import { requirePortal } from '@/lib/auth/session';
@@ -62,8 +62,11 @@ export async function saveWorkingWeek(input: unknown): Promise<Result<null>> {
   return ok(null);
 }
 
-/** DIA-02: an open slot, or time off. Overlaps are resolved by the database (M1-17). */
-export async function saveException(input: unknown): Promise<Result<null>> {
+/**
+ * DIA-02: an open slot, or time off. Overlaps are resolved by the database (M1-17). Time off over
+ * lessons still booked keeps them, and says which, so nobody is left waiting on a doorstep (D-354).
+ */
+export async function saveException(input: unknown): Promise<Result<{ lessonsInside: string[] }>> {
   const parsed = availabilityExceptionSchema.safeParse(input);
   if (!parsed.success) return err('VALIDATION_FAILED', undefined, fieldErrors(parsed.error));
 
@@ -90,7 +93,24 @@ export async function saveException(input: unknown): Promise<Result<null>> {
 
   revalidatePath('/app/instructor/settings');
   expireInstructorProfile(profileId);
-  return ok(null);
+  if (kind !== 'blocked') return ok({ lessonsInside: [] });
+
+  const { data: inside } = await supabase
+    .from('bookings')
+    .select('starts_at, users!bookings_learner_id_fkey(full_name)')
+    .eq('instructor_id', profileId)
+    .in('status', ['pending_payment', 'requested', 'confirmed', 'in_progress'])
+    .lt('starts_at', ends.toISOString())
+    .gt('ends_at', starts.toISOString())
+    .order('starts_at');
+  return ok({
+    lessonsInside: (inside ?? []).map((one) => `${formatTime(new Date(one.starts_at))} with ${learnerName(one.users)}`),
+  });
+}
+
+/** The types promise a name, but row-level security decides whether one comes back (D-097). */
+function learnerName(learner: { full_name: string } | null): string {
+  return learner === null || learner.full_name === '' ? 'a learner' : learner.full_name;
 }
 
 /** PRD 11.1: the settings a Business owns. Ranges are checked here and in the database. */
