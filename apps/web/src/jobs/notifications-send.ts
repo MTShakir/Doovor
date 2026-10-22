@@ -5,7 +5,7 @@ import { emailProvider } from '@/lib/email/provider';
 import { pushConfigured, sendPush } from '@/lib/notifications/push';
 import { smsProvider } from '@/lib/sms/provider';
 import { getSupabaseServiceClient } from '@/lib/supabase/service';
-import { readPlanLimits, smsAllowance } from './plan-limits';
+import { readPlanLimits, smsAllowance, type PlanLimits } from './plan-limits';
 import {
   emailPropsFor,
   smsBodyFor,
@@ -66,65 +66,11 @@ export async function sendPendingNotifications(limit = 25): Promise<SendResult> 
       dedupeKey: row.dedupe_key,
     };
 
-    let trouble: string | null = null;
-    let refused = false;
-
-    if (wantsEmail(one)) {
-      const email = await renderNotificationEmail(emailPropsFor(one, { appUrl }));
-      const result = await provider.send({
-        to: one.email,
-        subject: email.subject,
-        html: email.html,
-        text: email.text,
-        idempotencyKey: one.dedupeKey,
-      });
-      if (!result.ok) {
-        trouble = result.message;
-        refused = result.reason === 'REJECTED';
-      }
-    }
-
-    // Every browser this person signed up, and any that have gone are forgotten (NTF-01).
-    if (one.channels.includes('push') && pushConfigured()) {
-      const targets = await supabase.rpc('system_push_targets', { p_user_id: one.userId });
-      for (const target of targets.data ?? []) {
-        const result = await sendPush(target, {
-          title: one.title,
-          body: one.body,
-          url: one.link,
-          tag: one.kind,
-        });
-        if (result.ok) {
-          await supabase.rpc('system_touch_push_target', { p_id: target.id });
-          continue;
-        }
-        if (result.gone) {
-          await supabase.rpc('system_drop_push_target', { p_id: target.id });
-          continue;
-        }
-        trouble ??= result.message;
-      }
-    }
-
-    // Text messages are Pro only and capped by the month (NTF-01). The allowance is taken
-    // before the send and given back if it fails, so the cap is never quietly passed.
-    const number = smsNumberFor(one);
-    if (wantsSms(one) && one.businessId !== null && number !== null) {
-      const allowance = smsAllowance(one.businessPlan, limits);
-      const claimed = await supabase.rpc('system_claim_sms', {
-        p_business_id: one.businessId,
-        p_allowance: allowance,
-      });
-      if (claimed.data === true) {
-        const result = await texter.send({ to: number, body: smsBodyFor(one) });
-        if (!result.ok) {
-          await supabase.rpc('system_release_sms', { p_business_id: one.businessId });
-          trouble ??= result.message;
-          refused ||= result.reason === 'REJECTED';
-        }
-      }
-      // Over the cap is not a failure: everything else about this notification went out.
-    }
+    // One notification that cannot be sent holds up none of the others claimed with it, and
+    // those already sent are still marked sent, so the next run does not send them again (D-373).
+    const { trouble, refused } = await deliver(one, { supabase, provider, texter, limits, appUrl }).catch(
+      (problem: unknown) => ({ trouble: problem instanceof Error ? problem.message : 'It could not be sent.', refused: false }),
+    );
 
     if (trouble === null) {
       sent.push(one.id);
@@ -144,4 +90,78 @@ export async function sendPendingNotifications(limit = 25): Promise<SendResult> 
   }
 
   return { sent: sent.length, failed };
+}
+
+interface Tools {
+  supabase: ReturnType<typeof getSupabaseServiceClient>;
+  provider: ReturnType<typeof emailProvider>;
+  texter: ReturnType<typeof smsProvider>;
+  limits: PlanLimits;
+  appUrl: string;
+}
+
+/** One notification, on each channel it carries: what went wrong, if anything, and whether it will again. */
+async function deliver(one: ClaimedNotification, tools: Tools): Promise<{ trouble: string | null; refused: boolean }> {
+  const { supabase, provider, texter, limits, appUrl } = tools;
+  let trouble: string | null = null;
+  let refused = false;
+
+  if (wantsEmail(one)) {
+    const email = await renderNotificationEmail(emailPropsFor(one, { appUrl }));
+    const result = await provider.send({
+      to: one.email,
+      subject: email.subject,
+      html: email.html,
+      text: email.text,
+      idempotencyKey: one.dedupeKey,
+    });
+    if (!result.ok) {
+      trouble = result.message;
+      refused = result.reason === 'REJECTED';
+    }
+  }
+
+  // Every browser this person signed up, and any that have gone are forgotten (NTF-01).
+  if (one.channels.includes('push') && pushConfigured()) {
+    const targets = await supabase.rpc('system_push_targets', { p_user_id: one.userId });
+    for (const target of targets.data ?? []) {
+      const result = await sendPush(target, {
+        title: one.title,
+        body: one.body,
+        url: one.link,
+        tag: one.kind,
+      });
+      if (result.ok) {
+        await supabase.rpc('system_touch_push_target', { p_id: target.id });
+        continue;
+      }
+      if (result.gone) {
+        await supabase.rpc('system_drop_push_target', { p_id: target.id });
+        continue;
+      }
+      trouble ??= result.message;
+    }
+  }
+
+  // Text messages are Pro only and capped by the month (NTF-01). The allowance is taken
+  // before the send and given back if it fails, so the cap is never quietly passed.
+  const number = smsNumberFor(one);
+  if (wantsSms(one) && one.businessId !== null && number !== null) {
+    const allowance = smsAllowance(one.businessPlan, limits);
+    const claimed = await supabase.rpc('system_claim_sms', {
+      p_business_id: one.businessId,
+      p_allowance: allowance,
+    });
+    if (claimed.data === true) {
+      const result = await texter.send({ to: number, body: smsBodyFor(one) });
+      if (!result.ok) {
+        await supabase.rpc('system_release_sms', { p_business_id: one.businessId });
+        trouble ??= result.message;
+        refused ||= result.reason === 'REJECTED';
+      }
+    }
+    // Over the cap is not a failure: everything else about this notification went out.
+  }
+
+  return { trouble, refused };
 }
