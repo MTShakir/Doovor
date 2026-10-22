@@ -1,4 +1,5 @@
 import { formatPence } from '@repo/core/money';
+import { formatUkMobile } from '@repo/core/phone';
 import { formatDateWithYear, formatTime } from '@repo/core/time';
 import { Button } from '@repo/ui/button';
 import { SkeletonRow } from '@repo/ui/skeleton';
@@ -139,5 +140,9 @@ function said(key: string, value: unknown): string {
     const when = new Date(value);
     return Number.isNaN(when.getTime()) ? value : `${formatDateWithYear(when)}, ${formatTime(when)}`;
   }
+  // A time of day as the rest of the app writes one, 18:00 rather than 18:00:00 (D-376).
+  if (/^\d{2}:\d{2}:\d{2}$/.test(value)) return value.slice(0, 5);
+  // A mobile as their account shows it, 07700 900005 rather than 447700900005.
+  if (key === 'phone') return formatUkMobile(value);
   return value;
 }

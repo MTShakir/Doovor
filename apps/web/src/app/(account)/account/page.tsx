@@ -197,7 +197,7 @@ async function AccountContent() {
       <Card role="region" aria-labelledby="data-title">
         <CardTitle id="data-title">Your data</CardTitle>
         <CardDescription className="mt-1">
-          Everything we hold about you, to read, print or keep as a file (NFR-PRV-03).
+          Everything we hold about you, to read, print or keep as a file.
         </CardDescription>
         <div className="mt-4 flex flex-col gap-2 sm:flex-row">
           <Button variant="secondary" asChild>
