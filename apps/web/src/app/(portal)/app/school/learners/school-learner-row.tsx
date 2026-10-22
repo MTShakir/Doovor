@@ -1,6 +1,7 @@
 'use client';
 
 import { learnerStatusLabels, lessonsTakenLine } from '@repo/core/learners';
+import { formatDateTime } from '@repo/core/time';
 import { Button } from '@repo/ui/button';
 import { Sheet } from '@repo/ui/sheet';
 import { StatusPill } from '@repo/ui/status-pill';
@@ -86,6 +87,8 @@ export function SchoolLearnerRow({ learner, instructors, teacherSwitchedOff }: S
         <span className="text-small text-grey-700">
           {teacher === null ? 'Nobody yet' : teacherOff ? `With ${teacher}, who is switched off` : `With ${teacher}`} ·{' '}
           {lessonsTakenLine(learner.lessonsTaken)}
+          {/* "No lessons yet" is about lessons had: one booked is said too, as the instructor's list says it (D-345). */}
+          {learner.nextLessonAt === null ? null : ` · Next ${formatDateTime(new Date(learner.nextLessonAt))}`}
         </span>
       </span>
       <Button variant="secondary" className="relative" pending={pending} onClick={openSheet}>
