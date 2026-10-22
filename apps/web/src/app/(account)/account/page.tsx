@@ -1,5 +1,6 @@
 import { formatUkMobile } from '@repo/core/phone';
-import { formatDate, formatDateTime } from '@repo/core/time';
+import { creditGivenUpWords } from '@repo/core/balance';
+import { formatDate, formatDateTime, formatMinutes } from '@repo/core/time';
 import { Button } from '@repo/ui/button';
 import { platformId } from '@repo/core/platform-id';
 import { Card, CardDescription, CardTitle } from '@repo/ui/card';
@@ -10,9 +11,12 @@ import { Building2, ChevronLeft, IdCard, KeyRound, LogOut, Mail, MonitorSmartpho
 import type { Metadata, Route } from 'next';
 import Link from 'next/link';
 import { Suspense } from 'react';
+import { FormAlert } from '@/components/form-alert';
 import { landingPath, requiresMfa } from '@/lib/auth/portals';
 import { businessNameLabel, myBusiness, ownBusiness } from '@/lib/auth/own-business';
 import { requireAccess } from '@/lib/auth/session';
+import { learnerBalance } from '@/lib/payments/balance';
+import { learnerBusinesses } from '@/lib/payments/packages';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
 import { describeUserAgent } from '@/lib/user-agent';
 import { signOut } from '../../(auth)/actions';
@@ -53,6 +57,8 @@ async function AccountContent() {
   ]);
   // listFactors().totp only ever contains verified factors.
   const totpOn = (factors?.totp.length ?? 0) > 0;
+  // Hours a learner bought and has not used, which their account takes with it (PAY-12, D-353).
+  const givesUp = access.isLearner ? await creditGivenUp(session.userId) : undefined;
   const mfaRequired = requiresMfa(access);
   // Who they work for, and whether that name is theirs to change (D-196, D-217).
   const business = myBusiness(access);
@@ -214,7 +220,10 @@ async function AccountContent() {
               <KeepMyAccount />
             </div>
           ) : (
-            <DeleteAccount />
+            <div className="flex flex-col gap-3">
+              {givesUp ? <FormAlert tone="warning">{givesUp}</FormAlert> : null}
+              <DeleteAccount warning={givesUp ?? null} />
+            </div>
           )}
         </div>
       </Card>
@@ -231,5 +240,15 @@ async function AccountContent() {
         </Button>
       </form>
     </div>
+  );
+}
+
+/** The credit a learner would give up with their account, in words, or undefined for none (D-353). */
+async function creditGivenUp(userId: string): Promise<string | undefined> {
+  const businesses = await learnerBusinesses(userId);
+  const balances = await Promise.all(businesses.map((one) => learnerBalance(one.businessId, userId)));
+  return creditGivenUpWords(
+    businesses.map((one, index) => ({ businessName: one.businessName, minutes: balances[index]?.creditMinutes ?? 0 })),
+    formatMinutes,
   );
 }

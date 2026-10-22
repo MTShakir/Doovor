@@ -28,7 +28,8 @@ export function RevokeDeviceButton({ sessionId, device }: { sessionId: string; d
   );
 }
 
-export function DeleteAccount() {
+/** `warning`: what they would give up, said again where they confirm (D-353). */
+export function DeleteAccount({ warning = null }: { warning?: string | null }) {
   const [open, setOpen] = useState(false);
   const [reason, setReason] = useState('');
   const [error, setError] = useState<string | null>(null);
@@ -73,6 +74,7 @@ export function DeleteAccount() {
       >
         <div className="flex flex-col gap-4">
           {error ? <FormAlert>{error}</FormAlert> : null}
+          {warning ? <FormAlert tone="warning">{warning}</FormAlert> : null}
           <Field label="Why are you leaving?" hint="You do not have to say. If you tell us, we may be able to put it right first.">
             <Textarea value={reason} onChange={(e) => { setReason(e.target.value); }} maxLength={500} />
           </Field>
