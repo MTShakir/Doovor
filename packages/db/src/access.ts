@@ -33,6 +33,11 @@ export interface AccessContext {
    * portal, and signing in says so rather than making them a Business of their own.
    */
   switchedOffBy: string[];
+  /**
+   * They turned on two-step verification, so it is asked for when they sign in whether or not their
+   * role needs it (AUTH-08, D-351).
+   */
+  secondStepOn: boolean;
 }
 
 export class AccessContextError extends Error {
@@ -51,7 +56,7 @@ export class SessionEndedError extends AccessContextError {
 }
 
 export async function getAccessContext(client: DbClient, userId: string): Promise<AccessContext> {
-  const [staff, memberships, learner, instructors] = await Promise.all([
+  const [staff, memberships, learner, instructors, secondStep] = await Promise.all([
     client.from('platform_staff').select('role').eq('user_id', userId).maybeSingle(),
     client
       .from('memberships')
@@ -63,9 +68,10 @@ export async function getAccessContext(client: DbClient, userId: string): Promis
       .from('instructor_profiles')
       .select('id, business_id, onboarding_step, onboarding_completed_at')
       .eq('user_id', userId),
+    client.rpc('my_second_step_on'),
   ]);
 
-  const failed = [staff.error, memberships.error, learner.error, instructors.error].find(Boolean);
+  const failed = [staff.error, memberships.error, learner.error, instructors.error, secondStep.error].find(Boolean);
   if (failed?.code === 'SESSION_ENDED') throw new SessionEndedError();
   if (failed) throw new AccessContextError(failed.message);
 
@@ -106,5 +112,6 @@ export async function getAccessContext(client: DbClient, userId: string): Promis
     suspendedBusinesses: suspended.map((m) => m.businesses.name),
     pausedBusinesses: paused.map((m) => m.businesses.name),
     switchedOffBy: switchedOff?.data ?? [],
+    secondStepOn: secondStep.data === true,
   };
 }

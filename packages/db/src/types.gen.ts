@@ -4351,6 +4351,7 @@ export type Database = {
       my_learners_asked_to_move: { Args: never; Returns: Json }
       my_paused_business: { Args: never; Returns: Json }
       my_referrals: { Args: { p_business_id: string }; Returns: Json }
+      my_second_step_on: { Args: never; Returns: boolean }
       my_subscription: { Args: { p_business_id: string }; Returns: Json }
       my_switched_off_by: { Args: never; Returns: string[] }
       next_open_slots: {

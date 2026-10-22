@@ -6,7 +6,7 @@ import { linkFromEmail } from '../support/mailpit';
 import { testNumber } from '../support/phone-numbers';
 import { enterCode, signInThroughForm } from '../support/sign-in';
 import { agreeToTerms, chooseRoleAndCreateAccount, uniqueEmail } from '../support/sign-up';
-import { forgetTerms, makeSchoolLearner, termsAgreed } from '../support/database';
+import { forgetTerms, giveAuthenticator, makeSchoolLearner, termsAgreed } from '../support/database';
 import { termsVersion } from '@repo/core/legal';
 
 /** Different seeded people per viewport so parallel projects never share state. */
@@ -195,6 +195,29 @@ test.describe('sign-in (AUTH-01)', () => {
     await expect(page.getByText('Email or password is not right.')).toBeVisible();
     await expectAccessible(page);
     await snap(page, testInfo, 'sign-in-error');
+  });
+
+  test('somebody who turned two-step verification on is asked for the code, though their role does not need it (AUTH-08, D-351)', async ({ page }, testInfo) => {
+    const learner = await makeSchoolLearner(`Two Step ${testInfo.project.name}`, { postcode: 'M13 9PL', transmission: 'manual' });
+    await giveAuthenticator(learner.email);
+    try {
+      await page.goto('/sign-in?next=%2Fapp%2Flearner');
+      await page.getByLabel('Email').fill(learner.email);
+      await page.getByLabel('Password', { exact: true }).fill(seedAccounts().password);
+      await page.getByRole('button', { name: 'Sign in', exact: true }).click();
+      // The password alone opens nothing of theirs, the account included.
+      await expect(page).toHaveURL(/\/mfa\?next=/);
+      await expect(page.getByRole('heading', { level: 1, name: 'Enter your code' })).toBeVisible();
+      await page.goto('/account');
+      await expect(page).toHaveURL(/\/mfa\?next=%2Faccount/);
+
+      await enterCode(page, totp('JBSWY3DPEHPK3PXP'));
+      await expect(page).toHaveURL(/\/account$/, { timeout: 20_000 });
+      await page.goto('/app/learner');
+      await expect(page).toHaveURL(/\/app\/learner$/);
+    } finally {
+      await learner.remove();
+    }
   });
 
   test('a learner signs in with a magic link', async ({ page }, testInfo) => {

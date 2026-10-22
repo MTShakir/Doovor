@@ -1,7 +1,7 @@
 import { defaultErrorCopy, type DomainErrorCode } from '@repo/core/errors';
 import { keptDaysSchema } from '@repo/core/schemas/kept-days';
 import { addDaysToLocalDate, todayInZone } from '@repo/core/time';
-import { requiresMfa } from '@/lib/auth/portals';
+import { secondStepRequired } from '@/lib/auth/portals';
 import { getAccess } from '@/lib/auth/session';
 import { lessonsFromToday, teachingProfiles } from '@/lib/lessons/teaching';
 
@@ -24,7 +24,7 @@ export async function GET(request: Request): Promise<Response> {
   if (!result) return refuse('NOT_AUTHENTICATED', 401);
   const { session, access } = result;
   // The same second step the portals ask for (AUTH-08).
-  if (requiresMfa(access) && session.aal !== 'aal2') return refuse('MFA_REQUIRED', 403);
+  if (secondStepRequired(access) && session.aal !== 'aal2') return refuse('MFA_REQUIRED', 403);
 
   const parsed = keptDaysSchema.safeParse({ days: new URL(request.url).searchParams.get('days') ?? undefined });
   if (!parsed.success) return refuse('VALIDATION_FAILED', 422);

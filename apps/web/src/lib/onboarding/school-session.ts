@@ -1,7 +1,7 @@
 import 'server-only';
 import type { LessonSeller } from '@repo/core/schemas/school';
 import type { AccessMembership } from '@repo/db';
-import { landingPath, requiresMfa } from '@/lib/auth/portals';
+import { landingPath, secondStepRequired } from '@/lib/auth/portals';
 import { getAccess, requireAgreedTerms } from '@/lib/auth/session';
 import { redirectTo } from '@/lib/redirect-to';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
@@ -37,7 +37,7 @@ function schoolToSetUp(memberships: AccessMembership[]): AccessMembership | null
 export async function requireSchoolSetup(path: string): Promise<SchoolSetupSession> {
   const result = await getAccess();
   if (!result) redirectTo(`/sign-in?next=${encodeURIComponent(path)}`);
-  if (requiresMfa(result.access) && result.session.aal !== 'aal2') redirectTo(`/mfa?next=${encodeURIComponent(path)}`);
+  if (secondStepRequired(result.access) && result.session.aal !== 'aal2') redirectTo(`/mfa?next=${encodeURIComponent(path)}`);
   await requireAgreedTerms(result, path);
   const membership = schoolToSetUp(result.access.memberships);
   if (!membership) redirectTo(landingPath(result.access));

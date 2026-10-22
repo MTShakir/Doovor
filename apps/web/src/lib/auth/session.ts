@@ -9,7 +9,7 @@ import { z } from '@repo/core/zod';
 import { viewingId } from './view-as';
 import { portalRoots, type Portal } from '@/lib/navigation';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
-import { canUsePortal, landingPath, needsLearnerOnboarding, needsOnboarding, needsSchoolOnboarding, requiresMfa } from './portals';
+import { canUsePortal, landingPath, needsLearnerOnboarding, needsOnboarding, needsSchoolOnboarding, secondStepRequired } from './portals';
 
 /** Platform staff viewing as somebody, read only (ADM-06, D-129). */
 export interface ViewingAs {
@@ -131,7 +131,7 @@ export async function requirePortal(portals: Portal | readonly Portal[]): Promis
   const path = await currentPath();
   const result = await getAccess();
   if (!result) redirectTo(`/sign-in?next=${encodeURIComponent(path)}`);
-  if (requiresMfa(result.access) && result.session.aal !== 'aal2' && result.session.viewingAs === null) {
+  if (secondStepRequired(result.access) && result.session.aal !== 'aal2' && result.session.viewingAs === null) {
     redirectTo(`/mfa?next=${encodeURIComponent(path)}`);
   }
   await requireAgreedTerms(result, path);
@@ -147,6 +147,20 @@ export async function requirePortal(portals: Portal | readonly Portal[]): Promis
 
 /** For pages open to any signed-in person (account, MFA, phone verification). */
 export async function requireAccess(): Promise<{ session: Session; access: AccessContext }> {
+  const result = await requireSecondStepScreen();
+  // The account, its password and its devices wait for the second step as the portals do: a
+  // password alone changes nothing for somebody who has one (AUTH-08, D-351).
+  if (secondStepRequired(result.access) && result.session.aal !== 'aal2') {
+    redirectTo(`/mfa?next=${encodeURIComponent(await currentPath())}`);
+  }
+  return result;
+}
+
+/**
+ * The gate of the screens that take the second step itself, and the ones before it: signed in, and
+ * not viewing as somebody (D-129). Everything else asks for the second step first (D-351).
+ */
+export async function requireSecondStepScreen(): Promise<{ session: Session; access: AccessContext }> {
   const result = await getAccess();
   if (!result) redirectTo(`/sign-in?next=${encodeURIComponent(await currentPath())}`);
   // Staff viewing as somebody see their portals, not their account, devices or verification (D-129).
