@@ -2,8 +2,13 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const rpc = vi.fn();
 const revalidatePath = vi.fn();
+/** The credit ledger's lines for the lot just bought: what it paid for at once (D-385). */
+const used = { rows: [] as { booking_id: string | null }[] };
+const from = vi.fn(() => ({
+  select: () => ({ eq: () => ({ eq: () => Promise.resolve({ data: used.rows, error: null }) }) }),
+}));
 
-vi.mock('@/lib/supabase/server', () => ({ createSupabaseServerClient: () => Promise.resolve({ rpc }) }));
+vi.mock('@/lib/supabase/server', () => ({ createSupabaseServerClient: () => Promise.resolve({ rpc, from }) }));
 vi.mock('@/lib/auth/session', () => ({
   requirePortal: () => Promise.resolve({ session: { userId: 'instructor-1' }, access: {} }),
 }));
@@ -18,17 +23,25 @@ const lotId = '44444444-4444-4444-8444-444444444444';
 beforeEach(() => {
   vi.clearAllMocks();
   rpc.mockResolvedValue({ data: lotId, error: null });
+  used.rows = [];
 });
 
 describe('a package paid for in person (PAY-04, PAY-05, M3-16)', () => {
   it('records it through the function that writes the payment and the credit together', async () => {
-    expect(await recordOfflinePackage({ learnerId, packageId, method: 'cash' })).toEqual({ ok: true, data: { lotId } });
+    expect(await recordOfflinePackage({ learnerId, packageId, method: 'cash' })).toEqual({ ok: true, data: { lotId, lessonsPaid: 0 } });
     expect(rpc).toHaveBeenCalledWith('record_offline_package', {
       p_learner_id: learnerId,
       p_package_id: packageId,
       p_method: 'cash',
     });
     expect(revalidatePath).toHaveBeenCalledWith(`/app/instructor/learners/${learnerId}`);
+  });
+
+  it('says how many lessons already booked the credit went towards, once each (D-385)', async () => {
+    used.rows = [{ booking_id: 'lesson-1' }, { booking_id: 'lesson-2' }, { booking_id: 'lesson-2' }];
+    expect(await recordOfflinePackage({ learnerId, packageId, method: 'bank' })).toEqual({ ok: true, data: { lotId, lessonsPaid: 2 } });
+    expect(from).toHaveBeenCalledWith('credit_ledger');
+    expect(revalidatePath).toHaveBeenCalledWith('/app/instructor/diary');
   });
 
   it('asks nothing of the database for a learner, package or method it does not recognise', async () => {

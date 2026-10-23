@@ -91,7 +91,11 @@ async function Purchase({ params }: { params: Promise<{ package: string }> }) {
       </div>
 
       <ul className="flex list-disc flex-col gap-1 pl-5 text-body text-ink">
-        <li>Your lessons with {offer.businessName} are paid from this credit first.</li>
+        {/* D-385: it pays for what is booked already before anything booked afterwards. */}
+        <li>
+          Your lessons with {offer.businessName} are paid from this credit first, starting with the ones you have
+          already booked, soonest first.
+        </li>
         <li>It is for lessons with {offer.businessName} only.</li>
         <li>{packageExpiryText(offer.expiryDays)}</li>
         {policy === null ? null : <li>{cancellationPolicyWords(policy)}</li>}

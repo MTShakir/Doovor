@@ -15,9 +15,11 @@ const packageSaleSchema = z.object({
 
 /**
  * PAY-04, PAY-05, M3-16: a package the learner paid for in person. The function decides who may
- * record one and writes the payment and the credit it buys together. Returns the lot of credit.
+ * record one and writes the payment and the credit it buys together, and the credit pays for the
+ * lessons already booked first (D-385). Returns the lot of credit, and how many lessons it went
+ * towards, read from the ledger the instructor may already see.
  */
-export async function recordOfflinePackage(input: unknown): Promise<Result<{ lotId: string }>> {
+export async function recordOfflinePackage(input: unknown): Promise<Result<{ lotId: string; lessonsPaid: number }>> {
   const parsed = packageSaleSchema.safeParse(input);
   if (!parsed.success) return err('VALIDATION_FAILED');
 
@@ -30,9 +32,14 @@ export async function recordOfflinePackage(input: unknown): Promise<Result<{ lot
   });
   if (error) return err(parsePostgresError(error).code);
 
+  const { data: used } = await supabase.from('credit_ledger').select('booking_id').eq('lot_id', data).eq('kind', 'use');
+  const lessonsPaid = new Set((used ?? []).map((row) => row.booking_id).filter((id) => id !== null)).size;
+
   revalidatePath(`/app/instructor/learners/${parsed.data.learnerId}`);
   revalidatePath(`/app/school/learners/${parsed.data.learnerId}`);
-  return ok({ lotId: data });
+  // The diary shows those lessons as paid now, wherever it is open.
+  if (lessonsPaid > 0) revalidatePath('/app/instructor/diary');
+  return ok({ lotId: data, lessonsPaid });
 }
 
 const handBackSchema = z.object({ refundId: z.uuid(), learnerId: z.uuid() });
