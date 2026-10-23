@@ -22,6 +22,11 @@ export interface NotificationRecipient {
   muted?: NotificationChannel[];
   /** Channels their plan does not include, such as text messages below Pro (NTF-01). */
   unavailable?: NotificationChannel[];
+  /**
+   * They made the change it is about themselves, so it goes to their inbox and nowhere else: an
+   * email or a push about what somebody has just done tells them nothing (D-384).
+   */
+  ownChange?: boolean;
 }
 
 export interface PlannedNotification {
@@ -73,7 +78,7 @@ export function notificationDedupeKey(
 export function channelsFor(kind: NotificationKind, recipient: NotificationRecipient): NotificationChannel[] {
   const spec = notificationCatalogue[kind];
   const off = new Set([...(recipient.muted ?? []), ...(recipient.unavailable ?? [])]);
-  const left = spec.channels.filter((channel) => !off.has(channel));
+  const left = spec.channels.filter((channel) => !off.has(channel) && (recipient.ownChange !== true || channel === 'in_app'));
   if (left.length > 0) return left;
   return spec.essential && spec.channels.includes('in_app') ? ['in_app'] : [];
 }

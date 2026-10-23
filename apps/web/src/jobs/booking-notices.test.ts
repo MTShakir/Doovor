@@ -60,6 +60,43 @@ describe('which notification an event comes to (NTF-03)', () => {
   });
 });
 
+describe('whoever made the change is told in the app only (NTF-03, D-384)', () => {
+  const channelsOf = (planned: ReturnType<typeof planBookingNotifications>) =>
+    Object.fromEntries(planned.map((one) => [one.userId, one.channels]));
+
+  it('puts a lesson the instructor booked in their inbox, and emails the learner and the school as before', () => {
+    const planned = planBookingNotifications({
+      event: { name: 'booking.created', payload: { status: 'confirmed', actor: 'instructor-1' } },
+      notice,
+    });
+    expect(channelsOf(planned)).toEqual({
+      'learner-1': ['in_app', 'push', 'email'],
+      'instructor-1': ['in_app'],
+      'manager-1': ['in_app', 'push', 'email'],
+    });
+  });
+
+  it('does the same for somebody in the office who moved it, and nobody else', () => {
+    const planned = planBookingNotifications({
+      event: { name: 'booking.rescheduled', payload: { actor: 'manager-1' } },
+      notice,
+    });
+    expect(channelsOf(planned)['manager-1']).toEqual(['in_app']);
+    expect(channelsOf(planned)['instructor-1']).toEqual(['in_app', 'push', 'email']);
+  });
+
+  it('keeps every channel for a learner, who has what they did in writing, and for a change nobody made', () => {
+    const own = planBookingNotifications({
+      event: { name: 'booking.cancelled', payload: { by: 'learner', actor: 'learner-1' } },
+      notice: { ...notice, status: 'cancelled' },
+    });
+    expect(channelsOf(own)['learner-1']).toEqual(['in_app', 'push', 'email']);
+    expect(channelsOf(own)['instructor-1']).toEqual(['in_app', 'push', 'email']);
+    const nobody = planBookingNotifications({ event: { name: 'booking.created', payload: { status: 'confirmed' } }, notice });
+    expect(channelsOf(nobody)['instructor-1']).toEqual(['in_app', 'push', 'email']);
+  });
+});
+
 describe('what everybody is told about a lesson (PRD Appendix B)', () => {
   it('tells the learner, the instructor and the school when one is booked', () => {
     const planned = planBookingNotifications({
