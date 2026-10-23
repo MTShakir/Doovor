@@ -91,11 +91,14 @@ export function TurnOffTwoStep({ factorId }: { factorId: string }) {
   );
 }
 
-/** What waiting for the account to go means, to whoever is reading (D-361, D-370). */
+/**
+ * What waiting for the account to go means, to whoever is reading (D-361, D-370). No email is sent
+ * about it, so none is promised: the account screen says when it goes, and keeps it (D-382).
+ */
 const waitingWords = {
-  teaches: 'We will confirm by email. Your profile stays up until your account goes, seven days from now.',
-  learns: 'We will confirm by email. Lessons already booked stay with your instructor until we finish.',
-  neither: 'We will confirm by email, and it goes seven days from now.',
+  teaches: 'Your account goes seven days from now, and until then you can keep it. Your profile stays up until it goes.',
+  learns: 'Your account goes seven days from now, and until then you can keep it. Lessons already booked stay with your instructor until it goes.',
+  neither: 'Your account goes seven days from now, and until then you can keep it.',
 } as const;
 
 /**
@@ -130,7 +133,7 @@ export function DeleteAccount({ warning = null, who = 'learns' }: { warning?: st
                   const result = await requestDeletion({ reason });
                   if (result.ok) {
                     setOpen(false);
-                    toast('Request received. We will email you.');
+                    toast('Request received. Your account goes in seven days.');
                   } else {
                     setError(result.message);
                   }

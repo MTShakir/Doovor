@@ -4,6 +4,7 @@ import {
   guessColumns,
   importFields,
   looksLikeHeader,
+  notText,
   parseCsv,
   readRows,
   reviewRows,
@@ -76,6 +77,10 @@ export function ImportLearners({
     if (!chosen) return;
     void chosen.text().then(
       (text) => {
+        if (notText(text)) {
+          setError('That is not a CSV file. Save your spreadsheet as CSV (in Excel: File, Save as, CSV) and choose that.');
+          return;
+        }
         const rows = parseCsv(text);
         if (rows.length === 0) {
           setError('That file has no rows in it.');

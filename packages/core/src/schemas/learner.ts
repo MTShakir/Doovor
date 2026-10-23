@@ -10,7 +10,7 @@ import { isAtLeast, leastLearnerAge } from '../age.ts';
 import { isPostcode, normalisePostcode } from '../postcode.ts';
 import { isValidLocalDate } from '../time/calendar.ts';
 import { todayInZone } from '../time/zone.ts';
-import { emailSchema, fullNameSchema, ukMobileSchema } from './auth.ts';
+import { emailSchema, fullNameSchema, optionalUkMobileSchema, theirNameSchema } from './auth.ts';
 
 export const learnerTransmissions = [
   { value: 'manual', label: 'Manual' },
@@ -120,9 +120,9 @@ export type LearnerOnboarding = z.infer<typeof learnerOnboardingSchema>;
  */
 export const manualLearnerSchema = z
   .object({
-    fullName: fullNameSchema,
+    fullName: theirNameSchema,
     email: z.union([z.literal('').transform(() => null), emailSchema]),
-    phone: z.union([z.literal('').transform(() => null), ukMobileSchema]),
+    phone: optionalUkMobileSchema,
     postcode: z.union([
       z.literal('').transform(() => null),
       z

@@ -135,13 +135,16 @@ async function Setup() {
       .from('learner_relationships')
       .select('learner_id', { count: 'exact', head: true })
       .eq('instructor_id', membership.instructorProfileId)
-      .eq('status', 'active'),
+      // Anybody on the list, invited or added: somebody who joined from an invitation is an
+      // enquiry until their first lesson, and is still the first learner on board (D-382).
+      .neq('status', 'left'),
   ]);
 
   const state: SetupState = {
     learners: learners ?? 0,
     paymentsConnected: business?.stripe_charges_enabled ?? false,
     verified: profile?.verification_status === 'approved',
+    badgeToSend: profile?.verification_status === 'unsubmitted' || profile?.verification_status === 'rejected',
     badgeInDate: !profile?.badge_expiry || profile.badge_expiry >= todayInZone(),
     // A trainee is booked only while somebody supervises them (R-18, D-343).
     supervised:

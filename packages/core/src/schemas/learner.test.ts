@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { experienceLevels, learnerGearboxSchema, learnerHealthSchema, learnerMedicationSchema, learnerOnboardingSchema, learnerTheorySchema, learnerTransmissions, setupStepSchema, setupSteps, theoryAnswers } from './learner.ts';
+import { experienceLevels, learnerGearboxSchema, learnerHealthSchema, learnerMedicationSchema, learnerOnboardingSchema, learnerTheorySchema, learnerTransmissions, manualLearnerSchema, setupStepSchema, setupSteps, theoryAnswers } from './learner.ts';
 
 const valid = {
   fullName: 'Jack Taylor',
@@ -124,5 +124,31 @@ describe('the getting-started questions (LRN-02, D-183)', () => {
   it('lets any of them be skipped, and nothing else', () => {
     for (const step of setupSteps) expect(setupStepSchema.safeParse({ step }).success).toBe(true);
     expect(setupStepSchema.safeParse({ step: 'everything' }).success).toBe(false);
+  });
+});
+
+describe('a learner an instructor adds themselves (LRN-03, D-381)', () => {
+  const added = { fullName: 'Jack Taylor', email: '', phone: '07700 900011', postcode: '', transmission: '' };
+  const messages = (input: Record<string, unknown>): string[][] => {
+    const result = manualLearnerSchema.safeParse(input);
+    return result.success ? [] : result.error.issues.map((issue) => [issue.path.join('.'), issue.message]);
+  };
+
+  it('takes a name and one way to reach them, and leaves the rest empty', () => {
+    expect(manualLearnerSchema.parse(added)).toEqual({
+      fullName: 'Jack Taylor',
+      email: null,
+      phone: '+447700900011',
+      postcode: null,
+      transmission: null,
+    });
+  });
+
+  it('says what is wrong with a landline, rather than that the input is invalid', () => {
+    expect(messages({ ...added, phone: '0113 496 0000' })).toEqual([['phone', 'Enter a UK mobile number like 07700 900123, or leave it empty']]);
+  });
+
+  it("asks for their name, since it is not the instructor's that is missing", () => {
+    expect(messages({ ...added, fullName: '  ' })).toEqual([['fullName', 'Enter their name']]);
   });
 });

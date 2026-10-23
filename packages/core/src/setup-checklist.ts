@@ -13,6 +13,11 @@ export interface SetupState {
   paymentsConnected: boolean;
   /** The badge has been approved, so the public profile is live (INS-02, INS-05). */
   verified: boolean;
+  /**
+   * There is no badge with us to check: it was skipped at sign-up, or refused, and is the
+   * instructor's to send from their profile (INS-02, D-262, D-382). Absent means it was sent.
+   */
+  badgeToSend?: boolean;
   /** The badge is in date, so the booking link takes bookings (INS-03). Hiding from search does not matter (PUB-04). */
   badgeInDate: boolean;
   /**
@@ -33,15 +38,22 @@ export interface SetupTask {
   id: SetupTaskId;
   done: boolean;
   /** Why it cannot be done yet, when something else has to happen first. */
-  blockedBy?: 'verification' | 'renewal' | 'supervision';
+  blockedBy?: 'badge' | 'verification' | 'renewal' | 'supervision';
 }
 
 export function setupTasks(state: SetupState): SetupTask[] {
   const linkLive = state.verified && state.badgeInDate && state.supervised !== false;
   // A link nobody can book is not worth sharing, so this waits for the badge check, and for a
   // trainee for somebody to supervise them (D-343).
-  // A badge that has run out was approved once, so it waits for the new one (D-346).
-  const waitsFor = !state.verified ? 'verification' : !state.badgeInDate ? 'renewal' : 'supervision';
+  // A badge that has run out was approved once, so it waits for the new one (D-346). One that was
+  // never sent, or was refused, waits for the instructor rather than for us (D-382).
+  const waitsFor = !state.verified
+    ? state.badgeToSend === true
+      ? 'badge'
+      : 'verification'
+    : !state.badgeInDate
+      ? 'renewal'
+      : 'supervision';
   return [
     { id: 'first-learner', done: state.learners > 0 },
     ...(state.paymentsAreTheSchools ? [] : [{ id: 'connect-payments' as const, done: state.paymentsConnected }]),

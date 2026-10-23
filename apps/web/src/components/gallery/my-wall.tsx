@@ -2,6 +2,7 @@
 
 import { Button } from '@repo/ui/button';
 import { Card, CardDescription, CardTitle } from '@repo/ui/card';
+import { Sheet } from '@repo/ui/sheet';
 import { toast } from '@repo/ui/toast';
 import { EyeOff, Trash2 } from 'lucide-react';
 import { useState, useTransition } from 'react';
@@ -24,8 +25,11 @@ export function MyWall({
 }) {
   const [pending, startTransition] = useTransition();
   const [going, setGoing] = useState<string | null>(null);
+  // Asked first: the photo is deleted, and there is no undo to offer, only adding it again.
+  const [asking, setAsking] = useState<OwnGalleryPhoto | null>(null);
 
   const remove = (photo: OwnGalleryPhoto) => {
+    setAsking(null);
     setGoing(photo.id);
     startTransition(async () => {
       const result = await removeGalleryPhoto({ photoId: photo.id });
@@ -70,7 +74,7 @@ export function MyWall({
               variant="secondary"
               className="self-start"
               pending={pending && going === photo.id}
-              onClick={() => { remove(photo); }}
+              onClick={() => { setAsking(photo); }}
             >
               <Trash2 className="size-5" aria-hidden />
               <span>
@@ -80,6 +84,22 @@ export function MyWall({
           </li>
         ))}
       </ul>
+
+      <Sheet
+        open={asking !== null}
+        onOpenChange={() => { setAsking(null); }}
+        title={asking === null ? 'Remove this photo?' : `Remove ${asking.learnerName}'s photo?`}
+        description="It comes off your public profile and is deleted. To show it again, add it again."
+        footer={
+          <Button width="full" size="lg" pending={pending} onClick={() => { if (asking !== null) remove(asking); }}>
+            Remove the photo
+          </Button>
+        }
+      >
+        <Button variant="secondary" width="full" onClick={() => { setAsking(null); }}>
+          Keep it
+        </Button>
+      </Sheet>
     </Card>
   );
 }

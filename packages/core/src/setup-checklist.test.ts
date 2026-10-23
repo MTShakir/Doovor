@@ -45,6 +45,12 @@ describe('setup checklist (PRD 10.1, M1-10)', () => {
     expect(setupTasks({ ...fresh, supervised: false })[2]).toEqual({ id: 'booking-link', done: false, blockedBy: 'verification' });
   });
 
+  it('asks for the badge itself when there is none with us to check (D-382)', () => {
+    expect(setupTasks({ ...fresh, badgeToSend: true })[2]).toEqual({ id: 'booking-link', done: false, blockedBy: 'badge' });
+    // Sent, it waits for the check, whatever the field said before.
+    expect(setupTasks({ ...fresh, badgeToSend: false })[2]).toEqual({ id: 'booking-link', done: false, blockedBy: 'verification' });
+  });
+
   it('waits for a new badge, not an approval, when the badge has run out (D-346)', () => {
     expect(setupTasks({ ...fresh, verified: true, badgeInDate: false })[2]).toEqual({ id: 'booking-link', done: false, blockedBy: 'renewal' });
   });

@@ -7,7 +7,7 @@
 
 import { z } from '../zod';
 import { isPostcode, normalisePostcode } from '../postcode.ts';
-import { emailSchema, ukMobileSchema } from './auth.ts';
+import { emailSchema, optionalUkMobileSchema } from './auth.ts';
 
 /** A school is a Business, and a Business is named in 1 to 120 characters. */
 export const schoolNameSchema = z
@@ -82,7 +82,7 @@ export const instructorInviteSchema = z
     channel: inviteChannelSchema,
     fullName: z.string().trim().max(120, { error: 'Use 120 characters or fewer' }),
     email: z.union([z.literal('').transform(() => null), emailSchema]),
-    phone: z.union([z.literal('').transform(() => null), ukMobileSchema]),
+    phone: optionalUkMobileSchema,
   })
   .superRefine((value, context) => {
     if (value.channel === 'email' && value.email === null) {
@@ -133,7 +133,7 @@ function enquirySchema(agreedError: string) {
     .object({
       fullName: z.string().trim().min(1, { error: 'Enter a name' }).max(120, { error: 'Use 120 characters or fewer' }),
       email: z.union([z.literal('').transform(() => null), emailSchema]),
-      phone: z.union([z.literal('').transform(() => null), ukMobileSchema]),
+      phone: optionalUkMobileSchema,
       postcode: z
         .string()
         .trim()

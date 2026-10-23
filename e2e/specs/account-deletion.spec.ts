@@ -34,7 +34,7 @@ test.describe('deleting your account (NFR-PRV-03, AUTH-09, M6-12)', () => {
       await settled(page);
       await snap(page, testInfo, 'delete-account');
       await sheet.getByRole('button', { name: 'Ask to delete my account' }).click();
-      await expect(page.getByText('Request received. We will email you.')).toBeVisible();
+      await expect(page.getByText('Request received. Your account goes in seven days.')).toBeVisible();
 
       // The screen says when it happens, and offers a way out.
       await expect(card).toContainText('Your account goes seven days later');
@@ -56,7 +56,7 @@ test.describe('deleting your account (NFR-PRV-03, AUTH-09, M6-12)', () => {
     await signInThroughForm(page, learner.email, { next: '/account' });
     await page.getByRole('region', { name: 'Delete your account' }).getByRole('button', { name: 'Ask to delete my account' }).click();
     await page.getByRole('dialog', { name: 'Delete your account?' }).getByRole('button', { name: 'Ask to delete my account' }).click();
-    await expect(page.getByText('Request received. We will email you.')).toBeVisible();
+    await expect(page.getByText('Request received. Your account goes in seven days.')).toBeVisible();
 
     // Seven days on, the sweep carries it out.
     await ageDeletionRequest(learner.email);
@@ -98,7 +98,7 @@ test.describe('deleting your account (NFR-PRV-03, AUTH-09, M6-12)', () => {
       // Called off, the request goes through.
       await lesson.callOff();
       await sheet.getByRole('button', { name: 'Ask to delete my account' }).click();
-      await expect(page.getByText('Request received. We will email you.')).toBeVisible();
+      await expect(page.getByText('Request received. Your account goes in seven days.')).toBeVisible();
       await expect(card).toContainText('Your account goes seven days later');
     } finally {
       await lesson.remove();

@@ -61,6 +61,14 @@ test.describe('instructor onboarding (AUTH-04, M1-02)', () => {
     await expect(page).toHaveURL(/\/app\/instructor$/);
     await expect(page.getByRole('heading', { level: 1, name: 'Today' })).toBeVisible();
 
+    // The badge was skipped, so nothing is waiting for us to check it: Today says to send it, and
+    // the row opens the profile, which sends it (D-262, D-382).
+    const link = page.getByRole('link', { name: /Share your booking link/ });
+    await expect(link).toContainText('Send your badge from your profile first.');
+    await link.click();
+    await expect(page).toHaveURL(/\/app\/instructor\/profile$/);
+    await expect(page.getByRole('button', { name: 'Send your badge' })).toBeVisible();
+
     // Finished means finished: onboarding sends them back to the diary.
     await page.goto('/onboarding');
     await expect(page).toHaveURL(/\/app\/instructor$/);
@@ -414,10 +422,11 @@ test.describe('instructor onboarding (AUTH-04, M1-02)', () => {
     await expect(page).toHaveURL(/\/app\/instructor$/);
     await expect(page.getByRole('heading', { level: 1, name: 'Today' })).toBeVisible();
 
-    // Nothing is set up yet, and the booking link waits for the badge check (PRD 10.1).
+    // Nothing is set up yet, and the booking link waits for the badge, which was skipped, so it
+    // asks for it to be sent rather than waiting for a check of nothing (PRD 10.1, D-382).
     await expect(page.getByText('0 of 3 done')).toBeVisible();
     await expect(page.getByRole('link', { name: /Share your booking link/ })).toContainText(
-      'Ready as soon as your badge is approved',
+      'Send your badge from your profile first.',
     );
 
     // Finished means finished, so the last step is behind them now.

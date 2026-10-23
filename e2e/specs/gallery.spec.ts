@@ -99,6 +99,10 @@ test.describe('the gallery (D-218)', () => {
       // And the instructor takes their own down again.
       await page.goto('/app/instructor/gallery');
       await page.getByRole('button', { name: `Remove ${who}` }).click();
+      // Asked first, since a photo once removed is gone (D-381).
+      const sure = page.getByRole('dialog', { name: `Remove ${who}'s photo?` });
+      await expect(sure).toBeVisible();
+      await sure.getByRole('button', { name: 'Remove the photo' }).click();
       await expect(page.getByText(`${who} removed from your gallery`)).toBeVisible();
       await expect(page.getByText(`${who} became a driver on`)).toHaveCount(0);
     } finally {
