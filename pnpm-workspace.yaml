@@ -59,6 +59,11 @@ overrides:
   vite: '>=8.3.3 <8.4'
   # Path traversal through a prefix, under Lighthouse CI.
   tmp: '>=0.2.6'
+  # Two bypasses of its sanitising (GHSA-cg2g-xh64-v4q7, GHSA-mrv2-3pqr-j5jr, D-383). It arrives with
+  # posthog-js, which loads in a visitor's browser once they agree to analytics, so it is in the
+  # page, not only in a tool. posthog-js asks for ^3.4.13; this keeps the fixed line however the
+  # lockfile is written again.
+  dompurify: '>=3.4.17 <4'
   # Missing bounds check when given a buffer, under Lighthouse CI.
   uuid: '>=11.1.1'
   # Stack exhaustion from nested brace groups and from parseCommaParts. It reaches us three times
@@ -94,9 +99,12 @@ catalog:
   eslint: ^10.10.0
   # 16.3.6 fixes a critical remote code execution in next/og, which the public share images use.
   # 16.3.8 fixes a server-side request forgery in image optimisation (GHSA-cjq9-62q9-8jv4), which
-  # every page with a picture goes through. A tilde rather than a caret, so this fix is the patch
-  # release it names and not 16.4.0 riding in with it: a minor is a change to read, not a patch.
-  next: ~16.3.8
+  # every page with a picture goes through. 16.4.1 fixes two critical remote code executions, one
+  # in image optimisation with SVG (GHSA-2464-fhr4-w9xw) and one in `use cache` functions
+  # (GHSA-673q-mjm6-r5xr), and a denial of service through Server Actions (GHSA-p3m5-59mp-jv5r).
+  # Every 16.3 release is affected, so this is the minor they were fixed in, read before it was
+  # taken (D-383). Still a tilde, so a later minor is a change to read, not a patch's passenger.
+  next: ~16.4.2
   react: ^19.2.0
   react-dom: ^19.2.0
   tailwindcss: ^4.3.0
