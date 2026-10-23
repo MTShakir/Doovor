@@ -38,6 +38,15 @@ export function formatWeekday(instant: Date, timeZone: string = DEFAULT_TIME_ZON
   return format(inZone(instant, timeZone), 'EEEE');
 }
 
+const weekdayNames = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'] as const;
+
+/** An ISO weekday, Monday 1 to Sunday 7, in full: what a weekly slot keeps (BOK-05, D-380). */
+export function weekdayName(isoWeekday: number): string {
+  const name = weekdayNames[isoWeekday - 1];
+  if (name === undefined) throw new RangeError(`isoWeekday must be 1 to 7, got ${String(isoWeekday)}`);
+  return name;
+}
+
 /** A length of time in words: "45 minutes", "1 hour", "12 hours 30 minutes". */
 /**
  * A lesson's length, short enough for a badge on a card: 1h, 1.5h, 2h, 45m (D-211).

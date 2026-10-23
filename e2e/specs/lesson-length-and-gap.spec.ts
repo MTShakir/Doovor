@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test';
-import { bookLesson, makeSchoolInstructor, makeSchoolLearner, removeLesson } from '../support/database';
+import { bookLesson, makeSchoolInstructor, makeSchoolLearner, removeLesson, withDatabase } from '../support/database';
 import { expectAccessible, openDiaryLesson, snap, tapUntil } from '../support/helpers';
 import { signInThroughForm } from '../support/sign-in';
 
@@ -61,6 +61,43 @@ test.describe('a lesson an instructor can lengthen, and a gap they can skip (BOK
     } finally {
       await removeLesson(instructor.name, learner.email, day, time);
       await removeLesson(instructor.name, learner.email, day, after);
+      await learner.remove();
+      await instructor.remove();
+    }
+  });
+
+  test('says what becomes of the cash paid for a lesson before its length is changed (D-188, D-381)', async ({ page }, testInfo) => {
+    const instructor = await makeSchoolInstructor(`Lengths ${testInfo.project.name}`);
+    const learner = await makeSchoolLearner(`Lena ${testInfo.project.name}`, { postcode: 'LS6 3QS', transmission: 'manual', instructorName: instructor.name });
+    const day = inThreeWeeks();
+    const time = '10:00';
+    await bookLesson(instructor.name, learner.email, day, time);
+    // Paid in cash, as the lesson's own status says. Nothing is moved here, so no payment needs
+    // to exist for it to go back, and none is left behind in the school's figures afterwards.
+    await withDatabase((sql) => sql`
+      update public.bookings b set payment_status = 'paid_cash'
+        from public.users u
+       where u.id = b.learner_id and lower(u.email) = lower(${learner.email})
+         and b.starts_at = (${day}::date + ${time}::time) at time zone 'Europe/London'`);
+
+    try {
+      await signInThroughForm(page, instructor.email);
+      await page.goto(`/app/instructor/diary?view=day&date=${day}`);
+      await expect(page.getByText(learner.name)).toBeVisible();
+
+      // A new length starts the money again, which the sheet says before anything is changed.
+      const editing = page.getByRole('dialog', { name: `Edit ${learner.name}'s lesson` });
+      const again = await openDiaryLesson(page, time, learner.name);
+      await again.getByRole('button', { name: 'Edit lesson' }).click();
+      await expect(editing).toBeVisible();
+      await expect(editing).not.toContainText('owed back');
+      await editing.getByLabel('How long?').selectOption({ label: '2 hours' });
+      await expect(editing.getByText(/^2 hours costs £\d+/)).toContainText(
+        /The £\d+(\.\d\d)? they paid is owed back to them: mark it handed back on their learner card once it is\. They then pay the £\d+(\.\d\d)? the way they pay for any lesson\./,
+      );
+      await snap(page, testInfo, 'lesson-length-paid');
+    } finally {
+      await removeLesson(instructor.name, learner.email, day, time);
       await learner.remove();
       await instructor.remove();
     }

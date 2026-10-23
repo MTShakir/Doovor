@@ -4,7 +4,7 @@ import { lessonState, lessonStateLabel } from '@repo/core/diary';
 import { lessonToStart } from '@repo/core/lesson-records';
 import { formatPence } from '@repo/core/money';
 import { whatsAppTo } from '@repo/core/phone';
-import { formatDate, formatTime } from '@repo/core/time';
+import { formatDate, formatTime, weekdayName } from '@repo/core/time';
 import { Button } from '@repo/ui/button';
 import { Field } from '@repo/ui/field';
 import { cn } from '@repo/ui/lib/cn';
@@ -13,7 +13,7 @@ import { Sheet } from '@repo/ui/sheet';
 import { Skeleton } from '@repo/ui/skeleton';
 import { StatusPill } from '@repo/ui/status-pill';
 import { toast } from '@repo/ui/toast';
-import { Banknote, CalendarClock, Mail, MapPin, Navigation, Pencil, Phone, UserRound, X } from 'lucide-react';
+import { Banknote, CalendarClock, CalendarX, Mail, MapPin, Navigation, Pencil, Phone, UserRound, X } from 'lucide-react';
 import { icons } from '@/lib/icons';
 import type { Route } from 'next';
 import Link from 'next/link';
@@ -52,7 +52,7 @@ function Section({ title, children }: { title: string; children: ReactNode }) {
 /** The one option in the list that is not a place: it opens the learner's own form (D-222). */
 const addPickupValue = '__add__';
 
-type Action = 'move' | 'cancel' | 'paid';
+type Action = 'move' | 'cancel' | 'paid' | 'stop';
 type Channel = 'email' | 'sms';
 
 /**
@@ -303,6 +303,19 @@ export function LessonDetailsBody({
               </>
             ) : null}
           </div>
+          {/* BOK-05, D-380: a slot with no end goes on booking weeks ahead until somebody stops it,
+              and this is where somebody looking at one of its lessons can. */}
+          {changeable && details.weekly !== null ? (
+            <div className="flex flex-col gap-2">
+              <p className="text-small text-grey-700">
+                Booked every {weekdayName(details.weekly.weekday)} at {details.weekly.time} until you stop it.
+              </p>
+              <Button variant="tertiary" className="self-start" onClick={() => { onAction('stop'); }}>
+                <CalendarX className="size-5" aria-hidden />
+                Stop booking it every week
+              </Button>
+            </div>
+          ) : null}
         </Section>
       ) : null}
 
@@ -393,6 +406,7 @@ export function LessonDetailsSheet({
           pricePence: details.pricePence,
           creditMinutes: details.creditMinutes,
           paymentStatus: details.paymentStatus,
+          weekly: details.weekly,
         }}
         rules={details.rules}
         action={action}

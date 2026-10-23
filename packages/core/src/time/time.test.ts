@@ -18,6 +18,7 @@ import {
   minutesToLocalTime,
   localTimeToMinutes,
   utcToLocal,
+  weekdayName,
 } from './index.ts';
 
 const iso = (d: Date | null) => d?.toISOString() ?? null;
@@ -32,6 +33,12 @@ describe('formatting in Europe/London (PRD 7.6)', () => {
     expect(formatWeekday(instant)).toBe('Tuesday');
     // Late on a Saturday in UTC is already Sunday in London in the summer.
     expect(formatWeekday(new Date('2026-09-19T23:30:00Z'))).toBe('Sunday');
+  });
+
+  it('names the day a weekly slot keeps, Monday 1 to Sunday 7 (D-380)', () => {
+    expect([1, 2, 3, 4, 5, 6, 7].map(weekdayName)).toEqual(['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']);
+    expect(() => weekdayName(0)).toThrow(RangeError);
+    expect(() => weekdayName(8)).toThrow(RangeError);
   });
 
   it('uses GMT in winter', () => {

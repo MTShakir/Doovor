@@ -760,6 +760,8 @@ const exampleLesson: LessonDetails = {
   pickupPointId: 'pickup-1',
   rules: { cancellationWindowHours: 24, lateFeePercent: 100 },
   textReminders: true,
+  // Booked every Tuesday at 14:30 until it is stopped, so the sheet offers to stop it (D-380).
+  weekly: { id: 'weekly-1', weekday: 2, time: '14:30' },
 };
 const exampleLessonUnreachable: LessonDetails = {
   ...exampleLesson,
@@ -768,6 +770,7 @@ const exampleLessonUnreachable: LessonDetails = {
   learner: { id: 'learner-2', name: 'Noah Wilson', phone: null, email: null },
   pickup: null,
   textReminders: false,
+  weekly: null,
 };
 const exampleLessonDone: LessonDetails = { ...exampleLesson, id: 'lesson-3', status: 'completed', paymentStatus: 'paid_card' };
 
@@ -1466,6 +1469,8 @@ export function DesignShowcase() {
           <SetupChecklist state={{ learners: 3, paymentsConnected: false, verified: true, badgeInDate: true }} />
           {/* A trainee checked, whom nobody supervises yet (D-343). */}
           <SetupChecklist state={{ learners: 1, paymentsConnected: true, verified: true, badgeInDate: true, supervised: false }} />
+          {/* The badge skipped at sign-up: it waits for them to send it, not for us (D-382). */}
+          <SetupChecklist state={{ learners: 0, paymentsConnected: false, verified: false, badgeInDate: true, badgeToSend: true }} />
         </div>
         <Label>Install offer: the browser&apos;s own prompt, and the steps on an iPhone or iPad (M4-08)</Label>
         <div className="grid items-start gap-4 md:grid-cols-2">

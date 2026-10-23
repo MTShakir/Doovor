@@ -35,6 +35,11 @@ export interface LessonDetails {
   rules: CancellationRules;
   /** A reminder may go by text: the Business's plan has texts, and the learner has a number (NTF-01). */
   textReminders: boolean;
+  /**
+   * The weekly slot it came from, while that slot is still booking lessons ahead with no end
+   * (BOK-05, D-380): the day and the time it keeps, so the sheet can say so and stop it.
+   */
+  weekly: { id: string; weekday: number; time: string } | null;
 }
 
 interface Row {
@@ -50,6 +55,7 @@ interface Row {
   learner_id: string;
   instructor_id: string;
   pickup_point_id: string | null;
+  recurrence_id: string | null;
   lesson_types: { name: string; kind: string };
   instructor_profiles: { display_name: string };
   pickup_points: { label: string; address: string | null; postcode: string | null } | null;
@@ -61,7 +67,7 @@ export async function lessonDetails(bookingId: string): Promise<LessonDetails | 
   const { data, error } = await supabase
     .from('bookings')
     .select(
-      'id, starts_at, ends_at, status, payment_status, source, price_pence, credit_minutes, declined_at, learner_id, instructor_id, pickup_point_id, lesson_types(name, kind), instructor_profiles(display_name), pickup_points(label, address, postcode)',
+      'id, starts_at, ends_at, status, payment_status, source, price_pence, credit_minutes, declined_at, learner_id, instructor_id, pickup_point_id, recurrence_id, lesson_types(name, kind), instructor_profiles(display_name), pickup_points(label, address, postcode)',
     )
     .eq('id', bookingId)
     .maybeSingle();
@@ -69,12 +75,23 @@ export async function lessonDetails(bookingId: string): Promise<LessonDetails | 
   if (data === null) return null;
   const row = data as unknown as Row;
 
-  const [card, rules, options] = await Promise.all([
+  const [card, rules, options, slot] = await Promise.all([
     learnerCard(row.learner_id),
     cancellationRules(row.instructor_id),
     // Whether the plan has texts, and never the plan itself, which is the owner's (D-123).
     supabase.rpc('lesson_reminder_options', { p_booking_id: row.id }),
+    // Only one with no end that nobody has stopped: a slot for so many weeks is all booked already.
+    row.recurrence_id === null
+      ? null
+      : supabase
+          .from('booking_recurrences')
+          .select('id, weekday, local_time')
+          .eq('id', row.recurrence_id)
+          .is('ends_on', null)
+          .is('cancelled_at', null)
+          .maybeSingle(),
   ]);
+  const weekly = slot?.data ?? null;
   const phone = card?.phone ?? null;
   return {
     id: row.id,
@@ -104,5 +121,6 @@ export async function lessonDetails(bookingId: string): Promise<LessonDetails | 
     pickupPointId: row.pickup_point_id,
     rules,
     textReminders: phone !== null && (options.data as { texts?: boolean } | null)?.texts === true,
+    weekly: weekly === null ? null : { id: weekly.id, weekday: weekly.weekday, time: weekly.local_time.slice(0, 5) },
   };
 }

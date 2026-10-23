@@ -3,7 +3,7 @@
 import { cancellationOutcome, cancellationWarning } from '@repo/core/cancellation';
 import { splitByCredit } from '@repo/core/credit';
 import { formatPence } from '@repo/core/money';
-import { formatDate, formatMinutes, formatTime, todayInZone, utcToLocal } from '@repo/core/time';
+import { formatDate, formatMinutes, formatTime, todayInZone, utcToLocal, weekdayName } from '@repo/core/time';
 import { Button } from '@repo/ui/button';
 import { Checkbox } from '@repo/ui/checkbox';
 import { Field } from '@repo/ui/field';
@@ -18,7 +18,7 @@ import { useRouter } from 'next/navigation';
 import { useEffect, useState, useTransition } from 'react';
 import { FormAlert } from '@/components/form-alert';
 import { MarkPaidSheet } from '@/components/money/mark-paid';
-import { cancelLesson, moveLesson, priceForLength, slotsForDay } from '@/app/(portal)/app/instructor/booking-actions';
+import { cancelLesson, moveLesson, priceForLength, slotsForDay, stopWeekly } from '@/app/(portal)/app/instructor/booking-actions';
 import type { LessonPortal } from '@/components/lessons/lesson-details';
 
 export interface ChosenLesson {
@@ -33,13 +33,15 @@ export interface ChosenLesson {
   creditMinutes?: number;
   /** Where its money stands, so the sheet can say what goes back when it is called off (R-08). */
   paymentStatus?: string;
+  /** The weekly slot with no end it came from, which the sheet can stop (BOK-05, D-380). */
+  weekly?: { id: string; weekday: number; time: string } | null;
 }
 
 export interface LessonSheetsProps {
   lesson: ChosenLesson;
   /** The Business rules, so the sheet can say what a cancellation costs before it happens. */
   rules: { cancellationWindowHours: number; lateFeePercent: number };
-  action: 'move' | 'cancel' | 'paid';
+  action: 'move' | 'cancel' | 'paid' | 'stop';
   onClose: () => void;
   /**
    * The instructor's own diary, or the school's office moving one of its instructor's lessons,
@@ -79,24 +81,32 @@ function lengthOptions(current: number): { value: string; label: string }[] {
     .map((each) => ({ value: String(each), label: formatMinutes(each) }));
 }
 
-/** What the length change does to the price, in the words under the picker. */
+/**
+ * What the length change does to the price, in the words under the picker. A new length starts
+ * the lesson's money again (D-188): whatever paid for it goes back as a cancellation would give it
+ * back, and the new price is paid the way any lesson is, so the instructor is told that here,
+ * before it happens, rather than finding a paid lesson unpaid afterwards.
+ */
 function priceWords(
   minutes: number,
   was: number,
   pricePence: number,
   quoted: { minutes: number; pence: number | null } | null,
+  goesBack: string | null,
 ): string {
   if (minutes === was) return `It runs for ${formatMinutes(was)} and costs ${formatPence(pricePence)}.`;
   if (quoted?.minutes !== minutes) return 'Working out what that costs...';
   if (quoted.pence === null) return 'No price is set for a lesson that long, so it cannot be changed to it.';
-  return `${formatMinutes(minutes)} costs ${formatPence(quoted.pence)}, instead of ${formatPence(pricePence)}.`;
+  const price = `${formatMinutes(minutes)} costs ${formatPence(quoted.pence)}, instead of ${formatPence(pricePence)}.`;
+  if (goesBack === null) return price;
+  return `${price} ${goesBack} They then pay the ${formatPence(quoted.pence)} the way they pay for any lesson.`;
 }
 
 /** BOK-08, BOK-09, PAY-05: what an instructor does to a lesson that is already in. */
 export function LessonSheets({ lesson, rules, action, onClose, portal = 'instructor', instructorName }: LessonSheetsProps) {
   const office = portal === 'school';
   const whose = office && instructorName !== undefined ? `${instructorName}'s hours` : 'your hours';
-  const { bookingId, learnerId, learnerName, startsAt, durationMinutes, pricePence, creditMinutes, paymentStatus } = lesson;
+  const { bookingId, learnerId, learnerName, startsAt, durationMinutes, pricePence, creditMinutes, paymentStatus, weekly } = lesson;
   const { cancellationWindowHours, lateFeePercent } = rules;
   // Credit pays for what it covers and the rest is paid the usual way, so what is owed in money is
   // the price less what those minutes were worth (D-225). The sheets ask for that, not the price.
@@ -107,6 +117,7 @@ export function LessonSheets({ lesson, rules, action, onClose, portal = 'instruc
   const cancelling = action === 'cancel';
   const moving = action === 'move';
   const paying = action === 'paid';
+  const stopping = action === 'stop' && weekly !== undefined && weekly !== null;
   const [reason, setReason] = useState('');
   const [error, setError] = useState<string | null>(null);
 
@@ -191,6 +202,22 @@ export function LessonSheets({ lesson, rules, action, onClose, portal = 'instruc
     });
   };
 
+  // BOK-05, D-380: no more weeks are booked, and the lessons already in the diary stay.
+  const stop = () => {
+    if (weekly === undefined || weekly === null) return;
+    setError(null);
+    startTransition(async () => {
+      const result = await stopWeekly({ weeklyId: weekly.id });
+      if (!result.ok) {
+        setError(result.message);
+        return;
+      }
+      toast(`${learnerName}'s weekly lesson stopped`);
+      onClose();
+      router.refresh();
+    });
+  };
+
   const move = () => {
     if (slot === null) return;
     setTelling(false);
@@ -269,7 +296,10 @@ export function LessonSheets({ lesson, rules, action, onClose, portal = 'instruc
       >
         <div className="flex flex-col gap-4">
           {error ? <FormAlert>{error}</FormAlert> : null}
-          <Field label="How long?" hint={priceWords(minutes, durationMinutes, pricePence, newPrice)}>
+          <Field
+            label="How long?"
+            hint={priceWords(minutes, durationMinutes, pricePence, newPrice, paidBack(paymentStatus, formatPence(owedPence), fromCredit))}
+          >
             <Select
               value={String(minutes)}
               onChange={(event) => { setMinutes(Number(event.target.value)); }}
@@ -318,6 +348,25 @@ export function LessonSheets({ lesson, rules, action, onClose, portal = 'instruc
               ) : null}
             </div>
           )}
+        </div>
+      </Sheet>
+
+      <Sheet
+        open={stopping}
+        onOpenChange={onClose}
+        title={`Stop ${learnerName}'s weekly lesson?`}
+        description={weekly ? `No more ${weekdayName(weekly.weekday)}s at ${weekly.time} are booked for them.` : undefined}
+        footer={
+          <Button width="full" size="lg" pending={pending} onClick={stop}>
+            Stop booking it every week
+          </Button>
+        }
+      >
+        <div className="flex flex-col gap-3">
+          {error ? <FormAlert>{error}</FormAlert> : null}
+          <p className="text-small text-grey-700">
+            The lessons already in the diary stay, this one too. Cancel any of them that will not be needed.
+          </p>
         </div>
       </Sheet>
 
