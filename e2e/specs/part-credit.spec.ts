@@ -3,12 +3,15 @@ import { authFile, roles } from '../support/accounts';
 import {
   bookAsLearner,
   clearPaymentsAccount,
+  enablePayments,
   giveCredit,
   holdPaymentsBusiness,
+  lessonIdAt,
   makeSchoolLearner,
   withDatabase,
 } from '../support/database';
 import { expectAccessible, settled, snap } from '../support/helpers';
+import { signInThroughForm } from '../support/sign-in';
 
 /**
  * Credit pays for what it covers and the rest is paid the usual way (PAY-04, D-225).
@@ -57,7 +60,7 @@ test.describe('credit pays for what it covers (PAY-04, D-225)', () => {
     return day.toISOString().slice(0, 10);
   };
 
-  test('an hour of credit against a two hour lesson leaves the rest to pay', async ({ page }, testInfo) => {
+  test('an hour of credit against a two hour lesson leaves the rest to pay', async ({ page, browser }, testInfo) => {
     const on = workingDay(testInfo.project.name);
     const at = '13:00';
     const learner = await makeSchoolLearner(`Cara Credit ${testInfo.project.name}`, {
@@ -82,6 +85,30 @@ test.describe('credit pays for what it covers (PAY-04, D-225)', () => {
     expect(lesson.paymentStatus, 'and is not paid until the rest of it is').toBe('unpaid');
     // Half the lesson came from credit, so half the price is left, to the penny.
     expect(lesson.owedPence).toBe(lesson.pricePence - Math.floor(lesson.pricePence / 2));
+
+    // The learner is asked for the rest as well, never the price (D-381): in person while the
+    // school takes no cards, and the rest by card, on the button too, once it does.
+    const theirs = await browser.newContext();
+    try {
+      const learnerPage = await theirs.newPage();
+      const bookingId = await lessonIdAt('Emma Clarke', on, at);
+      await signInThroughForm(learnerPage, learner.email, { next: `/app/learner/pay/${bookingId}` });
+      const checkout = learnerPage.getByRole('region', { name: new RegExp(`at ${at}$`) });
+      await expect(checkout).toContainText(
+        `1 hour of it was paid with your credit, so ${pounds(lesson.owedPence)} of the ${pounds(lesson.pricePence)} is left.`,
+      );
+      await expect(checkout).toContainText('Pay Quayside Driving School in person.');
+      await expect(checkout.getByRole('button', { name: /^Pay £/ })).toHaveCount(0);
+
+      await enablePayments(roles.schoolOwner.email, 'acct_part_credit_e2e');
+      await learnerPage.reload();
+      await expect(checkout.getByRole('button', { name: `Pay ${pounds(lesson.owedPence)}` })).toBeVisible();
+      await expect(checkout.getByRole('button', { name: `Pay ${pounds(lesson.pricePence)}` }), 'never the whole price').toHaveCount(0);
+      await snap(learnerPage, testInfo, 'part-credit-learner-pays-the-rest');
+    } finally {
+      await clearPaymentsAccount(roles.schoolOwner.email);
+      await theirs.close();
+    }
 
     // The instructor is asked for the rest, not the price, and told where the rest of it went.
     await page.goto(`/app/instructor/diary?view=day&date=${on}`);
