@@ -1,4 +1,3 @@
-import { hasEntitlement } from '@repo/config/plans';
 import { PageHeader } from '@repo/ui/app-shell';
 import { EmptyState } from '@repo/ui/empty-state';
 import { SkeletonRow } from '@repo/ui/skeleton';
@@ -39,7 +38,7 @@ async function Wall() {
   if (!where) {
     return <EmptyState icon={Images} title="Nothing to show" description="The gallery belongs to a Business." />;
   }
-  if (!hasEntitlement(where.plan, 'gallery')) {
+  if (!where.open) {
     return (
       <EmptyState
         icon={Images}

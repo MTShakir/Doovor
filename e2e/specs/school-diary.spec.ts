@@ -65,7 +65,7 @@ test.describe('a live diary (DIA-03, M1-23)', () => {
     await page.goto(`/app/school/diary?date=${seeded.date}`);
     const lesson = page.getByRole('article', { name: new RegExp(`${seeded.time} ${seeded.learnerName}`) });
     await expect(lesson).toBeVisible();
-    await expect(lesson).toContainText('Pending');
+    await expect(lesson).toContainText('Requested');
     // A change made before the page is listening is one it can never hear about.
     await expect(page.locator('[data-diary-live="on"]')).toBeAttached();
 
@@ -79,6 +79,6 @@ test.describe('a live diary (DIA-03, M1-23)', () => {
     }
 
     await page.reload();
-    await expect(lesson).toContainText('Pending');
+    await expect(lesson).toContainText('Requested');
   });
 });

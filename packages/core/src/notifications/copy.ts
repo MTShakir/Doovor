@@ -24,6 +24,8 @@ export interface NotificationFacts {
   learnerDetail?: string;
   /** Whether a decision went the person's way: a badge verified rather than refused (D-260). */
   approved?: boolean;
+  /** A request nobody answered in time, rather than one somebody turned down (R-12, D-377). */
+  lapsed?: boolean;
   /** The school it is about, by name (M9-28). */
   schoolName?: string;
   /** The Business somebody would move from, or the one that is paused, by name (D-292). */
@@ -110,8 +112,12 @@ export function notificationCopy(
     case 'booking.requested':
       return { title: `${them} asked for a lesson`, body: sentence(closed(facts.when), 'Accept it or decline it') };
 
+    // Which way it went is what they want to know, so it is the title, and the subject (D-377).
     case 'booking.answered':
-      return { title: 'Your lesson request was answered', body: sentence(line, facts.detail) };
+      if (facts.lapsed === true) return { title: `${them} did not answer in time`, body: sentence(line, facts.detail) };
+      return facts.approved === false
+        ? { title: `${them} could not take your lesson`, body: sentence(line, facts.detail) }
+        : { title: `${them} accepted your lesson`, body: sentence(line, facts.detail) };
 
     case 'booking.reminder':
       return audience === 'learner'

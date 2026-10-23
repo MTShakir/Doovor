@@ -28,7 +28,7 @@ test.describe('instructor diary (DIA-03, DIA-04, M1-19)', () => {
     const lessons = page.getByRole('article');
     await expect(lessons.first()).toBeVisible();
     // Every lesson says who it is with, when, and where the money stands (DIA-04).
-    await expect(lessons.first()).toContainText(/Paid|Unpaid|Credit|Test day|Cancelled|Pending|Completed/);
+    await expect(lessons.first()).toContainText(/Paid|Unpaid|Credit|Test day|Cancelled|Pending|Requested|Completed/);
     await expectAccessible(page);
     await snap(page, testInfo, 'diary-day');
   });

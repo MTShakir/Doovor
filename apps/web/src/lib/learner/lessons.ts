@@ -33,8 +33,13 @@ export interface MyLesson {
  * Whether a lesson still has money to take, at a Business that takes cards. A request is paid for
  * with an authorisation, and one already authorised has nothing left to do until it is answered (R-12).
  */
-export function owesForLesson(status: string, paymentStatus: string): boolean {
-  return (status === 'requested' ? ['unpaid', 'failed'] : ['unpaid', 'pending', 'failed']).includes(paymentStatus);
+export function owesForLesson(status: string, paymentStatus: string, paymentMode: string): boolean {
+  // A request paid for the day before or afterwards has nothing to authorise (D-378). One at a
+  // Business paid when it is booked is made with no terms of its own until it is authorised.
+  if (status === 'requested') {
+    return paymentMode !== 'before_lesson' && paymentMode !== 'after_lesson' && ['unpaid', 'failed'].includes(paymentStatus);
+  }
+  return ['unpaid', 'pending', 'failed'].includes(paymentStatus);
 }
 
 /** The learner's own lessons (PRD 8.2). Row-level security answers for them, not this. */
@@ -72,7 +77,7 @@ export async function myLessons(): Promise<{ upcoming: MyLesson[]; past: MyLesso
       asksForCard({
         chargesEnabled: row.businesses.stripe_charges_enabled,
         mode: chosenPaymentMode(row.businesses.settings),
-      }) && owesForLesson(row.status, row.payment_status),
+      }) && owesForLesson(row.status, row.payment_status, row.payment_mode),
   }));
 
   return {
@@ -139,7 +144,7 @@ export async function myLesson(bookingId: string): Promise<MyLessonDetails | nul
     durationMinutes: Math.round((new Date(data.ends_at).getTime() - new Date(data.starts_at).getTime()) / 60_000),
     canPayNow:
       asksForCard({ chargesEnabled: business.stripe_charges_enabled, mode: chosenPaymentMode(business.settings) }) &&
-      owesForLesson(data.status, data.payment_status),
+      owesForLesson(data.status, data.payment_status, data.payment_mode),
     // A profile exists once the platform has checked them, and while their Business is in good
     // standing: the same rule the public page itself keeps, so a link never leads to nothing.
     instructorProfile:

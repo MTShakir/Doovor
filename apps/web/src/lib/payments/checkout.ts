@@ -23,6 +23,8 @@ export interface CheckoutLesson {
   holdExpiresAt: string | null;
   /** When a request stops waiting for an answer (R-12). Null for anything but a request. */
   requestExpiresAt: string | null;
+  /** It was asked for rather than booked outright, whatever became of it since (BOK-06). */
+  wasRequest: boolean;
   /** Their card is authorised for this lesson: set aside by the bank, not yet taken (R-12). */
   authorised: boolean;
   /** The fee for calling it off late, or not coming, for a lesson that was (R-06, R-09). */
@@ -95,6 +97,7 @@ export async function checkoutLesson(bookingId: string): Promise<CheckoutLesson 
     status: data.status,
     holdExpiresAt: data.hold_expires_at,
     requestExpiresAt: data.status === 'requested' ? data.expires_at : null,
+    wasRequest: data.expires_at !== null,
     authorised: (payments.data ?? []).some((one) => one.status === 'authorised'),
     feePence,
     feeOwed,

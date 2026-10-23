@@ -14,6 +14,7 @@ import { Suspense } from 'react';
 import { requirePortal } from '@/lib/auth/session';
 import { myLesson } from '@/lib/learner/lessons';
 import { myPickupPoints } from '@/lib/pickup/list';
+import { NoShowDispute } from '../no-show-dispute';
 import { LessonPickup } from './lesson-pickup';
 
 export const metadata: Metadata = { title: 'Lesson', robots: { index: false } };
@@ -76,6 +77,10 @@ async function Lesson({ params }: LessonPageProps) {
           <span className="text-body font-semibold text-black tabular-nums">{formatPence(lesson.pricePence)}</span>
         </div>
 
+        {/* Where the lesson is read in full, as well as on the list: opened from the notice of
+            it, the way to dispute it was not here (R-09, D-377). */}
+        {lesson.status === 'no_show' ? <NoShowDispute lesson={lesson} now={new Date().toISOString()} /> : null}
+
         <Card className="flex flex-col gap-3" role="region" aria-labelledby="pickup-title">
           <CardTitle id="pickup-title">Where you are collected</CardTitle>
           {/* Said in full only where it cannot be chosen: the chooser below says it otherwise. */}
@@ -93,6 +98,7 @@ async function Lesson({ params }: LessonPageProps) {
             bookingId={lesson.id}
             chosen={lesson.pickupPointId}
             changeable={lesson.changeable}
+            notGoingAhead={['cancelled', 'declined', 'expired'].includes(lesson.status)}
             places={places.map((place) => ({
               id: place.id,
               label: place.label,

@@ -47,7 +47,9 @@ export async function placeMetadata(params: PlaceParams): Promise<Metadata> {
     description:
       count === 0
         ? `Driving lessons in ${where} on ${brand.name}. Instructors with checked badges, their prices and free times.`
-        : `${String(count)} driving ${count === 1 ? 'instructor' : 'instructors'} in ${where}, each with a checked badge. See prices and free times, and book a lesson.`,
+        : count === 1
+          ? `1 driving instructor in ${where} with a checked badge. See their prices and free times, and book a lesson.`
+          : `${String(count)} driving instructors in ${where}, each with a checked badge. See prices and free times, and book a lesson.`,
     path,
     indexable: !isThinPlace(count),
     card: placeCard(page, params.automatic),
@@ -91,7 +93,9 @@ export async function PlaceContent({ params }: { params: Promise<PlaceParams> })
         <p className="max-w-prose text-body text-grey-700">
           {count === 0
             ? 'No instructors are listed here yet.'
-            : `${String(count)} driving ${count === 1 ? 'instructor' : 'instructors'}, each with a checked badge, and their prices. Choose one to see their free times and book.`}
+            : count === 1
+              ? '1 driving instructor with a checked badge, and their prices. Open their profile to see their free times and book.'
+              : `${String(count)} driving instructors, each with a checked badge, and their prices. Choose one to see their free times and book.`}
         </p>
       </div>
       <SchoolInstructors

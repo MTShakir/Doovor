@@ -1,4 +1,3 @@
-import { hasEntitlement } from '@repo/config/plans';
 import { PageHeader } from '@repo/ui/app-shell';
 import { EmptyState } from '@repo/ui/empty-state';
 import { SkeletonRow } from '@repo/ui/skeleton';
@@ -43,7 +42,7 @@ async function Wall() {
     );
   }
 
-  if (!hasEntitlement(where.plan, 'gallery')) {
+  if (!where.open) {
     return (
       <ProUpsell
         feature="The gallery"

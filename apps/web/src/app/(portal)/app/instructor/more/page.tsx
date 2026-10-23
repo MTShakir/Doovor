@@ -12,6 +12,7 @@ import {
 import { icons } from '@/lib/icons';
 import { installAppLink, MoreMenu } from '@/components/more-menu';
 import { businessPlanKey } from '@/lib/billing/plan';
+import { galleryIsOpen } from '@/lib/gallery/mine';
 import { requirePortal } from '@/lib/auth/session';
 import { ownSchoolLink } from '@/lib/school/link';
 
@@ -29,7 +30,12 @@ export const metadata: Metadata = { title: 'More' };
  * nobody buys.
  */
 export default async function InstructorMorePage() {
-  const [plan, linked, { access }] = await Promise.all([businessPlanKey(), ownSchoolLink(), requirePortal('instructor')]);
+  const [plan, linked, { access }, galleryOpen] = await Promise.all([
+    businessPlanKey(),
+    ownSchoolLink(),
+    requirePortal('instructor'),
+    galleryIsOpen(),
+  ]);
   // An instructor teaching under a school sees what it pays them (D-291).
   const teachesForSchool = access.memberships.some((one) => one.businessType === 'school' && one.role === 'instructor');
   const locked = plan === null || !hasEntitlement(plan, 'expensesAndExports');
@@ -60,7 +66,8 @@ export default async function InstructorMorePage() {
           title: 'Gallery',
           subtitle: 'The photo you take when somebody passes',
           pro: true,
-          locked,
+          // Open to an instructor at a school on the School plan, whose plan is not theirs to read (D-374).
+          locked: !galleryOpen,
         },
         { href: '/app/instructor/colours', icon: Palette, title: 'Your booking colours', subtitle: 'Your colour on your booking page', pro: true, locked },
         { href: '/app/instructor/plan', icon: Layers, title: 'Your plan', subtitle: 'What you are on, and until when' },

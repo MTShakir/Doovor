@@ -35,21 +35,21 @@ async function Settings() {
       {readOnly ? <p className="text-small text-grey-700">Only a super admin can change these.</p> : null}
       <SettingCard
         title="Default booking rules"
-        description="What every Business starts with until it sets its own (PRD 11.1)."
+        description="What every Business starts with until it sets its own."
         changedOn={settings.changedOn.bookingDefaults}
       >
         <BookingRulesForm rules={settings.bookingDefaults} savePlatformRules={saveBookingDefaults} readOnly={readOnly} />
       </SettingCard>
       <SettingCard
         title="Switch-on rule"
-        description="What a postcode area needs before the learner marketplace can open there (PRD 4.2)."
+        description="What a postcode area needs before the learner marketplace can open there."
         changedOn={settings.changedOn.switchOnRule}
       >
         <SwitchOnRuleForm rule={settings.switchOnRule} save={saveSwitchOnRule} readOnly={readOnly} />
       </SettingCard>
       <SettingCard
         title="Plan limits"
-        description="Text message reminders a Business on each paid plan may send in a calendar month (NTF-01)."
+        description="Text message reminders a Business on each paid plan may send in a calendar month."
         changedOn={settings.changedOn.planLimits}
       >
         <PlanLimitsForm limits={settings.planLimits} save={savePlanLimits} readOnly={readOnly} />

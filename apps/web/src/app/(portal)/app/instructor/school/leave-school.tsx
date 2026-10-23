@@ -9,7 +9,7 @@ import { useState, useTransition } from 'react';
 import { leaveSchool } from './actions';
 
 /** Leaving the school a business is linked to, after saying what that changes (D-282). */
-export function LeaveSchool({ linkId, school, proGiven }: { linkId: string; school: string; proGiven: boolean }) {
+export function LeaveSchool({ linkId, school, proGiven, vouched }: { linkId: string; school: string; proGiven: boolean; vouched: boolean }) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const [pending, startTransition] = useTransition();
@@ -23,7 +23,9 @@ export function LeaveSchool({ linkId, school, proGiven }: { linkId: string; scho
         open={open}
         onOpenChange={setOpen}
         title={`Leave ${school}?`}
-        description={`Your business, its learners, prices and payments stay yours. ${school} stops sending you pupils, ${brand.name} checks your badge again before your profile is back on the site${proGiven ? ', and the Pro it paid for ends' : ''}.`}
+        // Only a badge the school vouched for is checked again: one the platform checked before the
+        // link keeps its tick, and leaving was said to take the profile off the site (D-376).
+        description={`Your business, its learners, prices and payments stay yours. ${school} stops sending you pupils${vouched ? `, ${brand.name} checks your badge before your profile is back on the site` : ''}${proGiven ? ', and the Pro it paid for ends' : ''}.`}
         footer={
           <>
             <Button variant="secondary" onClick={() => { setOpen(false); }}>

@@ -51,6 +51,11 @@ export interface BookingNotice {
   series?: { count: number; first: boolean | null; last_starts_at: string | null } | null;
 }
 
+/** A request that ran out with nobody answering it, rather than one somebody turned down (R-12, D-377). */
+function lapsed(event: BookingEvent): boolean {
+  return event.name === 'booking.declined' && event.payload.lapsed === true;
+}
+
 /** One of several lessons booked every week in one go, which the first of them speaks for. */
 function inSeries(notice: BookingNotice): boolean {
   return (notice.series?.count ?? 0) > 1;
@@ -187,6 +192,8 @@ function detailFor(event: BookingEvent, notice: BookingNotice): string | undefin
   }
   const reason = notice.cancel_reason?.trim();
   if (event.name === 'booking.accepted') return 'It is in the diary';
+  // A request nobody answered in time raises the same event, marked as having run out (D-377).
+  if (event.name === 'booking.declined' && lapsed(event)) return 'It was not booked, and nothing is taken for it';
   if (event.name === 'booking.declined') return reason ? `Reason: ${reason}` : 'They could not make that time';
   if (event.name === 'booking.cancelled') {
     const money = cancelledMoneyWords(cancelledMoney(event, notice), { kind: 'business', learnerName: notice.learner_name }, formatPence);
@@ -276,6 +283,8 @@ export function planBookingNotifications(input: BookingNoticeInput): PlannedNoti
       when: `${formatDate(startsAt)} at ${formatTime(startsAt)}`,
       detail: detailFor(event, notice),
       learnerDetail: learnerDetailFor(event, notice),
+      ...(event.name === 'booking.accepted' || event.name === 'booking.declined' ? { approved: event.name === 'booking.accepted' } : {}),
+      ...(lapsed(event) ? { lapsed: true } : {}),
     },
     recipients: [
       { userId: notice.learner_user_id, audience: 'learner', muted: muted.get(notice.learner_user_id) },

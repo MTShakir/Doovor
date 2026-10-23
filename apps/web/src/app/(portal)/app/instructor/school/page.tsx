@@ -37,14 +37,25 @@ async function School() {
   const [linked, owed] = await Promise.all([ownSchoolLink(), own ? feesStillOwed(own.businessId) : Promise.resolve([])]);
 
   if (linked === null) {
+    // Somebody teaching under a school is at one, not linked to one, and was told they were not
+    // at a school at all (D-374).
+    const under = access.memberships.find((one) => one.businessType === 'school' && one.role === 'instructor');
     return (
       <>
         <Card>
-          <EmptyState
-            icon={icons.school}
-            title="You are not linked to a school"
-            description="A driving school that sends pupils to instructors with their own business can send you a link to join it. You keep your own prices, payments and learners."
-          />
+          {under ? (
+            <EmptyState
+              icon={icons.school}
+              title={`You teach for ${under.businessName}`}
+              description="The school sets your prices and takes the payments. Linking is for instructors with a business of their own."
+            />
+          ) : (
+            <EmptyState
+              icon={icons.school}
+              title="You are not linked to a school"
+              description="A driving school that sends pupils to instructors with their own business can send you a link to join it. You keep your own prices, payments and learners."
+            />
+          )}
         </Card>
         <StillOwed owed={owed} />
       </>
@@ -76,7 +87,7 @@ async function School() {
         {link.proGiven ? <li>Your plan includes Pro while you are linked, paid for by {link.schoolName}.</li> : null}
       </ul>
       <PriceGuideNote school={link.schoolName} recommendedHourlyPence={link.recommendedHourlyPence} maxHourlyPence={link.maxHourlyPence} />
-      <LeaveSchool linkId={link.linkId} school={link.schoolName} proGiven={link.proGiven} />
+      <LeaveSchool linkId={link.linkId} school={link.schoolName} proGiven={link.proGiven} vouched={link.vouched} />
     </Card>
     {/* D-289: pupils the school offers, and those accepted. */}
     {waiting ? null : <PupilOffersScreen school={link.schoolName} offers={offers} />}

@@ -193,6 +193,30 @@ test.describe('a school keeps its own wall (D-218)', () => {
 });
 
 /**
+ * The school's own instructors and managers add to its wall too. Its plan is the owner's to read
+ * (D-123), and both were told the gallery was not on it (D-374).
+ */
+test.describe('a school instructor and a manager add to the wall (D-374)', () => {
+  for (const [role, path] of [
+    ['schoolInstructor', '/app/instructor/gallery'],
+    ['schoolManager', '/app/school/gallery'],
+  ] as const) {
+    test(`${role === 'schoolInstructor' ? 'an instructor' : 'a manager'} is offered the form, not the plan`, async ({ browser }) => {
+      const context = await browser.newContext({ storageState: authFile(role) });
+      try {
+        const page = await context.newPage();
+        await page.goto(path);
+        await expect(page.getByRole('region', { name: 'Add a pass' })).toBeVisible();
+        await expect(page.getByRole('region', { name: 'The gallery is part of Pro' })).toHaveCount(0);
+        await expect(page.getByText('The gallery is not on this plan')).toHaveCount(0);
+      } finally {
+        await context.close();
+      }
+    });
+  }
+});
+
+/**
  * Three on a profile, and the whole wall on a page of its own (D-268). An instructor of its own,
  * so the three are known: the seeded wall is added to by the tests above at the same time.
  */

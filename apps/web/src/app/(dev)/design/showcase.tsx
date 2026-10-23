@@ -56,8 +56,9 @@ import { LessonsCalendar } from '@/components/lessons/lessons-calendar';
 import { MyLessonRow } from '@/app/(portal)/app/learner/lessons/my-lesson';
 import type { MyLesson } from '@/lib/learner/lessons';
 import { UpcomingLessons } from '@/components/lessons/upcoming-lessons';
+import { WaitingRequests } from '@/components/lessons/waiting-requests';
 import type { LessonDetails } from '@/lib/lessons/details';
-import type { TeachingLesson } from '@/lib/lessons/teaching';
+import type { TeachingLesson, WaitingRequest } from '@/lib/lessons/teaching';
 import type { LearnerPickupPoint } from '@/lib/pickup/list';
 import { SetupChecklist } from '@/components/setup-checklist';
 import { InstructorWeeks, OverviewFigures, OverviewSkeleton } from '@/components/school/overview';
@@ -796,6 +797,12 @@ const exampleMyLessons: MyLesson[] = [
   { ...exampleMyLesson, id: 'my-lesson-3', startsAt: '2026-10-06T08:00:00Z', endsAt: '2026-10-06T10:00:00Z', lessonType: 'Mock test', durationMinutes: 120, pricePence: 8400 },
 ];
 const exampleLearnerRules = { cancellationWindowHours: 48, lateFeePercent: 100 };
+
+/** Lessons asked for, waiting on Today for an answer (D-379). */
+const exampleRequests: WaitingRequest[] = [
+  { id: 'request-1', startsAt: '2026-09-22T08:00:00Z', learnerName: "Zoë D'Arcy-Smith", answerBy: '2026-09-21T19:30:00Z' },
+  { id: 'request-2', startsAt: '2026-09-24T15:30:00Z', learnerName: 'Ffion ap Rhys', answerBy: null },
+];
 
 /** The lessons after today, under Today's (D-167). */
 const exampleUpcoming: TeachingLesson[] = [
@@ -2315,6 +2322,11 @@ export function DesignShowcase() {
             </Card>
           ))}
         </div>
+        <Label>Lessons asked for and waiting for an answer, on Today (BOK-06, D-379); nothing is drawn while none are</Label>
+        {/* Formatting a lesson's time reads the clock, which a page built ahead of time must leave to the visit. */}
+        <Suspense fallback={<SkeletonRow />}>
+          <WaitingRequests requests={exampleRequests} />
+        </Suspense>
         <Label>The lessons after today, under Today&apos;s, five at a time (DIA-04, D-167); and nothing booked yet</Label>
         {/* Formatting a lesson's time reads the clock, which a page built ahead of time must leave to the visit. */}
         <Suspense fallback={<SkeletonRow />}>

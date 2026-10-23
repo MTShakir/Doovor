@@ -4199,6 +4199,7 @@ export type Database = {
       export_my_data: { Args: never; Returns: Json }
       feature_flags: { Args: never; Returns: Json }
       founding_places: { Args: never; Returns: Json }
+      gallery_is_open: { Args: { p_business_id: string }; Returns: boolean }
       give_school_enquiry: {
         Args: {
           p_enquiry_id: string
