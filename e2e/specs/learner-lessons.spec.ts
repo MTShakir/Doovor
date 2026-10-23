@@ -80,7 +80,12 @@ test.describe('my lessons (BOK-08, BOK-09, M2-26)', () => {
 
     const notice = page.getByRole('dialog', { name: 'Only your instructor can move it' });
     await tapUntil(lesson.getByRole('button', { name: 'Move' }), notice);
-    await expect(notice).toContainText('Contact Sarah Khan directly to ask for another time.');
+    await expect(notice).toContainText('Ask Sarah Khan for another time.');
+    // And the way to ask her: a call, a text or WhatsApp, to the mobile she verified (D-386).
+    const reach = notice.getByRole('group', { name: 'Get in touch with Sarah Khan' });
+    await expect(reach.getByRole('link', { name: 'Call' })).toHaveAttribute('href', 'tel:+447700900001');
+    await expect(reach.getByRole('link', { name: 'Text' })).toHaveAttribute('href', 'sms:+447700900001');
+    await expect(reach.getByRole('link', { name: 'WhatsApp' })).toHaveAttribute('href', 'https://wa.me/447700900001');
     // No times to choose from: nothing a learner does here moves the lesson.
     await expect(page.getByRole('group', { name: /^Times on/ })).toHaveCount(0);
     await expectAccessible(page);

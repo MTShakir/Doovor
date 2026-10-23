@@ -4356,6 +4356,13 @@ export type Database = {
         Returns: Json
       }
       my_access_flags: { Args: never; Returns: Json }
+      my_instructors_contact: {
+        Args: never
+        Returns: {
+          instructor_id: string
+          phone: string
+        }[]
+      }
       my_learners_asked_to_move: { Args: never; Returns: Json }
       my_paused_business: { Args: never; Returns: Json }
       my_referrals: { Args: { p_business_id: string }; Returns: Json }

@@ -54,6 +54,7 @@ import { SetupCard } from '@/app/(portal)/app/learner/setup-card';
 import { LessonDetailsBody } from '@/components/lessons/lesson-details';
 import { LessonsCalendar } from '@/components/lessons/lessons-calendar';
 import { MyLessonRow } from '@/app/(portal)/app/learner/lessons/my-lesson';
+import { InstructorContact } from '@/components/learner/instructor-contact';
 import type { MyLesson } from '@/lib/learner/lessons';
 import { UpcomingLessons } from '@/components/lessons/upcoming-lessons';
 import { WaitingRequests } from '@/components/lessons/waiting-requests';
@@ -785,6 +786,7 @@ const exampleMyLesson: MyLesson = {
   declined: false,
   instructorId: 'instructor-1',
   instructorName: 'Sarah Khan',
+  instructorPhone: '+447700900001',
   lessonType: 'Standard lesson',
   pricePence: 6300,
   pickup: 'Home',
@@ -2352,6 +2354,8 @@ export function DesignShowcase() {
           />
           <LessonsCalendar today="2026-09-19" lessons={[]} />
         </Suspense>
+        <Label>A learner&apos;s way to their own instructor, on the lesson and where they ask to move it (BOK-08, D-386)</Label>
+        <InstructorContact name="Sarah Khan" phone="+447700900001" />
       </Section>
 
       <Section title="Overlays">

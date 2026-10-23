@@ -1,5 +1,6 @@
 import 'server-only';
 import { asksForCard, chosenPaymentMode } from '@repo/core/payment-modes';
+import { normaliseUkMobile } from '@repo/core/phone';
 import { instructorProfilePath, schoolProfilePath } from '@repo/core/public-profile';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
 
@@ -11,6 +12,8 @@ export interface MyLesson {
   paymentStatus: string;
   instructorId: string;
   instructorName: string;
+  /** Their instructor's verified mobile, to ask them to move it (D-386). Null when there is none to give. */
+  instructorPhone: string | null;
   lessonType: string;
   pricePence: number;
   /** Minutes of it already paid for from credit, so what is left to pay is less (D-225). */
@@ -42,9 +45,22 @@ export function owesForLesson(status: string, paymentStatus: string, paymentMode
   return ['unpaid', 'pending', 'failed'].includes(paymentStatus);
 }
 
+/**
+ * The mobile of each instructor who teaches this learner (BOK-08, D-386), by instructor. The
+ * database decides whose: only instructors they learn with, and only a number that was verified.
+ */
+async function instructorPhones(supabase: Awaited<ReturnType<typeof createSupabaseServerClient>>): Promise<Map<string, string>> {
+  const { data, error } = await supabase.rpc('my_instructors_contact');
+  // Without the numbers the lessons still show; the learner just has no button to call.
+  if (error) return new Map();
+  // Supabase Auth keeps a number without its plus, which is not a number a phone can ring.
+  return new Map(data.map((row) => [row.instructor_id, normaliseUkMobile(row.phone) ?? row.phone]));
+}
+
 /** The learner's own lessons (PRD 8.2). Row-level security answers for them, not this. */
 export async function myLessons(): Promise<{ upcoming: MyLesson[]; past: MyLesson[] }> {
   const supabase = await createSupabaseServerClient();
+  const phones = instructorPhones(supabase);
   const { data, error } = await supabase
     .from('bookings')
     .select(
@@ -56,6 +72,7 @@ export async function myLessons(): Promise<{ upcoming: MyLesson[]; past: MyLesso
 
   const now = Date.now();
   const off = ['cancelled', 'expired', 'declined', 'no_show'];
+  const reach = await phones;
   const all = data.map((row) => ({
     id: row.id,
     startsAt: row.starts_at,
@@ -65,6 +82,7 @@ export async function myLessons(): Promise<{ upcoming: MyLesson[]; past: MyLesso
     paymentMode: row.payment_mode,
     instructorId: row.instructor_id,
     instructorName: row.instructor_profiles.display_name,
+    instructorPhone: reach.get(row.instructor_id) ?? null,
     lessonType: row.lesson_types.name,
     pricePence: row.price_pence,
     creditMinutes: row.credit_minutes,
@@ -109,6 +127,7 @@ export interface MyLessonDetails extends MyLesson {
  */
 export async function myLesson(bookingId: string): Promise<MyLessonDetails | null> {
   const supabase = await createSupabaseServerClient();
+  const phones = instructorPhones(supabase);
   const { data, error } = await supabase
     .from('bookings')
     .select(
@@ -122,6 +141,7 @@ export async function myLesson(bookingId: string): Promise<MyLessonDetails | nul
   const business = data.businesses;
   const instructor = data.instructor_profiles;
   const live = business.status === 'active';
+  const reach = await phones;
   return {
     id: data.id,
     startsAt: data.starts_at,
@@ -131,6 +151,7 @@ export async function myLesson(bookingId: string): Promise<MyLessonDetails | nul
     paymentMode: data.payment_mode,
     instructorId: data.instructor_id,
     instructorName: instructor.display_name,
+    instructorPhone: reach.get(data.instructor_id) ?? null,
     lessonType: data.lesson_types.name,
     pricePence: data.price_pence,
     creditMinutes: data.credit_minutes,
