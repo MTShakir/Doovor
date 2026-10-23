@@ -13,6 +13,8 @@ interface TaskCopy {
   section: string;
   /** What to say while something else has to happen first. */
   blocked?: string;
+  /** What to say while there is no badge with us to check (D-382). */
+  waitingForBadge?: string;
   /** What to say while a trainee waits for somebody to supervise them (D-343). */
   waitingForSupervisor?: string;
   /** What to say while a badge that has run out waits for the new one (D-346). */
@@ -30,13 +32,15 @@ const copy: Record<SetupTaskId, TaskCopy> = {
     title: 'Connect payments',
     todo: 'Take card payments and get paid out automatically.',
     done: 'Payments are connected.',
-    section: 'money',
+    // Straight to where it is done, not the Money screen a tap away from it.
+    section: 'money/setup',
   },
   'booking-link': {
     title: 'Share your booking link',
     todo: 'Put it in your bio, your car and your messages.',
     done: 'Your booking link is live.',
     blocked: 'Ready as soon as your badge is approved.',
+    waitingForBadge: 'Send your badge from your profile first. It is ready once we have checked it.',
     waitingForSupervisor: 'Ready as soon as a school or an approved instructor supervises you.',
     waitingForRenewal: 'Paused while your badge is out of date. Send your new one from your profile.',
     section: 'profile',
@@ -65,15 +69,14 @@ export function SetupChecklist({ state }: { state: SetupState }) {
       <ul className="border-t border-grey-200">
         {tasks.map((task) => {
           const text = copy[task.id];
-          const subtitle = task.done
-            ? text.done
-            : task.blockedBy === 'supervision'
-              ? text.waitingForSupervisor
-              : task.blockedBy === 'renewal'
-                ? text.waitingForRenewal
-                : task.blockedBy
-                ? text.blocked
-                : text.todo;
+          // What it waits for, in words: the badge itself, a supervisor, a new badge, or our check.
+          const waiting = {
+            badge: text.waitingForBadge,
+            supervision: text.waitingForSupervisor,
+            renewal: text.waitingForRenewal,
+            verification: text.blocked,
+          };
+          const subtitle = task.done ? text.done : task.blockedBy ? (waiting[task.blockedBy] ?? text.blocked) : text.todo;
           return (
             <li key={task.id} className="border-b border-grey-200 last:border-b-0">
               <NavLink

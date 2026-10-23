@@ -61,6 +61,11 @@ describe('the prices of lessons (R-05, SCH-04, M5-15)', () => {
     expect(parsed.prices.map((one) => one.price)).toEqual([4200, null]);
     const wrong = lessonPricesSchema.safeParse({ prices: [{ lessonTypeId: standard.id, durationMinutes: 60, price: '4' }] });
     expect(wrong.error?.issues[0]).toMatchObject({ path: ['prices', 0, 'price'], message: 'Enter a price between £5 and £1,000' });
+    // Something that is not money is told so, not given a range it may already be inside (D-381).
+    for (const typed of ['42.555', 'forty', '£4 2']) {
+      const notMoney = lessonPricesSchema.safeParse({ prices: [{ lessonTypeId: standard.id, durationMinutes: 60, price: typed }] });
+      expect(notMoney.error?.issues[0]?.message, typed).toBe('Enter pounds and pence, like 42 or 42.50');
+    }
     expect(lessonPricesSchema.safeParse({ prices: [{ lessonTypeId: standard.id, durationMinutes: 50, price: '40' }] }).success).toBe(false);
     expect(penceAsTyped(4200)).toBe('42');
     expect(penceAsTyped(4250)).toBe('42.50');

@@ -62,5 +62,13 @@ test.describe('importing learners (LRN-03, M2-09)', () => {
         .setInputFiles({ name: 'empty.csv', mimeType: 'text/csv', buffer: Buffer.from('\n\n', 'utf8') });
       await expect(page.getByText('That file has no rows in it.')).toBeVisible({ timeout: 1000 });
     }).toPass({ timeout: 15_000 });
+
+    // The spreadsheet itself, chosen instead of a CSV saved from it, is named for what it is
+    // rather than read as rows of nonsense (D-381). An Excel file is a zip, and starts as one.
+    await page
+      .getByLabel('Spreadsheet')
+      .setInputFiles({ name: 'learners.xlsx', mimeType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', buffer: Buffer.from([0x50, 0x4b, 0x03, 0x04, 0x14, 0x00, 0x06, 0x00]) });
+    await expect(page.getByText('That is not a CSV file.', { exact: false })).toBeVisible();
+    await expect(page.getByText('Which column is which?')).toHaveCount(0);
   });
 });

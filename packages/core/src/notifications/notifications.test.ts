@@ -314,6 +314,15 @@ describe('channels, once settings are applied (NTF-04)', () => {
   it('sends nothing at all when everything optional is switched off', () => {
     expect(channelsFor('credit.low', { ...learner, muted: ['in_app', 'push', 'email'] })).toEqual([]);
   });
+
+  it('tells whoever made the change in the inbox only (D-384)', () => {
+    const instructor = { userId: 'u2', audience: 'instructor' as NotificationAudience, ownChange: true };
+    expect(channelsFor('booking.confirmed', instructor)).toEqual(['in_app']);
+    expect(channelsFor('booking.cancelled', instructor)).toEqual(['in_app']);
+    // The inbox they switched off stays off, unless the message is a service one.
+    expect(channelsFor('credit.low', { ...instructor, muted: ['in_app'] })).toEqual([]);
+    expect(channelsFor('booking.cancelled', { ...instructor, muted: ['in_app'] })).toEqual(['in_app']);
+  });
 });
 
 describe('planning one event (NTF-03)', () => {

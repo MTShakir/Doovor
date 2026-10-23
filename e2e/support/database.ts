@@ -563,6 +563,32 @@ export async function paymentFor(startsAt: string): Promise<{ amountPence: numbe
  * and how many lots they came in. Credit is never taken away by a test, so tests compare before
  * with after.
  */
+/**
+ * What the newest lot of credit a learner has with a Business went on at once: the minutes it gave
+ * to lessons already booked, and how many lessons (D-385).
+ */
+export async function creditSpentFromNewestLot(learnerEmail: string, ownerEmail: string): Promise<{ minutes: number; lessons: number }> {
+  return withDatabase(async (sql) => {
+    const rows = await sql<{ minutes: string; lessons: string }[]>`
+      with newest as (
+        select l.id
+          from public.credit_lots l
+          join public.users learner on learner.id = l.learner_id
+          join public.memberships m on m.business_id = l.business_id and m.role = 'owner'
+          join public.users owner on owner.id = m.user_id
+         where lower(learner.email) = lower(${learnerEmail})
+           and lower(owner.email) = lower(${ownerEmail})
+         order by l.purchased_at desc, l.id desc
+         limit 1
+      )
+      select coalesce(-sum(e.minutes), 0)::text as minutes, count(distinct e.booking_id)::text as lessons
+        from public.credit_ledger e
+       where e.lot_id = (select id from newest)
+         and e.kind = 'use'`;
+    return { minutes: Number(rows[0]?.minutes ?? '0'), lessons: Number(rows[0]?.lessons ?? '0') };
+  });
+}
+
 export async function creditWith(learnerEmail: string, ownerEmail: string): Promise<{ minutes: number; lots: number }> {
   return withDatabase(async (sql) => {
     const rows = await sql<{ minutes: string; lots: string }[]>`
@@ -625,8 +651,14 @@ export async function creditFromPayment(providerRef: string): Promise<{ payments
 }
 
 /**
- * Gives a learner credit with the Business an owner runs, as buying a package does: a card payment
- * and the lot it fills, through the same function the webhook uses. Local only.
+ * Gives a learner credit with the Business an owner runs, as a package bought before their lessons
+ * now in the diary were booked: a card payment and the lot it filled, with the minutes all still
+ * there. Local only.
+ *
+ * Buying credit now pays for the lessons already booked first (D-385), which the purchase tests
+ * test through the app. This is for a test whose starting point is credit to spend, so it writes
+ * the lot and its ledger line itself rather than through the purchase, and nothing is spent until
+ * the test books something.
  *
  * Lessons are paid from credit first, and the credit ledger keeps every lesson it paid for, so
  * those lessons can never be deleted. Give credit only to learners whose lessons no spec clears
@@ -649,8 +681,17 @@ export async function giveCredit(learnerEmail: string, ownerEmail: string, minut
         returning id`;
       if (!payment) throw new Error('The payment was not written');
       await tx`
-        select private.add_credit_lot(${who.business_id}::uuid, ${who.learner_id}::uuid, ${minutes}::int, ${pricePence}::int,
-                                      ${payment.id}::uuid, null::uuid, null::timestamptz, now(), null::uuid)`;
+        insert into public.credit_accounts (business_id, learner_id)
+        values (${who.business_id}::uuid, ${who.learner_id}::uuid)
+        on conflict (business_id, learner_id) do nothing`;
+      const [lot] = await tx<{ id: string }[]>`
+        insert into public.credit_lots (business_id, learner_id, payment_id, minutes_total, price_pence, early_start_requested_at)
+        values (${who.business_id}::uuid, ${who.learner_id}::uuid, ${payment.id}::uuid, ${minutes}::int, ${pricePence}::int, now())
+        returning id`;
+      if (!lot) throw new Error('The credit was not written');
+      await tx`
+        insert into public.credit_ledger (business_id, learner_id, lot_id, kind, minutes, payment_id)
+        values (${who.business_id}::uuid, ${who.learner_id}::uuid, ${lot.id}::uuid, 'purchase', ${minutes}::int, ${payment.id}::uuid)`;
     });
   });
 }

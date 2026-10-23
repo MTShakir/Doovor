@@ -15,7 +15,8 @@ import { recordOfflinePackage } from './money-actions';
 
 /**
  * A package the learner paid for in person, recorded in three taps: open, choose the package, say
- * how it was paid (PAY-04, PAY-05, M3-16). The credit is theirs to book with straight away.
+ * how it was paid (PAY-04, PAY-05, M3-16). The credit pays for the lessons already booked first,
+ * soonest first, and the rest is theirs to book with straight away (D-385).
  */
 export function SellPackage({
   learnerId,
@@ -43,7 +44,12 @@ export function SellPackage({
         return;
       }
       setOpen(false);
-      toast(`${formatMinutes(pack.minutes)} of credit added for ${learnerName}`);
+      const paid = result.data.lessonsPaid;
+      toast(
+        paid === 0
+          ? `${formatMinutes(pack.minutes)} of credit added for ${learnerName}`
+          : `${formatMinutes(pack.minutes)} of credit added for ${learnerName}. It went towards ${paid === 1 ? 'the lesson' : `the ${String(paid)} lessons`} already booked.`,
+      );
     });
   };
 
@@ -57,7 +63,7 @@ export function SellPackage({
         open={open}
         onOpenChange={() => { setOpen(false); }}
         title="Package paid in person"
-        description={`What ${learnerName} bought, and how they paid. The hours are theirs to book with straight away.`}
+        description={`What ${learnerName} bought, and how they paid. It pays for their lessons already booked first, soonest first, and the rest is theirs to book with.`}
       >
         <div className="flex flex-col gap-3 pb-2">
           {error ? <FormAlert>{error}</FormAlert> : null}

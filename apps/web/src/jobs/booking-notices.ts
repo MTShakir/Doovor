@@ -272,6 +272,11 @@ export function planBookingNotifications(input: BookingNoticeInput): PlannedNoti
 
   const muted = input.muted ?? new Map<string, NotificationChannel[]>();
   const startsAt = new Date(notice.starts_at);
+  // Whoever made the change, when somebody did (D-384). The instructor or the office who booked,
+  // moved or called off a lesson hears about it in the app only. A learner keeps every channel:
+  // what they booked or called off is theirs to have in writing.
+  const actor = typeof event.payload.actor === 'string' ? event.payload.actor : null;
+  const madeIt = (userId: string): boolean => actor !== null && userId === actor;
 
   return planNotifications({
     kind,
@@ -288,11 +293,17 @@ export function planBookingNotifications(input: BookingNoticeInput): PlannedNoti
     },
     recipients: [
       { userId: notice.learner_user_id, audience: 'learner', muted: muted.get(notice.learner_user_id) },
-      { userId: notice.instructor_user_id, audience: 'instructor', muted: muted.get(notice.instructor_user_id) },
+      {
+        userId: notice.instructor_user_id,
+        audience: 'instructor',
+        muted: muted.get(notice.instructor_user_id),
+        ownChange: madeIt(notice.instructor_user_id),
+      },
       ...notice.school_user_ids.map((userId) => ({
         userId,
         audience: 'school' as const,
         muted: muted.get(userId),
+        ownChange: madeIt(userId),
       })),
     ],
     linkFor: linkFor(event, notice),

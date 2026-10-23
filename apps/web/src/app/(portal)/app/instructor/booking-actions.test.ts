@@ -21,7 +21,7 @@ const lessonDetails = vi.fn<(bookingId: string) => Promise<unknown>>();
 vi.mock('@/lib/lessons/details', () => ({ lessonDetails: (bookingId: string) => lessonDetails(bookingId) }));
 vi.mock('next/cache', () => ({ revalidatePath: (...args: unknown[]) => { revalidatePath(...args); } }));
 
-const { bookLesson, cancelLesson, lessonDetailsFor, recordOfflinePayment, sendReminder, setLessonPickup, slotsForDay, undoOfflinePayment } =
+const { bookLesson, cancelLesson, lessonDetailsFor, recordOfflinePayment, sendReminder, setLessonPickup, slotsForDay, stopWeekly, undoOfflinePayment } =
   await import('./booking-actions');
 
 const bookingId = '6f1c3a52-9d8e-4b7a-8c61-2f0e9b4d7a13';
@@ -114,6 +114,29 @@ describe('sending a reminder by hand (NTF-02, D-166)', () => {
   it('says so when one already went this way within the hour', async () => {
     rpc.mockResolvedValue({ data: null, error: { code: '53400', message: 'RATE_LIMITED' } });
     expect(await sendReminder({ bookingId, channel: 'email' })).toMatchObject({ ok: false, code: 'RATE_LIMITED' });
+  });
+});
+
+describe('stopping a lesson booked every week (BOK-05, D-380)', () => {
+  const weeklyId = '9a4c2f1e-7b3d-4e8a-b5c6-1d2e3f4a5b6c';
+
+  it('asks the database to stop it, and redraws the diary and Today', async () => {
+    rpc.mockResolvedValue({ data: null, error: null });
+    expect(await stopWeekly({ weeklyId })).toEqual({ ok: true, data: null });
+    expect(rpc).toHaveBeenCalledWith('stop_recurrence', { p_recurrence_id: weeklyId });
+    expect(revalidatePath).toHaveBeenCalledWith('/app/instructor/diary');
+    expect(revalidatePath).toHaveBeenCalledWith('/app/instructor');
+  });
+
+  it('asks nothing for something that is not a weekly slot', async () => {
+    expect(await stopWeekly({ weeklyId: 'every week' })).toMatchObject({ ok: false, code: 'VALIDATION_FAILED' });
+    expect(rpc).not.toHaveBeenCalled();
+  });
+
+  it('passes on a refusal, for a slot that is not theirs', async () => {
+    rpc.mockResolvedValue({ data: null, error: { code: '42501', message: 'NOT_ALLOWED' } });
+    expect(await stopWeekly({ weeklyId })).toMatchObject({ ok: false, code: 'NOT_ALLOWED' });
+    expect(revalidatePath).not.toHaveBeenCalled();
   });
 });
 

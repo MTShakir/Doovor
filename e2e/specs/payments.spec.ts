@@ -7,6 +7,7 @@ import {
   clearNotifications,
   clearPaymentsAccount,
   creditFromPayment,
+  creditSpentFromNewestLot,
   creditWith,
   enablePayments,
   expireHoldsNow,
@@ -28,6 +29,7 @@ import {
   removeLessonById,
   requestLesson,
   setBookingStatus,
+  userIdOf,
 } from '../support/database';
 import { dayLabel, expectAccessible, fillUntil, openDiaryLesson, settled, snap, tapThrough } from '../support/helpers';
 import { signInThroughForm } from '../support/sign-in';
@@ -618,10 +620,14 @@ test.describe('lesson credit (PAY-04, M3-13, M3-14)', () => {
 
     await page.waitForURL(/\/app\/learner\/payments$/);
     await expect(page.getByText('5 hours of credit added')).toBeVisible();
+    // The five hours pay for the lessons already booked first, soonest first, and what is left of
+    // them is credit to book with (D-385).
+    const spent = await creditSpentFromNewestLot(email, owner);
+    const after = await creditWith(email, owner);
+    expect(after).toEqual({ minutes: before.minutes + 300 - spent.minutes, lots: before.lots + 1 });
     await expect(page.getByRole('region', { name: `Balance with ${school}` })).toContainText(
-      `${inWords(before.minutes + 300)} of credit`,
+      after.minutes === 0 ? 'No credit' : `${inWords(after.minutes)} of credit`,
     );
-    expect(await creditWith(email, owner)).toEqual({ minutes: before.minutes + 300, lots: before.lots + 1 });
     await settled(page);
     await snap(page, testInfo, 'credit-added');
 
@@ -944,6 +950,10 @@ test.describe('fees for lessons nobody came to (PAY-09, R-09, M3-19)', () => {
     expect(missed?.payload).toMatchObject({ fee_pence: 4200, fee_percent: 100, charging: false });
     expect((await lessonMoney(bookingId)).paymentStatus).toBe('unpaid');
     expect((await page.request.post('/dev/events', { data: missed })).status()).toBe(200);
+    // Emma marked it, so she hears about it in the app only, and the learner by every way (D-384).
+    expect(missed?.payload.actor, 'the event names who marked it').toBe(await userIdOf(roles.schoolInstructor.email));
+    expect(await notificationChannels(roles.schoolInstructor.email, 'booking.no_show', bookingId)).toEqual(['in_app']);
+    expect(await notificationChannels(learner, 'booking.no_show', bookingId)).toContain('email');
 
     await signInThroughForm(page, learner, { next: '/notifications' });
     const notice = page.getByRole('article').filter({ hasText: 'Marked as a no-show' }).filter({ hasText: `${dayLabel(day)} at ${hour}` });

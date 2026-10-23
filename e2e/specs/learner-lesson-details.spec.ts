@@ -49,6 +49,11 @@ test.describe('a learner opens their own lesson (PRD 8.2, D-185)', () => {
       await page.getByRole('link', { name: new RegExp(`^Open .* with ${instructor.name}$`) }).click();
       const who = page.getByRole('region', { name: 'Who is teaching you' });
       await expect(who).toContainText('Quayside Driving School');
+      // And can call, text or WhatsApp them, on the mobile they verified (D-386).
+      const reach = who.getByRole('group', { name: `Get in touch with ${instructor.name}` });
+      await expect(reach.getByRole('link', { name: 'Call' })).toHaveAttribute('href', /^tel:\+447700900\d{3}$/);
+      await expect(reach.getByRole('link', { name: 'Text' })).toHaveAttribute('href', /^sms:\+447700900\d{3}$/);
+      await expect(reach.getByRole('link', { name: 'WhatsApp' })).toHaveAttribute('href', /^https:\/\/wa\.me\/447700900\d{3}$/);
       await expect(who.getByRole('link', { name: `See ${instructor.name}'s profile` })).toBeVisible();
       await who.getByRole('link', { name: 'See Quayside Driving School' }).click();
       await expect(page.getByRole('heading', { level: 1, name: 'Quayside Driving School' })).toBeVisible();

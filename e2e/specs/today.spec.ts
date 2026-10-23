@@ -28,6 +28,6 @@ test.describe('instructor Today screen (PRD 10.1, M1-10)', () => {
     await page.goto('/app/instructor');
     await page.getByRole('link', { name: /Connect payments/ }).click();
 
-    await expect(page).toHaveURL(/\/app\/instructor\/money$/);
+    await expect(page).toHaveURL(/\/app\/instructor\/money\/setup$/);
   });
 });

@@ -102,13 +102,20 @@ test.describe('what a learner has and owes (PAY-06, M3-16)', () => {
     await snap(card, testInfo, 'sell-package');
     await sale.getByRole('button', { name: 'Paid in cash' }).click();
     await expect(card.getByText(`5 hours of credit added for ${learner.name}`)).toBeVisible();
+    // New credit pays for lessons already booked first (D-385), so what is owed is read again:
+    // never more than before, and the lesson that has been and gone is still owed.
+    await card.reload();
+    await openLearnerTab(card, 'Payments');
+    await expect(cardOwed.filter({ hasText: `${dayLabel(day)} at 07:00` })).toHaveCount(1);
+    const owedAfterSale = await cardOwed.count();
+    expect(owedAfterSale).toBeLessThanOrEqual(owedCount);
 
     // And the overdue lesson, marked paid from the card in two taps.
     const lesson = cardOwed.filter({ hasText: `${dayLabel(day)} at 07:00` });
     await lesson.getByRole('button', { name: 'Mark paid' }).click();
     await card.getByRole('dialog', { name: `How did ${learner.name} pay?` }).getByRole('button', { name: 'Cash' }).click();
     await expect(lesson).toHaveCount(0);
-    await expect(cardOwed).toHaveCount(owedCount - 1);
+    await expect(cardOwed).toHaveCount(owedAfterSale - 1);
     // The history is its own block now, with its own heading, rather than the tail of the
     // Payments card (D-211).
     await expect(card.getByRole('region', { name: 'Recent' })).toContainText('5 hours of credit bought');
@@ -120,7 +127,7 @@ test.describe('what a learner has and owes (PAY-06, M3-16)', () => {
     // The learner sees exactly that too.
     await page.reload();
     await expect(theirLines).toHaveText(instructorSees);
-    await expect(theirOwed).toHaveCount(owedCount - 1);
+    await expect(theirOwed).toHaveCount(owedAfterSale - 1);
     await expect(theirs).toContainText('5 hours of credit bought');
   });
 });

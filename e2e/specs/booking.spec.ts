@@ -1,6 +1,6 @@
 import { expect, test } from '@playwright/test';
 import { authFile } from '../support/accounts';
-import { acceptRequests, clearDiary, requestLesson } from '../support/database';
+import { acceptRequests, clearDiary, requestLesson, withDatabase } from '../support/database';
 import { expectAccessible, openDiaryLesson, snap, tapUntil } from '../support/helpers';
 
 /** The instructor's three taps: who it is for, when it is, and yes (BOK-01, BOK-03, M2-16). */
@@ -190,6 +190,62 @@ test.describe('booking a lesson (BOK-01, M2-16)', () => {
     await expect(
       page.getByRole('article').filter({ hasText: 'Jack Taylor' }).filter({ hasText: '13:00' }),
     ).toBeVisible();
+  });
+
+  test('stops a lesson booked every week until it is stopped (BOK-05, D-380)', async ({ page }, testInfo) => {
+    // Wednesdays, this spec's weekday, well past the four the test above books at either width.
+    const first = new Date();
+    first.setDate(first.getDate() + 7 * (36 + (testInfo.project.name === 'mobile' ? 0 : 6)));
+    while (first.getDay() !== 3) first.setDate(first.getDate() + 1);
+    const wednesdays = [0, 7, 14, 21].map((days) => {
+      const one = new Date(first);
+      one.setDate(one.getDate() + days);
+      return one.toISOString().slice(0, 10);
+    });
+    for (const day of wednesdays) await clearDiary('Sarah Khan', day);
+
+    try {
+      await page.goto(`/app/instructor/diary?view=day&date=${wednesdays[0] ?? ''}`);
+      await tapUntil(
+        page.getByRole('button', { name: 'Book a lesson' }).first(),
+        page.getByRole('dialog', { name: 'Book a lesson' }),
+      );
+      const sheet = page.getByRole('dialog', { name: 'Book a lesson' });
+      await sheet.getByLabel('Who is it for?').selectOption({ label: 'Jack Taylor' });
+      await sheet.getByLabel('How often?').selectOption('open');
+      await sheet.getByRole('button', { name: '16:00' }).click();
+      await sheet.getByRole('button', { name: /^Book 16:00 for £/ }).click();
+      await expect(page.getByText('4 lessons booked, 16:00 every week')).toBeVisible();
+
+      // Any of its lessons says it keeps going, and is where it is stopped.
+      const lesson = await openDiaryLesson(page, '16:00', 'Jack Taylor');
+      await expect(lesson).toContainText('Booked every Wednesday at 16:00 until you stop it.');
+      await lesson.getByRole('button', { name: 'Stop booking it every week' }).click();
+      const stop = page.getByRole('dialog', { name: "Stop Jack Taylor's weekly lesson?" });
+      await expect(stop).toContainText('No more Wednesdays at 16:00 are booked for them.');
+      await expect(stop).toContainText('The lessons already in the diary stay');
+      await expectAccessible(page);
+      await snap(page, testInfo, 'weekly-lesson-stop');
+      await stop.getByRole('button', { name: 'Stop booking it every week' }).click();
+      await expect(page.getByText("Jack Taylor's weekly lesson stopped")).toBeVisible();
+
+      // Stopped: nothing more is booked, the lessons in the diary stay, and the sheet says no more.
+      const slots = await withDatabase((sql) => sql<{ stopped: boolean; lessons: number }[]>`
+        select r.cancelled_at is not null as stopped,
+               (select count(*)::int from public.bookings b where b.recurrence_id = r.id and b.status = 'confirmed') as lessons
+          from public.booking_recurrences r
+          join public.users u on u.id = r.learner_id
+         where u.email = 'jack.taylor@example.com'
+           and r.starts_on = ${wednesdays[0] ?? ''}::date
+           and r.local_time = '16:00'`);
+      expect(slots).toEqual([{ stopped: true, lessons: 4 }]);
+      await page.reload();
+      const again = await openDiaryLesson(page, '16:00', 'Jack Taylor');
+      await expect(again.getByRole('button', { name: 'Edit lesson' })).toBeVisible();
+      await expect(again).not.toContainText('until you stop it');
+    } finally {
+      for (const day of wednesdays) await clearDiary('Sarah Khan', day);
+    }
   });
 
   test('moves a lesson to another time (BOK-08)', async ({ page }, testInfo) => {

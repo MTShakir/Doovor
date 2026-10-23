@@ -3,6 +3,7 @@ import {
   detectDelimiter,
   guessColumns,
   looksLikeHeader,
+  notText,
   parseCsv,
   readRows,
   reviewRows,
@@ -161,5 +162,23 @@ describe('a real sized file (LRN-03)', () => {
     expect(review.ready).toHaveLength(117);
     expect(review.problems.map((problem) => problem.line)).toEqual([11, 21]);
     expect(review.problems[1]?.reason).toBe('Same details as line 20');
+  });
+});
+
+describe('a file that is not a spreadsheet saved as text (LRN-03, D-381)', () => {
+  it('knows an Excel file, a photo and anything with nothing between its bytes', () => {
+    expect(notText('PK' + String.fromCharCode(3, 4) + 'xl/workbook.xml')).toBe(true);
+    expect(notText(String.fromCharCode(0xfffd, 0xfffd, 0x10, 0xfffd) + 'JFIF' + String.fromCharCode(0xfffd).repeat(40))).toBe(true);
+    expect(notText('Name,Mobile' + String.fromCharCode(0) + String.fromCharCode(0))).toBe(true);
+  });
+
+  it('reads a CSV as one, including one saved with a few letters the wrong way', () => {
+    const line = String.fromCharCode(10);
+    expect(notText(['Name,Mobile', 'Asha Patel,07700 900123', ''].join(line))).toBe(false);
+    // Renée, saved by an app that wrote it in Windows letters, which read as one unknown character.
+    const renee = `Ren${String.fromCharCode(0xfffd)}e Dupont,07700 900123`;
+    const cp1252 = ['Name,Mobile', renee, ...Array.from({ length: 40 }, () => 'Sam Lee,07700 900124')].join(line);
+    expect(notText(cp1252)).toBe(false);
+    expect(notText('')).toBe(false);
   });
 });

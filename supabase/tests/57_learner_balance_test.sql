@@ -29,11 +29,12 @@ returns uuid language sql as $$
 $$;
 
 -- Lee owes Ian for last week and Ivy for three days ago, has paid Ian in cash for another, has a
--- lesson to come, and two hours of credit, half an hour of which went on a lesson.
+-- lesson to come, and two hours of credit, half an hour of which went on a lesson. The credit was
+-- bought before the lesson to come was booked: new credit pays first for any lesson already booked
+-- and unpaid (D-385), which is a test of its own.
 select pg_temp.lesson(:'ian', -170, 'completed') as owed_ian \gset
 select pg_temp.lesson(:'ivy', -72, 'completed') as owed_ivy \gset
 select pg_temp.lesson(:'ian', -30, 'completed', 'paid_cash') as paid_lesson \gset
-select pg_temp.lesson(:'ian', 50, 'confirmed') as coming \gset
 
 insert into public.payments (business_id, learner_id, payer_id, booking_id, provider, amount_pence, method, status, paid_at)
 values (:'school', :'lee', :'lee', :'paid_lesson', 'offline', 4200, 'cash', 'paid', now() - interval '29 hours');
@@ -41,8 +42,12 @@ insert into public.payments (business_id, learner_id, amount_pence, method, stat
 values (:'school', :'lee', 8400, 'card', 'paid', now() - interval '10 days')
 returning id as package_payment \gset
 select private.add_credit_lot(:'school', :'lee', 120, 8400, :'package_payment', null, null, null, null) as lot \gset
+select pg_temp.lesson(:'ian', 50, 'confirmed') as coming \gset
 insert into public.credit_ledger (business_id, learner_id, lot_id, kind, minutes, booking_id)
 values (:'school', :'lee', :'lot', 'use', -30, :'coming');
+-- The lesson says so too, as one part paid by credit does (D-225), so the package sold below has
+-- nothing booked and unpaid to go on first.
+update public.bookings set credit_minutes = 30 where id = :'coming';
 
 -- ---------------------------------------------------------------------------------------
 -- The facts, for the learner.

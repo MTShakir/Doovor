@@ -28,7 +28,13 @@ function pounds(min: number, max: number, error: string) {
     .transform((value, context): number | null => {
       if (value === '') return null;
       const pence = parsePoundsToPence(value);
-      if (pence === null || pence < min || pence > max) {
+      // Not a sum of money at all, which a range would not explain: 205.555 is between £5 and
+      // £5,000, and the trouble is the half a penny (D-381).
+      if (pence === null) {
+        context.addIssue({ code: 'custom', message: 'Enter pounds and pence, like 42 or 42.50' });
+        return z.NEVER;
+      }
+      if (pence < min || pence > max) {
         context.addIssue({ code: 'custom', message: error });
         return z.NEVER;
       }

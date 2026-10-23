@@ -94,6 +94,10 @@ describe('inviting an instructor to the school (AUTH-05)', () => {
       email: null,
       phone: null,
     });
+    expect(
+      instructorInviteSchema.safeParse({ channel: 'sms', fullName: 'Nia', email: '', phone: '0113 496 0000' }).error?.issues[0]?.message,
+      'a landline is named for what it is (D-381)',
+    ).toBe('Enter a UK mobile number like 07700 900123, or leave it empty');
     expect(instructorInviteSchema.parse({ channel: 'whatsapp', fullName: ' Nia ', email: '', phone: '07700 900555' })).toEqual({
       kind: 'member',
       channel: 'whatsapp',
@@ -145,6 +149,13 @@ describe('somebody asking a school for lessons (M9-15, D-288)', () => {
       agreed: true,
     });
     expect(schoolEnquirySchema.parse({ ...asked, email: '', phone: '07700 900123' }).phone).toBe('+447700900123');
+  });
+
+  it('says what is wrong with a landline (D-381)', () => {
+    const landline = schoolEnquirySchema.safeParse({ ...asked, phone: '0161 496 0000' });
+    expect(landline.error?.issues.map((issue) => [issue.path[0], issue.message])).toEqual([
+      ['phone', 'Enter a UK mobile number like 07700 900123, or leave it empty'],
+    ]);
   });
 
   it('needs one way to reach them, and their agreement', () => {

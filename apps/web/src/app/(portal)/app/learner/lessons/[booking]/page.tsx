@@ -11,6 +11,7 @@ import type { Metadata, Route } from 'next';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { Suspense } from 'react';
+import { InstructorContact } from '@/components/learner/instructor-contact';
 import { requirePortal } from '@/lib/auth/session';
 import { myLesson } from '@/lib/learner/lessons';
 import { myPickupPoints } from '@/lib/pickup/list';
@@ -116,6 +117,8 @@ async function Lesson({ params }: LessonPageProps) {
               <span className="text-small text-grey-700">at {lesson.businessName}</span>
             )}
           </p>
+          {/* D-386: to ask them to move it, or anything else about it. */}
+          {lesson.instructorPhone === null ? null : <InstructorContact name={lesson.instructorName} phone={lesson.instructorPhone} />}
           <div className="flex flex-col gap-2">
             {lesson.instructorProfile === null ? null : (
               <Link

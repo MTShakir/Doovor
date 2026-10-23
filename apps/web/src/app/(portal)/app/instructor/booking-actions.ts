@@ -255,6 +255,26 @@ export async function moveLesson(input: unknown): Promise<Result<null>> {
   return ok(null);
 }
 
+const stopWeeklySchema = z.object({ weeklyId: z.uuid() });
+
+/**
+ * Stops a lesson booked every week until it is stopped (BOK-05, D-380): no more weeks are booked.
+ * The lessons already in the diary stay, each to be called off on its own if it is not wanted.
+ * The database checks the slot is theirs to stop.
+ */
+export async function stopWeekly(input: unknown): Promise<Result<null>> {
+  const parsed = stopWeeklySchema.safeParse(input);
+  if (!parsed.success) return err('VALIDATION_FAILED');
+
+  await requirePortal(portals);
+  const supabase = await createSupabaseServerClient();
+  const { error } = await supabase.rpc('stop_recurrence', { p_recurrence_id: parsed.data.weeklyId });
+  if (error) return err(parsePostgresError(error).code);
+
+  redraw();
+  return ok(null);
+}
+
 const lessonSchema = z.object({ bookingId: z.uuid() });
 
 const reminderSchema = lessonSchema.extend({ channel: z.enum(['email', 'sms']) });

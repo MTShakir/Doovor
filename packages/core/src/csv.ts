@@ -13,6 +13,19 @@ export type CsvRow = string[];
 
 const DELIMITERS = [',', ';', '\t'] as const;
 
+/**
+ * Whether a file read as text is not text at all (D-381). The likeliest is the spreadsheet itself,
+ * an Excel file, which is a zip and starts with its signature; a photo or a PDF reads as bytes
+ * that are not characters, or as nothing between them. Read as rows, any of them is a page of
+ * nonsense with "Enter their name" against every line.
+ */
+export function notText(text: string): boolean {
+  if (text.startsWith('PK\u0003\u0004') || text.includes('\u0000')) return true;
+  const sample = text.slice(0, 4000);
+  const unreadable = sample.match(/�/g)?.length ?? 0;
+  return unreadable > 0 && unreadable * 20 >= sample.length;
+}
+
 /** Whichever separator the first line uses most. Excel picks by locale, not by rule. */
 export function detectDelimiter(text: string): string {
   const firstLine = text.slice(0, 5000).split(/\r?\n/)[0] ?? '';

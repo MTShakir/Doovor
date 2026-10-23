@@ -51,7 +51,8 @@ returns integer language sql as $$
 $$;
 
 -- A lesson paid by card, one paid in cash, a third paid by card, and ten hours of credit bought
--- by card with one of them used.
+-- by card with one of them used. The lessons are paid for before the credit is bought, as new
+-- credit pays first for whatever booked lesson is still unpaid (D-385).
 select pg_temp.lesson(48) as card_lesson \gset
 select pg_temp.lesson(72) as cash_lesson \gset
 select pg_temp.lesson(96) as other_lesson \gset
@@ -61,13 +62,13 @@ select public.system_process_stripe_event('evt_card', 'payment_intent.succeeded'
 select public.system_process_stripe_event('evt_other', 'payment_intent.succeeded', 'acct_refunds',
          jsonb_build_object('id', 'pi_other', 'amount_received', 4200,
                             'metadata', jsonb_build_object('booking_id', :'other_lesson')));
+select tests.authenticate_as(:'ian_user');
+select public.record_offline_payment(:'cash_lesson', 'cash') as cash_payment \gset
+select tests.clear_authentication();
 select public.system_process_stripe_event('evt_package', 'payment_intent.succeeded', 'acct_refunds',
          jsonb_build_object('id', 'pi_package', 'amount_received', 38000,
                             'metadata', jsonb_build_object('package_id', null, 'business_id', :'school',
                                                            'learner_id', :'lee', 'minutes', '600')));
-select tests.authenticate_as(:'ian_user');
-select public.record_offline_payment(:'cash_lesson', 'cash') as cash_payment \gset
-select tests.clear_authentication();
 
 select id as card_payment from public.payments where provider_ref = 'pi_card' \gset
 select id as other_payment from public.payments where provider_ref = 'pi_other' \gset

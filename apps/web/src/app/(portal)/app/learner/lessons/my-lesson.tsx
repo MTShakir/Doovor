@@ -13,6 +13,7 @@ import { ChevronRight, MapPin } from 'lucide-react';
 import Link from 'next/link';
 import { useState, useTransition } from 'react';
 import { FormAlert } from '@/components/form-alert';
+import { InstructorContact } from '@/components/learner/instructor-contact';
 import type { MyLesson } from '@/lib/learner/lessons';
 import { cancelMyLesson } from './actions';
 import { NoShowDispute } from './no-show-dispute';
@@ -193,9 +194,13 @@ export function MyLessonRow({ lesson, rules, now, canChange }: MyLessonRowProps)
           </Button>
         }
       >
-        <p className="text-body text-ink">
-          Contact {lesson.instructorName} directly to ask for another time. When they move it, you are told the new time.
-        </p>
+        <div className="flex flex-col gap-3">
+          <p className="text-body text-ink">
+            Ask {lesson.instructorName} for another time. When they move it, you are told the new time.
+          </p>
+          {/* D-386: the way to ask them, where they have a verified mobile. */}
+          {lesson.instructorPhone === null ? null : <InstructorContact name={lesson.instructorName} phone={lesson.instructorPhone} />}
+        </div>
       </Sheet>
     </article>
   );

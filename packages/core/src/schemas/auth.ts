@@ -25,6 +25,13 @@ export const fullNameSchema = z
   .min(1, { error: 'Enter your name' })
   .max(120, { error: 'Use 120 characters or fewer' });
 
+/** Somebody else's name, typed in by whoever is adding them, who is not the one it is missing from. */
+export const theirNameSchema = z
+  .string()
+  .trim()
+  .min(1, { error: 'Enter their name' })
+  .max(120, { error: 'Use 120 characters or fewer' });
+
 export const intendedRoleSchema = z.enum(['learner', 'instructor', 'school']);
 export type IntendedRole = z.infer<typeof intendedRoleSchema>;
 
@@ -56,6 +63,20 @@ export const ukMobileSchema = z.string().transform((value, ctx) => {
   const normalised = normaliseUkMobile(value);
   if (!normalised) {
     ctx.addIssue({ code: 'custom', message: 'Enter a UK mobile number like 07700 900123' });
+    return z.NEVER;
+  }
+  return normalised;
+});
+
+/**
+ * A UK mobile, or an empty box, which is null. Not a union of the two: a union that fails both
+ * ways says only "Invalid input", which tells somebody who typed a landline nothing (D-381).
+ */
+export const optionalUkMobileSchema = z.string().transform((value, ctx) => {
+  if (value.trim() === '') return null;
+  const normalised = normaliseUkMobile(value);
+  if (!normalised) {
+    ctx.addIssue({ code: 'custom', message: 'Enter a UK mobile number like 07700 900123, or leave it empty' });
     return z.NEVER;
   }
   return normalised;

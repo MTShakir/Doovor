@@ -285,6 +285,20 @@ async function Checkout({ params }: { params: Promise<{ booking: string }> }) {
           </Note>
           <LessonsButton />
         </div>
+      ) : lesson.accountId === null ? (
+        // A Business that takes no cards is paid in person, as a fee is above. A link from a notice
+        // can still land here, and a card form that can only refuse is worse than saying so.
+        <div className="flex flex-col gap-3">
+          {stage === 'request' ? (
+            <Note icon={<Clock className={iconClass} aria-hidden />}>
+              {lesson.instructorName} has
+              {answerBy === null ? ' a little while' : ` until ${formatTime(answerBy)} on ${formatDate(answerBy)}`} to
+              accept.
+            </Note>
+          ) : null}
+          <p className="text-small text-grey-700">Pay {lesson.businessName} in person.</p>
+          <LessonsButton />
+        </div>
       ) : (
         <>
           {lesson.paymentStatus === 'failed' ? (
@@ -301,9 +315,10 @@ async function Checkout({ params }: { params: Promise<{ booking: string }> }) {
               accept. Your card is only charged if they do.
             </Note>
           ) : null}
+          {/* What is charged, which is the price less whatever credit covered (D-225). */}
           <PayLesson
             bookingId={lesson.bookingId}
-            pricePence={lesson.pricePence}
+            pricePence={lesson.amountPence}
             businessName={lesson.businessName}
             savedCards={savedCards}
             request={stage === 'request'}
@@ -312,7 +327,7 @@ async function Checkout({ params }: { params: Promise<{ booking: string }> }) {
         </>
       )}
 
-      {stage === 'due' || stage === 'request' || (stage === 'fee' && lesson.accountId !== null) ? (
+      {(stage === 'due' || stage === 'request' || stage === 'fee') && lesson.accountId !== null ? (
         <p className="text-small text-grey-700">
           {lesson.businessName} takes the payment. {lesson.instructorName} is told as soon as it goes through.
         </p>
