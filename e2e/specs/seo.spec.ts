@@ -1,3 +1,5 @@
+import { brand } from '@repo/config/brand';
+import { guidePath, guides } from '@repo/core/guides';
 import { expect, test, type APIRequestContext, type Page, type TestInfo } from '@playwright/test';
 import { cachePostcode, makeInstructor, type MadeInstructor } from '../support/database';
 import { addDays, freshPublicPages, keepScreenshot, robotsOf } from '../support/helpers';
@@ -125,5 +127,17 @@ test.describe('sitemaps, canonical addresses and share images (PRD 14.6, M5-08)'
     // Nothing is drawn for a profile or a place that is not there.
     expect((await page.request.get('/instructors/leeds/nobody-teaches-here/share.png')).status()).toBe(404);
     expect((await page.request.get('/driving-lessons/atlantis/share.png')).status()).toBe(404);
+  });
+});
+
+test.describe('the site described for language models (PRD 14.6, D-389)', () => {
+  test('/llms.txt says what the product is and costs, and links every guide', async ({ request }) => {
+    const response = await request.get('/llms.txt');
+    expect(response.status()).toBe(200);
+    expect(response.headers()['content-type']).toContain('text/plain');
+    const text = await response.text();
+    expect(text.startsWith(`# ${brand.name}\n`)).toBe(true);
+    expect(text).toContain('- Free: £0 a month');
+    for (const guide of guides) expect(text).toContain(`${guidePath(guide.slug)}): ${guide.description}`);
   });
 });
