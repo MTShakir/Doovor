@@ -188,6 +188,22 @@ test.describe("the school's office (PRD 6.2, LRN-02, D-330)", () => {
     }
   });
 
+  test('the learner books with the instructor the school gave them, from Home (BOK-02, D-395)', async ({ page }, testInfo) => {
+    const { school, learner } = await schoolWithLearner(`Home ${testInfo.project.name} ${crypto.randomUUID().slice(0, 4)}`);
+    try {
+      await signInThroughForm(page, learner.email, { next: '/app/learner' });
+      await expect(page.getByText(`Book your first lesson with ${school.instructor.name}, or they can book it for you.`)).toBeVisible();
+      await expect(page.getByRole('link', { name: 'Book a lesson', exact: true })).toHaveAttribute('href', `/book/${school.instructor.slug}`);
+      // They have an instructor, so they are not offered a search for one.
+      await expect(page.getByText('Looking for an instructor?')).toHaveCount(0);
+      await expectAccessible(page);
+      await snap(page, testInfo, 'learner-home-book-own-instructor');
+    } finally {
+      await school.remove();
+      await removeLearner(learner.id);
+    }
+  });
+
   test('opens a lesson from the school diary, and the card from the lesson', async ({ page }, testInfo) => {
     const { school, learner } = await schoolWithLearner(`Diary ${testInfo.project.name} ${crypto.randomUUID().slice(0, 4)}`);
     const day = dayAhead();
