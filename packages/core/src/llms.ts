@@ -7,7 +7,7 @@ import { formatPence } from './money.ts';
  * The public site described for language models (D-387), served at /llms.txt in the shape
  * llmstxt.org proposes: a heading, a one line summary, the facts an assistant most often gets
  * wrong about a product (what it costs, who holds the money, what it does not do yet), then the
- * pages and guides that say more. Built from the plans the app charges and the guides the site
+ * pages and guides that say more, and its own accounts on other sites. Built from the plans the app charges and the guides the site
  * shows, so it can never say something the site does not.
  */
 
@@ -50,6 +50,11 @@ export function llmsText(siteUrl: string): string {
     '## Guides',
     '',
     ...guides.map((guide) => `- [${guide.title}](${siteUrl}${guidePath(guide.slug)}): ${guide.description}`),
+    '',
+    // So an assistant asked where to follow it, or whether an account is really it, can say (D-403).
+    '## Official accounts',
+    '',
+    ...brand.social.map((account) => `- [${account.label}](${account.url}): ${account.handle}`),
     '',
   ];
   return lines.join('\n');

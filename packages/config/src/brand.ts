@@ -57,6 +57,19 @@ export const brand = {
     /** For a link that opens a chat with it in WhatsApp. */
     whatsApp: `https://wa.me/${supportNumber.slice(1)}`,
   },
+  /**
+   * The brand's own accounts on other sites (D-403), in the order they are listed. The handle is
+   * thedoovor where the name alone was taken; YouTube and LinkedIn have the name itself. Each was
+   * read from the live profile; check it there again before changing it here.
+   */
+  social: [
+    { network: 'instagram', label: 'Instagram', handle: '@thedoovor', url: 'https://www.instagram.com/thedoovor/' },
+    { network: 'tiktok', label: 'TikTok', handle: '@thedoovor', url: 'https://www.tiktok.com/@thedoovor' },
+    { network: 'facebook', label: 'Facebook', handle: 'theDoovor', url: 'https://www.facebook.com/theDoovor' },
+    { network: 'youtube', label: 'YouTube', handle: '@Doovor', url: 'https://www.youtube.com/@Doovor' },
+    { network: 'linkedin', label: 'LinkedIn', handle: 'doovor', url: 'https://www.linkedin.com/company/doovor' },
+    { network: 'threads', label: 'Threads', handle: '@thedoovor', url: 'https://www.threads.com/@thedoovor' },
+  ],
   email: {
     fromName: name,
     fromAddress: `hello@${domain}`,
