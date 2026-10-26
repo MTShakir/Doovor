@@ -14,10 +14,17 @@ export interface StatusControlProps {
   learnerId: string;
   status: LearnerStatus;
   name: string;
+  /** Lessons still to come, which stay booked whatever their status says (D-380, D-402). */
+  lessonsToCome?: number;
+}
+
+/** What marking somebody as having left does not do: call off what they have booked. */
+function stillBooked(count: number): string {
+  return count === 1 ? 'Their 1 lesson to come stays booked until you call it off.' : `Their ${String(count)} lessons to come stay booked until you call them off.`;
 }
 
 /** LRN-05: the six places a learner can be, and one tap to move them between them. */
-export function StatusControl({ learnerId, status, name }: StatusControlProps) {
+export function StatusControl({ learnerId, status, name, lessonsToCome = 0 }: StatusControlProps) {
   const [open, setOpen] = useState(false);
   const [pending, startTransition] = useTransition();
   const [current, setCurrent] = useState(status);
@@ -37,7 +44,11 @@ export function StatusControl({ learnerId, status, name }: StatusControlProps) {
       }
       setCurrent(next);
       setOpen(false);
-      toast(`${name} is now ${learnerStatusLabels[next].toLowerCase()}`);
+      toast(
+        next === 'left' && lessonsToCome > 0
+          ? `${name} is now left. ${stillBooked(lessonsToCome)}`
+          : `${name} is now ${learnerStatusLabels[next].toLowerCase()}`,
+      );
     });
   };
 
@@ -72,7 +83,9 @@ export function StatusControl({ learnerId, status, name }: StatusControlProps) {
             >
               <span className="flex min-w-0 flex-1 flex-col">
                 <span className="text-body font-semibold text-black">{learnerStatusLabels[one]}</span>
-                <span className="text-small text-grey-700">{learnerStatusHints[one]}</span>
+                <span className="text-small text-grey-700">
+                  {one === 'left' && lessonsToCome > 0 ? `${learnerStatusHints[one]}. ${stillBooked(lessonsToCome)}` : learnerStatusHints[one]}
+                </span>
               </span>
               {one === current ? <Check className="size-5 shrink-0 text-black" aria-hidden /> : null}
             </button>
