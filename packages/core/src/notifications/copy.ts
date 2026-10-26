@@ -32,6 +32,12 @@ export interface NotificationFacts {
   businessName?: string;
   /** Which way it went, for a notice about a school that can go more than one way (M9-28, D-295). */
   outcome?: SchoolNoticeOutcome;
+  /** Who a lesson was with before the school gave it to another instructor (D-397). */
+  formerInstructorName?: string;
+  /** Said to the instructor a lesson was taken from, rather than the one it went to (D-397). */
+  handedOver?: boolean;
+  /** What somebody joining a school does there, for their welcome (D-400). */
+  schoolRole?: 'instructor' | 'manager';
 }
 
 /**
@@ -48,6 +54,17 @@ export function offeredPupilLine(pupil: { firstName: string; area: string | null
   return [pupil.firstName, pupil.area === null ? undefined : `near ${pupil.area}`, pupil.transmission === null ? undefined : `for ${pupil.transmission} lessons`]
     .filter((part): part is string => part !== undefined && part.trim() !== '')
     .join(', ');
+}
+
+/**
+ * Somebody who asked a school for lessons, as the office first sees them (D-398): "Near DA16, for
+ * manual lessons". Empty when they gave neither.
+ */
+export function askedPupilLine(pupil: { area: string | null; transmission: 'manual' | 'automatic' | null }): string {
+  const near = pupil.area === null || pupil.area.trim() === '' ? null : `near ${pupil.area}`;
+  const gearbox = pupil.transmission === null ? null : `for ${pupil.transmission} lessons`;
+  const line = [near, gearbox].filter((part): part is string => part !== null).join(', ');
+  return line === '' ? '' : `${line.charAt(0).toUpperCase()}${line.slice(1)}`;
 }
 
 export interface NotificationCopy {
@@ -109,6 +126,10 @@ export function notificationCopy(
         ? { title: 'Lesson booked', body: sentence(line, facts.detail) }
         : { title: `${them} has a lesson booked`, body: sentence(line, facts.detail) };
 
+    // Sent the next morning, so the day is whole (D-392).
+    case 'booking.daily_summary':
+      return { title: 'Lessons booked yesterday', body: sentence(facts.detail) };
+
     case 'booking.requested':
       return { title: `${them} asked for a lesson`, body: sentence(closed(facts.when), 'Accept it or decline it') };
 
@@ -131,6 +152,18 @@ export function notificationCopy(
       return audience === 'learner'
         ? { title: 'Lesson moved', body: sentence('Now', line) }
         : { title: `${them}'s lesson moved`, body: sentence('Now', line) };
+
+    // A lesson the school's office gave to another of its instructors (D-397).
+    case 'booking.reassigned': {
+      const now = facts.instructorName ?? 'another instructor';
+      const before = facts.formerInstructorName ? `It was with ${facts.formerInstructorName} before` : undefined;
+      if (audience === 'learner') return { title: `Your lesson is with ${now} now`, body: sentence(line, before) };
+      if (audience === 'instructor' && facts.handedOver === true) {
+        return { title: `${them}'s lesson went to ${now}`, body: sentence(closed(facts.when), 'It is in their diary now') };
+      }
+      if (audience === 'instructor') return { title: `${them} has a lesson with you`, body: sentence(line, before) };
+      return { title: `${them}'s lesson went to ${now}`, body: sentence(line, before) };
+    }
 
     case 'booking.cancelled':
       return audience === 'learner'
@@ -220,8 +253,16 @@ export function notificationCopy(
       return { title: `${them} joined you`, body: 'They accepted your invitation and can be booked in now.' };
 
     // What is next depends on the side they signed up for; the way to ask for help does not.
-    case 'account.welcome':
-      return { title: `Welcome to ${brand.name}`, body: sentence(welcomeNext[audience], helpLine) };
+    // Somebody who joined a school is welcomed to it, as what they are there (D-400).
+    case 'account.welcome': {
+      const next =
+        facts.schoolName !== undefined && facts.schoolRole === 'manager'
+          ? `Your email is confirmed. You help run ${facts.schoolName}: its diary, learners and instructors are all in one place.`
+          : facts.schoolName !== undefined && facts.schoolRole === 'instructor'
+            ? `Your email is confirmed. You teach for ${facts.schoolName}: your diary, your learners and your pay are all in one place.`
+            : welcomeNext[audience];
+      return { title: `Welcome to ${brand.name}`, body: sentence(next, helpLine) };
+    }
 
     // A school's own arrangements (M9-28, D-295).
     case 'pupil.offered':
@@ -229,6 +270,9 @@ export function notificationCopy(
         title: `${school} has a pupil for you`,
         body: sentence(closed(facts.detail), facts.when ? `Answer by ${facts.when}` : 'Answer it in the app'),
       };
+
+    case 'pupil.asked':
+      return { title: `${them} asked about lessons`, body: sentence(closed(facts.detail), 'They are waiting in New pupils') };
 
     case 'pupil.taken':
       return {

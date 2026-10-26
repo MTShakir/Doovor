@@ -1,15 +1,21 @@
 import 'server-only';
 import { usableCards } from '@repo/core/cards';
+import { periodInstants } from '@repo/core/money-periods';
 import { notificationCatalogue, type NotificationCategory, type NotificationChannel, type NotificationKind } from '@repo/core/notifications';
+import { addDaysToLocalDate, todayInZone } from '@repo/core/time';
 import { getSupabaseServiceClient } from '@/lib/supabase/service';
 import {
+  formerInstructorId,
   kindForEvent,
   notificationRows,
   peopleInvolved,
   planBookingNotifications,
+  planDailyBookingSummary,
   rowContextFor,
   type BookingEvent,
   type BookingNotice,
+  type BookingSummary,
+  type FormerInstructor,
   type NotificationRow,
 } from './booking-notices';
 
@@ -65,9 +71,20 @@ export async function notifyAboutBooking(event: BookingEvent): Promise<NotifyRes
       ? { ...event, payload: { ...event.payload, charging: false } }
       : event;
 
-  const muted = await mutedChannels(peopleInvolved(notice), notificationCatalogue[kind].category);
-  const planned = planBookingNotifications({ event: told, notice, muted });
+  const former = await formerInstructorOf(event);
+  const muted = await mutedChannels(peopleInvolved(notice, former), notificationCatalogue[kind].category);
+  const planned = planBookingNotifications({ event: told, notice, muted, former });
   return { written: await writeNotifications(notificationRows(planned, rowContextFor(notice))) };
+}
+
+/** The instructor a lesson was given away from, named, when the event is about that (D-397). */
+async function formerInstructorOf(event: BookingEvent): Promise<FormerInstructor | null> {
+  const id = formerInstructorId(event);
+  if (id === null) return null;
+  const { data, error } = await getSupabaseServiceClient().rpc('system_instructor_named', { p_instructor_id: id });
+  if (error) throw new Error(`Could not read who the lesson was with: ${error.message}`);
+  const named = data as unknown as { user_id: string; name: string } | null;
+  return named === null ? null : { userId: named.user_id, name: named.name };
 }
 
 /** The notices that can say a fee is being charged to a kept card. */
@@ -98,4 +115,36 @@ export async function feeComesOffACard(bookingId: string, notice: BookingNotice,
     return false;
   }
   return usableCards(listed.data, now).length > 0;
+}
+
+export interface DailyBookingSummaryResult {
+  /** The day summed up, in London. */
+  day: string;
+  /** Schools whose instructors had a lesson booked that day. */
+  schools: number;
+  written: number;
+}
+
+/**
+ * Yesterday's lessons booked, for each school's owners and managers (Appendix B's manager digest,
+ * D-392). Yesterday in London, midnight to midnight, as the day's payments are summed up.
+ */
+export async function sendDailyBookingSummaries(now: Date = new Date()): Promise<DailyBookingSummaryResult> {
+  const day = addDaysToLocalDate(todayInZone(now), -1);
+  const { from, to } = periodInstants({ from: day, to: day });
+
+  const { data, error } = await getSupabaseServiceClient().rpc('system_daily_booking_summaries', {
+    p_from: from.toISOString(),
+    p_to: to.toISOString(),
+  });
+  if (error) throw new Error(`Could not sum up the day's bookings: ${error.message}`);
+
+  const summaries = (data ?? []) as unknown as BookingSummary[];
+  if (summaries.length === 0) return { day, schools: 0, written: 0 };
+
+  const muted = await mutedChannels([...new Set(summaries.flatMap((summary) => summary.user_ids))], notificationCatalogue['booking.daily_summary'].category);
+  const rows = summaries.flatMap((summary) =>
+    notificationRows(planDailyBookingSummary(summary, day, muted), { businessId: summary.business_id, entityType: 'business', entityId: summary.business_id }),
+  );
+  return { day, schools: summaries.length, written: await writeNotifications(rows) };
 }

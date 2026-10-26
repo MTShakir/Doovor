@@ -1,5 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
-import { bookLesson, makeSchool, withDatabase, type MadeSchool } from '../support/database';
+import { bookLesson, makeSchool, makeSchoolInstructor, withDatabase, type MadeSchool } from '../support/database';
 import { chooseDate, dayLabel, expectAccessible, openLearnerTab, snap, tapUntil } from '../support/helpers';
 import { signInThroughForm } from '../support/sign-in';
 
@@ -133,6 +133,57 @@ test.describe("the school's office (PRD 6.2, LRN-02, D-330)", () => {
       await snap(page, testInfo, 'school-learner-progress');
     } finally {
       await school.remove();
+      await removeLearner(learner.id);
+    }
+  });
+
+  test('gives a lesson to another instructor who is free then, and answers a request for one (D-397, D-399)', async ({ page }, testInfo) => {
+    test.setTimeout(120_000);
+    const tag = `${testInfo.project.name} ${crypto.randomUUID().slice(0, 4)}`;
+    const { school, learner } = await schoolWithLearner(`Cover ${tag}`);
+    const cover = await makeSchoolInstructor(`Cara ${tag}`, school.name);
+    const day = dayAhead();
+    try {
+      await bookLesson(school.instructor.name, learner.email, day, '10:00');
+      await bookLesson(school.instructor.name, learner.email, day, '14:00');
+      await withDatabase(async (sql) => {
+        await sql`
+          update public.bookings b set status = 'requested', expires_at = now() + interval '12 hours'
+            from public.instructor_profiles p
+           where p.id = b.instructor_id and p.business_id = ${school.businessId}
+             and to_char(b.starts_at at time zone 'Europe/London', 'HH24:MI') = '14:00'`;
+      });
+      await signInAsOffice(page, school);
+      await page.goto(`/app/school/diary?date=${day}`);
+
+      // Covered: the ten o'clock goes to Cara, who is free then.
+      await tapUntil(page.getByRole('button', { name: `Open 10:00 with ${learner.name}` }), page.getByRole('dialog', { name: learner.name }));
+      const lesson = page.getByRole('dialog', { name: learner.name });
+      await lesson.getByRole('button', { name: 'Give to another instructor' }).click();
+      const give = page.getByRole('dialog', { name: 'Who teaches it instead?' });
+      const choice = give.getByRole('button', { name: new RegExp(`^${cover.name}`) });
+      await expect(choice).toContainText('Free then');
+      await expectAccessible(page);
+      await snap(page, testInfo, 'school-give-lesson');
+      await choice.click();
+      await expect(page.getByText(`${learner.name}'s lesson is with ${cover.name} now`)).toBeVisible();
+      await expect.poll(async () =>
+        withDatabase(async (sql) => {
+          const [row] = await sql<{ name: string }[]>`
+            select p.display_name as name from public.bookings b join public.instructor_profiles p on p.id = b.instructor_id
+             where p.business_id = ${school.businessId} and to_char(b.starts_at at time zone 'Europe/London', 'HH24:MI') = '10:00'`;
+          return row?.name;
+        }),
+      ).toBe(cover.name);
+
+      // The two o'clock was asked for: the office answers it for the instructor.
+      await page.reload();
+      const asked = page.getByRole('article', { name: `14:00 ${learner.name}` });
+      await asked.getByRole('button', { name: 'Accept' }).click();
+      await expect(page.getByText(`Lesson with ${learner.name} confirmed`)).toBeVisible();
+    } finally {
+      await school.remove();
+      await cover.remove();
       await removeLearner(learner.id);
     }
   });

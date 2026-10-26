@@ -42,6 +42,14 @@ describe('the welcome, once an email is confirmed (NTF-03, NTF-06, D-259)', () =
     expect(welcome?.body).toContain(brand.supportEmail);
   });
 
+  it('welcomes somebody who joined a school to it, as an instructor there or a manager (D-400)', () => {
+    expect(planWelcome({ ...ian, school: { name: 'Quayside Driving School', role: 'instructor' } })[0]?.body).toContain(
+      'You teach for Quayside Driving School: your diary, your learners and your pay',
+    );
+    expect(planWelcome({ ...ian, school: { name: 'Quayside Driving School', role: 'manager' } })[0]?.body).toContain('You help run Quayside Driving School');
+    expect(planWelcome({ ...ian, school: null })[0]?.body).toContain('Finish setting up');
+  });
+
   it('writes it once for the person, about nobody else and no Business', async () => {
     database({
       system_welcome_notice: (args) => ({ data: args.p_user_id === 'user-1' ? ian : null, error: null }),

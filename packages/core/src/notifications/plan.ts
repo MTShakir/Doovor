@@ -7,6 +7,7 @@
  */
 
 import {
+  audienceChannels,
   notificationCatalogue,
   type NotificationAudience,
   type NotificationCategory,
@@ -77,10 +78,11 @@ export function notificationDedupeKey(
  */
 export function channelsFor(kind: NotificationKind, recipient: NotificationRecipient): NotificationChannel[] {
   const spec = notificationCatalogue[kind];
+  const channels = audienceChannels(spec, recipient.audience);
   const off = new Set([...(recipient.muted ?? []), ...(recipient.unavailable ?? [])]);
-  const left = spec.channels.filter((channel) => !off.has(channel) && (recipient.ownChange !== true || channel === 'in_app'));
+  const left = channels.filter((channel) => !off.has(channel) && (recipient.ownChange !== true || channel === 'in_app'));
   if (left.length > 0) return left;
-  return spec.essential && spec.channels.includes('in_app') ? ['in_app'] : [];
+  return spec.essential && channels.includes('in_app') ? ['in_app'] : [];
 }
 
 /** Every notification one event comes to. Nobody outside the catalogue's audiences hears. */

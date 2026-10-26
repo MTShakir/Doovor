@@ -30,6 +30,8 @@ export const bookingDeclined = bookingEvent('booking.declined');
 export const bookingHoldExpired = bookingEvent('booking.hold_expired');
 export const bookingCancelled = bookingEvent('booking.cancelled');
 export const bookingRescheduled = bookingEvent('booking.rescheduled');
+/** The school's office gave a lesson to another of its instructors (D-397). */
+export const bookingReassigned = bookingEvent('booking.reassigned');
 export const bookingCompleted = bookingEvent('booking.completed');
 /** An instructor asked for a reminder from the lesson's sheet (NTF-02, D-166). */
 export const bookingReminderRequested = bookingEvent('booking.reminder_requested');

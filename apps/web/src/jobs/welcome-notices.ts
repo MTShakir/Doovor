@@ -9,6 +9,8 @@ export interface WelcomeNotice {
   user_id: string;
   full_name: string;
   audience: NotificationAudience;
+  /** The school they joined, and as what, when they are at one (D-400). */
+  school?: { name: string; role: 'instructor' | 'manager' } | null;
 }
 
 /**
@@ -21,7 +23,7 @@ export function planWelcome(notice: WelcomeNotice): PlannedNotification[] {
   return planNotifications({
     kind: 'account.welcome',
     entityId: notice.user_id,
-    facts: {},
+    facts: notice.school ? { schoolName: notice.school.name, schoolRole: notice.school.role } : {},
     recipients: [{ userId: notice.user_id, audience: notice.audience }],
     linkFor: () => '/start',
   });

@@ -85,6 +85,7 @@ import type { PlatformDashboard } from '@/lib/admin/dashboard';
 import type { SchoolOverview } from '@/lib/school/overview';
 import { CancelInvitationDialog, LetGoDialog, SwitchOffDialog, TeamSections } from '@/components/school/team';
 import { AllocationChoices } from '@/components/school/allocation-choices';
+import { CoverChoiceList } from '@/components/diary/give-lesson';
 import { LinkedFreeBusy } from '@/components/school/linked-free-busy';
 import { EnquiryForm } from '@/components/school/enquiry-form';
 import { EnquiryInbox } from '@/components/school/enquiry-inbox';
@@ -2123,6 +2124,21 @@ export function DesignShowcase() {
             onChoose={() => undefined}
             idPrefix="design-allocation-failed"
           />
+        </div>
+        <Label>Who teaches a lesson instead: free first, the rest saying why not, the list on its way, nobody else</Label>
+        <div className="grid gap-8 md:grid-cols-3">
+          <CoverChoiceList
+            choices={[
+              { instructorId: 'cover-1', name: 'Tom Walsh', transmission: 'manual', problem: null },
+              { instructorId: 'cover-2', name: 'Emma Clarke', transmission: 'both', problem: 'SLOT_TAKEN' },
+              { instructorId: 'cover-3', name: 'Leo Park', transmission: 'manual', problem: 'PDI_NOT_LINKED' },
+            ]}
+            giving={null}
+            disabled={false}
+            onChoose={() => undefined}
+          />
+          <CoverChoiceList choices={null} giving={null} disabled={false} onChoose={() => undefined} />
+          <CoverChoiceList choices={[]} giving={null} disabled={false} onChoose={() => undefined} />
         </div>
         <Label>Prices a school sets, and an instructor's own over them</Label>
         <div className="grid gap-8 md:grid-cols-2">

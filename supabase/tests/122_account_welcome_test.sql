@@ -64,7 +64,7 @@ select is(
 -- What the job reads.
 select is(
   public.system_welcome_notice(:'ian'),
-  jsonb_build_object('user_id', :'ian', 'full_name', 'Ian Newcomer', 'audience', 'instructor'),
+  jsonb_build_object('user_id', :'ian', 'full_name', 'Ian Newcomer', 'audience', 'instructor', 'school', null),
   'the job reads their name and the side they signed up for'
 );
 select is(public.system_welcome_notice(:'gita') ->> 'audience', 'learner', 'and somebody who never chose a side is a learner');

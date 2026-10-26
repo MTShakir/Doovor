@@ -22,7 +22,8 @@ import {
   type NotificationKind,
   type PlannedNotification,
 } from '@repo/core/notifications';
-import { formatDate, formatTime, formatWeekday, utcToLocal } from '@repo/core/time';
+import { joinWords } from '@repo/core/public-profile';
+import { formatCalendarDate, formatDate, formatTime, formatWeekday, utcToLocal, type LocalDate } from '@repo/core/time';
 
 /** What `system_booking_notice` answers. */
 export interface BookingNotice {
@@ -48,7 +49,7 @@ export interface BookingNotice {
    * many went in together, whether this is the first, and when the last is. A count under two is
    * a lesson on its own.
    */
-  series?: { count: number; first: boolean | null; last_starts_at: string | null } | null;
+  series?: { count: number; first: boolean | null; last_starts_at: string | null; open_ended?: boolean | null } | null;
 }
 
 /** A request that ran out with nobody answering it, rather than one somebody turned down (R-12, D-377). */
@@ -92,6 +93,8 @@ export function kindForEvent(event: BookingEvent, notice: BookingNotice): Notifi
       return 'booking.dispute_decided';
     case 'booking.rescheduled':
       return 'booking.rescheduled';
+    case 'booking.reassigned':
+      return 'booking.reassigned';
     // A lesson paid for afterwards asks for the money when it is marked done (PAY-03, M3-10).
     case 'booking.completed':
       return notice.payment_mode === 'after_lesson' && notice.payment_status === 'unpaid' ? 'payment.requested' : null;
@@ -184,11 +187,14 @@ function detailFor(event: BookingEvent, notice: BookingNotice): string | undefin
     }
     return why;
   }
-  // The first of lessons booked every week in one go, for all of them (D-349).
+  // The first of lessons booked every week in one go, for all of them (D-349). Booked until somebody
+  // stops it, the last of them is only as far as the diary goes for now (D-380, D-394).
   if (event.name === 'booking.created' && inSeries(notice) && notice.series?.last_starts_at) {
     const first = new Date(notice.starts_at);
+    const every = `every ${formatWeekday(first)} at ${formatTime(first)}`;
+    if (notice.series.open_ended === true) return `The first of ${String(notice.series.count)} booked so far, ${every} until it is stopped`;
     const last = new Date(notice.series.last_starts_at);
-    return `The first of ${String(notice.series.count)}, every ${formatWeekday(first)} at ${formatTime(first)} until ${formatDate(last)}`;
+    return `The first of ${String(notice.series.count)}, ${every} until ${formatDate(last)}`;
   }
   const reason = notice.cancel_reason?.trim();
   if (event.name === 'booking.accepted') return 'It is in the diary';
@@ -257,11 +263,25 @@ function linkFor(event: BookingEvent, notice: BookingNotice): (audience: 'learne
   };
 }
 
+/** Who a lesson was with before the school's office gave it to another instructor (D-397). */
+export interface FormerInstructor {
+  userId: string;
+  name: string;
+}
+
+/** The instructor a lesson was given away from, by the id its event carries. */
+export function formerInstructorId(event: BookingEvent): string | null {
+  const id = event.payload.was_instructor_id;
+  return event.name === 'booking.reassigned' && typeof id === 'string' ? id : null;
+}
+
 export interface BookingNoticeInput {
   event: BookingEvent;
   notice: BookingNotice;
   /** What each person has switched off for the category this kind belongs to (NTF-04). */
   muted?: Map<string, NotificationChannel[]>;
+  /** The instructor a lesson was taken from, when the school gave it to another (D-397). */
+  former?: FormerInstructor | null;
 }
 
 /** Everyone who hears about one change to one lesson, and what each of them is told. */
@@ -277,20 +297,23 @@ export function planBookingNotifications(input: BookingNoticeInput): PlannedNoti
   // what they booked or called off is theirs to have in writing.
   const actor = typeof event.payload.actor === 'string' ? event.payload.actor : null;
   const madeIt = (userId: string): boolean => actor !== null && userId === actor;
+  const former = input.former ?? null;
+  const facts = {
+    learnerName: notice.learner_name,
+    instructorName: notice.instructor_name,
+    when: `${formatDate(startsAt)} at ${formatTime(startsAt)}`,
+    detail: detailFor(event, notice),
+    learnerDetail: learnerDetailFor(event, notice),
+    ...(event.name === 'booking.accepted' || event.name === 'booking.declined' ? { approved: event.name === 'booking.accepted' } : {}),
+    ...(lapsed(event) ? { lapsed: true } : {}),
+    ...(former === null ? {} : { formerInstructorName: former.name }),
+  };
 
-  return planNotifications({
+  const planned = planNotifications({
     kind,
     entityId: notice.booking_id,
     version: notice.version,
-    facts: {
-      learnerName: notice.learner_name,
-      instructorName: notice.instructor_name,
-      when: `${formatDate(startsAt)} at ${formatTime(startsAt)}`,
-      detail: detailFor(event, notice),
-      learnerDetail: learnerDetailFor(event, notice),
-      ...(event.name === 'booking.accepted' || event.name === 'booking.declined' ? { approved: event.name === 'booking.accepted' } : {}),
-      ...(lapsed(event) ? { lapsed: true } : {}),
-    },
+    facts,
     recipients: [
       { userId: notice.learner_user_id, audience: 'learner', muted: muted.get(notice.learner_user_id) },
       {
@@ -299,20 +322,37 @@ export function planBookingNotifications(input: BookingNoticeInput): PlannedNoti
         muted: muted.get(notice.instructor_user_id),
         ownChange: madeIt(notice.instructor_user_id),
       },
-      ...notice.school_user_ids.map((userId) => ({
-        userId,
-        audience: 'school' as const,
-        muted: muted.get(userId),
-        ownChange: madeIt(userId),
-      })),
+      // The instructor a lesson was taken from hears it as theirs, below, even if they help run the school.
+      ...notice.school_user_ids
+        .filter((userId) => userId !== former?.userId)
+        .map((userId) => ({
+          userId,
+          audience: 'school' as const,
+          muted: muted.get(userId),
+          ownChange: madeIt(userId),
+        })),
     ],
     linkFor: linkFor(event, notice),
   });
+  if (former === null) return planned;
+
+  // The instructor it was with: the lesson has gone from their diary (D-397).
+  return [
+    ...planned,
+    ...planNotifications({
+      kind,
+      entityId: notice.booking_id,
+      version: notice.version,
+      facts: { ...facts, handedOver: true },
+      recipients: [{ userId: former.userId, audience: 'instructor', muted: muted.get(former.userId), ownChange: madeIt(former.userId) }],
+      linkFor: linkFor(event, notice),
+    }),
+  ];
 }
 
 /** Everybody one event might reach, so their settings can be looked up in one go. */
-export function peopleInvolved(notice: BookingNotice): string[] {
-  return [...new Set([notice.learner_user_id, notice.instructor_user_id, ...notice.school_user_ids])];
+export function peopleInvolved(notice: BookingNotice, former: FormerInstructor | null = null): string[] {
+  return [...new Set([notice.learner_user_id, notice.instructor_user_id, ...notice.school_user_ids, ...(former === null ? [] : [former.userId])])];
 }
 
 /** One row as `system_notify` takes it: plain JSON, because that is what crosses the wire. */
@@ -346,4 +386,45 @@ export function notificationRows(planned: PlannedNotification[], context: RowCon
 /** The context for one lesson's notifications. */
 export function rowContextFor(notice: BookingNotice): RowContext {
   return { businessId: notice.business_id, entityType: 'booking', entityId: notice.booking_id };
+}
+
+// ---------------------------------------------------------------------------------------
+// A school's day of bookings.
+// ---------------------------------------------------------------------------------------
+
+/** One school's lessons booked in a day, from `system_daily_booking_summaries`. */
+export interface BookingSummary {
+  business_id: string;
+  business_name: string;
+  count: number;
+  /** Each instructor's share of them, most first. */
+  instructors: { name: string; count: number }[];
+  user_ids: string[];
+}
+
+function lessonCount(count: number): string {
+  return count === 1 ? '1 lesson' : `${String(count)} lessons`;
+}
+
+/**
+ * The lessons a school's instructors had booked the day before, for its owners and managers, once
+ * each morning: Appendix B's manager digest, in place of an email for every lesson (D-392).
+ */
+export function planDailyBookingSummary(summary: BookingSummary, day: LocalDate, muted?: Map<string, NotificationChannel[]>): PlannedNotification[] {
+  const booked = `${lessonCount(summary.count)} booked on ${formatCalendarDate(day, { year: false })} at ${summary.business_name}`;
+  const [only] = summary.instructors;
+  const detail =
+    summary.instructors.length === 1 && only !== undefined
+      ? `${booked}, all with ${only.name}`
+      : summary.instructors.length > 1
+        ? `${booked}: ${joinWords(summary.instructors.map((one) => `${String(one.count)} with ${one.name}`))}`
+        : booked;
+  return planNotifications({
+    kind: 'booking.daily_summary',
+    entityId: summary.business_id,
+    version: day,
+    facts: { detail },
+    recipients: summary.user_ids.map((userId) => ({ userId, audience: 'school' as const, muted: muted?.get(userId) })),
+    linkFor: () => '/app/school/diary',
+  });
 }

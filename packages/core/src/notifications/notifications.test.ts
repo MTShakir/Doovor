@@ -14,14 +14,14 @@ import {
   type NotificationAudience,
   type NotificationChannel,
 } from './catalogue.ts';
-import { notificationCopy, offeredPupilLine } from './copy.ts';
+import { askedPupilLine, notificationCopy, offeredPupilLine } from './copy.ts';
 import { channelsFor, notificationDedupeKey, planNotifications } from './plan.ts';
 
 const lesson = { learnerName: 'Jack Taylor', instructorName: 'Sarah Khan', when: 'Wed 16 Sep at 09:00' };
 
 describe('the catalogue (PRD Appendix B, NTF-03)', () => {
   it('has every kind of notification Phase 1 sends', () => {
-    expect(notificationKinds).toHaveLength(31);
+    expect(notificationKinds).toHaveLength(34);
     for (const kind of notificationKinds) expect(notificationCatalogue[kind].kind).toBe(kind);
   });
 
@@ -53,6 +53,15 @@ describe('the catalogue (PRD Appendix B, NTF-03)', () => {
 });
 
 describe('the welcome, once an email is confirmed (NTF-03, NTF-06, D-259)', () => {
+  it('welcomes somebody who joined a school to it, as what they do there (D-400)', () => {
+    expect(notificationCopy('account.welcome', 'instructor', { schoolName: 'Quayside Driving School', schoolRole: 'instructor' }).body).toBe(
+      `Your email is confirmed. You teach for Quayside Driving School: your diary, your learners and your pay are all in one place. Any questions as you get going? Email ${brand.supportEmail} and we will help.`,
+    );
+    expect(notificationCopy('account.welcome', 'instructor', { schoolName: 'Quayside Driving School', schoolRole: 'manager' }).body).toBe(
+      `Your email is confirmed. You help run Quayside Driving School: its diary, learners and instructors are all in one place. Any questions as you get going? Email ${brand.supportEmail} and we will help.`,
+    );
+  });
+
   const audiences: NotificationAudience[] = ['learner', 'instructor', 'school'];
 
   it('welcomes each side by name of the product, says what to do next, and where to ask for help', () => {
@@ -237,6 +246,32 @@ describe('the words (NTF-03)', () => {
     );
   });
 
+  it('says who a lesson the school gave to another instructor is with now, to each of them (D-397)', () => {
+    const given = { learnerName: 'Dan Price', instructorName: 'Leo Park', formerInstructorName: 'Grace Mensah', when: 'Sat 31 Oct at 08:00' };
+    expect(notificationCopy('booking.reassigned', 'learner', given)).toEqual({
+      title: 'Your lesson is with Leo Park now',
+      body: 'Sat 31 Oct at 08:00 with Leo Park. It was with Grace Mensah before.',
+    });
+    expect(notificationCopy('booking.reassigned', 'instructor', given)).toEqual({
+      title: 'Dan Price has a lesson with you',
+      body: 'Sat 31 Oct at 08:00 with Dan Price. It was with Grace Mensah before.',
+    });
+    expect(notificationCopy('booking.reassigned', 'instructor', { ...given, handedOver: true })).toEqual({
+      title: "Dan Price's lesson went to Leo Park",
+      body: 'Sat 31 Oct at 08:00. It is in their diary now.',
+    });
+    expect(notificationCopy('booking.reassigned', 'school', given)).toEqual({
+      title: "Dan Price's lesson went to Leo Park",
+      body: 'Sat 31 Oct at 08:00 with Leo Park. It was with Grace Mensah before.',
+    });
+  });
+
+  it('sums up the lessons booked the day before for a school (Appendix B, D-392)', () => {
+    expect(
+      notificationCopy('booking.daily_summary', 'school', { detail: '3 lessons booked on Mon 26 Oct at Bee School: 2 with Ian and 1 with Ivy' }),
+    ).toEqual({ title: 'Lessons booked yesterday', body: '3 lessons booked on Mon 26 Oct at Bee School: 2 with Ian and 1 with Ivy.' });
+  });
+
   it('says a payment is overdue, and sums up the day before for a school (NTF-03, M3-22)', () => {
     expect(notificationCopy('payment.overdue', 'learner', { ...lesson, learnerDetail: '£42 has been owed since Tue 15 Sep. Pay it now.' })).toEqual({
       title: 'Payment overdue',
@@ -313,6 +348,17 @@ describe('channels, once settings are applied (NTF-04)', () => {
 
   it('sends nothing at all when everything optional is switched off', () => {
     expect(channelsFor('credit.low', { ...learner, muted: ['in_app', 'push', 'email'] })).toEqual([]);
+  });
+
+  it('tells a school of each lesson booked in its inbox, and of the day in the morning (Appendix B, D-392)', () => {
+    const school = { userId: 'u3', audience: 'school' as NotificationAudience };
+    expect(channelsFor('booking.confirmed', school)).toEqual(['in_app']);
+    expect(channelsFor('booking.confirmed', { userId: 'u2', audience: 'instructor' })).toEqual(['in_app', 'push', 'email']);
+    expect(channelsFor('booking.daily_summary', school)).toEqual(['in_app', 'push', 'email']);
+    // A digest, so it can be switched off altogether; a lesson called off still reaches them everywhere.
+    expect(channelsFor('booking.daily_summary', { ...school, muted: ['in_app', 'push', 'email'] })).toEqual([]);
+    expect(channelsFor('booking.cancelled', school)).toEqual(['in_app', 'push', 'email']);
+    expect(channelsInCategory('bookings', ['school'])).toEqual(['in_app', 'email', 'push']);
   });
 
   it('tells whoever made the change in the inbox only (D-384)', () => {
@@ -421,6 +467,19 @@ describe("a school's own arrangements (M9-28, D-295)", () => {
       title: 'Quayside Driving School has a pupil for you',
       body: 'Pat, near M1, for automatic lessons. Answer by Wed 21 Oct at 14:30.',
     });
+  });
+
+  it('tells the school somebody asked it for lessons, and where they are waiting (NTF-03, D-398)', () => {
+    expect(askedPupilLine({ area: 'DA16', transmission: 'manual' })).toBe('Near DA16, for manual lessons');
+    expect(askedPupilLine({ area: null, transmission: 'automatic' })).toBe('For automatic lessons');
+    expect(askedPupilLine({ area: 'DA16', transmission: null })).toBe('Near DA16');
+    expect(askedPupilLine({ area: null, transmission: null })).toBe('');
+    expect(notificationCopy('pupil.asked', 'school', { learnerName: 'Dan Price', detail: 'Near DA16, for manual lessons' })).toEqual({
+      title: 'Dan Price asked about lessons',
+      body: 'Near DA16, for manual lessons. They are waiting in New pupils.',
+    });
+    expect(notificationCopy('pupil.asked', 'school', { learnerName: 'Dan Price' }).body).toBe('They are waiting in New pupils.');
+    expect(channelsFor('pupil.asked', { userId: 'u1', audience: 'school', muted: ['in_app', 'push', 'email'] })).toEqual(['in_app']);
   });
 
   it('tells the school who took a pupil', () => {
