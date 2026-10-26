@@ -34,8 +34,8 @@ import { Band, ClosingCall, FeatureGrid, FeatureStory, FoundingBadge, FoundingOf
 import { SiteFooter, SiteHeader } from '@/components/site/site-chrome';
 import { foundingPrice, planSummaries } from '@/lib/site/plan-features';
 import { foundingProgress } from '@repo/core/founding';
-import { guideOutline, guides, parseGuideMarkdown } from '@repo/core/guides';
-import { GuideBody, GuideByline, GuideCard, GuideOutline, GuideSources } from '@/components/guides/guide-parts';
+import { guideBySlug, guideOutline, guides, parseGuideMarkdown } from '@repo/core/guides';
+import { GuideBody, GuideByline, GuideCard, GuideOutline, GuidePlaces, GuideSources, GuideTakeaways } from '@/components/guides/guide-parts';
 import { NoSignalBanner } from '@/components/offline/connection-banner';
 import { KeptRecordsNotice } from '@/components/offline/kept-records-notice';
 import { CardFieldsSkeleton } from '@/components/payments/card-form';
@@ -193,6 +193,9 @@ const exampleGuide = guides[0] ?? (() => {
   throw new Error('There is no guide to show');
 })();
 
+/** A guide about a few towns, whose tags run to more than one line (D-387). */
+const exampleLocalGuide = guideBySlug('sidcup-belvedere-erith-driving-test-centres') ?? exampleGuide;
+
 const exampleGuideBlocks = parseGuideMarkdown(`
   ## A main heading
 
@@ -212,6 +215,8 @@ const exampleGuideBlocks = parseGuideMarkdown(`
   | Over £30,000 | 6 April 2027 |
 
   > A note, such as the line that says a guide is general information.
+
+  ![A learner choosing a driving lesson time on an instructor's booking page](booking-page "A picture of the app, framed as a phone's screen, with its caption under it.")
 `);
 
 /** Founding places part taken, as the site shows them while the offer is open (D-243, D-251). */
@@ -1920,10 +1925,19 @@ export function DesignShowcase() {
         <div className="max-w-md">
           <GuideCard guide={exampleGuide} />
         </div>
-        <Label>Under the title: who wrote it, when it was checked and how long it takes, then the page&apos;s own contents</Label>
+        <Label>Under the title: who wrote it, when it was checked and how long it takes, and where it applies (D-387)</Label>
         <GuideByline guide={exampleGuide} />
+        <GuidePlaces places={exampleGuide.places} />
+        <Label>A guide about a few towns, its tags wrapping</Label>
+        <div className="max-w-3xl">
+          <GuidePlaces places={exampleLocalGuide.places} />
+        </div>
+        <Label>The short answers first, then the page&apos;s own contents (D-387)</Label>
+        <div className="max-w-3xl">
+          <GuideTakeaways takeaways={exampleGuide.takeaways} />
+        </div>
         <GuideOutline outline={guideOutline(exampleGuideBlocks)} />
-        <Label>Every block a guide is written in: headings, paragraphs with bold and links, both lists, a table and a note</Label>
+        <Label>Every block a guide is written in: headings, paragraphs with bold and links, both lists, a table, a note and a picture of the app</Label>
         <div className="max-w-3xl">
           <GuideBody blocks={exampleGuideBlocks} />
         </div>

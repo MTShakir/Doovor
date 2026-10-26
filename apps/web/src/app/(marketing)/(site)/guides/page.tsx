@@ -11,7 +11,7 @@ import { publicPageMetadata } from '@/lib/public/metadata';
 export function generateMetadata(): Metadata {
   return publicPageMetadata({
     title: 'Guides for driving instructors and learners',
-    description: `Plain answers on running a driving instructor business and learning to drive, checked against GOV.UK and written by the ${brand.name} team.`,
+    description: `Plain answers on running a driving instructor business, choosing software and learning to drive, each fact sourced, by the ${brand.name} team.`,
     path: guidesPath,
     indexable: true,
     card: siteShareCard(brand.tagline),
@@ -29,8 +29,8 @@ export default function GuidesPage() {
       <section className="mx-auto flex w-full max-w-6xl flex-col gap-4 px-4 pt-10 pb-6 md:px-6 md:pt-20">
         <h1 className="text-display text-balance text-black md:text-hero">Guides</h1>
         <p className="max-w-2xl text-body text-pretty text-grey-700 md:text-h3 md:font-normal">
-          Plain answers on running a driving instructor business and learning to drive. Every fact is checked against GOV.UK, and every guide says
-          where.
+          Plain answers on running a driving instructor business, choosing the software for it and learning to drive. Every fact is checked against
+          GOV.UK or the company it is about, and every guide says where.
         </p>
       </section>
 

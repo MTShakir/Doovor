@@ -1,10 +1,12 @@
 /**
  * The few pieces of Markdown a guide is written in (D-255), read into blocks the site draws in its
- * own components: headings, paragraphs, lists, tables and a note, and inside a line, bold and
- * links. Nothing else is understood, and anything else is refused by name, so a guide can never
- * carry HTML or a script into a page, and a slip in the writing fails a test rather than showing
- * on the site.
+ * own components: headings, paragraphs, lists, tables, a note and a picture of the app (D-387), and
+ * inside a line, bold and links. Nothing else is understood, and anything else is refused by name,
+ * so a guide can never carry HTML or a script into a page, and a slip in the writing fails a test
+ * rather than showing on the site.
  */
+
+import { isGuideImageKey, type GuideImageKey } from './images.ts';
 
 export type Inline = { kind: 'text'; text: string } | { kind: 'strong'; text: string } | { kind: 'link'; text: string; href: string };
 
@@ -13,7 +15,26 @@ export type Block =
   | { kind: 'paragraph'; content: Inline[] }
   | { kind: 'list'; ordered: boolean; items: Inline[][] }
   | { kind: 'table'; header: Inline[][]; rows: Inline[][][] }
-  | { kind: 'note'; content: Inline[] };
+  | { kind: 'note'; content: Inline[] }
+  | { kind: 'image'; key: GuideImageKey; alt: string; caption: string };
+
+/** A picture on a line of its own: `![what it shows](name "what to notice")`. */
+const imageLine = /^!\[([^\]]+)\]\(([a-z0-9-]+) "([^"]+)"\)$/;
+
+/** A picture's words are plain: no HTML, no Markdown, and something to read either side of it. */
+function plainWords(text: string, what: string, line: string): string {
+  const words = text.trim();
+  if (words === '' || /[<*[\]]/.test(words)) throw new Error(`A picture's ${what} is plain words: ${line}`);
+  return words;
+}
+
+function imageBlock(line: string): Block {
+  const match = imageLine.exec(line);
+  if (match === null) throw new Error(`A picture in a guide is ![what it shows](name "what to notice"), on a line of its own: ${line}`);
+  const [, alt = '', key = '', caption = ''] = match;
+  if (!isGuideImageKey(key)) throw new Error(`A guide shows only the pictures in images.ts, not ${key}`);
+  return { kind: 'image', key, alt: plainWords(alt, 'description', line), caption: plainWords(caption, 'caption', line) };
+}
 
 const inlinePattern = /\*\*(.+?)\*\*|\[([^\]]+)\]\(([^)\s]+)\)/g;
 
@@ -25,6 +46,7 @@ function checkedHref(href: string): string {
 
 export function parseInline(line: string): Inline[] {
   if (line.includes('<')) throw new Error(`A guide cannot carry HTML: ${line}`);
+  if (line.includes('![')) throw new Error(`A picture in a guide sits on a line of its own: ${line}`);
   const content: Inline[] = [];
   let at = 0;
   for (const match of line.matchAll(inlinePattern)) {
@@ -108,6 +130,12 @@ export function parseGuideMarkdown(source: string): Block[] {
       at += 1;
       continue;
     }
+    if (line.startsWith('![')) {
+      endParagraph();
+      blocks.push(imageBlock(line));
+      at += 1;
+      continue;
+    }
     if (line.startsWith('- ') || /^\d+\. /.test(line)) {
       endParagraph();
       const ordered = /^\d+\. /.test(line);
@@ -161,6 +189,9 @@ export function wordCount(blocks: readonly Block[]): number {
           return block.items.map(inlineWords).join(' ');
         case 'table':
           return [...block.header, ...block.rows.flat()].map(inlineWords).join(' ');
+        case 'image':
+          // The caption is read; what the picture shows is for somebody who cannot see it.
+          return block.caption;
       }
     })
     .join(' ');

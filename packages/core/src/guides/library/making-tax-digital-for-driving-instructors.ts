@@ -1,7 +1,7 @@
 import { brand } from '@repo/config/brand';
 import type { Guide } from '../types.ts';
 
-/** Every date, threshold and penalty here is from the GOV.UK pages in `sources`, read on 13 October 2026. */
+/** Every date, threshold and penalty here is from the GOV.UK pages in `sources`, read again on 26 October 2026. */
 export const makingTaxDigitalForDrivingInstructors: Guide = {
   slug: 'making-tax-digital-for-driving-instructors',
   audience: 'instructors',
@@ -10,13 +10,28 @@ export const makingTaxDigitalForDrivingInstructors: Guide = {
     'When Making Tax Digital for Income Tax applies to a driving instructor, why it counts your takings rather than your profit, and the quarterly deadlines.',
   summary:
     'Self-employed driving instructors are moving to digital records and a short update to HMRC every quarter. When it starts for you depends on what you took in lesson fees, and the threshold comes down every year.',
+  takeaways: [
+    'Making Tax Digital for Income Tax applies to self-employed driving instructors with qualifying income over £50,000 from 6 April 2026, over £30,000 from 6 April 2027 and over £20,000 from 6 April 2028.',
+    'Qualifying income is your takings before expenses, so an instructor whose profit is far lower can still need it.',
+    'You keep digital records and send HMRC a summary every quarter, due by 7 August, 7 November, 7 February and 7 May.',
+    'There are no penalties for a late quarterly update in the 2026 to 2027 tax year; after that, 4 penalty points bring a £200 penalty.',
+  ],
+  keywords: [
+    'Making Tax Digital for driving instructors',
+    'Making Tax Digital for Income Tax',
+    'MTD for Income Tax',
+    'qualifying income',
+    'quarterly updates',
+    'self-employed driving instructors',
+  ],
+  places: [{ name: 'United Kingdom', region: 'GB' }],
   published: '2026-10-13',
-  updated: '2026-10-13',
+  updated: '2026-10-26',
   body: `
     ## What Making Tax Digital for Income Tax is
 
-    Making Tax Digital for Income Tax changes how self-employed people keep their books and tell HMRC
-    about them. Instead of gathering a year of receipts for one Self Assessment return, you keep
+    Making Tax Digital for Income Tax, MTD for Income Tax for short, changes how self-employed people
+    keep their books and tell HMRC about them. Instead of gathering a year of receipts for one Self Assessment return, you keep
     digital records as you go and send HMRC a short update every quarter, using software HMRC
     recognises.
 
@@ -88,12 +103,20 @@ export const makingTaxDigitalForDrivingInstructors: Guide = {
     ${brand.name} records every lesson payment as it happens, by card, cash or bank transfer, and on
     Pro keeps your expenses with a photo of each receipt. It exports your income and expenses by tax
     year and by quarter, ready for the software you send updates with or for your accountant. It does
-    not send updates to HMRC itself. [See how it works for instructors](/instructors-software).
+    not send updates to HMRC itself. [See how it works for instructors](/instructors-software), or
+    read [how to choose driving instructor software](/guides/how-to-choose-driving-instructor-software).
+
+    ![The export screen in a driving instructor app: the tax year's turnover, expenses and profit, with buttons for a CSV file and a PDF](tax-year-export "The export screen: your tax year's turnover, expenses and profit, as a CSV file for your software or a PDF for your accountant. Example figures.")
 
     > This guide is general information, not tax advice. HMRC or an accountant can tell you how the
     > rules apply to you.
   `,
   questions: [
+    {
+      question: 'When does Making Tax Digital start for driving instructors?',
+      answer:
+        'From 6 April 2026 if your qualifying income was over £50,000 in the 2024 to 2025 tax year, from 6 April 2027 if it was over £30,000 in 2025 to 2026, and from 6 April 2028 if it is over £20,000 in 2026 to 2027.',
+    },
     {
       question: 'My profit is under £30,000. Do I still need Making Tax Digital?',
       answer:
@@ -130,5 +153,5 @@ export const makingTaxDigitalForDrivingInstructors: Guide = {
     { label: 'GOV.UK: Penalties for Making Tax Digital for Income Tax', url: 'https://www.gov.uk/guidance/penalties-for-making-tax-digital-for-income-tax' },
     { label: 'GOV.UK: Sign up for Making Tax Digital for Income Tax', url: 'https://www.gov.uk/guidance/sign-up-for-making-tax-digital-for-income-tax' },
   ],
-  related: ['driving-instructor-expenses'],
+  related: ['driving-instructor-expenses', 'how-to-choose-driving-instructor-software'],
 };

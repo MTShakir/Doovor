@@ -3,9 +3,11 @@
  * instructors search for, written as typed data in this package so they are checked like code,
  * read by the same tests as everything else, and drawn by the site in its own components.
  *
- * A guide is written by "The [brand] team", says when it was last checked, and lists the GOV.UK
- * pages its facts come from. Search is given each one as an Article, with its questions as an
- * FAQ and its place on the site as breadcrumbs.
+ * A guide is written by "The [brand] team", says when it was last checked, and lists the pages
+ * its facts come from: GOV.UK for the government's rules and figures, and a company's own pages for
+ * what it sells (D-387). Search is given each one as an Article, with its questions as an FAQ and
+ * its place on the site as breadcrumbs; the page opens with its short answers, for the people and
+ * the assistants who want the answer first.
  */
 
 import { brand } from '@repo/config/brand';
@@ -14,16 +16,27 @@ import { breadcrumbList, type JsonLd } from '../structured-data.ts';
 import { formatCalendarDate } from '../time/index.ts';
 import { drivingInstructorExpenses } from './library/driving-instructor-expenses.ts';
 import { drivingTestBookingRules2026 } from './library/driving-test-booking-rules-2026.ts';
+import { howToChooseDrivingInstructorSoftware } from './library/how-to-choose-driving-instructor-software.ts';
 import { makingTaxDigitalForDrivingInstructors } from './library/making-tax-digital-for-driving-instructors.ts';
+import { sidcupBelvedereErithDrivingTestCentres } from './library/sidcup-belvedere-erith-driving-test-centres.ts';
+import { totalDriveVsMyDriveTime } from './library/total-drive-vs-mydrivetime.ts';
 import { parseGuideMarkdown, wordCount, type Block } from './markdown.ts';
 import type { Guide, GuideAudience } from './types.ts';
 
 export type { Block, Inline } from './markdown.ts';
 export { parseGuideMarkdown, wordCount } from './markdown.ts';
-export type { Guide, GuideAudience, GuideQuestion, GuideSource } from './types.ts';
+export { guideImageKeys, isGuideImageKey, type GuideImageKey } from './images.ts';
+export type { Guide, GuideAudience, GuidePlace, GuideQuestion, GuideSource } from './types.ts';
 
 /** Every guide, newest first. A new one is written in `library` and added here. */
-export const guides: readonly Guide[] = [makingTaxDigitalForDrivingInstructors, drivingInstructorExpenses, drivingTestBookingRules2026];
+export const guides: readonly Guide[] = [
+  howToChooseDrivingInstructorSoftware,
+  totalDriveVsMyDriveTime,
+  sidcupBelvedereErithDrivingTestCentres,
+  makingTaxDigitalForDrivingInstructors,
+  drivingInstructorExpenses,
+  drivingTestBookingRules2026,
+];
 
 export const guidesPath = '/guides';
 
@@ -73,6 +86,28 @@ export function guideDate(date: string): string {
   return formatCalendarDate(date, { year: true });
 }
 
+/** The pictures of the app a guide shows, in the order it shows them (D-387). */
+export function guidePictures(blocks: readonly Block[]): Extract<Block, { kind: 'image' }>[] {
+  return blocks.flatMap((block) => (block.kind === 'image' ? [block] : []));
+}
+
+/**
+ * The geo tags a few search engines still read (D-387): the place the guide is about first, and
+ * where it is when it is a town rather than a country.
+ */
+export function guideGeoTags(guide: Guide): Record<string, string> {
+  const [first] = guide.places;
+  if (first === undefined) return {};
+  const point = first.point;
+  return {
+    'geo.region': first.region,
+    'geo.placename': first.name,
+    ...(point === undefined
+      ? {}
+      : { 'geo.position': `${String(point.latitude)};${String(point.longitude)}`, ICBM: `${String(point.latitude)}, ${String(point.longitude)}` }),
+  };
+}
+
 /** The picture a shared link to a guide shows. */
 export function guideCard(guide: Guide): ShareCard {
   return guideShareCard({ audience: audienceLabels[guide.audience], title: guide.title, minutes: readingMinutes(guide), updated: guideDate(guide.updated) });
@@ -80,10 +115,13 @@ export function guideCard(guide: Guide): ShareCard {
 
 /**
  * What search is told about a guide (PRD 14.6): the Article, its questions as an FAQ, and where it
- * sits on the site. Everything in it is on the page as well; nothing is added for machines.
+ * sits on the site. Everything in it is on the page as well; nothing is added for machines. The
+ * Article carries the short answers as its abstract, the phrases it answers, the places it covers
+ * and the pictures it shows (D-387).
  */
-export function guideStructuredData(guide: Guide, site: { url: string; imageUrl: string }): JsonLd {
+export function guideStructuredData(guide: Guide, site: { url: string; imageUrl: string; pictureUrls?: readonly string[] }): JsonLd {
   const url = `${site.url}${guidePath(guide.slug)}`;
+  const pictures = site.pictureUrls ?? [];
   return {
     '@context': 'https://schema.org',
     '@graph': [
@@ -91,7 +129,15 @@ export function guideStructuredData(guide: Guide, site: { url: string; imageUrl:
         '@type': 'Article',
         headline: guide.title,
         description: guide.description,
-        image: site.imageUrl,
+        abstract: guide.takeaways.join(' '),
+        keywords: guide.keywords.join(', '),
+        image: pictures.length === 0 ? site.imageUrl : [site.imageUrl, ...pictures],
+        wordCount: wordCount(guideBlocks(guide)),
+        spatialCoverage: guide.places.map((place) => ({
+          '@type': 'Place',
+          name: place.name,
+          ...(place.point === undefined ? {} : { geo: { '@type': 'GeoCoordinates', latitude: place.point.latitude, longitude: place.point.longitude } }),
+        })),
         datePublished: guide.published,
         dateModified: guide.updated,
         author: { '@type': 'Organization', name: guideAuthor, url: site.url },
