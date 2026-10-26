@@ -34,6 +34,15 @@ describe('one word for a lesson (DIA-04, M1-19)', () => {
     expect(lessonState(standard)).toBe('unpaid');
   });
 
+  it('says a lesson still on whose money was given back is refunded, not unpaid (PAY-07, D-401)', () => {
+    expect(lessonState({ ...standard, paymentStatus: 'refunded' })).toBe('credit');
+    expect(lessonStateLabel({ ...standard, paymentStatus: 'refunded' })).toBe('Refunded');
+    expect(lessonStateLabel({ ...standard, paymentStatus: 'partially_refunded' })).toBe('Part refunded');
+    // Called off and paid back is a cancellation, as before.
+    expect(lessonState({ ...standard, status: 'cancelled', paymentStatus: 'refunded' })).toBe('cancelled');
+    expect(lessonStateLabel({ ...standard, status: 'cancelled', paymentStatus: 'refunded' })).toBeUndefined();
+  });
+
   it('puts a test day above everything else', () => {
     expect(lessonState({ ...standard, kind: 'test_day', paymentStatus: 'paid_card' })).toBe('test-day');
   });
