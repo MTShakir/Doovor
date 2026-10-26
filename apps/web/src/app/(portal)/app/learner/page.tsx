@@ -7,7 +7,8 @@ import { Button } from '@repo/ui/button';
 import { Card, CardDescription, CardTitle } from '@repo/ui/card';
 import { EmptyState } from '@repo/ui/empty-state';
 import { SkeletonRow } from '@repo/ui/skeleton';
-import { CalendarDays, CarFront, MapPin } from 'lucide-react';
+import { CalendarDays, CalendarPlus, CarFront, MapPin } from 'lucide-react';
+import type { Route } from 'next';
 import Link from 'next/link';
 import { Suspense } from 'react';
 import { ComingSoon } from '@/components/capture/coming-soon';
@@ -18,6 +19,7 @@ import { learnerMoves } from '@/lib/learners/moves';
 import { requirePortal } from '@/lib/auth/session';
 import { myLessons, type MyLesson } from '@/lib/learner/lessons';
 import { learnerSetup } from '@/lib/learner/setup';
+import { myInstructors } from '@/lib/learner/teachers';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
 
 export const metadata: Metadata = { title: 'Home' };
@@ -35,8 +37,15 @@ export default function LearnerHomePage() {
 /** PRD 8.2: the one thing a learner opens the app for is when their next lesson is. */
 async function Home() {
   const { session } = await requirePortal('learner');
-  const [{ upcoming, past }, setup, moves] = await Promise.all([myLessons(), learnerSetup(session.userId), learnerMoves()]);
+  const [{ upcoming, past }, setup, moves, instructors] = await Promise.all([
+    myLessons(),
+    learnerSetup(session.userId),
+    learnerMoves(),
+    myInstructors(session.userId),
+  ]);
   const next = upcoming[0];
+  // Their own instructor's booking link, in the app (BOK-02, D-395).
+  const bookWith = instructors.find((one) => one.bookingPath !== null);
 
   return (
     <>
@@ -75,19 +84,35 @@ async function Home() {
               icon={CarFront}
               title="No lessons booked"
               description={
-                past.length === 0
-                  ? 'Your instructor will book your first one, or send you a link to book it yourself.'
-                  : 'Ask your instructor for another, or use the link they sent you.'
+                bookWith === undefined
+                  ? past.length === 0
+                    ? 'Your instructor will book your first one, or send you a link to book it yourself.'
+                    : 'Ask your instructor for another, or use the link they sent you.'
+                  : past.length === 0
+                    ? `Book your first lesson with ${bookWith.name}, or they can book it for you.`
+                    : `Book your next lesson with ${bookWith.name}, or ask them to.`
               }
               action={
-                <Button asChild width="full">
-                  <Link href="/app/learner/lessons">See my lessons</Link>
-                </Button>
+                bookWith?.bookingPath ? (
+                  <Button asChild width="full">
+                    <Link href={bookWith.bookingPath as Route}>
+                      <CalendarPlus className="size-5" aria-hidden />
+                      Book a lesson
+                    </Link>
+                  </Button>
+                ) : (
+                  <Button asChild width="full">
+                    <Link href="/app/learner/lessons">See my lessons</Link>
+                  </Button>
+                )
               }
             />
           </Card>
         )}
-        {upcoming.length === 0 && past.length === 0 ? <FindAnInstructor userId={session.userId} email={session.email} /> : null}
+        {/* Somebody who already has an instructor is not looking for one. */}
+        {upcoming.length === 0 && past.length === 0 && instructors.length === 0 ? (
+          <FindAnInstructor userId={session.userId} email={session.email} />
+        ) : null}
         <InstallPrompt why="Your lessons, payments and progress, one tap away." />
       </div>
     </>

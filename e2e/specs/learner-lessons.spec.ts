@@ -26,6 +26,15 @@ test.describe('my lessons (BOK-08, BOK-09, M2-26)', () => {
     return new Intl.DateTimeFormat('en-CA', { timeZone: 'Europe/London' }).format(day);
   };
 
+  test('books with their own instructor from the app, on their booking link (BOK-02, D-395)', async ({ page }) => {
+    await page.goto('/app/learner/lessons');
+    const book = page.getByRole('link', { name: 'Book a lesson', exact: true });
+    await expect(book).toHaveAttribute('href', '/book/sarah-khan-driving');
+    await book.click();
+    await expect(page).toHaveURL(/\/book\/sarah-khan-driving$/);
+    await expect(page.getByLabel('Which day?')).toBeVisible();
+  });
+
   test('puts a lesson still to come that is not going ahead apart from what has happened (D-323)', async ({ page }, testInfo) => {
     const day = ownDay(testInfo.project.name, 8);
     await clearDiary('Sarah Khan', day);

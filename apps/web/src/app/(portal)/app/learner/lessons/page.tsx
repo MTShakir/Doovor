@@ -2,16 +2,20 @@ import type { Metadata } from 'next';
 import { resolveBookingRules } from '@repo/core/booking-rules';
 import { todayInZone } from '@repo/core/time';
 import { PageHeader } from '@repo/ui/app-shell';
+import { Button } from '@repo/ui/button';
 import { Card } from '@repo/ui/card';
 import { EmptyState } from '@repo/ui/empty-state';
 import { ListDivider } from '@repo/ui/list-row';
 import { SkeletonRow } from '@repo/ui/skeleton';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@repo/ui/tabs';
-import { CalendarX } from 'lucide-react';
+import { CalendarPlus, CalendarX } from 'lucide-react';
+import type { Route } from 'next';
+import Link from 'next/link';
 import { Fragment, Suspense } from 'react';
 import { LessonsCalendar } from '@/components/lessons/lessons-calendar';
 import { requirePortal } from '@/lib/auth/session';
 import { myLessons, type MyLesson } from '@/lib/learner/lessons';
+import { myInstructors } from '@/lib/learner/teachers';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
 import { MyLessonRow } from './my-lesson';
 
@@ -35,8 +39,10 @@ export default function LessonsPage() {
  * as a list or on a month calendar (D-170); what has happened is under both.
  */
 async function Lessons() {
-  await requirePortal('learner');
-  const { upcoming, past } = await myLessons();
+  const { session } = await requirePortal('learner');
+  const [{ upcoming, past }, instructors] = await Promise.all([myLessons(), myInstructors(session.userId)]);
+  // Booking a lesson themselves, on their instructor's own link (BOK-02, D-395).
+  const bookable = instructors.filter((one) => one.bookingPath !== null);
   const now = new Date();
   const rules = await rulesFor(upcoming[0] ?? past[0]);
   const notGoingAhead = past
@@ -50,6 +56,18 @@ async function Lessons() {
 
   return (
     <>
+      {bookable.length === 0 ? null : (
+        <div className="flex flex-wrap gap-2">
+          {bookable.map((one) => (
+            <Button key={one.instructorId} asChild variant="secondary" width="responsive">
+              <Link href={(one.bookingPath ?? '/app/learner') as Route}>
+                <CalendarPlus className="size-5" aria-hidden />
+                {bookable.length === 1 ? 'Book a lesson' : `Book a lesson with ${one.name}`}
+              </Link>
+            </Button>
+          ))}
+        </div>
+      )}
       <Tabs defaultValue="list" className="flex flex-col gap-4">
         {/* Less padding than a tab usually has, so both still fit side by side at twice the text size. */}
         <TabsList aria-label="Lessons to come" className="w-full md:w-96">
