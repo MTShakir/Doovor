@@ -249,6 +249,15 @@ test.describe('the page the printed pieces open (D-403)', () => {
     await booking.scrollIntoViewIfNeeded();
     await settled(page);
     await snap(page, testInfo, 'join-booking-open', { fullPage: false });
+
+    // Told where the details are asked for, and the privacy notice says the same (D-406).
+    await expect(booking).toContainText('Booking passes your name, email address and mobile number to us through Calendly');
+    await booking.getByRole('link', { name: 'Our privacy notice' }).click();
+    await expect(page).toHaveURL(/\/privacy$/);
+    await expect(page.getByRole('heading', { level: 1, name: 'Privacy notice' })).toBeVisible();
+    await expect(page.getByRole('rowheader', { name: 'Booking a call with us' })).toBeVisible();
+    await expect(page.getByRole('rowheader', { name: 'Calendly', exact: true })).toBeVisible();
+    await expect(page.getByText('Nothing is loaded from YouTube until you press play.')).toBeVisible();
   });
 
   test('waits for the cookie question to be answered, which sits where it would @phone-only', async ({ browser }) => {

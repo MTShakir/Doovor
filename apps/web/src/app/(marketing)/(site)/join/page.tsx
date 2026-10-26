@@ -409,6 +409,14 @@ export default async function JoinPage() {
         description="I’ll set up your account with you, import your learners and have your business ready in less than 30 minutes, on one free phone call. Pick a time that suits you, and I’ll ring you."
       >
         <BookingFacade url={brand.onboardingCall} embedDomain={brand.domain} title="Choose a time for your free onboarding call" />
+        {/* Told where it is asked for, as the privacy notice says it (D-406). */}
+        <p className="max-w-3xl text-small text-pretty text-grey-700">
+          Booking passes your name, email address and mobile number to us through Calendly, so we can ring you.{' '}
+          <a href="/privacy" className="font-semibold text-blue underline underline-offset-4">
+            Our privacy notice
+          </a>{' '}
+          says what we do with them.
+        </p>
         {ownerAgreed.whatsApp ? (
           <p className="text-body text-grey-700">
             Rather message first?{' '}
