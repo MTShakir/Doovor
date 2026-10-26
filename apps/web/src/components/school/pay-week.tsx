@@ -102,7 +102,12 @@ export function PayWeekView({
             )}
             {handlers ? (
               <div>
-                <Button variant="secondary" onClick={() => { setChanging(member); }}>
+                {/* Named for the person, since every instructor has one and a list of "Change pay" reads the same aloud. */}
+                <Button
+                  variant="secondary"
+                  aria-label={`${member.now.basis === null ? 'Set pay' : 'Change pay'} for ${member.name}`}
+                  onClick={() => { setChanging(member); }}
+                >
                   {member.now.basis === null ? 'Set pay' : 'Change pay'}
                 </Button>
               </div>
