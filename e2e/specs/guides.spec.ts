@@ -1,5 +1,5 @@
 import { brand } from '@repo/config/brand';
-import { audienceLabels, guideAuthor, guideBlocks, guideBySlug, guidePath, guidePictures, guides } from '@repo/core/guides';
+import { audienceLabels, guideAuthor, guideBlocks, guideBySlug, guidePath, guidePhotoCredit, guidePictures, guides } from '@repo/core/guides';
 import { expect, test } from '@playwright/test';
 import { expectAccessible, settled, snap } from '../support/helpers';
 
@@ -96,6 +96,21 @@ test.describe('guides (PRD 14.6, D-255)', () => {
     // The three test centres, in a table a reader and an assistant can both read.
     const centres = page.getByRole('table').first();
     for (const centre of ['Sidcup (London)', 'Erith (London)', 'Belvedere (London)']) await expect(centres.getByText(centre)).toBeVisible();
+
+    // Its photographs load, each credited with who took it, when, and its licence, linked (D-391).
+    const photos = guidePictures(guideBlocks(local)).filter((picture) => guidePhotoCredit(picture.key) !== null);
+    expect(photos.length).toBe(3);
+    for (const picture of photos) {
+      const credit = guidePhotoCredit(picture.key);
+      if (credit === null) continue;
+      const image = page.getByRole('img', { name: picture.alt });
+      await image.scrollIntoViewIfNeeded();
+      await expect.poll(() => image.evaluate((element) => (element as HTMLImageElement).naturalWidth), { timeout: 20_000 }).toBeGreaterThan(0);
+      const caption = page.locator('figcaption', { hasText: picture.caption });
+      await expect(caption).toContainText(`by ${credit.author}, ${String(credit.year)}`);
+      await expect(caption.getByRole('link', { name: credit.title })).toHaveAttribute('href', credit.sourceUrl);
+      await expect(caption.getByRole('link', { name: credit.licence })).toHaveAttribute('href', credit.licenceUrl);
+    }
     await expectAccessible(page);
   });
 

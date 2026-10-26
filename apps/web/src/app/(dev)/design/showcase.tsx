@@ -217,6 +217,8 @@ const exampleGuideBlocks = parseGuideMarkdown(`
   > A note, such as the line that says a guide is general information.
 
   ![A learner choosing a driving lesson time on an instructor's booking page](booking-page "A picture of the app, framed as a phone's screen, with its caption under it.")
+
+  ![A red double-decker bus at a stop on Sidcup High Street, with shops along the pavement](sidcup-high-street "A photograph at its own width, with its caption and then its credit (D-391).")
 `);
 
 /** Founding places part taken, as the site shows them while the offer is open (D-243, D-251). */
@@ -1937,7 +1939,7 @@ export function DesignShowcase() {
           <GuideTakeaways takeaways={exampleGuide.takeaways} />
         </div>
         <GuideOutline outline={guideOutline(exampleGuideBlocks)} />
-        <Label>Every block a guide is written in: headings, paragraphs with bold and links, both lists, a table, a note and a picture of the app</Label>
+        <Label>Every block a guide is written in: headings, paragraphs with bold and links, both lists, a table, a note, a picture of the app and a credited photograph</Label>
         <div className="max-w-3xl">
           <GuideBody blocks={exampleGuideBlocks} />
         </div>

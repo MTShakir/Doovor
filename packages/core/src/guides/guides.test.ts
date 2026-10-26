@@ -11,6 +11,8 @@ import {
   guideImageKeys,
   guideOutline,
   guidePath,
+  guidePhotoCredit,
+  guidePhotoCredits,
   guidePictures,
   guides,
   guideStructuredData,
@@ -150,6 +152,20 @@ describe('every guide is written to the same rules (D-255)', () => {
     const shown = new Set(guides.flatMap((guide) => guidePictures(guideBlocks(guide)).map((picture) => picture.key)));
     expect([...shown].sort()).toEqual([...guideImageKeys].sort());
   });
+
+  it('credits every photograph with its author, year, licence and where it came from, and nothing that is ours (D-391)', () => {
+    const photos = Object.entries(guidePhotoCredits);
+    expect(photos.map(([key]) => key).sort()).toEqual(['picardy-road-belvedere', 'sidcup-high-street', 'woolwich-road-belvedere']);
+    for (const [, credit] of photos) {
+      expect(credit.author).not.toBe('');
+      expect(credit.year).toBeGreaterThan(1990);
+      expect(credit.year).toBeLessThanOrEqual(2026);
+      expect(credit.sourceUrl.startsWith('https://commons.wikimedia.org/wiki/File:')).toBe(true);
+      expect(credit.licenceUrl).toBe('https://creativecommons.org/licenses/by-sa/2.0/');
+    }
+    expect(guidePhotoCredit('booking-page')).toBeNull();
+    expect(guidePhotoCredit('sidcup-high-street')?.author).toBe('Stacey Harris');
+  });
 });
 
 describe('what the comparisons are worked out from (D-387)', () => {
@@ -202,13 +218,27 @@ describe('what a guide page shows and tells search (D-255)', () => {
     const data = guideStructuredData(local, {
       url: 'https://example.com',
       imageUrl: 'https://example.com/share.png',
-      pictureUrls: ['https://example.com/today.webp'],
+      pictures: [
+        { key: 'today', url: 'https://example.com/today.webp' },
+        { key: 'sidcup-high-street', url: 'https://example.com/sidcup-high-street.webp' },
+      ],
     });
     const article = (data['@graph'] as Record<string, unknown>[])[0];
     expect(article).toMatchObject({
       abstract: local.takeaways.join(' '),
       keywords: local.keywords.join(', '),
-      image: ['https://example.com/share.png', 'https://example.com/today.webp'],
+      image: [
+        'https://example.com/share.png',
+        'https://example.com/today.webp',
+        {
+          '@type': 'ImageObject',
+          contentUrl: 'https://example.com/sidcup-high-street.webp',
+          creator: { '@type': 'Person', name: 'Stacey Harris' },
+          creditText: 'Stacey Harris, CC BY-SA 2.0, via Wikimedia Commons',
+          license: 'https://creativecommons.org/licenses/by-sa/2.0/',
+          acquireLicensePage: 'https://commons.wikimedia.org/wiki/File:Sidcup_High_Street_-_geograph.org.uk_-_657079.jpg',
+        },
+      ],
     });
     expect(article?.wordCount).toBeGreaterThan(600);
     expect((article?.spatialCoverage as unknown[])[0]).toEqual({

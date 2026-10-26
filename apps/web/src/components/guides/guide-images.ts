@@ -13,12 +13,16 @@ import bookingPage from './images/learner-books-driving-lesson-online.webp';
 import learnerContact from './images/learner-contacts-driving-instructor.webp';
 import learnerLessons from './images/learner-driving-lessons-list.webp';
 import learnerPay from './images/learner-pays-for-driving-lesson-by-card.webp';
+import picardyRoad from './images/picardy-road-belvedere-steep-hill-sign.webp';
+import sidcupHighStreet from './images/sidcup-high-street.webp';
+import woolwichRoad from './images/woolwich-road-belvedere-a206.webp';
 
 /**
  * The file behind each picture a guide can show (D-387): screens of the app on a phone, 640 pixels
- * wide, photographed from the local app with its made-up people and example figures. The files
- * are named for what they show, which is the name search sees. A key with no file here fails the
- * type check, so a guide can never name a picture that is not drawn.
+ * wide, photographed from the local app with its made-up people and example figures, and three
+ * photographs of Sidcup and Belvedere used under their licence as they are (D-391). The files are
+ * named for what they show, which is the name search sees. A key with no file here fails the type
+ * check, so a guide can never name a picture that is not drawn.
  */
 export const guideImages: Record<GuideImageKey, StaticImageData> = {
   'booking-page': bookingPage,
@@ -34,4 +38,7 @@ export const guideImages: Record<GuideImageKey, StaticImageData> = {
   'tax-year-export': taxYearExport,
   expenses,
   bookkeeping,
+  'sidcup-high-street': sidcupHighStreet,
+  'woolwich-road-belvedere': woolwichRoad,
+  'picardy-road-belvedere': picardyRoad,
 };

@@ -20,12 +20,13 @@ import { howToChooseDrivingInstructorSoftware } from './library/how-to-choose-dr
 import { makingTaxDigitalForDrivingInstructors } from './library/making-tax-digital-for-driving-instructors.ts';
 import { sidcupBelvedereErithDrivingTestCentres } from './library/sidcup-belvedere-erith-driving-test-centres.ts';
 import { totalDriveVsMyDriveTime } from './library/total-drive-vs-mydrivetime.ts';
+import { guidePhotoCredit, type GuideImageKey } from './images.ts';
 import { parseGuideMarkdown, wordCount, type Block } from './markdown.ts';
 import type { Guide, GuideAudience } from './types.ts';
 
 export type { Block, Inline } from './markdown.ts';
 export { parseGuideMarkdown, wordCount } from './markdown.ts';
-export { guideImageKeys, isGuideImageKey, type GuideImageKey } from './images.ts';
+export { guideImageKeys, guidePhotoCredit, guidePhotoCredits, isGuideImageKey, type GuideImageKey, type GuidePhotoCredit } from './images.ts';
 export type { Guide, GuideAudience, GuidePlace, GuideQuestion, GuideSource } from './types.ts';
 
 /** Every guide, newest first. A new one is written in `library` and added here. */
@@ -114,14 +115,34 @@ export function guideCard(guide: Guide): ShareCard {
 }
 
 /**
+ * A picture as search is told about it: a screen of the app by its address, and a photograph with
+ * who took it and the licence it is used under, as its credit on the page says (D-391).
+ */
+function pictureData(picture: { key: GuideImageKey; url: string }): string | Record<string, unknown> {
+  const credit = guidePhotoCredit(picture.key);
+  if (credit === null) return picture.url;
+  return {
+    '@type': 'ImageObject',
+    contentUrl: picture.url,
+    creator: { '@type': 'Person', name: credit.author },
+    creditText: `${credit.author}, ${credit.licence}, via ${credit.via}`,
+    license: credit.licenceUrl,
+    acquireLicensePage: credit.sourceUrl,
+  };
+}
+
+/**
  * What search is told about a guide (PRD 14.6): the Article, its questions as an FAQ, and where it
  * sits on the site. Everything in it is on the page as well; nothing is added for machines. The
  * Article carries the short answers as its abstract, the phrases it answers, the places it covers
  * and the pictures it shows (D-387).
  */
-export function guideStructuredData(guide: Guide, site: { url: string; imageUrl: string; pictureUrls?: readonly string[] }): JsonLd {
+export function guideStructuredData(
+  guide: Guide,
+  site: { url: string; imageUrl: string; pictures?: readonly { key: GuideImageKey; url: string }[] },
+): JsonLd {
   const url = `${site.url}${guidePath(guide.slug)}`;
-  const pictures = site.pictureUrls ?? [];
+  const pictures = (site.pictures ?? []).map(pictureData);
   return {
     '@context': 'https://schema.org',
     '@graph': [

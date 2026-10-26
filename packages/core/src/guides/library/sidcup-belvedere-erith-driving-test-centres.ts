@@ -85,6 +85,8 @@ export const sidcupBelvedereErithDrivingTestCentres: Guide = {
     in Upper Belvedere. Both postcodes start DA17. When a learner tells you they are booked "at Belvedere",
     check the centre's name on the booking before you plan their last lessons.
 
+    ![Woolwich Road in Belvedere, a wide road with white hatched markings, houses behind hedges and a footpath beside it](woolwich-road-belvedere "Woolwich Road in Belvedere, the road the Belvedere test centre is on. This stretch, towards Abbey Wood, is part of the A206.")
+
     ## What the pass rates mean for your learners
 
     A lower pass rate does not make a centre unfair, and DVSA does not say why centres differ. The
@@ -107,6 +109,8 @@ export const sidcupBelvedereErithDrivingTestCentres: Guide = {
     - **Belvedere (London)** is on Woolwich Road, a 30 mph road among the residential streets of Upper Belvedere. The streets around it climb the hill above the river, and Picardy Road has a sign for a 10% gradient, so hill starts are worth the practice.
     - **Erith (London)** is on Crabtree Manorway North, on the riverside industrial estate in Lower Belvedere, near Bronze Age Way, a dual carriageway with 50 mph and 30 mph stretches. Expect lorries and vans on the estate roads.
 
+    ![Warning signs on Picardy Road in Belvedere for a 10% steep hill and a double bend, with the road curving away past parked cars](picardy-road-belvedere "Picardy Road in Belvedere: a 10% hill and a double bend in one short stretch, good for hill starts and clutch control.")
+
     ## Where your learners live, and their nearest centre
 
     The borough runs from Thamesmead and Abbey Wood on the Greenwich side to Crayford, with Dartford
@@ -128,6 +132,8 @@ export const sidcupBelvedereErithDrivingTestCentres: Guide = {
     The nearest centre is not always the right one. A learner in Bexleyheath may be better taught
     for Sidcup's roads if that is where their test is booked, and their lessons should follow the
     booking, not the map.
+
+    ![A red double-decker bus at a stop on Sidcup High Street, with shops along the pavement and BUS STOP painted on the road](sidcup-high-street "Sidcup High Street, where learners meet buses pulling in and out of their stops.")
 
     ## Filling a week of lessons across the borough
 

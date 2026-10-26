@@ -89,7 +89,7 @@ export default async function GuidePage({ params }: Props) {
   const structured = guideStructuredData(guide, {
     url: site,
     imageUrl: shareImageUrl(guidePath(guide.slug), guideCard(guide)),
-    pictureUrls: guidePictures(blocks).map((picture) => `${site}${guideImages[picture.key].src}`),
+    pictures: guidePictures(blocks).map((picture) => ({ key: picture.key, url: `${site}${guideImages[picture.key].src}` })),
   });
 
   return (

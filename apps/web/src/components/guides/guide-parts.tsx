@@ -3,6 +3,7 @@ import {
   guideAuthor,
   guideDate,
   guidePath,
+  guidePhotoCredit,
   readingMinutes,
   type Block,
   type Guide,
@@ -54,11 +55,44 @@ export function InlineContent({ content }: { content: readonly Inline[] }) {
   );
 }
 
+/** A link out of a guide, which opens beside it, as every link out does. */
+function OutLink({ href, children }: { href: string; children: string }) {
+  return (
+    <a href={href} target="_blank" rel="noopener noreferrer" className="text-blue underline underline-offset-4 hover:text-black">
+      {children}
+      <span className="sr-only"> (opens in a new tab)</span>
+    </a>
+  );
+}
+
 /**
  * A screen of the app in a guide (D-387): a phone's width at most, framed as a screen, with its
- * caption under it. Below the first screenful it loads only as the reader reaches it.
+ * caption under it. A photograph is drawn at its own width with who took it, when, and the licence
+ * it is used under, each linked, as the licence asks (D-391). Below the first screenful a picture
+ * loads only as the reader reaches it.
  */
 export function GuideFigure({ block }: { block: Extract<Block, { kind: 'image' }> }) {
+  const credit = guidePhotoCredit(block.key);
+  if (credit !== null) {
+    return (
+      <figure className="flex flex-col items-center gap-3 py-2">
+        <Image
+          src={guideImages[block.key]}
+          alt={block.alt}
+          placeholder="blur"
+          sizes="(min-width: 768px) 640px, 100vw"
+          className="h-auto w-full max-w-160 rounded-card border border-grey-200 bg-grey-100"
+        />
+        <figcaption className="flex w-full max-w-160 flex-col gap-1 text-small text-pretty text-grey-700">
+          <span>{block.caption}</span>
+          <span>
+            Photo: <OutLink href={credit.sourceUrl}>{credit.title}</OutLink> by {credit.author}, {String(credit.year)},{' '}
+            <OutLink href={credit.licenceUrl}>{credit.licence}</OutLink>, via {credit.via}.
+          </span>
+        </figcaption>
+      </figure>
+    );
+  }
   return (
     <figure className="flex flex-col items-center gap-3 py-2">
       <Image
