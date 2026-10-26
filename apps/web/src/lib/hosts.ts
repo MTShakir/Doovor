@@ -10,9 +10,17 @@ import { sitePagePaths } from '@repo/core/sitemap';
 const siteHome = '/';
 const sitePrefixes: readonly string[] = ['/instructors/', '/schools/', '/driving-lessons/', '/guides/'];
 
+/**
+ * The site's pages that search is not given, so no sitemap lists them: the page the printed QR
+ * codes open, which says what the page for instructors says, for whoever scanned one (D-403).
+ */
+const unlistedSitePages: readonly string[] = ['/join'];
+
 /** Whether a path is one of the public site's pages. */
 export function isSitePath(pathname: string): boolean {
-  return sitePagePaths.includes(pathname) || sitePrefixes.some((prefix) => pathname.startsWith(prefix));
+  return (
+    sitePagePaths.includes(pathname) || unlistedSitePages.includes(pathname) || sitePrefixes.some((prefix) => pathname.startsWith(prefix))
+  );
 }
 
 export interface HostRedirect {

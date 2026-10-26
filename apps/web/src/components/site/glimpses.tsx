@@ -1,3 +1,5 @@
+import { notificationCopy } from '@repo/core/notifications';
+import { reminderHoursDefault, reminderWording } from '@repo/core/reminders';
 import { StatusPill } from '@repo/ui/status-pill';
 import { cn } from '@repo/ui/lib/cn';
 import { Check, MapPin } from 'lucide-react';
@@ -39,12 +41,21 @@ function FakeButton({ children }: { children: ReactNode }) {
   return <span className="flex h-12 w-full items-center justify-center rounded-full bg-black text-body font-semibold text-white">{children}</span>;
 }
 
-/** The instructor's Today (PRD 7.5): the day's lessons, who has paid, and the next one to start. */
-export function TodayGlimpse({ className }: { className?: string }) {
+/**
+ * The instructor's Today (PRD 7.5): the day's lessons, who has paid, and the next one to start.
+ * Picked up around Leeds, or wherever the page is talking to (D-403).
+ */
+export function TodayGlimpse({
+  className,
+  pickups = ['Headingley', 'Hyde Park', 'Kirkstall'],
+}: {
+  className?: string;
+  pickups?: readonly [string, string, string];
+}) {
   const lessons = [
-    { time: '09:00', name: 'Jack Taylor', pickup: 'Headingley', status: 'paid' as const },
-    { time: '10:30', name: 'Mia Wood', pickup: 'Hyde Park', status: 'credit' as const },
-    { time: '13:00', name: 'Sam Hussain', pickup: 'Kirkstall', status: 'unpaid' as const },
+    { time: '09:00', name: 'Jack Taylor', pickup: pickups[0], status: 'paid' as const },
+    { time: '10:30', name: 'Mia Wood', pickup: pickups[1], status: 'credit' as const },
+    { time: '13:00', name: 'Sam Hussain', pickup: pickups[2], status: 'unpaid' as const },
   ];
   return (
     <Frame title="Today" className={className}>
@@ -134,6 +145,35 @@ export function ProgressGlimpse({ className }: { className?: string }) {
         ))}
       </ul>
       <p className="rounded-input bg-grey-100 p-3 text-small text-ink">Good junctions, and mirrors checked early before every signal.</p>
+    </Frame>
+  );
+}
+
+/**
+ * A learner's notifications before a lesson (NTF-02): the reminders the platform sends the day
+ * before and two hours before, newest first, in the words the app itself writes them in.
+ */
+export function ReminderGlimpse({ className }: { className?: string }) {
+  const lesson = { instructorName: 'Sarah Khan', when: 'Tue 27 Oct at 10:30' };
+  // When each was sent: two hours before the lesson, and the morning before at the same time.
+  const sent: Record<number, string> = { 2: 'Tue 27 Oct, 08:30', 24: 'Mon 26 Oct, 10:30' };
+  const reminders = [...reminderHoursDefault]
+    .sort((a, b) => a - b)
+    .map((hours) => ({ hours, ...notificationCopy('booking.reminder', 'learner', { ...lesson, detail: reminderWording(hours) }) }));
+  return (
+    <Frame title="Notifications" className={className}>
+      <ul className="flex flex-col divide-y divide-grey-200">
+        {reminders.map((reminder) => (
+          <li key={reminder.hours} className="flex items-start gap-3 py-3">
+            <span className="mt-2 size-2 shrink-0 rounded-full bg-black" />
+            <span className="flex min-w-0 flex-1 flex-col gap-1">
+              <span className="text-body font-semibold text-black">{reminder.title}</span>
+              <span className="text-small text-grey-700">{reminder.body}</span>
+              <span className="text-caption text-grey-700 tabular-nums">{sent[reminder.hours] ?? ''}</span>
+            </span>
+          </li>
+        ))}
+      </ul>
     </Frame>
   );
 }

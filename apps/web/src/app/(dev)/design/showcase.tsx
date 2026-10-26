@@ -29,9 +29,38 @@ import { SchoolHeader, SchoolInstructors } from '@/components/public/school-prof
 import { LessonSellerCards } from '@/components/school/lesson-seller-cards';
 import { BookingLinkCard } from '@/components/share/booking-link-card';
 import { AreaPanel, CaptureDone } from '@/components/capture/coming-soon';
-import { BookingGlimpse, GlimpseAlone, GlimpsePair, MoneyGlimpse, ProfileGlimpse, ProgressGlimpse, SchoolGlimpse, TaxYearGlimpse, TodayGlimpse } from '@/components/site/glimpses';
-import { Band, ClosingCall, FeatureGrid, FeatureStory, FoundingBadge, FoundingOffer, PageHero, PlanCard, PrimaryLink, QuestionList, SecondaryLink, Steps } from '@/components/site/marketing';
+import {
+  BookingGlimpse,
+  GlimpseAlone,
+  GlimpsePair,
+  MoneyGlimpse,
+  ProfileGlimpse,
+  ProgressGlimpse,
+  ReminderGlimpse,
+  SchoolGlimpse,
+  TaxYearGlimpse,
+  TodayGlimpse,
+} from '@/components/site/glimpses';
+import { SignUpLink, StickyAction } from '@/components/site/join-actions';
+import { CostPanel, FactList, FounderNote, JoinHero, PriceLines, TextBubbles } from '@/components/site/join-parts';
+import {
+  Band,
+  ClosingCall,
+  FeatureGrid,
+  FeatureStory,
+  FoundingBadge,
+  FoundingOffer,
+  PageHero,
+  PlanCard,
+  PrimaryLink,
+  QuestionAccordion,
+  QuestionList,
+  SecondaryLink,
+  SignalEyebrow,
+  Steps,
+} from '@/components/site/marketing';
 import { SiteFooter, SiteHeader } from '@/components/site/site-chrome';
+import { joinHooks } from '@/lib/site/join';
 import { foundingPrice, planSummaries } from '@/lib/site/plan-features';
 import { foundingProgress } from '@repo/core/founding';
 import { guideBySlug, guideOutline, guides, parseGuideMarkdown } from '@repo/core/guides';
@@ -143,7 +172,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@repo/ui/tabs';
 import { LearnerTabs, LessonHistoryTabs } from '@/app/(portal)/app/instructor/learners/[id]/learner-tabs';
 import { TimeSlotGrid } from '@repo/ui/time-slot-grid';
 import { toast, toastWithUndo } from '@repo/ui/toast';
-import { BadgeCheck, CalendarX, Car, CreditCard, WifiOff } from 'lucide-react';
+import { BadgeCheck, CalendarX, Car, CreditCard, MessageCircle, WifiOff } from 'lucide-react';
 import { GalleryHeader } from '@/components/gallery/gallery-header';
 import { PassPhotoCard } from '@/components/gallery/pass-photo';
 import { PassWall } from '@/components/gallery/pass-wall';
@@ -1809,6 +1838,9 @@ export function DesignShowcase() {
           <GlimpseAlone>
             <TaxYearGlimpse />
           </GlimpseAlone>
+          <GlimpseAlone>
+            <ReminderGlimpse />
+          </GlimpseAlone>
         </div>
         <Label>One feature told beside its glimpse, with what is on Pro marked; the next one flips sides</Label>
         <div className="flex flex-col overflow-hidden rounded-card border border-grey-200">
@@ -1883,6 +1915,8 @@ export function DesignShowcase() {
             }
           />
         </div>
+        <ShowcaseJoinPage />
+
         <Label>
           Coming soon (MKT-10, M5-10): an area not open yet, with the city page near it; and what a learner sees once they have joined the
           waiting list or posted a lesson request
@@ -2541,5 +2575,118 @@ function ShowcaseOfferAndGive() {
         onGiven={() => { setGiving(null); }}
       />
     </div>
+  );
+}
+
+/**
+ * The page the printed QR codes open (D-403): its opening on each printed piece's words, and the
+ * pieces of the leaflet's story it is told in, each in every state it has.
+ */
+function ShowcaseJoinPage() {
+  const hooks = joinHooks(examplePlaces);
+  return (
+    <>
+      <Label>
+        The page the printed QR codes open (D-403): its opening on each piece's own words, the page's own for anybody else, and no founding line
+        over the card's, which already is the offer
+      </Label>
+      <div className="flex flex-col divide-y divide-grey-200 overflow-hidden rounded-card border border-grey-200">
+        {(['default', 'card', 'leaflet', 'flyer'] as const).map((key) => (
+          <JoinHero
+            key={key}
+            only={key}
+            hooks={hooks}
+            badge={<FoundingBadge places={examplePlaces} />}
+            eyebrow="For independent driving instructors"
+            actions={<SignUpLink href="#sign-up">Claim your founding place</SignUpLink>}
+            note="Free to start. No card needed. Set up in about 20 minutes."
+            visual={key === 'default' ? <GlimpsePair back={<TodayGlimpse pickups={['Belvedere', 'Erith', 'Bexleyheath']} />} front={<MoneyGlimpse />} /> : null}
+          />
+        ))}
+      </div>
+      <Label>The traffic light its story moves through: the old way, the moment it changes, and the product</Label>
+      <div className="flex flex-wrap gap-6 text-small font-semibold text-grey-700">
+        <SignalEyebrow lit="red">The old way</SignalEyebrow>
+        <SignalEyebrow lit="red-and-amber">The good news</SignalEyebrow>
+        <SignalEyebrow lit="green">With {brand.name}</SignalEyebrow>
+      </div>
+      <Label>The messages an instructor knows too well, and what the old way costs in a year, on black</Label>
+      <div className="grid items-start gap-10 rounded-card bg-grey-100 p-6 md:grid-cols-2">
+        <TextBubbles
+          messages={[
+            { from: 'Amir', at: '23:12', text: 'Hiya, can we move Thursday?', cost: 'Your evenings, gone on texts.' },
+            { from: 'Mia', at: '22:03', text: 'I’ll transfer it tonight x', cost: 'Money you’ve earned, still owed.' },
+          ]}
+        />
+        <CostPanel
+          figure={formatPence(4000 * 52)}
+          explanation={`a year, if one lesson a week cancels late at ${formatPence(4000)}.`}
+          costs={[
+            { title: 'Your evenings', description: 'On texts, after a full day of teaching.' },
+            { title: 'Your money', description: 'Still with learners, for lessons you’ve taught.' },
+          ]}
+        />
+      </div>
+      <Label>What it costs, now and later, in the order somebody asks, beside short facts each with its icon</Label>
+      <div className="grid gap-10 lg:grid-cols-2">
+        <PriceLines
+          lines={[
+            { when: 'Today', what: `${formatPence(0)}. Free to start, with no card needed.` },
+            { when: 'After that', what: `Pro at ${formatPence(1200)} a month, or the Free plan.` },
+          ]}
+        />
+        <FactList
+          facts={[
+            { icon: CreditCard, title: 'Booking and card payments, free', description: 'Both on the Free plan, with no upgrade needed.' },
+            { icon: WifiOff, title: 'Works without signal', description: 'Records save in the car, then catch up when you’re back online.' },
+          ]}
+        />
+      </div>
+      <Label>The founder in their own words, with their initials until a photo of them is agreed</Label>
+      <FounderNote name="Talha Shakir" jobTitle="Founder" place="Belvedere">
+        <p>If you teach nearby, I will set it up with you in person. Twenty minutes, and I do the typing.</p>
+      </FounderNote>
+      <Label>Questions that each open onto their answer</Label>
+      <QuestionAccordion
+        questions={[
+          { question: 'What’s the catch?', answer: 'After the year you choose: keep Pro, or carry on with the Free plan.' },
+          { question: 'Can I bring my learners?', answer: 'Yes. Import them from a spreadsheet, or invite each one by WhatsApp, text or email.' },
+        ]}
+      />
+      <Label>The page's button at the foot of a phone's screen, once its opening has scrolled away and before the next button is in view</Label>
+      <div className="overflow-hidden rounded-card border border-grey-200">
+        <StickyAction preview href="#sign-up" after="opening" quietWhile={[]}>
+          Claim your founding place
+        </StickyAction>
+      </div>
+      <Label>The founding offer with what comes after it, and the closing call with a line over it and a chat on WhatsApp as a second way in (D-404)</Label>
+      <div className="flex flex-col gap-6 overflow-hidden rounded-card border border-grey-200 pt-6">
+        <FoundingOffer
+          id="design-founding-offer"
+          places={examplePlaces}
+          action={<PrimaryLink href="#start">Claim your founding place</PrimaryLink>}
+          note="After the first 100, it’s 90 days free for the next 500."
+        />
+        <ClosingCall
+          id="design-closing"
+          eyebrow={<SignalEyebrow lit="green">Your green light</SignalEyebrow>}
+          title="Claim your founding place."
+          description="Free to start, no card needed, and set up in about 20 minutes."
+          action={
+            <div className="flex w-full flex-col gap-3 md:w-auto md:items-end">
+              <PrimaryLink href="#start" onDark>
+                Claim your founding place
+              </PrimaryLink>
+              <Button asChild size="lg" width="responsive" variant="tertiary" className="text-white ring-1 ring-white/60 hover:bg-white/10 hover:no-underline">
+                <a href="#whatsapp">
+                  <MessageCircle size={20} strokeWidth={2} aria-hidden />
+                  Message Talha on WhatsApp
+                </a>
+              </Button>
+            </div>
+          }
+        />
+      </div>
+    </>
   );
 }
