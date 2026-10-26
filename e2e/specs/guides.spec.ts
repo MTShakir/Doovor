@@ -116,6 +116,9 @@ test.describe('guides (PRD 14.6, D-255)', () => {
     const sitemap = await (await request.get('/sitemaps/guides.xml')).text();
     const listed = [...sitemap.matchAll(/<loc>([^<]+)<\/loc>/g)].map((match) => new URL(match[1] ?? '').pathname);
     expect(listed).toEqual(guides.map((guide) => guidePath(guide.slug)));
+    // Each dated by the day its facts were last checked, so search fetches a changed guide sooner (D-387).
+    const dated = [...sitemap.matchAll(/<lastmod>([^<]+)<\/lastmod>/g)].map((match) => match[1]);
+    expect(dated).toEqual(guides.map((guide) => guide.updated));
     expect((await request.get('/guides/no-such-guide')).status()).toBe(404);
   });
 });

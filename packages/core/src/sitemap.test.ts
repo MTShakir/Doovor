@@ -5,6 +5,7 @@ import {
   sitemapIndexXml,
   sitemapKinds,
   sitemapKindsWithPages,
+  sitemapLastModified,
   sitemapPath,
   sitemapPaths,
   sitePagePaths,
@@ -65,6 +66,21 @@ describe('sitemaps by type (PRD 14.6, M5-08)', () => {
         '</urlset>\n',
     );
     expect(urlSetXml([])).toBe('<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n</urlset>\n');
+  });
+
+  it('dates a guide by the day its facts were last checked, and gives no other page a date it cannot be sure of (D-387)', () => {
+    const guide = guides[0];
+    if (guide === undefined) throw new Error('There is no guide');
+    expect(sitemapLastModified('guides', guidePath(guide.slug))).toBe(guide.updated);
+    expect(sitemapLastModified('guides', '/guides/no-such-guide')).toBeNull();
+    expect(sitemapLastModified('pages', '/pricing')).toBeNull();
+    expect(urlSetXml([{ loc: 'https://example.com/guides/a', lastModified: '2026-10-26' }, { loc: 'https://example.com/b', lastModified: null }])).toBe(
+      '<?xml version="1.0" encoding="UTF-8"?>\n' +
+        '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n' +
+        '<url><loc>https://example.com/guides/a</loc><lastmod>2026-10-26</lastmod></url>\n' +
+        '<url><loc>https://example.com/b</loc></url>\n' +
+        '</urlset>\n',
+    );
   });
 
   it('indexes only the sitemaps with a page in them, because search reports an empty one as an error (D-261)', () => {

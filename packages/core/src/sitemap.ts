@@ -85,15 +85,34 @@ function escapeXml(text: string): string {
   return text.replace(/[&<>"']/g, (character) => `&${{ '&': 'amp', '<': 'lt', '>': 'gt', '"': 'quot', "'": 'apos' }[character] ?? ''};`);
 }
 
+/** A page in a sitemap: its whole address, and the day it last changed where the site knows it. */
+export interface SitemapUrl {
+  loc: string;
+  lastModified: string | null;
+}
+
+/**
+ * The day a page last changed, where the site knows it for certain (D-387): a guide's `updated`
+ * date, the day its facts were last checked. Search fetches a changed page sooner by it, and trusts
+ * it only from a site whose dates are always right, so a page without a sure date is given none.
+ */
+export function sitemapLastModified(kind: SitemapKind, path: string): string | null {
+  if (kind !== 'guides') return null;
+  return guides.find((guide) => guidePath(guide.slug) === path)?.updated ?? null;
+}
+
 /**
  * A sitemap of whole addresses. More than search engines read from one file is refused: the index
  * would need to list the kind in parts, and silently dropping pages would hide them from search.
  */
-export function urlSetXml(urls: readonly string[]): string {
+export function urlSetXml(urls: readonly (string | SitemapUrl)[]): string {
   if (urls.length > SITEMAP_URL_LIMIT) {
     throw new RangeError(`A sitemap holds at most ${String(SITEMAP_URL_LIMIT)} addresses, and this one has ${String(urls.length)}`);
   }
-  const lines = urls.map((url) => `<url><loc>${escapeXml(url)}</loc></url>\n`).join('');
+  const lines = urls
+    .map((one) => (typeof one === 'string' ? { loc: one, lastModified: null } : one))
+    .map(({ loc, lastModified }) => `<url><loc>${escapeXml(loc)}</loc>${lastModified === null ? '' : `<lastmod>${lastModified}</lastmod>`}</url>\n`)
+    .join('');
   return `${XML_DECLARATION}<urlset xmlns="${SITEMAP_NAMESPACE}">\n${lines}</urlset>\n`;
 }
 
