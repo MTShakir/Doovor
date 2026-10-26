@@ -190,6 +190,10 @@ describe('a line of history', () => {
     });
     expect(historyLine({ kind: 'credit', at: day, move: 'return', minutes: 90, lessonAt: day }).title).toBe('1 hour 30 minutes of credit back');
     expect(historyLine({ kind: 'credit', at: day, move: 'fee', minutes: -30, lessonAt: day }).title).toBe('30 minutes of credit kept as a late fee');
+    // Nobody came, so it is not a late fee (R-09).
+    expect(historyLine({ kind: 'credit', at: day, move: 'fee', minutes: -60, lessonAt: day, feeFor: 'no_show' }).title).toBe(
+      '1 hour of credit kept as a no-show fee',
+    );
     expect(historyLine({ kind: 'credit', at: day, move: 'expiry', minutes: -120, lessonAt: null })).toEqual({
       title: '2 hours of credit ran out',
       detail: 'Credit',

@@ -8,6 +8,7 @@ import {
   bookingDisputeDecided,
   bookingDisputed,
   bookingNoShow,
+  bookingReassigned,
   bookingRescheduled,
   paymentChargeFailed,
 } from '../events';
@@ -34,6 +35,7 @@ export const bookingNotices = inngest.createFunction(
       bookingDisputed,
       bookingDisputeDecided,
       bookingRescheduled,
+      bookingReassigned,
       bookingCompleted,
       paymentChargeFailed,
     ],

@@ -1,5 +1,6 @@
 import 'server-only';
 import {
+  askedPupilLine,
   notificationCatalogue,
   offeredPupilLine,
   planNotifications,
@@ -17,6 +18,7 @@ import { mutedChannels, writeNotifications, type NotifyResult } from './notify';
 
 /** The changes the database queues a notice about (M9-28, D-295). */
 export const schoolNoticeEvents = [
+  'pupil.asked',
   'pupil.offered',
   'pupil.taken',
   'school_fee.terms_set',
@@ -37,6 +39,7 @@ export function isSchoolNoticeEvent(value: string): value is SchoolNoticeEvent {
 /** What `system_school_notice` answers: who hears, and the facts as the database keeps them. */
 export interface SchoolNotice {
   kind:
+    | 'pupil.asked'
     | 'pupil.offered'
     | 'pupil.taken'
     | 'school_fee.terms_set'
@@ -90,6 +93,11 @@ export function factsFor(notice: SchoolNotice): NotificationFacts {
     outcome: notice.outcome ?? undefined,
   };
 
+  // Somebody who asked on the school's page: where, and for which gearbox (D-398).
+  if (notice.kind === 'pupil.asked') {
+    return { ...facts, detail: askedPupilLine({ area: given(notice.area) ?? null, transmission: notice.transmission ?? null }) || undefined };
+  }
+
   if (notice.kind === 'pupil.offered') {
     const expires = given(notice.expires_at) === undefined ? null : new Date(notice.expires_at ?? '');
     return {
@@ -131,6 +139,7 @@ export function factsFor(notice: SchoolNotice): NotificationFacts {
 /** Where tapping it lands, for whoever reads it. */
 export function schoolNoticeLink(notice: SchoolNotice, audience: NotificationAudience): string {
   switch (notice.kind) {
+    case 'pupil.asked':
     case 'pupil.taken':
       return '/app/school/pupils';
     case 'learner.move_asked':

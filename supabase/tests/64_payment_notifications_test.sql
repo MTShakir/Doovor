@@ -68,8 +68,8 @@ select results_eq(
   format($$ select (s ->> 'business_id')::uuid, (s ->> 'total_pence')::int, (s ->> 'count')::int, s -> 'user_ids'
               from jsonb_array_elements(public.system_daily_payment_summaries(now() - interval '1 day', now() + interval '1 minute')) as s
              where (s ->> 'business_id')::uuid = %L $$, :'school'),
-  format($$ values (%L::uuid, 42200, 2, jsonb_build_array(%L, %L)) $$, :'school', :'ben', :'manager'),
-  'the day''s summary is for schools, to their owners and managers'
+  format($$ values (%L::uuid, 42200, 2, jsonb_build_array(%L)) $$, :'school', :'ben'),
+  'the day''s summary is for schools, to their owners and the managers who may see revenue (D-393)'
 );
 
 insert into public.payments (business_id, learner_id, amount_pence, method, status, paid_at)

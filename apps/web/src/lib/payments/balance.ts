@@ -159,6 +159,13 @@ export async function learnerBalance(businessId: string, learnerId: string, now 
       move: move.move,
       minutes: move.minutes,
       lessonAt: move.lesson_at,
+      // Credit kept as a fee says which fee, by the lesson it was kept for (R-09).
+      feeFor:
+        move.move === 'fee' && move.lesson_at !== null
+          ? facts.lessons.find((lesson) => lesson.starts_at.getTime() === move.lesson_at?.getTime())?.status === 'no_show'
+            ? ('no_show' as const)
+            : ('cancelled' as const)
+          : null,
     })),
   ]
     .sort((a, b) => b.at.getTime() - a.at.getTime())

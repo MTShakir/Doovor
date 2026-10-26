@@ -70,7 +70,8 @@ function areaFit(instructor: AllocationInstructor): AreaFit {
 
 const areaOrder: Record<AreaFit, number> = { covers: 0, unknown: 1, outside: 2 };
 
-function gearboxReason(transmission: Transmission): string {
+/** "Teaches manual", or both, as the school reads it when choosing an instructor. */
+export function gearboxReason(transmission: Transmission): string {
   return transmission === 'both' ? 'Teaches manual and automatic' : `Teaches ${transmission}`;
 }
 

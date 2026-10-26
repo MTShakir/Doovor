@@ -114,8 +114,9 @@ async function SchoolDay({ searchParams }: SchoolDiaryParams) {
                   <ul className="divide-y divide-grey-200 rounded-card border border-grey-200 bg-white">
                     {theirs.map((lesson) => (
                       <li key={lesson.id}>
-                        {/* The office opens a lesson to move it, call it off or mark it paid (PRD 6.2, D-330). */}
-                        <LessonRow lesson={lesson} openable portal="school" />
+                        {/* The office opens a lesson to move it, call it off or mark it paid (PRD 6.2, D-330),
+                            and answers a request for the instructor (D-399). */}
+                        <LessonRow lesson={lesson} openable portal="school" answersRequests />
                       </li>
                     ))}
                   </ul>

@@ -120,7 +120,7 @@ async function Learner({ params, searchParams, portal }: LearnerScreenProps) {
 
       <div className="flex flex-col gap-4 px-4 md:max-w-2xl md:px-8">
         <div className="flex flex-wrap items-center gap-2">
-          <StatusControl learnerId={card.learnerId} status={card.status} name={card.fullName} />
+          <StatusControl learnerId={card.learnerId} status={card.status} name={card.fullName} lessonsToCome={lessons.upcoming.length} />
           {/* Who teaches them is worth saying only to somebody who is not that person. */}
           {card.instructorName === null || mine ? null : (
             <span className="text-small text-grey-700">Taught by {card.instructorName}</span>

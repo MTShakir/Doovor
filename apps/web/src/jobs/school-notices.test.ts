@@ -41,6 +41,28 @@ beforeEach(() => {
 });
 
 describe("telling people about a school's own arrangements (M9-28, NTF-03, D-295)", () => {
+  it('tells the office somebody asked for lessons on its page, and takes them to New pupils (D-398)', () => {
+    const asked: SchoolNotice = {
+      kind: 'pupil.asked',
+      business_id: 'school-1',
+      entity_type: 'school_enquiry',
+      entity_id: 'enquiry-1',
+      version: null,
+      recipients: [
+        { user_id: 'owner-1', audience: 'school' },
+        { user_id: 'manager-1', audience: 'school' },
+      ],
+      learner_name: 'Dan Price',
+      area: 'DA16',
+      transmission: 'manual',
+    };
+    expect(planSchoolNotice(asked).map((one) => [one.userId, one.title, one.body, one.link, one.channels])).toEqual([
+      ['owner-1', 'Dan Price asked about lessons', 'Near DA16, for manual lessons. They are waiting in New pupils.', '/app/school/pupils', ['in_app', 'push', 'email']],
+      ['manager-1', 'Dan Price asked about lessons', 'Near DA16, for manual lessons. They are waiting in New pupils.', '/app/school/pupils', ['in_app', 'push', 'email']],
+    ]);
+    expect(planSchoolNotice({ ...asked, area: null, transmission: null })[0]?.body).toBe('They are waiting in New pupils.');
+  });
+
   it('offers a pupil to the instructor with what they see before accepting, and when to answer by', () => {
     expect(planSchoolNotice(offered)).toEqual([
       expect.objectContaining({

@@ -196,7 +196,15 @@ export type HistoryEntry =
       feeFor: 'cancelled' | 'no_show' | null;
     }
   | { kind: 'refund'; at: Date; amountPence: number; status: RefundStatus; refundKind: RefundKind }
-  | { kind: 'credit'; at: Date; move: Exclude<LedgerKind, 'purchase'>; minutes: number; lessonAt: Date | null };
+  | {
+      kind: 'credit';
+      at: Date;
+      move: Exclude<LedgerKind, 'purchase'>;
+      minutes: number;
+      lessonAt: Date | null;
+      /** For credit kept as a fee: whether the lesson was called off late or nobody came (R-09). */
+      feeFor?: 'cancelled' | 'no_show' | null;
+    };
 
 export interface HistoryLine {
   title: string;
@@ -262,7 +270,7 @@ export function historyLine(entry: HistoryEntry): HistoryLine {
       const titles: Record<Exclude<LedgerKind, 'purchase'>, string> = {
         use: `${minutes} of credit used`,
         return: `${minutes} of credit back`,
-        fee: `${minutes} of credit kept as a late fee`,
+        fee: entry.feeFor === 'no_show' ? `${minutes} of credit kept as a no-show fee` : `${minutes} of credit kept as a late fee`,
         expiry: `${minutes} of credit ran out`,
         refund: `${minutes} of credit refunded`,
         adjustment: entry.minutes > 0 ? `${minutes} of credit added` : `${minutes} of credit taken off`,

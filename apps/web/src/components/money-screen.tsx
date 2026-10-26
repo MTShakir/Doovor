@@ -11,6 +11,7 @@ import { icons } from '@/lib/icons';
 import Link from 'next/link';
 import { connection } from 'next/server';
 import { Suspense } from 'react';
+import { requireSignedIn } from '@/lib/auth/session';
 import { paymentsState } from '@/lib/payments/connect';
 import { feesOwedToSchool, owedWords } from '@/lib/school/fees';
 import { moneySummary } from '@/lib/payments/money-summary';
@@ -37,14 +38,9 @@ export function MoneyScreen({
         title="Money"
         subtitle="What you have taken, and what is owed."
         actions={
-          // How learners pay and what their receipts say live on a screen of their own (D-195),
-          // and this is where somebody looking at their money goes looking for them.
-          <Button variant="secondary" className="px-4" asChild>
-            <Link href={screen === 'school' ? '/app/school/money/setup' : '/app/instructor/money/setup'}>
-              <icons.paymentSetup className="size-5 shrink-0" aria-hidden />
-              Payment setup
-            </Link>
-          </Button>
+          <Suspense fallback={null}>
+            <PaymentSetupLink screen={screen} />
+          </Suspense>
         }
       />
       <div className="flex flex-col gap-4 px-4 md:max-w-2xl md:px-8">
@@ -53,6 +49,26 @@ export function MoneyScreen({
         </Suspense>
       </div>
     </main>
+  );
+}
+
+/**
+ * How learners pay and what their receipts say live on a screen of their own (D-195), and this is
+ * where somebody looking at their money goes looking for them. Not for somebody teaching under a
+ * school, which takes the payments: there it only opened a screen saying so (D-396).
+ */
+async function PaymentSetupLink({ screen }: { screen: 'instructor' | 'school' }) {
+  if (screen === 'instructor') {
+    const { access } = await requireSignedIn();
+    if (access.memberships.some((one) => one.businessType === 'school' && one.role === 'instructor')) return null;
+  }
+  return (
+    <Button variant="secondary" className="px-4" asChild>
+      <Link href={screen === 'school' ? '/app/school/money/setup' : '/app/instructor/money/setup'}>
+        <icons.paymentSetup className="size-5 shrink-0" aria-hidden />
+        Payment setup
+      </Link>
+    </Button>
   );
 }
 

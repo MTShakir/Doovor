@@ -62,6 +62,9 @@ export function lessonState(facts: LessonFacts): LessonState {
   if (facts.source === 'gap_fill' && facts.status !== 'completed') return 'gap-fill';
   if (facts.paymentStatus === 'paid_credit') return 'credit';
   if (facts.paymentStatus.startsWith('paid_')) return 'paid';
+  // Given back and still going ahead, as a lesson the school gave somebody: nothing is owed, so the
+  // outline the credit pill has rather than the red one that asks for money (PAY-07, D-401).
+  if (facts.paymentStatus === 'refunded' || facts.paymentStatus === 'partially_refunded') return 'credit';
   if (facts.status === 'completed') return 'completed';
   return 'unpaid';
 }
@@ -79,6 +82,8 @@ export function lessonStateLabel(facts: LessonFacts): string | undefined {
   if (facts.status === 'expired') return 'Expired';
   // Asked for and not answered yet: not booked, whatever the card has done (BOK-06, D-377).
   if (facts.status === 'requested') return 'Requested';
+  if (facts.status !== 'cancelled' && facts.paymentStatus === 'refunded') return 'Refunded';
+  if (facts.status !== 'cancelled' && facts.paymentStatus === 'partially_refunded') return 'Part refunded';
   if (lessonState(facts) !== 'paid') return undefined;
   // Part of it came from credit and the rest was paid, so the pill says both. "Paid (cash)" on a
   // lesson an hour of credit went into is not what happened (D-225). Every method names itself,

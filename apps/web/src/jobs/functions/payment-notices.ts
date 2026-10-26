@@ -2,6 +2,7 @@ import { cron } from 'inngest';
 import { inngest } from '../client';
 import { creditLow, paymentReceived } from '../events';
 import { thenSend } from '../notifications-send';
+import { sendDailyBookingSummaries } from '../notify';
 import { notifyAboutPayment, notifyCreditLow, notifyOverdueLessons, sendDailyPaymentSummaries } from '../payment-notify';
 import { schedules } from '../schedules';
 
@@ -40,12 +41,15 @@ export const creditLowNotices = inngest.createFunction(
   ({ event }) => notifyCreditLow(event.data.business_id, event.data.learner_id).then(thenSend),
 );
 
-/** Each school's owners and managers get yesterday's payments in one message, each morning (M3-22). */
+/**
+ * Each school's owners and managers get yesterday in two messages each morning: the payments
+ * (M3-22) and the lessons booked (D-392). One run for both, as the free plan counts runs (D-271).
+ */
 export const dailyPaymentSummaries = inngest.createFunction(
   {
     id: 'daily-payment-summaries',
     name: 'Sum up the day before for each school',
     triggers: [cron(schedules.dailySummaries)],
   },
-  () => sendDailyPaymentSummaries().then(thenSend),
+  async () => thenSend({ payments: await sendDailyPaymentSummaries(), bookings: await sendDailyBookingSummaries() }),
 );

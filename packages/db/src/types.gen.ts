@@ -4200,6 +4200,10 @@ export type Database = {
       feature_flags: { Args: never; Returns: Json }
       founding_places: { Args: never; Returns: Json }
       gallery_is_open: { Args: { p_business_id: string }; Returns: boolean }
+      give_lesson_to: {
+        Args: { p_booking_id: string; p_instructor_id: string }
+        Returns: string
+      }
       give_school_enquiry: {
         Args: {
           p_enquiry_id: string
@@ -4321,6 +4325,7 @@ export type Database = {
       learner_introduced_by: { Args: { p_learner_id: string }; Returns: string }
       learner_moves_for_me: { Args: never; Returns: Json }
       leave_learner_capture: { Args: { p_token: string }; Returns: number }
+      lesson_cover_choices: { Args: { p_booking_id: string }; Returns: Json }
       lesson_reminder_options: { Args: { p_booking_id: string }; Returns: Json }
       links_still_owing: { Args: { p_business_id: string }; Returns: Json }
       list_my_sessions: {
@@ -4807,6 +4812,10 @@ export type Database = {
         Args: { p_business_id: string; p_learner_id: string }
         Returns: Json
       }
+      system_daily_booking_summaries: {
+        Args: { p_from: string; p_to: string }
+        Returns: Json
+      }
       system_daily_payment_summaries: {
         Args: { p_from: string; p_to: string }
         Returns: Json
@@ -4837,6 +4846,10 @@ export type Database = {
       system_forget_school_enquiries: { Args: never; Returns: number }
       system_hold_cancellations: {
         Args: { p_booking_id: string }
+        Returns: Json
+      }
+      system_instructor_named: {
+        Args: { p_instructor_id: string }
         Returns: Json
       }
       system_instructor_notice: {

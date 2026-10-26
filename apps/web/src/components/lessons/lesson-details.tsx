@@ -13,13 +13,14 @@ import { Sheet } from '@repo/ui/sheet';
 import { Skeleton } from '@repo/ui/skeleton';
 import { StatusPill } from '@repo/ui/status-pill';
 import { toast } from '@repo/ui/toast';
-import { Banknote, CalendarClock, CalendarX, Mail, MapPin, Navigation, Pencil, Phone, UserRound, X } from 'lucide-react';
+import { Banknote, CalendarClock, CalendarX, Mail, MapPin, Navigation, Pencil, Phone, UserRound, Users, X } from 'lucide-react';
 import { icons } from '@/lib/icons';
 import type { Route } from 'next';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState, useTransition, type ReactNode } from 'react';
 import { lessonDetailsFor, sendReminder, setLessonPickup } from '@/app/(portal)/app/instructor/booking-actions';
+import { GiveLessonSheet } from '@/components/diary/give-lesson';
 import { LessonSheets } from '@/components/diary/lesson-sheets';
 import { StartLessonButton } from '@/components/lessons/start-lesson';
 import type { LessonDetails } from '@/lib/lessons/details';
@@ -52,7 +53,7 @@ function Section({ title, children }: { title: string; children: ReactNode }) {
 /** The one option in the list that is not a place: it opens the learner's own form (D-222). */
 const addPickupValue = '__add__';
 
-type Action = 'move' | 'cancel' | 'paid' | 'stop';
+type Action = 'move' | 'cancel' | 'paid' | 'stop' | 'give';
 type Channel = 'email' | 'sms';
 
 /**
@@ -136,6 +137,8 @@ export function LessonDetailsBody({
   const phone = details.learner.phone;
   const remindable = details.status === 'confirmed' && ahead;
   const changeable = editable && !asked && !off && !done;
+  // The office covers a lesson still to come with another of the school's instructors (D-397).
+  const givable = portal === 'school' && details.status === 'confirmed' && ahead;
 
   return (
     <div className="flex flex-col gap-6">
@@ -276,7 +279,7 @@ export function LessonDetailsBody({
         </Section>
       ) : null}
 
-      {payable || changeable ? (
+      {payable || changeable || givable ? (
         <Section title="This lesson">
           <div className="flex flex-wrap gap-2">
             {payable ? (
@@ -301,6 +304,12 @@ export function LessonDetailsBody({
                   Cancel lesson
                 </Button>
               </>
+            ) : null}
+            {givable ? (
+              <Button variant="secondary" onClick={() => { onAction('give'); }}>
+                <Users className="size-5" aria-hidden />
+                Give to another instructor
+              </Button>
             ) : null}
           </div>
           {/* BOK-05, D-380: a slot with no end goes on booking weeks ahead until somebody stops it,
@@ -395,6 +404,14 @@ export function LessonDetailsSheet({
 
   if (state.kind === 'ready' && action) {
     const { details } = state;
+    if (action === 'give') {
+      return (
+        <GiveLessonSheet
+          lesson={{ bookingId: details.id, learnerName: details.learner.name, startsAt: details.startsAt, instructorName: details.instructorName }}
+          onClose={onClose}
+        />
+      );
+    }
     return (
       <LessonSheets
         lesson={{

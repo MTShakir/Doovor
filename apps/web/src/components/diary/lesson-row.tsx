@@ -22,6 +22,7 @@ export function LessonRow({
   lesson,
   showInstructor = false,
   canAnswer = false,
+  answersRequests = false,
   onMove,
   onCancel,
   answers = nothingToSay,
@@ -36,6 +37,11 @@ export function LessonRow({
   showInstructor?: boolean;
   /** BOK-06: somebody who may accept or decline a request is looking at it. */
   canAnswer?: boolean;
+  /**
+   * The school's office, which answers a request for one of its instructors and does nothing else
+   * from the row: the rest of what it does to a lesson is in its sheet (D-330, D-399).
+   */
+  answersRequests?: boolean;
   /** BOK-08, BOK-09: opening the sheets the day holds for the whole list. */
   onMove?: () => void;
   onCancel?: () => void;
@@ -124,7 +130,7 @@ export function LessonRow({
         summary
       )}
       {/* Its own line: on a phone there is no room beside a lesson for two more buttons. */}
-      {canAnswer && asked ? (
+      {(canAnswer || answersRequests) && asked ? (
         <div className="flex justify-end gap-2">
           <RequestActions bookingId={lesson.id} learnerName={lesson.learnerName} />
         </div>

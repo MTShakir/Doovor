@@ -12,6 +12,7 @@ import { icons } from '@/lib/icons';
 import { feesStillOwed, ownFees, owedWords, type FeesStillOwed } from '@/lib/school/fees';
 import { ownSchoolLink } from '@/lib/school/link';
 import { pupilOffersFor } from '@/lib/school/pupil-offers';
+import { createSupabaseServerClient } from '@/lib/supabase/server';
 import { PupilOffersScreen } from './pupil-offers-screen';
 import { LeaveSchool } from './leave-school';
 
@@ -31,8 +32,16 @@ export default function InstructorSchoolPage() {
   );
 }
 
+/** Whether the school lets this member set their own prices (SCH-02, D-120). */
+async function setsOwnPrices(businessId: string, userId: string): Promise<boolean> {
+  const supabase = await createSupabaseServerClient();
+  const { data } = await supabase.from('memberships').select('permissions').eq('business_id', businessId).eq('user_id', userId).maybeSingle();
+  const permissions: unknown = data?.permissions;
+  return typeof permissions === 'object' && permissions !== null && (permissions as Record<string, unknown>).set_own_prices === true;
+}
+
 async function School() {
-  const { access } = await requirePortal('instructor');
+  const { access, session } = await requirePortal('instructor');
   const own = access.memberships.find((one) => one.businessType === 'independent' && one.role === 'owner');
   const [linked, owed] = await Promise.all([ownSchoolLink(), own ? feesStillOwed(own.businessId) : Promise.resolve([])]);
 
@@ -40,6 +49,7 @@ async function School() {
     // Somebody teaching under a school is at one, not linked to one, and was told they were not
     // at a school at all (D-374).
     const under = access.memberships.find((one) => one.businessType === 'school' && one.role === 'instructor');
+    const ownPrices = under ? await setsOwnPrices(under.businessId, session.userId) : false;
     return (
       <>
         <Card>
@@ -47,7 +57,11 @@ async function School() {
             <EmptyState
               icon={icons.school}
               title={`You teach for ${under.businessName}`}
-              description="The school sets your prices and takes the payments. Linking is for instructors with a business of their own."
+              description={
+                ownPrices
+                  ? 'The school takes the payments, and lets you set your own prices in Settings. Linking is for instructors with a business of their own.'
+                  : 'The school sets your prices and takes the payments. Linking is for instructors with a business of their own.'
+              }
             />
           ) : (
             <EmptyState

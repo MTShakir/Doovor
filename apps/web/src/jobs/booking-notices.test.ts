@@ -4,6 +4,8 @@ import {
   notificationRows,
   peopleInvolved,
   planBookingNotifications,
+  planDailyBookingSummary,
+  formerInstructorId,
   rowContextFor,
   type BookingNotice,
 } from './booking-notices';
@@ -54,6 +56,16 @@ describe('which notification an event comes to (NTF-03)', () => {
     expect(planBookingNotifications({ event: created, notice: later })).toEqual([]);
   });
 
+  it('says a lesson booked every week until it is stopped does not end with the last one in the diary (D-394)', () => {
+    const created = { name: 'booking.created', payload: { status: 'confirmed' } };
+    const open = { ...notice, series: { count: 4, first: true, last_starts_at: '2026-10-07T08:00:00+00:00', open_ended: true } };
+    expect(planBookingNotifications({ event: created, notice: open }).map((one) => one.body)).toEqual([
+      'Wed 16 Sep at 09:00 with Sarah Khan. The first of 4 booked so far, every Wednesday at 09:00 until it is stopped.',
+      'Wed 16 Sep at 09:00 with Jack Taylor. The first of 4 booked so far, every Wednesday at 09:00 until it is stopped.',
+      'Wed 16 Sep at 09:00 with Sarah Khan. The first of 4 booked so far, every Wednesday at 09:00 until it is stopped.',
+    ]);
+  });
+
   it('says nothing about a lesson waiting to be paid for, or one marked done that owes nothing', () => {
     expect(kindForEvent({ name: 'booking.created', payload: { status: 'pending_payment' } }, notice)).toBeNull();
     expect(kindForEvent({ name: 'booking.completed', payload: {} }, notice)).toBeNull();
@@ -64,7 +76,7 @@ describe('whoever made the change is told in the app only (NTF-03, D-384)', () =
   const channelsOf = (planned: ReturnType<typeof planBookingNotifications>) =>
     Object.fromEntries(planned.map((one) => [one.userId, one.channels]));
 
-  it('puts a lesson the instructor booked in their inbox, and emails the learner and the school as before', () => {
+  it('puts a lesson the instructor booked in their inbox, emails the learner, and keeps the school to its inbox and the morning digest', () => {
     const planned = planBookingNotifications({
       event: { name: 'booking.created', payload: { status: 'confirmed', actor: 'instructor-1' } },
       notice,
@@ -72,7 +84,8 @@ describe('whoever made the change is told in the app only (NTF-03, D-384)', () =
     expect(channelsOf(planned)).toEqual({
       'learner-1': ['in_app', 'push', 'email'],
       'instructor-1': ['in_app'],
-      'manager-1': ['in_app', 'push', 'email'],
+      // Appendix B's manager digest: one message the next morning, not one a lesson (D-392).
+      'manager-1': ['in_app'],
     });
   });
 
@@ -436,5 +449,78 @@ describe('disputing a no-show (R-09, M3-19)', () => {
     expect(waived[0]?.title).toBe('Your no-show dispute was answered');
     expect(waived[0]?.body).toBe('Wed 16 Sep at 09:00 with Sarah Khan. The £42 fee is waived. £42 is going back to your card.');
     expect(decided({ outcome: 'kept' })[0]?.body).toBe('Wed 16 Sep at 09:00 with Sarah Khan. The fee stands.');
+  });
+});
+
+describe("a school's lessons booked, the next morning (Appendix B's manager digest, D-392)", () => {
+  const summary = {
+    business_id: 'business-1',
+    business_name: 'Quayside Driving School',
+    count: 9,
+    instructors: [
+      { name: 'Sarah Khan', count: 5 },
+      { name: 'Ian Holt', count: 3 },
+      { name: 'Ivy Moss', count: 1 },
+    ],
+    user_ids: ['owner-1', 'manager-1'],
+  };
+
+  it('tells the owner and managers how many, and with whom, once for the day', () => {
+    const planned = planDailyBookingSummary(summary, '2026-09-14');
+    expect(planned.map((one) => [one.userId, one.title, one.body, one.link, one.channels])).toEqual([
+      [
+        'owner-1',
+        'Lessons booked yesterday',
+        '9 lessons booked on Mon 14 Sep at Quayside Driving School: 5 with Sarah Khan, 3 with Ian Holt and 1 with Ivy Moss.',
+        '/app/school/diary',
+        ['in_app', 'push', 'email'],
+      ],
+      [
+        'manager-1',
+        'Lessons booked yesterday',
+        '9 lessons booked on Mon 14 Sep at Quayside Driving School: 5 with Sarah Khan, 3 with Ian Holt and 1 with Ivy Moss.',
+        '/app/school/diary',
+        ['in_app', 'push', 'email'],
+      ],
+    ]);
+    expect(planned[0]?.dedupeKey).toBe('booking.daily_summary:business-1:2026-09-14:owner-1');
+  });
+
+  it('says so when they were all with one instructor, and leaves out anybody who switched it off', () => {
+    const one = planDailyBookingSummary(
+      { ...summary, count: 1, instructors: [{ name: 'Sarah Khan', count: 1 }] },
+      '2026-09-14',
+      new Map([['manager-1', ['in_app', 'push', 'email']]]),
+    );
+    expect(one.map((planned) => [planned.userId, planned.body])).toEqual([
+      ['owner-1', '1 lesson booked on Mon 14 Sep at Quayside Driving School, all with Sarah Khan.'],
+    ]);
+  });
+});
+
+describe('a lesson the school gave to another instructor (D-397)', () => {
+  const event = { name: 'booking.reassigned', payload: { booking_id: 'booking-1', was_instructor_id: 'profile-9', actor: 'manager-1' } };
+  const former = { userId: 'instructor-9', name: 'Grace Mensah' };
+
+  it('reads which instructor it was taken from, by id only', () => {
+    expect(formerInstructorId(event)).toBe('profile-9');
+    expect(formerInstructorId({ name: 'booking.rescheduled', payload: { was_instructor_id: 'profile-9' } })).toBeNull();
+    expect(kindForEvent(event, notice)).toBe('booking.reassigned');
+  });
+
+  it('tells the learner, both instructors and the rest of the office, and whoever gave it in the inbox only', () => {
+    const planned = planBookingNotifications({ event, notice, former });
+    expect(planned.map((one) => [one.userId, one.title, one.body, one.channels])).toEqual([
+      ['learner-1', 'Your lesson is with Sarah Khan now', 'Wed 16 Sep at 09:00 with Sarah Khan. It was with Grace Mensah before.', ['in_app', 'push', 'email']],
+      ['instructor-1', 'Jack Taylor has a lesson with you', 'Wed 16 Sep at 09:00 with Jack Taylor. It was with Grace Mensah before.', ['in_app', 'push', 'email']],
+      ['manager-1', "Jack Taylor's lesson went to Sarah Khan", 'Wed 16 Sep at 09:00 with Sarah Khan. It was with Grace Mensah before.', ['in_app']],
+      ['instructor-9', "Jack Taylor's lesson went to Sarah Khan", 'Wed 16 Sep at 09:00. It is in their diary now.', ['in_app', 'push', 'email']],
+    ]);
+    expect(peopleInvolved(notice, former)).toEqual(['learner-1', 'instructor-1', 'manager-1', 'instructor-9']);
+  });
+
+  it('tells the instructor it was taken from once, as theirs, though they help run the school', () => {
+    const planned = planBookingNotifications({ event, notice: { ...notice, school_user_ids: ['manager-1', 'instructor-9'] }, former });
+    expect(planned.filter((one) => one.userId === 'instructor-9').map((one) => one.title)).toEqual(["Jack Taylor's lesson went to Sarah Khan"]);
   });
 });

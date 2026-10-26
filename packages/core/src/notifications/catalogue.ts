@@ -24,6 +24,8 @@ export interface NotificationSpec {
   audiences: NotificationAudience[];
   /** The channels this kind may use. Preferences can only narrow this. */
   channels: NotificationChannel[];
+  /** Fewer channels for one audience than `channels` gives the rest. */
+  byAudience?: Partial<Record<NotificationAudience, NotificationChannel[]>>;
   /**
    * A service message: something that happened to a booking or to money somebody has paid.
    * It always arrives in the inbox, whatever has been switched off (PECR, NFR-PRV-05).
@@ -34,12 +36,18 @@ export interface NotificationSpec {
 /** The kinds, in the order Appendix B lists them. */
 export const notificationKinds = [
   'booking.confirmed',
+  // Appendix B's "Manager digest" for a school: the lessons booked the day before, in one message
+  // each morning, rather than an email for every lesson its instructors book (D-392).
+  'booking.daily_summary',
   'booking.requested',
   'booking.answered',
   'booking.reminder',
   // Five minutes to go: the one an instructor acts on rather than reads (NTF-03, D-201).
   'booking.starting',
   'booking.rescheduled',
+  // Appendix B's "Lesson changed" when the change is who teaches it: the school's office gave the
+  // lesson to another of its instructors (D-397).
+  'booking.reassigned',
   'booking.cancelled',
   // Nobody came (R-09). Appendix B has no row of its own: a no-show counts as a late
   // cancellation, and is told to the same people on the same channels (D-093).
@@ -70,6 +78,8 @@ export const notificationKinds = [
   // asked whether to move, and an instructor and a school parting.
   'pupil.offered',
   'pupil.taken',
+  // Somebody asked for lessons on the school's own page: NTF-03's "new learner request" (D-398).
+  'pupil.asked',
   'school_fee.terms_set',
   'school_fee.due',
   'school_fee.settled',
@@ -93,7 +103,16 @@ export const notificationCatalogue: Record<NotificationKind, NotificationSpec> =
     category: 'bookings',
     audiences: ['learner', 'instructor', 'school'],
     channels: PUSH_AND_EMAIL,
+    // A school's office hears of each lesson in its inbox, and of the day's in the morning's digest.
+    byAudience: { school: ['in_app'] },
     essential: true,
+  },
+  'booking.daily_summary': {
+    kind: 'booking.daily_summary',
+    category: 'bookings',
+    audiences: ['school'],
+    channels: PUSH_AND_EMAIL,
+    essential: false,
   },
   'booking.requested': {
     kind: 'booking.requested',
@@ -127,6 +146,13 @@ export const notificationCatalogue: Record<NotificationKind, NotificationSpec> =
   },
   'booking.rescheduled': {
     kind: 'booking.rescheduled',
+    category: 'bookings',
+    audiences: ['learner', 'instructor', 'school'],
+    channels: PUSH_AND_EMAIL,
+    essential: true,
+  },
+  'booking.reassigned': {
+    kind: 'booking.reassigned',
     category: 'bookings',
     audiences: ['learner', 'instructor', 'school'],
     channels: PUSH_AND_EMAIL,
@@ -268,6 +294,15 @@ export const notificationCatalogue: Record<NotificationKind, NotificationSpec> =
     channels: ['in_app', 'push'],
     essential: false,
   },
+  // Somebody waiting to hear back, whom the office answers as it answers a request: by email too,
+  // for an office at a desk, and always in the inbox (D-398).
+  'pupil.asked': {
+    kind: 'pupil.asked',
+    category: 'bookings',
+    audiences: ['school'],
+    channels: PUSH_AND_EMAIL,
+    essential: true,
+  },
   // Money an instructor owes a school, or will: service messages, as a fee is (D-287).
   'school_fee.terms_set': {
     kind: 'school_fee.terms_set',
@@ -339,9 +374,20 @@ const specsIn = (category: NotificationCategory, audiences: readonly Notificatio
     (spec) => spec.category === category && (audiences.length === 0 || spec.audiences.some((one) => audiences.includes(one))),
   );
 
+/** The channels one kind may use for one audience. */
+export function audienceChannels(spec: NotificationSpec, audience: NotificationAudience): NotificationChannel[] {
+  return spec.byAudience?.[audience] ?? spec.channels;
+}
+
 /** Every channel anything in this group can use, for the people named, in the catalogue's order. */
 export function channelsInCategory(category: NotificationCategory, audiences: readonly NotificationAudience[] = []): NotificationChannel[] {
-  const used = new Set(specsIn(category, audiences).flatMap((spec) => spec.channels));
+  const used = new Set(
+    specsIn(category, audiences).flatMap((spec) =>
+      audiences.length === 0
+        ? spec.channels
+        : spec.audiences.filter((one) => audiences.includes(one)).flatMap((one) => audienceChannels(spec, one)),
+    ),
+  );
   return notificationChannels.filter((channel) => used.has(channel));
 }
 

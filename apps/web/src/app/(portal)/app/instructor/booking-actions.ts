@@ -255,6 +255,53 @@ export async function moveLesson(input: unknown): Promise<Result<null>> {
   return ok(null);
 }
 
+/** Somebody at the school who could take a lesson instead, and why not where they cannot (D-397). */
+export interface CoverChoice {
+  instructorId: string;
+  name: string;
+  transmission: 'manual' | 'automatic' | 'both' | null;
+  /** A domain error code, such as SLOT_TAKEN, or null when they are free then. */
+  problem: string | null;
+}
+
+const coverSchema = z.object({ bookingId: z.uuid() });
+
+/** Who at the school could teach a lesson instead of the instructor it is with (SCH-02, D-397). */
+export async function coverChoices(input: unknown): Promise<Result<CoverChoice[]>> {
+  const parsed = coverSchema.safeParse(input);
+  if (!parsed.success) return err('VALIDATION_FAILED');
+
+  await requirePortal('school');
+  const supabase = await createSupabaseServerClient();
+  const { data, error } = await supabase.rpc('lesson_cover_choices', { p_booking_id: parsed.data.bookingId });
+  if (error) return err(parsePostgresError(error).code);
+
+  const rows = (data ?? []) as unknown as { instructor_id: string; name: string; transmission: CoverChoice['transmission']; problem: string | null }[];
+  return ok(rows.map((row) => ({ instructorId: row.instructor_id, name: row.name, transmission: row.transmission, problem: row.problem })));
+}
+
+const giveSchema = z.object({ bookingId: z.uuid(), instructorId: z.uuid() });
+
+/**
+ * The school's office gives a lesson still to come to another of its instructors, at the same time
+ * and price (SCH-02, D-120, D-397). The learner and both instructors are told.
+ */
+export async function giveLesson(input: unknown): Promise<Result<null>> {
+  const parsed = giveSchema.safeParse(input);
+  if (!parsed.success) return err('VALIDATION_FAILED');
+
+  await requirePortal('school');
+  const supabase = await createSupabaseServerClient();
+  const { error } = await supabase.rpc('give_lesson_to', {
+    p_booking_id: parsed.data.bookingId,
+    p_instructor_id: parsed.data.instructorId,
+  });
+  if (error) return err(parsePostgresError(error).code);
+
+  redraw();
+  return ok(null);
+}
+
 const stopWeeklySchema = z.object({ weeklyId: z.uuid() });
 
 /**
