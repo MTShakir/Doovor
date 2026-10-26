@@ -58,6 +58,11 @@ export const brand = {
     whatsApp: `https://wa.me/${supportNumber.slice(1)}`,
   },
   /**
+   * The free onboarding call an instructor books with the founder, on Calendly (D-406). The times
+   * are kept in Calendly and change there, so this address stays the same when they do.
+   */
+  onboardingCall: 'https://calendly.com/thedoovor/onboarding',
+  /**
    * The brand's own accounts on other sites (D-403), in the order they are listed. The handle is
    * thedoovor where the name alone was taken; YouTube and LinkedIn have the name itself. Each was
    * read from the live profile; check it there again before changing it here.

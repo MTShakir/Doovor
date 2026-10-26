@@ -72,6 +72,20 @@ describe('which host a request belongs on (D-084)', () => {
     expect(hostRedirect(site, `${guidePath(guide.slug)}/share.png`, '')).toBeNull();
   });
 
+  it('keeps the page the printed QR codes open on the public site, with where they came from (D-404)', () => {
+    expect(isSitePath('/join')).toBe(true);
+    expect(hostRedirect(site, '/join', '?utm_source=card')).toBeNull();
+    expect(hostRedirect(`www.${site}`, '/join', '?utm_source=leaflet')).toBeNull();
+    expect(hostRedirect(app, '/join', '?utm_source=flyer')).toEqual({ url: `${brand.productionUrl}/join?utm_source=flyer`, permanent: true });
+    // Not listed for search, and nothing that only starts like it.
+    for (const kind of sitemapKinds) {
+      expect(sitemapPaths(kind, { instructors: [], schools: [], places: [] })).not.toContain('/join');
+    }
+    expect(isSitePath('/joined')).toBe(false);
+    // Getting started is the app's, whichever host it is asked for on.
+    expect(hostRedirect(site, '/start', '?utm_source=card')).toEqual({ url: `${brand.appUrl}/start?utm_source=card`, permanent: false });
+  });
+
   it('sends the app’s bare root to getting started, which knows where somebody signed in belongs', () => {
     expect(hostRedirect(app, '/', '?from=email')).toEqual({ url: `${brand.appUrl}/start?from=email`, permanent: false });
   });

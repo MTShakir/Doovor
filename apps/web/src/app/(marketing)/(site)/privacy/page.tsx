@@ -95,6 +95,10 @@ export default function PrivacyPage() {
               'How you found us',
               'Every Business has a referral code. If a Business joined through somebody else’s code we record which code, so the reward can be applied. It says one Business introduced another and nothing else.',
             ],
+            [
+              'Booking a call with us',
+              'If you book a free onboarding call on our page for instructors, Calendly takes your name, your email address, your mobile number and the time you chose, and passes them to us. We use them to ring you at that time and help you set up, and for nothing else.',
+            ],
           ]}
         />
       </LegalSection>
@@ -108,6 +112,7 @@ export default function PrivacyPage() {
             'To count how the product is used, but only once you have said yes to it. Nothing is counted before that.',
             'Anything you tell us about your health is held only because you chose to tell us, and for no other reason. Take it back and we stop holding it.',
             'To pass your details from a school to an instructor who works with it, because you asked the school for lessons and agreed to it, in the words we keep with what you asked.',
+            'To ring you about an onboarding call you booked and help you set up, because you asked us to.',
           ]}
         />
         <ForTheSolicitor>
@@ -120,9 +125,14 @@ export default function PrivacyPage() {
           The database, the files and the accounts are held in London, and the app itself runs in London. We keep
           encrypted backups of the database ourselves, in the United Kingdom. Errors and usage go to services in the
           European Union. Some of the companies below work outside the United Kingdom:
-          Stripe, Resend, Mapbox and Inngest may process what they handle outside the United Kingdom. If you sign in
-          with Google, Google handles that sign in. Text messages are sent through Twilio's Ireland region, so the
-          number a code goes to stays in the European Union.
+          Stripe, Resend, Mapbox, Inngest and Calendly may process what they handle outside the United Kingdom. If you
+          sign in with Google, Google handles that sign in. Text messages are sent through Twilio's Ireland region, so
+          the number a code goes to stays in the European Union.
+        </LegalText>
+        <LegalText>
+          Our page for instructors has a setup video from YouTube. Nothing is loaded from YouTube until you press play.
+          Once you do, the video comes from YouTube, and Google, which runs YouTube, decides what it records about that
+          under its own privacy policy.
         </LegalText>
         <LegalTable
           caption="The companies that hold something on our behalf."
@@ -136,12 +146,15 @@ export default function PrivacyPage() {
             ['PostHog', 'Counts how the product is used, once you have agreed. European Union.'],
             ['Sentry', 'Records errors so we can fix them. Reports reach it through our own server, so it never sees your address. European Union.'],
             ['Inngest', 'Runs the jobs behind reminders and receipts.'],
+            ['Calendly', 'Books the free onboarding call on our page for instructors, and holds the name, email address, number and time of each call booked.'],
           ]}
         />
         <ForTheSolicitor>
           <p>
             Please check this list against the processing agreements in place, add any transfer wording needed where a
             company is outside the United Kingdom, and say whether the list belongs here or in a separate register.
+            Please also confirm the wording for the setup video, which YouTube plays only once somebody presses play,
+            and whether YouTube belongs in this list as well.
           </p>
         </ForTheSolicitor>
       </LegalSection>
@@ -162,12 +175,14 @@ export default function PrivacyPage() {
             'Feedback you send us, and any screenshot with it: two years, the same as the audit trail.',
             'Asking a school about lessons: a year after the school closes it or an instructor takes you on, or a year after it was last touched if it is still waiting. Once an instructor takes you on, you are their learner and the rest of this notice applies.',
             'Fees between a school and the instructors who work with it, and what a school pays its instructors: with the rest of each business’s records.',
+            'An onboarding call you booked: until a year after the call.',
           ]}
         />
         <ForTheSolicitor>
           <p>
             Please confirm each period, and whether anything else must be kept for a set time, including the fees
-            between a school and the instructors who work with it and the pay records a school keeps.
+            between a school and the instructors who work with it, the pay records a school keeps, and how long a booked
+            onboarding call is kept in Calendly.
           </p>
         </ForTheSolicitor>
       </LegalSection>

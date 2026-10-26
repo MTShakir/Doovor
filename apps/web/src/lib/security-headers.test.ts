@@ -71,6 +71,17 @@ describe('the content security policy (NFR-SEC-03, M6-04)', () => {
     expect((policy['script-src'] ?? []).filter((source) => source.includes('mapbox'))).toEqual([]);
   });
 
+  it('admits the setup video and the onboarding call as frames, and nothing more of either (D-406)', () => {
+    const policy = directives(hosted);
+    expect(policy['frame-src']).toEqual(expect.arrayContaining(['https://www.youtube-nocookie.com', 'https://calendly.com']));
+    // The player that sets cookies as it loads is not the one embedded.
+    expect(policy['frame-src']).not.toContain('https://www.youtube.com');
+    // Each runs its own scripts inside its own frame, so neither is let into the page itself.
+    for (const directive of ['script-src', 'connect-src', 'img-src', 'style-src']) {
+      expect((policy[directive] ?? []).filter((source) => /youtube|calendly/.test(source)), directive).toEqual([]);
+    }
+  });
+
   it('admits the database, its socket, and the host that counts things', () => {
     const policy = directives(hosted);
     expect(policy['connect-src']).toEqual(expect.arrayContaining(['https://abcdefgh.supabase.co', 'wss://abcdefgh.supabase.co']));

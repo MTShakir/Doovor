@@ -4,7 +4,7 @@ import { formatPence } from '@repo/core/money';
 import { Button } from '@repo/ui/button';
 import { ProgressBar } from '@repo/ui/progress';
 import { cn } from '@repo/ui/lib/cn';
-import { Check, Clock, type LucideIcon } from 'lucide-react';
+import { Check, ChevronDown, Clock, type LucideIcon } from 'lucide-react';
 import type { ReactNode } from 'react';
 import type { FoundingPlaces } from '@/lib/site/founding';
 import type { FoundingPrice, PlanSummary } from '@/lib/site/plan-features';
@@ -65,6 +65,38 @@ export function FoundingBadge({ places, audience = 'instructors' }: { places: Fo
   );
 }
 
+/**
+ * The traffic light the brand's story moves through (D-404): red is the old way, red and amber the
+ * moment before it changes, and green the product. The one place red and green are used as colour
+ * rather than as a payment's state. It repeats the words beside it, so it is hidden from readers.
+ */
+export type Signal = 'red' | 'red-and-amber' | 'green';
+
+export function TrafficLight({ lit }: { lit: Signal }) {
+  const lamps = [
+    { colour: 'bg-red', on: lit !== 'green' },
+    { colour: 'bg-yellow', on: lit === 'red-and-amber' },
+    { colour: 'bg-green', on: lit === 'green' },
+  ];
+  return (
+    <span aria-hidden className="inline-flex h-7 w-3.5 shrink-0 flex-col items-center justify-center gap-0.5 rounded-full bg-black">
+      {lamps.map(({ colour, on }) => (
+        <span key={colour} className={cn('size-1.5 rounded-full', on ? colour : 'bg-grey-700')} />
+      ))}
+    </span>
+  );
+}
+
+/** A section's small first line, beside the light that says where in the story it is. */
+export function SignalEyebrow({ lit, children }: { lit: Signal; children: ReactNode }) {
+  return (
+    <span className="inline-flex items-center gap-2">
+      <TrafficLight lit={lit} />
+      {children}
+    </span>
+  );
+}
+
 /** One thing the product does, told in a few points beside a glimpse of it, alternating sides. */
 export function FeatureStory({
   id,
@@ -75,14 +107,17 @@ export function FeatureStory({
   visual,
   flip = false,
   tone = 'white',
+  action,
 }: {
   id: string;
-  eyebrow: string;
+  eyebrow: ReactNode;
   title: string;
   description: string;
   /** What it does, each in a line. Those on Pro say so, rather than being sold as on every plan. */
   points: readonly { text: string; pro?: boolean }[];
   visual: ReactNode;
+  /** A button under the points, for a page that asks again as it goes (D-406). */
+  action?: ReactNode;
   /** The glimpse on the left, so a page of these does not read as one long column. */
   flip?: boolean;
   tone?: 'white' | 'grey';
@@ -109,6 +144,7 @@ export function FeatureStory({
               </li>
             ))}
           </ul>
+          {action === undefined ? null : <div className="mt-4">{action}</div>}
         </div>
         <div className={cn('flex justify-center', flip ? 'md:order-1 md:justify-start' : 'md:justify-end')}>{visual}</div>
       </div>
@@ -131,17 +167,41 @@ export function QuestionList({ questions }: { questions: readonly { question: st
 }
 
 /**
+ * The same questions, each opening onto its answer, for a page read on a phone with a minute to
+ * spare: the list is short enough to find the one that is somebody's own (D-404). A disclosure the
+ * browser draws, so it opens before the page has loaded anything else, or with no script at all.
+ */
+export function QuestionAccordion({ questions }: { questions: readonly { question: string; answer: string }[] }) {
+  return (
+    <div className="flex flex-col divide-y divide-grey-200 border-y border-grey-200">
+      {questions.map(({ question, answer }) => (
+        <details key={question} className="group">
+          <summary className="flex min-h-14 cursor-pointer list-none items-center justify-between gap-4 py-3 text-h3 text-black [&::-webkit-details-marker]:hidden">
+            {question}
+            <ChevronDown size={20} strokeWidth={2} className="shrink-0 transition-transform duration-200 ease-out group-open:rotate-180" aria-hidden />
+          </summary>
+          <p className="max-w-3xl pb-5 text-body text-pretty text-grey-700">{answer}</p>
+        </details>
+      ))}
+    </div>
+  );
+}
+
+/**
  * A band of the page, with a heading of its own. Grey bands separate what sits either side. Its id
  * is what a link to it goes to, as "Find an instructor" and "See pricing" do (D-364).
  */
 export function Band({
   id,
+  eyebrow,
   title,
   description,
   tone = 'white',
   children,
 }: {
   id: string;
+  /** A small line over the heading: where in the page's story this band is (D-404). */
+  eyebrow?: ReactNode;
   title: string;
   description?: string;
   tone?: 'white' | 'grey';
@@ -151,6 +211,7 @@ export function Band({
     <section id={id} aria-labelledby={`${id}-heading`} className={tone === 'grey' ? 'bg-grey-100' : 'bg-white'}>
       <div className="mx-auto flex w-full max-w-6xl flex-col gap-8 px-4 py-14 md:px-6 md:py-20">
         <div className="flex max-w-2xl flex-col gap-3">
+          {eyebrow === undefined ? null : <p className="text-small font-semibold text-grey-700">{eyebrow}</p>}
           <h2 id={`${id}-heading`} className="text-h1 text-balance text-black">
             {title}
           </h2>
@@ -184,10 +245,13 @@ export function FeatureGrid({ features, tone = 'white' }: { features: readonly F
   );
 }
 
+/** Columns on a wide screen, one for each step: three steps do not sit in the room for five. */
+const stepColumns: Record<number, string> = { 3: 'md:grid-cols-3', 4: 'md:grid-cols-4' };
+
 /** Steps that happen in this order, and only then numbered. */
 export function Steps({ steps }: { steps: readonly { title: string; description: string }[] }) {
   return (
-    <ol className="grid grid-cols-[minmax(0,1fr)] gap-6 md:grid-cols-5">
+    <ol className={cn('grid grid-cols-[minmax(0,1fr)] gap-6', stepColumns[steps.length] ?? 'md:grid-cols-5')}>
       {steps.map((step, index) => (
         <li key={step.title} className="flex flex-col gap-2 border-t-2 border-black pt-4">
           <span className="text-small font-semibold text-grey-700 tabular-nums">Step {index + 1}</span>
@@ -215,13 +279,19 @@ export function Steps({ steps }: { steps: readonly { title: string; description:
  * page chooses the button's words, since it knows where it leads.
  */
 export function FoundingOffer({
+  id = 'founding-offer',
   action,
   places,
   audience = 'instructors',
+  note,
 }: {
+  /** Named for its heading, so a page that shows it twice, as the design page does, names each. */
+  id?: string;
   action?: ReactNode;
   places?: FoundingPlaces | null;
   audience?: 'instructors' | 'schools';
+  /** A last line while the places are open: what anybody who misses one gets instead (D-404). */
+  note?: string;
 }) {
   const counted = places?.[audience] ?? null;
   const closed = counted?.full === true;
@@ -229,11 +299,11 @@ export function FoundingOffer({
   const count = counted === null ? null : foundingCountWords(counted);
 
   return (
-    <section aria-labelledby="founding-offer-heading" className="mx-auto w-full max-w-6xl px-4 md:px-6">
+    <section aria-labelledby={`${id}-heading`} className="mx-auto w-full max-w-6xl px-4 md:px-6">
       <div className="flex flex-col gap-6 rounded-card bg-yellow p-6 text-black md:flex-row md:items-center md:justify-between md:gap-10 md:p-10">
         <div className="flex max-w-2xl flex-col gap-2">
           <p className="text-small font-semibold">Founding offer</p>
-          <h2 id="founding-offer-heading" className="text-h1 text-balance">
+          <h2 id={`${id}-heading`} className="text-h1 text-balance">
             {closed ? 'Start on the paid plan, free' : `The paid plan free for ${foundingTermWords(months)}`}
           </h2>
           <p className="text-body">
@@ -243,6 +313,7 @@ export function FoundingOffer({
                 'The founding places have all gone. Every new business still starts on the paid plan free for a while, with no card needed.'
               : `Pro for the first ${String(foundingOffer.instructorLimit)} independent instructors, and the School plan for the first ${String(foundingOffer.schoolLimit)} driving schools. No card needed.`}
           </p>
+          {closed || note === undefined ? null : <p className="text-body font-semibold">{note}</p>}
           {count === null || counted === null ? null : (
             <div className="mt-3 flex max-w-md flex-col gap-2" data-testid="founding-count">
               <div className="flex items-baseline justify-between gap-3">
@@ -266,12 +337,27 @@ export function FoundingOffer({
 }
 
 /** The last word on a page: what to do next, on black. */
-export function ClosingCall({ title, description, action }: { title: string; description: string; action: ReactNode }) {
+export function ClosingCall({
+  id,
+  eyebrow,
+  title,
+  description,
+  action,
+}: {
+  /** For a link to it, or something on the page that keeps out of its way (D-404). */
+  id?: string;
+  eyebrow?: ReactNode;
+  title: string;
+  description: string;
+  action: ReactNode;
+}) {
+  const headingId = `${id ?? 'closing'}-heading`;
   return (
-    <section aria-labelledby="closing-heading" className="bg-black text-white">
+    <section id={id} aria-labelledby={headingId} className="bg-black text-white">
       <div className="mx-auto flex w-full max-w-6xl flex-col gap-6 px-4 py-14 md:flex-row md:items-center md:justify-between md:px-6 md:py-20">
         <div className="flex max-w-2xl flex-col gap-3">
-          <h2 id="closing-heading" className="text-h1 text-balance">
+          {eyebrow === undefined ? null : <p className="text-small font-semibold">{eyebrow}</p>}
+          <h2 id={headingId} className="text-h1 text-balance">
             {title}
           </h2>
           <p className="text-body text-pretty">{description}</p>

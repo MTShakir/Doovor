@@ -14,6 +14,8 @@ export const publicPages = [
   '/learners',
   '/pricing',
   '/instructors-software',
+  // The page the printed QR codes open (D-404).
+  '/join',
   '/driving-schools-software',
   '/guides',
   '/guides/making-tax-digital-for-driving-instructors',

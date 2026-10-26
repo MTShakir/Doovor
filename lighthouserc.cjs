@@ -1,7 +1,8 @@
 /**
  * Lighthouse on the public pages (NFR-PERF-04, M5-24): an instructor's profile, a school's profile, a
- * city, an area and a city's automatic page, from the production build and the seeded database, with
- * the app already running on port 3000 (see the Lighthouse job in .github/workflows/ci.yml).
+ * city, an area, a city's automatic page, and the page the printed QR codes open, as a scanned card
+ * opens it (D-404), from the production build and the seeded database, with the app already running
+ * on port 3000 (see the Lighthouse job in .github/workflows/ci.yml).
  *
  * Each page is measured three times as Lighthouse measures by default: a mid-range phone on a slow 4G
  * connection. The median of each page's three scores must be 90 or more for performance, accessibility,
@@ -24,6 +25,7 @@ const pages = [
   `${origin}/driving-lessons/manchester`,
   `${origin}/driving-lessons/manchester/salford`,
   `${origin}/driving-lessons/manchester/automatic`,
+  `${origin}/join?utm_source=card`,
 ];
 
 module.exports = {
