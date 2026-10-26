@@ -107,6 +107,7 @@ export function FeatureStory({
   visual,
   flip = false,
   tone = 'white',
+  action,
 }: {
   id: string;
   eyebrow: ReactNode;
@@ -115,6 +116,8 @@ export function FeatureStory({
   /** What it does, each in a line. Those on Pro say so, rather than being sold as on every plan. */
   points: readonly { text: string; pro?: boolean }[];
   visual: ReactNode;
+  /** A button under the points, for a page that asks again as it goes (D-405). */
+  action?: ReactNode;
   /** The glimpse on the left, so a page of these does not read as one long column. */
   flip?: boolean;
   tone?: 'white' | 'grey';
@@ -141,6 +144,7 @@ export function FeatureStory({
               </li>
             ))}
           </ul>
+          {action === undefined ? null : <div className="mt-4">{action}</div>}
         </div>
         <div className={cn('flex justify-center', flip ? 'md:order-1 md:justify-start' : 'md:justify-end')}>{visual}</div>
       </div>

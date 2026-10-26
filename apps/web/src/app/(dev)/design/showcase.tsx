@@ -41,8 +41,10 @@ import {
   TaxYearGlimpse,
   TodayGlimpse,
 } from '@/components/site/glimpses';
+import setupGuidePoster from '@/components/site/images/setup-guide.webp';
 import { SignUpLink, StickyAction } from '@/components/site/join-actions';
-import { CostPanel, FactList, FounderNote, JoinHero, PriceLines, TextBubbles } from '@/components/site/join-parts';
+import { BookingFacade, VideoFacade } from '@/components/site/join-embeds';
+import { ActionRow, CostPanel, FactList, FounderNote, JoinHero, PriceLines, TextBubbles } from '@/components/site/join-parts';
 import {
   Band,
   ClosingCall,
@@ -2653,6 +2655,33 @@ function ShowcaseJoinPage() {
           { question: 'Can I bring my learners?', answer: 'Yes. Import them from a spreadsheet, or invite each one by WhatsApp, text or email.' },
         ]}
       />
+      <Label>
+        The setup video before it is played, and the onboarding call before its times are asked for (D-405). Nothing comes from YouTube or
+        Calendly until then; each then shows its own player or calendar in its place
+      </Label>
+      <div className="grid items-start gap-6 md:grid-cols-2">
+        <VideoFacade videoId="NXm0hbDlRlY" title="How to set up your driving instructor diary" length="6:31" poster={setupGuidePoster} />
+        <BookingFacade url="https://calendly.com" embedDomain="example.com" title="Choose a time for your free onboarding call" />
+      </div>
+      <Label>A part of the page ending on its button again, with a line beside it, and a feature told with one under its points</Label>
+      <ActionRow id="design-action-row" aside="Free to start. No card needed.">
+        <PrimaryLink href="#start">Claim your founding place</PrimaryLink>
+      </ActionRow>
+      <div className="overflow-hidden rounded-card border border-grey-200">
+        <FeatureStory
+          id="design-story-action"
+          eyebrow="Lesson records"
+          title="Records in under a minute"
+          description="Tap the skills you covered and rate each one."
+          points={[{ text: 'Skills from the areas on the driving test report' }]}
+          visual={
+            <GlimpseAlone>
+              <ProgressGlimpse />
+            </GlimpseAlone>
+          }
+          action={<PrimaryLink href="#start">Claim your founding place</PrimaryLink>}
+        />
+      </div>
       <Label>The page's button at the foot of a phone's screen, once its opening has scrolled away and before the next button is in view</Label>
       <div className="overflow-hidden rounded-card border border-grey-200">
         <StickyAction preview href="#sign-up" after="opening" quietWhile={[]}>

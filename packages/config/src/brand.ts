@@ -57,6 +57,11 @@ export const brand = {
     /** For a link that opens a chat with it in WhatsApp. */
     whatsApp: `https://wa.me/${supportNumber.slice(1)}`,
   },
+  /**
+   * The free onboarding call an instructor books with the founder, on Calendly (D-405). The times
+   * are kept in Calendly and change there, so this address stays the same when they do.
+   */
+  onboardingCall: 'https://calendly.com/thedoovor/onboarding',
   email: {
     fromName: name,
     fromAddress: `hello@${domain}`,

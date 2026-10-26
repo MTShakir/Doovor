@@ -103,6 +103,19 @@ export function JoinHero({
   );
 }
 
+/**
+ * The page's button again at the end of a part of it, so somebody convinced there need not scroll
+ * back for it, with a line beside it (D-405). Its id lets the phone's bar keep out of its way.
+ */
+export function ActionRow({ id, children, aside }: { id: string; children: ReactNode; aside?: ReactNode }) {
+  return (
+    <div id={id} className="flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-5">
+      {children}
+      {aside === undefined ? null : <div className="text-small text-grey-700">{aside}</div>}
+    </div>
+  );
+}
+
 export interface TextMessage {
   from: string;
   /** "23:12" */

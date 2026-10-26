@@ -61,6 +61,15 @@ const mapbox = {
   images: ['https://api.mapbox.com'],
 };
 
+/**
+ * What the page the printed QR codes opens can embed once somebody asks for it (D-405): the setup
+ * video from YouTube's privacy-enhanced player, and the onboarding call's times from Calendly.
+ * Each is a frame and nothing else; both pages load their own scripts inside their own frame.
+ */
+const embeds = {
+  frames: ['https://www.youtube-nocookie.com', 'https://calendly.com'],
+};
+
 /** The origin of a URL from the environment, or nothing when it is not set. */
 function originOf(url: string | undefined): string[] {
   if (!url) return [];
@@ -91,7 +100,7 @@ export function contentSecurityPolicy(env: HeaderEnvironment): string {
     ['connect-src', "'self'", ...supabase, ...supabaseSocket, ...mapbox.connect, ...stripe.connect, ...link.connect, ...posthog].join(' '),
     // The map library builds its tile workers itself; ours is served from our own origin.
     "worker-src 'self' blob:",
-    ['frame-src', "'self'", ...stripe.frames, ...link.frames].join(' '),
+    ['frame-src', "'self'", ...stripe.frames, ...link.frames, ...embeds.frames].join(' '),
     "manifest-src 'self'",
     "object-src 'none'",
     "frame-ancestors 'none'",

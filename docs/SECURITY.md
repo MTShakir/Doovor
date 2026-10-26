@@ -81,8 +81,10 @@ scanning: the automated checks named below run on every push (`.github/workflows
 - The content security policy is enforced, not reported (M6-04, D-138). It is built in
   `apps/web/src/lib/security-headers.ts`, which names every origin: the Supabase project this build
   points at and its socket, Mapbox, Stripe with Link, and the analytics and error hosts once they are
-  set. Nothing may frame us, plug in a plugin, rewrite where our own links point, or post our forms
-  away. A page may see where the car is and photograph a licence; nothing may listen.
+  set. Two more are frames and nothing else: YouTube's privacy-enhanced player and Calendly, which the
+  join page loads only when somebody presses play or asks for the call's times (D-405). Nothing may
+  frame us, plug in a plugin, rewrite where our own links point, or post our forms away. A page may
+  see where the car is and photograph a licence; nothing may listen.
 - Scripts and styles still allow `'unsafe-inline'`: Next puts an inline bootstrap into every page and
   the brand's stylesheet is written into the head. A nonce would mean rendering every page for every
   request, which is what the public pages must not do (NFR-PERF-04). `'unsafe-eval'` is allowed only

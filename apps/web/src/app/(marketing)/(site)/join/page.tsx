@@ -14,8 +14,10 @@ import {
   ReminderGlimpse,
   TodayGlimpse,
 } from '@/components/site/glimpses';
+import setupGuidePoster from '@/components/site/images/setup-guide.webp';
 import { SignUpLink, StickyAction } from '@/components/site/join-actions';
-import { CostPanel, FactList, FounderNote, JoinHero, PriceLines, TextBubbles, type TextMessage } from '@/components/site/join-parts';
+import { BookingFacade, VideoFacade } from '@/components/site/join-embeds';
+import { ActionRow, CostPanel, FactList, FounderNote, JoinHero, PriceLines, TextBubbles, type TextMessage } from '@/components/site/join-parts';
 import {
   Band,
   ClosingCall,
@@ -36,7 +38,9 @@ import { joinActionWords, joinHooks, offerTermWords } from '@/lib/site/join';
  * a minute between lessons, on a phone, and a reason to doubt another app. It goes in the order
  * they ask: is this for me, what is it, what does it cost now and later, who holds the money,
  * who is behind it, and the answers to what stops them. Every product line is one the site
- * already makes for instructors, and every figure comes from the configuration.
+ * already makes for instructors, and every figure comes from the configuration. The setup video
+ * and a free onboarding call can be had from the page, and its button comes again at the end of
+ * each part (D-405).
  *
  * Out of search, which the page for instructors is in, so the two do not compete for the same words.
  */
@@ -57,10 +61,16 @@ const patch = 'Bexley, Greenwich or Dartford';
 
 /**
  * What the product owner has agreed this page may show (D-404). The number is shown only where a
- * person may really be needed (D-277), so a chat on WhatsApp waits for their answer, and so does a
- * photo of the founder: the launch's pictures show no real faces.
+ * person may really be needed (D-277), and on 26 October 2026 the owner said this page is one, as
+ * the printed pieces are. A photo of the founder waits: the launch's pictures show no real faces.
  */
-const ownerAgreed: { whatsApp: boolean; founderPhoto: string | null } = { whatsApp: false, founderPhoto: null };
+const ownerAgreed: { whatsApp: boolean; founderPhoto: string | null } = { whatsApp: true, founderPhoto: null };
+
+/**
+ * The setup tutorial on the brand's YouTube channel (D-405): the real app, set up from nothing on
+ * a phone, from the week 2 launch pack. Its thumbnail is the owner's own, kept with the page.
+ */
+const setupGuide = { videoId: 'NXm0hbDlRlY', title: `How to set up your driving instructor diary in ${brand.name}`, length: '6:31' } as const;
 
 /** One late cancellation a week, at a £40 lesson, over a year: how the leaflet works it out. */
 const lessonPence = 4000;
@@ -147,7 +157,11 @@ const fairAndLocal = [
   },
   { icon: CreditCard, title: 'Booking and card payments, free', description: 'Both on the Free plan, with no upgrade needed.' },
   { icon: Smartphone, title: 'Free for your learners', description: 'They book, pay and see their progress in a free app, and never pay extra.' },
-  { icon: Handshake, title: 'Set up with you, in person', description: `Twenty minutes, anywhere in ${patch}. ${founder.firstName} does the typing.` },
+  {
+    icon: Handshake,
+    title: 'Set up with you',
+    description: `In person anywhere in ${patch}, or on a free call from anywhere else. ${founder.firstName} does the typing.`,
+  },
 ] as const;
 
 /** "1.5% plus 20p", as a card fee is said. */
@@ -207,7 +221,7 @@ function questions(open: boolean) {
     },
     {
       question: 'I’m not good with tech.',
-      answer: `That’s the test. If you can’t set it up in twenty minutes, it’s my fault, and I’ll fix it. Anywhere in ${patch}, I’ll set it up with you in person, and I do the typing.`,
+      answer: `That’s the test. If you can’t set it up in twenty minutes, it’s my fault, and I’ll fix it. Book a free call and I’ll do it with you on the phone, or anywhere in ${patch} I’ll set it up with you in person. Either way, I do the typing.`,
     },
     {
       question: `What happens after ${after}?`,
@@ -215,7 +229,7 @@ function questions(open: boolean) {
     },
     {
       question: 'Can I bring my learners?',
-      answer: 'Yes. Import them from a spreadsheet, or invite each one by WhatsApp, text or email. If I set you up in person, we do the import together.',
+      answer: 'Yes. Import them from a spreadsheet, or invite each one by WhatsApp, text or email. If I set you up, on a call or in person, we do the import together.',
     },
     {
       question: 'Does it work without signal?',
@@ -269,16 +283,44 @@ export default async function JoinPage() {
             costs={whatItCosts}
           />
         </div>
+        <ActionRow id="action-old-way" aside="Free to start. No card needed.">
+          <SignUpLink href={signUp}>{action}</SignUpLink>
+        </ActionRow>
       </Band>
 
       <Band
         id="the-fix"
         eyebrow={<SignalEyebrow lit="red-and-amber">The good news</SignalEyebrow>}
         title="It’s a 20 minute fix."
-        description={`Set it up once, on your phone. Or ${founder.firstName} sets it up with you, in person, anywhere in ${patch}.`}
+        description={`Set it up once, on your phone. Or ${founder.firstName} sets it up with you, on a free call or in person anywhere in ${patch}.`}
       >
         <Steps steps={steps} />
         <p className="text-small text-grey-700">Your link takes bookings once we have checked your badge against the DVSA register.</p>
+        <div className="flex max-w-3xl flex-col gap-3">
+          <h3 className="text-h2 text-black">Watch it set up, on a phone</h3>
+          <VideoFacade videoId={setupGuide.videoId} title={setupGuide.title} length={setupGuide.length} poster={setupGuidePoster} />
+          <p className="text-small text-grey-700">
+            Every step from signing up to the first booking. Playing it loads the video from YouTube.{' '}
+            <a
+              href={`https://www.youtube.com/watch?v=${setupGuide.videoId}`}
+              target="_blank"
+              rel="noopener"
+              className="font-semibold text-blue underline underline-offset-4"
+            >
+              Watch on YouTube<span className="sr-only"> (opens in a new tab)</span>
+            </a>
+          </p>
+        </div>
+        <ActionRow
+          id="action-fix"
+          aside={
+            <a href="#onboarding-call" className="font-semibold text-blue underline underline-offset-4">
+              Or book a free onboarding call
+            </a>
+          }
+        >
+          <SignUpLink href={signUp}>{action}</SignUpLink>
+        </ActionRow>
       </Band>
 
       <Band
@@ -306,7 +348,20 @@ export default async function JoinPage() {
       </Band>
 
       {stories.map((story, index) => (
-        <FeatureStory key={story.id} {...story} flip={index % 2 === 1} tone={index % 2 === 0 ? 'white' : 'grey'} />
+        <FeatureStory
+          key={story.id}
+          {...story}
+          flip={index % 2 === 1}
+          tone={index % 2 === 0 ? 'white' : 'grey'}
+          // Asked again after the last of the four, once all of them have been seen.
+          action={
+            index === stories.length - 1 ? (
+              <ActionRow id="action-stories">
+                <SignUpLink href={signUp}>{action}</SignUpLink>
+              </ActionRow>
+            ) : undefined
+          }
+        />
       ))}
 
       <Band id="fair-and-local" eyebrow={<SignalEyebrow lit="green">Why {brand.name}</SignalEyebrow>} title="Fair, simple and local.">
@@ -328,6 +383,9 @@ export default async function JoinPage() {
           </a>
           .
         </p>
+        <ActionRow id="action-fair" aside={`Free for up to ${freeLearners} learners for as long as you use it.`}>
+          <SignUpLink href={signUp}>{action}</SignUpLink>
+        </ActionRow>
       </Band>
 
       <Band id="founder" eyebrow="Who’s behind it" title={`Hi, I’m ${founder.firstName}.`} tone="grey">
@@ -337,12 +395,42 @@ export default async function JoinPage() {
             2025, after almost two weeks just finding an instructor, with every lesson arranged over calls, WhatsApp and bank transfers.
           </p>
           <p>My instructor had the same mess from the other side. So I asked: what if one thing sorted all of it?</p>
-          <p>If you teach in {patch}, I’ll set it up with you in person. Twenty minutes, and I do the typing.</p>
+          <p>
+            If you teach in {patch}, I’ll set it up with you in person. Anywhere else, book a free call below and we’ll do it on the phone. Either
+            way, I do the typing.
+          </p>
         </FounderNote>
       </Band>
 
-      <Band id="questions" title="What instructors ask me">
+      <Band
+        id="onboarding-call"
+        eyebrow="Set up with you"
+        title="Book a free onboarding call"
+        description="I’ll set up your account with you, import your learners and have your business ready in less than 30 minutes, on one free phone call. Pick a time that suits you, and I’ll ring you."
+      >
+        <BookingFacade url={brand.onboardingCall} embedDomain={brand.domain} title="Choose a time for your free onboarding call" />
+        {ownerAgreed.whatsApp ? (
+          <p className="text-body text-grey-700">
+            Rather message first?{' '}
+            <a href={whatsApp} className="font-semibold text-blue underline underline-offset-4">
+              Message {founder.firstName} on WhatsApp
+            </a>
+          </p>
+        ) : null}
+      </Band>
+
+      <Band id="questions" title="What instructors ask me" tone="grey">
         <QuestionAccordion questions={questions(open)} />
+        <ActionRow
+          id="action-questions"
+          aside={
+            <a href="#onboarding-call" className="font-semibold text-blue underline underline-offset-4">
+              Still unsure? Book a free call
+            </a>
+          }
+        >
+          <SignUpLink href={signUp}>{action}</SignUpLink>
+        </ActionRow>
       </Band>
 
       <div id="founding-places" className="pb-14 md:pb-20">
@@ -385,7 +473,12 @@ export default async function JoinPage() {
         }
       />
 
-      <StickyAction href={signUp} after="opening-action" quietWhile={['founding-places', 'claim']}>
+      <StickyAction
+        href={signUp}
+        after="opening-action"
+        // Every part with buttons of its own, in page order, the closing call last.
+        quietWhile={['action-old-way', 'action-fix', 'action-stories', 'action-fair', 'onboarding-call', 'action-questions', 'founding-places', 'claim']}
+      >
         {action}
       </StickyAction>
     </>

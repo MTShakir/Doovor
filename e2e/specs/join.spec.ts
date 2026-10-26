@@ -29,6 +29,12 @@ async function foundingPlaces(): Promise<{ limit: number; joined: number; open: 
 /** The button's words while the founding places are open, and once they have gone (D-251). */
 const actionFor = (open: boolean): string => (open ? 'Claim your founding place' : 'Create your free account');
 
+/** The page's sign-up buttons: the opening's, one at the end of five parts, the founding offer's and the closing call's. */
+const signUpButtons = 8;
+
+/** A pattern for a string as it is, for building a RegExp around it. */
+const literally = (text: string): string => text.replace(/[.*+?^${}()|[\]\\]/g, (character) => `\\${character}`);
+
 /** Brings an element to the top of the screen, as somebody scrolling down to it would. */
 async function scrollTo(page: Page, id: string): Promise<void> {
   await page.evaluate((target) => {
@@ -48,10 +54,12 @@ test.describe('the page the printed pieces open (D-403)', () => {
       // The card's headline is the offer, so it is the page's own once the places have gone.
       const expected = piece === 'card' && !open ? headlines.default : headlines[piece];
       await expect(page.getByRole('heading', { level: 1 })).toHaveAccessibleName(expected);
-      await expect(page.getByRole('link', { name: actionFor(open) }).first()).toHaveAttribute(
-        'href',
-        new RegExp(`/sign-up\\?role=instructor&utm_source=${piece}$`),
-      );
+      // Every one of the page's buttons carries it on, all the way down.
+      const buttons = page.getByRole('link', { name: actionFor(open) });
+      await expect(buttons).toHaveCount(signUpButtons);
+      for (const button of await buttons.all()) {
+        await expect(button).toHaveAttribute('href', new RegExp(`/sign-up\\?role=instructor&utm_source=${piece}$`));
+      }
       // Over every headline but the card's, which already is the offer.
       const badge = page.getByText(/^Founding offer: Pro free for/);
       if (piece === 'card' && open) await expect(badge).toBeHidden();
@@ -157,9 +165,17 @@ test.describe('the page the printed pieces open (D-403)', () => {
 
     const closing = page.getByRole('region', { name: open ? 'Claim your founding place.' : 'Start free today.' });
     await expect(closing.getByRole('link', { name: actionFor(open) })).toHaveAttribute('href', /\/sign-up\?role=instructor$/);
-    // The number waits for the product owner's answer (D-277, D-404).
-    await expect(page.locator(`a[href^="${brand.supportPhone.whatsApp}"]`)).toHaveCount(0);
+    // A chat on WhatsApp, as the product owner agreed for this page (D-277, D-404), with the number
+    // itself never written out.
+    const whatsApp = new RegExp(`^${literally(brand.supportPhone.whatsApp)}\\?text=`);
+    await expect(closing.getByRole('link', { name: 'Message Talha on WhatsApp' })).toHaveAttribute('href', whatsApp);
+    await expect(page.getByRole('region', { name: 'Book a free onboarding call' }).getByRole('link', { name: 'Message Talha on WhatsApp' })).toHaveAttribute(
+      'href',
+      whatsApp,
+    );
     await expect(page.getByText(brand.supportPhone.display)).toHaveCount(0);
+    // And the button again at the end of each part, each to sign up.
+    await expect(page.getByRole('link', { name: actionFor(open) })).toHaveCount(signUpButtons);
 
     await expectAccessible(page);
     await settled(page);
@@ -175,14 +191,18 @@ test.describe('the page the printed pieces open (D-403)', () => {
     await expect(bar).toBeHidden();
     await expect(bar).toHaveAttribute('inert', '');
 
-    await scrollTo(page, 'the-fix');
+    await scrollTo(page, 'with-us');
     await expect(bar).toBeVisible();
     await expect(bar).not.toHaveAttribute('inert');
     await expect(bar.getByRole('link', { name: actionFor(open) })).toHaveAttribute('href', /\/sign-up\?role=instructor&utm_source=flyer$/);
     await settled(page);
     await snap(page, testInfo, 'join-phone-bar', { fullPage: false });
 
-    // Out of the way of the founding offer's own button, and of the closing call's.
+    // Out of the way of every part's own button, the booking and the founding offer's.
+    await scrollTo(page, 'action-stories');
+    await expect(bar).toBeHidden();
+    await scrollTo(page, 'onboarding-call');
+    await expect(bar).toBeHidden();
     await scrollTo(page, 'founding-places');
     await expect(bar).toBeHidden();
     await scrollTo(page, 'claim');
@@ -191,9 +211,44 @@ test.describe('the page the printed pieces open (D-403)', () => {
       window.scrollTo(0, document.body.scrollHeight);
     });
     await expect(bar).toBeHidden();
-    // And back again on the way up.
-    await scrollTo(page, 'fair-and-local');
+    // And back again on the way up, where no other button is in view.
+    await scrollTo(page, 'payments');
     await expect(bar).toBeVisible();
+  });
+
+  test('loads the setup video and the onboarding call only when somebody asks for them (D-405)', async ({ page }, testInfo) => {
+    // Stand-ins for both, so the test asks neither company for anything, and a record of every
+    // request that would have gone to either.
+    const asked: string[] = [];
+    page.on('request', (request) => {
+      if (/(^|\.)(youtube-nocookie\.com|youtube\.com|ytimg\.com|calendly\.com)$/.test(new URL(request.url()).hostname)) asked.push(request.url());
+    });
+    await page.route(/^https:\/\/(www\.youtube-nocookie\.com|calendly\.com)\//, (route) =>
+      route.fulfill({ contentType: 'text/html', body: '<!doctype html><title>Stand-in</title><p>Stand-in</p>' }),
+    );
+    await page.goto('/join');
+
+    const video = page.getByRole('button', { name: /^Play the video, How to set up your driving instructor diary in .+, 6:31$/ });
+    await expect(video).toBeVisible();
+    const booking = page.getByRole('region', { name: 'Book a free onboarding call' });
+    await expect(booking.getByRole('button', { name: 'Choose a time' })).toBeVisible();
+    await expect(booking.getByRole('link', { name: /^Open the booking page/ })).toHaveAttribute('href', brand.onboardingCall);
+    // Scanned as it opens, before anything from another company is in it.
+    await expectAccessible(page);
+    expect(asked, 'nothing went to YouTube or Calendly before anybody asked').toEqual([]);
+
+    await video.click();
+    await expect(page.locator('iframe[src*="youtube-nocookie.com"]')).toHaveAttribute('src', 'https://www.youtube-nocookie.com/embed/NXm0hbDlRlY?autoplay=1&rel=0');
+    await booking.getByRole('button', { name: 'Choose a time' }).click();
+    await expect(booking.locator('iframe')).toHaveAttribute(
+      'src',
+      `${brand.onboardingCall}?embed_domain=${encodeURIComponent(brand.domain)}&embed_type=Inline&hide_event_type_details=1`,
+    );
+    await expect(booking.locator('iframe')).toHaveAttribute('title', 'Choose a time for your free onboarding call');
+    expect(asked.length, 'each was asked for once somebody asked').toBeGreaterThan(0);
+    await booking.scrollIntoViewIfNeeded();
+    await settled(page);
+    await snap(page, testInfo, 'join-booking-open', { fullPage: false });
   });
 
   test('waits for the cookie question to be answered, which sits where it would @phone-only', async ({ browser }) => {
@@ -203,7 +258,7 @@ test.describe('the page the printed pieces open (D-403)', () => {
       await page.goto('/join');
       const question = page.getByRole('dialog', { name: 'Cookies' });
       await expect(question).toBeVisible();
-      await scrollTo(page, 'the-fix');
+      await scrollTo(page, 'with-us');
       const bar = page.locator('[data-sticky-action]');
       await expect(bar).toBeHidden();
       await question.getByRole('button', { name: 'No thanks' }).click();
@@ -216,7 +271,7 @@ test.describe('the page the printed pieces open (D-403)', () => {
 
   test('has no bar on a wide screen, where its buttons are never far @desktop-only', async ({ page }) => {
     await page.goto('/join');
-    await scrollTo(page, 'the-fix');
+    await scrollTo(page, 'with-us');
     await expect(page.locator('[data-sticky-action]')).toBeHidden();
   });
 

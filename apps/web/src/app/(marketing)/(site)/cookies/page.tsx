@@ -19,7 +19,7 @@ export default function CookiesPage() {
     <LegalPage
       title="Cookies"
       summary="What we keep on your device, what each thing is for, and what waits until you say yes."
-      updated="18 September 2026"
+      updated="26 October 2026"
     >
       <LegalSection title="Your answer">
         <LegalText>
@@ -60,10 +60,18 @@ export default function CookiesPage() {
           maps come from Mapbox. Those companies may set something of their own while you are on that screen. We do not
           load either until the screen that needs it is opened.
         </LegalText>
+        <LegalText>
+          The page our printed cards and leaflets open also offers a setup video from YouTube, and a call you book
+          through Calendly.
+          Neither is loaded until you press play or choose to see the times, and each may then set something of its
+          own.
+        </LegalText>
         <ForTheSolicitor>
           <p>
             Please confirm this meets PECR and the ICO guidance on cookie consent, and whether the third party rows
             above need their own consent rather than being treated as strictly necessary on the screens that use them.
+            The same question applies to the YouTube and Calendly frames on the join page, which load only when the
+            visitor asks for them (D-405).
           </p>
         </ForTheSolicitor>
       </LegalSection>
