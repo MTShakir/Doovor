@@ -1,14 +1,17 @@
 import { brand } from '@repo/config/brand';
 import { siteShareCard } from '@repo/core/share-card';
+import { organizationStructuredData } from '@repo/core/structured-data';
 import { BadgeCheck, BellRing, Building2, CalendarCheck, CarFront, ClipboardCheck, CreditCard, GraduationCap, WifiOff } from 'lucide-react';
 import type { Metadata, Route } from 'next';
 import Link from 'next/link';
+import { JsonLdScript } from '@/components/public/json-ld';
 import { BookingGlimpse, GlimpsePair, TodayGlimpse } from '@/components/site/glimpses';
 import { Band, ClosingCall, FeatureGrid, FoundingOffer, PageHero, PrimaryLink, SecondaryLink } from '@/components/site/marketing';
 import { getAppUrl } from '@/lib/app-url';
 import { publicPageMetadata } from '@/lib/public/metadata';
 import { launchCities } from '@/lib/site/cities';
 import { foundingPlaces } from '@/lib/site/founding';
+import { getSiteUrl } from '@/lib/site-url';
 
 /** The site's front door (PRD 8.3, M5-09). */
 export function generateMetadata(): Metadata {
@@ -84,6 +87,8 @@ export default async function HomePage() {
   const [cities, places] = await Promise.all([launchCities(), foundingPlaces()]);
   return (
     <>
+      {/* Who runs the site and its own accounts elsewhere, for search (D-403). */}
+      <JsonLdScript data={organizationStructuredData(getSiteUrl())} />
       <PageHero
         title="Driving lessons, sorted."
         description={`${brand.tagline} For learners, driving instructors and driving schools.`}

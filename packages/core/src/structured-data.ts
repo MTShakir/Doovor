@@ -8,6 +8,7 @@
  * is what the page already shows; nothing private is added for machines.
  */
 
+import { brand } from '@repo/config/brand';
 import { formatMinutes } from './time/index.ts';
 
 export type JsonLd = Record<string, unknown>;
@@ -132,6 +133,29 @@ export function schoolStructuredData(input: SchoolStructuredDataInput): JsonLd {
       breadcrumbList(input.breadcrumbs),
     ],
   };
+}
+
+/**
+ * The brand as an Organization (D-403): its name, the company that runs it, the address to write
+ * to and its own accounts on other sites, as the footer shows them. sameAs is what tells search
+ * those accounts are the site's own. One id, so every page that names it names the same thing.
+ */
+export function brandOrganization(siteUrl: string): JsonLd {
+  return {
+    '@type': 'Organization',
+    '@id': `${siteUrl}/#organization`,
+    name: brand.name,
+    legalName: brand.legalEntity,
+    url: siteUrl,
+    logo: { '@type': 'ImageObject', url: `${siteUrl}/icons/512.png` },
+    email: brand.supportEmail,
+    sameAs: brand.social.map((account) => account.url),
+  };
+}
+
+/** The home page's markup: the brand itself (D-403). */
+export function organizationStructuredData(siteUrl: string): JsonLd {
+  return { '@context': 'https://schema.org', ...brandOrganization(siteUrl) };
 }
 
 /** PRD 14.6: breadcrumb markup on city and area pages, home first and the page itself last. */

@@ -185,7 +185,7 @@ test.describe('the public site (PRD 8.3, 9.18, M5-09)', () => {
     await snap(page, testInfo, 'site-pricing');
   });
 
-  test('every page of the site shares the header and a footer that links each city page, and search is told about them', async ({ page, request }) => {
+  test('every page of the site shares the header and a footer that links each city page and our own accounts, and search is told about them', async ({ page, request }) => {
     await page.goto('/instructors/leeds/sarah-khan-driving');
     await expect(page.getByRole('heading', { level: 1, name: 'Sarah Khan' })).toBeVisible();
     await expect(page.getByRole('banner').getByRole('link', { name: brand.name })).toHaveAttribute('href', '/');
@@ -194,6 +194,17 @@ test.describe('the public site (PRD 8.3, 9.18, M5-09)', () => {
       await expect(footer.getByRole('link', { name: `Driving lessons in ${city}` })).toHaveAttribute('href', `/driving-lessons/${city.toLowerCase()}`);
     }
     await expect(footer.getByRole('link', { name: 'Contact support' })).toHaveAttribute('href', `mailto:${brand.supportEmail}`);
+    // Our own accounts elsewhere open beside the site (D-403).
+    for (const account of brand.social) {
+      const link = footer.getByRole('link', { name: `${account.label} (opens in a new tab)`, exact: true });
+      await expect(link).toHaveAttribute('href', account.url);
+      await expect(link).toHaveAttribute('target', '_blank');
+    }
+
+    // The home page tells search who runs the site and that those accounts are its own (D-403).
+    await page.goto('/');
+    const organization = JSON.parse((await page.locator('script[type="application/ld+json"]').textContent()) ?? '{}') as Record<string, unknown>;
+    expect(organization).toMatchObject({ '@type': 'Organization', name: brand.name, legalName: brand.legalEntity, sameAs: brand.social.map((account) => account.url) });
 
     const sitemap = await request.get('/sitemaps/pages.xml');
     const listed = [...(await sitemap.text()).matchAll(/<loc>([^<]+)<\/loc>/g)].map((match) => new URL(match[1] ?? '').pathname);

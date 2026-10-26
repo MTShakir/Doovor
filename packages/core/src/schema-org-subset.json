@@ -93,6 +93,21 @@
       "parents": [
         "Place"
       ]
+    },
+    "ImageObject": {
+      "parents": [
+        "MediaObject"
+      ]
+    },
+    "MediaObject": {
+      "parents": [
+        "CreativeWork"
+      ]
+    },
+    "CreativeWork": {
+      "parents": [
+        "Thing"
+      ]
     }
   },
   "properties": {
@@ -118,6 +133,11 @@
     ],
     "description": [
       "Thing"
+    ],
+    "email": [
+      "ContactPoint",
+      "Organization",
+      "Person"
     ],
     "employee": [
       "Organization"
@@ -145,6 +165,9 @@
     "knowsLanguage": [
       "Organization",
       "Person"
+    ],
+    "legalName": [
+      "Organization"
     ],
     "logo": [
       "Organization",
@@ -178,6 +201,9 @@
     ],
     "provider": [
       "Service"
+    ],
+    "sameAs": [
+      "Thing"
     ],
     "serviceType": [
       "Service"

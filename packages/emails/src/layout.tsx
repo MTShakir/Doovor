@@ -134,6 +134,18 @@ export function EmailLayout({ preview, children, settingsUrl, reason }: EmailLay
           </Text>
           <LogoPictures width={footerLogo.width} height={footerLogo.height} style={signOff} />
           <Text style={slogan}>{brand.slogan}</Text>
+          {/* Our own accounts on other sites (D-403). */}
+          <Text style={footnote}>
+            Follow us on{' '}
+            {brand.social.map((account, index) => (
+              <span key={account.url}>
+                {index === 0 ? null : ' · '}
+                <Link href={account.url} style={quietLink}>
+                  {account.label}
+                </Link>
+              </span>
+            ))}
+          </Text>
           <Text style={footnote}>
             {footerLinks.map((one, index) => (
               <span key={one.url}>

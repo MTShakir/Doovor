@@ -113,3 +113,14 @@ describe('the notification email (NTF-03, M2-28)', () => {
     expect(email.html).toContain(copy.title.replaceAll("'", '&#x27;'));
   });
 });
+
+describe('the footer every email shares', () => {
+  it('links our own accounts on other sites, by name (D-403)', async () => {
+    const email = await renderNotificationEmail({ title: 'Lesson booked', body: 'Wed 16 Sep at 09:00.' });
+
+    expect(email.text).toContain('Follow us on');
+    for (const account of brand.social) {
+      expect(email.html).toMatch(new RegExp(`<a[^>]+href="${account.url}"[^>]*>${account.label}</a>`));
+    }
+  });
+});
