@@ -19,7 +19,7 @@ import { learnerMoves } from '@/lib/learners/moves';
 import { requirePortal } from '@/lib/auth/session';
 import { myLessons, type MyLesson } from '@/lib/learner/lessons';
 import { learnerSetup } from '@/lib/learner/setup';
-import { myInstructors } from '@/lib/learner/teachers';
+import { myTeachers } from '@/lib/learner/teachers';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
 
 export const metadata: Metadata = { title: 'Home' };
@@ -37,15 +37,15 @@ export default function LearnerHomePage() {
 /** PRD 8.2: the one thing a learner opens the app for is when their next lesson is. */
 async function Home() {
   const { session } = await requirePortal('learner');
-  const [{ upcoming, past }, setup, moves, instructors] = await Promise.all([
+  const [{ upcoming, past }, setup, moves, teachers] = await Promise.all([
     myLessons(),
     learnerSetup(session.userId),
     learnerMoves(),
-    myInstructors(session.userId),
+    myTeachers(session.userId),
   ]);
   const next = upcoming[0];
   // Their own instructor's booking link, in the app (BOK-02, D-395).
-  const bookWith = instructors.find((one) => one.bookingPath !== null);
+  const bookWith = teachers.instructors.find((one) => one.bookingPath !== null);
 
   return (
     <>
@@ -109,8 +109,8 @@ async function Home() {
             />
           </Card>
         )}
-        {/* Somebody who already has an instructor is not looking for one. */}
-        {upcoming.length === 0 && past.length === 0 && instructors.length === 0 ? (
+        {/* Somebody already learning with a Business, or waiting for a school to choose who teaches them, is not looking. */}
+        {upcoming.length === 0 && past.length === 0 && !teachers.atABusiness ? (
           <FindAnInstructor userId={session.userId} email={session.email} />
         ) : null}
         <InstallPrompt why="Your lessons, payments and progress, one tap away." />

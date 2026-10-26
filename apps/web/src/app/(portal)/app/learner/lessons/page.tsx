@@ -15,7 +15,7 @@ import { Fragment, Suspense } from 'react';
 import { LessonsCalendar } from '@/components/lessons/lessons-calendar';
 import { requirePortal } from '@/lib/auth/session';
 import { myLessons, type MyLesson } from '@/lib/learner/lessons';
-import { myInstructors } from '@/lib/learner/teachers';
+import { myTeachers } from '@/lib/learner/teachers';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
 import { MyLessonRow } from './my-lesson';
 
@@ -40,9 +40,9 @@ export default function LessonsPage() {
  */
 async function Lessons() {
   const { session } = await requirePortal('learner');
-  const [{ upcoming, past }, instructors] = await Promise.all([myLessons(), myInstructors(session.userId)]);
+  const [{ upcoming, past }, teachers] = await Promise.all([myLessons(), myTeachers(session.userId)]);
   // Booking a lesson themselves, on their instructor's own link (BOK-02, D-395).
-  const bookable = instructors.filter((one) => one.bookingPath !== null);
+  const bookable = teachers.instructors.filter((one) => one.bookingPath !== null);
   const now = new Date();
   const rules = await rulesFor(upcoming[0] ?? past[0]);
   const notGoingAhead = past
