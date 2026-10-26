@@ -1,4 +1,4 @@
-import { isSitemapKind, sitemapPaths, urlSetXml } from '@repo/core/sitemap';
+import { isSitemapKind, sitemapLastModified, sitemapPaths, urlSetXml } from '@repo/core/sitemap';
 import { sitemapEntries, xmlResponse } from '@/lib/public/sitemap';
 import { getSiteUrl } from '@/lib/site-url';
 
@@ -13,5 +13,5 @@ export async function GET(_request: Request, { params }: RouteContext<'/sitemaps
 
   const site = getSiteUrl();
   const paths = sitemapPaths(kind, await sitemapEntries());
-  return xmlResponse(urlSetXml(paths.map((path) => `${site}${path}`)));
+  return xmlResponse(urlSetXml(paths.map((path) => ({ loc: `${site}${path}`, lastModified: sitemapLastModified(kind, path) }))));
 }

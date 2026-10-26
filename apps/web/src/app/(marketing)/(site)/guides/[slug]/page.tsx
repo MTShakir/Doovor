@@ -5,8 +5,10 @@ import {
   guideBySlug,
   guideCard,
   guideDate,
+  guideGeoTags,
   guideOutline,
   guidePath,
+  guidePictures,
   guides,
   guidesPath,
   guideStructuredData,
@@ -15,7 +17,8 @@ import {
 } from '@repo/core/guides';
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
-import { GuideBody, GuideByline, GuideCard, GuideOutline, GuideSources } from '@/components/guides/guide-parts';
+import { guideImages } from '@/components/guides/guide-images';
+import { GuideBody, GuideByline, GuideCard, GuideOutline, GuidePlaces, GuideSources, GuideTakeaways } from '@/components/guides/guide-parts';
 import { JsonLdScript } from '@/components/public/json-ld';
 import { Breadcrumbs } from '@/components/public/place-links';
 import { ClosingCall, PrimaryLink, QuestionList } from '@/components/site/marketing';
@@ -33,13 +36,18 @@ export function generateStaticParams() {
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const guide = guideBySlug((await params).slug);
   if (guide === undefined) return {};
-  return publicPageMetadata({
-    title: guide.title,
-    description: guide.description,
-    path: guidePath(guide.slug),
-    indexable: true,
-    card: guideCard(guide),
-  });
+  return {
+    ...publicPageMetadata({
+      title: guide.title,
+      description: guide.description,
+      path: guidePath(guide.slug),
+      indexable: true,
+      card: guideCard(guide),
+    }),
+    // What it answers, and where it applies, for the engines that still read them (D-387).
+    keywords: [...guide.keywords],
+    other: guideGeoTags(guide),
+  };
 }
 
 /** What a reader of each audience is offered at the end. */
@@ -78,7 +86,11 @@ export default async function GuidePage({ params }: Props) {
   const outline = guideOutline(blocks);
   const related = relatedGuides(guide);
   const closing = closingFor(guide, getAppUrl());
-  const structured = guideStructuredData(guide, { url: site, imageUrl: shareImageUrl(guidePath(guide.slug), guideCard(guide)) });
+  const structured = guideStructuredData(guide, {
+    url: site,
+    imageUrl: shareImageUrl(guidePath(guide.slug), guideCard(guide)),
+    pictures: guidePictures(blocks).map((picture) => ({ key: picture.key, url: `${site}${guideImages[picture.key].src}` })),
+  });
 
   return (
     <>
@@ -96,8 +108,10 @@ export default async function GuidePage({ params }: Props) {
           <h1 className="text-display text-balance text-black">{guide.title}</h1>
           <p className="text-h3 font-normal text-pretty text-grey-700">{guide.summary}</p>
           <GuideByline guide={guide} />
+          <GuidePlaces places={guide.places} />
         </header>
 
+        <GuideTakeaways takeaways={guide.takeaways} />
         <GuideOutline outline={outline} />
         <GuideBody blocks={blocks} />
 

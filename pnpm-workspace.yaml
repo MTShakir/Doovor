@@ -66,6 +66,17 @@ overrides:
   dompurify: '>=3.4.17 <4'
   # Missing bounds check when given a buffer, under Lighthouse CI.
   uuid: '>=11.1.1'
+  # Memory exhaustion while validating oversized constrained collections (GHSA-mrhx-c7xc-m3w5,
+  # D-390). Our own zod validates every form and Server Action, so it is in visitors' requests;
+  # Serwist brings an older 4 at build time, and Lighthouse CI's browser driver brings zod 3. It is
+  # fixed only from 4.6.6, so the zod 3 that chromium-bidi asks for is lifted to 4 as well: it
+  # parses only messages from a local browser over WebDriver BiDi, which Lighthouse does not use.
+  zod@3: '>=4.6.7 <5'
+  zod@4: '>=4.6.7 <5'
+  # A denial of service through bytes after a compressed request body (GHSA-27r3-jxmh-p828, D-390).
+  # It arrives with Express, under Inngest and under Lighthouse CI; the app serves Inngest through
+  # Next, not Express. Held to the 1.20 line the fix landed in, which Express 4 already asks for.
+  body-parser@1: '>=1.20.9 <2'
   # Stack exhaustion from nested brace groups and from parseCommaParts. It reaches us three times
   # over, once per major, all of it under the eslint and Lighthouse toolchains, which read our own
   # files at development time and never a visitor's input. Fixed in each line, so each line is
@@ -112,7 +123,7 @@ catalog:
   typescript: ~6.0.3
   vitest: ^5.0.0
   "@vitest/coverage-v8": ^5.0.0
-  zod: ^4.6.0
+  zod: ^4.6.7
   lucide-react: ^1.44.0
   "@supabase/supabase-js": ^2.116.0
   "@supabase/ssr": ^0.12.0

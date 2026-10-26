@@ -6,7 +6,7 @@ const thisYear = amapRates(2026);
 const lastYear = amapRates(2025);
 
 /**
- * What a self-employed instructor can claim, from the GOV.UK pages in `sources`, read on 13
+ * What a self-employed instructor can claim, from the GOV.UK pages in `sources`, read again on 26
  * October 2026. The mileage rates are the app's own, so the guide and the books cannot disagree.
  */
 export const drivingInstructorExpenses: Guide = {
@@ -17,12 +17,28 @@ export const drivingInstructorExpenses: Guide = {
     'The costs a self-employed driving instructor can claim against tax, why a dual control car cannot use the mileage rate, and keeping records HMRC accepts.',
   summary:
     'Every cost you claim lowers the tax on what you earn from lessons. Here is what counts, with the one rule about your car that is easy to miss.',
+  takeaways: [
+    'A self-employed driving instructor can claim business costs such as fuel, insurance, repairs, the £300 ADI registration fee, a franchise fee, the business share of their phone, and advertising.',
+    "A car with dual controls cannot use HMRC's mileage rate: claim what it actually costs to run, and capital allowances on buying it.",
+    'Claim only the business share of anything you also use privately, and keep a log of your business miles to show how you worked it out.',
+    'Fines, everyday clothes and the training that first qualified you as an instructor cannot be claimed.',
+  ],
+  keywords: [
+    'driving instructor expenses',
+    'what expenses can a driving instructor claim',
+    'allowable expenses',
+    'dual control car',
+    'self-employed driving instructor',
+    'ADI registration fee',
+  ],
+  places: [{ name: 'United Kingdom', region: 'GB' }],
   published: '2026-10-13',
-  updated: '2026-10-13',
+  updated: '2026-10-26',
   body: `
     ## The rule behind every claim
 
-    You can claim a cost when it is for your business. When something is used for your business and
+    HMRC calls the costs you can claim allowable expenses. You can claim a cost when it is for your
+    business. When something is used for your business and
     your own life, such as your phone, or a car you also drive at weekends, you can claim only the
     business part. If you use the £1,000 trading allowance instead, you cannot claim any expenses,
     which suits very few full-time instructors.
@@ -80,6 +96,8 @@ export const drivingInstructorExpenses: Guide = {
     [Making Tax Digital](/guides/making-tax-digital-for-driving-instructors) applies to you, digital
     records are required anyway.
 
+    ![A driving instructor's bookkeeping screen: the tax year's turnover, expenses and net profit, and the expenses grouped as the tax return asks](bookkeeping "The tax year in the books: turnover, expenses and profit, with your costs grouped under the headings the self-employment pages use. Example figures.")
+
     ## Where ${brand.name} fits
 
     ${brand.name} records every lesson payment as it happens, and on Pro keeps your expenses with a
@@ -87,10 +105,17 @@ export const drivingInstructorExpenses: Guide = {
     allows, and exports your income and expenses by tax year and by quarter for your accountant.
     [See how it works for instructors](/instructors-software).
 
+    ![The expenses screen in a driving instructor app, with the tax year's total and each cost listed](expenses "Expenses in the app: each cost with its date and receipt, and the tax year's total at the top. Example figures.")
+
     > This guide is general information, not tax advice. HMRC or an accountant can tell you how the
     > rules apply to you.
   `,
   questions: [
+    {
+      question: 'What expenses can a driving instructor claim?',
+      answer:
+        'The costs of running the business: fuel, insurance, repairs and servicing, vehicle tax, parking, the ADI registration fee, a franchise fee, the business share of your phone, advertising, refresher training, bank and card fees, and your accountant. Only the business share of anything you also use privately.',
+    },
     {
       question: 'Can I claim the mileage rate for my dual control car?',
       answer:
@@ -117,5 +142,5 @@ export const drivingInstructorExpenses: Guide = {
     { label: 'GOV.UK: Training courses', url: 'https://www.gov.uk/expenses-if-youre-self-employed/training-courses' },
     { label: 'GOV.UK: Approved driving instructor (ADI) fees', url: 'https://www.gov.uk/approved-driving-instructor-adi-fees' },
   ],
-  related: ['making-tax-digital-for-driving-instructors'],
+  related: ['making-tax-digital-for-driving-instructors', 'how-to-choose-driving-instructor-software'],
 };

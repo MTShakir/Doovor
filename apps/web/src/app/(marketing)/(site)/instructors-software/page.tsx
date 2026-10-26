@@ -1,11 +1,13 @@
 import { brand } from '@repo/config/brand';
 import { foundingOffer, getEntitlements, plans } from '@repo/config/plans';
 import { foundingTermWords } from '@repo/core/founding';
+import { guides } from '@repo/core/guides';
 import { formatPence } from '@repo/core/money';
 import { referralRewardMonths } from '@repo/core/referral';
 import { siteShareCard } from '@repo/core/share-card';
 import { Bell, FileSpreadsheet, Gift, MessageCircleQuestionMark, Percent, Users } from 'lucide-react';
 import type { Metadata } from 'next';
+import { GuideCard } from '@/components/guides/guide-parts';
 import {
   BookingGlimpse,
   GlimpseAlone,
@@ -286,6 +288,20 @@ export default async function InstructorsSoftwarePage() {
 
       <Band id="instructor-questions" title="Questions instructors ask" tone="grey">
         <QuestionList questions={questions(term, termNoun)} />
+      </Band>
+
+      {/* The newest guides for instructors: choosing an app, comparing them, teaching locally (D-387). */}
+      <Band id="instructor-guides" title="Read before you choose" description="Guides for driving instructors, with every fact sourced.">
+        <ul className="grid grid-cols-[minmax(0,1fr)] gap-4 md:grid-cols-3">
+          {guides
+            .filter((guide) => guide.audience === 'instructors')
+            .slice(0, 3)
+            .map((guide) => (
+              <li key={guide.slug}>
+                <GuideCard guide={guide} />
+              </li>
+            ))}
+        </ul>
       </Band>
 
       <ClosingCall

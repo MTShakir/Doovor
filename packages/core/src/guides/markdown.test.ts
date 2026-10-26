@@ -84,6 +84,36 @@ describe('a guide read into blocks (D-255)', () => {
   });
 });
 
+describe('a picture of the app in a guide (D-387)', () => {
+  it('reads a picture on a line of its own: what it shows, which one, and its caption', () => {
+    const blocks = parseGuideMarkdown(`
+      Before it.
+
+      ![A learner booking a lesson](booking-page "Booking from a link.")
+
+      After it.
+    `);
+    expect(blocks).toEqual([
+      { kind: 'paragraph', content: [{ kind: 'text', text: 'Before it.' }] },
+      { kind: 'image', key: 'booking-page', alt: 'A learner booking a lesson', caption: 'Booking from a link.' },
+      { kind: 'paragraph', content: [{ kind: 'text', text: 'After it.' }] },
+    ]);
+  });
+
+  it('refuses a picture that does not exist, has no caption, carries markup, or sits inside a line', () => {
+    expect(() => parseGuideMarkdown('![A screen](nowhere "Its caption.")')).toThrow('images.ts');
+    expect(() => parseGuideMarkdown('![A screen](booking-page)')).toThrow('on a line of its own');
+    expect(() => parseGuideMarkdown('![A **bold** screen](booking-page "Its caption.")')).toThrow('plain words');
+    expect(() => parseGuideMarkdown('![A screen](booking-page "  ")')).toThrow('plain words');
+    expect(() => parseGuideMarkdown('Look: ![A screen](booking-page "Its caption.")')).toThrow('line of its own');
+    expect(() => parseInline('- ![A screen](booking-page "Its caption.")')).toThrow('line of its own');
+  });
+
+  it('counts a caption as read, and what a picture shows as not', () => {
+    expect(wordCount(parseGuideMarkdown('![Five words nobody reads here](booking-page "Two words.")'))).toBe(2);
+  });
+});
+
 describe('what a heading and a guide add up to', () => {
   it('makes an address from the words of a heading', () => {
     expect(headingId('When it applies to you')).toBe('when-it-applies-to-you');
