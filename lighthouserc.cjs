@@ -1,7 +1,7 @@
 /**
  * Lighthouse on the public pages (NFR-PERF-04, M5-24): an instructor's profile, a school's profile, a
  * city, an area, a city's automatic page, and the page the printed QR codes open, as a scanned card
- * opens it (D-403), from the production build and the seeded database, with the app already running
+ * opens it (D-404), from the production build and the seeded database, with the app already running
  * on port 3000 (see the Lighthouse job in .github/workflows/ci.yml).
  *
  * Each page is measured three times as Lighthouse measures by default: a mid-range phone on a slow 4G

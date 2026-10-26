@@ -71,7 +71,7 @@ export default function CookiesPage() {
             Please confirm this meets PECR and the ICO guidance on cookie consent, and whether the third party rows
             above need their own consent rather than being treated as strictly necessary on the screens that use them.
             The same question applies to the YouTube and Calendly frames on the join page, which load only when the
-            visitor asks for them (D-405).
+            visitor asks for them (D-406).
           </p>
         </ForTheSolicitor>
       </LegalSection>

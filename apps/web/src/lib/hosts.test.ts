@@ -72,7 +72,7 @@ describe('which host a request belongs on (D-084)', () => {
     expect(hostRedirect(site, `${guidePath(guide.slug)}/share.png`, '')).toBeNull();
   });
 
-  it('keeps the page the printed QR codes open on the public site, with where they came from (D-403)', () => {
+  it('keeps the page the printed QR codes open on the public site, with where they came from (D-404)', () => {
     expect(isSitePath('/join')).toBe(true);
     expect(hostRedirect(site, '/join', '?utm_source=card')).toBeNull();
     expect(hostRedirect(`www.${site}`, '/join', '?utm_source=leaflet')).toBeNull();

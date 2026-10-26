@@ -2,7 +2,7 @@ import { foundingTermWords, type FoundingProgress } from '@repo/core/founding';
 import type { FoundingPlaces } from './founding';
 
 /**
- * The page the printed pieces open (PRD 8.3, 9.18, D-403). The business card, the leaflet and the
+ * The page the printed pieces open (PRD 8.3, 9.18, D-404). The business card, the leaflet and the
  * flyer each carry a QR code for /join with a utm_source of their own, and the page opens on the
  * words the piece itself ended on, so whoever scanned it knows straight away they are in the right
  * place. Anybody else, with a link or the address typed in, gets the page's own opening.

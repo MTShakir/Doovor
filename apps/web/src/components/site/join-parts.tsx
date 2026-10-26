@@ -6,7 +6,7 @@ import { joinHookScript, type JoinHook, type JoinHookKey, type PrintedPiece } fr
 import { SignalEyebrow, type Feature } from './marketing';
 
 /**
- * The pieces of the page the printed QR codes open (PRD 8.3, D-403), in the look of the leaflet
+ * The pieces of the page the printed QR codes open (PRD 8.3, D-404), in the look of the leaflet
  * they come from: the traffic light, the yellow marker over the words that matter, and the
  * messages an instructor knows too well. Plain values in, so the design page can show them.
  */
@@ -105,7 +105,7 @@ export function JoinHero({
 
 /**
  * The page's button again at the end of a part of it, so somebody convinced there need not scroll
- * back for it, with a line beside it (D-405). Its id lets the phone's bar keep out of its way.
+ * back for it, with a line beside it (D-406). Its id lets the phone's bar keep out of its way.
  */
 export function ActionRow({ id, children, aside }: { id: string; children: ReactNode; aside?: ReactNode }) {
   return (
@@ -221,7 +221,7 @@ export function FactList({ facts }: { facts: readonly Feature[] }) {
 
 /**
  * Who is behind it, in their own words: a person in the area the offer is made in, and what they
- * will do for somebody in person. A photo of them only once they have said yes to one (D-404);
+ * will do for somebody in person. A photo of them only once they have said yes to one (D-405);
  * until then their initials, as anybody without a photo has in the app, in white on the grey band.
  */
 export function FounderNote({

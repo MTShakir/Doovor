@@ -34,13 +34,13 @@ import { foundingPlaces } from '@/lib/site/founding';
 import { joinActionWords, joinHooks, offerTermWords } from '@/lib/site/join';
 
 /**
- * The page the printed QR codes open (PRD 8.3, 9.18, D-403): for an independent instructor who has
+ * The page the printed QR codes open (PRD 8.3, 9.18, D-404): for an independent instructor who has
  * a minute between lessons, on a phone, and a reason to doubt another app. It goes in the order
  * they ask: is this for me, what is it, what does it cost now and later, who holds the money,
  * who is behind it, and the answers to what stops them. Every product line is one the site
  * already makes for instructors, and every figure comes from the configuration. The setup video
  * and a free onboarding call can be had from the page, and its button comes again at the end of
- * each part (D-405).
+ * each part (D-406).
  *
  * Out of search, which the page for instructors is in, so the two do not compete for the same words.
  */
@@ -60,14 +60,14 @@ const founder = { name: 'Talha Shakir', firstName: 'Talha', jobTitle: 'Founder',
 const patch = 'Bexley, Greenwich or Dartford';
 
 /**
- * What the product owner has agreed this page may show (D-404). The number is shown only where a
+ * What the product owner has agreed this page may show (D-405). The number is shown only where a
  * person may really be needed (D-277), and on 26 October 2026 the owner said this page is one, as
  * the printed pieces are. A photo of the founder waits: the launch's pictures show no real faces.
  */
 const ownerAgreed: { whatsApp: boolean; founderPhoto: string | null } = { whatsApp: true, founderPhoto: null };
 
 /**
- * The setup tutorial on the brand's YouTube channel (D-405): the real app, set up from nothing on
+ * The setup tutorial on the brand's YouTube channel (D-406): the real app, set up from nothing on
  * a phone, from the week 2 launch pack. Its thumbnail is the owner's own, kept with the page.
  */
 const setupGuide = { videoId: 'NXm0hbDlRlY', title: `How to set up your driving instructor diary in ${brand.name}`, length: '6:31' } as const;
@@ -409,7 +409,7 @@ export default async function JoinPage() {
         description="I’ll set up your account with you, import your learners and have your business ready in less than 30 minutes, on one free phone call. Pick a time that suits you, and I’ll ring you."
       >
         <BookingFacade url={brand.onboardingCall} embedDomain={brand.domain} title="Choose a time for your free onboarding call" />
-        {/* Told where it is asked for, as the privacy notice says it (D-406). */}
+        {/* Told where it is asked for, as the privacy notice says it (D-407). */}
         <p className="max-w-3xl text-small text-pretty text-grey-700">
           Booking passes your name, email address and mobile number to us through Calendly, so we can ring you.{' '}
           <a href="/privacy" className="font-semibold text-blue underline underline-offset-4">

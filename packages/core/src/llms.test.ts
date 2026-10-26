@@ -34,6 +34,11 @@ describe('the site described for language models (D-387)', () => {
     for (const path of links) expect(known.has(path), path).toBe(true);
   });
 
+  it('names our own accounts on other sites, and only those (D-403)', () => {
+    const section = text.split('## Official accounts\n\n')[1] ?? '';
+    expect(section.trim().split('\n')).toEqual(brand.social.map((account) => `- [${account.label}](${account.url}): ${account.handle}`));
+  });
+
   it('carries no long dash and ends with a new line', () => {
     expect(text).not.toMatch(new RegExp(`[${String.fromCharCode(0x2013, 0x2014)}]`));
     expect(text.endsWith('\n')).toBe(true);

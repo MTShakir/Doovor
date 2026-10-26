@@ -66,7 +66,7 @@ export function FoundingBadge({ places, audience = 'instructors' }: { places: Fo
 }
 
 /**
- * The traffic light the brand's story moves through (D-403): red is the old way, red and amber the
+ * The traffic light the brand's story moves through (D-404): red is the old way, red and amber the
  * moment before it changes, and green the product. The one place red and green are used as colour
  * rather than as a payment's state. It repeats the words beside it, so it is hidden from readers.
  */
@@ -116,7 +116,7 @@ export function FeatureStory({
   /** What it does, each in a line. Those on Pro say so, rather than being sold as on every plan. */
   points: readonly { text: string; pro?: boolean }[];
   visual: ReactNode;
-  /** A button under the points, for a page that asks again as it goes (D-405). */
+  /** A button under the points, for a page that asks again as it goes (D-406). */
   action?: ReactNode;
   /** The glimpse on the left, so a page of these does not read as one long column. */
   flip?: boolean;
@@ -168,7 +168,7 @@ export function QuestionList({ questions }: { questions: readonly { question: st
 
 /**
  * The same questions, each opening onto its answer, for a page read on a phone with a minute to
- * spare: the list is short enough to find the one that is somebody's own (D-403). A disclosure the
+ * spare: the list is short enough to find the one that is somebody's own (D-404). A disclosure the
  * browser draws, so it opens before the page has loaded anything else, or with no script at all.
  */
 export function QuestionAccordion({ questions }: { questions: readonly { question: string; answer: string }[] }) {
@@ -200,7 +200,7 @@ export function Band({
   children,
 }: {
   id: string;
-  /** A small line over the heading: where in the page's story this band is (D-403). */
+  /** A small line over the heading: where in the page's story this band is (D-404). */
   eyebrow?: ReactNode;
   title: string;
   description?: string;
@@ -290,7 +290,7 @@ export function FoundingOffer({
   action?: ReactNode;
   places?: FoundingPlaces | null;
   audience?: 'instructors' | 'schools';
-  /** A last line while the places are open: what anybody who misses one gets instead (D-403). */
+  /** A last line while the places are open: what anybody who misses one gets instead (D-404). */
   note?: string;
 }) {
   const counted = places?.[audience] ?? null;
@@ -344,7 +344,7 @@ export function ClosingCall({
   description,
   action,
 }: {
-  /** For a link to it, or something on the page that keeps out of its way (D-403). */
+  /** For a link to it, or something on the page that keeps out of its way (D-404). */
   id?: string;
   eyebrow?: ReactNode;
   title: string;

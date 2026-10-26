@@ -1,8 +1,10 @@
+import { brand } from '@repo/config/brand';
 import { describe, expect, it } from 'vitest';
 import vocabulary from './schema-org-subset.json' with { type: 'json' };
 import {
   breadcrumbStructuredData,
   instructorStructuredData,
+  organizationStructuredData,
   priceText,
   schoolStructuredData,
   serializeJsonLd,
@@ -165,6 +167,23 @@ describe('structured data for the public pages (PUB-02, M5-04)', () => {
         { '@type': 'ListItem', position: 2, name: 'Driving lessons in Leeds', item: 'https://example.com/driving-lessons/leeds' },
       ],
     });
+  });
+
+  it('describes the brand as an Organization with its own accounts elsewhere, valid schema.org (D-403)', () => {
+    const data = organizationStructuredData('https://example.com');
+    expect(problems(data)).toEqual([]);
+    expect(data).toEqual({
+      '@context': 'https://schema.org',
+      '@type': 'Organization',
+      '@id': 'https://example.com/#organization',
+      name: brand.name,
+      legalName: brand.legalEntity,
+      url: 'https://example.com',
+      logo: { '@type': 'ImageObject', url: 'https://example.com/icons/512.png' },
+      email: brand.supportEmail,
+      sameAs: brand.social.map((account) => account.url),
+    });
+    expect(data.sameAs).toHaveLength(6);
   });
 
   it('the checker itself refuses what schema.org does not define', () => {

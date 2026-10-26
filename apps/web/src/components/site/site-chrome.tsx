@@ -73,6 +73,8 @@ export function SiteHeader({ appUrl }: { appUrl: string }) {
 interface FooterLink {
   href: string;
   label: string;
+  /** Another site's, which opens beside this one, as every link out does. */
+  external?: boolean;
 }
 
 function FooterLinks({ title, links }: { title: string; links: readonly FooterLink[] }) {
@@ -83,8 +85,13 @@ function FooterLinks({ title, links }: { title: string; links: readonly FooterLi
       <ul className="flex flex-col gap-1">
         {links.map((link) => (
           <li key={link.href}>
-            <a href={link.href} className="inline-flex min-h-10 items-center text-small text-grey-700 hover:text-black hover:underline">
+            <a
+              href={link.href}
+              {...(link.external === true ? { target: '_blank', rel: 'noopener noreferrer' } : {})}
+              className="inline-flex min-h-10 items-center text-small text-grey-700 hover:text-black hover:underline"
+            >
               {link.label}
+              {link.external === true ? <span className="sr-only"> (opens in a new tab)</span> : null}
             </a>
           </li>
         ))}
@@ -96,7 +103,7 @@ function FooterLinks({ title, links }: { title: string; links: readonly FooterLi
 export function SiteFooter({ appUrl, cities }: { appUrl: string; cities: readonly { slug: string; name: string }[] }) {
   return (
     <footer className="border-t border-grey-200 bg-grey-100">
-      <div className="mx-auto grid w-full max-w-6xl grid-cols-[minmax(0,1fr)] gap-8 px-4 py-12 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-[minmax(0,1.5fr)_repeat(4,minmax(0,1fr))] md:px-6">
+      <div className="mx-auto grid w-full max-w-6xl grid-cols-[minmax(0,1fr)] gap-8 px-4 py-12 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-[minmax(0,1.5fr)_repeat(5,minmax(0,1fr))] md:px-6">
         <div className="flex flex-col gap-3">
           <Link href="/" className="flex w-fit max-w-full items-center text-black">
             <Logo art={horizontalLogo} label={brand.name} className="h-16 max-w-full" />
@@ -114,6 +121,8 @@ export function SiteFooter({ appUrl, cities }: { appUrl: string; cities: readonl
           ]}
         />
         <FooterLinks title="Legal" links={legalNav} />
+        {/* The brand's own accounts elsewhere (D-403). */}
+        <FooterLinks title="Follow us" links={brand.social.map((account) => ({ href: account.url, label: account.label, external: true }))} />
       </div>
       <p className="mx-auto w-full max-w-6xl px-4 pb-8 text-caption text-grey-700 md:px-6">
         {brand.name} is run by {companyDisclosure()}

@@ -6,7 +6,7 @@ import Image, { type StaticImageData } from 'next/image';
 import { useEffect, useRef, useState } from 'react';
 
 /**
- * What the page the printed QR codes opens borrows from other companies (D-405), each drawn as
+ * What the page the printed QR codes opens borrows from other companies (D-406), each drawn as
  * itself until somebody asks for it. Nothing is fetched from YouTube or Calendly before then, so
  * the page is as quick to open as it was, and nobody's visit is told to either company unless
  * they press play or ask to see the times. The frames are admitted by the security policy and by

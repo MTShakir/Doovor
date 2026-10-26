@@ -43,10 +43,10 @@ async function scrollTo(page: Page, id: string): Promise<void> {
 }
 
 /**
- * The page the printed QR codes open (PRD 8.3, 9.18, D-403): the card, the leaflet and the flyer
+ * The page the printed QR codes open (PRD 8.3, 9.18, D-404): the card, the leaflet and the flyer
  * each open it on their own words, and sign-up carries on where somebody came from.
  */
-test.describe('the page the printed pieces open (D-403)', () => {
+test.describe('the page the printed pieces open (D-404)', () => {
   test('opens on each printed piece’s own words, and carries where it came from on to sign-up', async ({ page }, testInfo) => {
     const { open } = await foundingPlaces();
     for (const piece of ['card', 'leaflet', 'flyer'] as const) {
@@ -165,7 +165,7 @@ test.describe('the page the printed pieces open (D-403)', () => {
 
     const closing = page.getByRole('region', { name: open ? 'Claim your founding place.' : 'Start free today.' });
     await expect(closing.getByRole('link', { name: actionFor(open) })).toHaveAttribute('href', /\/sign-up\?role=instructor$/);
-    // A chat on WhatsApp, as the product owner agreed for this page (D-277, D-404), with the number
+    // A chat on WhatsApp, as the product owner agreed for this page (D-277, D-405), with the number
     // itself never written out.
     const whatsApp = new RegExp(`^${literally(brand.supportPhone.whatsApp)}\\?text=`);
     await expect(closing.getByRole('link', { name: 'Message Talha on WhatsApp' })).toHaveAttribute('href', whatsApp);
@@ -216,7 +216,7 @@ test.describe('the page the printed pieces open (D-403)', () => {
     await expect(bar).toBeVisible();
   });
 
-  test('loads the setup video and the onboarding call only when somebody asks for them (D-405)', async ({ page }, testInfo) => {
+  test('loads the setup video and the onboarding call only when somebody asks for them (D-406)', async ({ page }, testInfo) => {
     // Stand-ins for both, so the test asks neither company for anything, and a record of every
     // request that would have gone to either.
     const asked: string[] = [];
@@ -250,7 +250,7 @@ test.describe('the page the printed pieces open (D-403)', () => {
     await settled(page);
     await snap(page, testInfo, 'join-booking-open', { fullPage: false });
 
-    // Told where the details are asked for, and the privacy notice says the same (D-406).
+    // Told where the details are asked for, and the privacy notice says the same (D-407).
     await expect(booking).toContainText('Booking passes your name, email address and mobile number to us through Calendly');
     await booking.getByRole('link', { name: 'Our privacy notice' }).click();
     await expect(page).toHaveURL(/\/privacy$/);

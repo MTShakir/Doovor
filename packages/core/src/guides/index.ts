@@ -12,7 +12,7 @@
 
 import { brand } from '@repo/config/brand';
 import { guideShareCard, type ShareCard } from '../share-card.ts';
-import { breadcrumbList, type JsonLd } from '../structured-data.ts';
+import { brandOrganization, breadcrumbList, type JsonLd } from '../structured-data.ts';
 import { formatCalendarDate } from '../time/index.ts';
 import { drivingInstructorExpenses } from './library/driving-instructor-expenses.ts';
 import { drivingTestBookingRules2026 } from './library/driving-test-booking-rules-2026.ts';
@@ -162,7 +162,7 @@ export function guideStructuredData(
         datePublished: guide.published,
         dateModified: guide.updated,
         author: { '@type': 'Organization', name: guideAuthor, url: site.url },
-        publisher: { '@type': 'Organization', name: brand.name, url: site.url, logo: { '@type': 'ImageObject', url: `${site.url}/icons/512.png` } },
+        publisher: brandOrganization(site.url),
         mainEntityOfPage: url,
         inLanguage: 'en-GB',
       },

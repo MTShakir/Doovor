@@ -82,7 +82,7 @@ scanning: the automated checks named below run on every push (`.github/workflows
   `apps/web/src/lib/security-headers.ts`, which names every origin: the Supabase project this build
   points at and its socket, Mapbox, Stripe with Link, and the analytics and error hosts once they are
   set. Two more are frames and nothing else: YouTube's privacy-enhanced player and Calendly, which the
-  join page loads only when somebody presses play or asks for the call's times (D-405). Nothing may
+  join page loads only when somebody presses play or asks for the call's times (D-406). Nothing may
   frame us, plug in a plugin, rewrite where our own links point, or post our forms away. A page may
   see where the car is and photograph a licence; nothing may listen.
 - Scripts and styles still allow `'unsafe-inline'`: Next puts an inline bootstrap into every page and

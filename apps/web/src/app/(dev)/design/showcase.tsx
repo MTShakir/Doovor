@@ -2581,7 +2581,7 @@ function ShowcaseOfferAndGive() {
 }
 
 /**
- * The page the printed QR codes open (D-403): its opening on each printed piece's words, and the
+ * The page the printed QR codes open (D-404): its opening on each printed piece's words, and the
  * pieces of the leaflet's story it is told in, each in every state it has.
  */
 function ShowcaseJoinPage() {
@@ -2589,7 +2589,7 @@ function ShowcaseJoinPage() {
   return (
     <>
       <Label>
-        The page the printed QR codes open (D-403): its opening on each piece's own words, the page's own for anybody else, and no founding line
+        The page the printed QR codes open (D-404): its opening on each piece's own words, the page's own for anybody else, and no founding line
         over the card's, which already is the offer
       </Label>
       <div className="flex flex-col divide-y divide-grey-200 overflow-hidden rounded-card border border-grey-200">
@@ -2656,7 +2656,7 @@ function ShowcaseJoinPage() {
         ]}
       />
       <Label>
-        The setup video before it is played, and the onboarding call before its times are asked for (D-405). Nothing comes from YouTube or
+        The setup video before it is played, and the onboarding call before its times are asked for (D-406). Nothing comes from YouTube or
         Calendly until then; each then shows its own player or calendar in its place
       </Label>
       <div className="grid items-start gap-6 md:grid-cols-2">
@@ -2688,7 +2688,7 @@ function ShowcaseJoinPage() {
           Claim your founding place
         </StickyAction>
       </div>
-      <Label>The founding offer with what comes after it, and the closing call with a line over it and a chat on WhatsApp as a second way in (D-404)</Label>
+      <Label>The founding offer with what comes after it, and the closing call with a line over it and a chat on WhatsApp as a second way in (D-405)</Label>
       <div className="flex flex-col gap-6 overflow-hidden rounded-card border border-grey-200 pt-6">
         <FoundingOffer
           id="design-founding-offer"

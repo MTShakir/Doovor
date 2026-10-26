@@ -62,7 +62,7 @@ const mapbox = {
 };
 
 /**
- * What the page the printed QR codes opens can embed once somebody asks for it (D-405): the setup
+ * What the page the printed QR codes opens can embed once somebody asks for it (D-406): the setup
  * video from YouTube's privacy-enhanced player, and the onboarding call's times from Calendly.
  * Each is a frame and nothing else; both pages load their own scripts inside their own frame.
  */

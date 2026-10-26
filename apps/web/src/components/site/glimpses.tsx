@@ -43,7 +43,7 @@ function FakeButton({ children }: { children: ReactNode }) {
 
 /**
  * The instructor's Today (PRD 7.5): the day's lessons, who has paid, and the next one to start.
- * Picked up around Leeds, or wherever the page is talking to (D-403).
+ * Picked up around Leeds, or wherever the page is talking to (D-404).
  */
 export function TodayGlimpse({
   className,

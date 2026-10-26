@@ -20,7 +20,7 @@ function useArrivalSource(): string | null {
 }
 
 /**
- * The page's button to sign up, carrying on where the visitor came from (D-403). The page is built
+ * The page's button to sign up, carrying on where the visitor came from (D-404). The page is built
  * once for everybody, so the address it was opened at is only known in the browser: the button is
  * drawn without it, and gains it as soon as the page is open.
  */
@@ -34,7 +34,7 @@ export function SignUpLink({ href, children, onDark = false }: { href: string; c
 }
 
 /**
- * The page's one action, kept at the foot of a phone's screen while somebody reads (D-403): from
+ * The page's one action, kept at the foot of a phone's screen while somebody reads (D-404): from
  * the moment the opening's own button has gone off the top, until the founding offer or the closing
  * call has its button in view, or has been passed. Out of sight, and out of reach of a keyboard or
  * a screen reader, the rest of the time; never on a wide screen, where the page's buttons are never

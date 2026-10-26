@@ -12,7 +12,7 @@ const sitePrefixes: readonly string[] = ['/instructors/', '/schools/', '/driving
 
 /**
  * The site's pages that search is not given, so no sitemap lists them: the page the printed QR
- * codes open, which says what the page for instructors says, for whoever scanned one (D-403).
+ * codes open, which says what the page for instructors says, for whoever scanned one (D-404).
  */
 const unlistedSitePages: readonly string[] = ['/join'];
 

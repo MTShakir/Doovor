@@ -71,7 +71,7 @@ describe('the content security policy (NFR-SEC-03, M6-04)', () => {
     expect((policy['script-src'] ?? []).filter((source) => source.includes('mapbox'))).toEqual([]);
   });
 
-  it('admits the setup video and the onboarding call as frames, and nothing more of either (D-405)', () => {
+  it('admits the setup video and the onboarding call as frames, and nothing more of either (D-406)', () => {
     const policy = directives(hosted);
     expect(policy['frame-src']).toEqual(expect.arrayContaining(['https://www.youtube-nocookie.com', 'https://calendly.com']));
     // The player that sets cookies as it loads is not the one embedded.

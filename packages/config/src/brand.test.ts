@@ -16,3 +16,23 @@ describe('what the company says about itself (Companies Act trading disclosures,
     expect(brand.icoRegistration).toMatch(/^Z[A-Z0-9]\d{6}$/);
   });
 });
+
+describe("the brand's own accounts (D-403)", () => {
+  it('gives each a secure address on its own network, with its handle in it', () => {
+    const hosts: Record<string, string> = {
+      instagram: 'www.instagram.com',
+      tiktok: 'www.tiktok.com',
+      facebook: 'www.facebook.com',
+      youtube: 'www.youtube.com',
+      linkedin: 'www.linkedin.com',
+      threads: 'www.threads.com',
+    };
+    expect(brand.social.map((one) => one.network)).toEqual(Object.keys(hosts));
+    for (const one of brand.social) {
+      const url = new URL(one.url);
+      expect(url.protocol, one.network).toBe('https:');
+      expect(url.host, one.network).toBe(hosts[one.network]);
+      expect(url.pathname.toLowerCase(), one.network).toContain(one.handle.replace(/^@/, '').toLowerCase());
+    }
+  });
+});
