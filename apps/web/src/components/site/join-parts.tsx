@@ -142,6 +142,8 @@ export function FilmBand({ id, title, children }: { id: string; title: { before:
       <div className="mx-auto flex w-full max-w-6xl flex-col items-center gap-8 px-4 py-14 md:gap-10 md:px-6 md:py-20">
         <h2 id={`${id}-heading`} className="max-w-3xl text-center text-h1 text-balance md:text-display">
           {title.before}
+          {/* On a phone the marked words start a line of their own, rather than one of them ending the first. */}
+          <br className="md:hidden" />
           <Marked>{title.marked}</Marked>
         </h2>
         <div className="flex w-full max-w-[26rem] flex-col gap-5">{children}</div>
