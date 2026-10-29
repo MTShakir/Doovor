@@ -14,9 +14,11 @@ import {
   ReminderGlimpse,
   TodayGlimpse,
 } from '@/components/site/glimpses';
+import filmPoster from '@/components/site/images/join-film.webp';
 import setupGuidePoster from '@/components/site/images/setup-guide.webp';
 import { SignUpLink, StickyAction } from '@/components/site/join-actions';
 import { BookingFacade, VideoFacade } from '@/components/site/join-embeds';
+import { FilmPlayer } from '@/components/site/join-film';
 import { ActionRow, CostPanel, FactList, FounderNote, JoinHero, PriceLines, TextBubbles, type TextMessage } from '@/components/site/join-parts';
 import {
   Band,
@@ -71,6 +73,25 @@ const ownerAgreed: { whatsApp: boolean; founderPhoto: string | null } = { whatsA
  * a phone, from the week 2 launch pack. Its thumbnail is the owner's own, kept with the page.
  */
 const setupGuide = { videoId: 'NXm0hbDlRlY', title: `How to set up your driving instructor diary in ${brand.name}`, length: '6:31' } as const;
+
+/**
+ * The page's own film (D-408): the whole story in under four minutes, the owner's voice over the
+ * app's own screens, hosted with the site. Its last frame points down to the button under it. A new
+ * cut gets a new file name, so nobody is ever sent an old one from a cache.
+ */
+const film = {
+  src: '/video/join-20261029.mp4',
+  captions: '/video/join-20261029.en-GB.vtt',
+  title: `${brand.name} in under four minutes`,
+  length: '3:43',
+} as const;
+
+/** What the film covers, part by part, with where each part starts. */
+const filmParts = [
+  { at: '0:00', title: 'The cost', description: 'Texts at night, money still owed, and a lesson cancelled at eight in the morning.' },
+  { at: '0:45', title: 'The fix', description: 'Bookings, payments, late cancels, lesson records and your tax year, on the app’s own screens.' },
+  { at: '3:00', title: 'The deal', description: 'Free to start, with no card needed, and the founding offer.' },
+] as const;
 
 /** One late cancellation a week, at a £40 lesson, over a year: how the leaflet works it out. */
 const lessonPence = 4000;
@@ -268,6 +289,33 @@ export default async function JoinPage() {
         note={'Free to start. No card needed. Set up in about 20\u00a0minutes.'}
         visual={<GlimpsePair back={<TodayGlimpse pickups={['Belvedere', 'Erith', 'Bexleyheath']} />} front={<MoneyGlimpse />} />}
       />
+
+      <Band
+        id="film"
+        title="See it in under four minutes."
+        description={`What the admin costs you, how the app takes it off you, and ${open ? `what the first ${String(foundingOffer.instructorLimit)} instructors get` : 'what it costs'}.`}
+      >
+        <div className="grid grid-cols-[minmax(0,1fr)] items-start gap-8 md:grid-cols-[minmax(0,26rem)_minmax(0,1fr)] md:gap-14">
+          <div className="flex flex-col gap-5">
+            <FilmPlayer src={film.src} captions={film.captions} title={film.title} length={film.length} poster={filmPoster} />
+            {/* Straight under the film, where its last frame points. */}
+            <ActionRow id="action-film" stacked aside="Free to start. No card needed.">
+              <SignUpLink href={signUp}>{action}</SignUpLink>
+            </ActionRow>
+          </div>
+          <ol className="flex flex-col gap-6 md:pt-2">
+            {filmParts.map((part) => (
+              <li key={part.at} className="flex gap-4">
+                <span className="min-w-12 text-body font-semibold text-grey-700 tabular-nums">{part.at}</span>
+                <div className="flex flex-col gap-1">
+                  <h3 className="text-h3 text-black">{part.title}</h3>
+                  <p className="text-body text-pretty text-grey-700">{part.description}</p>
+                </div>
+              </li>
+            ))}
+          </ol>
+        </div>
+      </Band>
 
       <Band id="old-way" eyebrow={<SignalEyebrow lit="red">The old way</SignalEyebrow>} title="Sound familiar?" tone="grey">
         <div className="grid grid-cols-[minmax(0,1fr)] items-start gap-10 md:grid-cols-2 md:items-center md:gap-16">
@@ -485,7 +533,7 @@ export default async function JoinPage() {
         href={signUp}
         after="opening-action"
         // Every part with buttons of its own, in page order, the closing call last.
-        quietWhile={['action-old-way', 'action-fix', 'action-stories', 'action-fair', 'onboarding-call', 'action-questions', 'founding-places', 'claim']}
+        quietWhile={['action-film', 'action-old-way', 'action-fix', 'action-stories', 'action-fair', 'onboarding-call', 'action-questions', 'founding-places', 'claim']}
       >
         {action}
       </StickyAction>

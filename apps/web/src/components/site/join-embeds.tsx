@@ -22,6 +22,20 @@ function useFocusOnArrival(arrived: boolean) {
   return frame;
 }
 
+/** A video's Play label, in a corner rather than the middle, so it covers none of the thumbnail's own words. */
+export function PlayLabel({ length }: { length: string }) {
+  return (
+    <span
+      className="absolute bottom-3 left-3 flex min-h-12 items-center gap-2 rounded-full bg-black py-2 pr-5 pl-4 text-body font-semibold text-white shadow-raised transition-transform duration-200 ease-out group-hover:scale-105"
+      aria-hidden
+    >
+      <Play size={20} strokeWidth={2} fill="currentColor" />
+      Play
+      <span className="font-normal tabular-nums">{length}</span>
+    </span>
+  );
+}
+
 /** The setup tutorial, as its own thumbnail until somebody presses play, then YouTube's privacy-enhanced player. */
 export function VideoFacade({ videoId, title, length, poster }: { videoId: string; title: string; length: string; poster: StaticImageData }) {
   const [playing, setPlaying] = useState(false);
@@ -47,15 +61,7 @@ export function VideoFacade({ videoId, title, length, poster }: { videoId: strin
           className="group absolute inset-0 size-full cursor-pointer"
         >
           <Image src={poster} alt="" fill sizes="(min-width: 768px) 768px, 100vw" placeholder="blur" className="object-cover" />
-          {/* In a corner rather than the middle, so it covers none of the thumbnail's own words. */}
-          <span
-            className="absolute bottom-3 left-3 flex min-h-12 items-center gap-2 rounded-full bg-black py-2 pr-5 pl-4 text-body font-semibold text-white shadow-raised transition-transform duration-200 ease-out group-hover:scale-105"
-            aria-hidden
-          >
-            <Play size={20} strokeWidth={2} fill="currentColor" />
-            Play
-            <span className="font-normal tabular-nums">{length}</span>
-          </span>
+          <PlayLabel length={length} />
         </button>
       )}
     </div>

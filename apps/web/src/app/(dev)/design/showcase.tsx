@@ -41,9 +41,11 @@ import {
   TaxYearGlimpse,
   TodayGlimpse,
 } from '@/components/site/glimpses';
+import filmPoster from '@/components/site/images/join-film.webp';
 import setupGuidePoster from '@/components/site/images/setup-guide.webp';
 import { SignUpLink, StickyAction } from '@/components/site/join-actions';
 import { BookingFacade, VideoFacade } from '@/components/site/join-embeds';
+import { FilmPlayer } from '@/components/site/join-film';
 import { ActionRow, CostPanel, FactList, FounderNote, JoinHero, PriceLines, TextBubbles } from '@/components/site/join-parts';
 import {
   Band,
@@ -2662,6 +2664,16 @@ function ShowcaseJoinPage() {
       <div className="grid items-start gap-6 md:grid-cols-2">
         <VideoFacade videoId="NXm0hbDlRlY" title="How to set up your driving instructor diary" length="6:31" poster={setupGuidePoster} />
         <BookingFacade url="https://calendly.com" embedDomain="example.com" title="Choose a time for your free onboarding call" />
+      </div>
+      <Label>
+        The join page’s own film, hosted with the site (D-408): its poster until somebody presses play, then the film itself, with sound and
+        captions to turn on. The page’s button is under it, with its line under the button, in a column too narrow for both side by side
+      </Label>
+      <div className="flex max-w-sm flex-col gap-5">
+        <FilmPlayer src="/video/join-20261029.mp4" captions="/video/join-20261029.en-GB.vtt" title="The join page film" length="3:43" poster={filmPoster} />
+        <ActionRow id="design-action-film" stacked aside="Free to start. No card needed.">
+          <PrimaryLink href="#start">Claim your founding place</PrimaryLink>
+        </ActionRow>
       </div>
       <Label>A part of the page ending on its button again, with a line beside it, and a feature told with one under its points</Label>
       <ActionRow id="design-action-row" aside="Free to start. No card needed.">

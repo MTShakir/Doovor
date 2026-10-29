@@ -105,11 +105,12 @@ export function JoinHero({
 
 /**
  * The page's button again at the end of a part of it, so somebody convinced there need not scroll
- * back for it, with a line beside it (D-406). Its id lets the phone's bar keep out of its way.
+ * back for it, with a line beside it (D-406), or under it in a column too narrow for both, as under
+ * the film (D-408). Its id lets the phone's bar keep out of its way.
  */
-export function ActionRow({ id, children, aside }: { id: string; children: ReactNode; aside?: ReactNode }) {
+export function ActionRow({ id, children, aside, stacked = false }: { id: string; children: ReactNode; aside?: ReactNode; stacked?: boolean }) {
   return (
-    <div id={id} className="flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-5">
+    <div id={id} className={stacked ? 'flex flex-col gap-3' : 'flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-5'}>
       {children}
       {aside === undefined ? null : <div className="text-small text-grey-700">{aside}</div>}
     </div>

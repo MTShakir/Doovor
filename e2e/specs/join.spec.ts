@@ -29,8 +29,11 @@ async function foundingPlaces(): Promise<{ limit: number; joined: number; open: 
 /** The button's words while the founding places are open, and once they have gone (D-251). */
 const actionFor = (open: boolean): string => (open ? 'Claim your founding place' : 'Create your free account');
 
-/** The page's sign-up buttons: the opening's, one at the end of five parts, the founding offer's and the closing call's. */
-const signUpButtons = 8;
+/** The page's sign-up buttons: the opening's, the film's, one at the end of five parts, the founding offer's and the closing call's. */
+const signUpButtons = 9;
+
+/** The page's own film, hosted with the site (D-408). */
+const film = { src: '/video/join-20261029.mp4', captions: '/video/join-20261029.en-GB.vtt', name: `Play the video, ${brand.name} in under four minutes, 3:43` };
 
 /** A pattern for a string as it is, for building a RegExp around it. */
 const literally = (text: string): string => text.replace(/[.*+?^${}()|[\]\\]/g, (character) => `\\${character}`);
@@ -199,6 +202,8 @@ test.describe('the page the printed pieces open (D-404)', () => {
     await snap(page, testInfo, 'join-phone-bar', { fullPage: false });
 
     // Out of the way of every part's own button, the booking and the founding offer's.
+    await scrollTo(page, 'action-film');
+    await expect(bar).toBeHidden();
     await scrollTo(page, 'action-stories');
     await expect(bar).toBeHidden();
     await scrollTo(page, 'onboarding-call');
@@ -258,6 +263,46 @@ test.describe('the page the printed pieces open (D-404)', () => {
     await expect(page.getByRole('rowheader', { name: 'Booking a call with us' })).toBeVisible();
     await expect(page.getByRole('rowheader', { name: 'Calendly', exact: true })).toBeVisible();
     await expect(page.getByText('Nothing is loaded from YouTube until you press play.')).toBeVisible();
+  });
+
+  test('plays its own film from the site itself, with captions, and its button straight under it (D-408)', async ({ page }, testInfo) => {
+    // Every request the film makes, and any to another company, which there should be none of.
+    const elsewhere: string[] = [];
+    const filmRequests: string[] = [];
+    page.on('request', (request) => {
+      const url = new URL(request.url());
+      if (url.pathname.startsWith('/video/')) filmRequests.push(url.pathname);
+      if (/(^|\.)(youtube-nocookie\.com|youtube\.com|ytimg\.com|vimeo\.com)$/.test(url.hostname)) elsewhere.push(request.url());
+    });
+    await page.goto('/join');
+    const { open } = await foundingPlaces();
+
+    const section = page.getByRole('region', { name: 'See it in under four minutes.' });
+    const play = section.getByRole('button', { name: film.name });
+    await expect(play).toBeVisible();
+    // Its parts, and the page's button straight under it, where the film's last frame points.
+    for (const part of ['The cost', 'The fix', 'The deal']) await expect(section.getByRole('heading', { level: 3, name: part })).toBeVisible();
+    await expect(page.locator('#action-film').getByRole('link', { name: actionFor(open) })).toHaveAttribute('href', /\/sign-up\?role=instructor$/);
+    await expectAccessible(page);
+    expect(filmRequests, 'nothing of the film is downloaded before play is pressed').toEqual([]);
+
+    await play.click();
+    const video = section.locator('video');
+    await expect(video).toHaveAttribute('src', film.src);
+    await expect(video.locator('track[kind="captions"]')).toHaveAttribute('src', film.captions);
+    await expect(video).toHaveAttribute('aria-label', `${brand.name} in under four minutes`);
+    expect(elsewhere, 'nothing goes to another company for it').toEqual([]);
+    // Served by the site itself: the film in pieces, as a browser asks for it, and its captions.
+    const piece = await page.request.get(film.src, { headers: { Range: 'bytes=0-1023' } });
+    expect([200, 206]).toContain(piece.status());
+    expect(piece.headers()['content-type']).toContain('video/mp4');
+    const captions = await page.request.get(film.captions);
+    expect(captions.status()).toBe(200);
+    expect(captions.headers()['content-type']).toContain('text/vtt');
+    expect(await captions.text()).toContain('Your last lesson ends at six.');
+    await section.scrollIntoViewIfNeeded();
+    await settled(page);
+    await snap(page, testInfo, 'join-film', { fullPage: false });
   });
 
   test('waits for the cookie question to be answered, which sits where it would @phone-only', async ({ browser }) => {
