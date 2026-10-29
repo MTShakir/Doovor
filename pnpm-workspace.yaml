@@ -88,6 +88,12 @@ overrides:
   brace-expansion@2: '>=2.1.6 <3'
   brace-expansion@4: '>=5.0.11'
   brace-expansion@5: '>=5.0.11'
+  # Command injection on Windows through Unicode quotation marks given to services()
+  # (GHSA-3f7j-7jwc-fxfj, D-409). It arrives with the job runner: Inngest loads OpenTelemetry's
+  # automatic instrumentations, and their host metrics read the machine's own figures through it.
+  # Nothing a visitor sends reaches it, and production runs on Linux, but a fixed version exists,
+  # so it is raised rather than ignored. Held to the 5 line the fix landed in.
+  systeminformation: '>=5.33.16 <6'
 
 # An advisory with no fixed version, read and accepted (M6-02, D-136). extract-zip reaches us only
 # through Lighthouse CI's browser downloader, which never runs: the Lighthouse job measures with the
