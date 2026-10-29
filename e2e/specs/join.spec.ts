@@ -100,23 +100,32 @@ test.describe('the page the printed pieces open (D-404)', () => {
     await expect(fix.getByRole('listitem')).toHaveCount(3);
     await expect(fix).toContainText('once we have checked your badge');
 
-    // Seven jobs, one card each, those on Pro saying so (D-410), and the big four told below.
+    // Seven jobs, one card each, those on Pro saying so (D-410), each going down to a part of its own
+    // that says the same, beside how it looks in the app (D-411).
     const jobs = page.getByRole('region', { name: 'Your admin, handled. Here’s how.' });
     await expect(jobs.getByRole('listitem')).toHaveCount(7);
-    await expect(jobs).toContainText('Seven jobs off your list.');
-    for (const [job, pro] of [
-      ['Your own page, booking link and gallery', 'Gallery on Pro'],
-      ['Automatic text and email reminders', 'Texts on Pro'],
-      ['Bookkeeping in a few taps, exported by year or quarter', 'On Pro'],
+    await expect(jobs).toContainText('Seven jobs off your list. Pick one to see it in the app.');
+    for (const [title, id, pro] of [
+      ['Your diary, made easy', 'diary', null],
+      ['Your own page, booking link and gallery', 'your-page', 'Gallery on Pro'],
+      ['Learners book your free times', 'bookings', null],
+      ['Automatic text and email reminders', 'reminders', 'Texts on Pro'],
+      ['Directions in a tap, records in a minute', 'lesson-records', null],
+      ['Paid before the lesson, late cancels covered', 'payments', null],
+      ['Bookkeeping in a few taps', 'books', 'On Pro'],
     ] as const) {
-      await expect(jobs.getByRole('listitem').filter({ hasText: job })).toContainText(pro);
+      const card = jobs.getByRole('link').filter({ hasText: title });
+      await expect(card).toHaveAttribute('href', `#${id}`);
+      if (pro === null) await expect(card).not.toContainText('Pro');
+      else await expect(card).toContainText(pro);
+      await expect(page.getByRole('region', { name: title, exact: true })).toHaveAttribute('id', id);
     }
-    await expect(jobs.getByRole('listitem').filter({ hasText: 'Your diary, made easy' })).not.toContainText('Pro');
-    for (const title of ['Learners book themselves', 'Paid before the lesson', 'Late cancels covered', 'Records in under a minute']) {
-      await expect(page.getByRole('region', { name: title })).toBeVisible();
-    }
+    // A card goes down to its part, the last of them as well.
+    await jobs.getByRole('link').filter({ hasText: 'Bookkeeping in a few taps' }).click();
+    await expect(page).toHaveURL(/#books$/);
+    await expect(page.getByRole('heading', { level: 2, name: 'Bookkeeping in a few taps' })).toBeInViewport();
     // The reminders in the app's own words, and texts sold as Pro.
-    const reminders = page.getByRole('region', { name: 'Late cancels covered' });
+    const reminders = page.getByRole('region', { name: 'Automatic text and email reminders' });
     await expect(reminders).toContainText('the day before and two hours before');
     await expect(reminders).toContainText('On Pro');
 
@@ -293,6 +302,16 @@ test.describe('the page the printed pieces open (D-404)', () => {
     const button = page.locator('#action-film').getByRole('link', { name: actionFor(open) });
     await expect(button).toHaveAttribute('href', /\/sign-up\?role=instructor$/);
     expect(await button.evaluate((link) => getComputedStyle(link).backgroundColor)).toBe('rgb(255, 212, 0)');
+    // Its line centred under the button, and the words that matter underlined in yellow, not marked (D-411).
+    const note = page.locator('#action-film').getByText('Free to start. No card needed.');
+    expect(await note.evaluate((line) => getComputedStyle(line).textAlign)).toBe('center');
+    const underlined = section.getByRole('heading', { level: 2 }).getByText('Get your evenings back.');
+    expect(
+      await underlined.evaluate((words) => {
+        const style = getComputedStyle(words);
+        return [style.textDecorationLine, style.textDecorationColor, style.backgroundColor];
+      }),
+    ).toEqual(['underline', 'rgb(255, 212, 0)', 'rgba(0, 0, 0, 0)']);
     await expectAccessible(page);
     expect(filmRequests, 'nothing of the film is downloaded before play is pressed').toEqual([]);
 

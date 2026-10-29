@@ -1891,7 +1891,7 @@ export function DesignShowcase() {
             { question: 'Who holds the money?', answer: 'You do. Card payments go to your own Stripe account.' },
           ]}
         />
-        <Label>A band with features, on grey, and steps in their order</Label>
+        <Label>A band with features, on grey, and steps in their order, then a band with a hairline over it, for one that follows a part of its own colour (D-411)</Label>
         <div className="flex flex-col overflow-hidden rounded-card border border-grey-200">
           <Band id="design-features" title="Built for how driving lessons really work" tone="grey">
             <FeatureGrid
@@ -1913,6 +1913,9 @@ export function DesignShowcase() {
                 { title: 'Your hours', description: 'The times you teach.' },
               ]}
             />
+          </Band>
+          <Band id="design-divided" title="A white band after a white part" divided>
+            <p className="text-body text-grey-700">White again after a white part, with the hairline over it keeping the two apart.</p>
           </Band>
         </div>
         <Label>The founding offer, the one yellow block on the site, and the closing call on black</Label>
@@ -2690,13 +2693,16 @@ function ShowcaseJoinPage() {
           </ActionRow>
         </FilmBand>
       </div>
-      <Label>The jobs the app takes off the list, one card each, a Pro one saying so, and an odd last card across the row (D-410)</Label>
+      <Label>
+        The jobs the app takes off the list, one card each going down to its own part (D-411), a Pro one saying so, and an odd last card across
+        the row (D-410)
+      </Label>
       <div className="rounded-card bg-grey-100 p-6">
         <JobList
           jobs={[
-            { title: 'Your diary, made easy' },
-            { title: 'Your own page, booking link and gallery', pro: 'Gallery on Pro' },
-            { title: 'Bookkeeping in a few taps, exported by year or quarter', pro: 'On Pro' },
+            { title: 'Your diary, made easy', href: '#design-features' },
+            { title: 'Your own page, booking link and gallery', href: '#design-steps', pro: 'Gallery on Pro' },
+            { title: 'Bookkeeping in a few taps', href: '#design-story-action', pro: 'On Pro' },
           ]}
         />
       </div>

@@ -10,8 +10,10 @@ import {
   GlimpseAlone,
   GlimpsePair,
   MoneyGlimpse,
+  ProfileGlimpse,
   ProgressGlimpse,
   ReminderGlimpse,
+  TaxYearGlimpse,
   TodayGlimpse,
 } from '@/components/site/glimpses';
 import filmPoster from '@/components/site/images/join-film.webp';
@@ -101,20 +103,6 @@ const film = {
   hook: { before: 'Give us 4 minutes. ', marked: 'Get your evenings back.' },
 } as const;
 
-/**
- * What the app takes off an instructor's list (D-410), each in as few words as it will go, and
- * each one the app does today. The four told in full further down come third to sixth.
- */
-const jobs = [
-  { title: 'Your diary, made easy' },
-  { title: 'Your own page, booking link and gallery', pro: 'Gallery on Pro' },
-  { title: 'Learners book your free times themselves' },
-  { title: 'Automatic text and email reminders', pro: 'Texts on Pro' },
-  { title: '1 tap to the pickup, 1 minute to record progress' },
-  { title: 'Paid before the lesson, late cancels covered' },
-  { title: 'Bookkeeping in a few taps, exported by year or quarter', pro: 'On Pro' },
-] as const;
-
 /** One late cancellation a week, at a £40 lesson, over a year: how the leaflet works it out. */
 const lessonPence = 4000;
 const weeksInAYear = 52;
@@ -138,12 +126,48 @@ const steps = [
   { title: 'Switch on payments', description: 'Your bank details go to Stripe, so card payments reach you.' },
 ] as const;
 
+/** Where the day's learners are picked up, in the patch the printed pieces go to. */
+const pickups = ['Belvedere', 'Erith', 'Bexleyheath'] as const;
+
+/**
+ * What the app takes off an instructor's list (D-410), each in its own part, told in a line or two
+ * beside how it looks in the app (D-411). Every one is something the app does today, and what is
+ * on Pro says so. The cards at the top of them are made from these, so a card and the part it goes
+ * down to always say the same.
+ */
 const stories = [
+  {
+    id: 'diary',
+    eyebrow: 'Your day',
+    title: 'Your diary, made easy',
+    description: 'Every lesson, where to pick each learner up and who has paid, on one screen.',
+    points: [{ text: 'Day, week and month views of your diary' }, { text: 'Time kept free between lessons' }],
+    visual: (
+      <GlimpseAlone>
+        <TodayGlimpse pickups={pickups} />
+      </GlimpseAlone>
+    ),
+  },
+  {
+    id: 'your-page',
+    eyebrow: 'Getting found',
+    title: 'Your own page, booking link and gallery',
+    description: 'Your prices, where you teach and your next free times, on a page learners near you can find.',
+    points: [
+      { text: 'Your own booking link, with a QR code for WhatsApp, Instagram and anywhere else' },
+      { text: 'Learners who passed with you, in a gallery on your page', pro: true },
+    ],
+    visual: (
+      <GlimpseAlone>
+        <ProfileGlimpse area={pickups[0]} />
+      </GlimpseAlone>
+    ),
+  },
   {
     id: 'bookings',
     eyebrow: 'Bookings',
-    title: 'Learners book themselves',
-    description: 'Learners book your free times from your own link, at your prices. No more back and forth over messages to find a slot.',
+    title: 'Learners book your free times',
+    description: 'From your own link, at your prices, with no back and forth over messages to find a slot.',
     points: [{ text: 'Nothing is ever booked twice' }, { text: 'Weekly lessons that book themselves' }],
     visual: (
       <GlimpseAlone>
@@ -152,26 +176,11 @@ const stories = [
     ),
   },
   {
-    id: 'payments',
-    eyebrow: 'Payments',
-    title: 'Paid before the lesson',
-    description: 'They pay before the lesson, by card, Apple Pay or Google Pay, straight to your own account.',
-    points: [{ text: `${brand.name} never holds the money` }, { text: 'Cash and bank transfers recorded in two taps' }],
-    visual: (
-      <GlimpseAlone>
-        <MoneyGlimpse />
-      </GlimpseAlone>
-    ),
-  },
-  {
-    id: 'late-cancels',
-    eyebrow: 'Late cancels',
-    title: 'Late cancels covered',
-    description: 'Your cancellation policy is shown before they book and pay, and applied for you, late fees included.',
-    points: [
-      { text: 'Reminders by email and app notification, the day before and two hours before' },
-      { text: 'Text message reminders as well', pro: true },
-    ],
+    id: 'reminders',
+    eyebrow: 'Reminders',
+    title: 'Automatic text and email reminders',
+    description: 'Learners are reminded the day before and two hours before each lesson, so they turn up.',
+    points: [{ text: 'By email and app notification, on every plan' }, { text: 'By text message as well', pro: true }],
     visual: (
       <GlimpseAlone>
         <ReminderGlimpse />
@@ -180,9 +189,10 @@ const stories = [
   },
   {
     id: 'lesson-records',
-    eyebrow: 'Lesson records',
-    title: 'Records in under a minute',
-    description: 'Tap the skills you covered and rate each one. Your learner sees their progress straight away, so they know what to practise.',
+    eyebrow: 'Lessons',
+    title: 'Directions in a tap, records in a minute',
+    description:
+      'One tap on Navigate opens directions to the pickup. After the lesson, tap the skills you covered and rate each one, and your learner sees their progress straight away.',
     points: [{ text: 'Skills from the areas on the driving test report' }, { text: 'Works without signal, and catches up when you are back online' }],
     visual: (
       <GlimpseAlone>
@@ -190,7 +200,41 @@ const stories = [
       </GlimpseAlone>
     ),
   },
+  {
+    id: 'payments',
+    eyebrow: 'Payments',
+    title: 'Paid before the lesson, late cancels covered',
+    description:
+      'Learners pay by card, Apple Pay or Google Pay, straight to your own account. Your cancellation policy is shown before they book, and applied for you, late fees included.',
+    points: [{ text: `${brand.name} never holds the money` }, { text: 'Cash and bank transfers recorded in two taps' }],
+    visual: (
+      <GlimpseAlone>
+        <MoneyGlimpse />
+      </GlimpseAlone>
+    ),
+  },
+  {
+    id: 'books',
+    eyebrow: 'Money and tax',
+    title: 'Bookkeeping in a few taps',
+    description: 'What came in this week, this month and this tax year, and what is still owed. Expenses go in as you go, not in a rush in January.',
+    points: [
+      { text: 'Expenses with a photo of the receipt', pro: true },
+      { text: 'Exports by tax year or quarter, for your accountant or Making Tax Digital software', pro: true },
+    ],
+    visual: (
+      <GlimpseAlone>
+        <TaxYearGlimpse />
+      </GlimpseAlone>
+    ),
+  },
 ] as const;
+
+/** What of each part is on Pro, said on its card as well as beside the points that are. */
+const onPro: Partial<Record<(typeof stories)[number]['id'], string>> = { 'your-page': 'Gallery on Pro', reminders: 'Texts on Pro', books: 'On Pro' };
+
+/** The cards at the top of the parts, each going down to its own. */
+const jobs = stories.map((story) => ({ title: story.title, href: `#${story.id}`, pro: onPro[story.id] }));
 
 const fairAndLocal = [
   {
@@ -308,7 +352,7 @@ export default async function JoinPage() {
         }
         // A space that does not break, so "minutes" never sits on a line of its own.
         note={'Free to start. No card needed. Set up in about 10\u00a0minutes.'}
-        visual={<GlimpsePair back={<TodayGlimpse pickups={['Belvedere', 'Erith', 'Bexleyheath']} />} front={<MoneyGlimpse />} />}
+        visual={<GlimpsePair back={<TodayGlimpse pickups={pickups} />} front={<MoneyGlimpse />} />}
       />
 
       <FilmBand id="film" title={film.hook}>
@@ -379,7 +423,7 @@ export default async function JoinPage() {
         id="with-us"
         eyebrow={<SignalEyebrow lit="green">With {brand.name}</SignalEyebrow>}
         title="Your admin, handled. Here’s how."
-        description="Seven jobs off your list. The big four are below, as they look in the app."
+        description="Seven jobs off your list. Pick one to see it in the app."
         tone="grey"
       >
         <JobList jobs={jobs} />
@@ -391,7 +435,7 @@ export default async function JoinPage() {
           {...story}
           flip={index % 2 === 1}
           tone={index % 2 === 0 ? 'white' : 'grey'}
-          // Asked again after the last of the four, once all of them have been seen.
+          // Asked again after the last of the seven, once all of them have been seen.
           action={
             index === stories.length - 1 ? (
               <ActionRow id="action-stories">
@@ -402,7 +446,8 @@ export default async function JoinPage() {
         />
       ))}
 
-      <Band id="fair-and-local" eyebrow={<SignalEyebrow lit="green">Why {brand.name}</SignalEyebrow>} title="Fair, simple and local.">
+      {/* Seven parts end on white, as this begins, so a hairline keeps them apart (D-411). */}
+      <Band id="fair-and-local" eyebrow={<SignalEyebrow lit="green">Why {brand.name}</SignalEyebrow>} title="Fair, simple and local." divided>
         <div className="grid grid-cols-[minmax(0,1fr)] gap-10 lg:grid-cols-[minmax(0,1.2fr)_minmax(0,1fr)] lg:gap-16">
           <div className="flex flex-col gap-4">
             <h3 className="text-h2 text-black">What it costs, now and later</h3>

@@ -241,8 +241,11 @@ export function SchoolGlimpse({ className }: { className?: string }) {
   );
 }
 
-/** An instructor as learners searching nearby find them (INS-05, PRD 9.13): checked, priced, free. */
-export function ProfileGlimpse({ className }: { className?: string }) {
+/**
+ * An instructor as learners searching nearby find them (INS-05, PRD 9.13): checked, priced, free.
+ * Based around Leeds, or wherever the page is talking to (D-411).
+ */
+export function ProfileGlimpse({ className, area = 'Headingley' }: { className?: string; area?: string }) {
   const times = ['Tue 14:00', 'Wed 09:30', 'Thu 16:00'];
   return (
     <Frame title="Instructors near you" className={className}>
@@ -256,7 +259,7 @@ export function ProfileGlimpse({ className }: { className?: string }) {
       </div>
       <p className="flex items-center gap-1 text-small text-grey-700">
         <MapPin size={14} strokeWidth={1.5} />
-        Headingley, and 5 miles around
+        {area}, and 5 miles around
       </p>
       <div className="flex flex-col gap-2">
         <p className="text-small font-semibold text-black">Next free times</p>
