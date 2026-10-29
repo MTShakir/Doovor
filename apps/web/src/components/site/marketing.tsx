@@ -197,6 +197,7 @@ export function Band({
   title,
   description,
   tone = 'white',
+  divided = false,
   children,
 }: {
   id: string;
@@ -205,10 +206,12 @@ export function Band({
   title: string;
   description?: string;
   tone?: 'white' | 'grey';
+  /** A hairline over it, for a band that follows a part of the same colour (D-411). */
+  divided?: boolean;
   children: ReactNode;
 }) {
   return (
-    <section id={id} aria-labelledby={`${id}-heading`} className={tone === 'grey' ? 'bg-grey-100' : 'bg-white'}>
+    <section id={id} aria-labelledby={`${id}-heading`} className={cn(tone === 'grey' ? 'bg-grey-100' : 'bg-white', divided && 'border-t border-grey-200')}>
       <div className="mx-auto flex w-full max-w-6xl flex-col gap-8 px-4 py-14 md:px-6 md:py-20">
         <div className="flex max-w-2xl flex-col gap-3">
           {eyebrow === undefined ? null : <p className="text-small font-semibold text-grey-700">{eyebrow}</p>}

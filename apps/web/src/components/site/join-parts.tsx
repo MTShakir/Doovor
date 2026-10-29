@@ -1,13 +1,13 @@
 import { Avatar } from '@repo/ui/avatar';
 import { cn } from '@repo/ui/lib/cn';
-import { Check, MapPin } from 'lucide-react';
+import { ArrowDown, Check, MapPin } from 'lucide-react';
 import type { ReactNode } from 'react';
 import { joinHookScript, type JoinHook, type JoinHookKey, type PrintedPiece } from '@/lib/site/join';
 import { SignalEyebrow, type Feature } from './marketing';
 
 /**
  * The pieces of the page the printed QR codes open (PRD 8.3, D-404), in the look of the leaflet
- * they come from: the traffic light, the yellow marker over the words that matter, and the
+ * they come from: the traffic light, the brand yellow under the words that matter, and the
  * messages an instructor knows too well. Plain values in, so the design page can show them.
  */
 
@@ -36,9 +36,17 @@ const hiddenFor: Record<PrintedPiece, string> = {
   flyer: 'group-data-[join-hook=flyer]/hero:hidden',
 };
 
-/** Words marked as the printed pieces mark them: black on the brand yellow. */
+/**
+ * The words that matter, underlined in the brand yellow (D-411): a thick line under them, unbroken
+ * by the letters that hang below it, in whatever colour the words around them are. The printed
+ * pieces mark them with a block of yellow; on the page the owner chose the line.
+ */
 function Marked({ children }: { children: ReactNode }) {
-  return <span className="box-decoration-clone bg-yellow px-1 text-black">{children}</span>;
+  return (
+    <span className="underline decoration-yellow decoration-[length:0.12em] underline-offset-[0.14em] [text-decoration-skip-ink:none]">
+      {children}
+    </span>
+  );
 }
 
 /**
@@ -126,7 +134,10 @@ export function ActionRow({
   return (
     <div id={id} className={stacked ? 'flex flex-col gap-3' : 'flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-5'}>
       {children}
-      {aside === undefined ? null : <div className={cn('text-small', onDark ? 'text-white' : 'text-grey-700')}>{aside}</div>}
+      {aside === undefined ? null : (
+        // Centred while it sits under the button, as it always does when stacked and on a phone (D-411).
+        <div className={cn('text-small', stacked ? 'text-center' : 'text-center sm:text-left', onDark ? 'text-white' : 'text-grey-700')}>{aside}</div>
+      )}
     </div>
   );
 }
@@ -154,23 +165,31 @@ export function FilmBand({ id, title, children }: { id: string; title: { before:
 
 /**
  * The jobs the app takes off an instructor's list, one card each, in as few words as each will go
- * (D-410). One that is on Pro says so, rather than being sold as on every plan. An odd last card
- * takes the whole row, so the list never ends on a gap.
+ * (D-410), each a link down to the part that shows it (D-411). One that is on Pro says so, rather
+ * than being sold as on every plan. An odd last card takes the whole row, so the list never ends on
+ * a gap.
  */
-export function JobList({ jobs }: { jobs: readonly { title: string; pro?: string }[] }) {
+export function JobList({ jobs }: { jobs: readonly { title: string; href: string; pro?: string | undefined }[] }) {
   return (
     <ul className="grid grid-cols-[minmax(0,1fr)] gap-3 sm:grid-cols-2">
       {jobs.map((job) => (
-        <li key={job.title} className="flex min-h-14 items-center gap-3 rounded-card bg-white p-4 sm:last:odd:col-span-2">
-          <span className="flex size-8 shrink-0 items-center justify-center rounded-full bg-yellow text-black" aria-hidden>
-            <Check size={18} strokeWidth={2.5} />
-          </span>
-          <span className="text-body font-semibold text-pretty text-black">
-            {job.title}
-            {job.pro === undefined ? null : (
-              <span className="ml-2 inline-flex rounded-full bg-yellow-100 px-2 align-middle text-caption font-semibold text-black">{job.pro}</span>
-            )}
-          </span>
+        <li key={job.href} className="sm:last:odd:col-span-2">
+          {/* Each one goes down to its own part, where it is shown as it looks in the app (D-411). */}
+          <a href={job.href} className="flex h-full min-h-14 items-center gap-3 rounded-card bg-white p-4 hover:bg-grey-200">
+            <span className="flex size-8 shrink-0 items-center justify-center rounded-full bg-yellow text-black" aria-hidden>
+              <Check size={18} strokeWidth={2.5} />
+            </span>
+            {/* Free to narrow, so a long word breaks rather than pushing the card wider at 200% text,
+                with what is on Pro on a line of its own under it, where it never needs more room than
+                its own longest word (WCAG 1.4.4). */}
+            <span className="min-w-0 flex-1 text-body font-semibold text-pretty text-black">
+              {job.title}
+              {job.pro === undefined ? null : (
+                <span className="mt-1 block w-fit max-w-full rounded-full bg-yellow-100 px-2 text-caption font-semibold text-black">{job.pro}</span>
+              )}
+            </span>
+            <ArrowDown size={20} strokeWidth={1.5} className="shrink-0 text-grey-700" aria-hidden />
+          </a>
         </li>
       ))}
     </ul>
