@@ -50,6 +50,7 @@ const unfaded = {
   secondary: 'disabled:bg-grey-100 disabled:text-black',
   tertiary: 'disabled:text-black',
   destructive: 'disabled:bg-red disabled:text-white',
+  highlight: 'disabled:bg-yellow disabled:text-black',
 };
 
 /**

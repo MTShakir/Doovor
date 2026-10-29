@@ -9,7 +9,7 @@ const pounds = (pence: number): string => `£${String(pence / 100)}`;
 
 /** The words printed beside each piece's code, and the page's own for anybody who came another way. */
 const headlines = {
-  default: 'Less admin. More lessons. Paid on time.',
+  default: 'The better way for UK driving instructors.',
   card: 'Pro free for a year.',
   leaflet: 'Your last lesson ends at six. Your admin doesn’t.',
   flyer: 'Less admin. Paid on time.',
@@ -83,7 +83,9 @@ test.describe('the page the printed pieces open (D-404)', () => {
     await expect(page.getByRole('heading', { level: 1 })).toHaveAccessibleName(headlines.default);
     const { limit, joined, open } = await foundingPlaces();
     await expect(page.getByRole('link', { name: actionFor(open) }).first()).toHaveAttribute('href', /\/sign-up\?role=instructor$/);
-    await expect(page.getByText('Free to start. No card needed. Set up in about 20 minutes.')).toBeVisible();
+    // The old headline's three promises, under the new one (D-410).
+    await expect(page.getByText(/^Less admin\. More lessons\. Paid on time\. Learners book and pay from your own link/)).toBeVisible();
+    await expect(page.getByText('Free to start. No card needed. Set up in about 10 minutes.')).toBeVisible();
 
     // Out of search, which the page for instructors is in, at its one address.
     expect(await robotsOf(page)).toContain('noindex');
@@ -94,19 +96,23 @@ test.describe('the page the printed pieces open (D-404)', () => {
     await expect(oldWay).toContainText('£2,080');
     await expect(oldWay).toContainText('a year, if one lesson a week cancels late at £40.');
 
-    const fix = page.getByRole('region', { name: 'It’s a 20 minute fix.' });
+    const fix = page.getByRole('region', { name: 'It’s a 10 minute fix.' });
     await expect(fix.getByRole('listitem')).toHaveCount(3);
     await expect(fix).toContainText('once we have checked your badge');
 
-    // Each of the four jobs links to where it is shown, as it looks in the app.
-    const jobs = page.getByRole('region', { name: 'Four jobs off your list' });
-    for (const [title, id] of [
-      ['Learners book themselves', 'bookings'],
-      ['Paid before the lesson', 'payments'],
-      ['Late cancels covered', 'late-cancels'],
-      ['Records in under a minute', 'lesson-records'],
+    // Seven jobs, one card each, those on Pro saying so (D-410), and the big four told below.
+    const jobs = page.getByRole('region', { name: 'Your admin, handled. Here’s how.' });
+    await expect(jobs.getByRole('listitem')).toHaveCount(7);
+    await expect(jobs).toContainText('Seven jobs off your list.');
+    for (const [job, pro] of [
+      ['Your own page, booking link and gallery', 'Gallery on Pro'],
+      ['Automatic text and email reminders', 'Texts on Pro'],
+      ['Bookkeeping in a few taps, exported by year or quarter', 'On Pro'],
     ] as const) {
-      await expect(jobs.getByRole('link', { name: title })).toHaveAttribute('href', `#${id}`);
+      await expect(jobs.getByRole('listitem').filter({ hasText: job })).toContainText(pro);
+    }
+    await expect(jobs.getByRole('listitem').filter({ hasText: 'Your diary, made easy' })).not.toContainText('Pro');
+    for (const title of ['Learners book themselves', 'Paid before the lesson', 'Late cancels covered', 'Records in under a minute']) {
       await expect(page.getByRole('region', { name: title })).toBeVisible();
     }
     // The reminders in the app's own words, and texts sold as Pro.
@@ -243,7 +249,8 @@ test.describe('the page the printed pieces open (D-404)', () => {
     expect(asked, 'nothing went to YouTube or Calendly before anybody asked').toEqual([]);
 
     await video.click();
-    await expect(page.locator('iframe[src*="youtube-nocookie.com"]')).toHaveAttribute('src', 'https://www.youtube-nocookie.com/embed/NXm0hbDlRlY?autoplay=1&rel=0');
+    // A capital I, eighth: with the lowercase l that looks the same, YouTube has no such video (D-410).
+    await expect(page.locator('iframe[src*="youtube-nocookie.com"]')).toHaveAttribute('src', 'https://www.youtube-nocookie.com/embed/NXm0hbDIRlY?autoplay=1&rel=0');
     await booking.getByRole('button', { name: 'Choose a time' }).click();
     await expect(booking.locator('iframe')).toHaveAttribute(
       'src',
@@ -277,12 +284,15 @@ test.describe('the page the printed pieces open (D-404)', () => {
     await page.goto('/join');
     const { open } = await foundingPlaces();
 
-    const section = page.getByRole('region', { name: 'See it in under four minutes.' });
+    // Straight under the opening, on black, asking for the four minutes and saying what they buy (D-410).
+    const section = page.getByRole('region', { name: 'Give us 4 minutes. Get your evenings back.' });
     const play = section.getByRole('button', { name: film.name });
     await expect(play).toBeVisible();
-    // Its parts, and the page's button straight under it, where the film's last frame points.
-    for (const part of ['The cost', 'The fix', 'The deal']) await expect(section.getByRole('heading', { level: 3, name: part })).toBeVisible();
-    await expect(page.locator('#action-film').getByRole('link', { name: actionFor(open) })).toHaveAttribute('href', /\/sign-up\?role=instructor$/);
+    expect(await section.evaluate((band) => getComputedStyle(band).backgroundColor)).toBe('rgb(0, 0, 0)');
+    // The page's button straight under it, where the film's last frame points, in the brand yellow.
+    const button = page.locator('#action-film').getByRole('link', { name: actionFor(open) });
+    await expect(button).toHaveAttribute('href', /\/sign-up\?role=instructor$/);
+    expect(await button.evaluate((link) => getComputedStyle(link).backgroundColor)).toBe('rgb(255, 212, 0)');
     await expectAccessible(page);
     expect(filmRequests, 'nothing of the film is downloaded before play is pressed').toEqual([]);
 

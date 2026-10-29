@@ -3,7 +3,7 @@ import { foundingOffer, freeTrial, getEntitlements, plans, standardCardFee } fro
 import { formatPence } from '@repo/core/money';
 import { siteShareCard } from '@repo/core/share-card';
 import { Button } from '@repo/ui/button';
-import { Check, CreditCard, Handshake, Landmark, MessageCircle, Smartphone } from 'lucide-react';
+import { CreditCard, Handshake, Landmark, MessageCircle, Smartphone } from 'lucide-react';
 import type { Metadata } from 'next';
 import {
   BookingGlimpse,
@@ -19,7 +19,18 @@ import setupGuidePoster from '@/components/site/images/setup-guide.webp';
 import { SignUpLink, StickyAction } from '@/components/site/join-actions';
 import { BookingFacade, VideoFacade } from '@/components/site/join-embeds';
 import { FilmPlayer } from '@/components/site/join-film';
-import { ActionRow, CostPanel, FactList, FounderNote, JoinHero, PriceLines, TextBubbles, type TextMessage } from '@/components/site/join-parts';
+import {
+  ActionRow,
+  CostPanel,
+  FactList,
+  FilmBand,
+  FounderNote,
+  JobList,
+  JoinHero,
+  PriceLines,
+  TextBubbles,
+  type TextMessage,
+} from '@/components/site/join-parts';
 import {
   Band,
   ClosingCall,
@@ -70,27 +81,38 @@ const ownerAgreed: { whatsApp: boolean; founderPhoto: string | null } = { whatsA
 
 /**
  * The setup tutorial on the brand's YouTube channel (D-406): the real app, set up from nothing on
- * a phone, from the week 2 launch pack. Its thumbnail is the owner's own, kept with the page.
+ * a phone, from the week 2 launch pack. Its thumbnail is the owner's own, kept with the page, and
+ * says 7 minutes, as the tutorial runs 6:31 (D-410). The ID's eighth letter is a capital I, which
+ * looks like the lowercase l after it: with an l there, YouTube has no such video (D-410).
  */
-const setupGuide = { videoId: 'NXm0hbDlRlY', title: `How to set up your driving instructor diary in ${brand.name}`, length: '6:31' } as const;
+const setupGuide = { videoId: 'NXm0hbDIRlY', title: `How to set up your driving instructor diary in ${brand.name}`, length: '6:31' } as const;
 
 /**
  * The page's own film (D-408): the whole story in under four minutes, the owner's voice over the
  * app's own screens, hosted with the site. Its last frame points down to the button under it. A new
- * cut gets a new file name, so nobody is ever sent an old one from a cache.
+ * cut gets a new file name, so nobody is ever sent an old one from a cache. Its band asks for the
+ * four minutes and says what they buy, on black, so the yellow button under it stands out (D-410).
  */
 const film = {
   src: '/video/join-20261029.mp4',
   captions: '/video/join-20261029.en-GB.vtt',
   title: `${brand.name} in under four minutes`,
   length: '3:43',
+  hook: { before: 'Give us 4 minutes. ', marked: 'Get your evenings back.' },
 } as const;
 
-/** What the film covers, part by part, with where each part starts. */
-const filmParts = [
-  { at: '0:00', title: 'The cost', description: 'Texts at night, money still owed, and a lesson cancelled at eight in the morning.' },
-  { at: '0:45', title: 'The fix', description: 'Bookings, payments, late cancels, lesson records and your tax year, on the app’s own screens.' },
-  { at: '3:00', title: 'The deal', description: 'Free to start, with no card needed, and the founding offer.' },
+/**
+ * What the app takes off an instructor's list (D-410), each in as few words as it will go, and
+ * each one the app does today. The four told in full further down come third to sixth.
+ */
+const jobs = [
+  { title: 'Your diary, made easy' },
+  { title: 'Your own page, booking link and gallery', pro: 'Gallery on Pro' },
+  { title: 'Learners book your free times themselves' },
+  { title: 'Automatic text and email reminders', pro: 'Texts on Pro' },
+  { title: '1 tap to the pickup, 1 minute to record progress' },
+  { title: 'Paid before the lesson, late cancels covered' },
+  { title: 'Bookkeeping in a few taps, exported by year or quarter', pro: 'On Pro' },
 ] as const;
 
 /** One late cancellation a week, at a £40 lesson, over a year: how the leaflet works it out. */
@@ -242,7 +264,7 @@ function questions(open: boolean) {
     },
     {
       question: 'I’m not good with tech.',
-      answer: `That’s the test. If you can’t set it up in twenty minutes, it’s my fault, and I’ll fix it. Book a free call and I’ll do it with you on the phone, or anywhere in ${patch} I’ll set it up with you in person. Either way, I do the typing.`,
+      answer: `That’s the test. If you can’t set it up in ten minutes, it’s my fault, and I’ll fix it. Book a free call and I’ll do it with you on the phone, or anywhere in ${patch} I’ll set it up with you in person. Either way, I do the typing.`,
     },
     {
       question: `What happens after ${after}?`,
@@ -279,43 +301,25 @@ export default async function JoinPage() {
       <JoinHero
         hooks={joinHooks(places)}
         badge={<FoundingBadge places={places} />}
-        eyebrow="For independent driving instructors"
         actions={
           <div id="opening-action" className="flex w-full flex-col md:w-auto">
             <SignUpLink href={signUp}>{action}</SignUpLink>
           </div>
         }
         // A space that does not break, so "minutes" never sits on a line of its own.
-        note={'Free to start. No card needed. Set up in about 20\u00a0minutes.'}
+        note={'Free to start. No card needed. Set up in about 10\u00a0minutes.'}
         visual={<GlimpsePair back={<TodayGlimpse pickups={['Belvedere', 'Erith', 'Bexleyheath']} />} front={<MoneyGlimpse />} />}
       />
 
-      <Band
-        id="film"
-        title="See it in under four minutes."
-        description={`What the admin costs you, how the app takes it off you, and ${open ? `what the first ${String(foundingOffer.instructorLimit)} instructors get` : 'what it costs'}.`}
-      >
-        <div className="grid grid-cols-[minmax(0,1fr)] items-start gap-8 md:grid-cols-[minmax(0,26rem)_minmax(0,1fr)] md:gap-14">
-          <div className="flex flex-col gap-5">
-            <FilmPlayer src={film.src} captions={film.captions} title={film.title} length={film.length} poster={filmPoster} />
-            {/* Straight under the film, where its last frame points. */}
-            <ActionRow id="action-film" stacked aside="Free to start. No card needed.">
-              <SignUpLink href={signUp}>{action}</SignUpLink>
-            </ActionRow>
-          </div>
-          <ol className="flex flex-col gap-6 md:pt-2">
-            {filmParts.map((part) => (
-              <li key={part.at} className="flex gap-4">
-                <span className="min-w-12 text-body font-semibold text-grey-700 tabular-nums">{part.at}</span>
-                <div className="flex flex-col gap-1">
-                  <h3 className="text-h3 text-black">{part.title}</h3>
-                  <p className="text-body text-pretty text-grey-700">{part.description}</p>
-                </div>
-              </li>
-            ))}
-          </ol>
-        </div>
-      </Band>
+      <FilmBand id="film" title={film.hook}>
+        <FilmPlayer src={film.src} captions={film.captions} title={film.title} length={film.length} poster={filmPoster} />
+        {/* Straight under the film, where its last frame points. */}
+        <ActionRow id="action-film" stacked onDark aside="Free to start. No card needed.">
+          <SignUpLink href={signUp} highlight>
+            {action}
+          </SignUpLink>
+        </ActionRow>
+      </FilmBand>
 
       <Band id="old-way" eyebrow={<SignalEyebrow lit="red">The old way</SignalEyebrow>} title="Sound familiar?" tone="grey">
         <div className="grid grid-cols-[minmax(0,1fr)] items-start gap-10 md:grid-cols-2 md:items-center md:gap-16">
@@ -339,7 +343,7 @@ export default async function JoinPage() {
       <Band
         id="the-fix"
         eyebrow={<SignalEyebrow lit="red-and-amber">The good news</SignalEyebrow>}
-        title="It’s a 20 minute fix."
+        title="It’s a 10 minute fix."
         description={`Set it up once, on your phone. Or ${founder.firstName} sets it up with you, on a free call or in person anywhere in ${patch}.`}
       >
         <Steps steps={steps} />
@@ -374,25 +378,11 @@ export default async function JoinPage() {
       <Band
         id="with-us"
         eyebrow={<SignalEyebrow lit="green">With {brand.name}</SignalEyebrow>}
-        title="Four jobs off your list"
-        description="Each one below, as it looks in the app."
+        title="Your admin, handled. Here’s how."
+        description="Seven jobs off your list. The big four are below, as they look in the app."
         tone="grey"
       >
-        <ul className="grid grid-cols-[minmax(0,1fr)] gap-3 sm:grid-cols-2">
-          {stories.map((story) => (
-            <li key={story.id}>
-              <a
-                href={`#${story.id}`}
-                className="flex min-h-14 items-center gap-3 rounded-card bg-white p-4 text-body font-semibold text-black hover:bg-grey-200"
-              >
-                <span className="flex size-8 shrink-0 items-center justify-center rounded-full bg-yellow text-black" aria-hidden>
-                  <Check size={18} strokeWidth={2.5} />
-                </span>
-                {story.title}
-              </a>
-            </li>
-          ))}
-        </ul>
+        <JobList jobs={jobs} />
       </Band>
 
       {stories.map((story, index) => (
@@ -503,8 +493,8 @@ export default async function JoinPage() {
         title={open ? 'Claim your founding place.' : 'Start free today.'}
         description={
           open
-            ? `Pro free for ${term}, for the first ${String(foundingOffer.instructorLimit)} instructors. Free to start, no card needed, and set up in about 20 minutes.`
-            : 'Free to start, no card needed, and set up in about 20 minutes.'
+            ? `Pro free for ${term}, for the first ${String(foundingOffer.instructorLimit)} instructors. Free to start, no card needed, and set up in about 10 minutes.`
+            : 'Free to start, no card needed, and set up in about 10 minutes.'
         }
         action={
           <div className="flex w-full flex-col gap-3 md:w-auto md:items-end">

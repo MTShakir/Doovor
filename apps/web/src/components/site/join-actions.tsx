@@ -24,10 +24,20 @@ function useArrivalSource(): string | null {
  * once for everybody, so the address it was opened at is only known in the browser: the button is
  * drawn without it, and gains it as soon as the page is open.
  */
-export function SignUpLink({ href, children, onDark = false }: { href: string; children: ReactNode; onDark?: boolean }) {
+export function SignUpLink({
+  href,
+  children,
+  onDark = false,
+  highlight = false,
+}: {
+  href: string;
+  children: ReactNode;
+  onDark?: boolean;
+  highlight?: boolean;
+}) {
   const source = useArrivalSource();
   return (
-    <PrimaryLink href={withArrivalSource(href, source)} onDark={onDark}>
+    <PrimaryLink href={withArrivalSource(href, source)} onDark={onDark} highlight={highlight}>
       {children}
     </PrimaryLink>
   );

@@ -1,6 +1,6 @@
 import { Avatar } from '@repo/ui/avatar';
 import { cn } from '@repo/ui/lib/cn';
-import { MapPin } from 'lucide-react';
+import { Check, MapPin } from 'lucide-react';
 import type { ReactNode } from 'react';
 import { joinHookScript, type JoinHook, type JoinHookKey, type PrintedPiece } from '@/lib/site/join';
 import { SignalEyebrow, type Feature } from './marketing';
@@ -59,7 +59,8 @@ export function JoinHero({
   hooks: readonly JoinHook[];
   /** The founding offer's line over the headline. */
   badge: ReactNode;
-  eyebrow: string;
+  /** Left out where the headline already says who it is for (D-410). */
+  eyebrow?: string;
   actions: ReactNode;
   note: ReactNode;
   visual: ReactNode;
@@ -80,7 +81,7 @@ export function JoinHero({
       {switched ? <script dangerouslySetInnerHTML={{ __html: joinHookScript() }} /> : null}
       <div className="flex flex-col gap-5">
         {withBadge ? <div className={cn(switched && badgeHidden)}>{badge}</div> : null}
-        <p className="text-small font-semibold text-grey-700">{eyebrow}</p>
+        {eyebrow === undefined ? null : <p className="text-small font-semibold text-grey-700">{eyebrow}</p>}
         <h1 className="text-display text-balance text-black md:text-hero">
           {shown.map((hook) => (
             <span key={hook.key} className={switched ? shownInline[hook.key] : undefined}>
@@ -108,12 +109,69 @@ export function JoinHero({
  * back for it, with a line beside it (D-406), or under it in a column too narrow for both, as under
  * the film (D-408). Its id lets the phone's bar keep out of its way.
  */
-export function ActionRow({ id, children, aside, stacked = false }: { id: string; children: ReactNode; aside?: ReactNode; stacked?: boolean }) {
+export function ActionRow({
+  id,
+  children,
+  aside,
+  stacked = false,
+  onDark = false,
+}: {
+  id: string;
+  children: ReactNode;
+  aside?: ReactNode;
+  stacked?: boolean;
+  /** On a black band, where the line beside it is white (D-410). */
+  onDark?: boolean;
+}) {
   return (
     <div id={id} className={stacked ? 'flex flex-col gap-3' : 'flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-5'}>
       {children}
-      {aside === undefined ? null : <div className="text-small text-grey-700">{aside}</div>}
+      {aside === undefined ? null : <div className={cn('text-small', onDark ? 'text-white' : 'text-grey-700')}>{aside}</div>}
     </div>
+  );
+}
+
+/**
+ * The film's own band (D-408, D-410): black, so the yellow button under the film is the brightest
+ * thing on the screen, under a headline that asks for four minutes and says what they buy. Nothing
+ * else is said around it: the film says the rest.
+ */
+export function FilmBand({ id, title, children }: { id: string; title: { before: string; marked: string }; children: ReactNode }) {
+  return (
+    <section id={id} aria-labelledby={`${id}-heading`} className="bg-black text-white">
+      <div className="mx-auto flex w-full max-w-6xl flex-col items-center gap-8 px-4 py-14 md:gap-10 md:px-6 md:py-20">
+        <h2 id={`${id}-heading`} className="max-w-3xl text-center text-h1 text-balance md:text-display">
+          {title.before}
+          <Marked>{title.marked}</Marked>
+        </h2>
+        <div className="flex w-full max-w-[26rem] flex-col gap-5">{children}</div>
+      </div>
+    </section>
+  );
+}
+
+/**
+ * The jobs the app takes off an instructor's list, one card each, in as few words as each will go
+ * (D-410). One that is on Pro says so, rather than being sold as on every plan. An odd last card
+ * takes the whole row, so the list never ends on a gap.
+ */
+export function JobList({ jobs }: { jobs: readonly { title: string; pro?: string }[] }) {
+  return (
+    <ul className="grid grid-cols-[minmax(0,1fr)] gap-3 sm:grid-cols-2">
+      {jobs.map((job) => (
+        <li key={job.title} className="flex min-h-14 items-center gap-3 rounded-card bg-white p-4 sm:last:odd:col-span-2">
+          <span className="flex size-8 shrink-0 items-center justify-center rounded-full bg-yellow text-black" aria-hidden>
+            <Check size={18} strokeWidth={2.5} />
+          </span>
+          <span className="text-body font-semibold text-pretty text-black">
+            {job.title}
+            {job.pro === undefined ? null : (
+              <span className="ml-2 inline-flex rounded-full bg-yellow-100 px-2 align-middle text-caption font-semibold text-black">{job.pro}</span>
+            )}
+          </span>
+        </li>
+      ))}
+    </ul>
   );
 }
 
