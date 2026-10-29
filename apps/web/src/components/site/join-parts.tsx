@@ -175,14 +175,17 @@ export function JobList({ jobs }: { jobs: readonly { title: string; href: string
       {jobs.map((job) => (
         <li key={job.href} className="sm:last:odd:col-span-2">
           {/* Each one goes down to its own part, where it is shown as it looks in the app (D-411). */}
-          <a href={job.href} className="flex min-h-14 items-center gap-3 rounded-card bg-white p-4 hover:bg-grey-200">
+          <a href={job.href} className="flex h-full min-h-14 items-center gap-3 rounded-card bg-white p-4 hover:bg-grey-200">
             <span className="flex size-8 shrink-0 items-center justify-center rounded-full bg-yellow text-black" aria-hidden>
               <Check size={18} strokeWidth={2.5} />
             </span>
-            <span className="flex-1 text-body font-semibold text-pretty text-black">
+            {/* Free to narrow, so a long word breaks rather than pushing the card wider at 200% text,
+                with what is on Pro on a line of its own under it, where it never needs more room than
+                its own longest word (WCAG 1.4.4). */}
+            <span className="min-w-0 flex-1 text-body font-semibold text-pretty text-black">
               {job.title}
               {job.pro === undefined ? null : (
-                <span className="ml-2 inline-flex rounded-full bg-yellow-100 px-2 align-middle text-caption font-semibold text-black">{job.pro}</span>
+                <span className="mt-1 block w-fit max-w-full rounded-full bg-yellow-100 px-2 text-caption font-semibold text-black">{job.pro}</span>
               )}
             </span>
             <ArrowDown size={20} strokeWidth={1.5} className="shrink-0 text-grey-700" aria-hidden />
