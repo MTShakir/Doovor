@@ -102,7 +102,9 @@ describe('what the page opens on (D-404)', () => {
   it('opens on each printed piece’s own words, and the page’s own for everybody else', () => {
     const [everybody, card, leaflet, flyer] = joinHooks(places(46));
     const headline = (hook: typeof everybody) => (hook ? `${hook.title.before}${hook.title.marked}${hook.title.after}` : '');
-    expect(headline(everybody)).toBe('Less admin. More lessons. Paid on time.');
+    // The page's own says who it is for, and keeps the old headline's three promises under it (D-410).
+    expect(headline(everybody)).toBe('The better way for UK driving instructors.');
+    expect(everybody?.description).toMatch(/^Less admin\. More lessons\. Paid on time\. /);
     expect(headline(card)).toBe('Pro free for a year.');
     expect(headline(leaflet)).toBe('Your last lesson ends at six. Your admin doesn’t.');
     expect(headline(flyer)).toBe('Less admin. Paid on time.');

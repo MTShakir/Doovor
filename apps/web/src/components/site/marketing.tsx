@@ -369,9 +369,20 @@ export function ClosingCall({
 }
 
 /** A link styled as the page's one primary button. */
-export function PrimaryLink({ href, children, onDark = false }: { href: string; children: ReactNode; onDark?: boolean }) {
+export function PrimaryLink({
+  href,
+  children,
+  onDark = false,
+  highlight = false,
+}: {
+  href: string;
+  children: ReactNode;
+  onDark?: boolean;
+  /** In the brand yellow, on a black band whose button should be the brightest thing on it (D-410). */
+  highlight?: boolean;
+}) {
   return (
-    <Button asChild size="lg" width="responsive" variant={onDark ? 'secondary' : 'primary'}>
+    <Button asChild size="lg" width="responsive" variant={highlight ? 'highlight' : onDark ? 'secondary' : 'primary'}>
       <a href={href}>{children}</a>
     </Button>
   );

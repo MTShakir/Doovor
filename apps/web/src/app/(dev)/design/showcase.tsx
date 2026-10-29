@@ -46,7 +46,7 @@ import setupGuidePoster from '@/components/site/images/setup-guide.webp';
 import { SignUpLink, StickyAction } from '@/components/site/join-actions';
 import { BookingFacade, VideoFacade } from '@/components/site/join-embeds';
 import { FilmPlayer } from '@/components/site/join-film';
-import { ActionRow, CostPanel, FactList, FounderNote, JoinHero, PriceLines, TextBubbles } from '@/components/site/join-parts';
+import { ActionRow, CostPanel, FactList, FilmBand, FounderNote, JobList, JoinHero, PriceLines, TextBubbles } from '@/components/site/join-parts';
 import {
   Band,
   ClosingCall,
@@ -1093,6 +1093,15 @@ export function DesignShowcase() {
           <Button variant="secondary">Add learner</Button>
           <Button variant="tertiary">More options</Button>
           <Button variant="destructive">Cancel lesson</Button>
+        </div>
+        <Label>Highlight, the brand yellow, only on a black band whose button should be the brightest thing on it (D-410), and disabled</Label>
+        <div className="flex flex-wrap items-center gap-3 rounded-card bg-black p-6">
+          <Button variant="highlight" size="lg">
+            Claim your founding place
+          </Button>
+          <Button variant="highlight" disabled>
+            Claim your founding place
+          </Button>
         </div>
         <Label>States: pending, disabled, large, icon</Label>
         <div className="flex flex-wrap items-center gap-3">
@@ -2592,7 +2601,8 @@ function ShowcaseJoinPage() {
     <>
       <Label>
         The page the printed QR codes open (D-404): its opening on each piece's own words, the page's own for anybody else, and no founding line
-        over the card's, which already is the offer
+        over the card's, which already is the offer. The page's own says who it is for, so it has no line over it (D-410); the last has one, as
+        another page might
       </Label>
       <div className="flex flex-col divide-y divide-grey-200 overflow-hidden rounded-card border border-grey-200">
         {(['default', 'card', 'leaflet', 'flyer'] as const).map((key) => (
@@ -2601,9 +2611,9 @@ function ShowcaseJoinPage() {
             only={key}
             hooks={hooks}
             badge={<FoundingBadge places={examplePlaces} />}
-            eyebrow="For independent driving instructors"
+            eyebrow={key === 'flyer' ? 'For independent driving instructors' : undefined}
             actions={<SignUpLink href="#sign-up">Claim your founding place</SignUpLink>}
-            note="Free to start. No card needed. Set up in about 20 minutes."
+            note="Free to start. No card needed. Set up in about 10 minutes."
             visual={key === 'default' ? <GlimpsePair back={<TodayGlimpse pickups={['Belvedere', 'Erith', 'Bexleyheath']} />} front={<MoneyGlimpse />} /> : null}
           />
         ))}
@@ -2648,7 +2658,7 @@ function ShowcaseJoinPage() {
       </div>
       <Label>The founder in their own words, with their initials until a photo of them is agreed</Label>
       <FounderNote name="Talha Shakir" jobTitle="Founder" place="Belvedere">
-        <p>If you teach nearby, I will set it up with you in person. Twenty minutes, and I do the typing.</p>
+        <p>If you teach nearby, I will set it up with you in person. Ten minutes, and I do the typing.</p>
       </FounderNote>
       <Label>Questions that each open onto their answer</Label>
       <QuestionAccordion
@@ -2662,18 +2672,33 @@ function ShowcaseJoinPage() {
         Calendly until then; each then shows its own player or calendar in its place
       </Label>
       <div className="grid items-start gap-6 md:grid-cols-2">
-        <VideoFacade videoId="NXm0hbDlRlY" title="How to set up your driving instructor diary" length="6:31" poster={setupGuidePoster} />
+        <VideoFacade videoId="NXm0hbDIRlY" title="How to set up your driving instructor diary" length="6:31" poster={setupGuidePoster} />
         <BookingFacade url="https://calendly.com" embedDomain="example.com" title="Choose a time for your free onboarding call" />
       </div>
       <Label>
-        The join page’s own film, hosted with the site (D-408): its poster until somebody presses play, then the film itself, with sound and
-        captions to turn on. The page’s button is under it, with its line under the button, in a column too narrow for both side by side
+        The join page’s own film, hosted with the site (D-408), in its own black band under a headline that asks for four minutes (D-410): its
+        yellow cover until somebody presses play, then the film itself, with sound and captions to turn on. The yellow button is under it, with
+        its line in white under the button
       </Label>
-      <div className="flex max-w-sm flex-col gap-5">
-        <FilmPlayer src="/video/join-20261029.mp4" captions="/video/join-20261029.en-GB.vtt" title="The join page film" length="3:43" poster={filmPoster} />
-        <ActionRow id="design-action-film" stacked aside="Free to start. No card needed.">
-          <PrimaryLink href="#start">Claim your founding place</PrimaryLink>
-        </ActionRow>
+      <div className="overflow-hidden rounded-card">
+        <FilmBand id="design-film" title={{ before: 'Give us 4 minutes. ', marked: 'Get your evenings back.' }}>
+          <FilmPlayer src="/video/join-20261029.mp4" captions="/video/join-20261029.en-GB.vtt" title="The join page film" length="3:43" poster={filmPoster} />
+          <ActionRow id="design-action-film" stacked onDark aside="Free to start. No card needed.">
+            <PrimaryLink href="#start" highlight>
+              Claim your founding place
+            </PrimaryLink>
+          </ActionRow>
+        </FilmBand>
+      </div>
+      <Label>The jobs the app takes off the list, one card each, a Pro one saying so, and an odd last card across the row (D-410)</Label>
+      <div className="rounded-card bg-grey-100 p-6">
+        <JobList
+          jobs={[
+            { title: 'Your diary, made easy' },
+            { title: 'Your own page, booking link and gallery', pro: 'Gallery on Pro' },
+            { title: 'Bookkeeping in a few taps, exported by year or quarter', pro: 'On Pro' },
+          ]}
+        />
       </div>
       <Label>A part of the page ending on its button again, with a line beside it, and a feature told with one under its points</Label>
       <ActionRow id="design-action-row" aside="Free to start. No card needed.">
@@ -2712,7 +2737,7 @@ function ShowcaseJoinPage() {
           id="design-closing"
           eyebrow={<SignalEyebrow lit="green">Your green light</SignalEyebrow>}
           title="Claim your founding place."
-          description="Free to start, no card needed, and set up in about 20 minutes."
+          description="Free to start, no card needed, and set up in about 10 minutes."
           action={
             <div className="flex w-full flex-col gap-3 md:w-auto md:items-end">
               <PrimaryLink href="#start" onDark>

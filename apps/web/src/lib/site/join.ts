@@ -87,11 +87,11 @@ export interface JoinHook {
  */
 export function joinHooks(places: FoundingPlaces | null): JoinHook[] {
   const counted = places?.instructors ?? null;
+  // The page's own opening says who it is for and that it is better (D-410); what it does follows.
   const everybody: JoinHook = {
     key: 'default',
-    title: { before: 'Less admin. More lessons. ', marked: 'Paid on time.', after: '' },
-    description:
-      'Learners book your free times from your own link and pay before the lesson, straight to your own account. Your diary, payments and lesson records in one app.',
+    title: { before: 'The better way for ', marked: 'UK driving instructors.', after: '' },
+    description: 'Less admin. More lessons. Paid on time. Learners book and pay from your own link, straight to your own account.',
     badge: true,
   };
   const card: JoinHook =

@@ -21,6 +21,11 @@ export const buttonVariants = cva(
         tertiary: 'rounded-full bg-transparent text-black underline-offset-4 hover:underline disabled:text-grey-400',
         /** Darker on hover, never lighter: white on red is 4.8:1, and faded to 90% it drops under 4.5:1. */
         destructive: 'rounded-full bg-red text-white hover:brightness-90 disabled:bg-grey-200 disabled:text-grey-400',
+        /**
+         * The brand yellow, for a black band that wants its button to be the brightest thing on it
+         * (D-410). Black on yellow, as yellow always is; its focus ring is white, which black needs.
+         */
+        highlight: 'rounded-full bg-yellow text-black hover:brightness-95 focus-visible:outline-white disabled:bg-grey-200 disabled:text-grey-400',
       },
       size: {
         /** 48 px: the minimum touch target (PRD 7.1). A wrapped label makes it taller, not smaller. */
