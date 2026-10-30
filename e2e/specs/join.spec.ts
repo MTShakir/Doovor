@@ -7,13 +7,8 @@ import { expectAccessible, robotsOf, settled, snap } from '../support/helpers';
 /** Whole pounds, as the site writes them. */
 const pounds = (pence: number): string => `£${String(pence / 100)}`;
 
-/** The words printed beside each piece's code, and the page's own for anybody who came another way. */
-const headlines = {
-  default: 'The better way for UK driving instructors.',
-  card: 'Pro free for a year.',
-  leaflet: 'Your last lesson ends at six. Your admin doesn’t.',
-  flyer: 'Less admin. Paid on time.',
-} as const;
+/** The page's opening, the same for everybody, whichever printed piece they scanned (D-412). */
+const opening = 'The better way for UK driving instructors.';
 
 /** The founding places as the database counts them, read after the page: it may be behind, never ahead. */
 async function foundingPlaces(): Promise<{ limit: number; joined: number; open: boolean }> {
@@ -47,40 +42,32 @@ async function scrollTo(page: Page, id: string): Promise<void> {
 
 /**
  * The page the printed QR codes open (PRD 8.3, 9.18, D-404): the card, the leaflet and the flyer
- * each open it on their own words, and sign-up carries on where somebody came from.
+ * all land on the same page (D-412), and sign-up carries on where somebody came from.
  */
 test.describe('the page the printed pieces open (D-404)', () => {
-  test('opens on each printed piece’s own words, and carries where it came from on to sign-up', async ({ page }, testInfo) => {
+  test('opens the same for every printed piece, and carries where it came from on to sign-up (D-412)', async ({ page }, testInfo) => {
     const { open } = await foundingPlaces();
-    for (const piece of ['card', 'leaflet', 'flyer'] as const) {
+    for (const piece of ['card', 'leaflet', 'flyer', 'linkedin'] as const) {
       await page.goto(`/join?utm_source=${piece}`);
-      // The card's headline is the offer, so it is the page's own once the places have gone.
-      const expected = piece === 'card' && !open ? headlines.default : headlines[piece];
-      await expect(page.getByRole('heading', { level: 1 })).toHaveAccessibleName(expected);
-      // Every one of the page's buttons carries it on, all the way down.
+      // One landing page for all of them, with the founding offer's line over it while it is open.
+      await expect(page.getByRole('heading', { level: 1 })).toHaveAccessibleName(opening);
+      if (open) await expect(page.getByText(/^Founding offer: Pro free for/)).toBeVisible();
+      // Every one of the page's buttons carries where it came from on, all the way down, so each
+      // piece is still counted.
       const buttons = page.getByRole('link', { name: actionFor(open) });
       await expect(buttons).toHaveCount(signUpButtons);
       for (const button of await buttons.all()) {
         await expect(button).toHaveAttribute('href', new RegExp(`/sign-up\\?role=instructor&utm_source=${piece}$`));
       }
-      // Over every headline but the card's, which already is the offer.
-      const badge = page.getByText(/^Founding offer: Pro free for/);
-      if (piece === 'card' && open) await expect(badge).toBeHidden();
-      else if (open) await expect(badge).toBeVisible();
-      await expectAccessible(page);
-      await settled(page);
-      await snap(page, testInfo, `join-${piece}`, { fullPage: false });
     }
-
-    // Anybody else gets the page's own opening, and any other source is still carried on.
-    await page.goto('/join?utm_source=linkedin');
-    await expect(page.getByRole('heading', { level: 1 })).toHaveAccessibleName(headlines.default);
-    await expect(page.getByRole('link', { name: actionFor(open) }).first()).toHaveAttribute('href', /\/sign-up\?role=instructor&utm_source=linkedin$/);
+    await expectAccessible(page);
+    await settled(page);
+    await snap(page, testInfo, 'join-printed', { fullPage: false });
   });
 
   test('tells the story the leaflet tells, with every figure from the configuration', async ({ page }, testInfo) => {
     await page.goto('/join');
-    await expect(page.getByRole('heading', { level: 1 })).toHaveAccessibleName(headlines.default);
+    await expect(page.getByRole('heading', { level: 1 })).toHaveAccessibleName(opening);
     const { limit, joined, open } = await foundingPlaces();
     await expect(page.getByRole('link', { name: actionFor(open) }).first()).toHaveAttribute('href', /\/sign-up\?role=instructor$/);
     // The old headline's three promises, under the new one (D-410).
@@ -205,7 +192,7 @@ test.describe('the page the printed pieces open (D-404)', () => {
     const { open } = await foundingPlaces();
     const bar = page.locator('[data-sticky-action]');
     // At the top the opening's own button is in view.
-    await expect(page.getByRole('heading', { level: 1 })).toHaveAccessibleName(headlines.flyer);
+    await expect(page.getByRole('heading', { level: 1 })).toHaveAccessibleName(opening);
     await expect(bar).toBeHidden();
     await expect(bar).toHaveAttribute('inert', '');
 
@@ -320,6 +307,12 @@ test.describe('the page the printed pieces open (D-404)', () => {
     await expect(video).toHaveAttribute('src', film.src);
     await expect(video.locator('track[kind="captions"]')).toHaveAttribute('src', film.captions);
     await expect(video).toHaveAttribute('aria-label', `${brand.name} in under four minutes`);
+    // It really plays, from the press alone, on a phone and on a wide screen (D-412): its time moves,
+    // a picture is decoded, and the browser reports nothing wrong.
+    await expect.poll(() => video.evaluate((element: HTMLVideoElement) => element.currentTime), { timeout: 20_000 }).toBeGreaterThan(0.5);
+    expect(
+      await video.evaluate((element: HTMLVideoElement) => ({ paused: element.paused, error: element.error?.code ?? null, width: element.videoWidth })),
+    ).toEqual({ paused: false, error: null, width: 1080 });
     expect(elsewhere, 'nothing goes to another company for it').toEqual([]);
     // Served by the site itself: the film in pieces, as a browser asks for it, and its captions.
     const piece = await page.request.get(film.src, { headers: { Range: 'bytes=0-1023' } });
@@ -363,7 +356,7 @@ test.describe('the page the printed pieces open (D-404)', () => {
     try {
       const page = await context.newPage();
       await page.goto('/join?utm_source=card');
-      await expect(page.getByRole('heading', { level: 1 })).toHaveAccessibleName(headlines.default);
+      await expect(page.getByRole('heading', { level: 1 })).toHaveAccessibleName(opening);
       const { open } = await foundingPlaces();
       await expect(page.getByRole('link', { name: actionFor(open) }).first()).toHaveAttribute('href', /\/sign-up\?role=instructor$/);
       // The questions are the browser's own, so they open without one too.

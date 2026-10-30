@@ -64,7 +64,7 @@ import {
   Steps,
 } from '@/components/site/marketing';
 import { SiteFooter, SiteHeader } from '@/components/site/site-chrome';
-import { joinHooks } from '@/lib/site/join';
+import { joinOpening } from '@/lib/site/join';
 import { foundingPrice, planSummaries } from '@/lib/site/plan-features';
 import { foundingProgress } from '@repo/core/founding';
 import { guideBySlug, guideOutline, guides, parseGuideMarkdown } from '@repo/core/guides';
@@ -2595,31 +2595,32 @@ function ShowcaseOfferAndGive() {
 }
 
 /**
- * The page the printed QR codes open (D-404): its opening on each printed piece's words, and the
- * pieces of the leaflet's story it is told in, each in every state it has.
+ * The page the printed QR codes open (D-404): its opening, the same whichever piece was scanned
+ * (D-412), and the pieces of the leaflet's story it is told in, each in every state it has.
  */
 function ShowcaseJoinPage() {
-  const hooks = joinHooks(examplePlaces);
   return (
     <>
       <Label>
-        The page the printed QR codes open (D-404): its opening on each piece's own words, the page's own for anybody else, and no founding line
-        over the card's, which already is the offer. The page's own says who it is for, so it has no line over it (D-410); the last has one, as
-        another page might
+        The page the printed QR codes open (D-404): the same opening for everybody, whichever piece they scanned (D-412), under the founding
+        line. It says who it is for, so it has no line over it (D-410); the second has one, as an opening that does not might
       </Label>
       <div className="flex flex-col divide-y divide-grey-200 overflow-hidden rounded-card border border-grey-200">
-        {(['default', 'card', 'leaflet', 'flyer'] as const).map((key) => (
-          <JoinHero
-            key={key}
-            only={key}
-            hooks={hooks}
-            badge={<FoundingBadge places={examplePlaces} />}
-            eyebrow={key === 'flyer' ? 'For independent driving instructors' : undefined}
-            actions={<SignUpLink href="#sign-up">Claim your founding place</SignUpLink>}
-            note="Free to start. No card needed. Set up in about 10 minutes."
-            visual={key === 'default' ? <GlimpsePair back={<TodayGlimpse pickups={['Belvedere', 'Erith', 'Bexleyheath']} />} front={<MoneyGlimpse />} /> : null}
-          />
-        ))}
+        <JoinHero
+          opening={joinOpening}
+          badge={<FoundingBadge places={examplePlaces} />}
+          actions={<SignUpLink href="#sign-up">Claim your founding place</SignUpLink>}
+          note="Free to start. No card needed. Set up in about 10 minutes."
+          visual={<GlimpsePair back={<TodayGlimpse pickups={['Belvedere', 'Erith', 'Bexleyheath']} />} front={<MoneyGlimpse />} />}
+        />
+        <JoinHero
+          opening={{ title: { before: 'Less admin. ', marked: 'Paid on time.' }, description: 'Learners book your free times and pay before the lesson.' }}
+          badge={null}
+          eyebrow="For independent driving instructors"
+          actions={<SignUpLink href="#sign-up">Create your free account</SignUpLink>}
+          note="Free to start. No card needed."
+          visual={null}
+        />
       </div>
       <Label>The traffic light its story moves through: the old way, the moment it changes, and the product</Label>
       <div className="flex flex-wrap gap-6 text-small font-semibold text-grey-700">
