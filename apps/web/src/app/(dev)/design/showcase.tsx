@@ -98,6 +98,9 @@ import { SetupChecklist } from '@/components/setup-checklist';
 import { InstructorWeeks, OverviewFigures, OverviewSkeleton } from '@/components/school/overview';
 import { DashboardFigures, DashboardSkeleton, WaitingOnStaff } from '@/components/admin/dashboard';
 import { DateRangePicker } from '@/components/admin/date-range';
+import { ActiveFilters, Breakdown, SignupsBySource, VisitorFigures, VisitorsSkeleton, VisitsChart } from '@/components/admin/visitors';
+import { HeardAboutField } from '@/components/heard-about-field';
+import type { VisitorsReport } from '@/lib/admin/visitors';
 import { PlatformHighlights } from '@/components/admin/highlights';
 import { PlatformIncomeScreen } from '@/components/admin/income';
 import { DeletionsScreen } from '@/app/(admin)/admin/deletions/deletions-screen';
@@ -304,6 +307,98 @@ const quietDashboard: PlatformDashboard = {
   money: { gmvPence: 0, cardPence: 0, feesPence: 0, payments: 0, refundsPence: 0 },
   verification: { waiting: 0, oldestSince: null },
   disputes: { open: 0, oldestSince: null },
+};
+
+/** A month of visits to the site, from posts, searches and the printed codes (D-413). */
+const exampleVisitors: VisitorsReport = {
+  label: 'Last 30 days',
+  range: 'Thu 1 Oct 2026 to Fri 30 Oct 2026',
+  hourly: false,
+  visits: 1_284,
+  pageViews: 3_377,
+  before: { visits: 912, pageViews: 2_210 },
+  series: Array.from({ length: 30 }, (_, index) => {
+    const social = 18 + ((index * 7) % 23);
+    const search = 6 + ((index * 5) % 9);
+    const print = index % 6 === 2 ? 9 : 2;
+    const direct = 5 + (index % 4);
+    const visits = social + search + print + direct + 2;
+    return {
+      at: `2026-10-${String(index + 1).padStart(2, '0')}`,
+      visits,
+      pageViews: visits * 3 - 4,
+      channels: { social, search, print, direct, ai: 2 },
+    };
+  }),
+  breakdowns: {
+    channel: [
+      { key: 'social', visits: 702, pageViews: 1_750 },
+      { key: 'search', visits: 271, pageViews: 802 },
+      { key: 'direct', visits: 198, pageViews: 512 },
+      { key: 'print', visits: 79, pageViews: 241 },
+      { key: 'ai', visits: 34, pageViews: 72 },
+    ],
+    source: [
+      { key: 'instagram', visits: 388, pageViews: 941 },
+      { key: 'google', visits: 251, pageViews: 760 },
+      { key: 'direct', visits: 198, pageViews: 512 },
+      { key: 'tiktok', visits: 141, pageViews: 322 },
+      { key: 'facebook', visits: 96, pageViews: 270 },
+      { key: 'card', visits: 47, pageViews: 160 },
+      { key: 'youtube', visits: 41, pageViews: 98 },
+      { key: 'chatgpt', visits: 34, pageViews: 72 },
+      { key: 'leaflet', visits: 22, pageViews: 61 },
+      { key: 'drivingforum.co.uk', visits: 12, pageViews: 30 },
+    ],
+    medium: [{ key: null, visits: 1_284, pageViews: 3_377 }],
+    campaign: [
+      { key: null, visits: 771, pageViews: 2_127 },
+      { key: 'week2', visits: 301, pageViews: 720 },
+      { key: 'week1', visits: 212, pageViews: 530 },
+    ],
+    landing: [
+      { key: '/instructors-software', visits: 512, pageViews: 1_402 },
+      { key: '/', visits: 388, pageViews: 960 },
+      { key: '/join', visits: 79, pageViews: 241 },
+    ],
+    page: [
+      { key: '/pricing', visits: 61, pageViews: 802 },
+      { key: '/instructors-software', visits: 512, pageViews: 760 },
+    ],
+    referrer: [],
+    country: [
+      { key: 'GB', visits: 1_250, pageViews: 3_300 },
+      { key: null, visits: 34, pageViews: 77 },
+    ],
+    city: [
+      { key: 'London', visits: 402, pageViews: 1_050 },
+      { key: 'Belvedere', visits: 61, pageViews: 190 },
+    ],
+    device: [
+      { key: 'phone', visits: 1_020, pageViews: 2_480 },
+      { key: 'computer', visits: 230, pageViews: 820 },
+      { key: 'tablet', visits: 34, pageViews: 77 },
+    ],
+    browser: [{ key: 'Instagram app', visits: 301, pageViews: 690 }],
+    system: [{ key: 'iOS', visits: 702, pageViews: 1_802 }],
+    app: [{ key: 'instagram', visits: 301, pageViews: 690 }],
+  },
+  signups: {
+    totals: { learners: 21, instructors: 14, schools: 2, undecided: 1, total: 38 },
+    before: 25,
+    bySource: [
+      { key: null, channel: null, learners: 17, instructors: 3, schools: 1, undecided: 1, total: 22 },
+      { key: 'instagram', channel: 'social', learners: 4, instructors: 7, schools: 0, undecided: 0, total: 11 },
+      { key: 'card', channel: 'print', learners: 0, instructors: 4, schools: 1, undecided: 0, total: 5 },
+    ],
+    byAnswer: [
+      { key: 'instructor', learners: 15, instructors: 0, schools: 0, undecided: 0, total: 15 },
+      { key: null, learners: 3, instructors: 4, schools: 1, undecided: 1, total: 9 },
+      { key: 'instagram', learners: 2, instructors: 6, schools: 0, undecided: 0, total: 8 },
+      { key: 'word_of_mouth', learners: 1, instructors: 4, schools: 1, undecided: 0, total: 6 },
+    ],
+    inTheirWords: [{ text: 'A stand at the ADI conference', role: 'instructor', when: 'Wed 21 Oct' }],
+  },
 };
 
 /** The five lists under the dashboard's figures (ADM-01, D-172). */
@@ -1133,6 +1228,19 @@ export function DesignShowcase() {
       </Section>
 
       <Section title="Inputs">
+        <Label>How did you hear about us: not answered, started from the link, and somewhere else with too much (D-413)</Label>
+        <div className="grid gap-6 md:grid-cols-3">
+          <HeardAboutField signingUpAs="instructor" value="" onChange={() => undefined} other="" onOtherChange={() => undefined} />
+          <HeardAboutField signingUpAs="learner" value="instagram" onChange={() => undefined} other="" onOtherChange={() => undefined} />
+          <HeardAboutField
+            signingUpAs="school"
+            value="other"
+            onChange={() => undefined}
+            other="A stand at the ADI conference, and a leaflet in the test centre waiting room"
+            onOtherChange={() => undefined}
+            otherError="Use 80 characters or fewer"
+          />
+        </div>
         <div className="grid gap-6 md:grid-cols-2">
           <Field label="Full name" hint="As it appears on your licence.">
             <Input placeholder="Sam Taylor" autoComplete="name" />
@@ -2236,6 +2344,33 @@ export function DesignShowcase() {
         <Label>A platform just starting, with nothing waiting</Label>
         <WaitingOnStaff dashboard={quietDashboard} idPrefix="design-waiting-quiet" />
         <DashboardFigures dashboard={quietDashboard} idPrefix="design-platform-month-quiet" />
+        <Label>Visitors to the site, against the days before, and each day by where they came from (D-413)</Label>
+        <VisitorFigures report={exampleVisitors} />
+        <VisitsChart report={exampleVisitors} />
+        <Label>The filters chosen, each taken away by itself, and none chosen</Label>
+        <ActiveFilters place={{ base: '/design', range: statsRange('last_30_days', '2026-10-30'), filters: { source: 'instagram', device: 'phone', country: '' } }} />
+        <ActiveFilters place={{ base: '/design', range: statsRange('last_30_days', '2026-10-30'), filters: {} }} />
+        <Label>A list with one row chosen and the rest folded away, and a list with nothing in these days</Label>
+        <div className="grid grid-cols-[minmax(0,1fr)] gap-4 lg:grid-cols-2">
+          <Breakdown
+            title="Sources"
+            description="The site, app or printed piece each visit came from."
+            filterKey="source"
+            rows={exampleVisitors.breakdowns.source}
+            place={{ base: '/design', range: statsRange('last_30_days', '2026-10-30'), filters: { source: 'instagram' } }}
+          />
+          <Breakdown
+            title="Sites they came from"
+            description="The site the browser said the visit came from."
+            filterKey="referrer"
+            rows={[]}
+            place={{ base: '/design', range: statsRange('last_30_days', '2026-10-30'), filters: {} }}
+          />
+        </div>
+        <Label>Sign-ups by the link they came on, by what they said, and in their own words</Label>
+        <SignupsBySource report={exampleVisitors} place={{ base: '/design', range: statsRange('last_30_days', '2026-10-30'), filters: { device: 'phone' } }} />
+        <Label>Loading</Label>
+        <VisitorsSkeleton />
         <Label>Who has asked to leave, with a day left and with four (AUTH-09, D-175)</Label>
         <DeletionsScreen requests={exampleLeavers} canKeep />
         <Label>What the platform itself earned, and the plans Businesses are on (ADM-01, ADM-10, D-174)</Label>

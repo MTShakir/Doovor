@@ -78,6 +78,7 @@
     "./receipts": "./src/receipts.ts",
     "./money-periods": "./src/money-periods.ts",
     "./stats-range": "./src/stats-range.ts",
+    "./visits": "./src/visits.ts",
     "./platform-id": "./src/platform-id.ts",
     "./lesson-length": "./src/lesson-length.ts",
     "./schemas/receipt-details": "./src/schemas/receipt-details.ts",

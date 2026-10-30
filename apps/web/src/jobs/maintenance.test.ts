@@ -5,7 +5,7 @@ const remove = vi.fn();
 const from = vi.fn(() => ({ remove }));
 vi.mock('@/lib/supabase/service', () => ({ getSupabaseServiceClient: () => ({ rpc, storage: { from } }) }));
 
-const { pruneAuditTrail, removeUnreferencedFiles } = await import('./maintenance');
+const { pruneAuditTrail, pruneSiteVisits, removeUnreferencedFiles } = await import('./maintenance');
 
 beforeEach(() => {
   vi.clearAllMocks();
@@ -68,3 +68,19 @@ describe('pruning the audit trail (NFR-SEC-06, D-158)', () => {
     await expect(pruneAuditTrail()).rejects.toThrow('Could not prune the audit trail: timeout');
   });
 });
+
+describe('pruning the visits to the site (D-413)', () => {
+  it('asks the database to prune, and says how many went', async () => {
+    rpc.mockResolvedValue({ data: 40, error: null });
+
+    expect(await pruneSiteVisits()).toEqual({ visitsPruned: 40 });
+    expect(rpc).toHaveBeenCalledWith('system_prune_site_visits');
+  });
+
+  it('fails, so the run is retried, when the database refuses', async () => {
+    rpc.mockResolvedValue({ data: null, error: { message: 'timeout' } });
+
+    await expect(pruneSiteVisits()).rejects.toThrow("Could not prune the site's visits: timeout");
+  });
+});
+

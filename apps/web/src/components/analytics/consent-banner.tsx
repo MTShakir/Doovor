@@ -22,8 +22,8 @@ export function ConsentBanner() {
     >
       <div className="mx-auto flex w-full max-w-6xl flex-col gap-4 md:flex-row md:items-center md:justify-between">
         <p className="text-body text-ink">
-          We count how the app is used, so we know what to fix. Nothing is counted until you say yes, and you can
-          change your mind at any time.{' '}
+          We count visits to our website without cookies, keeping nothing that identifies you. Say yes and we also
+          count how the app is used, so we know what to fix. You can change your mind at any time.{' '}
           <Link href="/cookies" className="font-semibold text-blue underline underline-offset-4">
             What we keep
           </Link>

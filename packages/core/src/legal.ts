@@ -12,7 +12,7 @@ import { parseLocalDate, type LocalDate } from './time/calendar.ts';
 export const legalDocuments = {
   learnerTerms: { title: 'Terms for learners', path: '/terms', updated: '2026-10-20' },
   businessTerms: { title: 'Terms for instructors', path: '/business-terms', updated: '2026-10-20' },
-  privacy: { title: 'Privacy notice', path: '/privacy', updated: '2026-10-26' },
+  privacy: { title: 'Privacy notice', path: '/privacy', updated: '2026-10-30' },
 } as const satisfies Record<string, { title: string; path: string; updated: LocalDate }>;
 
 export type LegalDocument = (typeof legalDocuments)[keyof typeof legalDocuments];

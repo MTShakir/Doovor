@@ -18,9 +18,8 @@ export function arrivalSource(search: string): string | null {
 }
 
 /**
- * A sign-up address that carries on where somebody came from. Nothing records it on the account:
- * the counting reads it from the address of the page it is on, so a sign-up that began with a scan
- * is counted against the piece that was scanned, for whoever has said yes to being counted.
+ * A sign-up address that carries on where somebody came from, so a sign-up that began with a scan
+ * is kept with the piece that was scanned (D-413).
  */
 export function withArrivalSource(href: string, source: string | null): string {
   if (source === null) return href;

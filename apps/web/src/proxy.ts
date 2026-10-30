@@ -52,9 +52,10 @@ export async function proxy(request: NextRequest) {
 
 export const config = {
   matcher: [
-    // The service worker, the page it keeps for no connection, the webhooks and the error reports
-    // passed on to Sentry (D-157) are fetched by machines, or need no session at all. Nor do the
-    // pictures, or the join page's film and its captions (D-408), fetched in pieces as it plays.
-    '/((?!_next/static|_next/image|api/health|api/inngest|api/webhooks|api/reports|favicon.ico|sw.js|serwist/|offline$|.*\\.(?:png|jpg|jpeg|gif|svg|webp|ico|txt|xml|webmanifest|mp4|vtt)$).*)',
+    // The service worker, the page it keeps for no connection, the webhooks, the error reports
+    // passed on to Sentry (D-157) and the note a page of the site sends as it opens (D-413) are
+    // fetched by machines, or need no session at all. Nor do the pictures, or the join page's film
+    // and its captions (D-408), fetched in pieces as it plays.
+    '/((?!_next/static|_next/image|api/health|api/inngest|api/webhooks|api/reports|api/visits|favicon.ico|sw.js|serwist/|offline$|.*\\.(?:png|jpg|jpeg|gif|svg|webp|ico|txt|xml|webmanifest|mp4|vtt)$).*)',
   ],
 };
