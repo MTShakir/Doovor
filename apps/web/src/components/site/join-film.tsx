@@ -1,7 +1,8 @@
 'use client';
 
 import Image, { type StaticImageData } from 'next/image';
-import { useEffect, useRef, useState } from 'react';
+import { useRef, useState } from 'react';
+import { flushSync } from 'react-dom';
 import { PlayLabel } from './join-embeds';
 
 /**
@@ -9,6 +10,12 @@ import { PlayLabel } from './join-embeds';
  * nothing plays after it, and its last frame, an arrow pointing down to the page's button, stays on
  * screen. It is its poster until somebody presses play, so a visitor who never does downloads
  * none of it; then it plays in the page, with sound, and captions to turn on.
+ *
+ * The film is started inside the press itself (D-412). A phone lets a film play with sound only
+ * when a person asked for it, and Safari on an iPhone judges that by whether play is called while
+ * the tap is still being handled, so the player is put in place and started there, not a moment
+ * later. The file is one every browser plays (film.test.ts); if a browser still says no, the
+ * player's own controls are there to press.
  */
 export function FilmPlayer({
   src,
@@ -27,13 +34,15 @@ export function FilmPlayer({
 }) {
   const [playing, setPlaying] = useState(false);
   const film = useRef<HTMLVideoElement>(null);
-  useEffect(() => {
+  const start = () => {
+    flushSync(() => {
+      setPlaying(true);
+    });
     const video = film.current;
-    if (!playing || !video) return;
+    if (video === null) return;
     video.focus();
-    // Pressing play is what lets it start with sound; a browser that still says no leaves its own play button.
     video.play().catch(() => undefined);
-  }, [playing]);
+  };
   return (
     <div className="relative aspect-[4/5] w-full overflow-hidden rounded-card bg-black">
       {playing ? (
@@ -52,9 +61,7 @@ export function FilmPlayer({
       ) : (
         <button
           type="button"
-          onClick={() => {
-            setPlaying(true);
-          }}
+          onClick={start}
           aria-label={`Play the video, ${title}, ${length}`}
           className="group absolute inset-0 size-full cursor-pointer"
         >

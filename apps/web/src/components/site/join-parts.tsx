@@ -2,7 +2,7 @@ import { Avatar } from '@repo/ui/avatar';
 import { cn } from '@repo/ui/lib/cn';
 import { ArrowDown, Check, MapPin } from 'lucide-react';
 import type { ReactNode } from 'react';
-import { joinHookScript, type JoinHook, type JoinHookKey, type PrintedPiece } from '@/lib/site/join';
+import type { JoinOpening } from '@/lib/site/join';
 import { SignalEyebrow, type Feature } from './marketing';
 
 /**
@@ -10,31 +10,6 @@ import { SignalEyebrow, type Feature } from './marketing';
  * they come from: the traffic light, the brand yellow under the words that matter, and the
  * messages an instructor knows too well. Plain values in, so the design page can show them.
  */
-
-/**
- * Which of the opening's words show, by the piece that was scanned. Written out whole, so the
- * stylesheet has each one: the opening is marked before it is painted (joinHookScript), and
- * everybody who came another way sees the page's own words.
- */
-const shownInline: Record<JoinHookKey, string> = {
-  default: 'group-data-[join-hook]/hero:hidden',
-  card: 'hidden group-data-[join-hook=card]/hero:inline',
-  leaflet: 'hidden group-data-[join-hook=leaflet]/hero:inline',
-  flyer: 'hidden group-data-[join-hook=flyer]/hero:inline',
-};
-
-const shownBlock: Record<JoinHookKey, string> = {
-  default: 'group-data-[join-hook]/hero:hidden',
-  card: 'hidden group-data-[join-hook=card]/hero:block',
-  leaflet: 'hidden group-data-[join-hook=leaflet]/hero:block',
-  flyer: 'hidden group-data-[join-hook=flyer]/hero:block',
-};
-
-const hiddenFor: Record<PrintedPiece, string> = {
-  card: 'group-data-[join-hook=card]/hero:hidden',
-  leaflet: 'group-data-[join-hook=leaflet]/hero:hidden',
-  flyer: 'group-data-[join-hook=flyer]/hero:hidden',
-};
 
 /**
  * The words that matter, underlined in the brand yellow (D-411): a thick line under them, unbroken
@@ -50,21 +25,19 @@ function Marked({ children }: { children: ReactNode }) {
 }
 
 /**
- * The opening, carrying straight on from whichever piece was scanned: the same headline, under the
- * founding offer's line except where the headline already is the offer. Laid out as every other
- * page's opening (PageHero). The page is built once for everybody, so the words of every piece are
- * in it, and the script before them says which to show before anything is painted.
+ * The opening, laid out as every other page's opening (PageHero), under the founding offer's line:
+ * the same for everybody, whichever printed piece they scanned (D-412), with the words that matter
+ * underlined.
  */
 export function JoinHero({
-  hooks,
+  opening,
   badge,
   eyebrow,
   actions,
   note,
   visual,
-  only,
 }: {
-  hooks: readonly JoinHook[];
+  opening: JoinOpening;
   /** The founding offer's line over the headline. */
   badge: ReactNode;
   /** Left out where the headline already says who it is for (D-410). */
@@ -72,38 +45,17 @@ export function JoinHero({
   actions: ReactNode;
   note: ReactNode;
   visual: ReactNode;
-  /** One way of arriving's words alone, with nothing to switch: for the design page. */
-  only?: JoinHookKey;
 }) {
-  const switched = only === undefined;
-  const shown = switched ? hooks : hooks.filter((hook) => hook.key === only);
-  const badgeHidden = hooks.flatMap((hook) => (hook.badge || hook.key === 'default' ? [] : [hiddenFor[hook.key]]));
-  const withBadge = switched || shown.some((hook) => hook.badge);
   return (
-    // Marked by the script inside it before React arrives, which is told to expect that one attribute.
-    <section
-      suppressHydrationWarning
-      className="group/hero mx-auto grid w-full max-w-6xl grid-cols-[minmax(0,1fr)] items-center gap-12 px-4 pt-10 pb-14 md:grid-cols-[minmax(0,1.1fr)_minmax(0,1fr)] md:px-6 md:pt-20 md:pb-24"
-    >
-      {/* A fixed string, written by the page, with nothing from the address in it. */}
-      {switched ? <script dangerouslySetInnerHTML={{ __html: joinHookScript() }} /> : null}
+    <section className="mx-auto grid w-full max-w-6xl grid-cols-[minmax(0,1fr)] items-center gap-12 px-4 pt-10 pb-14 md:grid-cols-[minmax(0,1.1fr)_minmax(0,1fr)] md:px-6 md:pt-20 md:pb-24">
       <div className="flex flex-col gap-5">
-        {withBadge ? <div className={cn(switched && badgeHidden)}>{badge}</div> : null}
+        <div>{badge}</div>
         {eyebrow === undefined ? null : <p className="text-small font-semibold text-grey-700">{eyebrow}</p>}
         <h1 className="text-display text-balance text-black md:text-hero">
-          {shown.map((hook) => (
-            <span key={hook.key} className={switched ? shownInline[hook.key] : undefined}>
-              {hook.title.before}
-              <Marked>{hook.title.marked}</Marked>
-              {hook.title.after}
-            </span>
-          ))}
+          {opening.title.before}
+          <Marked>{opening.title.marked}</Marked>
         </h1>
-        {shown.map((hook) => (
-          <p key={hook.key} className={cn('max-w-xl text-body text-pretty text-grey-700 md:text-h3 md:font-normal', switched && shownBlock[hook.key])}>
-            {hook.description}
-          </p>
-        ))}
+        <p className="max-w-xl text-body text-pretty text-grey-700 md:text-h3 md:font-normal">{opening.description}</p>
         <div className="mt-2 flex flex-col gap-3 sm:flex-row">{actions}</div>
         <div className="text-small text-grey-700">{note}</div>
       </div>
@@ -245,7 +197,11 @@ export function CostPanel({
         <SignalEyebrow lit="red">What it costs you</SignalEyebrow>
       </p>
       <div className="flex flex-col gap-3">
-        <p className="w-fit rounded-input bg-yellow px-3 text-display text-black tabular-nums md:text-hero">{figure}</p>
+        <p className="w-fit rounded-input bg-yellow px-3 text-display text-black tabular-nums md:text-hero">
+          {/* Struck through in red, as money gone (D-412). A strike is not read out, so it says so in words. */}
+          <s className="decoration-red decoration-[length:0.08em]">{figure}</s>
+          <span className="sr-only"> lost</span>
+        </p>
         <p className="text-body text-pretty">{explanation}</p>
       </div>
       <dl className="flex flex-col gap-4 border-t border-white/25 pt-6">

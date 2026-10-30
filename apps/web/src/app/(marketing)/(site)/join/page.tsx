@@ -45,8 +45,9 @@ import {
 } from '@/components/site/marketing';
 import { getAppUrl } from '@/lib/app-url';
 import { publicPageMetadata } from '@/lib/public/metadata';
+import { joinFilm } from '@/lib/site/film';
 import { foundingPlaces } from '@/lib/site/founding';
-import { joinActionWords, joinHooks, offerTermWords } from '@/lib/site/join';
+import { joinActionWords, joinOpening, offerTermWords } from '@/lib/site/join';
 
 /**
  * The page the printed QR codes open (PRD 8.3, 9.18, D-404): for an independent instructor who has
@@ -91,17 +92,11 @@ const setupGuide = { videoId: 'NXm0hbDIRlY', title: `How to set up your driving 
 
 /**
  * The page's own film (D-408): the whole story in under four minutes, the owner's voice over the
- * app's own screens, hosted with the site. Its last frame points down to the button under it. A new
- * cut gets a new file name, so nobody is ever sent an old one from a cache. Its band asks for the
- * four minutes and says what they buy, on black, so the yellow button under it stands out (D-410).
+ * app's own screens, hosted with the site (film.ts, where the file is held to one every browser
+ * plays). Its last frame points down to the button under it. Its band asks for the four minutes and
+ * says what they buy, on black, so the yellow button under it stands out (D-410).
  */
-const film = {
-  src: '/video/join-20261029.mp4',
-  captions: '/video/join-20261029.en-GB.vtt',
-  title: `${brand.name} in under four minutes`,
-  length: '3:43',
-  hook: { before: 'Give us 4 minutes. ', marked: 'Get your evenings back.' },
-} as const;
+const film = { ...joinFilm, hook: { before: 'Give us 4 minutes. ', marked: 'Get your evenings back.' } } as const;
 
 /** One late cancellation a week, at a £40 lesson, over a year: how the leaflet works it out. */
 const lessonPence = 4000;
@@ -343,7 +338,7 @@ export default async function JoinPage() {
   return (
     <>
       <JoinHero
-        hooks={joinHooks(places)}
+        opening={joinOpening}
         badge={<FoundingBadge places={places} />}
         actions={
           <div id="opening-action" className="flex w-full flex-col md:w-auto">
