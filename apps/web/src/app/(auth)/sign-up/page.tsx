@@ -1,10 +1,12 @@
 import type { IntendedRole } from '@repo/core/schemas/auth';
+import { readTags } from '@repo/core/visits';
 import { Skeleton } from '@repo/ui/skeleton';
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import { Suspense } from 'react';
 import { SignUpForm } from './sign-up-form';
+import { readInvitation } from '@/lib/auth/invitation-cookie';
 import { featureFlags } from '@/lib/flags';
 
 export const metadata: Metadata = { title: 'Create an account' };
@@ -13,7 +15,14 @@ function roleFromParam(value: string | undefined): IntendedRole | null {
   return value === 'learner' || value === 'instructor' || value === 'school' ? value : null;
 }
 
-type SignUpParams = Promise<{ role?: string; name?: string; email?: string }>;
+type SignUpParams = Promise<{
+  role?: string;
+  name?: string;
+  email?: string;
+  utm_source?: string;
+  utm_medium?: string;
+  utm_campaign?: string;
+}>;
 
 /** Query values come from whoever made the link, so they are trimmed and capped. */
 function clean(value: string | undefined): string {
@@ -44,5 +53,11 @@ async function RoleForm({ searchParams }: { searchParams: SignUpParams }) {
   // An invitation already knows the learner's name and email, so they do not retype them
   // on a phone (AUTH-07).
   const prefill = { fullName: clean(params.name), email: clean(params.email) };
-  return <SignUpForm key={role} role={role} prefill={prefill} flags={await featureFlags()} />;
+  // The tags of the link they arrived on, carried here from the site (D-413). Somebody invited
+  // came from whoever invited them, so they are not asked how they heard about us.
+  const arrival = readTags(
+    new URLSearchParams({ utm_source: params.utm_source ?? '', utm_medium: params.utm_medium ?? '', utm_campaign: params.utm_campaign ?? '' }).toString(),
+  );
+  const invited = (await readInvitation()) !== null;
+  return <SignUpForm key={role} role={role} prefill={prefill} flags={await featureFlags()} arrival={arrival} askHowHeard={!invited} />;
 }

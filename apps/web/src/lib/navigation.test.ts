@@ -23,6 +23,10 @@ describe('portal navigation (PRD 8.2)', () => {
     expect(sectionsFor('admin')).toContain('payments');
   });
 
+  it('shows staff the visits to the site, right after the dashboard (D-413)', () => {
+    expect(navFor('admin', 'desktop').map((i) => i.label).slice(0, 2)).toEqual(['Dashboard', 'Visitors']);
+  });
+
   it('keeps admin off mobile', () => {
     expect(navFor('admin', 'mobile')).toHaveLength(0);
   });

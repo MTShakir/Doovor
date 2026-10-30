@@ -7,13 +7,14 @@ import {
   eraseDueAccounts,
   extendRecurrences,
   pruneAuditTrail,
+  pruneSiteVisits,
   removeUnreferencedFiles,
 } from '../maintenance';
 
 /**
  * Housekeeping, once a day (NFR-SEC-03, AUTH-07, NFR-PRV-03, D-158): old rate limit windows,
- * invitations nobody accepted, pictures nothing points to any more, and audit rows past the two
- * years the privacy notice gives.
+ * invitations nobody accepted, pictures nothing points to any more, and audit rows and visits to
+ * the site past the two years the privacy notice gives (D-413).
  */
 export const maintenanceSweep = inngest.createFunction(
   { id: 'maintenance-sweep', name: 'Maintenance sweep', triggers: [cron(schedules.maintenance)] },
@@ -22,6 +23,7 @@ export const maintenanceSweep = inngest.createFunction(
     ...(await clearExpiredInvitations()),
     ...(await removeUnreferencedFiles()),
     ...(await pruneAuditTrail()),
+    ...(await pruneSiteVisits()),
   }),
 );
 

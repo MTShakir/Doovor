@@ -9,6 +9,47 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      account_origins: {
+        Row: {
+          campaign: string | null
+          channel: string | null
+          created_at: string
+          heard_about: string | null
+          heard_about_other: string | null
+          medium: string | null
+          source: string | null
+          user_id: string
+        }
+        Insert: {
+          campaign?: string | null
+          channel?: string | null
+          created_at?: string
+          heard_about?: string | null
+          heard_about_other?: string | null
+          medium?: string | null
+          source?: string | null
+          user_id: string
+        }
+        Update: {
+          campaign?: string | null
+          channel?: string | null
+          created_at?: string
+          heard_about?: string | null
+          heard_about_other?: string | null
+          medium?: string | null
+          source?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "account_origins_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: true
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       account_suspensions: {
         Row: {
           reason: string
@@ -3369,6 +3410,66 @@ export type Database = {
           },
         ]
       }
+      site_visits: {
+        Row: {
+          app: string | null
+          browser: string
+          campaign: string | null
+          channel: string
+          city: string | null
+          country: string | null
+          device: string
+          entry: boolean
+          id: string
+          landing: string | null
+          medium: string | null
+          occurred_at: string
+          path: string
+          referrer: string | null
+          region: string | null
+          source: string
+          system: string
+        }
+        Insert: {
+          app?: string | null
+          browser: string
+          campaign?: string | null
+          channel: string
+          city?: string | null
+          country?: string | null
+          device: string
+          entry: boolean
+          id?: string
+          landing?: string | null
+          medium?: string | null
+          occurred_at?: string
+          path: string
+          referrer?: string | null
+          region?: string | null
+          source: string
+          system: string
+        }
+        Update: {
+          app?: string | null
+          browser?: string
+          campaign?: string | null
+          channel?: string
+          city?: string | null
+          country?: string | null
+          device?: string
+          entry?: boolean
+          id?: string
+          landing?: string | null
+          medium?: string | null
+          occurred_at?: string
+          path?: string
+          referrer?: string | null
+          region?: string | null
+          source?: string
+          system?: string
+        }
+        Relationships: []
+      }
       skill_assessments: {
         Row: {
           assessed_at: string
@@ -4449,6 +4550,17 @@ export type Database = {
         Args: { p_learner_id: string; p_rating: number; p_skill_code: string }
         Returns: string
       }
+      record_account_origin: {
+        Args: {
+          p_campaign: string
+          p_channel: string
+          p_heard_about: string
+          p_heard_about_other: string
+          p_medium: string
+          p_source: string
+        }
+        Returns: boolean
+      }
       record_audit_export: {
         Args: { p_count: number; p_filters: Json }
         Returns: undefined
@@ -4699,6 +4811,31 @@ export type Database = {
         }
         Returns: undefined
       }
+      site_visits_report: {
+        Args: { p_filters?: Json; p_from: string; p_to: string }
+        Returns: Json
+      }
+      site_visits_rows: {
+        Args: { p_filters?: Json; p_from: string; p_to: string }
+        Returns: {
+          app: string
+          browser: string
+          campaign: string
+          channel: string
+          city: string
+          country: string
+          device: string
+          entry: boolean
+          landing: string
+          medium: string
+          occurred_at: string
+          path: string
+          referrer: string
+          region: string
+          source: string
+          system: string
+        }[]
+      }
       sitemap_entries: { Args: never; Returns: Json }
       slot_problem: {
         Args: {
@@ -4927,6 +5064,7 @@ export type Database = {
         Returns: Json
       }
       system_prune_audit_log: { Args: never; Returns: number }
+      system_prune_site_visits: { Args: never; Returns: number }
       system_push_targets: {
         Args: { p_user_id: string }
         Returns: {
@@ -5028,6 +5166,26 @@ export type Database = {
           p_credit_restored_pence: number
           p_duplicate_subscription_id: string
           p_refunded_pence: number
+        }
+        Returns: boolean
+      }
+      system_record_visit: {
+        Args: {
+          p_app: string
+          p_browser: string
+          p_campaign: string
+          p_channel: string
+          p_city: string
+          p_country: string
+          p_device: string
+          p_entry: boolean
+          p_landing: string
+          p_medium: string
+          p_path: string
+          p_referrer: string
+          p_region: string
+          p_source: string
+          p_system: string
         }
         Returns: boolean
       }

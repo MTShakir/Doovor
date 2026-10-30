@@ -5,7 +5,8 @@ import { expectAccessible, settled, snap } from '../support/helpers';
 test.use({ storageState: { cookies: [], origins: [] } });
 
 /**
- * Nothing is counted until somebody says yes (NFR-PRV-02, M6-08, D-144).
+ * Nothing about how the app is used is counted until somebody says yes (NFR-PRV-02, M6-08, D-144).
+ * Visits to the site are counted for everybody, without cookies, by the site itself (D-413).
  *
  * The counting host points at the app's own stand-in while the tests run, so a request to it is
  * proof that something was sent, and its absence is proof that nothing was. Each test starts with
@@ -30,7 +31,8 @@ test.describe('the cookie question (NFR-PRV-02, M6-08)', () => {
 
     const question = page.getByRole('dialog', { name: 'Cookies' });
     await expect(question).toBeVisible();
-    await expect(question).toContainText('Nothing is counted until you say yes');
+    await expect(question).toContainText('We count visits to our website without cookies, keeping nothing that identifies you.');
+    await expect(question).toContainText('Say yes and we also count how the app is used');
     await expect(question.getByRole('link', { name: 'What we keep' })).toHaveAttribute('href', '/cookies');
 
     // Long enough for anything that loads after the page has painted.
@@ -85,7 +87,7 @@ test.describe('the cookie question (NFR-PRV-02, M6-08)', () => {
     await page.goto('/cookies');
     await expect(page.getByText('You have said yes to being counted.')).toBeVisible();
     await page.getByRole('button', { name: 'Stop counting me' }).click();
-    await expect(page.getByText('You have said no to being counted, and nothing is.')).toBeVisible();
+    await expect(page.getByText('You have said no, so how you use the app is not counted.')).toBeVisible();
   });
 
   test('leaves the page room to scroll clear of it, so the last button is never under it (WCAG 2.4.11)', async ({ page }, testInfo) => {

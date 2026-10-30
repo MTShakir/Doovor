@@ -1,6 +1,7 @@
 /** Shared by the sign-in forms (React Hook Form) and their Server Actions. */
 import { z } from '../zod';
 import { normaliseUkMobile } from '../phone.ts';
+import { cleanTag, isHeardAbout, type HeardAbout } from '../visits.ts';
 
 export const emailSchema = z.string().trim().toLowerCase().pipe(z.email({ error: 'Enter an email address like name@example.com' }));
 
@@ -40,6 +41,29 @@ export const signInSchema = z.object({
   password: z.string().min(1, { error: 'Enter your password' }),
 });
 
+/** A tag carried on from the link somebody arrived on. One that is not a plain word is dropped, never refused (D-413). */
+const carriedTagSchema = z
+  .string()
+  .max(200)
+  .nullish()
+  .transform((value) => cleanTag(value));
+
+/** Where somebody came from, carried on to sign-up from the link they arrived on (D-413). */
+export const arrivalTagsSchema = z
+  .object({ source: carriedTagSchema, medium: carriedTagSchema, campaign: carriedTagSchema })
+  .nullish()
+  .transform((tags) => ({ source: tags?.source ?? null, medium: tags?.medium ?? null, campaign: tags?.campaign ?? null }));
+
+/** "How did you hear about us?": optional, and anything that is not one of the answers is no answer (D-413). */
+export const heardAboutSchema = z
+  .string()
+  .max(40)
+  .nullish()
+  .transform((value): HeardAbout | null => (isHeardAbout(value) ? value : null));
+
+/** Where else, in their own words, when the answer is "Somewhere else". */
+export const heardAboutOtherSchema = z.string().trim().max(80, { error: 'Use 80 characters or fewer' }).nullish();
+
 export const signUpSchema = z
   .object({
     fullName: fullNameSchema,
@@ -47,6 +71,9 @@ export const signUpSchema = z
     password: passwordSchema,
     role: intendedRoleSchema,
     schoolName: z.string().trim().max(120).optional(),
+    arrival: arrivalTagsSchema,
+    heardAbout: heardAboutSchema,
+    heardAboutOther: heardAboutOtherSchema,
     /** The terms and the privacy notice, agreed to with a tick: never assumed (NFR-PRV-02, D-265). */
     acceptedTerms: z.boolean({ error: 'Agree to the terms to create your account' }).refine((agreed) => agreed, {
       error: 'Agree to the terms to create your account',
@@ -87,7 +114,13 @@ export const otpCodeSchema = z.string().trim().regex(/^\d{6}$/, { error: 'Enter 
 export const phoneCodeSchema = z.object({ phone: ukMobileSchema, code: otpCodeSchema });
 
 export const roleChoiceSchema = z
-  .object({ role: intendedRoleSchema, schoolName: z.string().trim().max(120).optional() })
+  .object({
+    role: intendedRoleSchema,
+    schoolName: z.string().trim().max(120).optional(),
+    arrival: arrivalTagsSchema,
+    heardAbout: heardAboutSchema,
+    heardAboutOther: heardAboutOtherSchema,
+  })
   .refine((value) => value.role !== 'school' || (value.schoolName?.length ?? 0) > 0, {
     path: ['schoolName'],
     error: 'Enter your school name',

@@ -72,3 +72,41 @@ describe('auth schemas', () => {
     expect(phoneCodeSchema.parse({ phone: '07700900001', code: ' 123456 ' })).toEqual({ phone: '+447700900001', code: '123456' });
   });
 });
+
+describe('where a sign-up came from (D-413)', () => {
+  const person = { fullName: 'Ben', email: 'ben@example.com', password: 'longenough', role: 'instructor' as const, acceptedTerms: true };
+
+  it('keeps the link’s tags as plain words, and drops one that is not, without refusing the account', () => {
+    const parsed = signUpSchema.parse({ ...person, arrival: { source: 'Instagram', medium: 'social', campaign: '<b>week</b>' } });
+    expect(parsed.arrival).toEqual({ source: 'instagram', medium: 'social', campaign: null });
+    expect(signUpSchema.parse(person).arrival).toEqual({ source: null, medium: null, campaign: null });
+  });
+
+  it('takes an answer from the list, and anything else as no answer', () => {
+    expect(signUpSchema.parse({ ...person, heardAbout: 'word_of_mouth' }).heardAbout).toBe('word_of_mouth');
+    expect(signUpSchema.parse({ ...person, heardAbout: '' }).heardAbout).toBeNull();
+    expect(signUpSchema.parse({ ...person, heardAbout: 'carrier-pigeon' }).heardAbout).toBeNull();
+    expect(signUpSchema.parse(person).heardAbout).toBeNull();
+  });
+
+  it('says how long somewhere else may be', () => {
+    const result = signUpSchema.safeParse({ ...person, heardAbout: 'other', heardAboutOther: 'x'.repeat(81) });
+    expect(result.success).toBe(false);
+    if (!result.success) expect(result.error.issues[0]?.message).toBe('Use 80 characters or fewer');
+    expect(signUpSchema.parse({ ...person, heardAbout: 'other', heardAboutOther: '  A stand at a show  ' }).heardAboutOther).toBe('A stand at a show');
+  });
+
+  it('reads back what it gave, so the form can send its own answer to the server', () => {
+    const once = signUpSchema.parse({ ...person, arrival: { source: 'card' }, heardAbout: '' });
+    expect(signUpSchema.parse(once)).toEqual(once);
+  });
+
+  it('carries the same after signing in with Google', () => {
+    expect(roleChoiceSchema.parse({ role: 'learner', arrival: { source: 'google', medium: 'search' }, heardAbout: 'search' })).toEqual({
+      role: 'learner',
+      arrival: { source: 'google', medium: 'search', campaign: null },
+      heardAbout: 'search',
+    });
+  });
+});
+

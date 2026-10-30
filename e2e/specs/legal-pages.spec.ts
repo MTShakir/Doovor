@@ -12,7 +12,7 @@ import { expectAccessible, robotsOf, settled, snap } from '../support/helpers';
 const pages = [
   // Six: the sixth is who can see what, added when the notice caught up with the product (B-77).
   { path: '/privacy', title: 'Privacy notice', gaps: 6 },
-  { path: '/cookies', title: 'Cookies', gaps: 1 },
+  { path: '/cookies', title: 'Cookies', gaps: 2 },
   // Four: the fourth is the pass photograph and the consent behind it (B-77, D-218).
   { path: '/terms', title: 'Terms for learners', gaps: 4 },
   // Four: the fourth is working with a school, its fees and the instructors it vouches for (D-296).

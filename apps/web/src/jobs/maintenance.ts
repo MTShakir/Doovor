@@ -50,6 +50,13 @@ export async function pruneAuditTrail(): Promise<{ pruned: number }> {
   return { pruned: data };
 }
 
+/** Visits to the site are kept two years, as the privacy notice says (D-413). */
+export async function pruneSiteVisits(): Promise<{ visitsPruned: number }> {
+  const { data, error } = await getSupabaseServiceClient().rpc('system_prune_site_visits');
+  if (error) throw new Error(`Could not prune the site's visits: ${error.message}`);
+  return { visitsPruned: data };
+}
+
 /** Open ended weekly slots are kept booked a month ahead (BOK-05, M2-20). */
 export async function extendRecurrences(): Promise<{ booked: number }> {
   const { data, error } = await getSupabaseServiceClient().rpc('system_extend_recurrences', { p_weeks: 4 });

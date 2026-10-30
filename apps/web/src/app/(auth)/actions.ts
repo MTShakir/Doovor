@@ -11,6 +11,7 @@ import {
   signUpSchema,
   ukMobileSchema,
 } from '@repo/core/schemas/auth';
+import { accountOriginOf, originMetadata } from '@repo/core/visits';
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
 
@@ -18,6 +19,7 @@ import { z } from '@repo/core/zod';
 import { getAppUrl } from '@/lib/app-url';
 import { authErrorCopy } from '@/lib/auth/auth-errors';
 import { completeSignIn } from '@/lib/auth/complete-sign-in';
+import { readInvitation } from '@/lib/auth/invitation-cookie';
 import { forgetReferral, readReferral } from '@/lib/auth/referral-cookie';
 import { safeNextPath } from '@/lib/auth/portals';
 import { VIEW_AS_COOKIE } from '@/lib/auth/view-as';
@@ -44,7 +46,15 @@ export async function signInWithPassword(input: unknown, next?: string | null): 
 export async function signUp(input: unknown): Promise<Result<null>> {
   const parsed = signUpSchema.safeParse(input);
   if (!parsed.success) return err('VALIDATION_FAILED', undefined, fieldErrors(parsed.error));
-  const { email, password, fullName, role, schoolName } = parsed.data;
+  const { email, password, fullName, role, schoolName, arrival, heardAbout, heardAboutOther } = parsed.data;
+  // Where they came from, kept with the account as it is made (D-413). A learner invited by their
+  // instructor came from them, and was not asked.
+  const invited = (await readInvitation()) !== null;
+  const origin = accountOriginOf({
+    tags: arrival,
+    heardAbout: invited ? (role === 'learner' ? 'instructor' : null) : heardAbout,
+    heardAboutOther,
+  });
   const supabase = await createSupabaseServerClient();
   const { error } = await supabase.auth.signUp({
     email,
@@ -56,6 +66,7 @@ export async function signUp(input: unknown): Promise<Result<null>> {
         intended_role: role,
         terms_version: termsVersion,
         ...(role === 'school' ? { school_name: schoolName } : {}),
+        ...originMetadata(origin),
       },
       emailRedirectTo: `${getAppUrl()}/auth/confirm`,
     },
@@ -146,6 +157,20 @@ export async function chooseRole(input: unknown): Promise<Result<null>> {
     });
     if (error) return err('UNKNOWN');
     if (referral !== null) await forgetReferral();
+  }
+
+  // Where they came from, which the sign-up form could not send for somebody who came with Google
+  // or Apple (D-413). Worth knowing, and never worth stopping them over.
+  const origin = accountOriginOf({ tags: parsed.data.arrival, heardAbout: parsed.data.heardAbout, heardAboutOther: parsed.data.heardAboutOther });
+  if (origin !== null) {
+    await supabase.rpc('record_account_origin', {
+      p_source: origin.source ?? '',
+      p_medium: origin.medium ?? '',
+      p_campaign: origin.campaign ?? '',
+      p_channel: origin.channel ?? '',
+      p_heard_about: origin.heardAbout ?? '',
+      p_heard_about_other: origin.heardAboutOther ?? '',
+    });
   }
   redirectTo(await completeSignIn());
 }

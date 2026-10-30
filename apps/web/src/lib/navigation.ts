@@ -5,6 +5,7 @@ import {
   Car,
   CreditCard,
   FileText,
+  Footprints,
   Gavel,
   HeartHandshake,
   Home,
@@ -78,6 +79,7 @@ const navigation: Record<Portal, PortalNavItem[]> = {
   ],
   admin: [
     { section: '', label: 'Dashboard', icon: LayoutDashboard, mobile: false, desktop: true, phase: 1 },
+    { section: 'visitors', label: 'Visitors', icon: Footprints, mobile: false, desktop: true, phase: 1 },
     { section: 'businesses', label: 'Businesses', icon: Building2, mobile: false, desktop: true, phase: 1 },
     { section: 'instructors', label: 'Instructors', icon: icons.instructors, mobile: false, desktop: true, phase: 1 },
     { section: 'verification', label: 'Verification', icon: icons.verification, mobile: false, desktop: true, phase: 1 },

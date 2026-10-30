@@ -1,5 +1,6 @@
-import type { ReactNode } from 'react';
+import { Suspense, type ReactNode } from 'react';
 import { SiteFooter, SiteHeader } from '@/components/site/site-chrome';
+import { VisitCounter } from '@/components/site/visit-counter';
 import { getAppUrl } from '@/lib/app-url';
 import { launchCities } from '@/lib/site/cities';
 
@@ -19,6 +20,11 @@ export default async function SiteLayout({ children }: { children: ReactNode }) 
         {children}
       </main>
       <SiteFooter appUrl={appUrl} cities={cities} />
+      {/* Counts the page, without cookies, and carries where the visit came from to sign-up (D-413).
+          It reads the page's address, so it waits for the page to be open, as the menu does. */}
+      <Suspense fallback={null}>
+        <VisitCounter appUrl={appUrl} />
+      </Suspense>
     </div>
   );
 }

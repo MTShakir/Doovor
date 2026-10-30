@@ -19,7 +19,7 @@ export default function CookiesPage() {
     <LegalPage
       title="Cookies"
       summary="What we keep on your device, what each thing is for, and what waits until you say yes."
-      updated="26 October 2026"
+      updated="30 October 2026"
     >
       <LegalSection title="Your answer">
         <LegalText>
@@ -28,6 +28,21 @@ export default function CookiesPage() {
           your mind here at any time.
         </LegalText>
         <CookieChoice />
+      </LegalSection>
+
+      <LegalSection title="Counted without cookies">
+        <LegalText>
+          We count every page of our website as it opens, for everybody, without cookies and without keeping anything
+          on your device. We keep the page, the site or link the visit came from, the country and town your connection
+          is in, and whether it is a phone, tablet or computer and which browser. We keep nothing that could identify
+          you, not even your internet address, and nothing joins one visit to another. Visits are kept for two years.
+        </LegalText>
+        <ForTheSolicitor>
+          <p>
+            Please confirm that counting visits this way, with nothing stored on or read from the device beyond what
+            every request carries, needs no consent under PECR (D-413).
+          </p>
+        </ForTheSolicitor>
       </LegalSection>
 
       <LegalSection title="Set whatever you choose">

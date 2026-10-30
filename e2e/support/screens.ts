@@ -92,5 +92,5 @@ export const portals: [RoleKey, string[]][] = [
       '/app/school/more',
     ],
   ],
-  ['admin', ['/admin', '/admin/businesses', '/admin/instructors', '/admin/learners', '/admin/payments', '/admin/deletions', '/admin/regions', '/admin/settings', '/admin/verification', '/admin/gallery', '/admin/audit-log']],
+  ['admin', ['/admin', '/admin/visitors', '/admin/businesses', '/admin/instructors', '/admin/learners', '/admin/payments', '/admin/deletions', '/admin/regions', '/admin/settings', '/admin/verification', '/admin/gallery', '/admin/audit-log']],
 ];

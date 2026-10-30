@@ -25,7 +25,7 @@ export function CookieChoice() {
         {choice === 'accepted'
           ? 'You have said yes to being counted.'
           : choice === 'declined'
-            ? 'You have said no to being counted, and nothing is.'
+            ? 'You have said no, so how you use the app is not counted. Visits to our website are still counted without cookies, as they are for everybody.'
             : 'You have not answered yet.'}
       </p>
       <div className="flex flex-col gap-2 sm:flex-row">

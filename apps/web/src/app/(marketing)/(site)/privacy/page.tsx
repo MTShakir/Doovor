@@ -68,6 +68,14 @@ export default function PrivacyPage() {
             ['What the app did', 'An audit trail of the things that matter: who signed in, who changed a role, who saw a learner, who took a payment, and where a lesson was changed.'],
             ['Asking us to close your account', 'If you ask us to close your account we record that you asked, when, and the reason you gave, so we can deal with it and so you can change your mind before it happens.'],
             [
+              'Where you came from',
+              'When you create an account: the tags on the link you arrived on, such as an Instagram post or a printed card, and your answer if you told us how you heard about us. It tells us what works. It is downloaded with the rest of your account, and goes when your account does.',
+            ],
+            [
+              'Visits to our website',
+              'We count every page of our website as it opens, without cookies and without keeping anything on your device: the page, the site or link the visit came from, the country and town your connection is in, and whether it is a phone, tablet or computer and which browser. We keep nothing that could identify you, not even your internet address, and nothing joins one visit to another.',
+            ],
+            [
               'A photograph of the day you passed',
               'If your instructor puts your pass photo on their public profile, we hold the picture, your first name, the date you passed and who taught you. It is on a page anybody can read. Your instructor has to confirm they asked you first, and we record that they said so and when. It is not a review and nothing is scored: it is a photograph. Ask your instructor to take it down and they can, at any time, and so can we if you ask us instead.',
             ],
@@ -109,7 +117,9 @@ export default function PrivacyPage() {
             'To run the service you asked for: your diary, your bookings, your payments and your progress. That is our contract with you.',
             'To keep the service safe and working: sign in, rate limits, the audit trail, and finding out what went wrong when something breaks. That is our legitimate interest, and yours.',
             'To meet the law: financial records for HMRC, and the checks that say an instructor is who they say they are.',
+            'To count visits to our website, without cookies and keeping nothing that could identify you, so we know which posts, searches and printed codes bring people to us.',
             'To count how the product is used, but only once you have said yes to it. Nothing is counted before that.',
+            'To know where an account came from: the link it arrived on, and how its holder told us they heard about us. That is our legitimate interest in knowing what brings people to us.',
             'Anything you tell us about your health is held only because you chose to tell us, and for no other reason. Take it back and we stop holding it.',
             'To pass your details from a school to an instructor who works with it, because you asked the school for lessons and agreed to it, in the words we keep with what you asked.',
             'To ring you about an onboarding call you booked and help you set up, because you asked us to.',
@@ -117,6 +127,11 @@ export default function PrivacyPage() {
         />
         <ForTheSolicitor>
           <p>Please confirm the lawful basis for each row, and the wording for the legitimate interests assessment.</p>
+          <p>
+            Please also confirm that counting visits as described, with nothing stored on or read from the device beyond
+            what every request carries, needs no consent under PECR, and that keeping where an account came from rests
+            on legitimate interests (D-413).
+          </p>
         </ForTheSolicitor>
       </LegalSection>
 
@@ -138,7 +153,7 @@ export default function PrivacyPage() {
           caption="The companies that hold something on our behalf."
           rows={[
             ['Supabase', 'The database, sign in, and the files people upload. London.'],
-            ['Vercel', 'Runs the app itself. London.'],
+            ['Vercel', 'Runs the app itself, and says which country and town a visit comes from without passing on the address. London.'],
             ['Stripe', 'Card payments and payouts. Stripe holds the card details; we never see them.'],
             ['Resend', 'Sends email.'],
             ['Twilio', 'Sends text messages, including sign in codes. Ireland.'],
@@ -166,6 +181,8 @@ export default function PrivacyPage() {
             'Financial records: six years, because HMRC requires it. When an account is deleted these are kept but the person behind them is removed.',
             'An instructor’s own books, and the receipts photographed into them: six years for the same reason, and they go with the Business if it is closed.',
             'The audit trail: two years.',
+            'Counts of visits to our website: two years. They hold nothing about anybody.',
+            'Where you came from when you made your account: while your account is open.',
             'Backups of the database: five weeks, encrypted, then deleted, so a deleted account has left every backup five weeks later.',
             'Pictures of a badge or a licence: removed once the check is done.',
             'What you told us about your health: for as long as you choose to leave it there. It is yours to take off your record at any moment, and it goes when your account does.',

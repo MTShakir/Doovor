@@ -639,6 +639,7 @@ sequenceDiagram
 
 - **Sentry** (EU region) for errors and performance on client, server and jobs, with a tunnel route so ad blockers do not drop events. Personal data is scrubbed before sending.
 - **Structured logs**: JSON logs with request ID, user ID (never email), Business ID and duration. Health check at `/api/health` (database and job runner reachable) for uptime monitoring with phone alerts.
+- **Visits to the public site** (D-413): every page of the site sends one note to `/api/visits` as it opens, and the server keeps the page, where the visit came from, the country and town, and the device, browser and system, to the hour and with nothing about the person. No cookie, nothing stored on the device, so everybody is counted. Sign-ups carry the visit's tags and an answer to "How did you hear about us?" into `account_origins`. Staff read both on Admin, Visitors (`site_visits_report`).
 - **PostHog EU**: loaded only after the visitor accepts analytics cookies (NFR-PRV-02). Server-side events are sent only for users whose stored consent allows it. Event names and properties match PRD section 16 exactly and are typed in `packages/core/src/analytics/events.ts`.
 
 ## 16. Environments, CI and delivery
