@@ -235,6 +235,7 @@ describe('what a guide page shows and tells search (D-255)', () => {
           contentUrl: 'https://example.com/sidcup-high-street.webp',
           creator: { '@type': 'Person', name: 'Stacey Harris' },
           creditText: 'Stacey Harris, CC BY-SA 2.0, via Wikimedia Commons',
+          copyrightNotice: '© Stacey Harris',
           license: 'https://creativecommons.org/licenses/by-sa/2.0/',
           acquireLicensePage: 'https://commons.wikimedia.org/wiki/File:Sidcup_High_Street_-_geograph.org.uk_-_657079.jpg',
         },
@@ -248,6 +249,23 @@ describe('what a guide page shows and tells search (D-255)', () => {
     });
     const country = guideStructuredData(guide, { url: 'https://example.com', imageUrl: 'https://example.com/share.png' });
     expect(((country['@graph'] as Record<string, unknown>[])[0]?.spatialCoverage as unknown[])[0]).toEqual({ '@type': 'Place', name: 'United Kingdom' });
+  });
+
+  it('tells search every field Google Images reads for each photograph, naming the photographer as the copyright owner (D-414)', () => {
+    const local = guideBySlug('sidcup-belvedere-erith-driving-test-centres');
+    if (local === undefined) throw new Error('There is no local guide');
+    const photos = guideImageKeys.filter((key) => guidePhotoCredit(key) !== null);
+    const data = guideStructuredData(local, {
+      url: 'https://example.com',
+      imageUrl: 'https://example.com/share.png',
+      pictures: photos.map((key) => ({ key, url: `https://example.com/${key}.webp` })),
+    });
+    const [, ...images] = (data['@graph'] as Record<string, unknown>[])[0]?.image as Record<string, unknown>[];
+    expect(images).toHaveLength(3);
+    for (const image of images) {
+      expect(Object.keys(image).sort()).toEqual(['@type', 'acquireLicensePage', 'contentUrl', 'copyrightNotice', 'creator', 'creditText', 'license']);
+      expect(image.copyrightNotice).toBe(`© ${(image.creator as { name: string }).name}`);
+    }
   });
 
   it('gives a town its geo tags with where it is, a country its region alone, and nowhere none at all (D-387)', () => {

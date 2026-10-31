@@ -116,7 +116,9 @@ export function guideCard(guide: Guide): ShareCard {
 
 /**
  * A picture as search is told about it: a screen of the app by its address, and a photograph with
- * who took it and the licence it is used under, as its credit on the page says (D-391).
+ * who took it and the licence it is used under, as its credit on the page says (D-391). The
+ * photographer owns the copyright, as each photograph's page on Commons says, so the notice names
+ * them: every field Google Images reads is filled (D-414).
  */
 function pictureData(picture: { key: GuideImageKey; url: string }): string | Record<string, unknown> {
   const credit = guidePhotoCredit(picture.key);
@@ -126,6 +128,7 @@ function pictureData(picture: { key: GuideImageKey; url: string }): string | Rec
     contentUrl: picture.url,
     creator: { '@type': 'Person', name: credit.author },
     creditText: `${credit.author}, ${credit.licence}, via ${credit.via}`,
+    copyrightNotice: `© ${credit.author}`,
     license: credit.licenceUrl,
     acquireLicensePage: credit.sourceUrl,
   };
